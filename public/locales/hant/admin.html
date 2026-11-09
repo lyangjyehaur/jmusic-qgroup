@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261109-privacy1"><script defer src="/admin.js?v=20261109-privacy1"></script>  <script defer src="/analytics.js?v=20261109-umami2"></script>
+  <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
+</head>
+<body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理後臺</h1><p id="admin-error" class="form-error" role="alert"></p>
+<form id="admin-login" class="admin-card"><h2>管理員登錄</h2><label class="field">管理憑證<input name="key" type="password" required autocomplete="off" maxlength="256"></label><p class="field-help">管理憑證與活動帳號獨立，僅由網站管理員持有。登錄有效一小時。</p><button class="button primary" type="submit">登錄管理後臺</button></form>
+<section id="admin-settings" class="admin-card" hidden><h2>註冊方式</h2><form id="registration-settings"><label class="check-option"><input id="allow-name-registration" type="checkbox" role="switch">允許免第三方登錄註冊</label><p class="field-help">默認關閉，新用戶須通過已接入的第三方登錄創建帳號。目前為 QQ，未來可擴展微信等。開啟後額外允許只填寫稱呼創建帳號；關閉不刪除已建立的帳號。</p><p id="provider-status" class="field-help"></p><button type="submit" class="button primary">保存設置</button><p id="admin-saved" role="status"></p></form><h2>資料刪除申請</h2><p class="field-help">帳號登錄身份及私人資料已由系統移除。涉及共同記錄的申請須核對活動、款項及憑證後繼續處理；填寫說明不會自動錶示這些記錄已經刪除。</p><div id="privacy-requests"></div><button id="admin-logout" class="text-button">退出管理後臺</button></section>
+</main></body></html>

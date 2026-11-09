@@ -1,0 +1,253 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="description" content="群聚看板：群组活动发布、报名接龙、候补管理与费用分摊。">
+  <title>群聚看板</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css?v=20261109-privacy1">
+  <script defer src="/analytics.js?v=20261109-umami2"></script>
+  <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
+  <script src="/i18n.js?v=20261109-privacy1" defer></script>
+  <script src="/storage.js?v=20261109-privacy1" defer></script>
+  <script src="/experience.js?v=20261109-privacy1" defer></script>
+  <script src="/client.js?v=20261109-privacy1" defer></script>
+  <script src="/roster.js?v=20261109-privacy1" defer></script>
+  <script src="/activity.js?v=20261109-privacy1" defer></script>
+  <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
+  <script src="/settlements.js?v=20261109-privacy1" defer></script>
+  <script src="/finance.js?v=20261109-privacy1" defer></script>
+  <script src="/identity.js?v=20261109-privacy1" defer></script>
+  <script src="/app.js?v=20261109-privacy1" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="header-inner">
+      <h1><a href="/" aria-label="群聚看板首页">群聚看板</a><span id="event-count" class="count-badge" aria-label="近期活动数">0</span></h1>
+      <button id="notifications-button" class="notification-button" aria-label="消息"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg><span id="notification-count" hidden></span></button>
+      <button id="profile-button" class="profile-button"><img id="my-qq-avatar" class="qq-avatar small" alt="QQ头像" width="24" height="24" hidden><span id="my-name">设置称呼</span></button>
+      <button class="button primary" id="create-button">发起活动</button>
+    </div>
+  </header>
+  <main class="page">
+    <section class="home-account" aria-label="QQ登录与账号">
+      <div class="home-account-copy"><h2 id="home-account-title">QQ 登录</h2><div id="home-qq-profile" class="qq-profile" hidden><img id="home-qq-avatar" class="qq-avatar" alt="QQ头像" width="40" height="40" hidden><span id="home-qq-name"></span></div><p id="home-qq-status">登录后即可发起活动和报名。</p></div>
+      <button type="button" id="home-qq-button" class="home-qq-button" data-identity="account" aria-label="QQ登录" disabled><img src="/qq-login.png" alt="QQ登录" width="76" height="24"></button>
+    </section>
+    <section class="board-section" aria-label="活动列表">
+      <div class="toolbar">
+        <div class="tabs" role="group" aria-label="筛选活动">
+          <button class="tab active" data-filter="upcoming" aria-pressed="true">近期活动</button>
+          <button class="tab" data-filter="mine" aria-pressed="false">我参与的</button>
+          <button class="tab" data-filter="past" aria-pressed="false">往期</button>
+        </div>
+        <button class="refresh-button" id="refresh-button" aria-label="刷新活动">刷新</button>
+      </div>
+      <div class="filters">
+        <label class="search"><input id="search" type="search" placeholder="搜索活动" aria-label="搜索活动"></label>
+        <select id="category-filter" aria-label="活动类型">
+          <option value="全部">全部类型</option><option value="约K">唱歌</option><option>聚餐</option><option>运动</option><option>出游</option><option>游戏</option><option>其他</option>
+        </select>
+      </div>
+      <label class="check-option archived-option" id="archived-option" hidden><input id="include-archived" type="checkbox">含已归档</label>
+      <div id="load-error" class="error-banner" role="alert" hidden></div>
+      <div id="board" class="board" aria-live="polite"><div class="loading-state">加载中…</div></div>
+    </section>
+  </main>
+  <footer class="site-footer"><a href="/guide.html">操作说明</a><a href="/privacy">隐私政策</a><a href="/contact">联系与投诉</a><a href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">渝ICP备16002872号-1</a></footer>
+
+  <dialog id="profile-dialog" data-advanced-scope data-advanced="false" class="dialog profile-dialog" aria-labelledby="profile-title">
+    <form id="profile-form">
+      <div class="dialog-heading"><h2 id="profile-title">个人资料</h2><button type="button" class="icon-button" data-close="profile-dialog" aria-label="关闭">×</button></div>
+      <label class="field">群内称呼<input name="nickname" required maxlength="24" autocomplete="nickname" placeholder="输入你的群内称呼" id="nickname-input"></label>
+      <p class="form-hint">使用当前浏览器管理活动和报名。</p>
+      <p class="form-error" role="alert"></p>
+      <button class="button primary full" type="submit">保存</button>
+    </form>
+    <button type="button" id="qq-account-button" class="text-button full qq-button" data-identity="account" hidden><img src="/qq-login.png" alt="QQ登录" width="76" height="24"><span>登录与账号绑定</span></button>
+    <details class="extra-settings profile-codes"><summary>我的收款码 <span id="payment-library-count" class="library-count"></span></summary>
+      <p class="field-help">仅自己可见；结算时可选择使用。最多保存 30 张。</p>
+      <div id="payment-library-list"></div>
+      <form id="payment-library-form">
+        <label class="field">收款方式<select name="kind"><option value="wechat">微信</option><option value="alipay">支付宝</option><option value="other">其他</option></select></label>
+        <label class="field">名称（选填）<input name="code_name" maxlength="40" autocomplete="off" placeholder="如：常用收款码"></label>
+        <label class="field">收款码图片<input name="image" type="file" required accept="image/png,image/jpeg,image/webp"></label>
+        <button id="payment-library-save" type="submit" class="button secondary full">上传并保存</button>
+      </form>
+      <p id="payment-library-error" class="form-error" role="alert"></p>
+    </details>
+    <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
+    <button type="button" class="text-button full" data-identity="account">账号与设备</button><button type="button" class="text-button full" data-identity="logout">退出登录</button>
+  </dialog>
+
+  <dialog id="event-form-dialog" data-advanced-scope data-advanced="false" class="dialog event-form-dialog" aria-labelledby="form-title">
+    <form id="event-form" class="event-form">
+      <div class="dialog-heading"><h2 id="form-title">发起活动</h2><button type="button" class="icon-button" data-close="event-form-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body">
+        <input type="hidden" name="id">
+        <label class="field">标题<input name="title" required maxlength="60" placeholder="如：周末聚餐、周日下午运动"></label>
+        <label class="field">活动类型<select name="category"><option value="约K">唱歌</option><option>聚餐</option><option>运动</option><option>出游</option><option>游戏</option><option>其他</option></select></label>
+        <label class="field">日期<input name="event_date" type="date" required></label>
+        <div class="form-row">
+          <label class="field">开始时间<input name="start_time" type="time" value="18:00" required></label>
+          <label class="field">持续时间<select name="duration_hours"><option value="1">1 小时</option><option value="2">2 小时</option><option value="3" selected>3 小时</option><option value="4">4 小时</option><option value="5">5 小时</option><option value="6">6 小时</option><option value="7">7 小时</option><option value="8">8 小时</option><option value="9">9 小时</option><option value="10">10 小时</option><option value="11">11 小时</option><option value="12">12 小时</option><option value="13">13 小时</option><option value="14">14 小时</option><option value="15">15 小时</option><option value="16">16 小时</option><option value="17">17 小时</option><option value="18">18 小时</option><option value="19">19 小时</option><option value="20">20 小时</option><option value="21">21 小时</option><option value="22">22 小时</option><option value="23">23 小时</option><option value="24">24 小时</option></select></label>
+        </div>
+        <p id="end-time-preview" class="end-time-preview" role="status"></p>
+        <label class="field">地点<input name="location" required maxlength="120" placeholder="集合地点、场地名称或地址"></label>
+        <label class="field">注意事项 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="3000" placeholder="费用、集合方式、其他要求等"></textarea></label>
+        <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
+        <p id="event-advanced-summary" class="field-help" hidden></p>
+        <div id="event-advanced-options" data-advanced-only>
+        <div class="capacity-setting">
+          <label class="unlimited-option"><input name="capacity_unlimited" type="checkbox" checked>人数不限</label>
+          <label class="field limited-capacity" hidden>人数上限<input name="capacity" type="number" inputmode="numeric" min="1" max="500" value="8" required disabled></label>
+        </div>
+
+          <label class="field">报名截止<input name="deadline" type="datetime-local" required></label>
+          <label class="field">退出期限<input name="withdrawal_deadline" type="datetime-local" required></label>
+          <label class="field">可见性<select name="visibility"><option value="public">公开</option><option value="invitation">持邀请链接可见</option></select></label>
+          <label class="field">活动时区<select name="timezone"><option value="Asia/Shanghai">北京时间（UTC+8）</option><option value="Asia/Taipei">台北时间（UTC+8）</option><option value="Asia/Hong_Kong">香港时间（UTC+8）</option><option value="Asia/Tokyo">东京时间（UTC+9）</option><option value="UTC">UTC</option><option value="">原记录未设置，按当前设备显示</option></select></label>
+          <label class="field">最低成团人数<input name="minimum_participants" type="number" min="0" max="500" inputmode="numeric" value="0"><span class="field-help">0 表示不设置；未达标由发起者决定，不自动取消。</span></label>
+          <label class="field">费用规则<textarea name="fee_policy" rows="3" maxlength="1000"></textarea></label>
+          <p class="field-help timezone-hint">时间按当前设备时区显示。</p>
+        </div>
+        <label class="field" id="event-change-reason" hidden>修改原因<textarea name="reason" rows="2" maxlength="200"></textarea><span class="field-help">已有报名时，更改时间、地点、费用等安排需原因，并请参加者重新确认。</span></label>
+      </div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="text-button full" id="event-reload" type="button" hidden>载入最新版（替换当前输入）</button><button class="button primary full" type="submit" id="publish-button" name="intent" value="publish">发布活动</button><button class="text-button full" type="submit" id="save-draft" data-advanced-only name="intent" value="draft">保存草稿</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="invoice-dialog" data-advanced-scope data-advanced="false" class="dialog event-form-dialog" aria-labelledby="invoice-title">
+    <form id="invoice-form" class="event-form">
+      <div class="dialog-heading"><h2 id="invoice-title">活动结算</h2><button type="button" class="icon-button" data-close="invoice-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body">
+        <p id="invoice-legacy" class="activity-alert" hidden></p>
+        <div id="invoice-items"></div><button class="text-button" type="button" data-advanced-only data-invoice="add-item">增加费用项目</button>
+        <div id="invoice-roster-summary" class="invoice-roster-summary"></div>
+        <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
+        <div data-advanced-only><h3 class="invoice-section-title">核对人员</h3><div id="invoice-people"></div></div>
+        <details class="extra-settings" data-advanced-only><summary>添加其他付款人</summary><label class="field">付款人称呼<input id="invoice-custom-name" maxlength="24"></label><button class="text-button" type="button" data-invoice="add-custom">加入付款人选项</button><p class="field-help">加入后可在人员的「付款归属」中选择；同名不会自动合并。</p></details>
+        <label class="field">结算备注 <span class="optional">选填</span><textarea name="note" maxlength="1000" rows="2"></textarea></label>
+        <section class="invoice-codes"><h3>收款码</h3><div id="invoice-code-picker"></div></section>
+        <label class="field" id="invoice-reason-field" hidden>本次修改／转换原因<textarea name="reason" maxlength="300" rows="2"></textarea></label>
+        <label class="check-option" id="invoice-convert" hidden><input type="checkbox" name="convert_legacy">新增逐人结算版本，保留原人均账单</label>
+        <label class="check-option"><input type="checkbox" name="reviewed_roster" required>已核对结算名单、约定与金额</label>
+        <div id="invoice-preview" class="invoice-preview" hidden></div>
+      </div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="text-button" id="invoice-reload" data-invoice="reload" type="button" hidden>载入最新版（替换当前输入）</button><button class="button primary full" id="preview-invoice" type="submit">预览结算</button><button class="button primary full" id="publish-invoice" type="button" hidden>确认发布</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="finance-dialog" class="dialog event-form-dialog" aria-labelledby="finance-title">
+    <div class="event-form"><div class="dialog-heading"><h2 id="finance-title">收付款账本</h2><button class="icon-button" data-close="finance-dialog" aria-label="关闭">×</button></div><div class="form-body"><p id="finance-error" class="form-error" role="alert"></p><div id="finance-content"></div></div><div class="form-footer"><button type="button" class="text-button full" data-finance="refresh">刷新账本</button></div></div>
+  </dialog>
+  <dialog id="finance-form-dialog" class="dialog event-form-dialog" aria-labelledby="finance-form-title">
+    <form id="finance-form" class="event-form"><div class="dialog-heading"><h2 id="finance-form-title">登记款项</h2><button class="icon-button" type="button" data-close="finance-form-dialog" aria-label="关闭">×</button></div><div class="form-body"><div id="finance-fields"></div><div id="finance-preview" class="invoice-preview" hidden></div></div><div class="form-footer"><p class="form-error" role="alert"></p><button class="text-button full" type="button" id="finance-reload" data-finance="reload" hidden>载入最新版（替换当前输入）</button><button class="button primary full" id="finance-preview-button" type="submit">预览核对</button><button class="button primary full" id="finance-confirm" type="button" hidden>确认登记</button></div></form>
+  </dialog>
+  <dialog id="detail-dialog" class="dialog detail-dialog" aria-label="活动详情"><div id="detail-content" data-advanced-scope data-advanced="false"></div></dialog>
+  <dialog id="settlement-history-dialog" class="dialog event-form-dialog" aria-labelledby="settlement-history-title">
+    <div class="event-form">
+      <div class="dialog-heading"><h2 id="settlement-history-title">结算记录</h2><button type="button" class="icon-button" data-close="settlement-history-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body" id="settlement-history-content"></div>
+    </div>
+  </dialog>
+  <dialog id="party-dialog" class="dialog event-form-dialog" aria-labelledby="party-title">
+    <form id="party-form" class="event-form">
+      <div class="dialog-heading"><h2 id="party-title">同行／代报名</h2><button type="button" class="icon-button" data-close="party-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body">
+        <label id="party-self-field" class="check-option"><input name="include_self" type="checkbox">同时为我报名</label>
+        <div id="party-rows"></div>
+        <button class="text-button" type="button" id="add-guest">＋ 添加参加者</button>
+        <div id="party-options">
+          <label class="field">参加意愿<select name="intent"><option value="registered">确定参加</option><option value="tentative">待确认，不占名额</option></select></label>
+          <label class="field">多人排队方式<select name="queue_mode"><option value="individual">可分开，接受部分人候补</option><option value="together">必须一起参加，整组候补</option></select></label>
+          <p class="field-help">后加的人员重新排队。整组候补排在前面但名额不足时，后续人员不会自动超车。</p>
+        </div>
+        <label class="field" id="party-reason-field" hidden>补报名原因<input name="reason" maxlength="200"><span class="field-help">邀请不预留名额，需对方接受后才加入名单。</span></label>
+        <div id="party-preview" aria-live="polite"></div>
+        <p id="party-terms" class="field-help"></p>
+      </div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="save-party" type="submit">预览报名</button></div>
+    </form>
+  </dialog>
+  <dialog id="attendee-dialog" data-advanced-scope data-advanced="false" class="dialog event-form-dialog" aria-labelledby="attendee-title">
+    <form id="attendee-form" class="event-form">
+      <div class="dialog-heading"><h2 id="attendee-title">管理报名</h2><button type="button" class="icon-button" data-close="attendee-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body">
+        <p id="attendee-status" class="muted"></p>
+        <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
+        <button type="button" class="button secondary full" data-advanced-only id="claim-attendee" hidden>邀请本人认领</button>
+        <p id="attendee-payment" class="field-help" hidden></p>
+        <p id="attendee-request" class="field-help"></p>
+        <div id="attendee-edit-fields">
+          <label class="field">参加者称呼<input name="name" maxlength="24" required></label>
+          <label class="field">备注 <span class="optional">选填</span><input name="note" maxlength="100"></label>
+          <label class="field" data-advanced-only>付款归属<select name="payer_kind"><option value="manager">由代报者统一付款</option><option value="self">参加者自己付款</option></select></label>
+        </div>
+        <label class="field" id="attendee-reason-field">操作原因 <span class="optional">按需填写</span><textarea name="reason" maxlength="200" rows="2"></textarea></label>
+        <p class="field-help" data-advanced-only>特殊操作需填写原因并保存记录；同行默认按人数分摊。</p>
+      </div>
+      <div class="form-footer attendee-actions">
+        <p class="form-error" role="alert"></p>
+        <button class="text-button full" id="reload-attendee" type="button" hidden>载入最新报名</button>
+        <button class="button primary full" id="save-attendee" type="submit">保存修改</button>
+        <button class="button secondary full" id="confirm-attendee" type="button">确认参加</button>
+        <button class="button secondary full" id="split-attendee" type="button">整组改为分开排队</button>
+        <button class="button secondary full" id="approve-withdrawal" type="button">同意退出</button>
+        <button class="button secondary full" id="reject-withdrawal" type="button">拒绝退出</button>
+        <button class="text-button full danger" id="withdraw-attendee" type="button">撤销这位报名</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog id="notifications-dialog" class="dialog event-form-dialog" aria-labelledby="notifications-title">
+    <div class="event-form"><div class="dialog-heading"><h2 id="notifications-title">消息</h2><button class="icon-button" data-close="notifications-dialog" aria-label="关闭">×</button></div><div class="form-body"><details id="pending-operations" class="extra-settings" open><summary>待确认操作</summary><div id="pending-content"></div></details><details id="todo-section" class="extra-settings" open><summary>待办</summary><div id="todo-content"></div></details><h3 class="invoice-section-title">通知</h3><div id="notifications-content"></div></div></div>
+  </dialog>
+  <dialog id="activity-history-dialog" class="dialog event-form-dialog" aria-labelledby="activity-history-title">
+    <div class="event-form"><div class="dialog-heading"><h2 id="activity-history-title">活动记录</h2><button class="icon-button" data-close="activity-history-dialog" aria-label="关闭">×</button></div><div class="form-body" id="activity-history-content"></div></div>
+  </dialog>
+  <dialog id="accept-invitation-dialog" class="dialog event-form-dialog" aria-labelledby="accept-invitation-title">
+    <form id="accept-invitation-form" class="event-form">
+      <div class="dialog-heading"><h2 id="accept-invitation-title">受邀报名</h2><button class="icon-button" type="button" data-close="accept-invitation-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body"><p id="invitation-description" class="settlement-note"></p><p id="invitation-time" class="muted"></p><div id="invitation-conditions"></div><p class="field-help">接受后以你的群内称呼为本人报名，由你管理及付款，并接受当前安排与费用规则；接受前不占名额。</p><label class="check-option"><input name="accept_waiting" type="checkbox">如果名额已满，我接受候补</label></div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="accept-invitation-button" type="submit">接受为本人报名</button></div>
+    </form>
+  </dialog>
+  <dialog id="draft-close-dialog" class="dialog confirm-dialog" aria-labelledby="draft-close-title"><div class="dialog-heading"><h2 id="draft-close-title">有尚未发布的修改</h2><button type="button" class="icon-button" data-close="draft-close-dialog" aria-label="继续编辑">×</button></div><p>暂存仅保存在当前浏览器，换设备无法恢复。</p><button id="draft-save-close" class="button primary full" type="button">暂存并关闭</button><button id="draft-discard-close" class="text-button full danger" type="button">舍弃修改并关闭</button></dialog>
+  <dialog id="identity-dialog" class="dialog event-form-dialog" aria-labelledby="identity-title"><div class="event-form"><div class="dialog-heading"><h2 id="identity-title">账号与设备</h2><button type="button" class="icon-button" data-close="identity-dialog" aria-label="关闭">×</button></div><div class="form-body"><p id="identity-error" class="form-error" role="alert"></p><div id="identity-content"></div></div></div></dialog>
+  <dialog id="link-dialog" class="dialog" aria-labelledby="link-title"><div class="dialog-heading"><h2 id="link-title">复制链接</h2><button class="icon-button" data-close="link-dialog" aria-label="关闭">×</button></div><label class="field">分享链接<textarea id="link-input" rows="6" readonly></textarea></label></dialog>
+
+  <dialog id="activity-action-dialog" class="dialog confirm-dialog" aria-labelledby="activity-action-title">
+    <form id="activity-action-form"><div class="dialog-heading"><h2 id="activity-action-title">管理活动</h2><button type="button" class="icon-button" data-close="activity-action-dialog" aria-label="关闭">×</button></div><p id="activity-action-hint" class="field-help"></p><label class="field"><span id="activity-reason-label">原因</span><textarea name="reason" rows="3" maxlength="200"></textarea></label><p class="form-error" role="alert"></p><button class="button primary full" id="activity-action-save" type="submit">保存</button></form>
+  </dialog>
+  <dialog id="conditions-dialog" class="dialog event-form-dialog" aria-labelledby="conditions-title">
+    <form id="conditions-form" class="event-form"><div class="dialog-heading"><h2 id="conditions-title">活动安排确认</h2><button class="icon-button" type="button" data-close="conditions-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body"><p id="conditions-version" class="muted"></p><p id="conditions-summary" class="activity-alert"></p><div id="conditions-current"></div><button class="text-button" id="copy-change-summary" type="button">复制安排摘要</button><textarea id="change-summary-fallback" class="summary-fallback" aria-label="安排摘要，可手动复制" readonly hidden rows="6"></textarea><div id="conditions-response-fields"><label class="field">为谁确认<select name="person_id"></select></label><div id="conditions-prior"></div><label class="field">说明 <span class="optional">不同意时必填</span><textarea name="reason" rows="2" maxlength="200"></textarea></label><p class="field-help">确认后按当前安排参加。暂不同意或未确认不会自动退出，也不会自动承担新增费用；原约定保留，请与发起者协调。</p></div></div>
+      <div class="form-footer" id="conditions-response-footer"><p class="form-error" role="alert"></p><button class="button primary full" type="submit" id="accept-conditions">接受当前安排</button><button class="text-button full" type="button" id="decline-conditions">暂不同意，请协调</button></div>
+    </form>
+  </dialog>
+  <dialog id="management-dialog" class="dialog event-form-dialog" aria-labelledby="management-title">
+    <form id="management-form" class="event-form"><div class="dialog-heading"><h2 id="management-title">协办与转交</h2><button class="icon-button" type="button" data-close="management-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body"><div id="management-roles"></div><div id="management-pending"></div><details class="extra-settings"><summary>新增管理邀请</summary><label class="field">交接类型<select name="kind"><option value="cohost">邀请协办</option><option value="transfer">转交发起者</option></select></label><label class="field">接任人<select name="attendee_id"></select></label><label class="field">接任人称呼<input name="target_name" maxlength="24" required></label><fieldset id="management-scopes"><legend>协办权限</legend><label class="check-option"><input name="permission" value="schedule" type="checkbox">修改安排与开始／结束</label><label class="check-option"><input name="permission" value="roster" type="checkbox" checked>管理报名</label><label class="check-option"><input name="permission" value="attendance" type="checkbox" checked>核对出席</label></fieldset><label class="field">交接原因<textarea name="reason" rows="2" maxlength="200" required></textarea></label><p class="field-help">邀请 7 天内有效，需对方接受。未限制报名浏览器的专属链接，任何持链接者都能接受，请只发给指定接任人。转交后原发起者不再保留发起者权限；协办没有帐款与转交权限。</p></details></div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="save-management" type="submit">生成交接邀请</button></div>
+    </form>
+  </dialog>
+  <dialog id="accept-role-dialog" class="dialog event-form-dialog" aria-labelledby="accept-role-title">
+    <form id="accept-role-form" class="event-form"><div class="dialog-heading"><h2 id="accept-role-title">接受交接</h2><button class="icon-button" type="button" data-close="accept-role-dialog" aria-label="关闭">×</button></div><div class="form-body"><p id="accept-role-description" class="settlement-note"></p><p id="accept-role-permissions" class="muted"></p><label class="check-option"><input name="accept_responsibility" type="checkbox" required>我接受上述管理责任</label></div><div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="accept-role-button" type="submit">接受交接</button></div></form>
+  </dialog>
+  <dialog id="attendance-dialog" class="dialog event-form-dialog" aria-labelledby="attendance-title">
+    <form id="attendance-form" class="event-form"><div class="dialog-heading"><h2 id="attendance-title">出席管理</h2><button class="icon-button" type="button" data-close="attendance-dialog" aria-label="关闭">×</button></div><div class="form-body"><p id="attendance-empty" class="muted" hidden>暂无可核对的正式人员。</p><div id="attendance-fields"><label class="field">参加者<select name="person_id"></select></label><label class="field">出席状态<select name="attendance"><option value="unknown">未核对</option><option value="present">到场</option><option value="absent">缺席</option><option value="late">迟到</option><option value="left">早退</option></select></label><label class="field">出席备注 <span class="optional">选填</span><textarea name="attendance_note" rows="2" maxlength="200"></textarea></label><details class="extra-settings"><summary id="attendance-time-label">实际到离场时间（选填）</summary><label class="field">实际到场<input name="arrived_at" type="datetime-local"></label><label class="field">实际离场<input name="left_at" type="datetime-local"></label></details><label class="field">补录／更正原因<textarea name="reason" rows="2" maxlength="200"></textarea></label><p id="attendance-reason-hint" class="field-help"></p></div></div><div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="save-attendance" type="submit">保存出席</button></div></form>
+  </dialog>
+  <dialog id="onsite-dialog" class="dialog event-form-dialog" aria-labelledby="onsite-title">
+    <form id="onsite-form" class="event-form"><div class="dialog-heading"><h2 id="onsite-title">现场补录</h2><button class="icon-button" type="button" data-close="onsite-dialog" aria-label="关闭">×</button></div><div class="form-body"><p id="onsite-capacity" class="muted"></p><label class="field">参加者称呼<input name="name" required maxlength="24"></label><label class="field">备注 <span class="optional">选填</span><input name="note" maxlength="100"></label><label class="field">付款归属<select name="payer_kind"><option value="manager">由我统一付款</option><option value="self">参加者自己付款</option></select></label><label class="field">补录原因<textarea name="reason" required maxlength="200" rows="2"></textarea></label><p id="onsite-terms" class="field-help"></p><label class="check-option"><input name="accept_terms" required type="checkbox">已与这位参加者确认当前安排与费用规则</label><details class="extra-settings"><summary>名额例外</summary><label class="check-option"><input name="allow_over_capacity" type="checkbox">确认本次可超过人数上限</label><label class="check-option"><input name="override_waitlist" type="checkbox">已协调候补，本次现场补录不按原队列</label></details></div><div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="save-onsite" type="submit">补录为正式到场</button></div></form>
+  </dialog>
+
+  <dialog id="confirm-dialog" class="dialog confirm-dialog" aria-labelledby="confirm-title">
+    <div class="dialog-heading"><h2 id="confirm-title">确认操作</h2><button type="button" class="icon-button" data-close="confirm-dialog" aria-label="关闭">×</button></div>
+    <p id="confirm-message" class="muted"></p>
+    <div class="confirm-actions"><button id="confirm-cancel" class="button secondary" data-close="confirm-dialog">返回</button><button id="confirm-action" class="button primary">确认</button></div>
+  </dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+</body>
+</html>

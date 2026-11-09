@@ -1,0 +1,7 @@
+{
+  "name": "qgroup-build-tools",
+  "private": true,
+  "type": "module",
+  "scripts": {"build:locales": "node deploy/build_locales.cjs"},
+  "devDependencies": {"@babel/parser": "8.1.0", "opencc-js": "1.4.2"}
+}

@@ -1,0 +1,12 @@
+[Unit]
+Description=Back up activity board SQLite database
+After=qgroup.service
+
+[Service]
+Type=oneshot
+UMask=0077
+ExecStart=/usr/bin/python3 /opt/qgroup/deploy/backup.py
+ProtectSystem=strict
+ReadWritePaths=/var/backups/qgroup
+ProtectHome=yes
+PrivateTmp=yes

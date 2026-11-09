@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理后台</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261109-privacy1"><script defer src="/admin.js?v=20261109-privacy1"></script>  <script defer src="/analytics.js?v=20261109-umami2"></script>
+  <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
+</head>
+<body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理后台</h1><p id="admin-error" class="form-error" role="alert"></p>
+<form id="admin-login" class="admin-card"><h2>管理员登录</h2><label class="field">管理凭证<input name="key" type="password" required autocomplete="off" maxlength="256"></label><p class="field-help">管理凭证与活动账号独立，仅由网站管理员持有。登录有效一小时。</p><button class="button primary" type="submit">登录管理后台</button></form>
+<section id="admin-settings" class="admin-card" hidden><h2>注册方式</h2><form id="registration-settings"><label class="check-option"><input id="allow-name-registration" type="checkbox" role="switch">允许免第三方登录注册</label><p class="field-help">默认关闭，新用户须通过已接入的第三方登录创建账号。目前为 QQ，未来可扩展微信等。开启后额外允许只填写称呼创建账号；关闭不删除已建立的账号。</p><p id="provider-status" class="field-help"></p><button type="submit" class="button primary">保存设置</button><p id="admin-saved" role="status"></p></form><h2>资料删除申请</h2><p class="field-help">账号登录身份及私人资料已由系统移除。涉及共同记录的申请须核对活动、款项及凭证后继续处理；填写说明不会自动表示这些记录已经删除。</p><div id="privacy-requests"></div><button id="admin-logout" class="text-button">退出管理后台</button></section>
+</main></body></html>

@@ -1,0 +1,29 @@
+[Unit]
+Description=Together activity board
+After=network.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+WorkingDirectory=/opt/qgroup
+StateDirectory=qgroup
+UMask=0077
+Environment=KANBAN_DB=/var/lib/qgroup/kanban.sqlite3
+Environment=KANBAN_HOST=127.0.0.1
+Environment=KANBAN_PORT=8791
+Environment=KANBAN_SECURE_COOKIE=1
+Environment=KANBAN_ORIGIN=https://kanban.danndann.cn
+EnvironmentFile=-/etc/qgroup/qq.env
+EnvironmentFile=-/etc/qgroup/admin.env
+ExecStart=/usr/bin/python3 /opt/qgroup/server.py
+Restart=on-failure
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
