@@ -47,7 +47,7 @@ def build():
   <meta name="description" content="群聚看板操作说明：发起、报名、同行、候补、退出、认领与结算。">
   <title>操作说明 · 群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261109-footer1">
+  <link rel="stylesheet" href="/style.css?v=20261109-footer2">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
 </head>
@@ -61,7 +61,7 @@ def build():
   </main>
   <footer class="site-footer">
     <nav class="footer-links" aria-label="页脚导航"><a href="/">返回活动</a></nav>
-    <div class="footer-author"><span>作者</span><a href="https://danndann.cn" target="_blank" rel="noopener noreferrer">飯糰</a></div>
+    <div class="footer-meta"><span class="footer-author">由 <a href="https://danndann.cn" target="_blank" rel="noopener noreferrer" translate="no">飯糰</a> 製作</span></div>
   </footer>
 </body>
 </html>

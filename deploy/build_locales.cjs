@@ -12,6 +12,10 @@ const canonical=new Set(['全部','约K','聚餐','运动','出游','游戏','�
 const sources=new Set();
 
 function html(text,convert) {
+  // Respect explicit non-translatable names in the generated HTML as well as browsers.
+  const preserved=[];
+  text=text.replace(/<([a-z][\w:-]*)\b(?=[^>]*\btranslate=("|')no\2)[^>]*>[\s\S]*?<\/\1>/gi,
+    value=>`__QG_PRESERVED_${preserved.push(value)-1}__`);
   // An option without value otherwise changes its submitted value with its label.
   text=text.replace(/<option\b([^>]*)>([^<]*)<\/option>/g,(all,attrs,label)=>
     !/\bvalue\s*=/.test(attrs)&&han.test(label)&&!label.includes('__QG_EXPR_')?
@@ -19,7 +23,7 @@ function html(text,convert) {
   return text.replace(/<[^>]*>|[^<]+/g,part=>part.startsWith('<')?
     part.replace(/\b(title|placeholder|aria-label|alt|download|content)=("[^"]*"|'[^']*')/g,
       (all,key,value)=>`${key}=${value[0]}${convert(value.slice(1,-1))}${value.at(-1)}`):
-    part.split(/([\u3400-\u9fff]ICP备\d+号(?:-\d+)?)/).map(piece=>/^[\u3400-\u9fff]ICP备\d+号(?:-\d+)?$/.test(piece)?piece:convert(piece)).join(''));
+    part.split(/([\u3400-\u9fff]ICP备\d+号(?:-\d+)?)/).map(piece=>/^[\u3400-\u9fff]ICP备\d+号(?:-\d+)?$/.test(piece)?piece:convert(piece)).join('')).replace(/__QG_PRESERVED_(\d+)__/g,(_,index)=>preserved[Number(index)]);
 }
 
 function javascript(source,convert,filename) {

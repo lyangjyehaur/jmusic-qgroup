@@ -21,6 +21,12 @@ for(const [folder,lang,category,required] of [
   const html=fs.readFileSync(`public/locales/${folder}/index.html`,'utf8');
   assert.match(html,/<option value="运动">/); // Localized label retains submitted value.
   assert.match(html,new RegExp(`<html lang="${lang}"`));
+  for(const page of ['index','guide','privacy','contact']) {
+    const footer=fs.readFileSync(`public/locales/${folder}/${page}.html`,'utf8').split('<footer')[1];
+    assert.match(footer,/<a href="https:\/\/danndann\.cn"[^>]*translate="no">飯糰<\/a>/);
+    assert.ok(!footer.includes('饭团'));
+    assert.match(footer,folder==='hans'?/制作<\/span>/:/製作<\/span>/);
+  }
   const settlementContext=vm.createContext({});
   vm.runInContext(fs.readFileSync(`public/locales/${folder}/settlements.js`,'utf8'),settlementContext);
   const input=[{id:'x',name:'后台原话 · 後臺',amount:'100',scope:'common',mode:'shares',note:'报名须知',allocations:[]}];
