@@ -87,7 +87,7 @@ function openProfile(next=null) {
   profileContinuation=next;
   $('#nickname-input').value=state.me.nickname;
   $('#profile-form .form-error').textContent='';
-  BoardAdvanced.set($('#profile-dialog'));showDialog('profile-dialog');
+  showDialog('profile-dialog');
   profileCodes.open();$('#nickname-input').focus();
 }
 function withProfile(next) { if(!state.me.authenticated)return identityUI.account(); if (state.me.nickname) return next(); else openProfile(next); }

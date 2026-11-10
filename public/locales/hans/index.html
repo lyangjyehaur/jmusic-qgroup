@@ -20,7 +20,7 @@
   <script src="/settlements.js?v=20261109-privacy1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
   <script src="/identity.js?v=20261110-copy1" defer></script>
-  <script src="/app.js?v=20261110-copy1" defer></script>
+  <script src="/app.js?v=20261110-profile1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -61,7 +61,7 @@
     <div class="footer-meta"><span class="footer-author">由 <a href="https://danndann.cn" target="_blank" rel="noopener noreferrer" translate="no">飯糰</a> 制作</span><span class="footer-separator" aria-hidden="true">·</span><a class="footer-legal" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">渝ICP备16002872号-1</a></div>
   </footer>
 
-  <dialog id="profile-dialog" data-advanced-scope data-advanced="false" class="dialog profile-dialog" aria-labelledby="profile-title">
+  <dialog id="profile-dialog" class="dialog profile-dialog" aria-labelledby="profile-title">
     <form id="profile-form">
       <div class="dialog-heading"><h2 id="profile-title">个人资料</h2><button type="button" class="icon-button" data-close="profile-dialog" aria-label="关闭">×</button></div>
       <label class="field">群内称呼<input name="nickname" required maxlength="24" autocomplete="nickname" placeholder="输入你的群内称呼" id="nickname-input"></label>
@@ -81,7 +81,6 @@
       </form>
       <p id="payment-library-error" class="form-error" role="alert"></p>
     </details>
-    <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
     <button type="button" class="text-button full" data-identity="account">账号与设备</button><button type="button" class="text-button full" data-identity="logout">退出登录</button>
   </dialog>
 
