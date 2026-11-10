@@ -3,13 +3,14 @@ const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
 const state = {events:[], me:{nickname:''}, filter:'upcoming', category:'全部', search:'', current:null, loaded:false};
 let profileContinuation = null, confirmCallback = null, toastTimer = null, refreshPromise = null;
+let eventTimeConfirmation = null;
 let dialogStack=[],detailSignature='',historyReturning=false,modalBack=false;
 const intentId=()=>crypto.randomUUID();
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const deviceZone=()=>Intl.DateTimeFormat().resolvedOptions().timeZone||'UTC';
 const effectiveZone=zone=>zone||deviceZone();
-const dateFormat=(value,zone)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
-const shortDate=(value,zone)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
+const dateFormat=(value,zone)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),month:'long',day:'numeric',weekday:'short',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value));
+const shortDate=(value,zone)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value));
 function wallDate(value,zone) {
   const parts=new Intl.DateTimeFormat('en-GB',{timeZone:effectiveZone(zone),year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(value));
   const get=kind=>parts.find(p=>p.type===kind).value;
@@ -28,18 +29,79 @@ function wallToISO(value,zone) {
   if(candidates.length!==1)throw new Error(candidates.length?"這個時間處於夏令時重複時段，請選一個明確的時間":"這個時區沒有這個本地時間，請重新選擇");
   return new Date(candidates[0]).toISOString();
 }
-const zoneLabel=zone=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),timeZoneName:'short'}).formatToParts(new Date()).find(p=>p.type==='timeZoneName').value;
-const clock=(value,zone)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value));
+const zoneLabel=(zone,value=Date.now())=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),timeZoneName:'short'}).formatToParts(new Date(value)).find(p=>p.type==='timeZoneName').value;
+const clock=(value,zone)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:effectiveZone(zone),hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).format(new Date(value));
 const endLabel=(start,end,zone)=>wallDate(start,zone).slice(0,10)===wallDate(end,zone).slice(0,10)?clock(end,zone):dateFormat(end,zone);
 const timeRange=e=>`${dateFormat(e.starts_at,e.timezone)}${e.ends_at?'–'+endLabel(e.starts_at,e.ends_at,e.timezone):''} (${zoneLabel(e.timezone)})`;
+const isEarlyTime=value=>/^0[0-6]:[0-5]\d$/.test(value);
+function shiftCalendarDate(value,days) {
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(value))throw new Error("請填寫完整日期");
+  const date=new Date(value+'T12:00:00Z');
+  if(!Number.isFinite(date.getTime())||date.toISOString().slice(0,10)!==value)throw new Error("請填寫有效日期");
+  date.setUTCDate(date.getUTCDate()+days);return date.toISOString().slice(0,10);
+}
+const calendarLabel=(value,year=true)=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',year:year?'numeric':undefined,month:'long',day:'numeric',weekday:'short'}).format(new Date(value+'T12:00:00Z'));
+function eventStartValue(date,time,offset='0') {
+  // Calendar-day arithmetic must not depend on the device zone or DST day length.
+  if(isEarlyTime(time)) {
+    if(!['0','1'].includes(offset))throw new Error("請選擇凌晨屬於哪一晚");
+    return shiftCalendarDate(date,Number(offset))+'T'+time;
+  }
+  return date+'T'+time;
+}
+function schedulePreview(start,end,zone) {
+  const startValue=wallDate(start,zone),endValue=wallDate(end,zone);
+  const full=value=>calendarLabel(value.slice(0,10))+' '+value.slice(11,16);
+  const lines=[`開始：${full(startValue)}`,`結束：${full(endValue)}${startValue.slice(0,10)!==endValue.slice(0,10)?"（跨日）":''}`,`共 ${(end-start)/3600000} 小時 · ${effectiveZone(zone)} (${zoneLabel(zone,start)})`];
+  if(isEarlyTime(startValue.slice(11,16)))lines.unshift(`這是 ${calendarLabel(shiftCalendarDate(startValue.slice(0,10),-1))} 晚上過後的凌晨場。`);
+  return lines.join('\n');
+}
+function startCountdownText(start,now=Date.now()) {
+  const difference=new Date(start).getTime()-now;
+  if(!Number.isFinite(difference))return '';
+  if(difference===0)return "開始時間已到，請核對日期與時間";
+  const future=difference>0,absolute=Math.abs(difference);
+  let duration="不到 1 分鐘";
+  if(absolute>=60000) {
+    const minutes=future?Math.ceil(absolute/60000):Math.floor(absolute/60000),parts=[];
+    const days=Math.floor(minutes/1440),hours=Math.floor(minutes%1440/60),remaining=minutes%60;
+    if(days)parts.push(`${days} 天`);
+    if(hours)parts.push(`${hours} 小時`);
+    if(remaining)parts.push(`${remaining} 分鐘`);
+    duration=parts.join(' ');
+  }
+  return future?`距離開始還有 ${duration}`:`開始時間已過 ${duration}，請核對日期與時間`;
+}
 function formStart() {
   const form=$('#event-form');
-  return new Date(wallToISO(`${form.elements.event_date.value}T${form.elements.start_time.value}`,form.elements.timezone.value));
+  return new Date(wallToISO(eventStartValue(form.elements.event_date.value,form.elements.start_time.value,form.elements.start_day_offset.value),form.elements.timezone.value));
+}
+function updateStartCountdown(start) {
+  if(start===undefined){try{start=formStart();}catch{start=null;}}
+  const target=$('#start-countdown'),now=Date.now(),text=start?startCountdownText(start,now):'';
+  target.textContent=text;target.hidden=!text;
+  target.classList.toggle('is-past',Boolean(text)&&start.getTime()<=now);
+}
+function renderEndPreview() {
+  const form=$('#event-form'),f=form.elements,early=isEarlyTime(f.start_time.value),offset=f.start_day_offset;
+  $('#start-day-field').hidden=!early;offset.disabled=!early;offset.required=early;
+  if(early&&form.dataset.previousEarly==='false')offset.value='';
+  if(!early)offset.value='0';form.dataset.previousEarly=String(early);
+  try {
+    const date=f.event_date.value;
+    offset.options[1].textContent=`當天凌晨 · ${calendarLabel(shiftCalendarDate(date,0),false)}`;
+    offset.options[2].textContent=`次日凌晨 · ${calendarLabel(shiftCalendarDate(date,1),false)}`;
+  }catch{offset.options[1].textContent="當天凌晨（前一晚過後）";offset.options[2].textContent="次日凌晨（相約當晚過後）";}
+  try {
+    const start=formStart(),duration=Number(f.duration_hours.value);
+    $('#end-time-preview').textContent=schedulePreview(start,new Date(start.getTime()+duration*3600000),f.timezone.value);
+    updateStartCountdown(start);
+    return start;
+  }catch(error){$('#end-time-preview').textContent=f.event_date.value&&f.start_time.value?error.message:'';updateStartCountdown(null);return null;}
 }
 function updateEndPreview() {
-  const form=$('#event-form');let start;try{start=formStart();}catch{$('#end-time-preview').textContent='';return;}const duration=Number(form.elements.duration_hours.value);
-  $('#end-time-preview').textContent=Number.isNaN(start.getTime())?'':`結束時間：${endLabel(start,new Date(start.getTime()+duration*3600000),form.elements.timezone.value)}`;
-  if(!Number.isNaN(start.getTime())) {
+  const form=$('#event-form'),start=renderEndPreview();
+  if(start) {
     const startValue=wallDate(start,form.elements.timezone.value),deadline=form.elements.deadline;
     if(!deadline.value||deadline.value===form.dataset.previousStart||deadline.value>startValue)deadline.value=startValue;
     form.dataset.previousStart=startValue;
@@ -188,7 +250,7 @@ function renderDetail(e,{preserve=false}={}) {
   if(e.can_finish)panel+="<button class=\"button secondary full finish-button\" data-detail-action=\"finish\">結束並結算</button>";
   const canRespond=e.my_attendees.some(p=>p.can_respond&&p.confirmation_state!=='accepted');
   if(canRespond)panel="<button class=\"button primary full\" data-activity=\"conditions\">確認變更後的安排</button>"+panel;
-  $('#detail-content').innerHTML=`<div class="detail-top"><div class="dialog-heading"><h2>${esc(e.title)}</h2><button class="icon-button" data-close="detail-dialog" aria-label="關閉">×</button></div><p class="detail-meta"><span>${esc(BoardI18n.category(e.category))}</span><span class="event-state ${kind}">${label}</span></p><dl class="detail-facts"><dt>時間</dt><dd>${timeRange(e)}</dd><dt>地點</dt><dd>${esc(e.location)} <a class="text-button navigation-link" href="https://uri.amap.com/search?keyword=${encodeURIComponent(e.location)}" target="_blank" rel="noopener noreferrer">導航</a></dd></dl><p class="detail-secondary">${shortDate(e.deadline,e.timezone)} 截止報名 · ${esc(e.owner_name)} 發起${e.withdrawal_deadline!==e.deadline?`<br>${shortDate(e.withdrawal_deadline,e.timezone)} 後退出需申請`:''}</p></div><div class="detail-main">${activityUI.alerts(e)}${settlementSection(e)}${e.finance?.has_records||e.finance?.pending_count?financeUI.section(e):''}${e.description?`<section class="event-notes"><h3>${e.category==='约K'?"注意事項":"活動說明"}</h3><p class="detail-description">${esc(e.description)}</p></section>`:''}${rosterUI.peopleSection(e)}${e.claim_invitations?.some(c=>c.can_decide||c.status==='requested')?identityUI.section(e):''}<div class="detail-tools"><button data-detail-action="share">複製活動鏈接</button>${e.can_edit_schedule?"<button data-activity=\"edit\">編輯活動</button>":''}${e.is_owner&&e.lifecycle==='draft'?"<button data-activity=\"publish\">發佈草稿</button>":''}</div></div><div class="join-panel">${panel}${BoardAdvanced.control()}<div class="detail-extra-controls" data-advanced-only>${!e.finance?.has_records&&!e.finance?.pending_count?financeUI.section(e):''}${!e.claim_invitations?.some(c=>c.can_decide||c.status==='requested')?identityUI.section(e):''}<div class="detail-tools"><button data-detail-action="summary">複製活動摘要</button><button data-detail-action="copy">複製為新活動</button><button data-roster-action="history">活動記錄</button>${activityUI.tools(e)}</div></div></div>`;
+  $('#detail-content').innerHTML=`<div class="detail-top"><div class="dialog-heading"><h2>${esc(e.title)}</h2><button class="icon-button" data-close="detail-dialog" aria-label="關閉">×</button></div><p class="detail-meta"><span>${esc(BoardI18n.category(e.category))}</span><span class="event-state ${kind}">${label}</span></p><dl class="detail-facts"><dt>時間</dt><dd>${timeRange(e)}</dd><dt>地點</dt><dd>${esc(e.location)} <a class="text-button navigation-link" href="https://uri.amap.com/search?keyword=${encodeURIComponent(e.location)}" target="_blank" rel="noopener noreferrer">導航</a></dd></dl><p class="detail-secondary">${shortDate(e.deadline,e.timezone)} 截止報名 · ${esc(e.owner_name)} 發起${e.withdrawal_deadline!==e.deadline?`<br>${shortDate(e.withdrawal_deadline,e.timezone)} 後退出需申請`:''}</p></div><div class="detail-main">${activityUI.alerts(e)}${settlementSection(e)}${e.finance?.has_records||e.finance?.pending_count?financeUI.section(e):''}${e.description?`<section class="event-notes"><h3>${e.category==='约K'?"注意事項":"活動說明"}</h3><p class="detail-description">${esc(e.description)}</p></section>`:''}${rosterUI.peopleSection(e)}${e.claim_invitations?.some(c=>c.can_decide||c.status==='requested')?identityUI.section(e):''}<div class="detail-tools"><button data-detail-action="share">複製活動鏈接</button>${e.can_edit_schedule?`<button data-activity="edit">${e.can_assist_schedule?"管理員協助編輯":"編輯活動"}</button>`:''}${e.is_owner&&e.lifecycle==='draft'?"<button data-activity=\"publish\">發佈草稿</button>":''}</div></div><div class="join-panel">${panel}${BoardAdvanced.control()}<div class="detail-extra-controls" data-advanced-only>${!e.finance?.has_records&&!e.finance?.pending_count?financeUI.section(e):''}${!e.claim_invitations?.some(c=>c.can_decide||c.status==='requested')?identityUI.section(e):''}<div class="detail-tools"><button data-detail-action="summary">複製活動摘要</button><button data-detail-action="copy">複製為新活動</button><button data-roster-action="history">活動記錄</button>${activityUI.tools(e)}</div></div></div>`;
   BoardAdvanced.set(content,advanced);
   $('#join-form')?.addEventListener('submit', event=>{
     event.preventDefault();
@@ -226,7 +288,7 @@ async function mutateEvent(id,data,message) {
 async function openEventForm(e=null,copy=false) {
   try{await BoardDrafts.detach('event-form-dialog');}catch(error){toast(error.message);return;}
   const source=copy?e:null;if(copy)e=null;
-  const form=$('#event-form');form.reset();form.elements.id.value=e?.id||'';form.dataset.intent=intentId();
+  const form=$('#event-form');form.reset();form.elements.id.value=e?.id||'';form.dataset.intent=intentId();eventTimeConfirmation=null;
   BoardAdvanced.set($('#event-form-dialog'));for(const details of form.querySelectorAll('details'))details.open=false;form.dataset.revision=e?.revision??'';form.dataset.lifecycle=e?.lifecycle||'';
   const zone=e?e.timezone:'Asia/Shanghai',zoneSelect=form.elements.timezone;
   if(zone&&![...zoneSelect.options].some(option=>option.value===zone))zoneSelect.add(new Option(zone,zone));zoneSelect.value=zone||'';
@@ -242,14 +304,21 @@ async function openEventForm(e=null,copy=false) {
   form.elements.withdrawal_deadline.value=e?wallDate(e.withdrawal_deadline,zone):form.elements.deadline.value;
   form.elements.visibility.value=e?.visibility||'public';form.elements.minimum_participants.value=e?.minimum_participants||0;
   form.elements.bot_enabled.checked=!!e?.bot_enabled;
-  form.elements.bot_enabled.disabled=!!e&&!e.is_owner;
-  form.elements.fee_policy.value=e?e.fee_policy:"按正式參加人數均攤；同行正常 AA；遲到、早退默認不減免。費用以活動實際結算為準。";
+  form.elements.bot_enabled.dataset.editable=String(!e||!!e.is_owner);
+  $('#event-admin-assist').hidden=!e?.can_assist_schedule;
+  form.elements.reason.required=!!e?.can_assist_schedule;
+  form.elements.reason.setCustomValidity('');
+  form.elements.start_day_offset.setCustomValidity('');
+  for(const name of ['visibility','withdrawal_deadline'])form.elements[name].disabled=!!e?.can_assist_schedule;
+  form.elements.fee_policy.disabled=!!e&&!e.is_owner;
+  form.elements.fee_policy.value=e?.fee_policy||'';
   form.dataset.previousDeadline=form.elements.deadline.value;updateCapacityInput();
   const startValue=wallDate(start,zone);form.elements.event_date.value=startValue.slice(0,10);form.elements.start_time.value=startValue.slice(11,16);
+  form.dataset.previousEarly=String(isEarlyTime(form.elements.start_time.value));form.elements.start_day_offset.value='0';
   form.dataset.previousStart=startValue;updateEndPreview();
   $('#event-change-reason').hidden=!e||e.lifecycle==='draft';
   $('#save-draft').hidden=!!e&&e.lifecycle!=='draft';
-  $('#form-title').textContent=e?"編輯活動":"發起活動";
+  $('#form-title').textContent=e?(e.can_assist_schedule?"管理員協助編輯":"編輯活動"):"發起活動";
   $('#publish-button').textContent=e?(e.lifecycle==='draft'?"發佈草稿":"保存修改"):"發佈活動";
   if(source) {
     for(const name of ['title','category','location','description','fee_policy','visibility','minimum_participants'])form.elements[name].value=source[name];
@@ -257,13 +326,13 @@ async function openEventForm(e=null,copy=false) {
     form.elements.duration_hours.value=source.duration_hours||3;
     if(source.timezone&&![...zoneSelect.options].some(v=>v.value===source.timezone))zoneSelect.add(new Option(source.timezone,source.timezone));
     zoneSelect.value=source.timezone||'';form.elements.start_time.value=wallDate(source.starts_at,source.timezone).slice(11,16);
-    form.elements.event_date.value='';form.elements.deadline.value='';form.elements.withdrawal_deadline.value='';updateCapacityInput();updateEndPreview();
+    form.elements.event_date.value='';form.elements.start_day_offset.value='';form.elements.deadline.value='';form.elements.withdrawal_deadline.value='';updateCapacityInput();updateEndPreview();
     $('#form-title').textContent="複製活動";$('#publish-button').textContent="發佈活動";
   }
-  updateEventAdvancedSummary();form.dataset.presetDuration=form.elements.duration_hours.value;
+  updateLegacyFeeNotice();updateEventBotOption();updateEventAdvancedSummary();form.dataset.presetDuration=form.elements.duration_hours.value;
   $('#event-reload').hidden=true;$('#event-form .form-error').textContent='';showDialog('event-form-dialog');
   try{await BoardDrafts.bind('event-form-dialog',e?'event:'+e.id:source?'copy:'+source.id:'event:new',
-    ()=>({fields:BoardDrafts.fields(form),dataset:{...form.dataset}}),data=>{BoardDrafts.fill(form,data.fields);Object.assign(form.dataset,data.dataset);updateCapacityInput();updateEventAdvancedSummary();$('#end-time-preview').textContent='';try{const start=formStart();$('#end-time-preview').textContent="結束時間："+endLabel(start,new Date(start.getTime()+Number(form.elements.duration_hours.value)*3600000),form.elements.timezone.value);}catch{}if((e&&Number(form.dataset.revision)!==e.revision)||(form.elements.id.value&&Number(form.dataset.revision)<0)){$('#event-reload').hidden=false;return "草稿基於舊版活動；請保留需要的文字並載入最新版後重新核對";}});}catch(error){$('.form-error',form).textContent=error.message;}
+    ()=>({fields:BoardDrafts.fields(form),dataset:{...form.dataset}}),data=>{BoardDrafts.fill(form,data.fields);Object.assign(form.dataset,data.dataset);if(!data.fields.some(field=>field.name==='start_day_offset'))form.elements.start_day_offset.value='0';form.dataset.previousEarly=String(isEarlyTime(form.elements.start_time.value));eventTimeConfirmation=null;updateCapacityInput();renderEndPreview();updateLegacyFeeNotice();updateEventBotOption();updateEventAdvancedSummary();if((e&&Number(form.dataset.revision)!==e.revision)||(form.elements.id.value&&Number(form.dataset.revision)<0)){$('#event-reload').hidden=false;return "草稿基於舊版活動；請保留需要的文字並載入最新版後重新核對";}});}catch(error){$('.form-error',form).textContent=error.message;}
   if(!source)form.elements.title.focus();else form.elements.event_date.focus();
 }
 
@@ -407,14 +476,25 @@ $('#event-form').addEventListener('submit',async event=>{
   event.preventDefault();const form=event.currentTarget,button=$('#publish-button');button.disabled=true;form.inert=true;
   try {
     if(!BoardDrafts.ready('event-form-dialog'))return;
+    const draft=event.submitter?.value==='draft',start=formStart(),end=new Date(start.getTime()+Number(form.elements.duration_hours.value)*3600000),zone=form.elements.timezone.value;
+    const scheduleKey=()=>JSON.stringify([form.dataset.intent,form.elements.id.value,form.elements.event_date.value,form.elements.start_time.value,form.elements.start_day_offset.value,form.elements.duration_hours.value,form.elements.timezone.value]);
+    const key=scheduleKey(),startValue=wallDate(start,zone);
+    if(!draft&&(isEarlyTime(startValue.slice(11,16))||startValue.slice(0,10)!==wallDate(end,zone).slice(0,10))&&eventTimeConfirmation!==key) {
+      const submitter=event.submitter||button;
+      askConfirm("核對通宵／跨日活動時間",startCountdownText(start)+'\n'+schedulePreview(start,end,zone),()=>{
+        if(!$('#event-form-dialog').open||scheduleKey()!==key)return;
+        eventTimeConfirmation=key;form.requestSubmit(submitter);
+      },{confirm:"日期無誤，繼續",cancel:"返回修改"});
+      return;
+    }
+    eventTimeConfirmation=null;
     if(await BoardClient.hasPending(form.elements.id.value||'new'))throw new Error("先在消息的「待確認操作」查詢上次保存結果，再繼續發佈");
     const data=Object.fromEntries(new FormData(form));data.client_intent=form.dataset.intent;const id=data.id;delete data.id;
     if(!form.elements.bot_enabled.disabled)data.bot_enabled=form.elements.bot_enabled.checked;
-    const draft=event.submitter?.value==='draft';
     if(!id||form.dataset.lifecycle==='draft')data.join_owner=true;
     data.withdrawal_deadline=wallToISO(form.elements.withdrawal_deadline.value,form.elements.timezone.value);if(id)data.base_revision=Number(form.dataset.revision);
     data.capacity=form.elements.capacity_unlimited.checked?0:Number(data.capacity);delete data.capacity_unlimited;data.duration_hours=Number(data.duration_hours);data.minimum_participants=Number(data.minimum_participants);
-    data.timezone=data.timezone||null;data.starts_at=formStart().toISOString();data.deadline=wallToISO(data.deadline,form.elements.timezone.value);delete data.event_date;delete data.start_time;delete data.intent;
+    data.timezone=data.timezone||null;data.starts_at=start.toISOString();data.deadline=wallToISO(data.deadline,form.elements.timezone.value);delete data.event_date;delete data.start_time;delete data.start_day_offset;delete data.intent;
     if(!id)data.lifecycle=draft?'draft':'scheduled';
     let result=await api('/api/events'+(id?'/'+id:''),id?'PATCH':'POST',data);
     form.dataset.revision=result.revision;form.elements.id.value=result.id;
@@ -430,15 +510,37 @@ function updateCapacityInput() {
   $('.limited-capacity').hidden=unlimited;
   form.elements.capacity.disabled=unlimited;
 }
+function updateLegacyFeeNotice() {
+  const form=$('#event-form');
+  $('#event-legacy-fee').hidden=!form.elements.fee_policy.value;
+  $('#event-legacy-fee-text').textContent=form.elements.fee_policy.value;
+  $('#event-merge-fee').hidden=form.elements.fee_policy.disabled;
+}
+function mergeLegacyFee() {
+  const form=$('#event-form'),fee=form.elements.fee_policy,notes=form.elements.description;
+  if(fee.disabled||!fee.value)return;
+  const combined=[notes.value,fee.value].filter(Boolean).join('\n\n');
+  if(combined.length>notes.maxLength){$('.form-error',form).textContent="合併後超出注意事項字數上限，請先精簡注意事項；舊版費用說明仍完整保留。";notes.focus();return;}
+  notes.value=combined;fee.value='';updateLegacyFeeNotice();
+  $('.form-error',form).textContent='';notes.dispatchEvent(new Event('input',{bubbles:true}));notes.focus();
+}
+function updateEventBotOption() {
+  const f=$('#event-form').elements,invitation=f.visibility.value==='invitation';
+  if(invitation)f.bot_enabled.checked=false;
+  f.bot_enabled.disabled=invitation||f.bot_enabled.dataset.editable!=='true';
+  $('#event-bot-visibility').hidden=!invitation;
+}
+$('#event-merge-fee').addEventListener('click',mergeLegacyFee);
+$('#event-form [name=visibility]').addEventListener('change',updateEventBotOption);
 function syncWithdrawalDeadline() {
   const form=$('#event-form');
   if(!form.elements.withdrawal_deadline.value||form.elements.withdrawal_deadline.value===form.dataset.previousDeadline)form.elements.withdrawal_deadline.value=form.elements.deadline.value;
   form.dataset.previousDeadline=form.elements.deadline.value;
 }
-$('#event-form [name=category]').addEventListener('change',()=>{const f=$('#event-form'),hours={约K:'3',聚餐:'2',运动:'2',出游:'8',游戏:'3',其他:'3'}[f.elements.category.value];if(!f.elements.id.value&&f.elements.duration_hours.value===f.dataset.presetDuration){f.elements.duration_hours.value=hours;updateEndPreview();}f.dataset.presetDuration=hours;$('#form-title').textContent=f.elements.id.value?"編輯活動":"發起活動";$('#publish-button').textContent=f.elements.id.value?"保存修改":"發佈活動";});
+$('#event-form [name=category]').addEventListener('change',()=>{const f=$('#event-form'),hours={约K:'3',聚餐:'2',运动:'2',出游:'8',游戏:'3',其他:'3'}[f.elements.category.value];if(!f.elements.id.value&&f.elements.duration_hours.value===f.dataset.presetDuration){f.elements.duration_hours.value=hours;updateEndPreview();}f.dataset.presetDuration=hours;$('#form-title').textContent=f.elements.id.value?(f.elements.reason.required?"管理員協助編輯":"編輯活動"):"發起活動";$('#publish-button').textContent=f.elements.id.value?"保存修改":"發佈活動";});
 $('#event-form [name=deadline]').addEventListener('input',syncWithdrawalDeadline);
 $('#event-form [name=capacity_unlimited]').addEventListener('change',updateCapacityInput);
-for(const name of ['event_date','start_time','duration_hours','timezone']) {
+for(const name of ['event_date','start_time','start_day_offset','duration_hours','timezone']) {
   $('#event-form [name='+name+']').addEventListener('input',updateEndPreview);
   $('#event-form [name='+name+']').addEventListener('change',updateEndPreview);
 }
@@ -465,8 +567,8 @@ window.addEventListener('popstate',async()=>{
   const id=new URL(location.href).searchParams.get('event');
   if(id)openDetail(id,false);else if($('#detail-dialog').open){$('#detail-dialog').dataset.fromHistory='1';$('#detail-dialog').close();}
 });
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh();});
-setInterval(()=>{if(document.visibilityState==='visible')refresh();},30000);
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refresh();if($('#event-form-dialog').open)updateStartCountdown();}});
+setInterval(()=>{if(document.visibilityState==='visible'){refresh();if($('#event-form-dialog').open)updateStartCountdown();}},30000);
 async function routeBotEntry(params) {
   const action=params.get('action');if(!action)return;
   let e=null;
@@ -535,14 +637,10 @@ function updateEventAdvancedSummary() {
   const form=$('#event-form'),f=form.elements,parts=[];
   if(!f.capacity_unlimited.checked)parts.push("上限 "+f.capacity.value+" 人");
   if(f.visibility.value==='invitation')parts.push("邀請可見");
-  if(f.bot_enabled.checked)parts.push("已開啟 QQ 群同步");
-  if(Number(f.minimum_participants.value))parts.push("成團 "+f.minimum_participants.value+" 人");
   if(f.timezone.value!=='Asia/Shanghai')parts.push("時區 "+(f.timezone.value||"跟隨設備"));
-  const start=f.event_date.value+'T'+f.start_time.value;
+  let start='';try{start=wallDate(formStart(),f.timezone.value);}catch{}
   if(f.deadline.value&&f.deadline.value!==start)parts.push("已設報名截止");
   if(f.withdrawal_deadline.value&&f.withdrawal_deadline.value!==f.deadline.value)parts.push("已設退出期限");
-  const defaults="按正式參加人數均攤；同行正常 AA；遲到、早退默認不減免。費用以活動實際結算為準。";
-  if(f.fee_policy.value&&f.fee_policy.value!==defaults)parts.push("自定費用規則");
   const target=$('#event-advanced-summary');target.hidden=!parts.length;target.textContent="已設置："+parts.join(' · ');
 }
 $('#event-form').addEventListener('input',updateEventAdvancedSummary);

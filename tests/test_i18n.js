@@ -19,6 +19,9 @@ for(const [folder,lang,category,required] of [
   listeners.input({target:field});assert.equal(field.message,'');
   field.setCustomValidity('业务原文');listeners.invalid({target:field});assert.equal(field.message,'业务原文');
   const html=fs.readFileSync(`public/locales/${folder}/index.html`,'utf8');
+  const basic=html.slice(html.indexOf('<form id="event-form"'),html.indexOf('class="advanced-switch"',html.indexOf('<form id="event-form"')));
+  for(const name of ['description','minimum_participants','bot_enabled'])assert.match(basic,new RegExp(`name="${name}"`));
+  assert.ok(!/<textarea[^>]+name="fee_policy"/.test(html));
   assert.match(html,/<option value="运动">/); // Localized label retains submitted value.
   assert.match(html,new RegExp(`<html lang="${lang}"`));
   for(const page of ['index','guide','privacy','contact']) {
@@ -60,11 +63,16 @@ for(const [folder,lang,category,required] of [
   vm.runInContext(roster.slice(roster.indexOf('  function fieldValue('),roster.indexOf('  async function history('))+';this.fieldValue=fieldValue;',context);
   assert.equal(context.fieldValue('category','运动'),category);
   assert.equal(context.fieldValue('location','后台後臺'),'后台後臺');
+  context.shortDate=(value,zone)=>zone+':'+value;
+  assert.equal(context.fieldValue('starts_at','2027-01-11T16:00:00Z','Asia/Shanghai'),'Asia/Shanghai:2027-01-11T16:00:00Z');
   const app=fs.readFileSync(`public/locales/${folder}/app.js`,'utf8');
   const dates=app.slice(app.indexOf('const deviceZone='),app.indexOf('function formStart()'));
   const dateContext=vm.createContext({Intl,Date,Error,BoardI18n:context.i18n});
-  vm.runInContext(dates+';this.dates={wallToISO,timeRange};',dateContext);
+  vm.runInContext(dates+';this.dates={wallToISO,timeRange,startCountdownText};',dateContext);
   assert.equal(dateContext.dates.wallToISO('2027-01-01T00:15','Asia/Shanghai'),'2026-12-31T16:15:00.000Z');
   assert.match(dateContext.dates.timeRange({starts_at:'2026-12-31T15:00Z',ends_at:'2026-12-31T17:00Z',timezone:'Asia/Shanghai'}),/1月1日/);
+  const now=Date.parse('2026-11-10T12:00:00Z');
+  assert.equal(dateContext.dates.startCountdownText('2026-11-11T16:00:00Z',now),folder==='hans'?'距离开始还有 1 天 4 小时':'距離開始還有 1 天 4 小時');
+  assert.match(dateContext.dates.startCountdownText(now-3600000,now),folder==='hans'?/开始时间已过 1 小时/:/開始時間已過 1 小時/);
 }
 console.log('Both shipped language bundles: category protocol, validation, original settlement values and cross-day dates passed');

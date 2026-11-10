@@ -45,7 +45,7 @@
   const user=usersInfo.users.find(item=>item.id===button.dataset.adminUser);if(!user)return;
   pendingUser=user;
   $('#users-confirm-name').textContent=user.nickname||"未設置稱呼";$('#users-confirm-id').textContent=user.id;
-  $('#users-confirm-effect').textContent=user.is_admin?"撤銷後，該帳號無法繼續使用管理後臺。":"該帳號將能管理全部後臺設置及用戶權限。";
+  $('#users-confirm-effect').textContent=user.is_admin?"撤銷後，該帳號無法繼續使用管理後臺或協助編輯其他人的活動。":"該帳號將能管理全部後臺設置及用戶權限，並協助編輯有權查看的已發佈活動安排。";
   $('#users-confirm-submit').textContent=user.is_admin?"撤銷管理員":"設為管理員";
   $('#users-confirm').returnValue='';$('#users-confirm').showModal();
  });

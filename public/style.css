@@ -10,6 +10,8 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important}}
 
 .end-time-preview{font-size:14px;color:var(--primary);line-height:1.6;margin:10px 0 18px}.card-bottom .card-chevron{margin-left:auto}.card-bottom .category-label+.card-chevron{margin-left:0}
+#event-date-help{margin-top:-10px}#start-day-field .field-help{margin:0}#end-time-preview{white-space:pre-line;overflow-wrap:anywhere;background:var(--bg);border-left:3px solid var(--primary);border-radius:4px;padding:12px}#end-time-preview:empty{display:none}#confirm-message{white-space:pre-line}
+.start-countdown{font-size:14px;font-weight:600;line-height:1.7;color:var(--primary);margin:14px 0 0;overflow-wrap:anywhere}.start-countdown.is-past{color:#b14229}
 
 .event-notes h3{font-size:14px;font-weight:600;margin:0 0 8px}.event-notes .detail-description{margin-bottom:22px}.detail-main{scrollbar-gutter:stable}
 

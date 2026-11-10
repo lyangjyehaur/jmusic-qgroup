@@ -7,20 +7,20 @@
   <meta name="description" content="群聚看板：群组活动发布、报名接龙、候补管理与费用分摊。">
   <title>群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261110-copy1">
+  <link rel="stylesheet" href="/style.css?v=20261110-activity1">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
   <script src="/i18n.js?v=20261109-privacy1" defer></script>
   <script src="/storage.js?v=20261109-privacy1" defer></script>
   <script src="/experience.js?v=20261110-bot2" defer></script>
   <script src="/client.js?v=20261109-privacy1" defer></script>
-  <script src="/roster.js?v=20261109-privacy1" defer></script>
-  <script src="/activity.js?v=20261110-bot2" defer></script>
+  <script src="/roster.js?v=20261110-adminedit1" defer></script>
+  <script src="/activity.js?v=20261110-adminedit1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
   <script src="/settlements.js?v=20261109-privacy1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
   <script src="/identity.js?v=20261110-qqbutton1" defer></script>
-  <script src="/app.js?v=20261110-qqbutton1" defer></script>
+  <script src="/app.js?v=20261110-activity1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -88,16 +88,30 @@
       <div class="dialog-heading"><h2 id="form-title">发起活动</h2><button type="button" class="icon-button" data-close="event-form-dialog" aria-label="关闭">×</button></div>
       <div class="form-body">
         <input type="hidden" name="id">
+        <p id="event-admin-assist" class="activity-alert" hidden>你正在以管理员身份协助编辑。请填写修改原因；操作会记入活动记录并通知发起者。时间、地点等重要安排变更后，参加者仍需重新确认。费用、可见性与自定义退出期限由发起者修改。</p>
         <label class="field">标题<input name="title" required maxlength="60" placeholder="如：周末聚餐、周日下午运动"></label>
         <label class="field">活动类型<select name="category"><option value="约K">唱歌</option><option value="聚餐">聚餐</option><option value="运动">运动</option><option value="出游">出游</option><option value="游戏">游戏</option><option value="其他">其他</option></select></label>
-        <label class="field">日期<input name="event_date" type="date" required></label>
+        <label class="field">相约日期<input name="event_date" type="date" aria-describedby="event-date-help" required></label>
+        <p id="event-date-help" class="field-help">先选相约的那一天。午夜后开始的场次，可在下方选择「次日凌晨」。</p>
         <div class="form-row">
           <label class="field">开始时间<input name="start_time" type="time" value="18:00" required></label>
           <label class="field">持续时间<select name="duration_hours"><option value="1">1 小时</option><option value="2">2 小时</option><option value="3" selected>3 小时</option><option value="4">4 小时</option><option value="5">5 小时</option><option value="6">6 小时</option><option value="7">7 小时</option><option value="8">8 小时</option><option value="9">9 小时</option><option value="10">10 小时</option><option value="11">11 小时</option><option value="12">12 小时</option><option value="13">13 小时</option><option value="14">14 小时</option><option value="15">15 小时</option><option value="16">16 小时</option><option value="17">17 小时</option><option value="18">18 小时</option><option value="19">19 小时</option><option value="20">20 小时</option><option value="21">21 小时</option><option value="22">22 小时</option><option value="23">23 小时</option><option value="24">24 小时</option></select></label>
         </div>
-        <p id="end-time-preview" class="end-time-preview" role="status"></p>
+        <label id="start-day-field" class="field" hidden>凌晨属于哪一晚？<select name="start_day_offset" aria-describedby="start-day-help" disabled><option value="">请选择凌晨日期</option><option value="0" selected>当天凌晨</option><option value="1">次日凌晨（相约当晚过午夜后）</option></select><span id="start-day-help" class="field-help">00:00 是一天的开始。若约的是这一天晚上过后的凌晨，请选「次日凌晨」。</span></label>
+        <p id="start-countdown" class="start-countdown" role="status" aria-live="polite" hidden></p>
+        <p id="end-time-preview" class="end-time-preview" role="status" aria-live="polite"></p>
         <label class="field">地点<input name="location" required maxlength="120" placeholder="集合地点、场地名称或地址"></label>
         <label class="field">注意事项 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="3000" placeholder="费用、集合方式、其他要求等"></textarea></label>
+        <input type="hidden" name="fee_policy">
+        <div id="event-legacy-fee" class="activity-alert" hidden>
+          <p class="field-help">此活动或草稿的旧版费用说明已保留；保存其他修改不会清除。可将原文并入注意事项后统一编辑，保存时会作为安排变更处理。</p>
+          <p id="event-legacy-fee-text" class="settlement-note"></p>
+          <button id="event-merge-fee" type="button" class="text-button">并入注意事项</button>
+        </div>
+        <label class="field">最低成团人数<input name="minimum_participants" type="number" min="0" max="500" inputmode="numeric" value="0"><span class="field-help">0 表示不设置；未达标由发起者决定，不自动取消。</span></label>
+        <label class="check-option"><input name="bot_enabled" type="checkbox" aria-describedby="event-bot-help event-bot-visibility">主动将公开活动信息与重要节点发送到通知目标 QQ 群</label>
+        <p id="event-bot-help" class="field-help">允许回复的群可查询已发布的公开活动；此开关只控制主动通知。请先核对内容适合群成员查看；邀请活动和草稿不对群公开。机器人模拟模式只记录，不发送。</p>
+        <p id="event-bot-visibility" class="field-help" hidden>当前为邀请可见，不对群公开，也不会主动发送通知。改为公开后，如需主动通知请重新勾选。</p>
         <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
         <p id="event-advanced-summary" class="field-help" hidden></p>
         <div id="event-advanced-options" data-advanced-only>
@@ -110,10 +124,6 @@
           <label class="field">退出期限<input name="withdrawal_deadline" type="datetime-local" required></label>
           <label class="field">可见性<select name="visibility"><option value="public">公开</option><option value="invitation">持邀请链接可见</option></select></label>
           <label class="field">活动时区<select name="timezone"><option value="Asia/Shanghai">北京时间（UTC+8）</option><option value="Asia/Taipei">台北时间（UTC+8）</option><option value="Asia/Hong_Kong">香港时间（UTC+8）</option><option value="Asia/Tokyo">东京时间（UTC+9）</option><option value="UTC">UTC</option><option value="">原记录未设置，按当前设备显示</option></select></label>
-          <label class="field">最低成团人数<input name="minimum_participants" type="number" min="0" max="500" inputmode="numeric" value="0"><span class="field-help">0 表示不设置；未达标由发起者决定，不自动取消。</span></label>
-          <label class="field">费用规则<textarea name="fee_policy" rows="3" maxlength="1000"></textarea></label>
-          <label class="check-option"><input name="bot_enabled" type="checkbox">主动将公开活动信息与重要节点发送到通知目标 QQ 群</label>
-          <p class="field-help">允许回复的群可查询已发布的公开活动；此开关只控制主动通知。请先核对内容适合群成员查看；邀请活动和草稿不对群公开。机器人模拟模式只记录，不发送。</p>
           <p class="field-help timezone-hint">时间按当前设备时区显示。</p>
         </div>
         <label class="field" id="event-change-reason" hidden>修改原因<textarea name="reason" rows="2" maxlength="200"></textarea><span class="field-help">已有报名时，更改时间、地点、费用等安排需原因，并请参加者重新确认。</span></label>

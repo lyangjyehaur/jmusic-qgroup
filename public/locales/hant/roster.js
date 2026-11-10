@@ -182,7 +182,7 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
       const ids=notifications.filter(n=>!n.read_at).map(n=>n.id);if(ids.length)await api('/api/notifications/read','POST',{ids});await refreshNotifications();
     }catch(problem){content.textContent=problem.message;}
   });
-  const actionNames={claim_invited:"邀請本人認領",claim_requested:"申請認領",claim_approved:"核對通過認領",claim_reject:"拒絕認領",claim_revoke:"撤銷認領",finance_record:"登記款項",finance_report:"申報款項",finance_accept:"確認款項申報",finance_reject:"暫不確認申報",finance_withdraw:"撤回款項申報",finance_reverse:"沖銷款項",finance_close:"確認帳務結清",finance_reopen:"重新核對帳務",event_publish:"發佈草稿",event_pause:"暫停報名",event_resume:"恢復報名",event_start:"確認實際開始",event_finish:"確認實際結束",event_cancel:"取消活動",event_archive:"歸檔",event_unarchive:"取消歸檔",event_formation:"確認成團",conditions_response:"確認新安排",attendance_updated:"核對出席",onsite_added:"現場補錄",management_invited:"發出管理邀請",management_invitation_revoked:"撤銷管理邀請",cohost_joined:"接受協辦",cohost_removed:"撤銷協辦",ownership_transferred:"轉交發起者",event_created:"發起活動",event_updated:"修改活動",signup:"報名",attendee_edit:"修改報名",attendee_confirm:"確認參加",attendee_split:"改為分開排隊",withdraw:"退出報名",withdrawal_request:"申請退出",withdrawal_approve:"同意退出",withdrawal_reject:"拒絕退出",invite:"邀請補報名",invitation_accepted:"接受補報名",nickname_changed:"修改稱呼",settlement_saved:"保存結算"};
+  const actionNames={claim_invited:"邀請本人認領",claim_requested:"申請認領",claim_approved:"核對通過認領",claim_reject:"拒絕認領",claim_revoke:"撤銷認領",finance_record:"登記款項",finance_report:"申報款項",finance_accept:"確認款項申報",finance_reject:"暫不確認申報",finance_withdraw:"撤回款項申報",finance_reverse:"沖銷款項",finance_close:"確認帳務結清",finance_reopen:"重新核對帳務",event_publish:"發佈草稿",event_pause:"暫停報名",event_resume:"恢復報名",event_start:"確認實際開始",event_finish:"確認實際結束",event_cancel:"取消活動",event_archive:"歸檔",event_unarchive:"取消歸檔",event_formation:"確認成團",conditions_response:"確認新安排",attendance_updated:"核對出席",onsite_added:"現場補錄",management_invited:"發出管理邀請",management_invitation_revoked:"撤銷管理邀請",cohost_joined:"接受協辦",cohost_removed:"撤銷協辦",ownership_transferred:"轉交發起者",event_created:"發起活動",event_updated:"修改活動",event_admin_updated:"管理員協助修改活動",signup:"報名",attendee_edit:"修改報名",attendee_confirm:"確認參加",attendee_split:"改為分開排隊",withdraw:"退出報名",withdrawal_request:"申請退出",withdrawal_approve:"同意退出",withdrawal_reject:"拒絕退出",invite:"邀請補報名",invitation_accepted:"接受補報名",nickname_changed:"修改稱呼",settlement_saved:"保存結算"};
   function describe(data) {
     let html='';
     if(data.participants?.length)html+=data.participants.map(p=>`<p class="history-person">${esc(p.nickname)} · ${labels[p.status]||esc(p.status)}${p.note?' · '+esc(p.note):''}${p.withdrawal_requested?" · 申請退出":''}${p.manager_name?' · '+esc(p.manager_name)+"管理":''}${p.payer_kind==='manager'?" · 統一付款":''}${p.confirmation_state==='pending'?" · 新安排待確認":p.confirmation_state==='declined'?" · 暫不同意新安排":''}${p.attendance&&p.attendance!=='unknown'?' · '+({present:"到場",absent:"缺席",late:"遲到",left:"早退"})[p.attendance]:''}${p.attendance_note?' · '+esc(p.attendance_note):''}${p.arrived_at?" · 到場 "+shortDate(p.arrived_at):''}${p.left_at?" · 離場 "+shortDate(p.left_at):''}</p>`).join('');
@@ -193,10 +193,10 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
     return html;
   }
   const fields={lifecycle:"活動階段",registration_open:"報名開關",actual_started_at:"實際開始",actual_ended_at:"實際結束",archived_at:"歸檔時間",timezone:"活動時區",minimum_participants:"最低成團人數",formation_state:"成團狀態",fee_policy:"費用規則",conditions_version:"安排版本",cancellation_reason:"取消原因",title:"標題",category:"類型",location:"地點",starts_at:"開始時間",deadline:"報名截止",capacity:"人數上限",description:"注意事項",duration_hours:"持續小時",status:"活動狀態",withdrawal_deadline:"退出期限",visibility:"可見性"};
-  function fieldValue(key,value) {
+  function fieldValue(key,value,zone) {
     if(key==='category')return BoardI18n.category(value);
     if(value==null||value==='')return "未設置";
-    if(['starts_at','deadline','withdrawal_deadline','actual_started_at','actual_ended_at','archived_at'].includes(key))return shortDate(value);
+    if(['starts_at','deadline','withdrawal_deadline','actual_started_at','actual_ended_at','archived_at'].includes(key))return shortDate(value,zone);
     if(key==='lifecycle')return ({draft:"草稿",scheduled:"待開始",ongoing:"進行中",ended:"已結束",cancelled:"已取消"})[value]||value;
     if(key==='registration_open')return value?"開放":"關閉";
     if(key==='formation_state')return value==='confirmed'?"已確認成團":"待確認";
@@ -211,7 +211,7 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
       const result=await api(`/api/events/${e.id}/history${before?'?before='+before:''}`);
       const html=result.entries.map(entry=>{
         const prior=entry.before.event||entry.before,after=entry.after.event||entry.after;
-        const eventChanges=Object.keys(fields).filter(key=>key in after&&JSON.stringify(prior[key])!==JSON.stringify(after[key])).map(key=>`<p class="history-person">${fields[key]}：${esc(fieldValue(key,prior[key]))} → ${esc(fieldValue(key,after[key]))}</p>`).join('');
+        const eventChanges=Object.keys(fields).filter(key=>key in after&&JSON.stringify(prior[key])!==JSON.stringify(after[key])).map(key=>`<p class="history-person">${fields[key]}：${esc(fieldValue(key,prior[key],prior.timezone))} → ${esc(fieldValue(key,after[key],after.timezone))}</p>`).join('');
         return `<details class="activity-revision"><summary>${actionNames[entry.action]||"更新記錄"}<span class="revision-meta">${shortDate(entry.created_at)} · ${esc(entry.actor_name)}</span></summary>${entry.reason?`<p class="settlement-note">${esc(entry.reason)}</p>`:''}${eventChanges}${describe(entry.before)?"<p class=\"field-help\">變更前</p>"+describe(entry.before):''}${describe(entry.after)?"<p class=\"field-help\">變更後</p>"+describe(entry.after):''}${entry.action.startsWith('finance_')?"<p class=\"field-help\">金額、流向及沖銷關係詳見「收付款帳本」。</p>":''}${entry.action==='settlement_saved'?"<p class=\"field-help\">金額及收款碼詳見「結算記錄」。</p>":''}</details>`;
       }).join('');
       if(before){$('#load-more-history')?.remove();$('#activity-history-content').insertAdjacentHTML('beforeend',html);}

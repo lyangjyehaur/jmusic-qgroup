@@ -28,7 +28,7 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
   function tools(e) {
     if(!e.is_owner&&!e.is_cohost)return '';
     const buttons=[];
-    if(e.can_edit_schedule&&e.lifecycle!=='draft') {
+    if(e.can_edit_schedule&&e.lifecycle!=='draft'&&(e.management_scopes||[]).includes('schedule')) {
       if(e.phase==='scheduled')buttons.push(`<button data-activity="${e.registration_open?'pause':'resume'}">${e.registration_open?'暂停报名':'恢复报名'}</button>`);
       if(!e.actual_started_at)buttons.push('<button data-activity="start">确认实际开始</button>');
     }

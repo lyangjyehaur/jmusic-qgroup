@@ -515,7 +515,7 @@ def on_append(db, event, user, action, before, after, reason=''):
                    "WHERE event_id=? AND channel='group' AND status IN ('pending','sending')", (event['id'],))
     if action.startswith('event_'):
         _schedule(db, current)
-    if action == 'event_updated':
+    if action in ('event_updated', 'event_admin_updated'):
         before_event = before.get('event', before) if isinstance(before, dict) else {}
         if current['conditions_version'] != before_event.get('conditions_version', current['conditions_version']):
             _broadcast(db, current['id'], 'conditions_changed')

@@ -45,7 +45,7 @@
   const user=usersInfo.users.find(item=>item.id===button.dataset.adminUser);if(!user)return;
   pendingUser=user;
   $('#users-confirm-name').textContent=user.nickname||"未设置称呼";$('#users-confirm-id').textContent=user.id;
-  $('#users-confirm-effect').textContent=user.is_admin?"撤销后，该账号无法继续使用管理后台。":"该账号将能管理全部后台设置及用户权限。";
+  $('#users-confirm-effect').textContent=user.is_admin?"撤销后，该账号无法继续使用管理后台或协助编辑其他人的活动。":"该账号将能管理全部后台设置及用户权限，并协助编辑有权查看的已发布活动安排。";
   $('#users-confirm-submit').textContent=user.is_admin?"撤销管理员":"设为管理员";
   $('#users-confirm').returnValue='';$('#users-confirm').showModal();
  });

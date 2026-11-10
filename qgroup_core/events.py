@@ -109,9 +109,11 @@ def patch(db,event,user,data):
     action=data.get('action')
     if action is None and 'title' not in data:
         action={'finished':'finish','cancelled':'cancel','open':'resume','closed':'pause','deleted':'remove'}.get(data.get('status'))
+    assisted=not owner and action is None and 'title' in data and permissions.can_assist_schedule(db,event,user['id'])
+    if assisted:audit.require_revision(event,data)
     if action in ('cancel','archive','unarchive','publish','formation','remove','bot_sync','bot_retry'):
         permissions.require(db,event,user['id'],'owner')
-    else:
+    elif not assisted:
         permissions.require(db,event,user['id'],'schedule')
     before,roster_before=public_snapshot(event),roster.snapshot(db,event['id'])
     reason=string(data,'reason',200,False)
@@ -122,12 +124,16 @@ def patch(db,event,user,data):
     if 'title' in data:
         if terminal or settled:
             raise APIError('活动已实际结束或取消，不能重写安排',409)
+        if assisted and not reason:
+            raise APIError('管理员协助修改活动请填写原因')
         values=event_values(data,event,draft=event['lifecycle']=='draft')
         withdrawal,visibility,zone,minimum,fee=settings(data,event)
         bot_enabled=bot_setting(data,visibility,event)
         if not owner and bot_enabled!=bool(event['bot_enabled']):
             raise APIError('群同步设置需由发起者修改',403)
-        if not owner and (fee!=event['fee_policy'] or (withdrawal or values[4])!=(event['withdrawal_deadline'] or event['deadline']) or visibility!=event['visibility']):
+        prior_withdrawal=event['withdrawal_deadline'] or event['deadline']
+        linked_withdrawal=assisted and prior_withdrawal==event['deadline'] and (withdrawal or values[4])==values[4]
+        if not owner and (fee!=event['fee_policy'] or ((withdrawal or values[4])!=prior_withdrawal and not linked_withdrawal) or visibility!=event['visibility']):
             raise APIError('费用规则、退出期限及可见性需由发起者修改',403)
         count=db.execute("SELECT count(*) FROM attendees WHERE event_id=? AND status='confirmed'",(event['id'],)).fetchone()[0]
         if values[5] and values[5]<count:
@@ -204,6 +210,8 @@ def patch(db,event,user,data):
     roster.rebalance(db,updated)
     roster_after=roster.snapshot(db,event['id'])
     changed=sorted(uid for uid in roster_before.keys()|roster_after.keys() if roster_before.get(uid)!=roster_after.get(uid))
-    audit.append(db,event,user,'event_'+(action or 'updated'),
+    audit.append(db,event,user,'event_admin_updated' if assisted else 'event_'+(action or 'updated'),
         dict(event=before,participants=[roster_before[uid] for uid in changed if uid in roster_before]),
         dict(event=public_snapshot(updated),participants=[roster_after[uid] for uid in changed if uid in roster_after]),reason)
+    if assisted and before!=public_snapshot(updated):
+        audit.notify(db,event['owner_id'],event['id'],'admin_event_updated',user['nickname']+' 以管理员身份协助修改了「'+updated['title']+'」：'+reason+'；请查看活动记录核对')

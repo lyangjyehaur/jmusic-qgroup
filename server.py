@@ -71,7 +71,8 @@ def serialize(db, event, viewer):
     terminal = event['lifecycle'] in ('ended','cancelled')
     result['can_settle'] = result['is_owner'] and terminal
     result['can_finish'] = 'schedule' in scopes and not terminal and event['lifecycle']!='draft' and not event['archived_at']
-    result['can_edit_schedule'] = 'schedule' in scopes and not terminal and not event['archived_at'] and not settled
+    result['can_assist_schedule'] = not result['is_owner'] and permissions.can_assist_schedule(db,event,viewer) and not settled
+    result['can_edit_schedule'] = ('schedule' in scopes or result['can_assist_schedule']) and not terminal and not event['archived_at'] and not settled
     result['can_manage_roster'] = 'roster' in scopes and not terminal and event['lifecycle']!='draft' and not event['archived_at'] and not settled
     result['can_attendance'] = 'attendance' in scopes and result['phase'] in ('ongoing','ended','cancelled') and not event['archived_at']
     result['can_onsite'] = {'roster','attendance'} <= scopes and result['phase'] in ('ongoing','ended') and not event['archived_at'] and not settled
@@ -454,6 +455,8 @@ class Handler(BaseHTTPRequestHandler):
                     if event['status']=='deleted' and event['owner_id']!=user['id']:
                         raise APIError('活动已移除',404)
             new_route = suffix.startswith(('/claims','/finance','/roster','/attendees','/invitations','/management','/attendance','/onsite','/settlement/detailed','/settlement/preview')) or path=='/api/notifications/read' or path.startswith(('/api/account/','/api/payment-codes'))
+            if event and not suffix and self.command=='PATCH' and 'title' in data and data.get('action') is None and event['owner_id']!=user['id'] and permissions.can_assist_schedule(db,event,user['id']):
+                if not modern or not request_key:raise APIError('管理员协助编辑请刷新页面后重试',409)
             if suffix.startswith('/finance') and not modern:raise APIError('页面版本已更新，请刷新后重试',409)
             if (modern or new_route) and not request_key:
                 raise APIError('页面版本已更新，请刷新后重试',409)

@@ -1,12 +1,13 @@
 <!doctype html>
 <html lang="zh-Hans">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理后台</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-botgroups1"><script defer src="/admin.js?v=20261110-botgroups1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理后台</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-activity1"><script defer src="/admin.js?v=20261110-activity1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
 </head>
 <body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理后台</h1><p id="admin-error" class="form-error" role="alert"></p>
 <form id="admin-login" class="admin-card" hidden><h2>管理员登录</h2><p class="field-help">已设为管理员的账号，登录后可直接访问此页。请先<a href="/">返回看板登录或切换账号</a>。</p><label class="field">管理凭证<input name="key" type="password" required autocomplete="off" maxlength="256"></label><p class="field-help">也可使用独立管理凭证登录，有效一小时。首次使用请通过凭证进入后台，再在用户管理中指定管理员。</p><button class="button primary" type="submit">登录管理后台</button></form>
 <section id="admin-settings" hidden>
 <p id="admin-access" class="field-help"></p>
+<section class="admin-card"><h2>协助编辑活动</h2><p class="field-help">使用已授权的管理员账号登录看板，打开有权查看、尚未结束的已发布活动，点「管理员协助编辑」可修改名称、时间、地点等安排。须填写原因，活动记录会标明操作者并通知发起者。独立管理凭证用于后台管理；首次使用请先在下方授权自己的账号。</p><a class="button secondary" href="/">前往活动看板</a></section>
 <section class="admin-card" aria-labelledby="users-heading"><h2 id="users-heading">用户管理</h2><p class="field-help">授权前请核对账号 ID 与 QQ 昵称。</p>
 <form id="users-search" class="admin-user-search" role="search"><label class="field">搜索账号<input name="search" type="search" maxlength="100" placeholder="称呼、账号 ID 或 QQ 绑定昵称"></label><label class="field">QQ UnionID<select name="unionid"><option value="all">全部状态</option><option value="bound">已取得 UnionID</option><option value="missing">UnionID 待补齐</option><option value="unbound">未绑定 QQ</option></select></label><button type="submit" class="button secondary">搜索</button><button id="users-reload" type="button" class="text-button">重新载入</button></form>
 <p class="field-help">待补齐的用户需用原 QQ 重新登录。</p>

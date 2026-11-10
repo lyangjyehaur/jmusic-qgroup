@@ -201,6 +201,22 @@ class ActivityFlowTests(unittest.TestCase):
         self.assertEqual(e['formation_state'],'confirmed');self.assertTrue(e['can_join'])
         self.assertEqual(self.action('formation',client=self.manager,reason='不能代为决定')[0],403)
 
+    def test_single_notes_merge_preserves_legacy_fee_agreement(self):
+        notes='集合原文 后台後臺';fee='原费用约定：每人 100'
+        self.assertEqual(self.edit(description=notes,fee_policy=fee)[0],200)
+        accepted=self.signup(self.manager,[{'is_self':True}])
+        status,changed=self.edit(description=notes+'\n\n'+fee,fee_policy='',reason='合并至注意事项统一编辑')
+        self.assertEqual(status,200,changed)
+        self.assertEqual(changed['fee_policy'],'')
+        self.assertEqual(changed['description'],notes+'\n\n'+fee)
+        self.assertEqual(changed['conditions_version'],accepted['conditions_version']+1)
+        self.assertEqual(changed['pending_confirmation_count'],1)
+        status,history=self.manager.request(self.url+'/conditions')
+        self.assertEqual(status,200)
+        self.assertEqual(history['versions'][1]['arrangement']['fee_policy'],fee)
+        self.assertEqual(history['versions'][1]['arrangement']['description'],notes)
+        self.assertEqual(changed['participants'][0]['accepted_conditions_version'],accepted['conditions_version'])
+
     def test_important_changes_preserve_original_agreements_and_require_individual_responses(self):
         first=self.signup(self.manager,[{'is_self':True},{'name':'同行'}]);people=first['my_attendees']
         self.assertEqual(self.edit(fee_policy='新费用规则')[0],400)

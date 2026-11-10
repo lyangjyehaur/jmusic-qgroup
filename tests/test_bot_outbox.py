@@ -371,6 +371,22 @@ class WorkerTests(BotOutboxFixture, unittest.TestCase):
         self.assertEqual(len([r for r in rows if r['due_at'] and r['status']=='pending']),2)
         self.assertEqual(len([r for r in rows if r['kind']=='conditions_changed']),1)
 
+    def test_admin_assisted_reschedule_replaces_reminders_and_broadcasts_new_arrangements(self):
+        event_id=self.create_event()
+        old=[r for r in self.rows() if r['due_at']]
+        with storage.connect(self.path) as db:
+            db.execute("INSERT INTO users(id,token_hash,nickname,created_at) VALUES('admin-helper','admin-hash','管理员',?)",(now(),))
+            db.execute("INSERT INTO user_admin_roles VALUES('admin-helper',1,1,?)",(now(),))
+            e=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            shifted=(datetime.fromisoformat(self.start)+timedelta(days=1)).isoformat(timespec='seconds')
+            events.patch(db,e,dict(id='admin-helper',nickname='管理员'),dict(self.data,starts_at=shifted,
+                deadline=shifted,base_revision=e['revision'],reason='协助更正通宵日期'))
+            self.assertEqual(db.execute('SELECT owner_id FROM events WHERE id=?',(event_id,)).fetchone()[0],'u1')
+        rows=self.rows()
+        self.assertTrue(all(next(r for r in rows if r['id']==o['id'])['status']=='skipped' for o in old))
+        self.assertEqual(len([r for r in rows if r['due_at'] and r['status']=='pending']),2)
+        self.assertEqual(len([r for r in rows if r['kind']=='conditions_changed']),1)
+
     def test_reschedule_back_to_original_time_restores_invalidated_reminders(self):
         event_id=self.create_event()
         original_due={r['due_at'] for r in self.rows() if r['due_at']}

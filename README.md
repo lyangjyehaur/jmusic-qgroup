@@ -76,6 +76,8 @@ node --check public/experience.js
 
 管理员可在 `/admin` 的「用户管理」查看、搜索账号，并设为或撤销管理员。被授权的账号登录后直接访问 `/admin`，无需再输入管理凭证；撤销权限立即生效。首次授权仍使用独立管理凭证登录，作为恢复入口保留。账号方式退出后台时会同时登出当前账号。
 
+管理员账号也可在有权查看的已发布活动详情点「管理员协助编辑」，协助更正名称、时间、地点、说明等；须填写原因，保留修改前后及管理员操作记录，并通知发起者。时间、地点等重要变更仍需参加者重新确认。费用、可见性、群同步与自定义退出期限仍由发起者处理；跟随报名截止的退出期限可随改期同步。不会取得活动所有权、报名管理或财务权，也不能借此编辑私有草稿、绕过邀请访问或重写已实际结束／取消／归档及已结算的活动。详情见活动契约。
+
 用户管理同时显示 QQ UnionID 的取得状态，可筛选已取得、待补齐或未绑定 QQ。已绑定 QQ 但缺少 UnionID 的旧账号会收到重新登录引导，直接使用原 QQ 授权即可补齐，无需先登出；引导会说明对 bot 账号识别功能的影响，并允许稍后处理，24 小时内不重复自动提醒。「账号与设备」保留手动更新入口，QQ 未返回 UnionID 时仍保留原账号并显示结果，不强制反复登录。
 
 「允许免第三方登录注册」默认关闭。开启才允许仅填称呼创建浏览器账号，后端同样检查；再次关闭保留已有账号。该类账号丢失所有 Cookie／授权设备前应先绑定 QQ，否则不能仅凭称呼找回。详见 [身份契约](docs/identity-contract.md)。QQ 实际授权仍返回 100008「该网站尚未开通 QQ 账号登录」，待平台开通后做真实验收，再向群友公开。
@@ -83,6 +85,8 @@ node --check public/experience.js
 公开活动的称呼、备注、账务对访问者可见；邀请模式对列表、详情、历史、图片统一验证。邀请可转传，不证明 QQ 群成员身份。站内通知及复制摘要供人工转发；可选的 QQ 群机器人见下节，默认关闭。页面每 30 秒刷新，写入、审计、通知、请求结果及机器人待发消息在同一事务提交。
 
 ## server2 部署与保全
+
+发布范围、单边更新条件、混合版本验证及回退规则见 [Web／bot 发布与相容性规则](docs/deployment-policy.md)。项目级 `AGENTS.md` 也引用同一份规则；以经过验证的 web／bot 版本组合为准，不强制两边同版。当前 Compose 仍共用 `QGROUP_TAG`，独立版本锁定及自动发布检查尚未实现。
 
 - 网站：https://kanban.danndann.cn
 - 应用 `/opt/qgroup`，由 **Docker Compose** 管理：`qgroup-web` 与 `qgroup-bot` 两个容器共用同一个 `qgroup:<tag>` 映像，只差启动命令；同一静态账号 `qgroupsvc`（994:992）非 root 运行，容器只读根文件系统。
@@ -103,7 +107,7 @@ docker compose up -d --force-recreate bot # 修改 env_file 后重新载入环�
 docker compose down                     # 停止容器，不改动任何资料
 ```
 
-每次升级先备份代码及 SQLite，以正式备份的隔离副本演练迁移，再上传新版代码、建置新映像、`up -d` 滚动启动。`git archive HEAD | ssh server2 'tar -x -C /opt/qgroup'` 会替换 `server.py`、`qgroup_core/`、`qgroup_bot/`、`public/`、`deploy/`、文档与 Docker 档案；**不上传数据库**。不要让旧 systemd 服务与新容器同时运行（会抢 8791 与同一个 bot 长连线），不由 root 迁移实时库。回退：`docker compose down` → `systemctl enable --now qgroup qgroup-bot`；或把 `.env` 的 `QGROUP_TAG` 指回旧映像后 `docker compose up -d`。
+每次升级先按发布规则确定 `web`／`bot`／`both` 范围并记录当前版本组合，再备份代码及 SQLite，以正式备份的隔离副本演练所需迁移，然后上传新版代码、建置新映像并更新选定服务。上方整组 `up -d` 适用于成套启动／相容升级；不相容变更须按发布规则安排维护窗，单边发布须额外处理当前共用标签的限制。`git archive HEAD | ssh server2 'tar -x -C /opt/qgroup'` 会替换 `server.py`、`qgroup_core/`、`qgroup_bot/`、`public/`、`deploy/`、文档与 Docker 档案；**不上传数据库**。不要让旧 systemd 服务与新容器同时运行（会抢 8791 与同一个 bot 长连线），不由 root 迁移实时库。回退前先检查原版本组合与现有资料库相容；成套回退可 `docker compose down` → `systemctl enable --now qgroup qgroup-bot`，或把 `.env` 的 `QGROUP_TAG` 指回已验证的旧映像后 `docker compose up -d`。单边回退须保留另一服务的预期版本，不能直接套用整组成套指令。
 
 ```sh
 ssh server2 'docker compose -f /opt/qgroup/compose.yaml ps; systemctl start qgroup-backup.service'

@@ -182,7 +182,7 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
       const ids=notifications.filter(n=>!n.read_at).map(n=>n.id);if(ids.length)await api('/api/notifications/read','POST',{ids});await refreshNotifications();
     }catch(problem){content.textContent=problem.message;}
   });
-  const actionNames={claim_invited:'邀请本人认领',claim_requested:'申请认领',claim_approved:'核对通过认领',claim_reject:'拒绝认领',claim_revoke:'撤销认领',finance_record:'登记款项',finance_report:'申报款项',finance_accept:'确认款项申报',finance_reject:'暂不确认申报',finance_withdraw:'撤回款项申报',finance_reverse:'冲销款项',finance_close:'确认账务结清',finance_reopen:'重新核对账务',event_publish:'发布草稿',event_pause:'暂停报名',event_resume:'恢复报名',event_start:'确认实际开始',event_finish:'确认实际结束',event_cancel:'取消活动',event_archive:'归档',event_unarchive:'取消归档',event_formation:'确认成团',conditions_response:'确认新安排',attendance_updated:'核对出席',onsite_added:'现场补录',management_invited:'发出管理邀请',management_invitation_revoked:'撤销管理邀请',cohost_joined:'接受协办',cohost_removed:'撤销协办',ownership_transferred:'转交发起者',event_created:'发起活动',event_updated:'修改活动',signup:'报名',attendee_edit:'修改报名',attendee_confirm:'确认参加',attendee_split:'改为分开排队',withdraw:'退出报名',withdrawal_request:'申请退出',withdrawal_approve:'同意退出',withdrawal_reject:'拒绝退出',invite:'邀请补报名',invitation_accepted:'接受补报名',nickname_changed:'修改称呼',settlement_saved:'保存结算'};
+  const actionNames={claim_invited:'邀请本人认领',claim_requested:'申请认领',claim_approved:'核对通过认领',claim_reject:'拒绝认领',claim_revoke:'撤销认领',finance_record:'登记款项',finance_report:'申报款项',finance_accept:'确认款项申报',finance_reject:'暂不确认申报',finance_withdraw:'撤回款项申报',finance_reverse:'冲销款项',finance_close:'确认账务结清',finance_reopen:'重新核对账务',event_publish:'发布草稿',event_pause:'暂停报名',event_resume:'恢复报名',event_start:'确认实际开始',event_finish:'确认实际结束',event_cancel:'取消活动',event_archive:'归档',event_unarchive:'取消归档',event_formation:'确认成团',conditions_response:'确认新安排',attendance_updated:'核对出席',onsite_added:'现场补录',management_invited:'发出管理邀请',management_invitation_revoked:'撤销管理邀请',cohost_joined:'接受协办',cohost_removed:'撤销协办',ownership_transferred:'转交发起者',event_created:'发起活动',event_updated:'修改活动',event_admin_updated:'管理员协助修改活动',signup:'报名',attendee_edit:'修改报名',attendee_confirm:'确认参加',attendee_split:'改为分开排队',withdraw:'退出报名',withdrawal_request:'申请退出',withdrawal_approve:'同意退出',withdrawal_reject:'拒绝退出',invite:'邀请补报名',invitation_accepted:'接受补报名',nickname_changed:'修改称呼',settlement_saved:'保存结算'};
   function describe(data) {
     let html='';
     if(data.participants?.length)html+=data.participants.map(p=>`<p class="history-person">${esc(p.nickname)} · ${labels[p.status]||esc(p.status)}${p.note?' · '+esc(p.note):''}${p.withdrawal_requested?' · 申请退出':''}${p.manager_name?' · '+esc(p.manager_name)+'管理':''}${p.payer_kind==='manager'?' · 统一付款':''}${p.confirmation_state==='pending'?' · 新安排待确认':p.confirmation_state==='declined'?' · 暂不同意新安排':''}${p.attendance&&p.attendance!=='unknown'?' · '+({present:'到场',absent:'缺席',late:'迟到',left:'早退'})[p.attendance]:''}${p.attendance_note?' · '+esc(p.attendance_note):''}${p.arrived_at?' · 到场 '+shortDate(p.arrived_at):''}${p.left_at?' · 离场 '+shortDate(p.left_at):''}</p>`).join('');
@@ -193,10 +193,10 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
     return html;
   }
   const fields={lifecycle:'活动阶段',registration_open:'报名开关',actual_started_at:'实际开始',actual_ended_at:'实际结束',archived_at:'归档时间',timezone:'活动时区',minimum_participants:'最低成团人数',formation_state:'成团状态',fee_policy:'费用规则',conditions_version:'安排版本',cancellation_reason:'取消原因',title:'标题',category:'类型',location:'地点',starts_at:'开始时间',deadline:'报名截止',capacity:'人数上限',description:'注意事项',duration_hours:'持续小时',status:'活动状态',withdrawal_deadline:'退出期限',visibility:'可见性'};
-  function fieldValue(key,value) {
+  function fieldValue(key,value,zone) {
     if(key==='category')return BoardI18n.category(value);
     if(value==null||value==='')return '未设置';
-    if(['starts_at','deadline','withdrawal_deadline','actual_started_at','actual_ended_at','archived_at'].includes(key))return shortDate(value);
+    if(['starts_at','deadline','withdrawal_deadline','actual_started_at','actual_ended_at','archived_at'].includes(key))return shortDate(value,zone);
     if(key==='lifecycle')return ({draft:'草稿',scheduled:'待开始',ongoing:'进行中',ended:'已结束',cancelled:'已取消'})[value]||value;
     if(key==='registration_open')return value?'开放':'关闭';
     if(key==='formation_state')return value==='confirmed'?'已确认成团':'待确认';
@@ -211,7 +211,7 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
       const result=await api(`/api/events/${e.id}/history${before?'?before='+before:''}`);
       const html=result.entries.map(entry=>{
         const prior=entry.before.event||entry.before,after=entry.after.event||entry.after;
-        const eventChanges=Object.keys(fields).filter(key=>key in after&&JSON.stringify(prior[key])!==JSON.stringify(after[key])).map(key=>`<p class="history-person">${fields[key]}：${esc(fieldValue(key,prior[key]))} → ${esc(fieldValue(key,after[key]))}</p>`).join('');
+        const eventChanges=Object.keys(fields).filter(key=>key in after&&JSON.stringify(prior[key])!==JSON.stringify(after[key])).map(key=>`<p class="history-person">${fields[key]}：${esc(fieldValue(key,prior[key],prior.timezone))} → ${esc(fieldValue(key,after[key],after.timezone))}</p>`).join('');
         return `<details class="activity-revision"><summary>${actionNames[entry.action]||'更新记录'}<span class="revision-meta">${shortDate(entry.created_at)} · ${esc(entry.actor_name)}</span></summary>${entry.reason?`<p class="settlement-note">${esc(entry.reason)}</p>`:''}${eventChanges}${describe(entry.before)?'<p class="field-help">变更前</p>'+describe(entry.before):''}${describe(entry.after)?'<p class="field-help">变更后</p>'+describe(entry.after):''}${entry.action.startsWith('finance_')?'<p class="field-help">金额、流向及冲销关系详见「收付款账本」。</p>':''}${entry.action==='settlement_saved'?'<p class="field-help">金额及收款码详见「结算记录」。</p>':''}</details>`;
       }).join('');
       if(before){$('#load-more-history')?.remove();$('#activity-history-content').insertAdjacentHTML('beforeend',html);}
