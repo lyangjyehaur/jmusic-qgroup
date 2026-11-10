@@ -76,12 +76,12 @@ node --check public/experience.js
 
 管理员在 `/admin` 使用独立管理凭证登录；「允许免第三方登录注册」默认关闭。开启才允许仅填称呼创建浏览器账号，后端同样检查；再次关闭保留已有账号。该类账号丢失所有 Cookie／授权设备前应先绑定 QQ，否则不能仅凭称呼找回。详见 [身份契约](docs/identity-contract.md)。QQ 实际授权仍返回 100008「该网站尚未开通 QQ 账号登录」，待平台开通后做真实验收，再向群友公开。
 
-公开活动的称呼、备注、账务对访问者可见；邀请模式对列表、详情、历史、图片统一验证。邀请可转传，不证明 QQ 群成员身份。站内通知及复制摘要供人工转发，暂无外部群推送。页面每 30 秒刷新，写入、审计、通知及请求结果在同一事务提交。
+公开活动的称呼、备注、账务对访问者可见；邀请模式对列表、详情、历史、图片统一验证。邀请可转传，不证明 QQ 群成员身份。站内通知及复制摘要供人工转发；可选的 QQ 群机器人见下节，默认关闭。页面每 30 秒刷新，写入、审计、通知、请求结果及机器人待发消息在同一事务提交。
 
 ## server2 部署与保全
 
 - 网站：https://kanban.danndann.cn
-- 应用 `/opt/qgroup`，systemd `qgroup.service`，DynamicUser 非 root 运行。
+- 应用 `/opt/qgroup`，systemd `qgroup.service` 与 `qgroup-bot.service`，两者以同一静态账号 `qgroupsvc` 非 root 运行。
 - 后端仅监听 `127.0.0.1:8791`。
 - 数据库 `/var/lib/qgroup/kanban.sqlite3`，StateDirectory 实际指向 `/var/lib/private/qgroup`。
 - 反向代理、TLS 由用户通过 **1Panel 标准流程**管理；目标 `http://127.0.0.1:8791`，使用现有通配符证书。不要手写 OpenResty 配置。
@@ -112,10 +112,33 @@ python3 deploy/verify_migration.py source.sqlite3 isolated-copy.sqlite3
 | KANBAN_QQ_APP_ID | 空 | QQ 互联 App ID；未配置时隐藏 QQ 入口 |
 | KANBAN_QQ_APP_KEY | 空 | 仅服务器保存，禁止放前端或代码仓库 |
 | KANBAN_QQ_REDIRECT_URI | ORIGIN + /auth/qq/callback | 须与 QQ 平台登记一致，只接受同源固定路径 |
+| KANBAN_BOT_ENABLED | 0 | 主服务是否把群消息写入 `bot_outbox`；不设则所有原有写入路径完全不变 |
+| KANBAN_BOT_BASE_URL | https://kanban.danndann.cn | 群消息里的站内链接前缀 |
+| KANBAN_BOT_SCHEDULE | 1 | 建立活动时排入截止前 24 小时／预计结束两条时间驱动提醒 |
+| KANBAN_BOT_SETTLEMENT_DETAIL | 0 | 1 才在群里列出逐人金额；**会同时公开参加者姓名**，默认只给站内链接 |
+| KANBAN_BOT_PERSONAL_QUEUE | 0 | 1 才把点名通知排入 private 通道（尚无身份绑定，投递时会被标记为 skipped） |
+| KANBAN_BOT_BROADCAST_KINDS | 空＝默认集合 | 逗号分隔，自行增减主动广播节点；不是频率限制 |
+| KANBAN_BOT_DRY_RUN | 1 | bot 行程只记 log 不真的发送，验收前保持 1 |
 
 静态文件白名单；写接口要求 JSON、同源与限流，并在事务内验证身份、版本及权限。输入在前端进行 HTML 转义。
 
 操作手册更新后运行 `python3 deploy/build_guide.py` 生成 `public/guide.html`；仅构建时需要 markdown-it-py，线上运行不需要该依赖。
+
+## QQ 群机器人（初版 MVP）
+
+独立的 `qgroup_bot` 常驻行程，通过官方 QQ 开放平台 WebSocket／OpenAPI v2 与群交互。平台能力已于 2026-11-10 实机验证：正式环境长连线、全量事件、被动回复、主动纯文字／含 URL、纯定时推播均可，个人主体即可，无需企业资质或上架审核。本版**默认全链路关闭**：`KANBAN_BOT_ENABLED` 未设时主服务一行额外逻辑都不执行；`KANBAN_BOT_DRY_RUN=1` 时 bot 只记 log 不发送。
+
+**分工**：主服务只负责在 `audit.notify`／`audit.append` 的**同一事务**内把去识别化摘要写入 `bot_outbox`（migration 10）；`server.py` 的 API 与数据库业务表一行未改。挂钩由 `audit.bot_hook` 包住，文案组合或 outbox 写入出任何异常都只记日志，**不会让报名、结算或账务写入失败**。`qgroup_bot` 只读写 outbox 的投递状态，业务表一律只读打开。主服务没有排程器，所以时间驱动提醒在活动发布时就以 `due_at` 预先排入 outbox，由 bot 按时消费；发送失败只改 outbox 状态与 `attempts`，绝不回滚已成功的报名或收款。
+
+**主动广播节点**（按「全群是否需要知道或行动」分级，不设则数上限）：活动发布／成团确认／重要安排变更／开始／结束／结算发布／已结清收尾，加上截止前与预计结束两条时间提醒。一场典型活动约 6–8 条，分散在数天。同一事实以内容派生的 `dedupe_key` 配合 `INSERT OR IGNORE` 去重——这是去重，不是限流；`audit.append` 的 `before == after` 短路也天然挡掉无效变更。逐笔报名、退出审批、认领、款项申报不广播，改由被动查询或（开启 `KANBAN_BOT_PERSONAL_QUEUE` 后）private 通道处理。
+
+**被动查询**：`@bot /活动`、`/名额`、`/待办`、`/签到`、`/结算`、`/我的`、`/帮助`，可加活动 id 前 8 位指定活动；只 @ 不带指令时回当前活动卡（最快捷的报名入口）。`/待办` 直接映射 `boardTodos()` 那套既有聚合，不新增数据模型。指令面板 `/v2/panels` 与 keyboard 按钮为可选项，需在管理端核对 API 格式后开启。
+
+**启用顺序**：① 部署 `deploy/qgroup-bot.service` 与 `deploy/bot.env.example`（`/etc/qgroup/bot.env`，root 0600）；② 建静态系统账号 `qgroupsvc` 并让两个 service 都改用同一 `User/Group`——`qgroup` 这个名称已被 systemd 的 `DynamicUser` 占用（nss-systemd 动态提供，不能 useradd），且两个不同使用者会互相 chown 掉同一个 SQLite；`StateDirectory=qgroup` 会在启动时自动把 `/var/lib/private/qgroup` 设为该账号所有；③ 在**主服务**环境（`/etc/qgroup/qq.env`）加 `KANBAN_BOT_ENABLED=1`；④ 先以 dry-run 观察 outbox 内容，确认后再设 `KANBAN_BOT_DRY_RUN=0`。bot 行程需要 `websockets`（`python3 -m venv .venv-bot && .venv-bot/bin/pip install websockets`），主服务仍只有标准库依赖。
+
+**本版刻意未做**：身份绑定（事件 `union_openid` 实测为空、QQ 互联仍在审核）→ 因此 `@bot` 直接报名、`/我的` 回个别金额、@ 特定成员、私聊个人化金额都还不能用，前者一律回一次性站内链接；结算卡默认只给站内链接，逐人金额需显式设 `KANBAN_BOT_SETTLEMENT_DETAIL=1`，收款码图片（私有 `image_assets`，须走富媒体分片上传 `msg_type=7`，不能用图文卡片 `pic_url`）留待上线时调整；前端「同步到群」逐次勾选尚未做，目前由环境变量与 `KANBAN_BOT_BROADCAST_KINDS` 控制。**默认群消息不含昵称、账号 id 与个别金额**；但显式开启 `KANBAN_BOT_SETTLEMENT_DETAIL=1` 后，结算卡会列出参加者姓名与应付金额，等于在群里公开金流信息，开启前须确认群成员都同意，并在隐私政策与群内告知监听全群对话这件事。
+
+测试：`python3 -m unittest discover -s tests -p 'test_bot_*.py'`。全套 Python 测试分别在 `KANBAN_BOT_ENABLED` 关闭与开启两种状态下各跑一遍，确保新挂载点不影响任何既有业务路径。
 
 ## 访问与交互统计
 

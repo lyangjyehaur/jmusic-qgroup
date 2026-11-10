@@ -318,4 +318,4 @@ class AllocationAndMigrationTests(unittest.TestCase):
                 self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='settlement_details'").fetchone())
             verify(path,Path(folder)/'upgraded.sqlite3')
             server.storage.initialize(path);server.storage.initialize(path)
-            with sqlite3.connect(path) as db:self.assertEqual(db.execute('SELECT version FROM schema_migrations').fetchall(),[(1,),(2,),(3,),(4,),(5,),(6,),(7,),(8,),(9,)])
+            with sqlite3.connect(path) as db:self.assertEqual(db.execute('SELECT version FROM schema_migrations').fetchall(),[(1,),(2,),(3,),(4,),(5,),(6,),(7,),(8,),(9,),(10,)])

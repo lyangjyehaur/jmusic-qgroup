@@ -356,7 +356,9 @@ def migrate_accounts(db):
 
 
 def migrate_privacy(db):
-    if db.execute('SELECT 1 FROM schema_migrations WHERE version=9').fetchone():return
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=9').fetchone():
+        migrate_bot(db)
+        return
     db.execute("ALTER TABLE login_attempts ADD COLUMN privacy_version TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE login_attempts ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
     db.execute('''CREATE TABLE external_profiles(provider TEXT NOT NULL,client_id TEXT NOT NULL,user_id TEXT NOT NULL REFERENCES users(id),
@@ -371,3 +373,37 @@ def migrate_privacy(db):
           OR EXISTS(SELECT 1 FROM settlement_receipt_images WHERE digest=OLD.digest)
         BEGIN SELECT RAISE(ABORT,'Referenced images cannot be deleted'); END''')
     db.execute('INSERT INTO schema_migrations VALUES(9,?)',(now(),))
+    migrate_bot(db)
+
+
+def migrate_bot(db):
+    """QQ group bot outbox. Queued in the same transaction as the business write."""
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=10').fetchone():return
+    db.execute('''CREATE TABLE IF NOT EXISTS bot_outbox(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        event_id TEXT NOT NULL REFERENCES events(id),
+        kind TEXT NOT NULL,
+        dedupe_key TEXT NOT NULL,
+        channel TEXT NOT NULL DEFAULT 'group' CHECK(channel IN ('group','private')),
+        target TEXT NOT NULL DEFAULT '',
+        payload_json TEXT NOT NULL,
+        due_at TEXT,
+        status TEXT NOT NULL DEFAULT 'pending'
+            CHECK(status IN ('pending','sending','sent','failed','skipped')),
+        attempts INTEGER NOT NULL DEFAULT 0,
+        last_error TEXT NOT NULL DEFAULT '',
+        claimed_at TEXT,
+        created_at TEXT NOT NULL,
+        sent_at TEXT,
+        UNIQUE(event_id,kind,dedupe_key,channel,target))''')
+    db.execute('CREATE INDEX IF NOT EXISTS bot_outbox_due ON bot_outbox(status,due_at,id)')
+    db.execute('CREATE INDEX IF NOT EXISTS bot_outbox_event ON bot_outbox(event_id,created_at)')
+    # The queue row describes a committed fact; only delivery state may change.
+    db.execute('''CREATE TRIGGER IF NOT EXISTS bot_outbox_payload_immutable
+        BEFORE UPDATE ON bot_outbox
+        WHEN NEW.event_id!=OLD.event_id OR NEW.kind!=OLD.kind
+          OR NEW.dedupe_key!=OLD.dedupe_key OR NEW.channel!=OLD.channel
+          OR NEW.payload_json!=OLD.payload_json
+          OR NEW.due_at!=OLD.due_at OR NEW.created_at!=OLD.created_at
+        BEGIN SELECT RAISE(ABORT,'Outbox payload is immutable'); END''')
+    db.execute('INSERT OR IGNORE INTO schema_migrations VALUES(10,?)',(now(),))

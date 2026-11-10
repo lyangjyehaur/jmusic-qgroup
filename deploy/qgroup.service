@@ -4,7 +4,10 @@ After=network.target
 
 [Service]
 Type=simple
-DynamicUser=yes
+# 與 qgroup-bot.service 共用同一個靜態帳號，兩者才能讀寫同一個 SQLite。
+# StateDirectory 會在啟動時自動處理 /var/lib/private/qgroup 的擁有者。
+User=qgroupsvc
+Group=qgroupsvc
 WorkingDirectory=/opt/qgroup
 StateDirectory=qgroup
 UMask=0077

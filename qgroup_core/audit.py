@@ -1,7 +1,22 @@
 """Atomic event revisions, append-only history, and station notifications."""
 import json
+import logging
 
+from . import bot_outbox
 from .common import APIError, now
+
+
+def bot_hook(db, function, *args):
+    """Queue bot messages without ever letting a bot failure affect the write.
+
+    The outbox is a convenience, not business data. A malformed field, a schema
+    mismatch or a SQLite error while composing a card must never roll back a
+    registration, a settlement or an immutable ledger entry.
+    """
+    try:
+        function(db, *args)
+    except Exception:
+        logging.exception('[bot] outbox hook failed; business write is unaffected')
 
 
 def require_revision(event, data):
@@ -21,8 +36,12 @@ def append(db, event, user, action, before, after, reason=''):
         before_json,after_json,reason,created_at) VALUES(?,?,?,?,?,?,?,?,?)''',
         (event['id'],version,user['id'] if user else None,user['nickname'] if user else '系统',action,
          json.dumps(before,ensure_ascii=False),json.dumps(after,ensure_ascii=False),reason,now()))
+    # Same transaction as the audit row: a broadcast describes a committed fact,
+    # and de-duplication (not throttling) keeps one fact to one message.
+    bot_hook(db, bot_outbox.on_append, event, user, action, before, after, reason)
 
 
 def notify(db, user_id, event_id, kind, message):
     db.execute('INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,?,?,?)',
         (user_id,event_id,kind,message,now()))
+    bot_hook(db, bot_outbox.on_notify, user_id, event_id, kind, message)

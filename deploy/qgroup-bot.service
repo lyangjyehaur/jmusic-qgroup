@@ -1,0 +1,34 @@
+[Unit]
+Description=qgroup QQ group bot (outbox delivery + passive commands)
+After=network-online.target qgroup.service
+Wants=network-online.target
+# 主動推播是純 HTTP，即使 qgroup.service 短暫重啟，outbox 仍可繼續消費。
+
+[Service]
+Type=simple
+# 重要：bot 需要寫入同一個 SQLite（只更新 bot_outbox 的投遞狀態）。
+# 主服務原本使用 DynamicUser=yes；兩個服務不能用不同的使用者，
+# 否則後啟動者會 chown 掉 StateDirectory 並奪走彼此的檔案權限。
+# 名稱不可用 qgroup：該名稱已由 nss-systemd 提供給 dynamic user。
+# 部署前先建立靜態系統帳號，並讓 qgroup.service 也改用同一個 User/Group：
+#   sudo useradd --system --home-dir /var/lib/qgroup --shell /usr/sbin/nologin qgroupsvc
+# StateDirectory 會在啟動時自動把 /var/lib/private/qgroup 設為該使用者所有。
+User=qgroupsvc
+Group=qgroupsvc
+WorkingDirectory=/opt/qgroup
+StateDirectory=qgroup
+UMask=0077
+Environment=KANBAN_DB=/var/lib/qgroup/kanban.sqlite3
+EnvironmentFile=-/etc/qgroup/bot.env
+ExecStart=/opt/qgroup/.venv-bot/bin/python -m qgroup_bot.main
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+
+[Install]
+WantedBy=multi-user.target
