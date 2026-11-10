@@ -1,0 +1,81 @@
+# qgroup: two processes, one image, one SQLite file.
+#
+#   docker compose build web          # build qgroup:<tag> once
+#   docker compose up -d              # start web + bot
+#   docker compose ps / logs -f web   # inspect
+#   docker compose down               # stop (systemd units are the rollback path)
+#
+# Host-specific values live in an untracked .env next to this file.
+# See deploy/compose.env.example. Secrets stay in /etc/qgroup/*.env (0600).
+
+name: qgroup
+
+x-qgroup-common: &qgroup-common
+  image: qgroup:${QGROUP_TAG:-local}
+  # server.py's rate limiter only trusts X-Real-IP when the peer is loopback
+  # (127.0.0.1 / ::1). A published bridge port would arrive from the Docker
+  # gateway, collapsing every visitor into one bucket. Host networking keeps
+  # the existing reverse proxy, rate limiting and 127.0.0.1:8791 unchanged.
+  network_mode: host
+  user: "${QGROUP_UID:-994}:${QGROUP_GID:-992}"
+  volumes:
+    # The DB and its content-addressed images/ live side by side; the host
+    # backup service reads this exact path, so it must stay a bind mount.
+    - ${QGROUP_DATA_DIR:-/var/lib/qgroup}:/var/lib/qgroup
+  restart: unless-stopped
+  init: true
+  stop_grace_period: 15s
+  read_only: true
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,noexec,size=64m
+  security_opt:
+    - no-new-privileges:true
+  cap_drop:
+    - ALL
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "5"
+
+services:
+  web:
+    <<: *qgroup-common
+    container_name: qgroup-web
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        QGROUP_UID: ${QGROUP_UID:-994}
+        QGROUP_GID: ${QGROUP_GID:-992}
+    env_file:
+      - path: ${QGROUP_ENV_DIR:-/etc/qgroup}/qq.env
+        required: true
+      - path: ${QGROUP_ENV_DIR:-/etc/qgroup}/admin.env
+        required: false
+    environment:
+      KANBAN_DB: /var/lib/qgroup/kanban.sqlite3
+      KANBAN_HOST: 127.0.0.1
+      KANBAN_PORT: "${KANBAN_PORT:-8791}"
+      KANBAN_SECURE_COOKIE: "1"
+      KANBAN_ORIGIN: "${KANBAN_ORIGIN:-https://kanban.danndann.cn}"
+    command: ["python3", "server.py"]
+    healthcheck:
+      # /api/health is a read-only SELECT 1; browsing / would create sessions.
+      test: ["CMD", "python3", "-c", "import os,urllib.request; u='http://127.0.0.1:'+os.environ.get('KANBAN_PORT','8791')+'/api/health'; urllib.request.urlopen(u,timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  bot:
+    <<: *qgroup-common
+    container_name: qgroup-bot
+    env_file:
+      - path: ${QGROUP_ENV_DIR:-/etc/qgroup}/bot.env
+        required: true
+    environment:
+      KANBAN_DB: /var/lib/qgroup/kanban.sqlite3
+    # Deliberately no depends_on health gate: active delivery is plain HTTP and
+    # must keep consuming the outbox even while the web service restarts.
+    command: ["python3", "-m", "qgroup_bot.main"]

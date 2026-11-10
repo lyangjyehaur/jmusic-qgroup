@@ -81,18 +81,34 @@ node --check public/experience.js
 ## server2 部署与保全
 
 - 网站：https://kanban.danndann.cn
-- 应用 `/opt/qgroup`，systemd `qgroup.service` 与 `qgroup-bot.service`，两者以同一静态账号 `qgroupsvc` 非 root 运行。
-- 后端仅监听 `127.0.0.1:8791`。
-- 数据库 `/var/lib/qgroup/kanban.sqlite3`；改用静态账号后 systemd 的 `StateDirectory=qgroup` 就直接落在这里。原 `DynamicUser` 时代的 `/var/lib/private/qgroup` 已由 systemd 在首次启动时自动迁移过来（日志会写明），不要再往 private 路径找库。
+- 应用 `/opt/qgroup`，由 **Docker Compose** 管理：`qgroup-web` 与 `qgroup-bot` 两个容器共用同一个 `qgroup:<tag>` 映像，只差启动命令；同一静态账号 `qgroupsvc`（994:992）非 root 运行，容器只读根文件系统。
+- 后端仅监听 `127.0.0.1:8791`。容器刻意用 **host networking**：`server.py` 的限流只在来源为回环时才信任反向代理的 `X-Real-IP`；改用 bridge 发布端口会让所有访客都来自 Docker 网关，限流退化成全局共用。`1Panel` 上游因此一行都不用改。
+- 数据库 `/var/lib/qgroup/kanban.sqlite3` 连同 `images/`、`-wal`、`-shm` 以 **bind mount** 挂进两个容器（容器内路径相同）。不能换成 named volume：宿主 `qgroup-backup.service` 直接读这个路径。原 `DynamicUser` 时代的 `/var/lib/private/qgroup` 已由 systemd 自动迁移过来，不要再往 private 路径找库。
+- 密钥仍放 `/etc/qgroup/qq.env`、`admin.env`、`bot.env`（root 0600），由 `env_file` 注入；不进映像、不进构建上下文、不进 Git。非密钥设定放 `/opt/qgroup/.env`（不进 Git，见 `deploy/compose.env.example`）。
 - 反向代理、TLS 由用户通过 **1Panel 标准流程**管理；目标 `http://127.0.0.1:8791`，使用现有通配符证书。不要手写 OpenResty 配置。
-
-每次升级先备份代码及 SQLite，以正式备份的隔离副本演练迁移，再停服务、最终快照、完整替换应用、启动迁移。上传 `server.py`、`qgroup_core/`、`public/`、`deploy/`、文档；不上传数据库。不要让旧、新写逻辑同时运行，不由 root 迁移实时库。
+- `deploy/qgroup.service` 与 `qgroup-bot.service` 保留为 **systemd 回退路径**，Docker 上线后停用但不删除；`qgroup-backup.timer` 与备份脚本不受影响。容器以 `restart: unless-stopped` 随 Docker 开机自启，不需要额外 systemd unit。
 
 ```sh
-ssh server2 'systemctl status qgroup --no-pager'
-ssh server2 'journalctl -u qgroup -n 80 --no-pager'
-ssh server2 'systemctl start qgroup-backup.service'
+# 常用维运（在 /opt/qgroup 下）
+docker compose config -q                 # 校验设定；勿用 config 完整输出，会印出密钥
+docker compose build web                # 建置 qgroup:<QGROUP_TAG> 映像
+docker compose up -d                    # 启动 web + bot
+docker compose ps
+docker compose logs -f web              # 或 bot
+docker compose restart bot
+docker compose down                     # 停止容器，不改动任何资料
+```
+
+每次升级先备份代码及 SQLite，以正式备份的隔离副本演练迁移，再上传新版代码、建置新映像、`up -d` 滚动启动。`git archive HEAD | ssh server2 'tar -x -C /opt/qgroup'` 会替换 `server.py`、`qgroup_core/`、`qgroup_bot/`、`public/`、`deploy/`、文档与 Docker 档案；**不上传数据库**。不要让旧 systemd 服务与新容器同时运行（会抢 8791 与同一个 bot 长连线），不由 root 迁移实时库。回退：`docker compose down` → `systemctl enable --now qgroup qgroup-bot`；或把 `.env` 的 `QGROUP_TAG` 指回旧映像后 `docker compose up -d`。
+
+```sh
+ssh server2 'docker compose -f /opt/qgroup/compose.yaml ps; systemctl start qgroup-backup.service'
 python3 deploy/verify_migration.py source.sqlite3 isolated-copy.sqlite3
+# 映像内可跑同一套测试（不需在宿主装依赖，也不触碰正式 DB）。
+# 务必用 docker run 而非 compose run：compose 会注入生产用的 SECURE_COOKIE / 管理金钥。
+ssh server2 'docker run --rm --user 994:992 --read-only --tmpfs /tmp:rw,size=64m \
+  -e KANBAN_DB=/tmp/kanban.sqlite3 \
+  qgroup:local python3 -m unittest discover -s tests -q'
 ```
 
 `qgroup-backup.timer` 每天 UTC 19:20 后延迟 0–5 分钟（台北次日 03:20–03:25）在线备份，root 专用目录 `/var/backups/qgroup` 保留 14 份。每份 `.sqlite3` 配对同名前缀的 `.images.tar.gz`，包含所有已提交的图片与历史。恢复需同时还原数据库和图片目录；旧版没有外部图片的备份可单独使用。升级验收比较源库每个用户表原有列及每个值，并校验完整性、外键和重复迁移。
@@ -120,6 +136,8 @@ python3 deploy/verify_migration.py source.sqlite3 isolated-copy.sqlite3
 | KANBAN_BOT_BROADCAST_KINDS | 空＝默认集合 | 逗号分隔，自行增减主动广播节点；不是频率限制 |
 | KANBAN_BOT_DRY_RUN | 1 | bot 行程只记 log 不真的发送，验收前保持 1 |
 
+Compose 专属变量写在 `/opt/qgroup/.env`（不进 Git，范例 `deploy/compose.env.example`）：`QGROUP_UID`／`QGROUP_GID` 必须等于宿主 `/var/lib/qgroup` 的拥有者，`QGROUP_TAG` 是映像标签，`QGROUP_DATA_DIR`／`QGROUP_ENV_DIR` 是资料与凭证目录，`KANBAN_PORT`／`KANBAN_ORIGIN` 供 web 使用。这些值只影响容器编排，不改变应用行为。
+
 静态文件白名单；写接口要求 JSON、同源与限流，并在事务内验证身份、版本及权限。输入在前端进行 HTML 转义。
 
 操作手册更新后运行 `python3 deploy/build_guide.py` 生成 `public/guide.html`；仅构建时需要 markdown-it-py，线上运行不需要该依赖。
@@ -134,7 +152,7 @@ python3 deploy/verify_migration.py source.sqlite3 isolated-copy.sqlite3
 
 **被动查询**：`@bot /活动`、`/名额`、`/待办`、`/签到`、`/结算`、`/我的`、`/帮助`，可加活动 id 前 8 位指定活动；只 @ 不带指令时回当前活动卡（最快捷的报名入口）。`/待办` 直接映射 `boardTodos()` 那套既有聚合，不新增数据模型。指令面板 `/v2/panels` 与 keyboard 按钮为可选项，需在管理端核对 API 格式后开启。
 
-**启用顺序**：① 部署 `deploy/qgroup-bot.service` 与 `deploy/bot.env.example`（`/etc/qgroup/bot.env`，root 0600）；② 建静态系统账号 `qgroupsvc` 并让两个 service 都改用同一 `User/Group`——`qgroup` 这个名称已被 systemd 的 `DynamicUser` 占用（nss-systemd 动态提供，不能 useradd），且两个不同使用者会互相 chown 掉同一个 SQLite；systemd 首次启动会把旧的 `/var/lib/private/qgroup` 自动迁移到 `/var/lib/qgroup`，不用手动搬库；③ 在**主服务**环境（`/etc/qgroup/qq.env`）加 `KANBAN_BOT_ENABLED=1`；④ 先以 dry-run 观察 outbox 内容，确认后再设 `KANBAN_BOT_DRY_RUN=0`。bot 行程需要 `websockets`，主服务仍只有标准库依赖；Debian 12 未装 `python3-venv` 时 `python3 -m venv` 会因缺 ensurepip 失败，改用 `python3 -m venv --without-pip .venv-bot` 再 `pip3 install --target .venv-bot/lib/python3.11/site-packages websockets`。
+**启用顺序**：① 准备 `deploy/bot.env.example` → `/etc/qgroup/bot.env`（root 0600，填 AppID／Secret／`KANBAN_BOT_GROUP`）；② 在**主服务**环境（`/etc/qgroup/qq.env`）加 `KANBAN_BOT_ENABLED=1`；③ `docker compose build web && docker compose up -d`，两个容器共用 `/var/lib/qgroup` 的 SQLite，UID/GID 必须与宿主 `qgroupsvc` 一致（见 `deploy/compose.env.example`）；④ 先以 dry-run 观察 outbox 内容，确认后再设 `KANBAN_BOT_DRY_RUN=0`。`websockets==17.4` 由 Dockerfile 装入映像，宿主不再需要 `.venv-bot`；主服务本身仍只有标准库依赖。若走 systemd 回退路径：静态账号 `qgroupsvc` 要同时给两个 unit 使用（`qgroup` 名称已被 nss-systemd 的 `DynamicUser` 占用），Debian 12 缺 ensurepip 时以 `python3 -m venv --without-pip` 加 `pip3 install --target` 安装。
 
 **本版刻意未做**：身份绑定（事件 `union_openid` 实测为空、QQ 互联仍在审核）→ 因此 `@bot` 直接报名、`/我的` 回个别金额、@ 特定成员、私聊个人化金额都还不能用，前者一律回一次性站内链接；结算卡默认只给站内链接，逐人金额需显式设 `KANBAN_BOT_SETTLEMENT_DETAIL=1`，收款码图片（私有 `image_assets`，须走富媒体分片上传 `msg_type=7`，不能用图文卡片 `pic_url`）留待上线时调整；前端「同步到群」逐次勾选尚未做，目前由环境变量与 `KANBAN_BOT_BROADCAST_KINDS` 控制。**默认群消息不含昵称、账号 id 与个别金额**；但显式开启 `KANBAN_BOT_SETTLEMENT_DETAIL=1` 后，结算卡会列出参加者姓名与应付金额，等于在群里公开金流信息，开启前须确认群成员都同意，并在隐私政策与群内告知监听全群对话这件事。
 

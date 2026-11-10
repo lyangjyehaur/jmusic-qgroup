@@ -1,0 +1,34 @@
+# Never send host credentials or runtime state into the build context.
+.git
+.gitignore
+.workbuddy
+.env
+.env.*
+*.env
+*.pem
+*.key
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.log
+*.pyc
+__pycache__
+.DS_Store
+
+# Build inputs that are not part of the runtime image.
+Dockerfile
+compose.yaml
+.dockerignore
+README.md
+package.json
+package-lock.json
+node_modules
+.venv
+.venv-*
+artifacts
+data
+images
+backups
+docs
+tools
