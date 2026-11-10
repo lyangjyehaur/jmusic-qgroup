@@ -582,7 +582,7 @@ async function routeBotEntry(params) {
   const plan=boardEntryPlan(action,e,state.me.authenticated);
   if(plan.kind==='missing'){toast("請先選擇可訪問的活動");return;}
   if(plan.kind==='denied'){toast("當前身份或活動階段不允許此操作，請在活動頁核對權限");return;}
-  BoardAdvanced.set($('#detail-content'),true);
+  if(['party','tentative','invite','withdraw','management','manage','attendance','onsite'].includes(action))BoardAdvanced.set($('#detail-content'),true);
   const click=selector=>{const el=$(selector,$('#detail-content'));if(el){el.click();return true;}return false;};
   if(['party','tentative','invite'].includes(action))click('[data-roster-action="'+({party:'add',tentative:'tentative',invite:'invite'}[action])+'"]');
   else if(action==='conditions')await activityUI.openConditions(e);
