@@ -78,8 +78,12 @@ function setProfile() {
     const avatar=$(selector);avatar.hidden=!visible||!qq.avatar_url;
     if(visible&&qq.avatar_url)avatar.src=qq.avatar_url;else avatar.removeAttribute('src');
   }
-  $('#qq-account-button').hidden=!state.me.qq?.enabled;
-  $('#home-qq-button').disabled=!state.me.qq?.enabled&&!state.me.allow_name_registration;
+  const accountButton=$('#home-qq-button');
+  accountButton.className=state.me.authenticated?'button secondary':'home-qq-button';
+  accountButton.setAttribute('aria-label',state.me.authenticated?"账号与设备":"QQ登录");
+  if(state.me.authenticated)accountButton.textContent="账号与设备";
+  else accountButton.innerHTML="<img src=\"/qq-login.png\" alt=\"QQ登录\" width=\"76\" height=\"24\">";
+  accountButton.disabled=!state.me.authenticated&&!state.me.qq?.enabled&&!state.me.allow_name_registration;
   $('#home-qq-status').textContent=state.me.authenticated?state.me.qq?.needs_reauth?"QQ 资料待更新，bot 暂时无法识别账号。":"已登录，可在个人资料中修改称呼。":"登录后即可发起活动和报名。";
 }
 function openProfile(next=null) {

@@ -78,8 +78,12 @@ function setProfile() {
     const avatar=$(selector);avatar.hidden=!visible||!qq.avatar_url;
     if(visible&&qq.avatar_url)avatar.src=qq.avatar_url;else avatar.removeAttribute('src');
   }
-  $('#qq-account-button').hidden=!state.me.qq?.enabled;
-  $('#home-qq-button').disabled=!state.me.qq?.enabled&&!state.me.allow_name_registration;
+  const accountButton=$('#home-qq-button');
+  accountButton.className=state.me.authenticated?'button secondary':'home-qq-button';
+  accountButton.setAttribute('aria-label',state.me.authenticated?"帳號與設備":"QQ登錄");
+  if(state.me.authenticated)accountButton.textContent="帳號與設備";
+  else accountButton.innerHTML="<img src=\"/qq-login.png\" alt=\"QQ登錄\" width=\"76\" height=\"24\">";
+  accountButton.disabled=!state.me.authenticated&&!state.me.qq?.enabled&&!state.me.allow_name_registration;
   $('#home-qq-status').textContent=state.me.authenticated?state.me.qq?.needs_reauth?"QQ 資料待更新，bot 暫時無法識別帳號。":"已登錄，可在個人資料中修改稱呼。":"登錄後即可發起活動和報名。";
 }
 function openProfile(next=null) {

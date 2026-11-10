@@ -126,7 +126,7 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
   });
   function qqSection(qq) {
     if(!qq?.enabled)return "<p class=\"field-help\">QQ 登录暂不可用，可连接自己的另一台设备。</p>";
-    return `<section class="qq-account-section"><h3>QQ 账号</h3>${qq.bound?qqProfile(qq.nickname,qq.avatar_url):''}<p class="field-help">${qq.bound?"换设备时，用此 QQ 登录即可。":"绑定 QQ 可找回当前账号。直接登录将进入该 QQ 对应的账号。"}</p>${qq.bound?qq.needs_reauth?"<p class=\"field-help\">资料待更新，bot 暂时无法识别账号。</p><button type=\"button\" class=\"button secondary full\" data-identity=\"qq-refresh-info\">重新登录 QQ</button>":'':"<button type=\"button\" class=\"button secondary full qq-button\" data-identity=\"qq-bind\"><img src=\"/qq-login.png\" alt=\"QQ登录\" width=\"76\" height=\"24\"><span>绑定到当前账号</span></button>"}<button type="button" class="text-button full" data-identity="qq-login">${qq.bound?"换个 QQ 登录":"使用 QQ 登录"}</button></section>`;
+    return `<section class="qq-account-section"><h3>QQ 账号</h3>${qq.bound?qqProfile(qq.nickname,qq.avatar_url):''}<p class="field-help">${qq.bound?"换设备时，用此 QQ 登录即可。":"绑定 QQ 可找回当前账号。直接登录将进入该 QQ 对应的账号。"}</p>${qq.bound?qq.needs_reauth?"<p class=\"field-help\">资料待更新，bot 暂时无法识别账号。</p><button type=\"button\" class=\"button secondary full\" data-identity=\"qq-refresh-info\">重新登录 QQ</button>":'':"<button type=\"button\" class=\"button secondary full\" data-identity=\"qq-bind\">绑定 QQ</button>"}<button type="button" class="text-button full" data-identity="qq-login">${qq.bound?"换个 QQ 登录":"使用 QQ 登录"}</button></section>`;
   }
   function reminderKey(){return 'kanban-qq-reauth-v1:'+state.me.draft_scope;}
   function stampQQReminder(){
