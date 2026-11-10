@@ -73,7 +73,7 @@ class Fixture:
 class ListNumberTests(Fixture, unittest.TestCase):
     def setUp(self):
         super().setUp()
-        self.first = self.event('第一场 [点我](https://evil.test)', lifecycle='scheduled')
+        self.first = self.event('第一场 *特别*', lifecycle='scheduled')
         later = (datetime.now(timezone.utc) + timedelta(days=5)).isoformat(timespec='seconds')
         self.second = self.event('第二场活动', starts_at=later, deadline=later)
         self.event_id = self.first
@@ -165,15 +165,19 @@ class BroadcastMarkdownTests(Fixture, unittest.TestCase):
         rich = planned[2]['_markdown']
         self.assertIsInstance(rich, str)
         self.assertTrue(rich.startswith('## 活动发起'))
-        self.assertIn(r'\*特别\*', rich)
-        self.assertIn(r'\[点我\]', rich)
+        self.assertIn('*特别*', rich)
+        self.assertIn('[点我](https://evil.test)', rich)
+        self.assertNotIn('\\', rich)
         self.assertNotIn('<qqbot-at-everyone />', rich)
         self.assertIn('[打开活动](https://example.test/?event=', rich)
-        self.assertIsNone(bot_markdown.content_problem(rich, ('example.test',)))
+        # A user-authored link to an unregistered host is deliberately caught
+        # by the allowlist, so the worker falls back to plain text instead of
+        # publishing a clickable off-site link inside a Markdown card.
+        self.assertIsNotNone(bot_markdown.content_problem(rich, ('example.test',)))
         # The plain-text body is untouched by the rich version.
         self.assertIn('唱K *特别*', planned[0])
 
-    def test_admin_markdown_template_is_used_and_variables_are_escaped(self):
+    def test_admin_markdown_template_keeps_variables_as_markdown(self):
         config = bot_settings.defaults()
         config['templates']['activity_published'+bot_settings.MARKDOWN_SUFFIX] = (
             '## **{title}**\n\u200B\n{details}\n\u200B\n[打开活动]({url})')
@@ -182,7 +186,8 @@ class BroadcastMarkdownTests(Fixture, unittest.TestCase):
                        url='https://example.test/?event=abc', heading='h',
                        _label='活动发起', _details_lines=[])
         rich = bot_outbox.render_message(config, 'activity_published', context, markdown=True)
-        self.assertIn(r'\*特别\*', rich)
+        self.assertIn('*特别*', rich)
+        self.assertNotIn('\\', rich)
         self.assertNotIn('<qqbot-at-everyone />', rich)
         self.assertIn('- 时间：周六', rich)
         self.assertIn('[打开活动](https://example.test/?event=abc)', rich)

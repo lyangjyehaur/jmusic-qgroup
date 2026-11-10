@@ -60,10 +60,8 @@ outbox），跨服務資料契約與設定語意都動到，依規則先按 `bot
 
 ## 安全與合規
 
-- `qgroup_core/bot_markdown.escape_markdown()` 統一處理使用者原文（`* _ [ ] ( ) < > #`、
-  換行、控制字元、`://`），系統片段才上格式。
-- 送出前檢查 4000 字、控制字元、未報備網域；**keyboard 跳轉按鈕的 URL 也比照白名單**
-  （`OutboxWorker._keyboard_problem`）。
+- `qgroup_core/bot_markdown.escape_markdown()` 只做**結構性去活化**：摺掉換行／Tab／控制字元（防止注入標題、清單、段落）、移除 `<qqbot-at-*>` 平台提及標記。**不再加反斜線、不再插入零寬字元、不再全形替換**。2026-11-11 測試群 A／B／C／D 實機對照：官方語法卡片渲染完全正確，其餘三種「中和」手段全部失敗；QQ 官方文件也沒有列任何 escape 機制。因此使用者原文自己的 `**粗體**`、`_斜體_`、`[連結](url)`、`~~刪除線~~` 會正常生效，這也是「活用 Markdown」的原本需求。
+- 外部連結由 `content_problem()` 的 URL 白名單（`KANBAN_BOT_ALLOWED_HOSTS`）把關：含未報備網域的 Markdown 卡片會被攔下並降級純文字；**keyboard 跳轉按鈕的 URL 也比照白名單**（`OutboxWorker._keyboard_problem`）。啟用白名單後，含外部網址的純文字通知同樣會被既有 `_content_problem` 攔住，這是既有設計、不是本次新增；下單前已盤點正式 DB，現有活動與兩則待送提醒都只有官方站連結。
 - `msg_type=2` 的 body 不帶 `content`（官方要求互斥）。
 - 結算逐人明細（顯式 opt-in 的 `group_notice`）在系統卡片與自訂 `@md` 模板都固定附上，
   不會因美化而被省略。
@@ -72,15 +70,21 @@ outbox），跨服務資料契約與設定語意都動到，依規則先按 `bot
 
 ## 已驗證 / 尚未驗證
 
-已驗證（本機）：Python 454 項、前端 JS 11 項、`node --check`、簡繁產物重建
+已驗證（本機）：Python **455 項**、前端 JS 11 項、`node --check`、簡繁產物重建
 （`npm run build:locales`）、`git diff --check`；序號解析與跨指令一致性、25 個指令
-全數產生可用且通過內容檢查的 Markdown、payload 加法相容、開關降級、白名單、
-逐人明細保留、管理員 `@md` 模板 escaping。
+全數產生可用且通過內容檢查的 Markdown、payload 加法相容、開關降級、白名單攔截
+未報備連結、平台提及標記移除、逐人明細保留、管理員 `@md` 模板。
+
+已驗證（實機，皆在測試群 `F8118831…`）：三則 @bot 指令 `msg_type=2` 獲平台
+HTTP 200；三則語法／escaping 卡片與一則 worker 完整投遞鏈皆獲平台接受，
+**Markdown + keyboard 按鈕可正常顯示與點擊**；官方語法（`**粗體**`、`_斜體_`、
+`~~刪除線~~`）渲染完全正確，反斜線、零寬插入、全形替換三種中和手段全部不合格，
+故已移除。
 
 `test_api.test_concurrent_last_seat_and_promotion` 是既有的併發 HTTP 測試，全套執行
 時偶發 `RemoteDisconnected`（本次 3 次全套中 1 次）；單獨執行與全套重跑均通過，
 與本次改動無關，未修改該測試。
 
-尚未驗證（須實機）：QQ 對反斜線跳脫與零寬空行的實際渲染、keyboard 搭配
-`msg_type=2` 的行為、主動訊息頻控與 `40034105`／`40034011` 等錯誤碼。
-正式群目前 `dry_run=false` 且已設為通知目標，**開關開啟前務必先切模擬或只用測試群**。
+尚未驗證：正式群的主動廣播投遞（刻意只送測試群）、主動訊息頻控與
+`40034105`／`40034011` 等錯誤碼。正式群目前 `dry_run=false` 且已設為通知目標，
+任何實機測試仍應只用測試群。

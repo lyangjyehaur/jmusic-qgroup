@@ -17,9 +17,13 @@ Custom Markdown in group/single chats has been open to all bots since
 2026-04-23; no template application is required. A markdown body must NOT carry
 ``content`` at the same time.
 
-Backslash escaping is standard Markdown but QQ does not document it explicitly;
-until a real device confirms the rendering, deployments keep
-KANBAN_BOT_MARKDOWN=0 (default) and stay on plain text.
+Real-device syntax probes (2026-11-11, test group): a card written with the
+documented syntax renders correctly, while backslash escapes, zero-width
+characters inserted next to syntax characters and full-width substitutions all
+render badly. QQ documents no escape mechanism at all. User-authored text
+therefore keeps its own **bold**, _italic_, [links](url) and ~~strike~~; we
+neutralise only structural injection (see escape_markdown) and let
+content_problem() enforce the outbound-link allowlist.
 """
 import re
 from urllib.parse import urlsplit
@@ -29,26 +33,31 @@ RULE = '***'
 MAX_CHARS = 4000
 
 _CONTROL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
-# Characters QQ may interpret as emphasis, links, images, headings,
-# autolinks (<...>) or platform mention markup (<qqbot-at-everyone />).
-_SPECIAL = re.compile(r'([\\*_~\[\]()<>!#`])')
+# Platform mention markup is the one construct that must never survive: a
+# title containing <qqbot-at-everyone /> would mention the whole group.
+# QQ's autolink <https://...> is left alone; only qqbot-at-* tags are removed.
+_PLATFORM_TAG = re.compile(r'<\s*/?\s*qqbot-at-[^>]*>', re.IGNORECASE)
 _URL = re.compile(r'https?://([^\s<>"\[\]{}()]+)')
 
 
 def escape_markdown(text):
-    """Neutralise user-authored text before it enters a markdown reply.
+    """Keep inline Markdown live; remove only structural injection.
 
-    Newlines and control characters are folded into spaces so a title or a
-    note can never inject a heading, a list item or an extra paragraph.
-    ``://`` is broken by a zero-width space: a URL pasted into an activity
-    title stays readable but is neither auto-linked by QQ nor caught by the
-    deployment's URL allowlist as an outbound link.
+    Newlines, tabs and control characters are folded into spaces so a title or
+    a note can never inject a heading, a list item or an extra paragraph.
+    Platform ``<qqbot-at-*>`` tags are dropped so user text cannot @everyone.
+
+    Deliberately NOT escaped: ``*``, ``_``, ``~``, ``[``, ``]``, ``(``, ``)``,
+    ``#``, ``!`` and backticks. QQ has no escape syntax; backslashes, zero-width
+    insertions and full-width replacements were all rejected by a real-device
+    A/B/C/D comparison. Letting the documented syntax work is both the product
+    requirement and the only option that renders cleanly. Outbound link targets
+    are checked separately by content_problem() against the allowlist.
     """
     value = str(text if text is not None else '')
     value = _CONTROL.sub(' ', value)
     value = value.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ')
-    value = _SPECIAL.sub(r'\\\1', value)
-    return value.replace('://', ':/\u200B/')
+    return _PLATFORM_TAG.sub('', value)
 
 
 def content_problem(text, allowed_hosts=()):

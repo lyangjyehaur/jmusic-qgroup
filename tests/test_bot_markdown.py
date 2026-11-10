@@ -1,9 +1,9 @@
-"""Passive Markdown replies (msg_type=2): escaping, opt-in and fallback.
+"""Passive Markdown replies (msg_type=2): opt-in, fallback and link safety.
 
 Escaping and renderers now live in ``qgroup_core.bot_markdown``; the active
 broadcast side and the web/bot payload contract are covered in
 ``test_bot_markdown_broadcast.py``. Checks are offline; nothing here claims a
-real QQ device accepted a markdown message.
+real QQ device rendered a markdown message correctly.
 """
 import asyncio
 import os
@@ -43,8 +43,8 @@ class MarkdownReplyTests(unittest.TestCase):
                 dict(title='唱K活动', category='约K', location='某KTV', starts_at=start,
                      deadline=start, capacity=10, description='', duration_hours=3,
                      minimum_participants=4, join_owner=False, bot_enabled=True))
-        # User-authored text that would otherwise become a link, emphasis,
-        # a mention or a second paragraph inside a markdown body.
+        # User-authored text exercising live inline syntax, a heading on a
+        # second line and a platform mention tag.
         with storage.connect(self.path) as db:
             db.execute('UPDATE events SET title=?, location=? WHERE id=?',
                        ('唱K *特别* [点我](https://evil.test)',
@@ -68,16 +68,31 @@ class MarkdownReplyTests(unittest.TestCase):
         finally:
             db.close()
 
-    def test_escape_neutralises_links_emphasis_mentions_and_newlines(self):
-        escaped = md.escape_markdown(
+    def test_escape_keeps_inline_markdown_but_blocks_structural_injection(self):
+        value = md.escape_markdown(
             '[点我](https://evil.test) **粗** <qqbot-at-everyone />\n# 标题')
-        self.assertIn(r'\[点我\]', escaped)
-        self.assertIn(r'\*\*粗\*\*', escaped)
-        self.assertIn(r'\<qqbot-at-everyone', escaped)
-        self.assertIn(r'\# 标题', escaped)
-        self.assertNotIn('\n', escaped)
-        self.assertNotIn('[点我](https://evil.test)', escaped)
-        self.assertIn(':/\u200B/', escaped)
+        # QQ has no escape syntax: real-device A/B/C/D probes rejected
+        # backslashes, zero-width insertions and full-width substitutions.
+        self.assertIn('[点我](https://evil.test)', value)
+        self.assertIn('**粗**', value)
+        self.assertIn('# 标题', value)
+        self.assertNotIn('\\', value)
+        self.assertNotIn('\u200B', value)
+        # Structural injection is still neutralised.
+        self.assertNotIn('<qqbot-at-everyone />', value)
+        self.assertNotIn('\n', value)
+        self.assertEqual(md.escape_markdown('<qqbot-at-user id="7" /> 安安'), ' 安安')
+        self.assertEqual(md.escape_markdown('a\rb\tc'), 'a b c')
+
+    def test_user_link_is_caught_by_the_outbound_allowlist(self):
+        rich = md.render_broadcast('活动发起', '唱K [点我](https://evil.test)', [],
+                                   'https://example.test/?event=abc')
+        self.assertIn('[点我](https://evil.test)', rich)
+        self.assertIsNotNone(md.content_problem(rich, ('example.test',)))
+        self.assertIsNone(md.content_problem(
+            md.render_broadcast('活动发起', '唱K **特别**', [],
+                               'https://example.test/?event=abc'),
+            ('example.test',)))
 
     def test_escape_drops_control_characters(self):
         self.assertNotIn('\x01', md.escape_markdown('a\x01b'))
@@ -125,18 +140,22 @@ class MarkdownReplyTests(unittest.TestCase):
     def test_unknown_command_gets_markdown_help_with_prefix(self):
         self.assertIn('未识别这条指令', self.markdown(None))
 
-    def test_activity_markdown_escapes_user_text_but_plain_answer_keeps_it(self):
+    def test_activity_markdown_keeps_user_syntax_but_blocks_mentions(self):
         rich = self.markdown('活动')
         plain = self.plain('活动')
         self.assertTrue(rich.startswith('## 唱K'))
-        self.assertIn(r'\[点我\]', rich)
-        self.assertIn(r'\*\*KTV\*\*', rich)
-        self.assertNotIn('[点我](https://evil.test)', rich)
+        # QQ has no escape syntax: inline markup stays live and renders cleanly.
+        self.assertIn('[点我](https://evil.test)', rich)
+        self.assertIn('**KTV**', rich)
+        self.assertNotIn('\\', rich)
+        # Structural injection and platform mentions are still removed.
         self.assertNotIn('<qqbot-at-everyone />', rich)
-        self.assertNotIn('第二行 <qqbot', rich)
+        self.assertNotIn('\n第二行', rich)
         self.assertIn('[点我](https://evil.test)', plain)
         self.assertIn('[打开活动](https://example.test/?event=%s)' % self.event_id, rich)
-        self.assertIsNone(md.content_problem(rich, ('example.test',)))
+        # An off-site link authored by a user is caught by the allowlist, so
+        # this card falls back to plain text rather than becoming a hyperlink.
+        self.assertIsNotNone(md.content_problem(rich, ('example.test',)))
 
     def test_todos_markdown_is_a_list_and_never_names_a_person(self):
         text = self.markdown('待办')
@@ -145,7 +164,7 @@ class MarkdownReplyTests(unittest.TestCase):
         self.assertIn('[查看待办](https://example.test/?event=', text)
         self.assertNotIn('私密昵称', text)
 
-    def test_selection_markdown_links_only_system_urls(self):
+    def test_selection_markdown_keeps_user_links_but_allowlist_catches_them(self):
         start = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat(timespec='seconds')
         with storage.connect(self.path) as db:
             events.create(db, {'id': 'u1', 'nickname': '私密昵称'},
@@ -157,8 +176,8 @@ class MarkdownReplyTests(unittest.TestCase):
         self.assertIn('1. **', text)
         self.assertIn('2. **', text)
         self.assertIn('[打开活动](https://example.test/?event=', text)
-        self.assertNotIn('[点我](https://evil.test)', text)
-        self.assertIsNone(md.content_problem(text, ('example.test',)))
+        self.assertIn('[点我](https://evil.test)', text)
+        self.assertIsNotNone(md.content_problem(text, ('example.test',)))
 
     def test_markdown_is_opt_in_by_default(self):
         with mock.patch.dict(os.environ, {'KANBAN_BOT_MARKDOWN': '0'}):
