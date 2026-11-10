@@ -313,6 +313,17 @@ def accept_invitation(db, event, user, token, data):
 
 def serialize(db, event, viewer):
     people = rows(db,event['id'])
+    # Profile images are current display data, not part of immutable roster history.
+    from . import qq_oauth
+    settings = qq_oauth.config()
+    avatar_urls = {}
+    if settings:
+        profiles = db.execute("""SELECT p.user_id,p.avatar_url FROM external_profiles p
+            JOIN external_identities i USING(provider,client_id,user_id)
+            WHERE p.provider='qq' AND p.client_id=? AND p.user_id IN
+                (SELECT user_id FROM attendees WHERE event_id=? AND status!='withdrawn')""",
+            (settings['app_id'],event['id']))
+        avatar_urls = {p['user_id']:qq_oauth.avatar(p['avatar_url']) for p in profiles}
     settled = bool(db.execute('SELECT 1 FROM settlements WHERE event_id=?',(event['id'],)).fetchone())
     result, invited, managed = [], [], []
     position, waiting_position = 0, 0
@@ -320,7 +331,8 @@ def serialize(db, event, viewer):
         if person['status']=='withdrawn':
             continue
         item = public_person(person)
-        item['is_me'] = person['user_id']==viewer
+        item['avatar_url'] = avatar_urls.get(person['user_id'],'')
+        item['is_me'] = viewer is not None and person['user_id']==viewer
         item['managed_by_me'] = person['manager_id']==viewer
         item['can_manage'] = permissions.has(db,event,viewer,'roster') or item['managed_by_me']
         item['is_guest'] = person['user_id'] is None

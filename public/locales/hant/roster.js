@@ -25,6 +25,13 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
     if(index<0)state.events.push(updated);else state.events[index]=updated;
     renderDetail(updated);await refresh({detail:false});if(message)toast(message);
   }
+  function personAvatar(person) {
+    const initial=Array.from(String(person.nickname||'').trim())[0]||'?';
+    return `<span class="participant-avatar" aria-hidden="true"><span>${esc(initial)}</span>${person.avatar_url?`<img src="${esc(person.avatar_url)}" alt="" width="24" height="24" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`;
+  }
+  document.addEventListener('error',event=>{
+    if(event.target.matches?.('.participant-avatar img'))event.target.remove();
+  },true);
   function peopleSection(e) {
     let html=e.my_attendees?.some(p=>!p.is_me)?`<details class="extra-settings"><summary>我的報名／同行 · ${e.my_attendees.length} 人</summary>${e.my_attendees.map(p=>`<p class="history-person">${esc(p.nickname)} · ${labels[p.status]}${p.waiting_position?" · 候補 "+p.waiting_position:''}${p.payer_kind==='manager'?" · 由"+esc(p.payer_name||p.manager_name)+"統一付款":" · 本人付款"}${p.can_manage&&(p.can_change||p.can_withdraw||p.can_claim)?` <button class="text-button" data-roster-action="manage" data-person="${p.id}">管理</button>`:''}</p>`).join('')}</details>`:'';
     for(const status of ['confirmed','waiting','tentative']) {
@@ -34,7 +41,7 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
         const extra=p.payment_locked?`保留原報名付款人：${esc(p.payer_name)}`:p.is_guest?`${esc(p.manager_name)}代報 · ${p.payer_kind==='manager'?"由"+esc(p.payer_name||p.manager_name)+"統一付款":"本人付款"}`:'';
         const confirmation=p.confirmation_state==='pending'?"新安排待確認":p.confirmation_state==='declined'?"暫不同意新安排":'';
         const attendance=({present:"到場",absent:"缺席",late:"遲到",left:"早退"})[p.attendance];
-        return `<li class="participant ${status}"><span class="participant-position">${status==='waiting'?"候補 ":''}${index+1}</span><div class="participant-text"><div class="participant-name">${esc(p.nickname)}${p.is_me?"<span class=\"me-badge\">我</span>":''}${attendance?`<span class="attendance-badge">${attendance}</span>`:''}</div>${extra?`<p class="participant-note">${extra}</p>`:''}${p.note?`<p class="participant-note">${esc(p.note)}</p>`:''}${confirmation?`<p class="withdrawal-label">${confirmation}</p>`:''}${p.withdrawal_requested?"<p class=\"withdrawal-label\">已申請退出，待發起者處理</p>":''}</div>${p.can_manage&&(p.can_change||p.can_withdraw||p.can_claim)?`<button class="text-button participant-manage"${p.is_me?'':' data-advanced-only'} data-roster-action="manage" data-person="${p.id}">管理</button>`:''}</li>`;
+        return `<li class="participant ${status}"><span class="participant-position">${status==='waiting'?"候補 ":''}${index+1}</span><div class="participant-text"><div class="participant-heading">${personAvatar(p)}<div class="participant-name">${esc(p.nickname)}${p.is_me?"<span class=\"me-badge\">我</span>":''}${attendance?`<span class="attendance-badge">${attendance}</span>`:''}</div></div>${extra?`<p class="participant-note">${extra}</p>`:''}${p.note?`<p class="participant-note">${esc(p.note)}</p>`:''}${confirmation?`<p class="withdrawal-label">${confirmation}</p>`:''}${p.withdrawal_requested?"<p class=\"withdrawal-label\">已申請退出，待發起者處理</p>":''}</div>${p.can_manage&&(p.can_change||p.can_withdraw||p.can_claim)?`<button class="text-button participant-manage"${p.is_me?'':' data-advanced-only'} data-roster-action="manage" data-person="${p.id}">管理</button>`:''}</li>`;
       }).join('')+'</ol>';
     }
     if(!e.participants.length)html="<p class=\"muted\">暫無報名</p>";
