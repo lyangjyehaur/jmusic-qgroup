@@ -138,7 +138,7 @@ class QQTests(unittest.TestCase):
         after = self.owner.request('/api/me')[1]
         self.assertEqual(after['draft_scope'], before['draft_scope'])
         self.assertEqual(after['nickname'], before['nickname'])
-        self.assertEqual(after['qq'], dict(enabled=True,bound=True,nickname='QQ 后台後臺',avatar_url=''))
+        self.assertEqual(after['qq'], dict(enabled=True,bound=True,nickname='QQ 后台後臺',avatar_url='',unionid_bound=False,needs_reauth=True))
         self.assertNotEqual(next(iter(old_cookie)).value, cookie)
         with storage.connect(server.DB) as db:
             self.assertIsNone(db.execute('SELECT * FROM browser_sessions WHERE token_hash=?', (hashlib.sha256(cookie.encode()).hexdigest(),)).fetchone())

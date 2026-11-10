@@ -43,10 +43,14 @@ def required():
 
 def summary(db, user):
     settings = config()
-    bound = db.execute("SELECT display_name AS nickname FROM external_identities WHERE provider='qq' AND user_id=? AND client_id=?",
+    bound = db.execute("""SELECT e.display_name AS nickname,EXISTS(SELECT 1 FROM external_unionids x
+        WHERE x.provider=e.provider AND x.client_id=e.client_id AND x.subject=e.subject) AS unionid_bound
+        FROM external_identities e WHERE provider='qq' AND user_id=? AND client_id=?""",
                        (user['id'], settings['app_id'])).fetchone() if settings and user else None
     profile=db.execute("SELECT avatar_url FROM external_profiles WHERE provider='qq' AND client_id=? AND user_id=?",(settings['app_id'],user['id'])).fetchone() if bound else None
-    return dict(enabled=bool(settings), bound=bool(bound), nickname=bound['nickname'] if bound else '',avatar_url=avatar(profile[0]) if profile else '')
+    unionid_bound=bool(bound and bound['unionid_bound'])
+    return dict(enabled=bool(settings), bound=bool(bound), nickname=bound['nickname'] if bound else '',avatar_url=avatar(profile[0]) if profile else '',
+                unionid_bound=unionid_bound,needs_reauth=bool(bound and not unionid_bound))
 
 
 def start(db, user, session, data):

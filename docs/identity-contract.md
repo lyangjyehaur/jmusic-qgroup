@@ -10,6 +10,7 @@ QQ OAuth 登入、回調、get_user_info 暱稱讀取及既有帳號綁定已實
 - 管理後台 `/admin` 支援明確授予的帳號管理員權限；一般帳號、稱呼及活動協辦角色不授予後台權限。管理員登入站內帳號後可直接進入後台。首次授權及恢復仍可使用長隨機管理憑證登入；伺服器 `/etc/qgroup/admin.env` 僅保存 SHA256 摘要 `KANBAN_ADMIN_KEY_HASH`（root 0600），原始憑證僅交付管理員私下保存。輪替摘要會立即撤銷舊憑證管理 session。
 - 憑證管理 Cookie 為 HttpOnly、Secure、SameSite=Strict，有效一小時；帳號方式沿用站內登入 session，每次請求重新檢查當前帳號及管理員權限。寫入須同源、管理權限、CSRF 和對應設定版本；帳號 CSRF 綁定 session、帳號 ID 與授權版本，切換帳號、撤銷及重新授權後舊頁面的寫入失效。
 - 「用戶管理」以稱呼、完整站內帳號 ID、第三方綁定暱稱及註冊時間辨識帳號；可搜尋並分頁，每頁 20 筆，不傳回 OpenID、UnionID、Cookie 或憑證摘要。`GET /api/admin/users` 讀取列表，`POST /api/admin/users` 以 `user_id`、`is_admin` 和 `base_revision` 修改角色。
+- 用戶列表顯示每個 QQ 身份是否取得 UnionID，並支援已取得／待補齊／未綁 QQ 篩選。狀態依完整 `(provider, client_id, subject)` 關聯，僅回傳布林值；多個 QQ 身份中任一缺少 UnionID 即列入待補齊。此狀態不代表群成員資格或已完成 bot 身份綁定。
 - 管理員可授權其他帳號及撤銷其權限；不能撤銷當前以帳號登入的自身權限，須由其他管理員或獨立憑證操作。角色及追加式 `admin_role_history` 同事務提交，註銷帳號會撤銷角色並保留審計；已註銷帳號不列入用戶列表且不能重新授權。
 - 帳號方式退出管理後台會同時登出當前瀏覽器帳號、清除獨立管理登入；其他裝置保留。憑證方式退出僅清除獨立管理登入。Migration 14 新增角色及歷史表，預設不授權任何既有帳號，重複遷移保全原資料。註冊政策及追加式管理紀錄在同一事務提交。
 - 只有管理員開啟開關後，`POST /api/register` 才接受稱呼與明確確認。直接呼叫 API 不能繞過關閉設定；再次關閉不刪除既有帳號，也不禁止它們修改稱呼。
@@ -71,6 +72,9 @@ Migration 5 僅新增 browser_accounts、device_links、account_audit、attendee
 - `GET /api/auth/qq/status`：僅回傳當前 session／帳號的授權狀態和確認所需暱稱；不回傳 OpenID、token 或 App Key。
 - `POST /api/auth/qq/finish`：須 `attempt_id` 與 `confirm=true`。使用者核對後才綁定或登入；已綁別的帳號或當前帳號已有其他 QQ 時，拒絕替換及合併。
 - 完成後輪替 HttpOnly session，撤銷舊 Cookie，保留該裝置原有各帳號授權。活動、名額、付款人、帳單與帳務不改動，QQ 暱稱不覆蓋既有群內稱呼。新帳號才以 QQ 暱稱建立初始稱呼，然後回到原活動／邀請網址。舊 `/api/account/qq/*` 路徑保留相容。
+- 已登入且已綁當前 QQ 應用、但缺少 UnionID 的舊帳號，進站時顯示更新登入資料引導；已有表單、邀請、活動或回調確認視窗時延後顯示。主按鈕直接以 `mode=bind` 重新授權原 QQ，不先登出、不自動切換帳號，並保留原活動／邀請返回地址。使用另一個 QQ 仍受既有衝突檢查阻擋。
+- 引導說明缺少 UnionID 會影響 bot 對應站內帳號及需識別個人帳號的功能，公開活動查詢與網站功能仍可使用；不承諾已開放尚未完成的 bot 功能。允許稍後處理，以瀏覽器本機的帳號 scope 記錄 24 小時提醒間隔；「帳號與裝置」始終保留手動更新入口。未綁 QQ、訪客、已有 UnionID 或 QQ 未配置時不提示。
+- 完成 QQ 授權後若仍未取得 UnionID，顯示未取得的結果並暫停自動提醒，保留原登入與重試入口；有取得才顯示更新成功。不把介面權限開啟視為每次回應必定帶值。UnionID 仍只在伺服器保存，前端只讀 `unionid_bound`／`needs_reauth` 布林狀態。
 - 綁定／登入、session 輪替、一次性授權使用與帳號審計同交易；審計失敗全部回滾。登入後舊分頁寫入須刷新。沒有任何可用 Cookie 時，只有已綁 QQ 且能完成官方授權才可找回該帳號。
 - App Key 僅由主機 `/etc/qgroup/qq.env`（root 0600）讀取。token 只在後端短暫使用，不保存、不傳給瀏覽器；回調 code／state 不寫日誌。官方 HTTPS 請求限時、限回應大小且不跟隨重新導向。
 - Migration 7 僅新增 `qq_accounts`、`qq_attempts` 和索引，原資料逐欄逐值保全。

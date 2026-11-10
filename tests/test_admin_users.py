@@ -70,12 +70,26 @@ class AdminUserTests(unittest.TestCase):
         for search in ('绑定昵称','成员甲',self.uid):
             result=self.manager.request('/api/admin/users?'+urlencode(dict(search=search)))[1]
             self.assertEqual([u['id'] for u in result['users']],[self.uid])
-            self.assertEqual(result['users'][0]['identities'],[dict(provider='qq',display_name='绑定昵称')])
+            self.assertEqual(result['users'][0]['identities'],[dict(provider='qq',display_name='绑定昵称',unionid_bound=False)])
             self.assertNotIn('private-openid',str(result));self.assertNotIn('private-app',str(result))
             self.assertNotIn('token_hash',str(result))
         self.assertEqual(self.manager.request('/api/admin/users?search=%25')[1]['total'],0)
         for query in ('offset=-1','offset=nope','search='+'x'*101):
             self.assertEqual(self.manager.request('/api/admin/users?'+query)[0],400)
+
+    def test_unionid_status_filters_use_the_exact_provider_identity(self):
+        with server.connect() as db:
+            db.execute("INSERT INTO external_identities VALUES('qq','app-a','same-subject',?,'甲QQ','now')",(self.uid,))
+            db.execute("INSERT INTO external_identities VALUES('qq','app-b','same-subject',?,'乙QQ','now')",(self.other_uid,))
+            db.execute("INSERT INTO external_unionids VALUES('qq','app-a','same-subject','private-unionid','now')")
+            unbound=accounts.create(db,'未绑定QQ')
+        for query,expected in [('bound',[self.uid]),('missing',[self.other_uid]),('unbound',[unbound])]:
+            status,result=self.manager.request('/api/admin/users?unionid='+query)
+            self.assertEqual(status,200);self.assertEqual([u['id'] for u in result['users']],expected)
+            self.assertNotIn('private-unionid',str(result));self.assertNotIn('same-subject',str(result))
+            if query!='unbound':self.assertEqual(result['users'][0]['identities'][0]['unionid_bound'],query=='bound')
+        self.assertEqual(self.manager.request('/api/admin/users?unionid=invalid')[0],400)
+        self.assertEqual(self.manager.request('/api/admin/users?unionid=missing&search='+self.uid)[1]['total'],0)
 
     def test_grant_allows_keyless_access_and_survives_initialization(self):
         self.assertEqual(self.role(self.uid,True)[0],200)

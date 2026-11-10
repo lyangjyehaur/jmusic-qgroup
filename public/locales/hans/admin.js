@@ -1,7 +1,7 @@
 'use strict';
 (()=>{
  const $=s=>document.querySelector(s);let csrf='',revision=0,botInfo=null,botTemplates={},templateKind='',botBusy=false;
- let currentUserId=null,usersInfo=null,usersSearch='',usersOffset=0,usersBusy=false,pendingUser=null;
+ let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null;
  async function request(path,data){
   let status=0,outcome='network_error';
   try{
@@ -21,10 +21,10 @@
   $('#users-summary').textContent=`共 ${info.total} 个账号`;
   $('#users-page').textContent=info.total?`${Math.floor(info.offset/info.limit)+1} / ${Math.ceil(info.total/info.limit)}`:'0 / 0';
   $('#users-prev').disabled=usersBusy||info.offset===0;$('#users-next').disabled=usersBusy||info.offset+info.limit>=info.total;
-  $('#admin-users').innerHTML=info.users.map(user=>`<article class="admin-user"><div class="admin-user-heading"><strong>${esc(user.nickname||"未设置称呼")}</strong><span class="admin-user-role">${user.is_admin?"管理员":"普通用户"}${user.id===currentUserId?" · 当前账号":''}</span></div><p class="receipt-id" translate="no">${esc(user.id)}</p><p class="field-help">${user.identities.length?user.identities.map(item=>`${esc(item.provider==='qq'?"QQ 绑定昵称":item.provider)}：<span translate="no">${esc(item.display_name)}</span>`).join('；'):"未绑定第三方账号"}</p><p class="field-help">注册时间：${esc(new Date(user.created_at).toLocaleString())}</p><button type="button" class="button secondary" data-admin-user="${esc(user.id)}" ${usersBusy||(user.id===currentUserId&&user.is_admin)?'disabled':''}>${user.is_admin?"撤销管理员":"设为管理员"}</button>${user.id===currentUserId?"<p class=\"field-help\">当前账号的管理员权限须由其他管理员撤销。</p>":''}</article>`).join('')||"<p class=\"field-help\">没有符合条件的账号</p>";
+  $('#admin-users').innerHTML=info.users.map(user=>`<article class="admin-user"><div class="admin-user-heading"><strong>${esc(user.nickname||"未设置称呼")}</strong><span class="admin-user-role">${user.is_admin?"管理员":"普通用户"}${user.id===currentUserId?" · 当前账号":''}</span></div><p class="receipt-id" translate="no">${esc(user.id)}</p><p class="field-help">${user.identities.length?user.identities.map(item=>`${esc(item.provider==='qq'?"QQ 绑定昵称":item.provider)}：<span translate="no">${esc(item.display_name)}</span>${item.provider==='qq'?` · UnionID：${item.unionid_bound?"已取得":"待补齐"}`:''}`).join('；'):"未绑定第三方账号"}${user.identities.some(item=>item.provider==='qq')?'':" · UnionID：未绑定 QQ"}</p><p class="field-help">注册时间：${esc(new Date(user.created_at).toLocaleString())}</p><button type="button" class="button secondary" data-admin-user="${esc(user.id)}" ${usersBusy||(user.id===currentUserId&&user.is_admin)?'disabled':''}>${user.is_admin?"撤销管理员":"设为管理员"}</button>${user.id===currentUserId?"<p class=\"field-help\">当前账号的管理员权限须由其他管理员撤销。</p>":''}</article>`).join('')||"<p class=\"field-help\">没有符合条件的账号</p>";
  }
  async function loadUsers(){
-  usersInfo=await request('/api/admin/users?'+new URLSearchParams({search:usersSearch,offset:String(usersOffset)}));
+  usersInfo=await request('/api/admin/users?'+new URLSearchParams({search:usersSearch,unionid:usersFilter,offset:String(usersOffset)}));
   if(usersOffset&&usersOffset>=usersInfo.total){usersOffset=Math.max(0,Math.floor((usersInfo.total-1)/usersInfo.limit)*usersInfo.limit);return loadUsers();}
   renderUsers();
  }
@@ -35,7 +35,7 @@
   try{await work();}catch(problem){$('#users-error').textContent=problem.message;if(problem.status===401)await load();}
   finally{usersBusy=false;for(const field of $('#users-search').elements)field.disabled=false;if(usersInfo)renderUsers();}
  }
- $('#users-search').addEventListener('submit',e=>{e.preventDefault();usersSearch=e.currentTarget.elements.search.value.trim();usersOffset=0;usersAction(loadUsers);});
+ $('#users-search').addEventListener('submit',e=>{e.preventDefault();usersSearch=e.currentTarget.elements.search.value.trim();usersFilter=e.currentTarget.elements.unionid.value;usersOffset=0;usersAction(loadUsers);});
  $('#users-reload').addEventListener('click',()=>usersAction(loadUsers));
  $('#users-prev').addEventListener('click',()=>{if(usersBusy)return;usersOffset=Math.max(0,usersOffset-20);usersAction(loadUsers);});
  $('#users-next').addEventListener('click',()=>{if(usersBusy)return;usersOffset+=20;usersAction(loadUsers);});

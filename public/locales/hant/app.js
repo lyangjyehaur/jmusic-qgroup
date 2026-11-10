@@ -80,7 +80,7 @@ function setProfile() {
   }
   $('#qq-account-button').hidden=!state.me.qq?.enabled;
   $('#home-qq-button').disabled=!state.me.qq?.enabled&&!state.me.allow_name_registration;
-  $('#home-qq-status').textContent=state.me.authenticated?"已登錄，可在個人資料中修改稱呼。":"登錄後即可發起活動和報名。";
+  $('#home-qq-status').textContent=state.me.authenticated?state.me.qq?.needs_reauth?"QQ 帳號資料待更新，可在「帳號與設備」重新登錄；bot 的帳號識別功能會受影響。":"已登錄，可在個人資料中修改稱呼。":"登錄後即可發起活動和報名。";
 }
 function openProfile(next=null) {
   if(!state.me.authenticated)return identityUI.account();
@@ -508,8 +508,9 @@ async function routeBotEntry(params) {
   else if(id&&managementInvite){try{await activityUI.showManagementInvitation(id,managementInvite);}catch(problem){toast(problem.message);}}
   else if(id&&participantInvite){try{await rosterUI.showInvitation(id,participantInvite);}catch(problem){toast(problem.message);}}
   else if(params.has('action'))await routeBotEntry(params);
-  else if(id)openDetail(id,false);
+  else if(id)await openDetail(id,false);
   identityUI.receipt();
+  identityUI.initQQRefresh();
   try{if(sessionStorage.getItem('kanban-welcome')){sessionStorage.removeItem('kanban-welcome');toast("歡迎使用群聚看板！可在個人資料修改群內稱呼，再選擇活動報名或發起新活動。");}}catch{}
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   $('.timezone-hint').textContent="日期和截止時間按所選活動時區填寫；跨日會顯示完整結束日期。";

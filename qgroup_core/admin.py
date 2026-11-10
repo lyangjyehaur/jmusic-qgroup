@@ -55,9 +55,16 @@ def users(db,headers,query):
     try:offset=int(query.get('offset',['0'])[0])
     except (ValueError,TypeError):raise APIError('用户列表页码不正确')
     if offset<0 or len(search)>100:raise APIError('用户查询条件不正确')
+    unionid=query.get('unionid',['all'])[0]
+    has_qq="EXISTS(SELECT 1 FROM external_identities q WHERE q.user_id=u.id AND q.provider='qq')"
+    missing="""EXISTS(SELECT 1 FROM external_identities q WHERE q.user_id=u.id AND q.provider='qq'
+        AND NOT EXISTS(SELECT 1 FROM external_unionids x WHERE x.provider=q.provider AND x.client_id=q.client_id AND x.subject=q.subject))"""
+    filters={'all':'1','bound':has_qq+' AND NOT '+missing,'missing':missing,'unbound':'NOT '+has_qq}
+    if unionid not in filters:raise APIError('UnionID 筛选条件不正确')
     where='''NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)
         AND (?='' OR instr(lower(u.id),lower(?))>0 OR instr(lower(u.nickname),lower(?))>0
         OR EXISTS(SELECT 1 FROM external_identities e WHERE e.user_id=u.id AND instr(lower(e.display_name),lower(?))>0))'''
+    where+=' AND ('+filters[unionid]+')'
     params=(search,)*4
     total=db.execute('SELECT count(*) FROM users u WHERE '+where,params).fetchone()[0]
     rows=db.execute('''SELECT u.id,u.nickname,u.created_at,COALESCE(r.is_admin,0) AS is_admin,

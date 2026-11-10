@@ -1,6 +1,8 @@
 'use strict';
 function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,renderDetail,askConfirm,copyLink,openDetail}) {
   let incoming=null,link=null,qqResult=null;
+  let qqReminderReady=false;
+  const remindedScopes=new Set(),qqReminderInterval=24*60*60*1000;
   const fail=problem=>{$('#identity-error').textContent=problem.message;};
   function privacyConsent() {
     return state.me.privacy_accepted?'':`<label class="check-option privacy-consent"><input id="privacy-consent" type="checkbox"><span>我已阅读并同意<a href="/privacy" target="_blank" rel="noopener">隐私政策</a>，同意为登录与账号功能处理必要资料。<a href="/contact" target="_blank" rel="noopener">联系运营者</a></span></label>`;
@@ -66,6 +68,15 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
     }
     if(!accountButton)return;const action=accountButton.dataset.identity;
     if(action==='account')return account();
+    if(action==='qq-refresh-info')return qqRefresh();
+    if(action==='qq-refresh-later'){$('#identity-dialog').close();return;}
+    if(action==='qq-refresh'){
+      if(!state.me.qq?.needs_reauth||!canLeave())return;
+      let consent;try{consent=privacyData();}catch(error){fail(error);return;}
+      accountButton.disabled=true;
+      try{await startQQ('bind',consent,true);}catch(error){fail(error);accountButton.disabled=false;}
+      return;
+    }
     if(action==='logout'){
       if(!canLeave())return;
       askConfirm('退出当前浏览器？','当前浏览器中的所有账号授权都会退出，再次使用时请重新登录。共用设备请同时清理浏览器网站数据和本机草稿。',async()=>{
@@ -91,7 +102,7 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
       if(!$('#qq-confirm')?.checked){fail(new Error('请先核对并确认账号操作'));return;}
       if(!canLeave())return;
       accountButton.disabled=true;
-      try{const result=await api('/api/auth/qq/finish','POST',{attempt_id:qqResult.attempt_id,confirm:true});if(result.new_account){try{sessionStorage.setItem('kanban-welcome','1');}catch{}}location.replace(result.return_path||'/');}
+      try{const result=await api('/api/auth/qq/finish','POST',{attempt_id:qqResult.attempt_id,confirm:true});try{const wasRefresh=qqResult.mode==='bind'&&sessionStorage.getItem('kanban-qq-refresh-scope')===state.me.draft_scope;sessionStorage.setItem('kanban-qq-authorized',wasRefresh?'refresh':'login');sessionStorage.removeItem('kanban-qq-refresh-scope');if(result.new_account)sessionStorage.setItem('kanban-welcome','1');}catch{}location.replace(result.return_path||'/');}
       catch(error){const me=await api('/api/me').catch(()=>null);if(me&&me.draft_scope!==state.me.draft_scope)location.replace('/');else fail(error);accountButton.disabled=false;}
       return;
     }
@@ -115,8 +126,35 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
   });
   function qqSection(qq) {
     if(!qq?.enabled)return '<p class="field-help">QQ 登录尚未配置；请保留原浏览器，或连接自己的另一台设备。</p>';
-    return `<section class="qq-account-section"><h3>QQ 登录与绑定</h3>${qq.bound?qqProfile(qq.nickname,qq.avatar_url):''}<p class="field-help">${qq.bound?`已绑定 QQ：${esc(qq.nickname)}。以后可用这个 QQ 登录找回当前账号。`:'已有活动或报名，请先绑定当前账号，以后才能用 QQ 找回。直接使用 QQ 登录会进入该 QQ 对应的账号。'}</p>${qq.bound?'':'<button type="button" class="button secondary full qq-button" data-identity="qq-bind"><img src="/qq-login.png" alt="QQ登录" width="76" height="24"><span>绑定到当前账号</span></button>'}<button type="button" class="text-button full" data-identity="qq-login">使用 QQ 登录账号</button></section>`;
+    return `<section class="qq-account-section"><h3>QQ 登录与绑定</h3>${qq.bound?qqProfile(qq.nickname,qq.avatar_url):''}<p class="field-help">${qq.bound?`已绑定 QQ：${esc(qq.nickname)}。以后可用这个 QQ 登录找回当前账号。`:'已有活动或报名，请先绑定当前账号，以后才能用 QQ 找回。直接使用 QQ 登录会进入该 QQ 对应的账号。'}</p>${qq.bound?qq.needs_reauth?'<p class="field-help">QQ 账号资料待更新（UnionID）。bot 暂时无法对应你的站内账号，需要识别账号的功能会受影响。公开活动查询与网站功能仍可使用。</p><button type="button" class="button secondary full" data-identity="qq-refresh-info">更新 QQ 登录资料</button>':'<p class="field-help">QQ 登录资料已完整（UnionID 已取得）。</p>':'<button type="button" class="button secondary full qq-button" data-identity="qq-bind"><img src="/qq-login.png" alt="QQ登录" width="76" height="24"><span>绑定到当前账号</span></button>'}<button type="button" class="text-button full" data-identity="qq-login">使用 QQ 登录账号</button></section>`;
   }
+  function reminderKey(){return 'kanban-qq-reauth-v1:'+state.me.draft_scope;}
+  function stampQQReminder(){
+    remindedScopes.add(state.me.draft_scope);
+    try{localStorage.setItem(reminderKey(),String(Date.now()));}catch{}
+  }
+  function qqRefresh(){
+    if(!state.me.authenticated||!state.me.qq?.enabled||!state.me.qq.needs_reauth)return;
+    stampQQReminder();
+    $('#identity-title').textContent='更新 QQ 登录资料';$('#identity-error').textContent='';
+    $('#identity-content').innerHTML=`${qqProfile(state.me.qq.nickname,state.me.qq.avatar_url)}<p>你的 QQ 账号已绑定，但还缺少一项账号识别资料（UnionID）。用原绑定的同一个 QQ 重新登录，即可尝试补齐。</p><p>缺少这项资料时，bot 无法对应你的站内账号，需要识别账号的功能会受影响。公开活动查询与网站功能仍可使用。</p><p class="field-help">无需先退出登录。重新授权后核对 QQ 并确认，现有账号、活动、报名和款项都会保留。请勿改用另一个 QQ。</p>${privacyConsent()}<button type="button" class="button primary full qq-button" data-identity="qq-refresh"><img src="/qq-login.png" alt="QQ登录" width="76" height="24"><span>用原 QQ 重新登录</span></button><button type="button" class="text-button full" data-identity="qq-refresh-later">稍后处理</button><p class="field-help">稍后处理期间，需要识别站内账号的 bot 功能仍会受影响。24 小时内不再自动提醒，也可随时在「账号与设备」更新。</p>`;
+    showDialog('identity-dialog');
+  }
+  function maybeQQRefresh(){
+    if(!qqReminderReady||!state.me.authenticated||!state.me.qq?.enabled||!state.me.qq.bound||!state.me.qq.needs_reauth||!state.me.draft_scope)return;
+    if(document.querySelector('dialog[open]')||remindedScopes.has(state.me.draft_scope))return;
+    try{const stamp=Number(localStorage.getItem(reminderKey()));if(stamp>0&&Date.now()-stamp<qqReminderInterval)return;}catch{}
+    qqRefresh();
+  }
+  function initQQRefresh(){
+    let authorized;try{authorized=sessionStorage.getItem('kanban-qq-authorized');sessionStorage.removeItem('kanban-qq-authorized');}catch{}
+    if(authorized&&state.me.authenticated&&state.me.qq?.bound){
+      if(state.me.qq.needs_reauth){stampQQReminder();toast('QQ 这次未提供 UnionID，原账号仍可使用。需要识别账号的 bot 功能仍会受影响，可在「账号与设备」重试。');}
+      else if(authorized==='refresh')toast('QQ 登录资料已更新。');
+    }
+    qqReminderReady=true;maybeQQRefresh();
+  }
+  document.addEventListener('close',()=>{if(qqReminderReady)setTimeout(maybeQQRefresh,0);},true);
   function canLeave() {
     if($('#profile-dialog').open&&$('#nickname-input').value!==state.me.nickname){toast('请先保存或关闭称呼修改');return false;}
     if([...document.querySelectorAll('dialog[open]')].some(d=>d.id!=='profile-dialog'&&d.querySelector('form'))){toast('请先暂存并关闭正在编辑的表单');return false;}
@@ -126,8 +164,14 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
     if(!canLeave())return;
     let consent;try{consent=privacyData();}catch(error){fail(error);return;}
     askConfirm(mode==='bind'?'绑定 QQ 到当前账号？':'使用 QQ 登录账号？',mode==='bind'?'授权后还需要核对确认。绑定保留当前账号的活动、报名和款项，QQ 昵称不会覆盖群内称呼。':state.me.authenticated?'将进入这个 QQ 对应的账号；当前账号分开保留，不自动合并报名或款项。':'将前往 QQ 官方授权，首次登录会创建账号。返回后核对并确认登录即可。',async()=>{
-      try{const result=await api('/api/auth/qq/start','POST',{mode,confirm:true,...consent,operation:crypto.randomUUID(),return_path:location.pathname+location.search});location.assign(result.authorize_url);}catch(error){fail(error);}
+      try{await startQQ(mode,consent);}catch(error){fail(error);}
     });
+  }
+  async function startQQ(mode,consent,refresh=false){
+    if(state.me.qq?.needs_reauth)stampQQReminder();
+    const result=await api('/api/auth/qq/start','POST',{mode,confirm:true,...consent,operation:crypto.randomUUID(),return_path:location.pathname+location.search});
+    try{if(refresh)sessionStorage.setItem('kanban-qq-refresh-scope',state.me.draft_scope);else sessionStorage.removeItem('kanban-qq-refresh-scope');}catch{}
+    location.assign(result.authorize_url);
   }
   async function receiveQQ() {
     $('#identity-title').textContent='确认 QQ 授权';$('#identity-error').textContent='';$('#identity-content').textContent='加载中…';showDialog('identity-dialog');
@@ -148,5 +192,5 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
     $('#identity-content').innerHTML=`<p>账号登录身份、QQ 资料及私人收款码已移除。</p><p>申请编号：</p><p class="receipt-id">${esc(result.request_id)}</p><p>${result.status==='shared_review'?'共同活动、报名或账务记录仍待核对。请把申请编号发送至下方邮箱，说明希望进一步删除的范围。':'个人账号资料删除已完成。必要的注销处理记录及隔离备份会按隐私政策处理。'}</p><p><a href="mailto:203008876@qq.com">203008876@qq.com</a></p><p class="field-help">请保存申请编号，便于跟进处理。</p>`;
     showDialog('identity-dialog');
   }
-  return {account,receiveClaim,receiveDevice,receiveQQ,section,issueClaim,receipt};
+  return {account,receiveClaim,receiveDevice,receiveQQ,section,issueClaim,receipt,initQQRefresh};
 }

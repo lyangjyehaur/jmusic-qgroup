@@ -80,7 +80,7 @@ function setProfile() {
   }
   $('#qq-account-button').hidden=!state.me.qq?.enabled;
   $('#home-qq-button').disabled=!state.me.qq?.enabled&&!state.me.allow_name_registration;
-  $('#home-qq-status').textContent=state.me.authenticated?"已登录，可在个人资料中修改称呼。":"登录后即可发起活动和报名。";
+  $('#home-qq-status').textContent=state.me.authenticated?state.me.qq?.needs_reauth?"QQ 账号资料待更新，可在「账号与设备」重新登录；bot 的账号识别功能会受影响。":"已登录，可在个人资料中修改称呼。":"登录后即可发起活动和报名。";
 }
 function openProfile(next=null) {
   if(!state.me.authenticated)return identityUI.account();
@@ -508,8 +508,9 @@ async function routeBotEntry(params) {
   else if(id&&managementInvite){try{await activityUI.showManagementInvitation(id,managementInvite);}catch(problem){toast(problem.message);}}
   else if(id&&participantInvite){try{await rosterUI.showInvitation(id,participantInvite);}catch(problem){toast(problem.message);}}
   else if(params.has('action'))await routeBotEntry(params);
-  else if(id)openDetail(id,false);
+  else if(id)await openDetail(id,false);
   identityUI.receipt();
+  identityUI.initQQRefresh();
   try{if(sessionStorage.getItem('kanban-welcome')){sessionStorage.removeItem('kanban-welcome');toast("欢迎使用群聚看板！可在个人资料修改群内称呼，再选择活动报名或发起新活动。");}}catch{}
   const tz=Intl.DateTimeFormat().resolvedOptions().timeZone;
   $('.timezone-hint').textContent="日期和截止时间按所选活动时区填写；跨日会显示完整结束日期。";

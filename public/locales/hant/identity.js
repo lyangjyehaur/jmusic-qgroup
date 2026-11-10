@@ -1,6 +1,8 @@
 'use strict';
 function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,renderDetail,askConfirm,copyLink,openDetail}) {
   let incoming=null,link=null,qqResult=null;
+  let qqReminderReady=false;
+  const remindedScopes=new Set(),qqReminderInterval=24*60*60*1000;
   const fail=problem=>{$('#identity-error').textContent=problem.message;};
   function privacyConsent() {
     return state.me.privacy_accepted?'':`<label class="check-option privacy-consent"><input id="privacy-consent" type="checkbox"><span>我已閱讀並同意<a href="/privacy" target="_blank" rel="noopener">隱私政策</a>，同意為登錄與帳號功能處理必要資料。<a href="/contact" target="_blank" rel="noopener">聯繫運營者</a></span></label>`;
@@ -66,6 +68,15 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
     }
     if(!accountButton)return;const action=accountButton.dataset.identity;
     if(action==='account')return account();
+    if(action==='qq-refresh-info')return qqRefresh();
+    if(action==='qq-refresh-later'){$('#identity-dialog').close();return;}
+    if(action==='qq-refresh'){
+      if(!state.me.qq?.needs_reauth||!canLeave())return;
+      let consent;try{consent=privacyData();}catch(error){fail(error);return;}
+      accountButton.disabled=true;
+      try{await startQQ('bind',consent,true);}catch(error){fail(error);accountButton.disabled=false;}
+      return;
+    }
     if(action==='logout'){
       if(!canLeave())return;
       askConfirm("退出當前瀏覽器？","當前瀏覽器中的所有帳號授權都會退出，再次使用時請重新登錄。共用設備請同時清理瀏覽器網站數據和本機草稿。",async()=>{
@@ -91,7 +102,7 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
       if(!$('#qq-confirm')?.checked){fail(new Error("請先核對並確認帳號操作"));return;}
       if(!canLeave())return;
       accountButton.disabled=true;
-      try{const result=await api('/api/auth/qq/finish','POST',{attempt_id:qqResult.attempt_id,confirm:true});if(result.new_account){try{sessionStorage.setItem('kanban-welcome','1');}catch{}}location.replace(result.return_path||'/');}
+      try{const result=await api('/api/auth/qq/finish','POST',{attempt_id:qqResult.attempt_id,confirm:true});try{const wasRefresh=qqResult.mode==='bind'&&sessionStorage.getItem('kanban-qq-refresh-scope')===state.me.draft_scope;sessionStorage.setItem('kanban-qq-authorized',wasRefresh?'refresh':'login');sessionStorage.removeItem('kanban-qq-refresh-scope');if(result.new_account)sessionStorage.setItem('kanban-welcome','1');}catch{}location.replace(result.return_path||'/');}
       catch(error){const me=await api('/api/me').catch(()=>null);if(me&&me.draft_scope!==state.me.draft_scope)location.replace('/');else fail(error);accountButton.disabled=false;}
       return;
     }
@@ -115,8 +126,35 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
   });
   function qqSection(qq) {
     if(!qq?.enabled)return "<p class=\"field-help\">QQ 登錄尚未配置；請保留原瀏覽器，或連接自己的另一臺設備。</p>";
-    return `<section class="qq-account-section"><h3>QQ 登錄與綁定</h3>${qq.bound?qqProfile(qq.nickname,qq.avatar_url):''}<p class="field-help">${qq.bound?`已綁定 QQ：${esc(qq.nickname)}。以後可用這個 QQ 登錄找回當前帳號。`:"已有活動或報名，請先綁定當前帳號，以後才能用 QQ 找回。直接使用 QQ 登錄會進入該 QQ 對應的帳號。"}</p>${qq.bound?'':"<button type=\"button\" class=\"button secondary full qq-button\" data-identity=\"qq-bind\"><img src=\"/qq-login.png\" alt=\"QQ登錄\" width=\"76\" height=\"24\"><span>綁定到當前帳號</span></button>"}<button type="button" class="text-button full" data-identity="qq-login">使用 QQ 登錄帳號</button></section>`;
+    return `<section class="qq-account-section"><h3>QQ 登錄與綁定</h3>${qq.bound?qqProfile(qq.nickname,qq.avatar_url):''}<p class="field-help">${qq.bound?`已綁定 QQ：${esc(qq.nickname)}。以後可用這個 QQ 登錄找回當前帳號。`:"已有活動或報名，請先綁定當前帳號，以後才能用 QQ 找回。直接使用 QQ 登錄會進入該 QQ 對應的帳號。"}</p>${qq.bound?qq.needs_reauth?"<p class=\"field-help\">QQ 帳號資料待更新（UnionID）。bot 暫時無法對應你的站內帳號，需要識別帳號的功能會受影響。公開活動查詢與網站功能仍可使用。</p><button type=\"button\" class=\"button secondary full\" data-identity=\"qq-refresh-info\">更新 QQ 登錄資料</button>":"<p class=\"field-help\">QQ 登錄資料已完整（UnionID 已取得）。</p>":"<button type=\"button\" class=\"button secondary full qq-button\" data-identity=\"qq-bind\"><img src=\"/qq-login.png\" alt=\"QQ登錄\" width=\"76\" height=\"24\"><span>綁定到當前帳號</span></button>"}<button type="button" class="text-button full" data-identity="qq-login">使用 QQ 登錄帳號</button></section>`;
   }
+  function reminderKey(){return 'kanban-qq-reauth-v1:'+state.me.draft_scope;}
+  function stampQQReminder(){
+    remindedScopes.add(state.me.draft_scope);
+    try{localStorage.setItem(reminderKey(),String(Date.now()));}catch{}
+  }
+  function qqRefresh(){
+    if(!state.me.authenticated||!state.me.qq?.enabled||!state.me.qq.needs_reauth)return;
+    stampQQReminder();
+    $('#identity-title').textContent="更新 QQ 登錄資料";$('#identity-error').textContent='';
+    $('#identity-content').innerHTML=`${qqProfile(state.me.qq.nickname,state.me.qq.avatar_url)}<p>你的 QQ 帳號已綁定，但還缺少一項帳號識別資料（UnionID）。用原綁定的同一個 QQ 重新登錄，即可嘗試補齊。</p><p>缺少這項資料時，bot 無法對應你的站內帳號，需要識別帳號的功能會受影響。公開活動查詢與網站功能仍可使用。</p><p class="field-help">無需先退出登錄。重新授權後核對 QQ 並確認，現有帳號、活動、報名和款項都會保留。請勿改用另一個 QQ。</p>${privacyConsent()}<button type="button" class="button primary full qq-button" data-identity="qq-refresh"><img src="/qq-login.png" alt="QQ登錄" width="76" height="24"><span>用原 QQ 重新登錄</span></button><button type="button" class="text-button full" data-identity="qq-refresh-later">稍後處理</button><p class="field-help">稍後處理期間，需要識別站內帳號的 bot 功能仍會受影響。24 小時內不再自動提醒，也可隨時在「帳號與設備」更新。</p>`;
+    showDialog('identity-dialog');
+  }
+  function maybeQQRefresh(){
+    if(!qqReminderReady||!state.me.authenticated||!state.me.qq?.enabled||!state.me.qq.bound||!state.me.qq.needs_reauth||!state.me.draft_scope)return;
+    if(document.querySelector('dialog[open]')||remindedScopes.has(state.me.draft_scope))return;
+    try{const stamp=Number(localStorage.getItem(reminderKey()));if(stamp>0&&Date.now()-stamp<qqReminderInterval)return;}catch{}
+    qqRefresh();
+  }
+  function initQQRefresh(){
+    let authorized;try{authorized=sessionStorage.getItem('kanban-qq-authorized');sessionStorage.removeItem('kanban-qq-authorized');}catch{}
+    if(authorized&&state.me.authenticated&&state.me.qq?.bound){
+      if(state.me.qq.needs_reauth){stampQQReminder();toast("QQ 這次未提供 UnionID，原帳號仍可使用。需要識別帳號的 bot 功能仍會受影響，可在「帳號與設備」重試。");}
+      else if(authorized==='refresh')toast("QQ 登錄資料已更新。");
+    }
+    qqReminderReady=true;maybeQQRefresh();
+  }
+  document.addEventListener('close',()=>{if(qqReminderReady)setTimeout(maybeQQRefresh,0);},true);
   function canLeave() {
     if($('#profile-dialog').open&&$('#nickname-input').value!==state.me.nickname){toast("請先保存或關閉稱呼修改");return false;}
     if([...document.querySelectorAll('dialog[open]')].some(d=>d.id!=='profile-dialog'&&d.querySelector('form'))){toast("請先暫存並關閉正在編輯的表單");return false;}
@@ -126,8 +164,14 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
     if(!canLeave())return;
     let consent;try{consent=privacyData();}catch(error){fail(error);return;}
     askConfirm(mode==='bind'?"綁定 QQ 到當前帳號？":"使用 QQ 登錄帳號？",mode==='bind'?"授權後還需要核對確認。綁定保留當前帳號的活動、報名和款項，QQ 暱稱不會覆蓋群內稱呼。":state.me.authenticated?"將進入這個 QQ 對應的帳號；當前帳號分開保留，不自動合併報名或款項。":"將前往 QQ 官方授權，首次登錄會創建帳號。返回後核對並確認登錄即可。",async()=>{
-      try{const result=await api('/api/auth/qq/start','POST',{mode,confirm:true,...consent,operation:crypto.randomUUID(),return_path:location.pathname+location.search});location.assign(result.authorize_url);}catch(error){fail(error);}
+      try{await startQQ(mode,consent);}catch(error){fail(error);}
     });
+  }
+  async function startQQ(mode,consent,refresh=false){
+    if(state.me.qq?.needs_reauth)stampQQReminder();
+    const result=await api('/api/auth/qq/start','POST',{mode,confirm:true,...consent,operation:crypto.randomUUID(),return_path:location.pathname+location.search});
+    try{if(refresh)sessionStorage.setItem('kanban-qq-refresh-scope',state.me.draft_scope);else sessionStorage.removeItem('kanban-qq-refresh-scope');}catch{}
+    location.assign(result.authorize_url);
   }
   async function receiveQQ() {
     $('#identity-title').textContent="確認 QQ 授權";$('#identity-error').textContent='';$('#identity-content').textContent="加載中…";showDialog('identity-dialog');
@@ -148,5 +192,5 @@ function createIdentityUI({api,$,esc,showDialog,toast,state,withProfile,refresh,
     $('#identity-content').innerHTML=`<p>帳號登錄身份、QQ 資料及私人收款碼已移除。</p><p>申請編號：</p><p class="receipt-id">${esc(result.request_id)}</p><p>${result.status==='shared_review'?"共同活動、報名或帳務記錄仍待核對。請把申請編號發送至下方郵箱，說明希望進一步刪除的範圍。":"個人帳號資料刪除已完成。必要的註銷處理記錄及隔離備份會按隱私政策處理。"}</p><p><a href="mailto:203008876@qq.com">203008876@qq.com</a></p><p class="field-help">請保存申請編號，便於跟進處理。</p>`;
     showDialog('identity-dialog');
   }
-  return {account,receiveClaim,receiveDevice,receiveQQ,section,issueClaim,receipt};
+  return {account,receiveClaim,receiveDevice,receiveQQ,section,issueClaim,receipt,initQQRefresh};
 }

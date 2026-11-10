@@ -83,5 +83,7 @@ def external(db,provider,client_id,subject):
 
 
 def linked(db,uid):
-    return [dict(provider=r['provider'],display_name=r['display_name']) for r in db.execute(
-        'SELECT provider,display_name FROM external_identities WHERE user_id=? ORDER BY provider,client_id',(uid,))]
+    return [dict(provider=r['provider'],display_name=r['display_name'],unionid_bound=bool(r['unionid_bound'])) for r in db.execute(
+        '''SELECT e.provider,e.display_name,EXISTS(SELECT 1 FROM external_unionids x
+            WHERE x.provider=e.provider AND x.client_id=e.client_id AND x.subject=e.subject) AS unionid_bound
+            FROM external_identities e WHERE e.user_id=? ORDER BY e.provider,e.client_id''',(uid,))]

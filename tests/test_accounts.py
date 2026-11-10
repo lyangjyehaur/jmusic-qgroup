@@ -154,7 +154,7 @@ class AccountTests(unittest.TestCase):
         self.assertEqual(status,200,result);self.assertEqual(result['return_path'],'/?event=example')
         self.assertEqual(self.count(),before+1)
         me=self.guest.request('/api/me')[1];self.assertTrue(me['authenticated']);self.assertTrue(me['qq']['bound'])
-        self.assertEqual(me['identities'],[dict(provider='qq',display_name='第三方用户')])
+        self.assertEqual(me['identities'],[dict(provider='qq',display_name='第三方用户',unionid_bound=False)])
         with server.connect() as db:
             self.assertEqual(db.execute("SELECT count(*) FROM external_identities WHERE provider='qq' AND display_name='第三方用户'").fetchone()[0]>0,True)
         self.assertFalse(me['allow_name_registration'])

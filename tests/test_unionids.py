@@ -51,6 +51,8 @@ class UnionIDTests(unittest.TestCase):
             before={table:[tuple(r) for r in db.execute('SELECT * FROM '+table)] for table in tables}
             users=db.execute('SELECT count(*) FROM users').fetchone()[0]
         self.assertIsNone(self.stored())
+        old_summary=self.owner.request('/api/me')[1]['qq']
+        self.assertTrue(old_summary['needs_reauth']);self.assertFalse(old_summary['unionid_bound'])
         self.union_value='UID_fixture_private_union_identifier'
         ready=self.ready(mode='login')
         status,result=self.finish(ready)
@@ -58,9 +60,39 @@ class UnionIDTests(unittest.TestCase):
         self.assertFalse(result['new_account'])
         self.assertEqual(self.owner.request('/api/me')[1]['draft_scope'],original)
         self.assertEqual(self.stored(),self.union_value)
+        summary=self.owner.request('/api/me')[1]['qq']
+        self.assertFalse(summary['needs_reauth']);self.assertTrue(summary['unionid_bound'])
         with storage.connect(server.DB) as db:
             self.assertEqual(db.execute('SELECT count(*) FROM users').fetchone()[0],users)
             self.assertEqual({table:[tuple(r) for r in db.execute('SELECT * FROM '+table)] for table in tables},before)
+
+    def test_reauth_status_excludes_guests_unbound_and_other_apps(self):
+        self.assertFalse(self.owner.request('/api/me')[1]['qq']['needs_reauth'])
+        with storage.connect(server.DB) as db:
+            import hashlib
+            cookie=next(h for h in self.owner.opener.handlers if hasattr(h,'cookiejar')).cookiejar
+            token=next(c.value for c in cookie if c.name=='kanban_session')
+            uid=db.execute('SELECT user_id FROM browser_sessions WHERE token_hash=?',(hashlib.sha256(token.encode()).hexdigest(),)).fetchone()[0]
+            db.execute("INSERT INTO external_identities VALUES('qq','different-app',?,?,'其他应用QQ','now')",(self.openid,uid))
+        qq=self.owner.request('/api/me')[1]['qq']
+        self.assertFalse(qq['bound']);self.assertFalse(qq['needs_reauth'])
+        self.assertFalse(qq['unionid_bound'])
+        self.union_value=None;self.assertEqual(self.finish(self.ready())[0],200)
+        self.assertTrue(self.owner.request('/api/me')[1]['qq']['needs_reauth'])
+        with mock.patch.dict('os.environ',{'KANBAN_QQ_APP_KEY':''}):
+            self.assertFalse(self.owner.request('/api/me')[1]['qq']['needs_reauth'])
+
+    def test_refresh_with_a_different_qq_preserves_current_account(self):
+        self.union_value=None;self.assertEqual(self.finish(self.ready())[0],200)
+        original=self.owner.request('/api/me')[1]['draft_scope']
+        original_openid=self.openid
+        self.openid='E'+self.openid[1:]
+        if self.openid==original_openid:self.openid='F'+self.openid[1:]
+        self.union_value='UID_different_qq'
+        self.assertEqual(self.finish(self.ready())[0],409)
+        me=self.owner.request('/api/me')[1]
+        self.assertEqual(me['draft_scope'],original);self.assertTrue(me['qq']['needs_reauth'])
+        self.assertIsNone(self.stored(original_openid))
 
     def test_unionid_is_not_exposed_before_confirmation_or_in_public_responses(self):
         ready=self.ready()
