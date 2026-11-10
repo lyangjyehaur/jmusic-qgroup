@@ -80,7 +80,7 @@ function setProfile() {
   }
   $('#qq-account-button').hidden=!state.me.qq?.enabled;
   $('#home-qq-button').disabled=!state.me.qq?.enabled&&!state.me.allow_name_registration;
-  $('#home-qq-status').textContent=state.me.authenticated?state.me.qq?.needs_reauth?"QQ 账号资料待更新，可在「账号与设备」重新登录；bot 的账号识别功能会受影响。":"已登录，可在个人资料中修改称呼。":"登录后即可发起活动和报名。";
+  $('#home-qq-status').textContent=state.me.authenticated?state.me.qq?.needs_reauth?"QQ 资料待更新，bot 暂时无法识别账号。":"已登录，可在个人资料中修改称呼。":"登录后即可发起活动和报名。";
 }
 function openProfile(next=null) {
   if(!state.me.authenticated)return identityUI.account();

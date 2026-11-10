@@ -76,6 +76,10 @@ body:not(.guide-body){min-height:100dvh;display:flex;flex-direction:column}body:
 
 .qq-button{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}.qq-button[hidden]{display:none}.qq-button img{width:76px;height:24px;flex-shrink:0}.qq-account-section{margin-block:16px}
 
+#identity-dialog:has([data-identity="qq-refresh"]){width:440px;max-width:calc(100vw - 24px);height:fit-content;max-height:calc(var(--visible-height,100dvh) - 24px);margin:auto;border:1px solid var(--line);border-radius:12px}
+#identity-dialog:has([data-identity="qq-refresh"]) .event-form{height:auto;max-height:calc(var(--visible-height,100dvh) - 26px)}
+#identity-dialog:has([data-identity="qq-refresh"]) .form-body{flex:0 1 auto}
+
 .home-account{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 16px;margin:16px 0 4px;border:1px solid var(--line);border-radius:10px;background:#fff}.home-account-copy{min-width:0}.home-account h2{font-size:15px;line-height:1.5;margin:0 0 4px;font-weight:600}.home-account p{font-size:12px;line-height:1.6;margin:0;color:var(--muted);overflow-wrap:anywhere}.home-qq-button{display:flex;align-items:center;justify-content:center;flex-shrink:0;min-width:92px;min-height:44px;padding:10px 8px;border-radius:6px}.home-qq-button:hover{background:#f0f3f1}.home-qq-button img{display:block;width:76px;height:24px}
 
 .admin-page{max-width:620px;padding-top:24px}.admin-page h1{font-size:24px}.admin-card{background:#fff;border:1px solid var(--line);padding:20px;border-radius:12px;margin:20px 0}.admin-card h2{font-size:18px;margin-top:0}.admin-card #admin-saved{color:var(--primary);font-size:14px}

@@ -43,7 +43,7 @@ function fixture({me={},stored=new Map(),session=new Map(),storageFails=false}={
 const prompt=fixture();prompt.ui.initQQRefresh();
 assert.equal(prompt.$('#identity-dialog').open,true);
 assert.match(prompt.$('#identity-content').innerHTML,/bot/);
-assert.match(prompt.$('#identity-content').innerHTML,/24 小时/);
+assert.match(prompt.$('#identity-content').innerHTML,/稍后处理不影响网站使用/);
 assert.match(prompt.$('#identity-content').innerHTML,/原QQ &lt;script&gt;/);
 assert.equal(prompt.calls.length,0,'Showing the guide does not log out or start authorization');
 await prompt.click('qq-refresh');
@@ -74,7 +74,7 @@ assert.equal(noStorage.$('#identity-dialog').open,false,'Storage failure does no
 
 const noUnion=fixture({session:new Map([['kanban-qq-authorized','refresh']])});noUnion.ui.initQQRefresh();
 assert.equal(noUnion.$('#identity-dialog').open,false,'A completed OAuth that still lacks UnionID cannot cause a relogin loop');
-assert.match(noUnion.toasts[0],/QQ 这次未提供 UnionID/);
+assert.match(noUnion.toasts[0],/QQ 资料未补齐/);
 await noUnion.click('qq-refresh-info');assert.equal(noUnion.$('#identity-dialog').open,true,'Manual retry remains available during cooldown');
 const success=fixture({me:{qq:{enabled:true,bound:true,needs_reauth:false,unionid_bound:true}},session:new Map([['kanban-qq-authorized','refresh']])});success.ui.initQQRefresh();
 assert.equal(success.$('#identity-dialog').open,false);assert.match(success.toasts[0],/已更新/);
