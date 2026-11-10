@@ -7,7 +7,7 @@ bot-only API (platform rejection codes) and re-exports the shared helpers for
 """
 from qgroup_core.bot_markdown import (  # noqa: F401  (re-exported API)
     BLANK, RULE, MAX_CHARS,
-    escape_markdown, content_problem,
+    escape_markdown, plain_line, content_problem,
     render_broadcast, render_help, render_command, render_event, render_tasks,
     render_selection, render_no_events,
 )

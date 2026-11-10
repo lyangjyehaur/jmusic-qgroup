@@ -143,7 +143,10 @@ class MarkdownReplyTests(unittest.TestCase):
     def test_activity_markdown_keeps_user_syntax_but_blocks_mentions(self):
         rich = self.markdown('活动')
         plain = self.plain('活动')
-        self.assertTrue(rich.startswith('## 唱K'))
+        # A user-authored title must sit on a plain line, not in a heading or
+        # inside a bold span: QQ renders neither position's inline syntax.
+        self.assertTrue(rich.startswith('## 活动详情'))
+        self.assertIn('\n活动名称：唱K', rich)
         # QQ has no escape syntax: inline markup stays live and renders cleanly.
         self.assertIn('[点我](https://evil.test)', rich)
         self.assertIn('**KTV**', rich)
@@ -157,9 +160,32 @@ class MarkdownReplyTests(unittest.TestCase):
         # this card falls back to plain text rather than becoming a hyperlink.
         self.assertIsNotNone(md.content_problem(rich, ('example.test',)))
 
+    def test_user_titles_are_never_in_headings_or_bold_wrappers(self):
+        title = '周末 **加粗** _斜体_ ~~删除线~~'
+        broadcast = md.render_broadcast('活动发起', title, [],
+                                        'https://example.test/?event=abc')
+        self.assertEqual(broadcast.splitlines()[0], '## 活动发起')
+        self.assertEqual(broadcast.splitlines()[1], '活动名称：' + title)
+        event = md.render_event(title, '11-13 18:00', [('地点', '某处')],
+                                'https://example.test/?event=abc')
+        self.assertEqual(event.splitlines()[0], '## 活动详情')
+        self.assertEqual(event.splitlines()[1], '活动名称：' + title)
+        selection = md.render_selection(
+            [(title, '11-13 18:00', 'https://example.test/?event=abc')],
+            '活动', 'https://example.test')
+        self.assertIn('1. ' + title, selection)
+        self.assertNotIn('1. **', selection)
+        # A leading '#' or '-' in a title cannot inject a heading/list item.
+        self.assertEqual(md.plain_line('活动名称：', '# 假标题\n第二行'),
+                         '活动名称：# 假标题 第二行')
+        self.assertTrue(md.render_event('# 假标题', '11-13', [],
+                                        'https://example.test/').splitlines()[1]
+                        .startswith('活动名称：# 假标题'))
+
     def test_todos_markdown_is_a_list_and_never_names_a_person(self):
         text = self.markdown('待办')
-        self.assertTrue(text.startswith('## 待办 · '))
+        self.assertTrue(text.startswith('## 待办'))
+        self.assertIn('\n活动名称：', text)
         self.assertIn('\n- ', text)
         self.assertIn('[查看待办](https://example.test/?event=', text)
         self.assertNotIn('私密昵称', text)
@@ -173,8 +199,9 @@ class MarkdownReplyTests(unittest.TestCase):
                      join_owner=False, bot_enabled=True))
         text = self.markdown('活动')
         self.assertTrue(text.startswith('## 选择活动'))
-        self.assertIn('1. **', text)
-        self.assertIn('2. **', text)
+        self.assertIn('\n1. 唱K', text)
+        self.assertIn('\n2. 第二场活动', text)
+        self.assertNotIn('1. **', text)
         self.assertIn('[打开活动](https://example.test/?event=', text)
         self.assertIn('[点我](https://evil.test)', text)
         self.assertIsNotNone(md.content_problem(text, ('example.test',)))

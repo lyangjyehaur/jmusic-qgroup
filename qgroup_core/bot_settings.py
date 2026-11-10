@@ -154,10 +154,13 @@ def render(config, kind, context, *, markdown=False):
     returns None when the admin did not write one; the caller then uses the
     system-authored card instead.
 
-    Rich templates are still admin-authored, but every substituted value is
-    escaped. ``{url}`` stays a bare, already-system-generated URL so
-    ``[文字]({url})`` works; ``{details}`` becomes a bullet list with each
-    line escaped, because QQ Markdown has no code fences or tables.
+    Rich templates are still admin-authored, but every substituted value goes
+    through ``bot_markdown.escape_markdown`` (folds newlines, drops platform
+    mention tags; inline Markdown stays live). ``{url}`` stays a bare,
+    already-system-generated URL so ``[文字]({url})`` works; ``{details}``
+    becomes a bullet list, because QQ Markdown has no code fences or tables.
+    Put ``{heading}`` / ``{title}`` on a plain line: QQ does not render inline
+    syntax inside a ``##`` heading or a ``**...**`` wrapper.
     """
     key = kind + MARKDOWN_SUFFIX if markdown else kind
     value = config['templates'].get(key)
