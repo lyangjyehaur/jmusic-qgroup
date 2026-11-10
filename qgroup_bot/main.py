@@ -19,7 +19,7 @@ import time
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from qgroup_core import bot_settings
+from qgroup_core import bot_settings, bot_groups, storage
 
 from .api import QQBotAPI
 from .config import Config
@@ -119,6 +119,32 @@ class Bot:
         # environment instead of the policy actually in effect.
         self.resolved_dry_run = None
         self.panels_done = False
+        self.group_seen = {}
+
+    def record_group(self, group_id, event_type=None, reason=None):
+        """Store routing diagnostics only, never chat content or member IDs."""
+        try:
+            with storage.connect(self.config.db) as db:
+                if event_type:
+                    bot_groups.observe(db, group_id, event_type)
+                if reason:
+                    bot_groups.ignored(db, group_id, reason)
+        except Exception as exc:
+            obs.event('group_observation_unavailable', level=logging.DEBUG,
+                      error_type=type(exc).__name__)
+
+    def reply_group_allowed(self, group_id):
+        try:
+            db = read_db(self.config.db)
+            try:
+                policy = bot_settings.read(db, worker=True)['config']
+            finally:
+                db.close()
+            return bot_groups.reply_allowed(policy, group_id, self.config.group)
+        except Exception as exc:
+            obs.event('group_policy_unavailable', level=logging.WARNING,
+                      error_type=type(exc).__name__)
+            return False
 
     def resolve_dry_run(self):
         """Same merge as _reply / worker: DB wins, env is the 'inherit' default."""
@@ -246,6 +272,18 @@ class Bot:
         event_type = message.get('t')
         payload = message.get('d') or {}
         event_id = message.get('id')
+        group_id = payload.get('group_openid')
+        if bot_groups.valid_id(group_id) and event_type != 'INTERACTION_CREATE':
+            # Group-wide events can be noisy; an @ or membership change always
+            # refreshes discovery, ordinary messages at most once a minute.
+            stamp = time.monotonic()
+            important = event_type != 'GROUP_MESSAGE_CREATE' or mentions_bot(
+                payload.get('mentions') or [], self.bot_id, payload.get('content'))
+            if important or stamp - self.group_seen.get(group_id, -60) >= 60:
+                self.group_seen[group_id] = stamp
+                if len(self.group_seen) > 500:
+                    self.group_seen.pop(next(iter(self.group_seen)))
+                await asyncio.to_thread(self.record_group, group_id, event_type)
         if self.config.verbose_events:
             # INFO is the configured level. Never dump group text or identities.
             obs.event('platform_event', event_type=event_type, payload_fields=sorted(payload)[:40])
@@ -292,8 +330,10 @@ class Bot:
                 obs.event('interaction_ack_failed', level=logging.WARNING, **obs.error_fields(exc))
             obs.event('interaction_received', interaction_type=interaction_type,
                       scene=payload.get('scene'))
-            if payload.get('group_openid') != self.config.group:
+            await asyncio.to_thread(self.record_group, group_id, event_type)
+            if not await asyncio.to_thread(self.reply_group_allowed, group_id):
                 obs.event('message_ignored', reason='group_not_allowed')
+                await asyncio.to_thread(self.record_group, group_id, reason='group_not_allowed')
                 return
             resolved = inner.get('resolved') or {}
             command, argument = parse(resolved.get('button_data') or '')
@@ -312,9 +352,6 @@ class Bot:
         obs.event('message_received', event_type=event_type, mentions_bot=mentioned,
                   mention_everyone=everyone, mention_count=len(mentions) if isinstance(mentions,list) else None,
                   **union_diagnostics(payload.get('author') or {}, self.config))
-        if payload.get('group_openid') != self.config.group:
-            obs.event('message_ignored', reason='group_not_allowed')
-            return
         author = payload.get('author') or {}
         if author.get('bot'):
             obs.event('message_ignored', reason='bot_author')
@@ -322,6 +359,10 @@ class Bot:
         addressed = event_type == 'GROUP_AT_MESSAGE_CREATE' or mentioned
         if not addressed:
             obs.event('message_ignored', reason='not_addressed')
+            return
+        if not await asyncio.to_thread(self.reply_group_allowed, group_id):
+            obs.event('message_ignored', reason='group_not_allowed')
+            await asyncio.to_thread(self.record_group, group_id, reason='group_not_allowed')
             return
         message_id = payload.get('id')
         content = str(payload.get('content') or '')
@@ -332,6 +373,7 @@ class Bot:
             payload.get('timestamp') or message_id or '')
         if self.duplicate(message_id, fingerprint):
             obs.event('message_ignored', reason='duplicate', fingerprint_ref=obs.reference(fingerprint))
+            await asyncio.to_thread(self.record_group, group_id, reason='duplicate')
             return
         command, argument = parse(content)
         obs.event('command_parsed', source='message', command=command or 'unknown',
@@ -347,16 +389,18 @@ class Bot:
 
     async def _reply(self, ws, group_openid, command, argument, *, msg_id=None, event_id=None):
         group = group_openid
-        if not group or group != self.config.group:
-            obs.event('reply_skipped', reason='group_not_allowed')
-            return
         started = time.monotonic()
         try:
             db = read_db(self.config.db)
             try:
                 policy = bot_settings.read(db, worker=True)['config']
+                if not bot_groups.reply_allowed(policy, group, self.config.group):
+                    obs.event('reply_skipped', reason='group_not_allowed')
+                    await asyncio.to_thread(self.record_group, group, reason='group_not_allowed')
+                    return
                 if not policy['replies_enabled']:
                     obs.event('reply_skipped', reason='replies_disabled')
+                    await asyncio.to_thread(self.record_group, group, reason='replies_disabled')
                     return
                 text, keyboard = answer(db, command, argument)
             finally:
@@ -367,6 +411,7 @@ class Bot:
             if dry_run:
                 obs.event('reply_simulated', sent=False, policy_dry_run=policy['dry_run'],
                           elapsed_ms=round((time.monotonic()-started)*1000))
+                await asyncio.to_thread(self.record_group, group, reason='dry_run')
                 return
             obs.event('reply_sending', mode='message' if msg_id else 'interaction', seq=1)
             ok, code, data = await asyncio.to_thread(

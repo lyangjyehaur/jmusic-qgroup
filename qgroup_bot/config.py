@@ -85,8 +85,6 @@ class Config:
         if str(self.db) and self.db.is_file() and not os.access(self.db, os.W_OK):
             problems.append('KANBAN_DB 不可寫：bot 必須更新 bot_outbox 投遞狀態'
                             '（檢查 ProtectSystem / ReadWritePaths / 檔案擁有者）')
-        if not self.group:
-            problems.append('KANBAN_BOT_GROUP 未設定（主要群的 group_openid）')
         return problems
 
     def describe(self):

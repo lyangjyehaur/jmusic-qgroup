@@ -16,7 +16,7 @@ import server
 from qgroup_bot.config import Config
 from qgroup_bot.main import Bot
 from qgroup_bot.worker import OutboxWorker
-from qgroup_core import bot_outbox, bot_settings, storage
+from qgroup_core import bot_outbox, bot_settings, bot_groups, storage
 from qgroup_core.common import APIError, now
 from test_bot_outbox import BotOutboxFixture
 from test_roster import ModernClient
@@ -278,6 +278,23 @@ class AdminBotHTTPTests(unittest.TestCase):
         self.assertEqual(saved['bot']['config']['templates']['activity_published'], '后台原文 {url}')
         with storage.connect(server.DB) as db:
             self.assertEqual(db.execute('SELECT count(*) FROM bot_outbox').fetchone()[0], 0)
+
+    def test_group_configuration_and_diagnostics_remain_admin_only_and_versioned(self):
+        with storage.connect(server.DB) as db:
+            bot_groups.observe(db,'private-group-id','GROUP_AT_MESSAGE_CREATE')
+            bot_groups.ignored(db,'private-group-id','group_not_allowed')
+        self.assertEqual(self.client.request('/api/admin/bot-settings')[0],401)
+        info=self.login()
+        self.assertEqual(info['group_status']['ignores'][0]['reason'],'group_not_allowed')
+        config=dict(info['config'],groups=[dict(id='private-group-id',name='測試群原文',replies=True,broadcast=False)])
+        payload=dict(base_revision=info['revision'],config=config)
+        self.assertEqual(self.client.request('/api/admin/bot-settings','POST',payload)[0],403)
+        status,result=self.client.request('/api/admin/bot-settings','POST',payload,headers=self.headers)
+        self.assertEqual(status,200,result)
+        self.assertEqual(result['bot']['config']['groups'],config['groups'])
+        self.assertIn('groups',result['bot']['history'][0]['changes'])
+        self.assertEqual(self.client.request('/api/admin/bot-settings','POST',payload,headers=self.headers)[0],409)
+        self.assertEqual(self.client.request('/api/admin/bot-settings',headers={'Accept-Language':'zh-CN'})[1]['config']['groups'],config['groups'])
 
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from qgroup_core import storage, bot_outbox, bot_views, bot_settings
+from qgroup_core import storage, bot_outbox, bot_views, bot_settings, bot_groups
 from qgroup_core.common import now
 from .api import hint, classify_error
 from . import observability as obs
@@ -19,9 +19,9 @@ class OutboxWorker:
     def __init__(self, config, api):
         self.config = config
         self.api = api
-        # Read once at startup. Writing a fresh refusal must not silently skip
-        # the remaining rows of the very batch that discovered it.
-        self.authorization_block = self._read_authorization_block()
+        # Cache refusals separately per destination. Writing a fresh refusal
+        # must not silently skip the remaining rows of that same batch.
+        self.authorization_blocks = {}
 
     def _connect(self):
         return storage.connect(self.config.db)
@@ -57,7 +57,10 @@ class OutboxWorker:
     def _skip_reason(self, row, settings):
         if row['channel'] == 'private':
             return 'no binding: 个人通知尚未启用，不能改发到群'
-        if row['target'] and row['target'] != self.config.group:
+        target = bot_groups.broadcast_target(settings, self.config.group)
+        if not target:
+            return '后台未设置主动通知目标群'
+        if row['target'] and row['target'] != target:
             return '目标群不在允许范围内'
         if not settings['enabled'] or row['kind'] not in settings['broadcast_kinds']:
             return '后台已关闭此类通知'
@@ -113,12 +116,16 @@ class OutboxWorker:
                     return '文字含未报备域名，拒绝发送'
         return None
 
-    def _group_state_path(self):
-        return Path(getattr(self.config, 'log_dir', Path(self.config.db).parent / 'bot-logs')) / 'bot-group-state.json'
+    def _group_state_path(self, group=None):
+        suffix = '-'+obs.reference(group) if group else ''
+        return Path(getattr(self.config, 'log_dir', Path(self.config.db).parent / 'bot-logs')) / ('bot-group-state'+suffix+'.json')
 
-    def _read_authorization_block(self):
+    def _read_authorization_block(self, group):
         try:
-            with self._group_state_path().open(encoding='utf-8') as handle:
+            path = self._group_state_path(group)
+            if not path.exists() and group == self.config.group:
+                path = self._group_state_path()
+            with path.open(encoding='utf-8') as handle:
                 state = json.load(handle)
             if state.get('push_authorized') is False:
                 return '群主未授权主动发言，后台已暂停主动推送'
@@ -126,11 +133,11 @@ class OutboxWorker:
             return None
         return None
 
-    def _record_rejection(self, code):
+    def _record_rejection(self, code, group):
         if code not in (40034105, 40034101, 40054003, 1100104, 40054016):
             return
         try:
-            path = self._group_state_path()
+            path = self._group_state_path(group)
             path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
             raw = json.dumps(dict(push_authorized=False, code=code, recorded_at=now())).encode('utf-8')
             fd = os.open(path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
@@ -142,8 +149,11 @@ class OutboxWorker:
             obs.event('group_state_unavailable', level=logging.WARNING, **obs.error_fields(exc))
 
     def deliver(self, row):
+        with self._connect() as db:
+            policy = bot_settings.read(db, worker=True)['config']
+        group = bot_groups.broadcast_target(policy, self.config.group)
         with obs.scope(trace_id=obs.trace_id(), outbox_id=row['id'], kind=row['kind'],
-                       activity_ref=obs.reference(row['event_id']), group_ref=obs.reference(self.config.group),
+                       activity_ref=obs.reference(row['event_id']), group_ref=obs.reference(group),
                        attempt=row['attempts']+1):
             started = time.monotonic()
             obs.event('outbox_claimed', reclaimed=row['status']=='sending', channel=row['channel'],
@@ -161,12 +171,15 @@ class OutboxWorker:
         if not self._owned(row):
             obs.event('outbox_skipped', reason='claim_lost')
             return 'skipped'
-        if self.authorization_block:
-            self._mark(row, 'skipped', self.authorization_block)
-            return 'skipped'
         with self._connect() as db:
             settings = bot_settings.read(db, worker=True)
         policy = settings['config']
+        group = bot_groups.broadcast_target(policy, self.config.group)
+        if group not in self.authorization_blocks:
+            self.authorization_blocks[group] = self._read_authorization_block(group)
+        if self.authorization_blocks[group]:
+            self._mark(row, 'skipped', self.authorization_blocks[group])
+            return 'skipped'
         reason = self._skip_reason(row, policy)
         if reason:
             self._mark(row, 'skipped', reason)
@@ -212,7 +225,7 @@ class OutboxWorker:
             body['keyboard'] = payload['keyboard']
         obs.event('outbox_prepared', msg_type=body['msg_type'], keyboard=bool(body.get('keyboard')),
                   **obs.text_fields(body.get('content'), self.config))
-        recorded = dict(body, _config_revision=settings['revision'])
+        recorded = dict(body, _config_revision=settings['revision'], _group_ref=obs.reference(group))
         dry_run = self.config.dry_run if policy['dry_run'] is None else policy['dry_run']
         if dry_run:
             self._mark(row, 'skipped', 'dry-run', simulated=True, payload=recorded)
@@ -241,7 +254,7 @@ class OutboxWorker:
             self._mark(row, 'pending', '等待允许发送的时间', retry_at=postpone)
             return 'deferred'
         obs.event('outbox_sending')
-        ok, code, data = self.api.post('/v2/groups/%s/messages' % self.config.group, body)
+        ok, code, data = self.api.post('/v2/groups/%s/messages' % group, body)
         if ok:
             persisted = self._mark(row, 'sent', sent=True, payload=recorded)
             obs.event('outbox_sent', sent_ref=obs.sent_reference(data), state_persisted=persisted)
@@ -262,7 +275,7 @@ class OutboxWorker:
             obs.event('outbox_permanently_rejected', level=logging.WARNING)
             return 'failed'
         if kind == 'authorization':
-            self._record_rejection(safe_code)
+            self._record_rejection(safe_code, group)
             obs.event('outbox_authorization_rejected', level=logging.WARNING)
             return self._failed(row, message)
         if kind == 'rate_limit':
@@ -274,6 +287,7 @@ class OutboxWorker:
 
     def poll_once(self):
         with self._connect() as db:
+            bot_groups.record_deployment(db, self.config.group)
             revision = bot_settings.read(db, worker=True)['revision']
             db.execute('UPDATE bot_runtime SET applied_revision=?,checked_at=? WHERE id=1', (revision, now()))
         rows = self.claim()

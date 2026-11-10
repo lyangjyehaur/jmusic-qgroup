@@ -1,4 +1,4 @@
-"""Shared, versioned bot policy. Secrets and transport settings stay in the environment."""
+"""Shared, versioned bot policy. Secrets and network settings stay in the environment."""
 import hashlib
 import json
 import os
@@ -8,6 +8,7 @@ from string import Formatter
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .common import APIError, now
+from . import bot_groups
 
 KINDS = {
     'activity_published': '活动发起', 'formation_confirmed': '已成团',
@@ -70,7 +71,7 @@ def defaults(*, worker=False):
         schedule_enabled=os.environ.get('KANBAN_BOT_SCHEDULE', '1') == '1',
         deadline_hours=24, estimated_over_delay_minutes=0,
         quiet_enabled=False, quiet_start='23:00', quiet_end='08:00',
-        timezone='Asia/Taipei', min_interval_seconds=0, templates={})
+        timezone='Asia/Taipei', min_interval_seconds=0, templates={}, groups=None)
 
 
 def read(db, *, worker=False):
@@ -88,6 +89,7 @@ def validate(config):
             raise APIError('机器人开关格式不正确')
     if config['dry_run'] is not None and type(config['dry_run']) is not bool:
         raise APIError('机器人模拟模式格式不正确')
+    bot_groups.validate(config['groups'])
     for key, low, high in (('deadline_hours', 1, 720),
                            ('estimated_over_delay_minutes', 0, 1440),
                            ('min_interval_seconds', 0, 3600)):
@@ -177,6 +179,7 @@ def view(db):
         result['history'].append(dict(revision=row['revision'], created_at=row['created_at'], action=row['action'], changes=changes))
     runtime = db.execute('SELECT applied_revision,checked_at FROM bot_runtime WHERE id=1').fetchone()
     result['runtime'] = dict(runtime)
+    result['group_status'] = bot_groups.view(db, result['config'])
     return result
 
 
@@ -194,6 +197,12 @@ def save(db, data, actor, *, revert=False):
         raw = json.loads(previous['config_json'])
     else:
         raw = validate(data.get('config'))
+    # Versions saved before group management inherit the old routing on revert.
+    if revert:
+        validate(dict(defaults(), **raw))
+    fallback = bot_groups.deployment_group(db)
+    old_target = bot_groups.broadcast_target(current['config'], fallback)
+    new_target = bot_groups.broadcast_target(raw, fallback)
     existing = json.loads(db.execute('SELECT config_json FROM bot_settings WHERE id=1').fetchone()[0])
     if raw == existing:
         return dict(ok=True, bot=view(db))
@@ -203,6 +212,10 @@ def save(db, data, actor, *, revert=False):
     db.execute('INSERT INTO bot_settings_history VALUES(?,?,?,?,?)',
                (revision+1, encoded, stamp, hashlib.sha256(actor.encode()).hexdigest()[:16], 'revert' if revert else 'save'))
     config = read(db)['config']
+    if old_target != new_target:
+        # Never redirect a queued announcement to a different audience.
+        db.execute("UPDATE bot_outbox SET status='skipped',last_error='通知目标群已变更，旧通知作废' "
+                   "WHERE channel='group' AND status IN ('pending','sending')")
     # Deferred rows must be reconsidered when quiet hours, pacing or simulation
     # change; a previous policy's retry_at is not a transport failure backoff.
     db.execute("UPDATE bot_outbox SET retry_at=NULL,last_error='' WHERE status='pending' "
@@ -212,7 +225,7 @@ def save(db, data, actor, *, revert=False):
             db.execute("UPDATE bot_outbox SET status='skipped',last_error='后台已关闭此类通知' "
                        "WHERE channel='group' AND kind=? AND status IN ('pending','sending')", (kind,))
     schedule_keys = ('enabled', 'broadcast_kinds', 'schedule_enabled', 'deadline_hours', 'estimated_over_delay_minutes')
-    if any(current['config'][key] != config[key] for key in schedule_keys):
+    if old_target != new_target or any(current['config'][key] != config[key] for key in schedule_keys):
         from . import bot_outbox
         for event in db.execute("SELECT * FROM events WHERE bot_enabled=1 AND lifecycle IN ('scheduled','ongoing')").fetchall():
             bot_outbox._schedule(db, event)

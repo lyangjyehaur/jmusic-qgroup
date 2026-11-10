@@ -2,6 +2,7 @@
 (()=>{
  const $=s=>document.querySelector(s);let csrf='',revision=0,botInfo=null,botTemplates={},templateKind='',botBusy=false;
  let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null;
+ let botGroups=[];
  async function request(path,data){
   let status=0,outcome='network_error';
   try{
@@ -55,7 +56,28 @@
   usersAction(async()=>{try{await request('/api/admin/users',{user_id:user.id,is_admin:!user.is_admin,base_revision:user.revision});$('#users-saved').textContent=user.is_admin?"已撤销管理员权限":"已设为管理员，该账号登录后可直接访问后台";}catch(problem){await loadUsers();throw problem;}await loadUsers();});
  });
  const botForm=$('#bot-settings-form');
- const botLabels={enabled:"主动通知",replies_enabled:"指令回复",dry_run:"发送模式",broadcast_kinds:"通知事件",schedule_enabled:"定时提醒",deadline_hours:"截止提醒时间",estimated_over_delay_minutes:"预计结束提醒时间",quiet_enabled:"勿扰开关",quiet_start:"勿扰开始",quiet_end:"勿扰结束",timezone:"勿扰时区",min_interval_seconds:"发送间隔",templates:"消息模板"};
+ const botLabels={enabled:"主动通知",replies_enabled:"指令回复",dry_run:"发送模式",broadcast_kinds:"通知事件",schedule_enabled:"定时提醒",deadline_hours:"截止提醒时间",estimated_over_delay_minutes:"预计结束提醒时间",quiet_enabled:"勿扰开关",quiet_start:"勿扰开始",quiet_end:"勿扰结束",timezone:"勿扰时区",min_interval_seconds:"发送间隔",templates:"消息模板",groups:"群组设置"};
+ const groupReasons={group_not_allowed:"此群未允许指令回复",replies_disabled:"全局指令回复已关闭",dry_run:"模拟模式，未实际发送",duplicate:"重复事件，已去重",bot_author:"来自机器人，已忽略"};
+ function rememberGroups(){
+  for(const row of $('#bot-groups').querySelectorAll('[data-group-row]')){
+   const item=botGroups.find(group=>group.id===row.dataset.groupRow);if(!item)continue;
+   item.name=row.querySelector('[data-group-name]').value;
+   item.replies=row.querySelector('[data-group-replies]').checked;
+   item.broadcast=row.querySelector('[data-group-broadcast]').checked;
+  }
+ }
+ function groupDiagnostics(status){
+  $('#bot-group-ignores').innerHTML=status.ignores.map(item=>{const group=botGroups.find(g=>g.id===item.group_id);return `<p><strong translate="no">${esc(group?.name||group?.reference||item.group_id)}</strong> · ${esc(new Date(item.created_at).toLocaleString())}<br>${esc(groupReasons[item.reason]||item.reason)}</p>`;}).join('')||"<p class=\"field-help\">暂无记录。可在测试群里 @ 一次，再刷新查看。</p>";
+ }
+ function renderGroups(){
+  $('#bot-groups').innerHTML=botGroups.map((group,index)=>`<article class="bot-group" data-group-row="${esc(group.id)}"><div class="bot-group-heading"><strong>${group.deployment_default?"原部署默认群":"已发现的群"}</strong><span class="field-help">${group.membership==='removed'?"机器人已被移出":group.last_seen?"最近收到事件 "+esc(new Date(group.last_seen).toLocaleString()):"尚未收到群事件"}</span></div><label class="field">管理备注<input data-group-name value="${esc(group.name)}" maxlength="60" placeholder="例如：正式群、测试群" translate="no"></label><p class="field-help">日志对应标识：<code translate="no">${esc(group.reference||group.id)}</code></p><div class="bot-group-options"><label class="check-option"><input type="checkbox" data-group-replies ${group.replies?'checked':''}>允许此群 @ 回复</label><label class="check-option"><input type="radio" name="bot_broadcast_target" data-group-broadcast value="${esc(group.id)}" ${group.broadcast?'checked':''}>主动通知目标</label></div><details><summary>查看群标识</summary><p class="receipt-id" translate="no">${esc(group.id)}</p></details></article>`).join('')||"<p class=\"field-help\">尚未发现群。在群里 @ 机器人一次，再点击刷新；新群须明确勾选并保存才会启用。</p>";
+  botForm.querySelector('[name="bot_broadcast_target"][value=""]').checked=!botGroups.some(group=>group.broadcast);
+ }
+ function refreshGroups(info){
+  rememberGroups();const status=info.group_status;
+  for(const observed of status.groups){const existing=botGroups.find(group=>group.id===observed.id);if(existing)Object.assign(existing,{last_seen:observed.last_seen,membership:observed.membership,reference:observed.reference});else botGroups.push({...observed,replies:false,broadcast:false});}
+  renderGroups();groupDiagnostics(status);
+ }
  function botStatus(info){
   const runtime=info.runtime;
   const loaded=runtime.applied_revision===null?"机器人尚未回报配置状态":`机器人已载入第 ${runtime.applied_revision} 版`;
@@ -77,6 +99,8 @@
  }
  function botSetup(info){
   botInfo=info;botTemplates={...info.config.templates};templateKind='';
+  botGroups=info.group_status.groups.map(group=>({...group}));renderGroups();groupDiagnostics(info.group_status);
+  $('#bot-group-mode').textContent=info.group_status.inherited?"当前沿用原部署默认群；保存后改由本页管理群组。":"当前由本页管理群组，保存后即时生效。";
   for(const [key,value] of Object.entries(info.config)){
    const field=botForm.elements.namedItem(key);if(!field)continue;
    if(field.type==='checkbox')field.checked=value;else field.value=key==='dry_run'?(value===null?'inherit':value?'simulate':'live'):value;
@@ -93,6 +117,7 @@
  function botDraft(){
   rememberTemplate();const config={};
   for(const key of Object.keys(botInfo.config)){
+   if(key==='groups'){rememberGroups();config[key]=botGroups.filter(group=>group.name||group.replies||group.broadcast).map(({id,name,replies,broadcast})=>({id,name,replies,broadcast}));continue;}
    if(key==='templates'){config[key]={...botTemplates};continue;}
    if(key==='broadcast_kinds'){config[key]=[...botForm.querySelectorAll('[name="broadcast_kind"]:checked')].map(field=>field.value);continue;}
    const field=botForm.elements.namedItem(key);
@@ -110,6 +135,8 @@
   finally{botBusy=false;for(const fieldset of botForm.querySelectorAll('fieldset'))fieldset.disabled=false;for(const button of botForm.querySelectorAll('button'))button.disabled=false;$('#bot-revert').disabled=botInfo.revision===0;}
  }
  $('#bot-template-kind').addEventListener('change',()=>{rememberTemplate();showTemplate();});
+ $('#bot-groups-refresh').addEventListener('click',()=>botAction(async()=>{const info=await request('/api/admin/bot-settings');botStatus(info);refreshGroups(info);$('#bot-saved').textContent="已刷新群组与诊断，保留未保存的修改。";}));
+ $('#bot-group-add').addEventListener('click',()=>{const field=$('#bot-group-id');const id=field.value.trim();if(!/^[A-Za-z0-9_-]{1,128}$/.test(id)){$('#bot-error').textContent="请输入 QQ 事件中的有效群标识，不是 QQ 群号。";return;}rememberGroups();if(!botGroups.some(group=>group.id===id))botGroups.push({id,name:'',replies:false,broadcast:false,membership:'unknown'});renderGroups();field.value='';$('#bot-error').textContent='';});
  $('#bot-template-text').addEventListener('input',()=>{rememberTemplate();templateState();$('#bot-preview-text').hidden=true;});
  $('#bot-template-reset').addEventListener('click',()=>{delete botTemplates[templateKind];showTemplate();});
  $('#bot-template-variables').addEventListener('click',e=>{const button=e.target.closest('[data-variable]');if(!button)return;const field=$('#bot-template-text');field.setRangeText('{'+button.dataset.variable+'}',field.selectionStart,field.selectionEnd,'end');field.focus();rememberTemplate();templateState();$('#bot-preview-text').hidden=true;});
@@ -117,7 +144,7 @@
  botForm.addEventListener('submit',e=>{e.preventDefault();const config=botDraft();botAction(async()=>{const result=await request('/api/admin/bot-settings',{config,base_revision:botInfo.revision});botSetup(result.bot);$('#bot-saved').textContent="机器人设置已保存，等待机器人回报载入状态。";});});
  $('#bot-reload').addEventListener('click',()=>botAction(async()=>{botSetup(await request('/api/admin/bot-settings'));$('#bot-saved').textContent="已重新载入，未保存的修改已清除。";}));
  $('#bot-revert').addEventListener('click',()=>botAction(async()=>{const result=await request('/api/admin/bot-revert',{base_revision:botInfo.revision});botSetup(result.bot);$('#bot-saved').textContent="已恢复上一版配置，并保存为新版本。";}));
- setInterval(async()=>{if(!csrf||!botInfo||botBusy||document.hidden)return;try{botStatus(await request('/api/admin/bot-settings'));}catch(problem){if(problem.status===401){csrf='';$('#admin-settings').hidden=true;$('#admin-login').hidden=false;error(problem);}}},10000);
+ setInterval(async()=>{if(!csrf||!botInfo||botBusy||document.hidden)return;try{const info=await request('/api/admin/bot-settings');botStatus(info);if(!$('#bot-groups').contains(document.activeElement))refreshGroups(info);else groupDiagnostics(info.group_status);}catch(problem){if(problem.status===401){csrf='';$('#admin-settings').hidden=true;$('#admin-login').hidden=false;error(problem);}}},10000);
  async function load(){
   try{const info=await request('/api/admin/session');csrf=info.csrf;currentUserId=info.current_user_id;$('#admin-access').textContent=info.auth_method==='account'?"管理员账号登录":"管理凭证登录 · 有效一小时";$('#admin-logout').textContent=info.auth_method==='account'?"退出管理后台及当前账号":"退出管理后台";privacyRequests(info.privacy_requests||[]);revision=info.settings.revision;botSetup(info.bot);$('#allow-name-registration').checked=info.settings.allow_name_registration;$('#admin-login').hidden=true;$('#admin-settings').hidden=false;$('#provider-status').textContent=info.providers.some(p=>p.enabled)?"QQ 登录已配置":"QQ 未配置，关闭称呼注册后将无法注册。";try{await loadUsers();}catch(problem){$('#users-error').textContent=problem.message;}}
   catch(problem){if(problem.status!==401)error(problem);csrf='';$('#admin-login').hidden=false;$('#admin-settings').hidden=true;}

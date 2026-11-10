@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-copy1"><script defer src="/admin.js?v=20261110-copy1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-botgroups1"><script defer src="/admin.js?v=20261110-botgroups1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
 </head>
 <body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理後臺</h1><p id="admin-error" class="form-error" role="alert"></p>
@@ -19,6 +19,16 @@
  <p id="bot-runtime" class="field-help" role="status"></p>
  <p class="field-help">保存後無需重啟。每場活動仍須由發起者開啟群同步，邀請活動與草稿不會進入群。</p>
  <form id="bot-settings-form">
+  <fieldset><legend>群組管理</legend>
+   <p class="field-help">允許回覆的群與主動通知目標分別設置。新發現的群默認停用，不會自動收到活動內容；群名稱是便於管理的備註，不會修改 QQ 群名。</p>
+   <p id="bot-group-mode" class="field-help"></p>
+   <label class="check-option"><input type="radio" name="bot_broadcast_target" value="">不設置主動通知目標群</label>
+   <div id="bot-groups"></div>
+   <div class="bot-actions"><button id="bot-groups-refresh" type="button" class="button secondary">刷新群組與診斷</button></div>
+   <details><summary>手動添加群標識</summary><p class="field-help">通常在群裡 @ 一次後刷新即可發現。QQ 事件的 group_openid 不是 QQ 群號；不確定時先保持停用。</p><label class="field">群標識<input id="bot-group-id" maxlength="128" pattern="[A-Za-z0-9_-]{1,128}" autocomplete="off" translate="no"></label><button id="bot-group-add" type="button" class="button secondary">添加到待保存列表</button></details>
+   <p class="field-help">群組修改須點擊下方「保存機器人設置」才會生效。更換通知目標會作廢舊待送通知，不會轉發到新群；未來提醒會重新排程。</p>
+   <details class="bot-group-diagnostics"><summary>最近未回覆的 @ 與按鈕操作</summary><div id="bot-group-ignores" aria-live="polite"></div><p class="field-help">請核對記錄時間，歷史原因不代表當前設置。僅保留最近 100 條原因，不保存聊天正文或成員身份。新版本啟用前的記錄不會自動補齊。</p></details>
+  </fieldset>
   <fieldset><legend>功能開關</legend>
    <label class="check-option"><input name="enabled" type="checkbox" role="switch">開啟主動通知</label>
    <label class="check-option"><input name="replies_enabled" type="checkbox" role="switch">開啟指令回覆</label>

@@ -22,7 +22,7 @@ from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
 from .common import now, APIError
-from . import bot_views, bot_settings
+from . import bot_views, bot_settings, bot_groups
 
 # Broadcast kinds are chosen by "the whole group needs to know or act",
 # not by a per-event message quota. Operators may extend or shrink the set.
@@ -167,6 +167,13 @@ def enqueue(db, event_id, kind, text, *, channel='group', target='',
         return False
     if channel == 'group' and not bot_views.shareable(_event(db, event_id)):
         return False
+    if channel == 'group':
+        policy = bot_settings.read(db)['config']
+        if policy['groups'] is not None:
+            selected = bot_groups.broadcast_target(policy)
+            if not selected or (target and target != selected):
+                return False
+            target = selected
     payload = {'text': text, 'msg_type': 0}
     if template_context is not None:
         payload['_template_context'] = template_context
