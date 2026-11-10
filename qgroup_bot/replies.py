@@ -96,7 +96,8 @@ def candidates(db, command='活动'):
     archived = '' if command == '往期' else ' AND archived_at IS NULL'
     order = ("CASE WHEN lifecycle IN ('ended','cancelled') THEN 0 ELSE 1 END, starts_at DESC"
              if command in FINANCE_COMMANDS else "ABS(strftime('%s',starts_at)-strftime('%s','now')),id")
-    return db.execute("SELECT * FROM events WHERE visibility='public' AND bot_enabled=1 "
+    # Public queries are independent of the owner's active-broadcast opt-in.
+    return db.execute("SELECT * FROM events WHERE visibility='public' "
                       "AND lifecycle!='draft' AND status!='deleted'" + terminal + archived +
                       ' ORDER BY '+order+' LIMIT 9').fetchall()
 
@@ -106,10 +107,10 @@ def current_event(db, argument='', command='活动'):
         if not re.fullmatch(r'[a-fA-F0-9]{8,16}', argument):
             raise SelectionError('活动短码应为 8–16 位字母 a–f 与数字，请重新选择活动。')
         rows = db.execute("SELECT * FROM events WHERE id LIKE ? AND visibility='public' "
-                          "AND bot_enabled=1 AND lifecycle!='draft' AND status!='deleted' LIMIT 2",
+                          "AND lifecycle!='draft' AND status!='deleted' LIMIT 2",
                           (argument.lower()+'%',)).fetchall()
         if not rows:
-            raise SelectionError('找不到可在本群查询的指定活动；请检查短码或向发起者确认群同步设置。')
+            raise SelectionError('找不到可在本群查询的指定活动；请检查短码，并确认活动已发布且公开可见。')
         if len(rows) != 1:
             raise SelectionError('活动短码不唯一，请使用完整活动编号。')
         return rows[0]
@@ -120,7 +121,7 @@ def current_event(db, argument='', command='活动'):
 def _selection(db, command):
     rows = candidates(db, command)
     if not rows:
-        return ('目前没有可在本群查询的活动（没有进行中、尚未开启群同步，或该分类暂无活动）。\n'
+        return ('目前没有可在本群查询的活动（没有进行中的公开活动，或该分类暂无已发布的公开活动）。\n'
                 '请到网站查看你有权访问的活动：\n'+bot_outbox.base_url()+'/'), None
     lines = ['请选择活动，点对应链接继续：']
     action = LINK_ACTIONS.get(command, ('settlement' if command == '结算' else 'detail', ''))[0]

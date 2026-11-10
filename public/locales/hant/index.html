@@ -112,8 +112,8 @@
           <label class="field">活動時區<select name="timezone"><option value="Asia/Shanghai">北京時間（UTC+8）</option><option value="Asia/Taipei">臺北時間（UTC+8）</option><option value="Asia/Hong_Kong">香港時間（UTC+8）</option><option value="Asia/Tokyo">東京時間（UTC+9）</option><option value="UTC">UTC</option><option value="">原記錄未設置，按當前設備顯示</option></select></label>
           <label class="field">最低成團人數<input name="minimum_participants" type="number" min="0" max="500" inputmode="numeric" value="0"><span class="field-help">0 表示不設置；未達標由發起者決定，不自動取消。</span></label>
           <label class="field">費用規則<textarea name="fee_policy" rows="3" maxlength="1000"></textarea></label>
-          <label class="check-option"><input name="bot_enabled" type="checkbox">將公開活動信息與重要節點同步到主要 QQ 群</label>
-          <p class="field-help">開啟後，標題、時間、地點、說明與重要變更可在群內查詢或通知。請先核對內容適合群成員查看；邀請可見活動不能開啟。機器人模擬模式只記錄，不發送。</p>
+          <label class="check-option"><input name="bot_enabled" type="checkbox">主動將公開活動信息與重要節點發送到通知目標 QQ 群</label>
+          <p class="field-help">允許回覆的群可查詢已發佈的公開活動；此開關只控制主動通知。請先核對內容適合群成員查看；邀請活動和草稿不對群公開。機器人模擬模式只記錄，不發送。</p>
           <p class="field-help timezone-hint">時間按當前設備時區顯示。</p>
         </div>
         <label class="field" id="event-change-reason" hidden>修改原因<textarea name="reason" rows="2" maxlength="200"></textarea><span class="field-help">已有報名時，更改時間、地點、費用等安排需原因，並請參加者重新確認。</span></label>
@@ -222,7 +222,7 @@
   <dialog id="link-dialog" class="dialog" aria-labelledby="link-title"><div class="dialog-heading"><h2 id="link-title">複製鏈接</h2><button class="icon-button" data-close="link-dialog" aria-label="關閉">×</button></div><label class="field">分享鏈接<textarea id="link-input" rows="6" readonly></textarea></label></dialog>
 
   <dialog id="activity-action-dialog" class="dialog confirm-dialog" aria-labelledby="activity-action-title">
-    <form id="activity-action-form"><div class="dialog-heading"><h2 id="activity-action-title">管理活動</h2><button type="button" class="icon-button" data-close="activity-action-dialog" aria-label="關閉">×</button></div><p id="activity-action-hint" class="field-help"></p><div id="bot-sync-options" hidden><label class="check-option"><input type="checkbox" name="bot_enabled">同步公開活動到主要 QQ 群</label><p id="bot-sync-preview" class="settlement-note"></p><p class="field-help">開啟後同步活動信息與重要節點；請核對內容適合群成員查看。模擬模式不發送，實際結果見活動頁。</p></div><label class="field"><span id="activity-reason-label">原因</span><textarea name="reason" rows="3" maxlength="200"></textarea></label><p class="form-error" role="alert"></p><button class="button primary full" id="activity-action-save" type="submit">保存</button></form>
+    <form id="activity-action-form"><div class="dialog-heading"><h2 id="activity-action-title">管理活動</h2><button type="button" class="icon-button" data-close="activity-action-dialog" aria-label="關閉">×</button></div><p id="activity-action-hint" class="field-help"></p><div id="bot-sync-options" hidden><label class="check-option"><input type="checkbox" name="bot_enabled">主動發送公開活動通知到目標 QQ 群</label><p id="bot-sync-preview" class="settlement-note"></p><p class="field-help">此開關只控制主動通知，不影響已發佈的公開活動在群內查詢。開啟前請核對內容；模擬模式不發送，實際結果見活動頁。</p></div><label class="field"><span id="activity-reason-label">原因</span><textarea name="reason" rows="3" maxlength="200"></textarea></label><p class="form-error" role="alert"></p><button class="button primary full" id="activity-action-save" type="submit">保存</button></form>
   </dialog>
   <dialog id="conditions-dialog" class="dialog event-form-dialog" aria-labelledby="conditions-title">
     <form id="conditions-form" class="event-form"><div class="dialog-heading"><h2 id="conditions-title">活動安排確認</h2><button class="icon-button" type="button" data-close="conditions-dialog" aria-label="關閉">×</button></div>

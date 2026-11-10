@@ -159,13 +159,40 @@ class CommandTests(unittest.TestCase):
         self.assertEqual(parse('<@BOT>'), ('活动',''))
         self.assertIn('未识别', self.answer(None))
 
-    def test_private_draft_and_unshared_events_cannot_be_read_by_id(self):
-        for field, value in [('visibility','invitation'),('lifecycle','draft'),('bot_enabled',0)]:
+    def test_private_draft_and_deleted_events_cannot_be_read_by_id(self):
+        for field, value in [('visibility','invitation'),('lifecycle','draft'),('status','deleted')]:
             with storage.connect(self.path) as db:
-                db.execute("UPDATE events SET visibility='public',lifecycle='scheduled',bot_enabled=1")
+                db.execute("UPDATE events SET visibility='public',lifecycle='scheduled',status='open',bot_enabled=0")
                 db.execute('UPDATE events SET '+field+'=? WHERE id=?', (value,self.event_id))
-            for argument in ('', self.event_id, self.event_id[:8], '%'):
-                self.assertNotIn('唱K活动', self.answer('活动', argument))
+            for command in ('活动','名额','报名','管理','结算','往期','待办','规则'):
+                for argument in ('', self.event_id, self.event_id[:8], '%'):
+                    with self.subTest(field=field,command=command,argument=argument):
+                        self.assertNotIn('唱K活动', self.answer(command, argument))
+
+    def test_public_queries_do_not_require_active_group_sync(self):
+        with storage.connect(self.path) as db:
+            db.execute('UPDATE events SET bot_enabled=0 WHERE id=?',(self.event_id,))
+        for command in ('活动','名额','报名','管理','地点','规则','结算','待办','出席'):
+            for argument in ('',self.event_id,self.event_id[:8]):
+                with self.subTest(command=command,argument=argument):
+                    self.assertIn('唱K活动',self.answer(command,argument))
+
+    def test_querying_and_editing_unsynced_public_event_never_queues_broadcasts(self):
+        with mock.patch.dict(os.environ,{'KANBAN_BOT_ENABLED':'1'}):
+            with storage.connect(self.path) as db:
+                source=db.execute('SELECT * FROM events WHERE id=?',(self.event_id,)).fetchone()
+                data=dict(title='只查询不推送',category='聚餐',location='餐厅',
+                          starts_at=source['starts_at'],deadline=source['deadline'],
+                          capacity=10,description='',duration_hours=2,
+                          join_owner=False,bot_enabled=False)
+                event_id=events.create(db,{'id':'u1','nickname':'test'},data)
+                event=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+                events.patch(db,event,{'id':'u1','nickname':'test'},dict(data,location='新地点'))
+            self.assertIn('只查询不推送',self.answer('活动',event_id))
+            self.assertIn('新地点',self.answer('活动',event_id))
+            with storage.connect(self.path) as db:
+                self.assertEqual(db.execute('SELECT COUNT(*) FROM bot_outbox').fetchone()[0],0)
+                self.assertEqual(db.execute('SELECT bot_enabled FROM events WHERE id=?',(event_id,)).fetchone()[0],0)
 
     def test_bad_or_missing_id_never_falls_back_to_a_different_event(self):
         for argument in ('deadbeefdeadbeef','%','abc','a_b11111'):
@@ -176,7 +203,7 @@ class CommandTests(unittest.TestCase):
             e = db.execute('SELECT * FROM events WHERE id=?',(self.event_id,)).fetchone()
             second = events.create(db,{'id':'u1','nickname':'私密昵称'},
                 dict(title='另一个活动',category='聚餐',location='餐厅',starts_at=e['starts_at'],
-                     deadline=e['deadline'],capacity=0,description='',duration_hours=2,bot_enabled=True))
+                     deadline=e['deadline'],capacity=0,description='',duration_hours=2,bot_enabled=False))
         text=self.answer('报名')
         self.assertIn('请选择活动',text)
         self.assertIn(self.event_id,text)
@@ -195,7 +222,7 @@ class CommandTests(unittest.TestCase):
 
     def test_finished_events_are_available_to_settlement_queries(self):
         with storage.connect(self.path) as db:
-            db.execute("UPDATE events SET lifecycle='ended',actual_ended_at=?",(now(),))
+            db.execute("UPDATE events SET lifecycle='ended',actual_ended_at=?,bot_enabled=0",(now(),))
         self.assertIn('唱K活动',self.answer('结算'))
         self.assertIn('尚未发布',self.answer('结算'))
         self.assertIn('唱K活动',self.answer('往期'))
@@ -232,6 +259,8 @@ class CommandTests(unittest.TestCase):
 
     def test_live_passive_reply_uses_the_traditional_command_and_card_event(self):
         from types import SimpleNamespace
+        with storage.connect(self.path) as db:
+            db.execute('UPDATE events SET bot_enabled=0 WHERE id=?',(self.event_id,))
         config=SimpleNamespace(db=self.path,group='allowed',dry_run=False,sandbox=False,verbose_events=False)
         bot=Bot(config);bot.api.reply_group=mock.Mock(return_value=(True,0,{}))
         asyncio.run(bot.handle_dispatch(None,{'t':'GROUP_AT_MESSAGE_CREATE','d':
