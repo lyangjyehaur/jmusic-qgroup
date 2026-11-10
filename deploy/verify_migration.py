@@ -88,6 +88,7 @@ def verify(source,destination):
                 raise AssertionError('Migration invented historical times or fee terms')
         versions={r[0] for r in db.execute('SELECT version FROM schema_migrations')}
         if not {1,2,3,4,5,6,7,8,9}.issubset(versions):raise AssertionError('Migration versions missing')
+        if 12 not in versions:raise AssertionError('UnionID migration missing')
     return {table:len(rows) for table,(_,rows) in before.items()}
 
 

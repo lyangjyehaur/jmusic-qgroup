@@ -456,5 +456,5 @@ class FinanceMigrationTests(unittest.TestCase):
                 self.assertIsNone(db.execute("SELECT name FROM sqlite_master WHERE name='finance_entries'").fetchone())
             verify(path,Path(folder)/'upgraded.sqlite3')
             storage.initialize(path);storage.initialize(path)
-            with sqlite3.connect(path) as db:self.assertEqual(db.execute('SELECT version FROM schema_migrations').fetchall(),[(1,),(2,),(3,),(4,),(5,),(6,),(7,),(8,),(9,),(10,)])
+            with sqlite3.connect(path) as db:self.assertTrue(set(range(1,11))|{12} <= {r[0] for r in db.execute('SELECT version FROM schema_migrations')})
 

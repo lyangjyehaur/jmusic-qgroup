@@ -5,13 +5,14 @@ to the app; a QQ nickname is display data, never proof of another account.
 """
 import hashlib
 import json
+import logging
 import os
 import re
 import secrets
 from urllib import request, error
 from urllib.parse import urlencode, urlsplit
 
-from . import identity, accounts, privacy
+from . import identity, accounts, privacy, unionids
 from .common import APIError, now
 
 CALLBACK = '/auth/qq/callback'
@@ -108,15 +109,23 @@ def exchange(settings, code):
     access = token.get('access_token')
     if not isinstance(access, str) or not re.fullmatch(r'[a-fA-F0-9]{32}|[a-fA-F0-9]{36}', access):
         raise APIError('QQ 授权令牌无效，请重新登录', 502)
-    subject = graph('/oauth2.0/me', dict(access_token=access, fmt='json'))
+    try:
+        subject = graph('/oauth2.0/me', dict(access_token=access, fmt='json', unionid=1))
+    except APIError:
+        # Optional UnionID availability must not prevent the original OpenID login.
+        logging.info('qq_unionid_fetch status=fallback')
+        subject = graph('/oauth2.0/me', dict(access_token=access, fmt='json'))
     openid = subject.get('openid')
     if str(subject.get('client_id')) != settings['app_id'] or not isinstance(openid, str) or not re.fullmatch(r'[a-fA-F0-9]{32}|[a-fA-F0-9]{36}', openid):
         raise APIError('QQ 授权身份不匹配，请重新登录', 502)
+    union_id = unionids.normalize(subject.get('unionid'))
+    logging.info('qq_unionid_fetch status=%s',
+                 'received' if union_id else 'missing' if not subject.get('unionid') else 'invalid')
     profile = graph('/user/get_user_info', dict(access_token=access, oauth_consumer_key=settings['app_id'], openid=openid))
     nickname = profile.get('nickname')
     if profile.get('ret') != 0 or not isinstance(nickname, str) or not nickname.strip() or len(nickname) > 200:
         raise APIError('QQ 用户资料暂时无法读取，请重新登录', 502)
-    return openid.upper(), nickname.strip(), avatar(profile.get('figureurl_qq_2')) or avatar(profile.get('figureurl_qq_1'))
+    return openid.upper(), nickname.strip(), avatar(profile.get('figureurl_qq_2')) or avatar(profile.get('figureurl_qq_1')), union_id
 
 
 def claim_callback(db, user, session, query):
@@ -142,17 +151,17 @@ def callback(connect, user, session, query):
         codes = query.get('code', [])
         if 'error' in query or len(codes) != 1 or not re.fullmatch(r'[A-Za-z0-9_-]{1,512}', codes[0]):
             raise APIError('QQ 授权未完成或已取消，请重新尝试')
-        openid, nickname, avatar_url = exchange(settings, codes[0])
+        openid, nickname, avatar_url, union_id = exchange(settings, codes[0])
     except APIError:
         with connect() as db:
             db.execute("UPDATE login_attempts SET status='failed' WHERE id=? AND status='exchanging'", (attempt['id'],))
         return
     with connect() as db:
         # A newer authorization or changed account invalidates this result.
-        db.execute("""UPDATE login_attempts SET status='verified',openid=?,nickname=?,avatar_url=?
+        db.execute("""UPDATE login_attempts SET status='verified',openid=?,nickname=?,avatar_url=?,union_id=?
             WHERE id=? AND status='exchanging' AND expires_at>?
             AND (EXISTS(SELECT 1 FROM browser_sessions WHERE token_hash=? AND user_id IS ?) OR EXISTS(SELECT 1 FROM visitor_sessions WHERE token_hash=? AND expires_at>?))""",
-            (openid, nickname, avatar_url, attempt['id'], now(), session, user['id'] if user else None,session,now()))
+            (openid, nickname, avatar_url, union_id, attempt['id'], now(), session, user['id'] if user else None,session,now()))
 
 
 def status(db, user, session):
@@ -200,8 +209,9 @@ def finish(db, user, session, data):
     else:
         db.execute("UPDATE external_identities SET display_name=? WHERE provider='qq' AND client_id=? AND subject=?", (row['nickname'], row['app_id'], row['openid']))
     db.execute("INSERT OR REPLACE INTO external_profiles VALUES('qq',?,?,?)",(row['app_id'],uid,avatar(row['avatar_url'])))
+    unionids.link(db,row['app_id'],row['openid'],row['union_id'])
     privacy.consent(db,uid)
     token=accounts.authenticate(db,session,uid,user['id'] if user else None)
-    db.execute("UPDATE login_attempts SET status='used' WHERE id=?", (row['id'],))
+    db.execute("UPDATE login_attempts SET status='used',union_id='' WHERE id=?", (row['id'],))
     identity.account_log(db, {'id': uid}, 'qq_bound' if row['mode'] == 'bind' else 'qq_login', dict(previous_scope=identity.scope(user['id']) if user else None))
     return dict(ok=True, switched=not user or uid != user['id'],new_account=not target and row['mode']=='login',return_path=row['return_path']), token

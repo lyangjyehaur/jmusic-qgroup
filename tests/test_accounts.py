@@ -54,7 +54,7 @@ class AccountTests(unittest.TestCase):
         return self.manager.request('/api/admin/settings','POST',dict({'allow_name_registration':value,'base_revision':session['settings']['revision']},**extra),headers={'X-Kanban-Admin':session['csrf']})
 
     def register(self,client=None,**extra):
-        return (client or self.guest).request('/api/register','POST',dict({'nickname':'测试称呼','confirm':True,'accept_privacy':True,'privacy_version':'2026-11-09'},**extra))
+        return (client or self.guest).request('/api/register','POST',dict({'nickname':'测试称呼','confirm':True,'accept_privacy':True,'privacy_version':server.privacy.VERSION},**extra))
 
     def test_fresh_install_is_closed_and_browsing_creates_no_account(self):
         with tempfile.TemporaryDirectory() as folder:
@@ -134,7 +134,7 @@ class AccountTests(unittest.TestCase):
 
     def ready_qq(self):
         me=self.guest.request('/api/me')[1]
-        status,result=self.guest.request('/api/auth/qq/start','POST',dict(mode='login',confirm=True,accept_privacy=True,privacy_version='2026-11-09',return_path='/?event=example'))
+        status,result=self.guest.request('/api/auth/qq/start','POST',dict(mode='login',confirm=True,accept_privacy=True,privacy_version=server.privacy.VERSION,return_path='/?event=example'))
         self.assertEqual(status,200,result)
         state=urllib.parse.parse_qs(urllib.parse.urlsplit(result['authorize_url']).query)['state'][0]
         processor=next(h for h in self.guest.opener.handlers if isinstance(h,urllib.request.HTTPCookieProcessor))
@@ -172,7 +172,7 @@ class AccountTests(unittest.TestCase):
 
     def test_oauth_return_path_does_not_allow_external_redirect(self):
         for path in ['https://evil.test','//evil.test','/\\evil.test','/admin','/?x=1\nLocation: https://evil.test']:
-            self.assertEqual(self.guest.request('/api/auth/qq/start','POST',dict(mode='login',confirm=True,accept_privacy=True,privacy_version='2026-11-09',return_path=path))[0],400,path)
+            self.assertEqual(self.guest.request('/api/auth/qq/start','POST',dict(mode='login',confirm=True,accept_privacy=True,privacy_version=server.privacy.VERSION,return_path=path))[0],400,path)
 
     def test_identity_namespace_reserves_wechat_without_sharing_qq_subjects(self):
         with server.connect() as db:

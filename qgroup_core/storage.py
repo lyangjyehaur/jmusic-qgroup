@@ -5,6 +5,7 @@ import secrets
 import sqlite3
 
 from .common import now
+from . import unionids
 
 
 def connect(path):
@@ -358,6 +359,7 @@ def migrate_accounts(db):
 def migrate_privacy(db):
     if db.execute('SELECT 1 FROM schema_migrations WHERE version=9').fetchone():
         migrate_bot(db)
+        unionids.migrate(db)
         return
     db.execute("ALTER TABLE login_attempts ADD COLUMN privacy_version TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE login_attempts ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
@@ -374,6 +376,7 @@ def migrate_privacy(db):
         BEGIN SELECT RAISE(ABORT,'Referenced images cannot be deleted'); END''')
     db.execute('INSERT INTO schema_migrations VALUES(9,?)',(now(),))
     migrate_bot(db)
+    unionids.migrate(db)
 
 
 def migrate_bot(db):

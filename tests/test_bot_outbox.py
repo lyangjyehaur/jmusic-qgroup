@@ -66,7 +66,7 @@ class BotOutboxTests(BotOutboxFixture, unittest.TestCase):
         with storage.connect(self.path) as db:
             versions = [row[0] for row in db.execute(
                 'SELECT version FROM schema_migrations ORDER BY version')]
-        self.assertEqual(versions, list(range(1, 11)))
+        self.assertTrue(set(range(1,11))|{12} <= set(versions))
         storage.initialize(self.path)  # idempotent
         with storage.connect(self.path) as db:
             self.assertEqual(db.execute(

@@ -11,7 +11,7 @@ from pathlib import Path
 from .common import APIError, now
 from . import identity, media
 
-VERSION='2026-11-09'
+VERSION='2026-11-10'
 CONTACT='203008876@qq.com'
 
 

@@ -48,7 +48,7 @@ class Client:
         if not me['authenticated']:
             # Explicit test fixture policy. Production defaults remain closed.
             with server.connect() as db:db.execute('UPDATE site_settings SET allow_name_registration=1 WHERE id=1')
-            assert self.request('/api/register','POST',{'nickname':name,'confirm':True,'accept_privacy':True,'privacy_version':'2026-11-09'},headers={'X-Kanban-Version':'2','Idempotency-Key':uuid.uuid4().hex,'X-Kanban-Identity':me['draft_scope']})[0]==200
+            assert self.request('/api/register','POST',{'nickname':name,'confirm':True,'accept_privacy':True,'privacy_version':server.privacy.VERSION},headers={'X-Kanban-Version':'2','Idempotency-Key':uuid.uuid4().hex,'X-Kanban-Identity':me['draft_scope']})[0]==200
         else:assert self.request('/api/profile', 'POST', {'nickname': name})[0] == 200
         return self
 
