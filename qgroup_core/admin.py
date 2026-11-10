@@ -1,4 +1,4 @@
-"""Separate administrator sessions; member accounts never imply admin access."""
+"""Explicit account administrator roles and bootstrap credential sessions."""
 import hashlib
 import os
 import secrets
@@ -16,14 +16,27 @@ def session_hash(headers):
     except cookies.CookieError:return ''
 
 
-def session(db,headers):
+def authority(db,headers):
+    member_session=identity.session_hash(headers)
+    member=db.execute('''SELECT u.id,r.revision FROM browser_sessions s
+        JOIN users u ON u.id=s.user_id JOIN user_admin_roles r ON r.user_id=u.id
+        WHERE s.token_hash=? AND r.is_admin=1
+        AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)''',(member_session,)).fetchone()
+    if member:
+        # Bind CSRF to the current account and grant, including on account switches
+        # that retain the browser cookie. Revocation is checked on every request.
+        digest='account:'+member_session+':'+member['id']+':'+str(member['revision'])
+        return dict(digest=digest,auth_method='account',user_id=member['id'])
     digest=session_hash(headers)
     row=db.execute('SELECT * FROM admin_sessions WHERE token_hash=? AND expires_at>?',(digest,now())).fetchone()
     if not row:raise APIError('请先登录管理后台',401)
     # Rotating the configured credential revokes old admin sessions immediately.
     configured=os.environ.get('KANBAN_ADMIN_KEY_HASH','')
     if not configured or not secrets.compare_digest(row['credential_hash'],configured):raise APIError('管理凭证已变更，请重新登录',401)
-    return digest
+    return dict(digest=digest,auth_method='credential',user_id=None)
+
+
+def session(db,headers):return authority(db,headers)['digest']
 
 
 def csrf(digest):return hashlib.sha256(('kanban-admin-v1:'+digest).encode()).hexdigest()
@@ -31,8 +44,50 @@ def csrf(digest):return hashlib.sha256(('kanban-admin-v1:'+digest).encode()).hex
 
 def view(db,headers):
     from . import privacy
-    digest=session(db,headers)
-    return dict(authenticated=True,csrf=csrf(digest),settings=accounts.settings(db),providers=accounts.providers(),privacy_requests=privacy.queue(db),bot=bot_settings.view(db))
+    access=authority(db,headers)
+    return dict(authenticated=True,csrf=csrf(access['digest']),auth_method=access['auth_method'],current_user_id=access['user_id'],
+                settings=accounts.settings(db),providers=accounts.providers(),privacy_requests=privacy.queue(db),bot=bot_settings.view(db))
+
+
+def users(db,headers,query):
+    session(db,headers)
+    search=query.get('search',[''])[0].strip()
+    try:offset=int(query.get('offset',['0'])[0])
+    except (ValueError,TypeError):raise APIError('用户列表页码不正确')
+    if offset<0 or len(search)>100:raise APIError('用户查询条件不正确')
+    where='''NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)
+        AND (?='' OR instr(lower(u.id),lower(?))>0 OR instr(lower(u.nickname),lower(?))>0
+        OR EXISTS(SELECT 1 FROM external_identities e WHERE e.user_id=u.id AND instr(lower(e.display_name),lower(?))>0))'''
+    params=(search,)*4
+    total=db.execute('SELECT count(*) FROM users u WHERE '+where,params).fetchone()[0]
+    rows=db.execute('''SELECT u.id,u.nickname,u.created_at,COALESCE(r.is_admin,0) AS is_admin,
+        COALESCE(r.revision,0) AS revision FROM users u LEFT JOIN user_admin_roles r ON r.user_id=u.id
+        WHERE '''+where+' ORDER BY u.created_at DESC,u.id LIMIT 20 OFFSET ?',(*params,offset)).fetchall()
+    return dict(users=[dict(id=r['id'],nickname=r['nickname'],created_at=r['created_at'],is_admin=bool(r['is_admin']),
+                           revision=r['revision'],identities=accounts.linked(db,r['id'])) for r in rows],
+                total=total,offset=offset,limit=20)
+
+
+def set_role(db,access,data):
+    uid=data.get('user_id');value=data.get('is_admin');revision=data.get('base_revision')
+    if not isinstance(uid,str) or type(value) is not bool or type(revision) is not int:
+        raise APIError('管理员设置格式不正确')
+    if not db.execute('''SELECT 1 FROM users u WHERE id=?
+        AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)''',(uid,)).fetchone():
+        raise APIError('账号不存在或已注销',404)
+    if access['user_id']==uid and not value:raise APIError('不能撤销当前登录账号的管理员权限，请由其他管理员操作',403)
+    current=db.execute('SELECT * FROM user_admin_roles WHERE user_id=?',(uid,)).fetchone()
+    before=bool(current['is_admin']) if current else False
+    if revision!=(current['revision'] if current else 0):raise APIError('该账号的权限已被修改，请重新载入后重试',409)
+    if before!=value:
+        stamp=now()
+        db.execute('''INSERT INTO user_admin_roles VALUES(?,?,?,?) ON CONFLICT(user_id)
+            DO UPDATE SET is_admin=excluded.is_admin,revision=excluded.revision,updated_at=excluded.updated_at''',
+                   (uid,int(value),revision+1,stamp))
+        actor='account:'+access['user_id'] if access['user_id'] else 'credential:'+access['digest']
+        db.execute('''INSERT INTO admin_role_history(user_id,actor_ref,before_value,after_value,revision,created_at)
+            VALUES(?,?,?,?,?,?)''',(uid,actor,int(before),int(value),revision+1,stamp))
+    return dict(ok=True)
 
 
 def bot_view(db,headers):
@@ -52,11 +107,15 @@ def login(db,data):
 
 
 def command(db,headers,path,data):
-    digest=session(db,headers)
+    access=authority(db,headers);digest=access['digest']
     if not secrets.compare_digest(headers.get('X-Kanban-Admin',''),csrf(digest)):raise APIError('管理页面已过期，请刷新后重试',403)
     if path=='/api/admin/logout':
-        db.execute('DELETE FROM admin_sessions WHERE token_hash=?',(digest,))
-        return dict(ok=True),''
+        db.execute('DELETE FROM admin_sessions WHERE token_hash=?',(session_hash(headers),))
+        if access['auth_method']=='account':
+            from . import privacy
+            privacy.logout(db,identity.session_hash(headers))
+        return dict(ok=True,logout_account=access['auth_method']=='account'),''
+    if path=='/api/admin/users':return set_role(db,access,data),None
     if path=='/api/admin/privacy-review':
         from . import privacy
         return privacy.review(db,data),None

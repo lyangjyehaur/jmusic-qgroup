@@ -68,6 +68,12 @@ def journal(db,entry):
 
 def erase(db,uid,request_id,created_at):
     if not db.execute('SELECT 1 FROM users WHERE id=?',(uid,)).fetchone():return
+    role=db.execute('SELECT * FROM user_admin_roles WHERE user_id=? AND is_admin=1',(uid,)).fetchone()
+    if role:
+        stamp=now()
+        db.execute('UPDATE user_admin_roles SET is_admin=0,revision=revision+1,updated_at=? WHERE user_id=?',(stamp,uid))
+        db.execute('''INSERT INTO admin_role_history(user_id,actor_ref,before_value,after_value,revision,created_at)
+            VALUES(?,'account_closure',1,0,?,?)''',(uid,role['revision']+1,stamp))
     shared=shared_records(db,uid)
     db.execute('''DELETE FROM login_attempts WHERE provider='qq' AND EXISTS(
         SELECT 1 FROM external_identities x WHERE x.user_id=? AND x.provider='qq'

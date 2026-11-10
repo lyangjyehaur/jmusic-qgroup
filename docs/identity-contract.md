@@ -7,8 +7,11 @@ QQ OAuth 登入、回調、get_user_info 暱稱讀取及既有帳號綁定已實
 - `GET /api/me` 僅建立 24 小時訪客 session，不新增 users。公開活動可瀏覽，發起、報名及成員寫接口須已登入。
 - 預設 `allow_name_registration=false`：新帳號須完成 QQ 官方身分驗證，返回並明確確認後才建立；單純 callback 不建立帳號。稱呼可另外修改，不作身分依據。
 - `external_identities` 以 `(provider, client_id, subject)` 唯一對應站內 user；不同平台或應用的 OpenID 不混用。同一帳號可另行明確綁定不同平台。微信只預留資料結構，尚未實作 adapter 或入口。
-- 管理後台 `/admin` 與活動帳號完全獨立。使用長隨機管理憑證登入；伺服器 `/etc/qgroup/admin.env` 僅保存 SHA256 摘要 `KANBAN_ADMIN_KEY_HASH`（root 0600），原始憑證僅交付管理員私下保存。輪替摘要會立即撤銷舊管理 session。
-- 管理 Cookie 為 HttpOnly、Secure、SameSite=Strict，有效一小時；寫入須同源、管理 session、CSRF 和設定版本。註冊政策及追加式管理紀錄在同一事務提交。
+- 管理後台 `/admin` 支援明確授予的帳號管理員權限；一般帳號、稱呼及活動協辦角色不授予後台權限。管理員登入站內帳號後可直接進入後台。首次授權及恢復仍可使用長隨機管理憑證登入；伺服器 `/etc/qgroup/admin.env` 僅保存 SHA256 摘要 `KANBAN_ADMIN_KEY_HASH`（root 0600），原始憑證僅交付管理員私下保存。輪替摘要會立即撤銷舊憑證管理 session。
+- 憑證管理 Cookie 為 HttpOnly、Secure、SameSite=Strict，有效一小時；帳號方式沿用站內登入 session，每次請求重新檢查當前帳號及管理員權限。寫入須同源、管理權限、CSRF 和對應設定版本；帳號 CSRF 綁定 session、帳號 ID 與授權版本，切換帳號、撤銷及重新授權後舊頁面的寫入失效。
+- 「用戶管理」以稱呼、完整站內帳號 ID、第三方綁定暱稱及註冊時間辨識帳號；可搜尋並分頁，每頁 20 筆，不傳回 OpenID、UnionID、Cookie 或憑證摘要。`GET /api/admin/users` 讀取列表，`POST /api/admin/users` 以 `user_id`、`is_admin` 和 `base_revision` 修改角色。
+- 管理員可授權其他帳號及撤銷其權限；不能撤銷當前以帳號登入的自身權限，須由其他管理員或獨立憑證操作。角色及追加式 `admin_role_history` 同事務提交，註銷帳號會撤銷角色並保留審計；已註銷帳號不列入用戶列表且不能重新授權。
+- 帳號方式退出管理後台會同時登出當前瀏覽器帳號、清除獨立管理登入；其他裝置保留。憑證方式退出僅清除獨立管理登入。Migration 14 新增角色及歷史表，預設不授權任何既有帳號，重複遷移保全原資料。註冊政策及追加式管理紀錄在同一事務提交。
 - 只有管理員開啟開關後，`POST /api/register` 才接受稱呼與明確確認。直接呼叫 API 不能繞過關閉設定；再次關閉不刪除既有帳號，也不禁止它們修改稱呼。
 - Migration 8 新增訪客、通用外部身分、登入請求、設定及管理紀錄，複製舊 QQ 綁定，保留所有舊資料。正式公開前的測試庫及配對圖片另外封存，再由既有服務建立空白正式庫；此清理不是 schema migration 的一部分。
 

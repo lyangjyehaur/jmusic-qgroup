@@ -244,6 +244,10 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
                 return self.reply(result,cookie=token)
             if path=='/api/admin/session':return self.reply(admin.view(db,self.headers))
+            if path=='/api/admin/users':
+                try:query=parse_qs(urlparse(self.path).query,keep_blank_values=True,max_num_fields=10)
+                except ValueError:raise APIError('用户查询条件不正确')
+                return self.reply(admin.users(db,self.headers,query))
             if path=='/api/admin/bot-settings':return self.reply(admin.bot_view(db,self.headers))
             if path in ('/api/account/qq/status','/api/auth/qq/status'):
                 if not user and not accounts.visitor_exists(db,identity.session_hash(self.headers)):raise APIError('请刷新页面后重试',401)
@@ -416,7 +420,8 @@ class Handler(BaseHTTPRequestHandler):
                 db.execute('BEGIN IMMEDIATE')
                 result,cookie=admin.login(db,data) if path=='/api/admin/login' and self.command=='POST' else admin.command(db,self.headers,path,data)
                 db.commit()
-                return self.reply(result,admin_cookie=cookie)
+                logout_account=result.pop('logout_account',False)
+                return self.reply(result,admin_cookie=cookie,cookie='' if logout_account else None)
         if path in ('/api/auth/logout','/api/auth/close','/api/register','/api/auth/qq/start','/api/auth/qq/finish','/api/account/qq/start','/api/account/qq/finish'):
             return self.auth_write(path,data)
         modern = self.headers.get('X-Kanban-Version')=='2'

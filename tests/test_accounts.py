@@ -188,7 +188,7 @@ class AccountTests(unittest.TestCase):
             source=Path(folder)/'v7.sqlite3';destination=Path(folder)/'v8.sqlite3'
             with server.connect() as db,sqlite3.connect(source) as out:db.backup(out)
             with sqlite3.connect(source) as db:
-                for table in ['external_profiles','privacy_consents','privacy_requests','external_identities','visitor_sessions','login_attempts','auth_requests','site_settings','admin_sessions','admin_audit']:db.execute('DROP TABLE '+table)
+                for table in ['admin_role_history','user_admin_roles','external_profiles','privacy_consents','privacy_requests','external_identities','visitor_sessions','login_attempts','auth_requests','site_settings','admin_sessions','admin_audit']:db.execute('DROP TABLE '+table)
                 db.execute('DELETE FROM schema_migrations WHERE version>=8')
                 uid=accounts.create(db,'旧QQ账号')
                 db.execute("INSERT INTO qq_accounts VALUES('app','subject',?,'旧账号','old')",(uid,))

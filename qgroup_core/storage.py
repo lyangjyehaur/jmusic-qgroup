@@ -84,6 +84,22 @@ def initialize(path):
         migrate_roster(db)
 
 
+def migrate_admin_roles(db):
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=14').fetchone():return
+    db.execute('''CREATE TABLE user_admin_roles(
+        user_id TEXT PRIMARY KEY REFERENCES users(id),
+        is_admin INTEGER NOT NULL CHECK(is_admin IN (0,1)),
+        revision INTEGER NOT NULL,updated_at TEXT NOT NULL)''')
+    db.execute('''CREATE TABLE admin_role_history(
+        id INTEGER PRIMARY KEY AUTOINCREMENT,user_id TEXT NOT NULL REFERENCES users(id),
+        actor_ref TEXT NOT NULL,before_value INTEGER NOT NULL,after_value INTEGER NOT NULL,
+        revision INTEGER NOT NULL,created_at TEXT NOT NULL)''')
+    for operation in ('UPDATE','DELETE'):
+        db.execute('CREATE TRIGGER admin_role_history_no_'+operation.lower()+' BEFORE '+operation+
+                   " ON admin_role_history BEGIN SELECT RAISE(ABORT,'Admin role history is append-only'); END")
+    db.execute('INSERT INTO schema_migrations VALUES(14,?)',(now(),))
+
+
 def migrate_roster(db):
     db.execute('''CREATE TABLE IF NOT EXISTS schema_migrations (
         version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)''')
@@ -361,6 +377,7 @@ def migrate_privacy(db):
         migrate_bot(db)
         unionids.migrate(db)
         bot_settings.migrate(db)
+        migrate_admin_roles(db)
         return
     db.execute("ALTER TABLE login_attempts ADD COLUMN privacy_version TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE login_attempts ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
@@ -379,6 +396,7 @@ def migrate_privacy(db):
     migrate_bot(db)
     unionids.migrate(db)
     bot_settings.migrate(db)
+    migrate_admin_roles(db)
 
 
 def migrate_bot(db):

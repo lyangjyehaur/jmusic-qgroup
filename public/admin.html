@@ -1,11 +1,17 @@
 <!doctype html>
 <html lang="zh-CN">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理后台</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-botconfig1"><script defer src="/admin.js?v=20261110-botconfig1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理后台</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-adminusers1"><script defer src="/admin.js?v=20261110-adminusers1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
 </head>
 <body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理后台</h1><p id="admin-error" class="form-error" role="alert"></p>
-<form id="admin-login" class="admin-card"><h2>管理员登录</h2><label class="field">管理凭证<input name="key" type="password" required autocomplete="off" maxlength="256"></label><p class="field-help">管理凭证与活动账号独立，仅由网站管理员持有。登录有效一小时。</p><button class="button primary" type="submit">登录管理后台</button></form>
+<form id="admin-login" class="admin-card" hidden><h2>管理员登录</h2><p class="field-help">已设为管理员的账号，登录后可直接访问此页。请先<a href="/">返回看板登录或切换账号</a>。</p><label class="field">管理凭证<input name="key" type="password" required autocomplete="off" maxlength="256"></label><p class="field-help">也可使用独立管理凭证登录，有效一小时。首次使用请通过凭证进入后台，再在用户管理中指定管理员。</p><button class="button primary" type="submit">登录管理后台</button></form>
 <section id="admin-settings" hidden>
+<p id="admin-access" class="field-help"></p>
+<section class="admin-card" aria-labelledby="users-heading"><h2 id="users-heading">用户管理</h2><p class="field-help">管理员可管理此后台的所有设置及用户权限。授权前请核对账号 ID 与 QQ 绑定昵称；同名账号是不同账号。撤销权限立即生效。</p>
+<form id="users-search" class="admin-user-search" role="search"><label class="field">搜索账号<input name="search" type="search" maxlength="100" placeholder="称呼、账号 ID 或 QQ 绑定昵称"></label><button type="submit" class="button secondary">搜索</button><button id="users-reload" type="button" class="text-button">重新载入</button></form>
+<p id="users-summary" class="field-help" role="status"></p><p id="users-error" class="form-error" role="alert"></p><p id="users-saved" role="status"></p><div id="admin-users" aria-live="polite"></div>
+<div class="admin-user-pages"><button id="users-prev" type="button" class="button secondary">上一页</button><span id="users-page" class="field-help"></span><button id="users-next" type="button" class="button secondary">下一页</button></div></section>
+<dialog id="users-confirm" aria-labelledby="users-confirm-title"><form method="dialog"><h2 id="users-confirm-title">确认权限变更</h2><p id="users-confirm-name"></p><p id="users-confirm-id" class="receipt-id" translate="no"></p><p id="users-confirm-effect" class="field-help"></p><div class="bot-actions"><button value="cancel" class="button secondary" autofocus>取消</button><button id="users-confirm-submit" value="confirm" class="button primary">确认</button></div></form></dialog>
 <section class="admin-card"><h2>注册方式</h2><form id="registration-settings"><label class="check-option"><input id="allow-name-registration" type="checkbox" role="switch">允许免第三方登录注册</label><p class="field-help">默认关闭，新用户须通过已接入的第三方登录创建账号。目前为 QQ，未来可扩展微信等。开启后额外允许只填写称呼创建账号；关闭不删除已建立的账号。</p><p id="provider-status" class="field-help"></p><button type="submit" class="button primary">保存设置</button><p id="admin-saved" role="status"></p></form></section>
 <section class="admin-card" aria-labelledby="bot-heading">
  <h2 id="bot-heading">QQ 机器人</h2>
