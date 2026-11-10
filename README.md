@@ -2,6 +2,8 @@
 
 私有原始碼倉庫：[git.dan.tw/dan/qgroup](https://git.dan.tw/dan/qgroup)，主分支為 `main`。推送原始碼不會自動部署，線上更新仍按下方 server2 部署與保全流程進行。資料庫、使用者上傳圖片、伺服器環境設定及本機管理憑證不納入 Git。
 
+功能分支驗證後先整合並推送 `main`；正式新版本只從遠端 main 歷史中的明確提交建置。發布前必須執行 `deploy/check_release_source.py`，不從未合併功能分支或未提交工作目錄直接上線；詳見[分支與發布來源](docs/deployment-policy.md#分支與發布來源)。
+
 面向群组成员的轻量活动报名与管理网站，支持唱歌、聚餐、运动、出游等活动，手机优先。首页直接显示活动，卡片进入详情。默认只显示基础发起、本人报名与结算；同行／代报、名额与期限、协办、账本及特殊分摊等收于各页「高级选项」开关。开关只控制显示，不清空已设置的数据和规则。
 
 使用说明可从首页底部「操作说明」进入，或打开 [在线说明](https://kanban.danndann.cn/guide.html)。源文档见 [操作手册](docs/user-guide.md)：包含发起／本人报名、同行与代报、整组候补、退出审批、报名认领、改期、现场补录和结算更正，末尾附可复制到群内的简版说明。适用版本 20261109-events1。
@@ -107,7 +109,14 @@ docker compose up -d --force-recreate bot # 修改 env_file 后重新载入环�
 docker compose down                     # 停止容器，不改动任何资料
 ```
 
-每次升级先按发布规则确定 `web`／`bot`／`both` 范围并记录当前版本组合，再备份代码及 SQLite，以正式备份的隔离副本演练所需迁移，然后上传新版代码、建置新映像并更新选定服务。上方整组 `up -d` 适用于成套启动／相容升级；不相容变更须按发布规则安排维护窗，单边发布须额外处理当前共用标签的限制。`git archive HEAD | ssh server2 'tar -x -C /opt/qgroup'` 会替换 `server.py`、`qgroup_core/`、`qgroup_bot/`、`public/`、`deploy/`、文档与 Docker 档案；**不上传数据库**。不要让旧 systemd 服务与新容器同时运行（会抢 8791 与同一个 bot 长连线），不由 root 迁移实时库。回退前先检查原版本组合与现有资料库相容；成套回退可 `docker compose down` → `systemctl enable --now qgroup qgroup-bot`，或把 `.env` 的 `QGROUP_TAG` 指回已验证的旧映像后 `docker compose up -d`。单边回退须保留另一服务的预期版本，不能直接套用整组成套指令。
+每次升级先按发布规则确定 `web`／`bot`／`both` 范围并记录当前版本组合，执行来源检查，再备份代码及 SQLite，以正式备份的隔离副本演练所需迁移，然后将明确提交的封存包上传到新的干净暂存目录、建置新映像并更新选定服务。上方整组 `up -d` 适用于成套启动／相容升级；不相容变更须按发布规则安排维护窗，单边发布须额外处理当前共用标签的限制。封存包只含该提交的追踪档案，**不上传数据库**。不要让旧 systemd 服务与新容器同时运行（会抢 8791 与同一个 bot 长连线），不由 root 迁移实时库。回退前先检查原版本组合与现有资料库相容；成套回退可 `docker compose down` → `systemctl enable --now qgroup qgroup-bot`，或把 `.env` 的 `QGROUP_TAG` 指回已验证的旧映像后 `docker compose up -d`。单边回退须保留另一服务的预期版本，不能直接套用整组成套指令。
+
+```sh
+# 在本机干净仓库检查来源；失败立即停止。用核准的完整 SHA 封存，勿改用 HEAD。
+release_commit=$(python3 deploy/check_release_source.py --commit FULL_40_CHARACTER_COMMIT_SHA) || exit 1
+git archive --format=tar "$release_commit" > /tmp/qgroup-"$release_commit".tar
+# 后续上传、建置及切换须遵循保全流程；这里不会操作正式环境。
+```
 
 ```sh
 ssh server2 'docker compose -f /opt/qgroup/compose.yaml ps; systemctl start qgroup-backup.service'
