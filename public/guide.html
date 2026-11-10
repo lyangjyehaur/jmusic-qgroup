@@ -19,7 +19,7 @@
 <details class="guide-section" id="section-1"><summary><h2>目前可以用到哪一步</h2></summary><div class="guide-copy"><p>介面及操作說明依瀏覽器首選語言自動顯示：簡中顯示簡體，其他語言顯示繁體。更改語言後重新整理即可。稱呼、活動內容、備註與歷史原文維持填寫時的文字。</p>
 <p>群聚看板用於群組活動的報名與管理，支援唱歌、聚餐、運動、出遊等類型。發起、本人／同行／代報名、候補、退出審批、安排變更、出席、結算、收退款帳本、認領與跨裝置授權都已上線。</p>
 <p>預設須使用 QQ 登入建立帳號。點首頁的「QQ 登录」，先閱讀並勾選同意隱私政策，再完成 QQ 官方授權，返回後核對並確認登入；首次確認才建立站內帳號，單純瀏覽不會建立帳號。登入後可另外修改群內稱呼。</p>
-<p>活動提醒可從站內「消息」查看，也可複製活動摘要分享。</p>
+<p>活動提醒可從站內「消息」查看，也可複製活動摘要分享。已配置機器人的主要 QQ 群可用指令取得網站入口，詳見第 10 節；活動須由發起者另行開啟群同步。</p>
 <details class="guide-topic"><summary>第一次使用</summary><div class="guide-copy"><ol>
 <li>打開網站，點「QQ 登录」，完成授權後核對並確認登入。發起或報名前也會引導登入。</li>
 <li>點右上角稱呼，在個人資料修改群內稱呼。同名不會合併帳號；換設備使用同一個 QQ 登入，才能回到對應帳號。</li>
@@ -564,7 +564,55 @@
 活動改安排、遞補和結算請留意站內「消息」；目前不會自動發到 QQ 群。</p>
 </blockquote>
 </div></details>
-    <p class="guide-updated">更新于 2026-11-09</p>
+<details class="guide-section" id="section-11"><summary><h2>QQ 群機器人</h2></summary><div class="guide-copy"><details class="guide-topic"><summary>查活動與繼續操作</summary><div class="guide-copy"><p>在已配置機器人的主要群 @ 機器人，使用 <code>/帮助</code> 查看指令。提示使用簡中，指令接受簡繁，例如 <code>/活动</code>／<code>/活動</code>、<code>/报名</code>／<code>/報名</code>、<code>/结算</code>／<code>/結算</code>。活動原文不轉換。</p>
+<div class="guide-table"><table>
+<thead>
+<tr>
+<th>要做的事</th>
+<th>指令</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>看時間、地點與名額</td>
+<td><code>/活动</code>、<code>/名额</code>、<code>/地点</code>、<code>/规则</code></td>
+</tr>
+<tr>
+<td>本人、同行、待確認與退出</td>
+<td><code>/报名</code>、<code>/同行</code>、<code>/待确认</code>、<code>/退出</code></td>
+</tr>
+<tr>
+<td>核對變更後的安排</td>
+<td><code>/确认安排</code></td>
+</tr>
+<tr>
+<td>查自己的報名與款項</td>
+<td><code>/我的</code>，登入網站查看</td>
+</tr>
+<tr>
+<td>往期帳單、帳本與申報</td>
+<td><code>/往期</code>、<code>/结算</code>、<code>/账本</code>、<code>/已付款</code>、<code>/申报</code></td>
+</tr>
+<tr>
+<td>發起、管理、出席與特殊流程</td>
+<td><code>/发起</code>、<code>/再约</code>、<code>/管理</code>、<code>/待办</code>、<code>/出席</code>、<code>/补报</code>、<code>/认领</code>、<code>/协办</code></td>
+</tr>
+</tbody>
+</table></div>
+<p>多場活動時先選對應連結，或輸入指令加 8 位活動短碼，例如 <code>/名额 a1b2c3d4</code>。短碼不唯一時使用完整編號。機器人只查已開啟群同步的公開活動，找不到時可向發起者確認，或登入網站查看有權訪問的活動。</p>
+<p>連結只打開對應頁面或表單。仍須在網站核對安排、名額、權限及金額後提交，沒有自動替你報名、退出、確認出席或登記付款。補報、認領和協辦的專屬邀請只交指定人，不要貼到整個群。</p>
+</div></details>
+<details class="guide-topic"><summary>發起者開啟同步與查看結果</summary><div class="guide-copy"><p>活動表單「高级选项」可勾選同步公開活動到主要 QQ 群；也可在詳情「高级选项」→「QQ 群同步设置」核對內容後開啟。新舊活動預設關閉；邀請活動和草稿不會發到群。關閉後停止查詢及待送通知，已送訊息仍可能留在群中。</p>
+<p>開啟後同步活動信息、安排變更、成團、暫停／恢復報名、開始／結束／取消、結算、帳務結清與重新核對等重要節點，並安排適用的截止與預計結束提醒。詳情高級選項中的「QQ 群同步」顯示最近投遞結果。「模擬，未發送」表示沒有真的發訊息；「已發送」不代表群友已讀。</p>
+<p>失敗或模擬的通知可由發起者核對後「重送通知」。這只重送通知，不重做報名或款項。管理員切換為實際發送後，不會自動補發所有模擬紀錄。</p>
+<p>目前機器人尚未綁定你的站內身份，不能在群裡查個人應付、代你報名、接收個人私聊通知。<code>/待办</code> 顯示公開活動摘要，自己的任務仍以登入後網站「消息」為準。</p>
+</div></details>
+<details class="guide-topic"><summary>網站管理員調整機器人</summary><div class="guide-copy"><p>管理員登入 <code>/admin</code>，在「QQ 机器人」調整主動通知、指令回覆、發送模式、通知事件、提醒時間、勿擾時段與發送間隔，保存後即可生效。後台顯示配置版本、機器人最近載入的版本與回報時間；尚未回報時，不能僅憑保存成功判斷機器人已運行。</p>
+<p>消息模板按通知事件分開編輯，可點選變數插入並「预览示例」；預覽使用示例資料，不會發送到群。模板必須保留 <code>{url}</code>，自訂文字按原文發送。切換通知類型會保留目前頁面的編輯，全部模板在「保存机器人设置」時一起保存。</p>
+<p>關閉某類通知會作廢待送消息，重新開啟不補發舊通知；調整提醒時間會重排未來提醒。勿擾與發送間隔只影響主動通知，指令回覆仍即時處理。可在「配置修改记录」查看修改項目並恢復上一版，恢復會追加新版本。</p>
+</div></details>
+</div></details>
+    <p class="guide-updated">更新于 2026-11-10</p>
   </main>
   <footer class="site-footer">
     <nav class="footer-links" aria-label="页脚导航"><a href="/">返回活动</a></nav>

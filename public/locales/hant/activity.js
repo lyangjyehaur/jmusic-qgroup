@@ -19,6 +19,10 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
     if(e.fee_policy)html+=`<details class="event-policy"><summary>費用與退出規則</summary><p>${esc(e.fee_policy)}</p><p>退出期限：${shortDate(e.withdrawal_deadline,e.timezone)}。期限後退出需提交申請；是否負擔費用須按已接受的約定協調，不會自動加收。</p></details>`;
     if(e.actual_started_at||e.actual_ended_at)html+=`<p data-advanced-only class="activity-status">${e.actual_started_at?"實際開始 "+shortDate(e.actual_started_at,e.timezone):''}${e.actual_started_at&&e.actual_ended_at?' · ':''}${e.actual_ended_at?"實際結束 "+shortDate(e.actual_ended_at,e.timezone):''}</p>`;
     if(e.cohosts.length)html+=`<p data-advanced-only class="activity-status">協辦：${e.cohosts.map(p=>esc(p.name)).join('、')}</p>`;
+    if(e.is_owner){
+      const states={pending:"待送",sending:"投遞中",sent:"已發送",failed:"失敗",skipped:"已作廢",simulated:"模擬，未發送"};
+      html+=`<details data-advanced-only class="extra-settings"><summary>QQ 群同步 · ${e.bot_enabled?"已開啟":"未開啟"}</summary><p class="field-help">${e.bot_feature_enabled?"通知是否實際發送，以投遞記錄為準；已發送不代表群友已讀。":"管理員尚未啟用機器人，當前不會排入通知。"}</p>${(e.bot_delivery||[]).map(r=>`<p class="field-help">${esc({activity_published:"活動信息",conditions_changed:"安排變更",deadline_reminder:"截止提醒",estimated_over_reminder:"結束提醒",settlement_updated:"結算發佈",finance_closed:"帳務結清",finance_reopened:"重新核對",event_started:"實際開始",event_finished:"實際結束",event_cancelled:"活動取消",formation_confirmed:"成團確認",registration_paused:"暫停報名",registration_resumed:"恢復報名",ownership_changed:"管理交接"}[r.kind]||"活動通知")} · ${esc(states[r.state]||r.state)} · ${shortDate(r.sent_at||r.simulated_at||r.created_at)}${r.last_error&&r.state!=='simulated'?' · '+esc(r.last_error):''}${e.bot_enabled&&['failed','simulated'].includes(r.state)?` <button class="text-button" data-activity="bot_retry" data-id="${r.id}">重送通知</button>`:''}</p>`).join('')||"<p class=\"field-help\">暫無投遞記錄</p>"}</details>`;
+    }
     return html;
   }
   function tools(e) {
@@ -32,6 +36,7 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
     if(e.can_attendance)buttons.push("<button data-activity=\"attendance\">出席管理</button>");
     if(e.can_onsite)buttons.push("<button data-activity=\"onsite\">現場補錄</button>");
     if(e.is_owner) {
+      if(!e.archived_at)buttons.push("<button data-activity=\"bot_sync\">QQ 群同步設置</button>");
       if(e.lifecycle!=='draft'&&!['ended','cancelled'].includes(e.lifecycle)&&!e.archived_at&&e.formation_state!=='confirmed')buttons.push("<button data-activity=\"formation\">確認成團</button>");
       if(!e.archived_at)buttons.push("<button data-activity=\"management\">協辦與轉交</button>");
       if(e.lifecycle!=='draft'&&e.lifecycle!=='cancelled'&&!e.archived_at)buttons.push("<button class=\"danger\" data-activity=\"cancel\">取消活動</button>");
@@ -47,10 +52,16 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       start:["確認實際開始","備註",false,"記錄現在為實際開始時間，停止普通報名；臨時加入使用現場補錄。"],
       formation:["確認成團","原因",!e.minimum_met,"未達到最低人數也可由發起者決定照常舉行，請寫明原因。"],
       pause:["暫停報名","備註",false,"現有名單與候補保留。"],resume:["恢復報名","備註",false,"在截止時間內按原候補順序遞補。"],
+      bot_sync:["QQ 群同步設置","備註",false,"只同步公開活動。開啟後會排入活動信息，並同步後續重要節點；關閉後不再查詢或發送。"],
+      bot_retry:["重送 QQ 通知","備註",false,"只重新排入這條通知，不重做原報名或款項操作。請核對原活動信息仍適合群成員查看；機器人仍在模擬模式時會繼續模擬。"],
       revoke_role:["撤銷協辦","原因",true,"撤銷管理權限；對方自己的報名管理權保留。"],
       revoke_invite:["撤銷交接邀請","原因",true,"尚未接受的鏈接將失效。"]}[action];
     if(!config)return;
     actionContext={event:e,action,...extra};const form=$('#activity-action-form');form.reset();
+    $('#bot-sync-options').hidden=action!=='bot_sync';
+    form.elements.bot_enabled.checked=!!e.bot_enabled;
+    form.elements.bot_enabled.disabled=e.visibility!=='public';
+    $('#bot-sync-preview').textContent=[e.title,timeRange(e),"地點："+e.location,e.description||'',e.fee_policy||''].filter(Boolean).join('\n');
     $('#activity-action-title').textContent=config[0];$('#activity-action-hint').textContent=config[3];
     $('#activity-reason-label').textContent=config[1]+(config[2]?'':"（選填）");form.elements.reason.required=config[2];
     $('#activity-action-save').textContent=config[0];$('.form-error',form).textContent='';showDialog('activity-action-dialog');
@@ -61,7 +72,10 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       const {event:e,action,id}=actionContext;let path='/api/events/'+e.id,method='PATCH';
       if(action==='revoke_role'){path+='/management/roles/'+id;method='DELETE';}
       if(action==='revoke_invite'){path+='/management/invitations/'+id;method='DELETE';}
-      const updated=await api(path,method,{action,base_revision:e.revision,reason:form.elements.reason.value.trim()});
+      const data={action,base_revision:e.revision,reason:form.elements.reason.value.trim()};
+      if(action==='bot_sync')data.bot_enabled=form.elements.bot_enabled.checked;
+      if(action==='bot_retry')data.outbox_id=Number(id);
+      const updated=await api(path,method,data);
       await apply(updated,"活動已更新",'activity-action-dialog');
       if(action.startsWith('revoke_'))openManagement(updated);
     }catch(problem){$('.form-error',form).textContent=problem.message;}
@@ -207,5 +221,5 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       else openAction(e,action,{id:button.dataset.id});
     }catch(problem){toast(problem.message);}
   });
-  return {alerts,tools,showManagementInvitation,arrangementHtml};
+  return {alerts,tools,showManagementInvitation,arrangementHtml,openConditions};
 }

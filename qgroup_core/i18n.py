@@ -159,6 +159,9 @@ def payload(value,locale):
     if isinstance(value,list):return [payload(item,locale) for item in value]
     if not isinstance(value,dict):return value
     result={key:payload(item,locale) for key,item in value.items()}
+    if 'default_template' in value and isinstance(value.get('kinds'),dict):
+        result['kinds']={key:text(label,locale) for key,label in value['kinds'].items()}
+        result['variables']={key:text(label,locale) for key,label in value['variables'].items()}
     if isinstance(value.get('error'),str):result['error']=error(value['error'],locale)
     if isinstance(value.get('rounding_rule'),str):result['rounding_rule']=text(value['rounding_rule'],locale)
     if isinstance(value.get('close_blockers'),list):result['close_blockers']=[error(item,locale) for item in value['close_blockers']]

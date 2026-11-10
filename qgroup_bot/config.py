@@ -29,7 +29,21 @@ class Config:
         self.db = Path(os.environ.get('KANBAN_DB', '')).expanduser()
         self.group = os.environ.get('KANBAN_BOT_GROUP', '').strip()
         self.sandbox = os.environ.get('QQBOT_SANDBOX') == '1'
+        # Deployment default. Shared bot_settings may explicitly override it;
+        # selecting "inherit deployment settings" keeps this value in effect.
         self.dry_run = os.environ.get('KANBAN_BOT_DRY_RUN', '1') != '0'
+        # 2026-08-10 changelog unified the OpenAPI host. The previously
+        # verified host remains an explicit fallback until the new one is
+        # confirmed from this deployment; see QQBotAPI.gateway().
+        self.api_base = (os.environ.get('KANBAN_BOT_API_BASE', '').strip().rstrip('/')
+                         or ('https://sandbox.api.sgroup.qq.com' if self.sandbox
+                             else 'https://api.bot.qq.com'))
+        self.legacy_api_base = 'https://api.sgroup.qq.com'
+        # Explicit opt-in: an empty value keeps the existing behaviour, so a
+        # deployment only enforces its URL allowlist once it is configured.
+        raw_hosts = os.environ.get('KANBAN_BOT_ALLOWED_HOSTS', '').strip()
+        self.allowed_link_hosts = tuple(
+            host.strip().lower() for host in raw_hosts.split(',') if host.strip()) if raw_hosts else ()
         self.poll_interval = self._float('KANBAN_BOT_POLL_INTERVAL', 5.0, 1.0)
         self.max_attempts = self._int('KANBAN_BOT_MAX_ATTEMPTS', 5, 1)
         self.batch = self._int('KANBAN_BOT_BATCH', 10, 1)
@@ -37,6 +51,9 @@ class Config:
         self.setup_panels = os.environ.get('KANBAN_BOT_SETUP_PANELS', '0') == '1'
         self.intents = self._int('KANBAN_BOT_INTENTS', (1 << 25) | (1 << 26), 0)
         self.verbose_events = os.environ.get('KANBAN_BOT_VERBOSE', '0') == '1'
+        self.log_dir = Path(os.environ.get('KANBAN_BOT_LOG_DIR') or self.db.parent / 'bot-logs').expanduser()
+        self.log_content = os.environ.get('KANBAN_BOT_LOG_CONTENT', '0') == '1'
+        self.log_content_limit = min(self._int('KANBAN_BOT_LOG_CONTENT_LIMIT', 500, 80), 2000)
 
     @staticmethod
     def _float(key, default, minimum):
@@ -73,6 +90,7 @@ class Config:
         return problems
 
     def describe(self):
-        return ('db=%s group=%s… dry_run=%s poll=%.0fs batch=%d panels=%s sandbox=%s'
-                % (self.db, self.group[:10], self.dry_run, self.poll_interval,
+        return ('db=%s group=%s… dry_run=%s api_host=%s poll=%.0fs batch=%d panels=%s sandbox=%s'
+                % (self.db, self.group[:10], self.dry_run,
+                   self.api_base.split('//')[-1], self.poll_interval,
                    self.batch, self.setup_panels, self.sandbox))

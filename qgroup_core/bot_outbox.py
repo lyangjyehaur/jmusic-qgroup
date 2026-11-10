@@ -11,17 +11,18 @@ Design contract (see README and docs/implementation-plan.md):
 * Sending is a separate long-running process. A send failure never rolls back
   a registration, a settlement or an audit entry.
 
-Nothing here imports ``server``. Set ``KANBAN_BOT_ENABLED=1`` on the web
-service to start queueing; leaving it unset keeps every existing write path
-byte-for-byte unchanged.
+Nothing here imports ``server``. Queueing requires the shared notification
+policy (initially KANBAN_BOT_ENABLED) and the owner's group-sharing opt-in.
 """
 import hashlib
 import json
 import os
+import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
 
-from .common import now
+from .common import now, APIError
+from . import bot_views, bot_settings
 
 # Broadcast kinds are chosen by "the whole group needs to know or act",
 # not by a per-event message quota. Operators may extend or shrink the set.
@@ -29,6 +30,8 @@ DEFAULT_BROADCAST = frozenset({
     'activity_published', 'formation_confirmed', 'conditions_changed',
     'event_started', 'event_finished', 'event_cancelled',
     'settlement_updated', 'deadline_reminder', 'estimated_over_reminder',
+    'registration_paused', 'registration_resumed', 'finance_closed', 'finance_reopened',
+    'ownership_changed',
 })
 
 # notify() kinds already produced by append() for the same state transition.
@@ -44,6 +47,11 @@ APPEND_ACTIONS = {
     'event_finish': 'event_finished',
     'event_cancel': 'event_cancelled',
     'settlement_saved': 'settlement_updated',
+    'event_pause': 'registration_paused',
+    'event_resume': 'registration_resumed',
+    'finance_close': 'finance_closed',
+    'finance_reopen': 'finance_reopened',
+    'ownership_transferred': 'ownership_changed',
 }
 
 # Point-at-a-person notifications. They are NOT banned from the bot: they are
@@ -57,11 +65,15 @@ PERSONAL_KINDS = frozenset({
 })
 
 
-def enabled():
+def enabled(db=None):
+    if db is not None:
+        return bot_settings.read(db)['config']['enabled']
     return os.environ.get('KANBAN_BOT_ENABLED', '0') == '1'
 
 
-def broadcast_kinds():
+def broadcast_kinds(db=None):
+    if db is not None:
+        return frozenset(bot_settings.read(db)['config']['broadcast_kinds'])
     raw = os.environ.get('KANBAN_BOT_BROADCAST_KINDS', '').strip()
     return frozenset(x.strip() for x in raw.split(',') if x.strip()) if raw else DEFAULT_BROADCAST
 
@@ -78,7 +90,9 @@ def keyboard_enabled():
     return os.environ.get('KANBAN_BOT_KEYBOARD', '0') == '1'
 
 
-def schedule_enabled():
+def schedule_enabled(db=None):
+    if db is not None:
+        return bot_settings.read(db)['config']['schedule_enabled']
     return os.environ.get('KANBAN_BOT_SCHEDULE', '1') == '1'
 
 
@@ -120,7 +134,7 @@ def local_time(value, zone=''):
 
 def _available(db):
     """Guard old databases that have not run migration 10 yet."""
-    if not enabled():
+    if not enabled(db):
         return False
     return bool(db.execute(
         "SELECT 1 FROM sqlite_master WHERE type='table' AND name='bot_outbox'"
@@ -144,28 +158,62 @@ def _keyboard(buttons):
 
 
 def enqueue(db, event_id, kind, text, *, channel='group', target='',
-            due_at=None, buttons=None, status='pending'):
+            due_at=None, buttons=None, status='pending', schedule_key=None,
+            fact_key=None, recipient_user_id=None, template_context=None):
     """Queue one message. Returns True when a new row was created."""
     if not _available(db) or not text:
         return False
-    if kind not in broadcast_kinds() and channel == 'group':
+    if kind not in broadcast_kinds(db) and channel == 'group':
+        return False
+    if channel == 'group' and not bot_views.shareable(_event(db, event_id)):
         return False
     payload = {'text': text, 'msg_type': 0}
+    if template_context is not None:
+        payload['_template_context'] = template_context
+    if schedule_key:
+        payload['_schedule_key'] = schedule_key
+    # Callback commands must retain the activity from the card they belong to.
+    buttons = [(label, data+' '+event_id if data else '', jump)
+               for label, data, jump in (buttons or [])]
     keyboard = _keyboard(buttons or [])
     if keyboard:
         payload['keyboard'] = keyboard
-    raw = '%s\n%s\n%s\n%s' % (kind, channel, target, text)
+    raw = '%s\n%s\n%s\n%s\n%s' % (kind, channel, target,
+        recipient_user_id or '', fact_key or schedule_key or text)
     dedupe = hashlib.sha256(raw.encode('utf-8')).hexdigest()[:32]
     cursor = db.execute('''INSERT OR IGNORE INTO bot_outbox
-        (event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at)
-        VALUES(?,?,?,?,?,?,?,?,?)''',
+        (event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id)
+        VALUES(?,?,?,?,?,?,?,?,?,?)''',
         (event_id, kind, dedupe, channel, target,
-         json.dumps(payload, ensure_ascii=False), due_at, status, now()))
+         json.dumps(payload, ensure_ascii=False), due_at, status, now(), recipient_user_id))
     return cursor.rowcount > 0
 
 
 def _event(db, event_id):
     return db.execute('SELECT * FROM events WHERE id=?', (event_id,)).fetchone()
+
+
+def retry(db, event, row_id):
+    """New delivery intent; never re-execute registration or financial commands."""
+    if not _available(db) or not bot_views.shareable(event):
+        raise APIError('当前活动未开启公开群同步，无法重送',409)
+    row = db.execute("SELECT * FROM bot_outbox WHERE id=? AND event_id=? AND channel='group'",
+                     (row_id,event['id'])).fetchone()
+    if not row or not (row['status']=='failed' or row['last_error']=='dry-run'):
+        raise APIError('只能重送失败或模拟的通知',409)
+    if db.execute("SELECT 1 FROM bot_outbox WHERE event_id=? AND kind=? AND payload_json=? "
+                  "AND status IN ('pending','sending')", (event['id'],row['kind'],row['payload_json'])).fetchone():
+        raise APIError('这条通知已有待送任务，请等待投递结果',409)
+    if row['kind'] in REMINDER_KINDS:
+        plan = reminder_plan(event,row['kind'],bot_settings.read(db)['config'])
+        if not plan or json.loads(row['payload_json']).get('_schedule_key')!=plan[1]:
+            raise APIError('活动安排已变更，请使用新版提醒，不能重送旧提醒',409)
+    cursor = db.execute('''INSERT INTO bot_outbox
+        (event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at)
+        VALUES(?,?,?,?,?,?,?,'pending',?)''',
+        (event['id'],row['kind'],'retry:'+uuid.uuid4().hex,'group',row['target'],
+         row['payload_json'],row['due_at'],now()))
+    return cursor.lastrowid
 
 
 def _counts(db, event_id):
@@ -213,11 +261,15 @@ def _settlement_lines(db, event_id, version):
     return lines
 
 
-def compose(db, event, kind, *, source='', after=None):
+def _compose_default(db, event, kind, *, source='', after=None):
     """Build a de-identified group message. Returns (text, buttons) or None."""
-    if event is None:
+    if not bot_views.shareable(event):
         return None
-    url = event_url(event['id'])
+    action = {'activity_published':'join', 'conditions_changed':'conditions',
+              'event_finished':'settlement', 'event_cancelled':'finance',
+              'settlement_updated':'settlement', 'deadline_reminder':'join',
+              'estimated_over_reminder':'manage'}.get(kind)
+    url = event_url(event['id'], action=action)
     zone = event['timezone'] or ''
     when = local_time(event['starts_at'], zone)
     deadline = local_time(event['deadline'], zone)
@@ -252,7 +304,7 @@ def compose(db, event, kind, *, source='', after=None):
     elif kind == 'event_started':
         lines = [head, '时间：%s' % when, '地点：%s' % event['location'],
                  '现场如需补录，请到站内「现场补录」操作。', '', url]
-        buttons = [('现场补录', '', url), ('签到', '/签到', '')]
+        buttons = [('现场补录', '', event_url(event['id'], action='onsite')), ('出席', '/出席', '')]
     elif kind == 'event_finished':
         lines = [head, '请核对出席与款项申报；结算由发起者发布后另行通知。', '', url]
         buttons = [('活动页', '', url), ('待办', '/待办', '')]
@@ -278,9 +330,53 @@ def compose(db, event, kind, *, source='', after=None):
     elif kind == 'estimated_over_reminder':
         lines = [head, '已超过预计结束时间，请发起者确认实际结束或延长。', '', url]
         buttons = [('活动页', '', url), ('待办', '/待办', '')]
+    elif kind in ('registration_paused', 'registration_resumed'):
+        lines = [head, bot_views.registration_label(event),
+                 '原名单与候补保留，名额按当前队列分配。', '', event_url(event['id'], action='join')]
+        buttons = [('看名额', '/名额', '')]
+    elif kind == 'finance_closed':
+        lines = [head, '发起者已确认本版账务结清；原账单与账本记录保留。', '',
+                 event_url(event['id'], action='finance')]
+        buttons = [('查看账本', '', event_url(event['id'], action='finance'))]
+    elif kind == 'finance_reopened':
+        lines = [head, '账务重新待核对，请以站内最新补退款及结清状态为准。', '',
+                 event_url(event['id'], action='finance')]
+        buttons = [('查看账本', '', event_url(event['id'], action='finance'))]
+    elif kind == 'ownership_changed':
+        lines = [head, '发起者交接已完成，当前管理者请到活动页查看。',
+                 '管理交接不代表实际代收资金已移交。', '', url]
+        buttons = [('活动页', '', url)]
     else:
         return None
     return '\n'.join(line for line in lines if line is not None), buttons
+
+
+def build_message(db, event, kind, *, source='', after=None, config=None):
+    planned = _compose_default(db, event, kind, source=source, after=after)
+    if not planned:
+        return None
+    original, buttons = planned
+    lines = original.split('\n')
+    # Capture facts at queue time; template edits must never turn an old fact
+    # into a statement about the activity's newer state.
+    confirmed, waiting, _ = _counts(db, event['id'])
+    context = dict(heading=lines[0], details='\n'.join(lines[1:-1]).strip(), url=lines[-1],
+                   title=str(event['title'])[:40], starts_at=local_time(event['starts_at'], event['timezone']),
+                   deadline=local_time(event['deadline'], event['timezone']), location=event['location'],
+                   confirmed=str(confirmed), waiting=str(waiting), fee_policy=str(event['fee_policy'] or '')[:120],
+                   description=str(event['description'] or '')[:120],
+                   version=str(_version(db, event['id']) or '') if kind == 'settlement_updated' else str(event['conditions_version']),
+                   change_summary=str(event['change_summary'] or '')[:120],
+                   cancellation_reason=str(event['cancellation_reason'] or '')[:120])
+    context['_default_text'] = original
+    config = config or bot_settings.read(db)['config']
+    text = bot_settings.render(config, kind, context) if kind in config['templates'] else original
+    return text, buttons, context
+
+
+def compose(db, event, kind, *, source='', after=None):
+    planned = build_message(db, event, kind, source=source, after=after)
+    return planned[:2] if planned else None
 
 
 PERSONAL_TEXT = {
@@ -307,44 +403,81 @@ LABELS = {
     'settlement_updated': '结算发布',
     'deadline_reminder': '报名即将截止',
     'estimated_over_reminder': '活动时间已到',
+    'registration_paused': '暂停报名',
+    'registration_resumed': '恢复报名',
+    'finance_closed': '账务已结清',
+    'finance_reopened': '账务重新核对',
+    'ownership_changed': '管理交接',
 }
 
 
+REMINDER_KINDS = ('deadline_reminder', 'estimated_over_reminder')
+
+
+def reminder_plan(event, kind, config=None):
+    if (not bot_views.shareable(event) or event['lifecycle'] not in ('scheduled', 'ongoing')
+            or event['archived_at']):
+        return None
+    config = config or bot_settings.defaults()
+    if not config['enabled'] or not config['schedule_enabled'] or kind not in config['broadcast_kinds']:
+        return None
+    value = event['deadline'] if kind == 'deadline_reminder' else event['starts_at']
+    try:
+        moment = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        if moment.tzinfo is None:
+            moment = moment.replace(tzinfo=_zone(event['timezone']))
+        if kind == 'deadline_reminder':
+            moment -= timedelta(hours=config['deadline_hours'])
+        else:
+            if not event['duration_hours']:
+                return None
+            moment += timedelta(hours=event['duration_hours'], minutes=config['estimated_over_delay_minutes'])
+        due = moment.astimezone(timezone.utc).isoformat(timespec='seconds')
+        key = hashlib.sha256((kind+'|'+due).encode()).hexdigest()[:32]
+        return due, key
+    except (ValueError, TypeError, AttributeError, OverflowError):
+        return None
+
+
 def _schedule(db, event):
-    """Time-driven rows: the web service has no scheduler, so queue them up front."""
-    if not schedule_enabled() or event['lifecycle'] == 'draft':
-        return
-    zone = event['timezone'] or ''
-    try:
-        deadline = datetime.fromisoformat(event['deadline'].replace('Z', '+00:00'))
-        due = (deadline - timedelta(hours=24)).astimezone(timezone.utc).isoformat(timespec='seconds')
-        if due > now():
-            planned = compose(db, event, 'deadline_reminder')
+    """Replace obsolete reminders; never mutate their immutable intent payload."""
+    settings = bot_settings.read(db)
+    for kind in REMINDER_KINDS:
+        plan = reminder_plan(event, kind, settings['config'])
+        retained = False
+        for row in db.execute("SELECT id,payload_json,status,last_error,simulated_at FROM bot_outbox WHERE event_id=? "
+                              "AND kind=?",
+                              (event['id'], kind)).fetchall():
+            try:
+                key = json.loads(row['payload_json']).get('_schedule_key')
+            except (ValueError, TypeError, AttributeError):
+                key = None
+            if (not plan or key != plan[1]) and row['status'] in ('pending','sending'):
+                db.execute("UPDATE bot_outbox SET status='skipped',last_error=? WHERE id=?",
+                           ('安排或群同步设置已变更，旧提醒作废', row['id']))
+            elif plan and key == plan[1] and (row['status'] != 'skipped'
+                    or row['last_error'] == 'dry-run' or row['simulated_at']):
+                retained = True
+        if plan and plan[0] > now() and not retained:
+            planned = build_message(db, event, kind)
             if planned:
-                enqueue(db, event['id'], 'deadline_reminder', planned[0],
-                        due_at=due, buttons=planned[1])
-    except (ValueError, TypeError, AttributeError, OverflowError):
-        pass
-    try:
-        if event['duration_hours']:
-            end = datetime.fromisoformat(event['starts_at'].replace('Z', '+00:00')) \
-                + timedelta(hours=event['duration_hours'])
-            due = end.astimezone(timezone.utc).isoformat(timespec='seconds')
-            if due > now():
-                planned = compose(db, event, 'estimated_over_reminder')
-                if planned:
-                    enqueue(db, event['id'], 'estimated_over_reminder', planned[0],
-                            due_at=due, buttons=planned[1])
-    except (ValueError, TypeError, AttributeError, OverflowError):
-        pass
+                enqueue(db, event['id'], kind, planned[0], due_at=plan[0],
+                        buttons=planned[1], schedule_key=plan[1],
+                        fact_key='schedule:'+plan[1]+':revision:'+str(event['revision'])+':config:'+str(settings['revision']),
+                        template_context=planned[2])
 
 
 def _broadcast(db, event_id, kind, source='', after=None):
     event = _event(db, event_id)
-    planned = compose(db, event, kind, source=source, after=after)
+    planned = build_message(db, event, kind, source=source, after=after)
     if not planned:
         return False
-    created = enqueue(db, event_id, kind, planned[0], buttons=planned[1])
+    version = (_version(db, event_id) if kind == 'settlement_updated'
+               else event['conditions_version'] if kind == 'conditions_changed'
+               else None)
+    created = enqueue(db, event_id, kind, planned[0], buttons=planned[1],
+                      fact_key=str(version) if version is not None else 'revision:'+str(event['revision']),
+                      template_context=planned[2])
     if created and kind == 'activity_published':
         _schedule(db, event)
     return created
@@ -362,18 +495,37 @@ def on_notify(db, user_id, event_id, kind, message):
         # Private rows stay unbound until member_openid <-> user_id exists.
         enqueue(db, event_id, kind,
                 PERSONAL_TEXT.get(kind, '你有一条待办') + '\n' + event_url(event_id),
-                channel='private')
+                channel='private', recipient_user_id=user_id)
 
 
 def on_append(db, event, user, action, before, after, reason=''):
     """Hook called by audit.append for every state transition."""
     if not _available(db):
         return
+    current = _event(db, event['id'])
+    if not bot_views.shareable(current):
+        db.execute("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' "
+                   "WHERE event_id=? AND channel='group' AND status IN ('pending','sending')", (event['id'],))
+    if action.startswith('event_'):
+        _schedule(db, current)
+    if action == 'event_updated':
+        before_event = before.get('event', before) if isinstance(before, dict) else {}
+        if current['conditions_version'] != before_event.get('conditions_version', current['conditions_version']):
+            _broadcast(db, current['id'], 'conditions_changed')
+        if not before_event.get('bot_enabled') and current['bot_enabled']:
+            _broadcast(db, current['id'], 'activity_published')
+        return
+    if action == 'event_bot_sync':
+        if current['bot_enabled']:
+            kind = {'ended': 'event_finished', 'cancelled': 'event_cancelled'}.get(current['lifecycle'], 'activity_published')
+            _broadcast(db, current['id'], kind)
+        return
     kind = APPEND_ACTIONS.get(action)
     if not kind:
+        if (action.startswith('finance_') and isinstance(before, dict) and isinstance(after, dict)
+                and before.get('state') == 'closed' and after.get('state') != 'closed'):
+            _broadcast(db, current['id'], 'finance_reopened')
         return
-    if action == 'event_created':
-        snapshot = after if isinstance(after, dict) else {}
-        if snapshot.get('lifecycle') == 'draft':
-            return
-    _broadcast(db, event['id'], kind, after=after)
+    if current['lifecycle'] == 'draft':
+        return
+    _broadcast(db, current['id'], kind, after=after)

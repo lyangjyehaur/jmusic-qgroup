@@ -21,7 +21,7 @@ window.BoardAnalytics=(()=>{
   };
   const markers=['event','todo-event','notification-event','operation-retry','operation','remove-guest','account-scope','revoke-device','claim-copy','code-archive','code-import','code-name','code-select','code-upload','library-remove','invoice-image','advanced-toggle','privacy-request'];
   const classes=new Set('guide-section guide-topic extra-settings event-policy invoice-breakdown invoice-payers invoice-person note-options payment-code-link invoice-image image-retry'.split(' '));
-  const routeWords=new Set('api events profile account qq start finish switch link accept revoke notifications read access roster preview parties invitations management roles attendees conditions withdrawal attendance onsite registration settlement detailed finance claims request payment-codes auth register close logout admin login session settings privacy-review'.split(' '));
+  const routeWords=new Set('api events profile account qq start finish switch link accept revoke notifications read access roster preview parties invitations management roles attendees conditions withdrawal attendance onsite registration settlement detailed finance claims request payment-codes auth register close logout admin login session settings privacy-review bot-settings bot-preview bot-revert'.split(' '));
   let previousPage='',routeKey='',retryTimer=null,retries=0;
   function route() {
     const url=new URL(location.href);

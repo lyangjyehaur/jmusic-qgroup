@@ -1,0 +1,73 @@
+"""Public group views. Personal actions always return to the authenticated site."""
+from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from .common import now
+
+
+def shareable(event):
+    return bool(event is not None and event['visibility'] == 'public'
+                and event['lifecycle'] != 'draft' and event['status'] != 'deleted'
+                and 'bot_enabled' in event.keys() and event['bot_enabled'])
+
+
+def registration_label(event):
+    if event['lifecycle'] in ('ended', 'cancelled') or event['archived_at']:
+        return '已结束报名'
+    if event['lifecycle'] == 'ongoing' or event['starts_at'] <= now():
+        return '已开始，补报名请联系发起者'
+    if event['deadline'] <= now():
+        return '已截止，补报名请联系发起者'
+    return '开放报名' if event['registration_open'] else '已暂停报名'
+
+
+def counts(db, event_id):
+    rows = db.execute('''SELECT status,confirmation_state,withdrawal_requested,attendance
+        FROM attendees WHERE event_id=?''', (event_id,)).fetchall()
+    active = [r for r in rows if r['status'] in ('confirmed', 'waiting', 'tentative')]
+    return dict(confirmed=sum(r['status'] == 'confirmed' for r in rows),
+                waiting=sum(r['status'] == 'waiting' for r in rows),
+                tentative=sum(r['status'] == 'tentative' for r in rows),
+                pending=sum(r['confirmation_state'] == 'pending' for r in active),
+                declined=sum(r['confirmation_state'] == 'declined' for r in active),
+                withdrawals=sum(bool(r['withdrawal_requested']) for r in active))
+
+
+def public_tasks(db, event):
+    """Activity facts, not a claim to know the sender's role or private tasks."""
+    c = counts(db, event['id'])
+    tasks = []
+    if c['pending'] or c['declined']:
+        tasks.append('%d 人待确认新安排，%d 人暂不同意，请逐人协调' % (c['pending'], c['declined']))
+    if c['withdrawals']:
+        tasks.append('有退出申请，请有报名管理权限的人到站内处理')
+    active = event['lifecycle'] in ('scheduled', 'ongoing') and not event['archived_at']
+    if (active and event['minimum_participants'] and event['formation_state'] != 'confirmed'
+            and (c['confirmed'] >= event['minimum_participants'] or event['deadline'] <= now())):
+        tasks.append('请发起者决定是否成团；达到人数不代表已确认成团')
+    if active and estimated_over(event):
+        tasks.append('已超过预计结束时间，请确认结束或延长')
+    bill = db.execute('SELECT 1 FROM settlements WHERE event_id=?', (event['id'],)).fetchone()
+    if event['lifecycle'] in ('ended', 'cancelled') and not bill and not event['archived_at']:
+        tasks.append('请发起者核对出席、原约定并发布结算')
+    if bill:
+        from . import finance
+        state = finance.summary(db, event)['state']
+        if state != 'closed':
+            tasks.append('结算已发布，收退款及账务结清状态请到站内核对')
+    return tasks
+
+
+def estimated_over(event):
+    if event['lifecycle'] not in ('scheduled', 'ongoing') or not event['duration_hours']:
+        return False
+    try:
+        end = datetime.fromisoformat(str(event['starts_at']).replace('Z', '+00:00')) + timedelta(hours=event['duration_hours'])
+        if end.tzinfo is None:
+            try:
+                zone = ZoneInfo(event['timezone']) if event['timezone'] else timezone.utc
+            except ZoneInfoNotFoundError:
+                zone = timezone.utc
+            end = end.replace(tzinfo=zone)
+        return end <= datetime.now(timezone.utc)
+    except (ValueError, TypeError, OverflowError):
+        return False

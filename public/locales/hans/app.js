@@ -164,6 +164,7 @@ async function openDetail(id, changeUrl=true) {
   try {
     const e=await api('/api/events/'+id); state.current=id; renderDetail(e); showDialog('detail-dialog');
     if(changeUrl) setUrlEvent(id);
+    return e;
   } catch(error) { toast(error.message); }
 }
 function renderDetail(e,{preserve=false}={}) {
@@ -236,6 +237,8 @@ async function openEventForm(e=null,copy=false) {
   }
   form.elements.withdrawal_deadline.value=e?wallDate(e.withdrawal_deadline,zone):form.elements.deadline.value;
   form.elements.visibility.value=e?.visibility||'public';form.elements.minimum_participants.value=e?.minimum_participants||0;
+  form.elements.bot_enabled.checked=!!e?.bot_enabled;
+  form.elements.bot_enabled.disabled=!!e&&!e.is_owner;
   form.elements.fee_policy.value=e?e.fee_policy:"按正式参加人数均摊；同行正常 AA；迟到、早退默认不减免。费用以活动实际结算为准。";
   form.dataset.previousDeadline=form.elements.deadline.value;updateCapacityInput();
   const startValue=wallDate(start,zone);form.elements.event_date.value=startValue.slice(0,10);form.elements.start_time.value=startValue.slice(11,16);
@@ -402,6 +405,7 @@ $('#event-form').addEventListener('submit',async event=>{
     if(!BoardDrafts.ready('event-form-dialog'))return;
     if(await BoardClient.hasPending(form.elements.id.value||'new'))throw new Error("先在消息的「待确认操作」查询上次保存结果，再继续发布");
     const data=Object.fromEntries(new FormData(form));data.client_intent=form.dataset.intent;const id=data.id;delete data.id;
+    if(!form.elements.bot_enabled.disabled)data.bot_enabled=form.elements.bot_enabled.checked;
     const draft=event.submitter?.value==='draft';
     if(!id||form.dataset.lifecycle==='draft')data.join_owner=true;
     data.withdrawal_deadline=wallToISO(form.elements.withdrawal_deadline.value,form.elements.timezone.value);if(id)data.base_revision=Number(form.dataset.revision);
@@ -459,6 +463,38 @@ window.addEventListener('popstate',async()=>{
 });
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')refresh();});
 setInterval(()=>{if(document.visibilityState==='visible')refresh();},30000);
+async function routeBotEntry(params) {
+  const action=params.get('action');if(!action)return;
+  let e=null;
+  const initial=boardEntryPlan(action,null,state.me.authenticated);
+  if(initial.kind==='login'){await identityUI.account();return;}
+  const entryUrl=new URL(location.href);entryUrl.searchParams.delete('action');history.replaceState(history.state,'',entryUrl);
+  if(initial.kind==='unknown'){toast("无法识别这个操作入口，请从活动页选择");return;}
+  if(action==='create'){await openEventForm();return;}
+  if(action==='mine'){changeFilter('mine');return;}
+  const id=params.get('event');if(id)e=await openDetail(id,false);
+  const plan=boardEntryPlan(action,e,state.me.authenticated);
+  if(plan.kind==='missing'){toast("请先选择可访问的活动");return;}
+  if(plan.kind==='denied'){toast("当前身份或活动阶段不允许此操作，请在活动页核对权限");return;}
+  BoardAdvanced.set($('#detail-content'),true);
+  const click=selector=>{const el=$(selector,$('#detail-content'));if(el){el.click();return true;}return false;};
+  if(['party','tentative','invite'].includes(action))click('[data-roster-action="'+({party:'add',tentative:'tentative',invite:'invite'}[action])+'"]');
+  else if(action==='conditions')await activityUI.openConditions(e);
+  else if(['management','attendance','onsite'].includes(action))click('[data-activity="'+action+'"]');
+  else if(action==='copy')await openEventForm(e,true);
+  else if(action==='finance')await financeUI.open(e);
+  else if(action==='report')await financeUI.open(e,true);
+  else if(action==='todos'){await renderInbox(true);showDialog('notifications-dialog');}
+  else if(action==='withdraw'){
+    const mine=e.my_attendees.filter(p=>p.can_manage&&(p.can_change||p.can_withdraw));
+    if(mine.length===1)click('[data-roster-action="manage"][data-person="'+mine[0].id+'"]');
+    else toast(mine.length?"请从我的报名／同行选择要管理的人员":"没有可撤销的报名，请核对活动状态");
+  } else if(action==='join'){
+    $('#join-form button[type=submit]')?.focus();
+    toast(e.can_join?"请先查看安排，再在页面提交报名；目前尚未占位":"请核对已有报名或联系发起者补报");
+  } else if(action==='claim')toast("请联系原管理人获取本人认领链接，或在报名管理中邀请认领");
+  else if(action==='settlement')$('.settlement-section',$('#detail-content'))?.scrollIntoView({block:'start'});
+}
 (async()=>{
   try{state.me=await api('/api/me');BoardClient.setIdentity(state.me.draft_scope);setProfile();}catch(error){toast(error.message);}
   const params=new URL(location.href).searchParams,id=params.get('event'),invite=params.get('invite'),participantInvite=params.get('attendee_invite'),managementInvite=params.get('management_invite'),claim=params.get('claim'),accountLink=params.get('account_link');
@@ -471,6 +507,7 @@ setInterval(()=>{if(document.visibilityState==='visible')refresh();},30000);
   else if(id&&claim&&state.me.authenticated)await identityUI.receiveClaim(id,claim);
   else if(id&&managementInvite){try{await activityUI.showManagementInvitation(id,managementInvite);}catch(problem){toast(problem.message);}}
   else if(id&&participantInvite){try{await rosterUI.showInvitation(id,participantInvite);}catch(problem){toast(problem.message);}}
+  else if(params.has('action'))await routeBotEntry(params);
   else if(id)openDetail(id,false);
   identityUI.receipt();
   try{if(sessionStorage.getItem('kanban-welcome')){sessionStorage.removeItem('kanban-welcome');toast("欢迎使用群聚看板！可在个人资料修改群内称呼，再选择活动报名或发起新活动。");}}catch{}
@@ -493,6 +530,7 @@ function updateEventAdvancedSummary() {
   const form=$('#event-form'),f=form.elements,parts=[];
   if(!f.capacity_unlimited.checked)parts.push("上限 "+f.capacity.value+" 人");
   if(f.visibility.value==='invitation')parts.push("邀请可见");
+  if(f.bot_enabled.checked)parts.push("已开启 QQ 群同步");
   if(Number(f.minimum_participants.value))parts.push("成团 "+f.minimum_participants.value+" 人");
   if(f.timezone.value!=='Asia/Shanghai')parts.push("时区 "+(f.timezone.value||"跟随设备"));
   const start=f.event_date.value+'T'+f.start_time.value;

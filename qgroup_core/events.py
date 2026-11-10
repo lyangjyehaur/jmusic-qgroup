@@ -3,7 +3,7 @@ import secrets
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from .common import APIError, now, string, date_value
-from . import audit, roster, conditions, permissions
+from . import audit, roster, conditions, permissions, bot_outbox
 from .lifecycle import end_time, has_ended, phase
 
 CATEGORIES = {'约K','聚餐','运动','出游','游戏','其他'}
@@ -31,7 +31,7 @@ def public_snapshot(event):
     keys=('title','category','location','starts_at','deadline','capacity','description','duration_hours',
         'status','withdrawal_deadline','visibility','lifecycle','registration_open','actual_started_at',
         'actual_ended_at','archived_at','timezone','minimum_participants','formation_state','fee_policy',
-        'conditions_version','cancellation_reason')
+        'conditions_version','cancellation_reason','bot_enabled')
     return {key:event[key] for key in keys}
 
 
@@ -57,12 +57,24 @@ def settings(data,existing=None):
     return withdrawal,visibility,zone,minimum,fee
 
 
+def bot_setting(data, visibility, existing=None):
+    value = data.get('bot_enabled', bool(existing['bot_enabled']) if existing else False)
+    if type(value) is not bool:
+        raise APIError('请选择是否同步到 QQ 群')
+    if visibility != 'public':
+        if value and 'bot_enabled' in data:
+            raise APIError('邀请可见活动不能同步到公开群，请先关闭群同步')
+        return False
+    return value
+
+
 def create(db,user,data):
     lifecycle=data.get('lifecycle','scheduled')
     if lifecycle not in ('draft','scheduled'):
         raise APIError('新活动只能保存草稿或发布')
     values=event_values(data,draft=lifecycle=='draft')
     withdrawal,visibility,zone,minimum,fee=settings(data)
+    bot_enabled=bot_setting(data,visibility)
     join_owner=data.get('join_owner',True)
     if type(join_owner) is not bool:
         raise APIError('请选择发起人是否参加')
@@ -75,6 +87,7 @@ def create(db,user,data):
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
         (uid,user['id'])+values+(now(),withdrawal,visibility,secrets.token_urlsafe(24),lifecycle,
         int(lifecycle!='draft'),'closed' if lifecycle=='draft' else 'open',zone,minimum,fee,int(join_owner)))
+    db.execute('UPDATE events SET bot_enabled=? WHERE id=?',(int(bot_enabled),uid))
     event=db.execute('SELECT * FROM events WHERE id=?',(uid,)).fetchone()
     roster.grant(db,uid,user['id'])
     if lifecycle!='draft':conditions.publish(db,event,user)
@@ -96,7 +109,7 @@ def patch(db,event,user,data):
     action=data.get('action')
     if action is None and 'title' not in data:
         action={'finished':'finish','cancelled':'cancel','open':'resume','closed':'pause','deleted':'remove'}.get(data.get('status'))
-    if action in ('cancel','archive','unarchive','publish','formation','remove'):
+    if action in ('cancel','archive','unarchive','publish','formation','remove','bot_sync','bot_retry'):
         permissions.require(db,event,user['id'],'owner')
     else:
         permissions.require(db,event,user['id'],'schedule')
@@ -111,6 +124,9 @@ def patch(db,event,user,data):
             raise APIError('活动已实际结束或取消，不能重写安排',409)
         values=event_values(data,event,draft=event['lifecycle']=='draft')
         withdrawal,visibility,zone,minimum,fee=settings(data,event)
+        bot_enabled=bot_setting(data,visibility,event)
+        if not owner and bot_enabled!=bool(event['bot_enabled']):
+            raise APIError('群同步设置需由发起者修改',403)
         if not owner and (fee!=event['fee_policy'] or (withdrawal or values[4])!=(event['withdrawal_deadline'] or event['deadline']) or visibility!=event['visibility']):
             raise APIError('费用规则、退出期限及可见性需由发起者修改',403)
         count=db.execute("SELECT count(*) FROM attendees WHERE event_id=? AND status='confirmed'",(event['id'],)).fetchone()[0]
@@ -129,8 +145,19 @@ def patch(db,event,user,data):
         db.execute('''UPDATE events SET title=?,category=?,location=?,starts_at=?,deadline=?,capacity=?,
             description=?,duration_hours=?,withdrawal_deadline=?,visibility=?,timezone=?,minimum_participants=?,fee_policy=?,draft_join_owner=? WHERE id=?''',
             values+(withdrawal,visibility,zone,minimum,fee,int(join_owner),event['id']))
+        db.execute('UPDATE events SET bot_enabled=? WHERE id=?',(int(bot_enabled),event['id']))
         updated=db.execute('SELECT * FROM events WHERE id=?',(event['id'],)).fetchone()
         conditions.revise(db,event,updated,user,reason)
+    elif action=='bot_retry':
+        row_id=data.get('outbox_id')
+        if type(row_id) is not int:
+            raise APIError('请选择要重送的通知')
+        new_id=bot_outbox.retry(db,event,row_id)
+        audit.append(db,event,user,'bot_delivery_retry',{},dict(original_id=row_id,outbox_id=new_id),reason)
+        return
+    elif action=='bot_sync':
+        db.execute('UPDATE events SET bot_enabled=? WHERE id=?',
+            (int(bot_setting(data,event['visibility'],event)),event['id']))
     elif action=='publish':
         if event['lifecycle']!='draft':raise APIError('只有草稿可以发布',409)
         if event['starts_at']<=now():raise APIError('请先把草稿的活动时间调整到将来',409)

@@ -147,7 +147,7 @@ class UnionIDTests(unittest.TestCase):
                 db.execute('DELETE FROM schema_migrations WHERE version=12')
             verify(source,destination)
             with storage.connect(destination) as db:
-                self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],12)
+                self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],13)
                 self.assertEqual(db.execute('SELECT count(*) FROM external_unionids').fetchone()[0],0)
                 self.assertTrue(all(r[0]=='' for r in db.execute('SELECT union_id FROM login_attempts')))
                 first=snapshot(db)

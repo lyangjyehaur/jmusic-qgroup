@@ -119,3 +119,18 @@ function boardTodos(events) {
   }
   return rows;
 }
+
+// Navigation only. A URL must never submit, approve, or record a business action.
+function boardEntryPlan(action,e,authenticated) {
+  const known=new Set(['detail','create','mine','join','party','tentative','withdraw','conditions',
+    'finance','report','invite','claim','management','manage','copy','todos','attendance','onsite','settlement']);
+  if(!known.has(action))return {kind:'unknown'};
+  if(!authenticated&&!['detail','settlement','conditions'].includes(action))return {kind:'login'};
+  if(['create','mine'].includes(action))return {kind:action};
+  if(!e)return {kind:'missing'};
+  const permission={party:e.can_join,tentative:e.can_join,invite:e.can_manage_roster,
+    attendance:e.can_attendance,onsite:e.can_onsite,management:e.is_owner,
+    manage:e.is_owner||e.is_cohost,report:e.finance?.can_report};
+  if(action in permission&&!permission[action])return {kind:'denied'};
+  return {kind:action};
+}

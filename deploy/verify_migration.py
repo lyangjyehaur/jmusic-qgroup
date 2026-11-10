@@ -87,7 +87,7 @@ def verify(source,destination):
             if db.execute("SELECT 1 FROM events WHERE actual_started_at IS NOT NULL OR actual_ended_at IS NOT NULL OR timezone IS NOT NULL OR fee_policy!='' LIMIT 1").fetchone():
                 raise AssertionError('Migration invented historical times or fee terms')
         versions={r[0] for r in db.execute('SELECT version FROM schema_migrations')}
-        if not {1,2,3,4,5,6,7,8,9}.issubset(versions):raise AssertionError('Migration versions missing')
+        if not set(range(1,14)).issubset(versions):raise AssertionError('Migration versions missing')
         if 12 not in versions:raise AssertionError('UnionID migration missing')
     return {table:len(rows) for table,(_,rows) in before.items()}
 

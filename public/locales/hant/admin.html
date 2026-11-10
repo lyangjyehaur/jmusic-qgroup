@@ -1,9 +1,52 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261109-privacy1"><script defer src="/admin.js?v=20261109-privacy1"></script>  <script defer src="/analytics.js?v=20261109-umami2"></script>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-botconfig1"><script defer src="/admin.js?v=20261110-botconfig1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
 </head>
 <body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理後臺</h1><p id="admin-error" class="form-error" role="alert"></p>
 <form id="admin-login" class="admin-card"><h2>管理員登錄</h2><label class="field">管理憑證<input name="key" type="password" required autocomplete="off" maxlength="256"></label><p class="field-help">管理憑證與活動帳號獨立，僅由網站管理員持有。登錄有效一小時。</p><button class="button primary" type="submit">登錄管理後臺</button></form>
-<section id="admin-settings" class="admin-card" hidden><h2>註冊方式</h2><form id="registration-settings"><label class="check-option"><input id="allow-name-registration" type="checkbox" role="switch">允許免第三方登錄註冊</label><p class="field-help">默認關閉，新用戶須通過已接入的第三方登錄創建帳號。目前為 QQ，未來可擴展微信等。開啟後額外允許只填寫稱呼創建帳號；關閉不刪除已建立的帳號。</p><p id="provider-status" class="field-help"></p><button type="submit" class="button primary">保存設置</button><p id="admin-saved" role="status"></p></form><h2>資料刪除申請</h2><p class="field-help">帳號登錄身份及私人資料已由系統移除。涉及共同記錄的申請須核對活動、款項及憑證後繼續處理；填寫說明不會自動錶示這些記錄已經刪除。</p><div id="privacy-requests"></div><button id="admin-logout" class="text-button">退出管理後臺</button></section>
+<section id="admin-settings" hidden>
+<section class="admin-card"><h2>註冊方式</h2><form id="registration-settings"><label class="check-option"><input id="allow-name-registration" type="checkbox" role="switch">允許免第三方登錄註冊</label><p class="field-help">默認關閉，新用戶須通過已接入的第三方登錄創建帳號。目前為 QQ，未來可擴展微信等。開啟後額外允許只填寫稱呼創建帳號；關閉不刪除已建立的帳號。</p><p id="provider-status" class="field-help"></p><button type="submit" class="button primary">保存設置</button><p id="admin-saved" role="status"></p></form></section>
+<section class="admin-card" aria-labelledby="bot-heading">
+ <h2 id="bot-heading">QQ 機器人</h2>
+ <p id="bot-runtime" class="field-help" role="status"></p>
+ <p class="field-help">保存後無需重啟。每場活動仍須由發起者開啟群同步，邀請活動與草稿不會進入群。</p>
+ <form id="bot-settings-form">
+  <fieldset><legend>功能開關</legend>
+   <label class="check-option"><input name="enabled" type="checkbox" role="switch">開啟主動通知</label>
+   <label class="check-option"><input name="replies_enabled" type="checkbox" role="switch">開啟指令回覆</label>
+   <label class="field">發送模式<select name="dry_run"><option value="inherit">沿用部署設置</option><option value="simulate">模擬，不實際發送</option><option value="live">實際發送</option></select></label>
+   <p class="field-help">發送模式同時適用於通知與指令回覆。關閉主動通知會作廢待送通知；重新開啟不會補發舊通知。已經提交給 QQ 的消息無法撤回。</p>
+  </fieldset>
+  <fieldset><legend>通知事件</legend><div id="bot-kinds" class="bot-options"></div></fieldset>
+  <fieldset><legend>提醒時間</legend>
+   <label class="check-option"><input name="schedule_enabled" type="checkbox" role="switch">開啟定時提醒</label>
+   <label class="field">報名截止前幾小時提醒<input name="deadline_hours" type="number" min="1" max="720" required></label>
+   <label class="field">超過預計結束後幾分鐘提醒<input name="estimated_over_delay_minutes" type="number" min="0" max="1440" required></label>
+   <p class="field-help">修改後會重排未來提醒，不補發已錯過的提醒。</p>
+  </fieldset>
+  <fieldset><legend>發送時段與間隔</legend>
+   <label class="check-option"><input name="quiet_enabled" type="checkbox" role="switch">開啟勿擾時段</label>
+   <div class="bot-time-row"><label class="field">開始<input name="quiet_start" type="time" required></label><label class="field">結束<input name="quiet_end" type="time" required></label></div>
+   <label class="field">勿擾時區<input name="timezone" maxlength="80" placeholder="Asia/Taipei" required></label>
+   <label class="field">主動通知最短間隔（秒）<input name="min_interval_seconds" type="number" min="0" max="3600" required></label>
+   <p class="field-help">勿擾期間延後主動通知，0 秒錶示不額外限制間隔。指令回覆仍即時響應；失效的截止提醒會跳過。</p>
+  </fieldset>
+  <fieldset><legend>消息模板</legend>
+   <label class="field">通知類型<select id="bot-template-kind"></select></label>
+   <p id="bot-template-state" class="field-help"></p>
+   <label class="field">模板內容<textarea id="bot-template-text" rows="8" maxlength="2000" spellcheck="false" translate="no"></textarea></label>
+   <p class="field-help">使用下方變量，可點擊插入。必須保留 {url}。{details} 是系統按事件生成的說明；自定義文字會按原文發送。模板最多 2000 字，變量展開後最多 4000 字。</p>
+   <div id="bot-template-variables" class="bot-variables"></div>
+   <div class="bot-actions"><button id="bot-template-reset" type="button" class="button secondary">使用默認模板</button><button id="bot-preview" type="button" class="button secondary">預覽示例</button></div>
+   <p class="field-help">預覽只使用示例資料，不會發送群消息。新版模板適用於尚未發送且帶有事件快照的通知；舊版隊列保留原文。</p>
+   <pre id="bot-preview-text" class="bot-preview" translate="no" aria-live="polite" hidden></pre>
+  </fieldset>
+  <div class="bot-actions"><button type="submit" class="button primary">保存機器人設置</button><button id="bot-reload" type="button" class="button secondary">重新載入</button></div>
+  <p id="bot-saved" role="status"></p><p id="bot-error" class="form-error" role="alert"></p>
+ </form>
+ <details class="bot-history"><summary>配置修改記錄</summary><div id="bot-history"></div><button id="bot-revert" type="button" class="button secondary">恢復上一版配置</button><p class="field-help">恢復會保存為新版本並重新應用通知與提醒規則，歷史記錄繼續保留。</p></details>
+</section>
+<section class="admin-card"><h2>資料刪除申請</h2><p class="field-help">帳號登錄身份及私人資料已由系統移除。涉及共同記錄的申請須核對活動、款項及憑證後繼續處理；填寫說明不會自動錶示這些記錄已經刪除。</p><div id="privacy-requests"></div></section><button id="admin-logout" class="text-button">退出管理後臺</button>
+</section>
 </main></body></html>

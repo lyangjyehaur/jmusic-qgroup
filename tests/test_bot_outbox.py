@@ -34,7 +34,7 @@ class BotOutboxFixture:
         self.start = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat(timespec='seconds')
         self.data = dict(title='测试活动', category='约K', location='某KTV',
                          starts_at=self.start, deadline=self.start, capacity=0,
-                         description='', duration_hours=3, join_owner=False)
+                         description='', duration_hours=3, join_owner=False, bot_enabled=True)
 
     def tearDown(self):
         self.env.stop()
@@ -52,12 +52,12 @@ class BotOutboxFixture:
                 'SELECT * FROM bot_outbox ' + where + ' ORDER BY id', args)]
 
     def due_rows(self, count):
-        """Replace future reminders with already-due rows (due_at is immutable)."""
+        """Queue due broadcasts; reminder version checks have separate coverage."""
         with storage.connect(self.path) as db:
             db.execute('DELETE FROM bot_outbox WHERE due_at IS NOT NULL')
             for index in range(count):
                 self.assertTrue(bot_outbox.enqueue(
-                    db, self.event_id, 'deadline_reminder', '报名即将截止 %d' % index,
+                    db, self.event_id, 'activity_published', '活动消息 %d' % index,
                     due_at=now()))
 
 
@@ -242,16 +242,18 @@ class WorkerTests(BotOutboxFixture, unittest.TestCase):
         with mock.patch.dict(os.environ, values):
             return Config()
 
-    def test_dry_run_marks_sent_without_http(self):
+    def test_dry_run_records_simulation_without_claiming_a_real_delivery(self):
         self.create_event()
         self.due_rows(2)
         api = mock.Mock()
         worker = OutboxWorker(self.config(), api)
         result = worker.poll_once()
         self.assertEqual(result['claimed'], 3)
-        self.assertEqual(result['sent'], 3)
+        self.assertEqual(result['sent'], 0)
+        self.assertEqual(result['simulated'], 3)
         api.post.assert_not_called()
-        self.assertEqual(set(r['status'] for r in self.rows()), {'sent'})
+        self.assertEqual(set(r['status'] for r in self.rows()), {'skipped'})
+        self.assertTrue(all(r['simulated_at'] and not r['sent_at'] for r in self.rows()))
         self.assertTrue(all(r['last_error'] == 'dry-run' for r in self.rows()))
 
     def test_api_failure_retries_without_touching_business_tables(self):
@@ -281,7 +283,7 @@ class WorkerTests(BotOutboxFixture, unittest.TestCase):
         worker.poll_once()
         row = next(r for r in self.rows() if r['kind'] == 'deadline_reminder')
         self.assertEqual(row['status'], 'skipped')
-        self.assertIn('歸檔', row['last_error'])
+        self.assertIn('归档', row['last_error'])
 
     def test_empty_text_payload_is_never_sent(self):
         event_id = self.create_event()
@@ -316,6 +318,150 @@ class WorkerTests(BotOutboxFixture, unittest.TestCase):
         self.assertFalse(any(call.args[1].get('msg_type') == 7
                              for call in api.post.call_args_list))
         self.assertEqual(self.rows("WHERE dedupe_key='blank-media'")[0]['status'], 'failed')
+
+    def test_api_exception_is_bounded_and_does_not_stop_the_batch(self):
+        self.create_event();self.due_rows(1)
+        api=mock.Mock();api.post.side_effect=[RuntimeError('token unavailable'),(True,0,{})]
+        worker=OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0',KANBAN_BOT_MAX_ATTEMPTS='2'),api)
+        worker.poll_once()
+        rows=self.rows()
+        self.assertEqual(sorted(r['status'] for r in rows),['pending','sent'])
+        failed=next(r for r in rows if r['status']=='pending')
+        self.assertEqual(failed['attempts'],1)
+        self.assertGreater(failed['retry_at'],now())
+        self.assertEqual(worker.poll_once()['claimed'],0)
+        api.post.side_effect=RuntimeError('still unavailable')
+        with mock.patch('qgroup_bot.worker.now',return_value=failed['retry_at']):
+            worker.poll_once()
+        failed=self.rows('WHERE id=?',(failed['id'],))[0]
+        self.assertEqual((failed['status'],failed['attempts']),('failed',2))
+
+    def test_send_time_checks_prevent_private_or_disabled_broadcasts(self):
+        for field,value in [('visibility','invitation'),('bot_enabled',0)]:
+            event_id=self.create_event()
+            with storage.connect(self.path) as db:
+                db.execute('UPDATE events SET '+field+'=? WHERE id=?',(value,event_id))
+            api=mock.Mock()
+            worker=OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api)
+            worker.poll_once()
+            api.post.assert_not_called()
+
+    def test_old_claim_cannot_send_or_overwrite_a_reclaimed_row(self):
+        self.create_event()
+        api=mock.Mock();api.post.return_value=(True,0,{})
+        worker=OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api)
+        old=worker.claim()[0]
+        with storage.connect(self.path) as db:
+            db.execute("UPDATE bot_outbox SET claimed_at='2000-01-01T00:00:00+00:00' WHERE id=?",(old['id'],))
+        new=worker.claim()[0]
+        self.assertNotEqual(old['claim_token'],new['claim_token'])
+        self.assertEqual(worker.deliver(old),'skipped')
+        api.post.assert_not_called()
+        self.assertEqual(worker.deliver(new),'sent')
+
+    def test_rescheduling_replaces_reminders_even_without_attendees(self):
+        event_id=self.create_event()
+        old=[r for r in self.rows() if r['due_at']]
+        with storage.connect(self.path) as db:
+            e=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            shifted=(datetime.fromisoformat(self.start)+timedelta(days=2)).isoformat(timespec='seconds')
+            events.patch(db,e,self.user,dict(self.data,starts_at=shifted,deadline=shifted,reason='改期'))
+        rows=self.rows()
+        self.assertTrue(all(next(r for r in rows if r['id']==o['id'])['status']=='skipped' for o in old))
+        self.assertEqual(len([r for r in rows if r['due_at'] and r['status']=='pending']),2)
+        self.assertEqual(len([r for r in rows if r['kind']=='conditions_changed']),1)
+
+    def test_reschedule_back_to_original_time_restores_invalidated_reminders(self):
+        event_id=self.create_event()
+        original_due={r['due_at'] for r in self.rows() if r['due_at']}
+        shifted=(datetime.fromisoformat(self.start)+timedelta(days=2)).isoformat(timespec='seconds')
+        with storage.connect(self.path) as db:
+            for start in (shifted,self.start):
+                e=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+                events.patch(db,e,self.user,dict(self.data,starts_at=start,deadline=start,reason='调整安排'))
+            e=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            events.patch(db,e,self.user,dict(self.data,reason='重复保存'))
+        pending=[r for r in self.rows() if r['due_at'] and r['status']=='pending']
+        self.assertEqual(len(pending),2)
+        self.assertEqual({r['due_at'] for r in pending},original_due)
+
+    def test_due_reminder_uses_current_counts_and_preserves_its_intent(self):
+        from qgroup_core import roster
+        event_id=self.create_event()
+        reminder=next(r for r in self.rows() if r['kind']=='deadline_reminder')
+        with storage.connect(self.path) as db:
+            e=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            roster.add_party(db,e,self.user,{'people':[{'is_self':True}]},require_preview=False)
+        api=mock.Mock();api.post.return_value=(True,0,{})
+        worker=OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api)
+        with mock.patch('qgroup_bot.worker.now',return_value=reminder['due_at']):
+            worker.poll_once()
+        row=self.rows('WHERE id=?',(reminder['id'],))[0]
+        self.assertEqual(row['status'],'sent')
+        self.assertIn('正式报名 1 人',json.loads(row['delivered_payload_json'])['content'])
+        self.assertEqual(row['payload_json'],reminder['payload_json'])
+
+    def test_callback_keeps_the_event_and_personal_rows_keep_the_recipient(self):
+        with mock.patch.dict(os.environ,{'KANBAN_BOT_KEYBOARD':'1','KANBAN_BOT_PERSONAL_QUEUE':'1'}):
+            event_id=self.create_event()
+            with storage.connect(self.path) as db:
+                audit.notify(db,'u1',event_id,'withdrawal_request','private reason')
+        card=next(r for r in self.rows() if r['kind']=='activity_published')
+        buttons=json.loads(card['payload_json'])['keyboard']['content']['rows']
+        callbacks=[b['action']['data'] for r in buttons for b in r['buttons'] if b['action']['type']==1]
+        self.assertTrue(all(text.endswith(event_id) for text in callbacks))
+        row=next(r for r in self.rows() if r['channel']=='private')
+        self.assertEqual(row['recipient_user_id'],'u1')
+
+    def test_sharing_is_opt_in_and_cannot_be_enabled_for_private_events(self):
+        from qgroup_core.common import APIError
+        with storage.connect(self.path) as db:
+            event_id=events.create(db,self.user,dict(self.data,bot_enabled=False))
+            self.assertFalse(db.execute('SELECT 1 FROM bot_outbox WHERE event_id=?',(event_id,)).fetchone())
+            with self.assertRaises(APIError):
+                events.create(db,self.user,dict(self.data,visibility='invitation'))
+
+    def test_manual_retry_is_a_new_delivery_and_cannot_duplicate_a_pending_one(self):
+        from qgroup_core.common import APIError
+        event_id=self.create_event()
+        worker=OutboxWorker(self.config(),mock.Mock());worker.poll_once()
+        original=next(r for r in self.rows() if r['kind']=='activity_published')
+        with storage.connect(self.path) as db:
+            event=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            new_id=bot_outbox.retry(db,event,original['id'])
+            with self.assertRaises(APIError):
+                bot_outbox.retry(db,event,original['id'])
+            self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0],1)
+        new=self.rows('WHERE id=?',(new_id,))[0]
+        self.assertEqual(new['status'],'pending')
+        self.assertEqual(new['payload_json'],original['payload_json'])
+        self.assertEqual(self.rows('WHERE id=?',(original['id'],))[0]['status'],'skipped')
+
+    def test_disable_cancels_queued_messages_and_nonowners_cannot_change_sharing(self):
+        from qgroup_core.common import APIError
+        event_id=self.create_event()
+        with storage.connect(self.path) as db:
+            event=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            with self.assertRaises(APIError):
+                events.patch(db,event,{'id':'not-owner','nickname':'test'},dict(action='bot_sync',bot_enabled=False))
+            events.patch(db,event,self.user,dict(action='bot_sync',bot_enabled=False))
+        self.assertTrue(all(r['status']=='skipped' for r in self.rows()))
+
+    def test_v10_migration_preserves_existing_data_and_defaults_to_no_sharing(self):
+        from deploy.verify_migration import verify
+        self.create_event()
+        source=Path(self.tmp.name)/'v10.sqlite3';target=Path(self.tmp.name)/'v11.sqlite3'
+        with sqlite3.connect(self.path) as db,sqlite3.connect(source) as copy:
+            db.backup(copy)
+        with sqlite3.connect(source) as db:
+            db.execute('ALTER TABLE events DROP COLUMN bot_enabled')
+            for column in ('retry_at','simulated_at','delivered_payload_json','claim_token','recipient_user_id'):
+                db.execute('ALTER TABLE bot_outbox DROP COLUMN '+column)
+            db.execute('DELETE FROM schema_migrations WHERE version=11')
+        verify(source,target)
+        with storage.connect(target) as db:
+            self.assertEqual(db.execute('SELECT bot_enabled FROM events').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],13)
 
 
 if __name__ == '__main__':

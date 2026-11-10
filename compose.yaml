@@ -79,3 +79,13 @@ services:
     # Deliberately no depends_on health gate: active delivery is plain HTTP and
     # must keep consuming the outbox even while the web service restarts.
     command: ["python3", "-m", "qgroup_bot.main"]
+    # running/READY alone cannot prove the heartbeat and outbox poll are alive.
+    # The bot refreshes a private state file on ACK, READY and every poll.
+    # Resolve the same directory as Config.log_dir (KANBAN_BOT_LOG_DIR), so a
+    # custom log path cannot leave the container permanently unhealthy.
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import json,os,time; p=os.path.join(os.environ.get('KANBAN_BOT_LOG_DIR') or '/var/lib/qgroup/bot-logs','bot-health.json'); d=json.load(open(p)); assert time.time()-d['updated_at']<120; assert not d.get('last_ack') or time.time()-d['last_ack']<240"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s

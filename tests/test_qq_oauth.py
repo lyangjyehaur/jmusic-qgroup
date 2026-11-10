@@ -252,7 +252,7 @@ class QQTests(unittest.TestCase):
             with sqlite3.connect(source) as db:
                 db.execute('DROP TABLE qq_accounts');db.execute('DROP TABLE qq_attempts');db.execute('DELETE FROM schema_migrations WHERE version=7')
             verify(source,copy)
-            with storage.connect(copy) as db:self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],12)
+            with storage.connect(copy) as db:self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],13)
 
 
 class GraphTests(unittest.TestCase):

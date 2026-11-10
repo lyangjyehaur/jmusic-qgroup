@@ -19,6 +19,10 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
     if(e.fee_policy)html+=`<details class="event-policy"><summary>费用与退出规则</summary><p>${esc(e.fee_policy)}</p><p>退出期限：${shortDate(e.withdrawal_deadline,e.timezone)}。期限后退出需提交申请；是否负担费用须按已接受的约定协调，不会自动加收。</p></details>`;
     if(e.actual_started_at||e.actual_ended_at)html+=`<p data-advanced-only class="activity-status">${e.actual_started_at?'实际开始 '+shortDate(e.actual_started_at,e.timezone):''}${e.actual_started_at&&e.actual_ended_at?' · ':''}${e.actual_ended_at?'实际结束 '+shortDate(e.actual_ended_at,e.timezone):''}</p>`;
     if(e.cohosts.length)html+=`<p data-advanced-only class="activity-status">协办：${e.cohosts.map(p=>esc(p.name)).join('、')}</p>`;
+    if(e.is_owner){
+      const states={pending:'待送',sending:'投递中',sent:'已发送',failed:'失败',skipped:'已作废',simulated:'模拟，未发送'};
+      html+=`<details data-advanced-only class="extra-settings"><summary>QQ 群同步 · ${e.bot_enabled?'已开启':'未开启'}</summary><p class="field-help">${e.bot_feature_enabled?'通知是否实际发送，以投递记录为准；已发送不代表群友已读。':'管理员尚未启用机器人，当前不会排入通知。'}</p>${(e.bot_delivery||[]).map(r=>`<p class="field-help">${esc({activity_published:'活动信息',conditions_changed:'安排变更',deadline_reminder:'截止提醒',estimated_over_reminder:'结束提醒',settlement_updated:'结算发布',finance_closed:'账务结清',finance_reopened:'重新核对',event_started:'实际开始',event_finished:'实际结束',event_cancelled:'活动取消',formation_confirmed:'成团确认',registration_paused:'暂停报名',registration_resumed:'恢复报名',ownership_changed:'管理交接'}[r.kind]||'活动通知')} · ${esc(states[r.state]||r.state)} · ${shortDate(r.sent_at||r.simulated_at||r.created_at)}${r.last_error&&r.state!=='simulated'?' · '+esc(r.last_error):''}${e.bot_enabled&&['failed','simulated'].includes(r.state)?` <button class="text-button" data-activity="bot_retry" data-id="${r.id}">重送通知</button>`:''}</p>`).join('')||'<p class="field-help">暂无投递记录</p>'}</details>`;
+    }
     return html;
   }
   function tools(e) {
@@ -32,6 +36,7 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
     if(e.can_attendance)buttons.push('<button data-activity="attendance">出席管理</button>');
     if(e.can_onsite)buttons.push('<button data-activity="onsite">现场补录</button>');
     if(e.is_owner) {
+      if(!e.archived_at)buttons.push('<button data-activity="bot_sync">QQ 群同步设置</button>');
       if(e.lifecycle!=='draft'&&!['ended','cancelled'].includes(e.lifecycle)&&!e.archived_at&&e.formation_state!=='confirmed')buttons.push('<button data-activity="formation">确认成团</button>');
       if(!e.archived_at)buttons.push('<button data-activity="management">协办与转交</button>');
       if(e.lifecycle!=='draft'&&e.lifecycle!=='cancelled'&&!e.archived_at)buttons.push('<button class="danger" data-activity="cancel">取消活动</button>');
@@ -47,10 +52,16 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       start:['确认实际开始','备注',false,'记录现在为实际开始时间，停止普通报名；临时加入使用现场补录。'],
       formation:['确认成团','原因',!e.minimum_met,'未达到最低人数也可由发起者决定照常举行，请写明原因。'],
       pause:['暂停报名','备注',false,'现有名单与候补保留。'],resume:['恢复报名','备注',false,'在截止时间内按原候补顺序递补。'],
+      bot_sync:['QQ 群同步设置','备注',false,'只同步公开活动。开启后会排入活动信息，并同步后续重要节点；关闭后不再查询或发送。'],
+      bot_retry:['重送 QQ 通知','备注',false,'只重新排入这条通知，不重做原报名或款项操作。请核对原活动信息仍适合群成员查看；机器人仍在模拟模式时会继续模拟。'],
       revoke_role:['撤销协办','原因',true,'撤销管理权限；对方自己的报名管理权保留。'],
       revoke_invite:['撤销交接邀请','原因',true,'尚未接受的链接将失效。']}[action];
     if(!config)return;
     actionContext={event:e,action,...extra};const form=$('#activity-action-form');form.reset();
+    $('#bot-sync-options').hidden=action!=='bot_sync';
+    form.elements.bot_enabled.checked=!!e.bot_enabled;
+    form.elements.bot_enabled.disabled=e.visibility!=='public';
+    $('#bot-sync-preview').textContent=[e.title,timeRange(e),'地点：'+e.location,e.description||'',e.fee_policy||''].filter(Boolean).join('\n');
     $('#activity-action-title').textContent=config[0];$('#activity-action-hint').textContent=config[3];
     $('#activity-reason-label').textContent=config[1]+(config[2]?'':'（选填）');form.elements.reason.required=config[2];
     $('#activity-action-save').textContent=config[0];$('.form-error',form).textContent='';showDialog('activity-action-dialog');
@@ -61,7 +72,10 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       const {event:e,action,id}=actionContext;let path='/api/events/'+e.id,method='PATCH';
       if(action==='revoke_role'){path+='/management/roles/'+id;method='DELETE';}
       if(action==='revoke_invite'){path+='/management/invitations/'+id;method='DELETE';}
-      const updated=await api(path,method,{action,base_revision:e.revision,reason:form.elements.reason.value.trim()});
+      const data={action,base_revision:e.revision,reason:form.elements.reason.value.trim()};
+      if(action==='bot_sync')data.bot_enabled=form.elements.bot_enabled.checked;
+      if(action==='bot_retry')data.outbox_id=Number(id);
+      const updated=await api(path,method,data);
       await apply(updated,'活动已更新','activity-action-dialog');
       if(action.startsWith('revoke_'))openManagement(updated);
     }catch(problem){$('.form-error',form).textContent=problem.message;}
@@ -207,5 +221,5 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       else openAction(e,action,{id:button.dataset.id});
     }catch(problem){toast(problem.message);}
   });
-  return {alerts,tools,showManagementInvitation,arrangementHtml};
+  return {alerts,tools,showManagementInvitation,arrangementHtml,openConditions};
 }

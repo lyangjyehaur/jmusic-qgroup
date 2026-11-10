@@ -57,7 +57,7 @@ def build():
     <h1>操作说明</h1>
     <p class="guide-intro">基本发起与报名直接查看，特殊情况点开对应条目。</p>
     CONTENT
-    <p class="guide-updated">更新于 2026-11-09</p>
+    <p class="guide-updated">更新于 2026-11-10</p>
   </main>
   <footer class="site-footer">
     <nav class="footer-links" aria-label="页脚导航"><a href="/">返回活动</a></nav>

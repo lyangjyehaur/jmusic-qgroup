@@ -98,7 +98,7 @@ class LanguageHTTPTests(unittest.TestCase):
                     self.assertIsNone(response.headers.get('Set-Cookie'))
                     self.assertEqual(body,(server.ROOT/'public/locales'/folder/name).read_bytes())
                     if name.endswith('.html'):
-                        self.assertIn(b'/analytics.js?v=20261109-umami2',body)
+                        self.assertIn(b'/analytics.js?v=20261110-botconfig1' if name=='admin.html' else b'/analytics.js?v=20261109-umami2',body)
                         self.assertIn(b'data-auto-track="false"',body)
                         self.assertIn(b'5244d326-3db9-4499-9c7a-6e3568b296cd',body)
                         csp=response.headers['Content-Security-Policy']

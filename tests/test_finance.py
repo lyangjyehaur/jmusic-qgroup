@@ -1,6 +1,7 @@
 import concurrent.futures
 import copy
 import json
+import os
 import sqlite3
 import tempfile
 import threading
@@ -234,6 +235,28 @@ class FinanceTests(unittest.TestCase):
         self.assertEqual(self.prepare(self.body('reopen',reason=''))[0],400)
         self.act('reopen',reason='核对遗漏饮料');self.assertEqual(self.view()['summary']['state'],'collecting')
         self.assertEqual([e['kind'] for e in self.view()['entries']],['reopen','close'])
+
+    def test_group_finance_notifications_and_delivery_controls_are_owner_only(self):
+        with mock.patch.dict(os.environ,{'KANBAN_BOT_ENABLED':'1'}):
+            status,e=self.owner.request(self.url,'PATCH',dict(action='bot_sync',
+                bot_enabled=True,base_revision=self.fresh()['revision']))
+            self.assertEqual(status,200,e)
+            self.invoice('0');self.act('close');self.act('reopen',reason='核对遗漏饮料')
+            deliveries=self.fresh()['bot_delivery']
+            kinds=[r['kind'] for r in deliveries]
+            self.assertEqual(kinds.count('finance_closed'),1)
+            self.assertEqual(kinds.count('finance_reopened'),1)
+            for client in (self.alice,self.stranger):
+                self.assertNotIn('bot_delivery',client.request(self.url)[1])
+                self.assertEqual(client.request(self.url,'PATCH',dict(action='bot_retry',
+                    outbox_id=deliveries[0]['id'],base_revision=self.fresh()['revision']))[0],403)
+            with sqlite3.connect(server.DB) as db:
+                db.execute("UPDATE bot_outbox SET status='failed' WHERE id=?",(deliveries[0]['id'],))
+            status,e=self.owner.request(self.url,'PATCH',dict(action='bot_retry',
+                outbox_id=deliveries[0]['id'],base_revision=self.fresh()['revision']))
+            self.assertEqual(status,200,e)
+            self.assertEqual(e['bot_delivery'][0]['status'],'pending')
+            self.assertEqual([e['kind'] for e in self.view()['entries']],['reopen','close'])
 
     def test_stale_and_changed_preview_rejected_and_retry_atomic(self):
         data=self.body(id=uuid.uuid4().hex[:16],transaction=self.tx());status,p=self.prepare(data);self.assertEqual(status,200)

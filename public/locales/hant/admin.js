@@ -1,6 +1,6 @@
 'use strict';
 (()=>{
- const $=s=>document.querySelector(s);let csrf='',revision=0;
+ const $=s=>document.querySelector(s);let csrf='',revision=0,botInfo=null,botTemplates={},templateKind='',botBusy=false;
  async function request(path,data){
   let status=0,outcome='network_error';
   try{
@@ -15,8 +15,72 @@
   $('#privacy-requests').innerHTML=items.map(item=>`<section class="privacy-request"><p><strong>${item.status==='completed'?"個人帳號資料已刪除":"共用記錄待核對"}</strong> · ${esc(item.created_at)}</p><p class="receipt-id">${esc(item.id)}</p><p class="field-help">${esc(Object.entries(item.shared_records).map(([table,count])=>table+': '+count).join('；')||"無關聯共用記錄")}</p><form data-privacy-request="${esc(item.id)}"><label class="field">處理說明<textarea name="note" required maxlength="1000">${esc(item.note)}</textarea></label><button class="button secondary" type="submit">保存處理說明</button></form></section>`).join('')||"<p class=\"field-help\">暫無資料刪除申請</p>";
  }
  const error=problem=>{$('#admin-error').textContent=problem.message;};
+ const botForm=$('#bot-settings-form');
+ const botLabels={enabled:"主動通知",replies_enabled:"指令回覆",dry_run:"發送模式",broadcast_kinds:"通知事件",schedule_enabled:"定時提醒",deadline_hours:"截止提醒時間",estimated_over_delay_minutes:"預計結束提醒時間",quiet_enabled:"勿擾開關",quiet_start:"勿擾開始",quiet_end:"勿擾結束",timezone:"勿擾時區",min_interval_seconds:"發送間隔",templates:"消息模板"};
+ function botStatus(info){
+  const runtime=info.runtime;
+  const loaded=runtime.applied_revision===null?"機器人尚未回報配置狀態":`機器人已載入第 ${runtime.applied_revision} 版`;
+  const updated=info.revision!==botInfo?.revision?"；有新版配置，請重新載入":'';
+  $('#bot-runtime').textContent=`當前配置第 ${info.revision} 版；${loaded}${runtime.checked_at?"；回報時間 "+new Date(runtime.checked_at).toLocaleString():''}${updated}`;
+ }
+ function templateState(){
+  $('#bot-template-state').textContent=Object.hasOwn(botTemplates,templateKind)?"正在編輯自定義模板":"正在使用默認模板";
+ }
+ function rememberTemplate(){
+  if(!templateKind)return;
+  const value=$('#bot-template-text').value;
+  if(value===botInfo.default_template)delete botTemplates[templateKind];else botTemplates[templateKind]=value;
+ }
+ function showTemplate(){
+  templateKind=$('#bot-template-kind').value;
+  $('#bot-template-text').value=botTemplates[templateKind]??botInfo.default_template;
+  $('#bot-preview-text').hidden=true;templateState();
+ }
+ function botSetup(info){
+  botInfo=info;botTemplates={...info.config.templates};templateKind='';
+  for(const [key,value] of Object.entries(info.config)){
+   const field=botForm.elements.namedItem(key);if(!field)continue;
+   if(field.type==='checkbox')field.checked=value;else field.value=key==='dry_run'?(value===null?'inherit':value?'simulate':'live'):value;
+  }
+  $('#bot-kinds').innerHTML=Object.entries(info.kinds).map(([kind,label])=>`<label class="check-option"><input type="checkbox" name="broadcast_kind" value="${esc(kind)}" ${info.config.broadcast_kinds.includes(kind)?'checked':''}>${esc(label)}</label>`).join('');
+  const selected=$('#bot-template-kind').value;
+  $('#bot-template-kind').innerHTML=Object.entries(info.kinds).map(([kind,label])=>`<option value="${esc(kind)}">${esc(label)}</option>`).join('');
+  if(Object.hasOwn(info.kinds,selected))$('#bot-template-kind').value=selected;
+  $('#bot-template-variables').innerHTML=Object.entries(info.variables).map(([key,label])=>`<button type="button" data-variable="${esc(key)}" title="${esc(label)}">${esc(label)} {${esc(key)}}</button>`).join('');
+  $('#bot-history').innerHTML=info.history.map(item=>`<p><strong>第 ${item.revision} 版</strong> · ${esc(new Date(item.created_at).toLocaleString())} · ${esc(item.action==='revert'?"恢復配置":item.action==='baseline'?"部署默認配置":"保存配置")}<br>${esc(item.changes.map(key=>botLabels[key]||key).join('、'))}</p>`).join('');
+  $('#bot-revert').disabled=info.revision===0;
+  showTemplate();botStatus(info);
+ }
+ function botDraft(){
+  rememberTemplate();const config={};
+  for(const key of Object.keys(botInfo.config)){
+   if(key==='templates'){config[key]={...botTemplates};continue;}
+   if(key==='broadcast_kinds'){config[key]=[...botForm.querySelectorAll('[name="broadcast_kind"]:checked')].map(field=>field.value);continue;}
+   const field=botForm.elements.namedItem(key);
+   config[key]=field.type==='checkbox'?field.checked:field.type==='number'?Number(field.value):field.value;
+  }
+  config.dry_run=config.dry_run==='inherit'?null:config.dry_run==='simulate';
+  return config;
+ }
+ async function botAction(work){
+  if(botBusy||!botInfo)return;botBusy=true;$('#bot-error').textContent='';$('#bot-saved').textContent='';
+  for(const fieldset of botForm.querySelectorAll('fieldset'))fieldset.disabled=true;
+  for(const button of botForm.querySelectorAll('button'))button.disabled=true;
+  $('#bot-revert').disabled=true;
+  try{await work();}catch(problem){$('#bot-error').textContent=problem.message;}
+  finally{botBusy=false;for(const fieldset of botForm.querySelectorAll('fieldset'))fieldset.disabled=false;for(const button of botForm.querySelectorAll('button'))button.disabled=false;$('#bot-revert').disabled=botInfo.revision===0;}
+ }
+ $('#bot-template-kind').addEventListener('change',()=>{rememberTemplate();showTemplate();});
+ $('#bot-template-text').addEventListener('input',()=>{rememberTemplate();templateState();$('#bot-preview-text').hidden=true;});
+ $('#bot-template-reset').addEventListener('click',()=>{delete botTemplates[templateKind];showTemplate();});
+ $('#bot-template-variables').addEventListener('click',e=>{const button=e.target.closest('[data-variable]');if(!button)return;const field=$('#bot-template-text');field.setRangeText('{'+button.dataset.variable+'}',field.selectionStart,field.selectionEnd,'end');field.focus();rememberTemplate();templateState();$('#bot-preview-text').hidden=true;});
+ $('#bot-preview').addEventListener('click',()=>{if(!botForm.reportValidity())return;const config=botDraft();botAction(async()=>{const result=await request('/api/admin/bot-preview',{config,kind:templateKind});$('#bot-preview-text').textContent=result.text;$('#bot-preview-text').hidden=false;});});
+ botForm.addEventListener('submit',e=>{e.preventDefault();const config=botDraft();botAction(async()=>{const result=await request('/api/admin/bot-settings',{config,base_revision:botInfo.revision});botSetup(result.bot);$('#bot-saved').textContent="機器人設置已保存，等待機器人回報載入狀態。";});});
+ $('#bot-reload').addEventListener('click',()=>botAction(async()=>{botSetup(await request('/api/admin/bot-settings'));$('#bot-saved').textContent="已重新載入，未保存的修改已清除。";}));
+ $('#bot-revert').addEventListener('click',()=>botAction(async()=>{const result=await request('/api/admin/bot-revert',{base_revision:botInfo.revision});botSetup(result.bot);$('#bot-saved').textContent="已恢復上一版配置，並保存為新版本。";}));
+ setInterval(async()=>{if(!csrf||!botInfo||botBusy||document.hidden)return;try{botStatus(await request('/api/admin/bot-settings'));}catch(problem){if(problem.status===401){csrf='';$('#admin-settings').hidden=true;$('#admin-login').hidden=false;error(problem);}}},10000);
  async function load(){
-  try{const info=await request('/api/admin/session');csrf=info.csrf;privacyRequests(info.privacy_requests||[]);revision=info.settings.revision;$('#allow-name-registration').checked=info.settings.allow_name_registration;$('#admin-login').hidden=true;$('#admin-settings').hidden=false;$('#provider-status').textContent=info.providers.some(p=>p.enabled)?"已配置第三方登錄：QQ。平臺是否開通以實際授權結果為準。":"第三方登錄尚未配置；關閉免第三方註冊後，訪客無法建立帳號。";}
+  try{const info=await request('/api/admin/session');csrf=info.csrf;privacyRequests(info.privacy_requests||[]);revision=info.settings.revision;botSetup(info.bot);$('#allow-name-registration').checked=info.settings.allow_name_registration;$('#admin-login').hidden=true;$('#admin-settings').hidden=false;$('#provider-status').textContent=info.providers.some(p=>p.enabled)?"已配置第三方登錄：QQ。平臺是否開通以實際授權結果為準。":"第三方登錄尚未配置；關閉免第三方註冊後，訪客無法建立帳號。";}
   catch(problem){if(problem.status!==401)error(problem);csrf='';$('#admin-login').hidden=false;$('#admin-settings').hidden=true;}
  }
  $('#admin-login').addEventListener('submit',async e=>{e.preventDefault();$('#admin-error').textContent='';const button=e.currentTarget.querySelector('button');button.disabled=true;try{await request('/api/admin/login',{key:e.currentTarget.elements.key.value});e.target.reset();await load();}catch(problem){error(problem);}finally{button.disabled=false;}});

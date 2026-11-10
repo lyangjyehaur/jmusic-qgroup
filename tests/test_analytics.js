@@ -112,7 +112,7 @@ for(const name of ['index','guide','privacy','contact','admin']){
  const html=fs.readFileSync('public/'+name+'.html','utf8');
  assert.match(html,/<script async src="https:\/\/u\.danndann\.cn\/script\.js"/);
  assert.match(html,/data-auto-track="false"/);
- assert.match(html,/\/analytics\.js\?v=20261109-umami2/);
+ assert.match(html,name==='admin'?/\/analytics\.js\?v=20261110-botconfig1/:/\/analytics\.js\?v=20261109-umami2/);
 }
 const offline=page();for(let i=0;i<120;i++)offline.emit('click',new Element('button'));
 for(let i=0;i<40;i++)offline.tick();assert.equal(offline.timers.size,0);

@@ -1,0 +1,48 @@
+{
+  "target_image": "qgroup:20261110-bot2-4bdfecc8e0",
+  "environment": "isolated temporary SQLite and mocked HTTP; no live message calls",
+  "results": {
+    "parallel_activity_notifications": {
+      "first": {
+        "activity_published": 1,
+        "deadline_reminder": 1,
+        "estimated_over_reminder": 1
+      },
+      "second": {
+        "activity_published": 1,
+        "deadline_reminder": 1,
+        "estimated_over_reminder": 1
+      }
+    },
+    "new_error_envelope": {
+      "input_http": 200,
+      "input_err_code": 40034105,
+      "actual_ok": true,
+      "actual_code": null,
+      "expected_ok": false
+    },
+    "panel_request": {
+      "actual_keys": [
+        "desc",
+        "elements",
+        "name",
+        "scene",
+        "target_type"
+      ],
+      "required_scope_present": false,
+      "required_panel_present": false
+    },
+    "legitimate_repeated_command": {
+      "first_ignored": false,
+      "second_different_message_ignored": true
+    },
+    "callback_deduplication": {
+      "same_callback_processed_times": 2,
+      "expected_once": true
+    },
+    "full_message_mention": {
+      "standard_mentions_only_processed": false,
+      "requires_undocumented_is_you": true
+    }
+  }
+}

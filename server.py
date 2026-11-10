@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy
+from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox
 from qgroup_core.events import event_values, end_time, has_ended
 from qgroup_core.common import APIError, now, string, date_value
 from qgroup_core.billing import money, settlement_values, qr_image, serialize_settlement
@@ -54,9 +54,15 @@ def initialize():
 
 def serialize(db, event, viewer):
     result = dict(event)
+    result['bot_enabled'] = bool(event['bot_enabled'])
     result.pop('owner_id')
     result['ends_at'] = end_time(event).isoformat(timespec='seconds') if event['duration_hours'] else None
     result['is_owner'] = event['owner_id'] == viewer
+    result['bot_feature_enabled'] = bot_outbox.enabled()
+    if result['is_owner']:
+        result['bot_delivery'] = [dict(r, state='simulated' if r['simulated_at'] or r['last_error']=='dry-run' else r['status'])
+            for r in db.execute('''SELECT id,kind,status,attempts,last_error,created_at,sent_at,simulated_at
+                FROM bot_outbox WHERE event_id=? AND channel='group' ORDER BY id DESC LIMIT 8''', (event['id'],))]
     result['has_ended'] = has_ended(event)
     scopes = permissions.scopes(db,event,viewer)
     settled = bool(db.execute('SELECT 1 FROM settlements WHERE event_id=?',(event['id'],)).fetchone())
@@ -238,6 +244,7 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
                 return self.reply(result,cookie=token)
             if path=='/api/admin/session':return self.reply(admin.view(db,self.headers))
+            if path=='/api/admin/bot-settings':return self.reply(admin.bot_view(db,self.headers))
             if path in ('/api/account/qq/status','/api/auth/qq/status'):
                 if not user and not accounts.visitor_exists(db,identity.session_hash(self.headers)):raise APIError('请刷新页面后重试',401)
                 return self.reply(qq_oauth.status(db,user,identity.session_hash(self.headers)))

@@ -5,7 +5,7 @@ import secrets
 import sqlite3
 
 from .common import now
-from . import unionids
+from . import unionids, bot_settings
 
 
 def connect(path):
@@ -360,6 +360,7 @@ def migrate_privacy(db):
     if db.execute('SELECT 1 FROM schema_migrations WHERE version=9').fetchone():
         migrate_bot(db)
         unionids.migrate(db)
+        bot_settings.migrate(db)
         return
     db.execute("ALTER TABLE login_attempts ADD COLUMN privacy_version TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE login_attempts ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
@@ -377,11 +378,14 @@ def migrate_privacy(db):
     db.execute('INSERT INTO schema_migrations VALUES(9,?)',(now(),))
     migrate_bot(db)
     unionids.migrate(db)
+    bot_settings.migrate(db)
 
 
 def migrate_bot(db):
     """QQ group bot outbox. Queued in the same transaction as the business write."""
-    if db.execute('SELECT 1 FROM schema_migrations WHERE version=10').fetchone():return
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=10').fetchone():
+        migrate_bot_delivery(db)
+        return
     db.execute('''CREATE TABLE IF NOT EXISTS bot_outbox(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         event_id TEXT NOT NULL REFERENCES events(id),
@@ -410,3 +414,17 @@ def migrate_bot(db):
           OR NEW.due_at!=OLD.due_at OR NEW.created_at!=OLD.created_at
         BEGIN SELECT RAISE(ABORT,'Outbox payload is immutable'); END''')
     db.execute('INSERT OR IGNORE INTO schema_migrations VALUES(10,?)',(now(),))
+    migrate_bot_delivery(db)
+
+
+def migrate_bot_delivery(db):
+    """Explicit group sharing and separate immutable intent / delivery state."""
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=11').fetchone():return
+    if 'bot_enabled' not in {r['name'] for r in db.execute('PRAGMA table_info(events)')}:
+        db.execute('ALTER TABLE events ADD COLUMN bot_enabled INTEGER NOT NULL DEFAULT 0 CHECK(bot_enabled IN (0,1))')
+    columns = {r['name'] for r in db.execute('PRAGMA table_info(bot_outbox)')}
+    for column in ('retry_at TEXT', 'simulated_at TEXT', 'delivered_payload_json TEXT',
+                   "claim_token TEXT NOT NULL DEFAULT ''", 'recipient_user_id TEXT REFERENCES users(id)'):
+        if column.split()[0] not in columns:
+            db.execute('ALTER TABLE bot_outbox ADD COLUMN '+column)
+    db.execute('INSERT INTO schema_migrations VALUES(11,?)',(now(),))

@@ -95,7 +95,7 @@ docker compose build web                # 建置 qgroup:<QGROUP_TAG> 映像
 docker compose up -d                    # 启动 web + bot
 docker compose ps
 docker compose logs -f web              # 或 bot
-docker compose restart bot
+docker compose up -d --force-recreate bot # 修改 env_file 后重新载入环境
 docker compose down                     # 停止容器，不改动任何资料
 ```
 
@@ -128,13 +128,13 @@ ssh server2 'docker run --rm --user 994:992 --read-only --tmpfs /tmp:rw,size=64m
 | KANBAN_QQ_APP_ID | 空 | QQ 互联 App ID；未配置时隐藏 QQ 入口 |
 | KANBAN_QQ_APP_KEY | 空 | 仅服务器保存，禁止放前端或代码仓库 |
 | KANBAN_QQ_REDIRECT_URI | ORIGIN + /auth/qq/callback | 须与 QQ 平台登记一致，只接受同源固定路径 |
-| KANBAN_BOT_ENABLED | 0 | 主服务是否把群消息写入 `bot_outbox`；不设则所有原有写入路径完全不变 |
+| KANBAN_BOT_ENABLED | 0 | 后台尚未保存配置时的主动通知默认开关；还需发起者逐场开启群同步 |
 | KANBAN_BOT_BASE_URL | https://kanban.danndann.cn | 群消息里的站内链接前缀 |
-| KANBAN_BOT_SCHEDULE | 1 | 建立活动时排入截止前 24 小时／预计结束两条时间驱动提醒 |
+| KANBAN_BOT_SCHEDULE | 1 | 后台尚未保存配置时的定时提醒默认开关；默认截止前 24 小时／预计结束提醒 |
 | KANBAN_BOT_SETTLEMENT_DETAIL | 0 | 1 才在群里列出逐人金额；**会同时公开参加者姓名**，默认只给站内链接 |
 | KANBAN_BOT_PERSONAL_QUEUE | 0 | 1 才把点名通知排入 private 通道（尚无身份绑定，投递时会被标记为 skipped） |
-| KANBAN_BOT_BROADCAST_KINDS | 空＝默认集合 | 逗号分隔，自行增减主动广播节点；不是频率限制 |
-| KANBAN_BOT_DRY_RUN | 1 | bot 行程只记 log 不真的发送，验收前保持 1 |
+| KANBAN_BOT_BROADCAST_KINDS | 空＝默认集合 | 后台尚未保存配置时的广播事件默认集合，逗号分隔 |
+| KANBAN_BOT_DRY_RUN | 1 | 后台发送模式选「沿用部署设置」时，1 表示模拟，通知及查询均不实际发送 |
 
 Compose 专属变量写在 `/opt/qgroup/.env`（不进 Git，范例 `deploy/compose.env.example`）：`QGROUP_UID`／`QGROUP_GID` 必须等于宿主 `/var/lib/qgroup` 的拥有者，`QGROUP_TAG` 是映像标签，`QGROUP_DATA_DIR`／`QGROUP_ENV_DIR` 是资料与凭证目录，`KANBAN_PORT`／`KANBAN_ORIGIN` 供 web 使用。这些值只影响容器编排，不改变应用行为。
 
@@ -142,21 +142,36 @@ Compose 专属变量写在 `/opt/qgroup/.env`（不进 Git，范例 `deploy/comp
 
 操作手册更新后运行 `python3 deploy/build_guide.py` 生成 `public/guide.html`；仅构建时需要 markdown-it-py，线上运行不需要该依赖。
 
-## QQ 群机器人（初版 MVP）
+## QQ 群机器人
 
-独立的 `qgroup_bot` 常驻行程，通过官方 QQ 开放平台 WebSocket／OpenAPI v2 与群交互。平台能力已于 2026-11-10 实机验证：正式环境长连线、全量事件、被动回复、主动纯文字／含 URL、纯定时推播均可，个人主体即可，无需企业资质或上架审核。本版**默认全链路关闭**：`KANBAN_BOT_ENABLED` 未设时主服务一行额外逻辑都不执行；`KANBAN_BOT_DRY_RUN=1` 时 bot 只记 log 不发送。
+### 后台实时配置
 
-**分工**：主服务只负责在 `audit.notify`／`audit.append` 的**同一事务**内把去识别化摘要写入 `bot_outbox`（migration 10）；`server.py` 的 API 与数据库业务表一行未改。挂钩由 `audit.bot_hook` 包住，文案组合或 outbox 写入出任何异常都只记日志，**不会让报名、结算或账务写入失败**。`qgroup_bot` 只读写 outbox 的投递状态，业务表一律只读打开。主服务没有排程器，所以时间驱动提醒在活动发布时就以 `due_at` 预先排入 outbox，由 bot 按时消费；发送失败只改 outbox 状态与 `attempts`，绝不回滚已成功的报名或收款。
+管理员登录 `/admin` 后，可在「QQ 机器人」调整主动通知与指令回复开关、模拟／实际发送模式、14 类通知事件、截止提前小时数、预计结束延后分钟数、勿扰时段与时区、主动通知最短间隔，以及按事件定制消息模板。模板可插入受限变量并用示例预览，预览不投递消息；模板中的自定义文字保持原文，不随后台简繁语言转换。模板必须保留 `{url}`，不能调用代码、访问对象属性或读取密钥。
 
-**主动广播节点**（按「全群是否需要知道或行动」分级，不设则数上限）：活动发布／成团确认／重要安排变更／开始／结束／结算发布／已结清收尾，加上截止前与预计结束两条时间提醒。一场典型活动约 6–8 条，分散在数天。同一事实以内容派生的 `dedupe_key` 配合 `INSERT OR IGNORE` 去重——这是去重，不是限流；`audit.append` 的 `before == after` 短路也天然挡掉无效变更。逐笔报名、退出审批、认领、款项申报不广播，改由被动查询或（开启 `KANBAN_BOT_PERSONAL_QUEUE` 后）private 通道处理。
+schema 13 新增配置、不可变版本历史与 bot 载入／发送间隔状态，保留既有业务记录。首次未保存时沿用部署中的通知开关、事件集合、定时提醒与 bot 模拟模式（web 与 bot 各自读取自己的 `env_file`，两份环境需一致；在后台保存一次配置后即完全以数据库为准）；后台保存后，以数据库中的设置为准，发送模式选择「沿用部署设置」时仍由 bot 的 `KANBAN_BOT_DRY_RUN` 决定。Secret、目标群、基础网址、键盘权限、逐人金额公开权限及网络配置仍留在部署环境。
 
-**被动查询**：`@bot /活动`、`/名额`、`/待办`、`/签到`、`/结算`、`/我的`、`/帮助`，可加活动 id 前 8 位指定活动；只 @ 不带指令时回当前活动卡（最快捷的报名入口）。`/待办` 直接映射 `boardTodos()` 那套既有聚合，不新增数据模型。指令面板 `/v2/panels` 与 keyboard 按钮为可选项，需在管理端核对 API 格式后开启。
+web 每次操作读取最新配置，bot 每次投递与指令回复读取最新配置；bot 每轮轮询回报已载入版本（默认约 5 秒），后台约每 10 秒更新显示，回报时间不代表 QQ 连接健康；连接与心跳是否存活另由 `docker compose ps` 的 bot healthcheck 判断。关闭通知会作废该类待送消息，不会自动回放；已经交给 QQ 的请求无法撤回。提醒规则变化会作废旧计划、重排未来提醒，不补发已错过的提醒。
 
-**启用顺序**：① 准备 `deploy/bot.env.example` → `/etc/qgroup/bot.env`（root 0600，填 AppID／Secret／`KANBAN_BOT_GROUP`）；② 在**主服务**环境（`/etc/qgroup/qq.env`）加 `KANBAN_BOT_ENABLED=1`；③ `docker compose build web && docker compose up -d`，两个容器共用 `/var/lib/qgroup` 的 SQLite，UID/GID 必须与宿主 `qgroupsvc` 一致（见 `deploy/compose.env.example`）；④ 先以 dry-run 观察 outbox 内容，确认后再设 `KANBAN_BOT_DRY_RUN=0`。`websockets==17.4` 由 Dockerfile 装入映像，宿主不再需要 `.venv-bot`；主服务本身仍只有标准库依赖。若走 systemd 回退路径：静态账号 `qgroupsvc` 要同时给两个 unit 使用（`qgroup` 名称已被 nss-systemd 的 `DynamicUser` 占用），Debian 12 缺 ensurepip 时以 `python3 -m venv --without-pip` 加 `pip3 install --target` 安装。
+普通消息保留入队时的事件事实，新版队列在发送时套用最新模板；更早版本没有事实快照的队列保留原文。定时提醒发送前重算人数和适用性。实际投递记录附配置版本，已发内容保持原样。勿扰和发送间隔仅延后主动通知、不消耗失败重试次数；间隔状态跨 bot 重启保留，指令回复即时处理。后台恢复上一版会追加新配置版本，再应用开关与排程规则，历史不会被覆盖。
 
-**本版刻意未做**：身份绑定（事件 `union_openid` 实测为空、QQ 互联仍在审核）→ 因此 `@bot` 直接报名、`/我的` 回个别金额、@ 特定成员、私聊个人化金额都还不能用，前者一律回一次性站内链接；结算卡默认只给站内链接，逐人金额需显式设 `KANBAN_BOT_SETTLEMENT_DETAIL=1`，收款码图片（私有 `image_assets`，须走富媒体分片上传 `msg_type=7`，不能用图文卡片 `pic_url`）留待上线时调整；前端「同步到群」逐次勾选尚未做，目前由环境变量与 `KANBAN_BOT_BROADCAST_KINDS` 控制。**默认群消息不含昵称、账号 id 与个别金额**；但显式开启 `KANBAN_BOT_SETTLEMENT_DETAIL=1` 后，结算卡会列出参加者姓名与应付金额，等于在群里公开金流信息，开启前须确认群成员都同意，并在隐私政策与群内告知监听全群对话这件事。
+独立的 `qgroup_bot` 行程通过 QQ 官方 WebSocket／OpenAPI v2 接收指令与发送通知。群回复、帮助和指令面板使用简中，指令同时接受简繁，例如 `/活动`／`/活動`、`/报名`／`/報名`、`/结算`／`/結算`、`/待办`／`/待辦`。裸 @ 显示活动；未知指令显示帮助。只处理 `KANBAN_BOT_GROUP` 指定的主要群。
 
-测试：`python3 -m unittest discover -s tests -p 'test_bot_*.py'`。全套 Python 测试分别在 `KANBAN_BOT_ENABLED` 关闭与开启两种状态下各跑一遍，确保新挂载点不影响任何既有业务路径。
+**群同步由发起者逐场开启**：新旧活动默认关闭。在活动高级选项开启「QQ 群同步」，先核对标题、时间、地点、说明与费用适合群成员查看；只有公开、已发布、未删除的活动可查询或通知。邀请活动与草稿不进入群。关闭同步或改为邀请可见后，待送通知立即作废，发送前也再次验权。全局 `KANBAN_BOT_ENABLED=1` 只允许排队，不会替所有活动开启同步。
+
+**分工与投递**：主服务在审计同一事务内写入 `bot_outbox`；挂钩异常仅记日志，不让报名或账务操作失败。schema 11 增加逐场开关、收件人、重试时间、模拟时间、实际投递内容与 claim 凭证，不重写旧业务数据。bot 不修改报名、结算或账本。改期会作废旧提醒并重排，提醒发出时重算人数。token、网络及响应解析异常逐条计入有限重试，按退避时间重试，不阻塞整批；claim 凭证阻止过期 worker 回写。网络发送后进程崩溃仍可能重复投递，不能保证恰好一次。
+
+**常用入口**：六个主要指令为 `/活动 /报名 /我的 /结算 /管理 /帮助`；另有 `/名额 /待办 /出席`（兼容 `/签到`）、`/同行 /退出 /待确认 /确认安排 /地点 /规则 /款项 /账本 /已付款 /申报 /发起 /再约 /补报 /认领 /协办 /往期`。多场活动列出时间、短码与对应入口；可在指令后加 8–16 位活动编号。错码、歧义不会自动跳到另一场。结算可查已结束／取消的活动；`/待办` 是公开活动状态摘要，个人任务需登录网站。所有写操作都回到网站按原权限核对、预览与提交，打开链接不会自动报名、记账或审批。
+
+**模拟与重送**：后台发送模式选「沿用部署设置」且 `KANBAN_BOT_DRY_RUN=1` 时，主动消息记为「模拟，未发送」，不会伪装成已发送；被动回复与面板注册也不发送。后台明确选「实际发送」时以数据库政策为准，不再受该环境变量限制。发起者可在活动高级选项查看最近 8 条群投递记录，失败或模拟通知可手动重送；重送只新增投递任务，不重做原业务操作。切换为真实发送不会自动回放模拟记录。旧安排的定时提醒不能重送。
+
+**查看日志**：Docker 部署用 `docker compose logs --since 10m bot`（或 `docker logs qgroup-bot`），旧 systemd unit 停用后不再向对应 journal 写入。JSON 日志同时保存到数据库同目录的 `bot-logs/bot-events.jsonl`，每档 5 MiB、共 5 档、权限 0600；现有 bind mount 保留日志，重建容器后仍可查。默认记录时间、消息／成员的摘要引用、指令、@ 判断、忽略原因、发送内容的字数与摘要、平台结果及重试，使用同一个 `trace_id` 串起异步请求；不保存群聊正文、原始身份或凭证。每次 outbox 尝试有独立追踪码，通过 `outbox_id` 对照重试。`mention_everyone=missing` 表示平台未提供字段，不能当作「不是 @全体」。短期需要核对实际内容时设 `KANBAN_BOT_LOG_CONTENT=1`，记录限长且遮罩过的指令／输出预览；普通未 @ 消息始终不记正文。详细查阅方式见 [Bot 日志排查](docs/bot-logging.md)。
+
+**启用顺序**：① 按 `deploy/bot.env.example` 配置 `/etc/qgroup/bot.env`（root 0600，AppID／Secret／主要群）；② 主服务环境 `/etc/qgroup/qq.env` 配置 `KANBAN_BOT_ENABLED=1`；③ 隔离副本验证 schema 13 迁移，构建新映像并 `docker compose up -d`，共用 SQLite 与 UID/GID；④ 发起者选择适合群内公开的活动开启同步，在后台保持模拟模式核对记录；⑤ 验收后在后台把发送模式切为「实际发送」、先只开指令回复（`replies_enabled=1`、广播 `enabled=0`），政策即时生效、无需重建容器；只有后台选「沿用部署设置」时才改 `KANBAN_BOT_DRY_RUN=0` 并执行 `docker compose up -d --force-recreate bot`。修改 env_file 后只执行 `restart` 不会加载新环境。`websockets==17.4` 在 Dockerfile 中安装，主服务仍只需标准库。systemd 回退同样使用静态账号 `qgroupsvc`，不能与容器同时运行。
+
+**后续能力**：尚未绑定 bot 与站内身份，因此不提供群内直接报名、个人金额、点名或私聊通知。个人队列只保存指定收件人，未绑定不会投递，也不会转发到群。收款码富媒体、每次操作独立勾选通知仍待完成。连接／心跳健康监测已完成：WebSocket 保存 session 并支援 Resume、心跳 ACK 逾时重连，bot 将 `bot-health.json`（0600）写入 `KANBAN_BOT_LOG_DIR`，compose 的 bot healthcheck 读取同一路径。默认群通知不含昵称与个人金额；`KANBAN_BOT_SETTLEMENT_DETAIL=1` 会公开逐人金额，需明确告知并取得同意后才开启。
+
+测试：`python3 -m unittest discover -s tests -p 'test_bot_*.py'`。完整业务测试应分别在全局开关关闭和开启时运行，验证迁移、权限、双语指令、模拟、重试及既有报名／账务流程。
+
 
 ## 访问与交互统计
 
@@ -170,7 +185,7 @@ Compose 专属变量写在 `/opt/qgroup/.env`（不进 Git，范例 `deploy/comp
 
 修改界面源文件、后端系统消息或手册后，运行 `python3 deploy/build_guide.py` 与 `npm run build:locales`，一并发布 `public/locales/` 和 `qgroup_core/locales.json`。构建依赖 Node.js 22.18+（或 24.11+）、npm、Python 及 markdown-it-py；生产运行仍只有 Python 标准库。不要直接修改生成的文件。新增动态系统消息时须在 `qgroup_core/i18n.py` 明确系统片段与用户变量边界并测试；不能对 API 或 DOM 全文转换。分类及状态保留原协议值，仅转换展示标签。
 
-图片及收款码契约见 [结算契约](docs/settlement-contract.md)；生产新图片目录 `/var/lib/qgroup/images/` 由现有 DynamicUser／StateDirectory 管理，按原 API 验证权限后读取，不由反向代理直接暴露。更新应用无需改 1Panel 或服务沙箱配置。
+图片及收款码契约见 [结算契约](docs/settlement-contract.md)；生产新图片目录 `/var/lib/qgroup/images/` 由静态账号 qgroupsvc 管理并挂入容器，按原 API 验证权限后读取，不由反向代理直接暴露。更新应用无需改 1Panel 或服务沙箱配置。
 
 
 QQ 服务配置从可选的 `/etc/qgroup/qq.env` 读取（root 所有、0600）；不把密钥写进 systemd 服务正文、前端、日志或数据库。生产 `KANBAN_ORIGIN=https://kanban.danndann.cn`，回调 `https://kanban.danndann.cn/auth/qq/callback`。详情见 [身份契约](docs/identity-contract.md)。本地测试通过伪造官方响应验收，不能据此声称审核通过或真实 QQ 授权成功。

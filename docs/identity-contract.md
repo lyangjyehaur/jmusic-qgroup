@@ -61,7 +61,7 @@ Migration 5 僅新增 browser_accounts、device_links、account_audit、attendee
 
 ## QQ 登入與綁定
 
-- 只申請 `get_user_info`，使用 `(provider=qq, App ID, OpenID)` 辨識帳號，不需要 UnionID，不取得 QQ 號碼、群名片或群資格。
+- 只申請 `get_user_info`，使用 `(provider=qq, App ID, OpenID)` 辨識帳號，不取得 QQ 號碼、群名片或群資格。2026-11-10 起 QQ 互聯應用已開通 UnionID 介面權限，`/oauth2.0/me?unionid=1` 回傳值會寫入 `external_unionids`（schema 12），供日後與機器人 `author.union_openid` 比對；**站內帳號辨識仍以 OpenID 為準**，UnionID 只做跨應用核對，不自動合併帳號，且機器人側需等 Union_openid 綁定核准並實機驗證兩邊數值是否相等。
 - 首頁活動列表上方的官方「QQ 登录」按鈕直接進入登入頁，個人資料的「登录与账号绑定」保留同一入口：已有活動請用「绑定到当前账号」；「使用 QQ 登录账号」進入該 QQ 綁定的帳號，首次使用會建立獨立帳號。
 - `POST /api/auth/qq/start`：`mode=bind|login`、`confirm=true` 與同源首頁 `return_path`（可帶原活動／邀請查詢參數），遵循既有同源、身分與請求去重檢查。state 為隨機一次性值，庫內只存摘要，綁定發起 session、帳號（訪客可為空）、provider、App ID 及 10 分鐘期限；同裝置新授權使舊授權失效。
 - `GET /auth/qq/callback`：無參數時顯示說明，不建立帳號；合法回調須原瀏覽器 Cookie、原帳號與 state 一致，先消耗 state，再由後端交換 token、核對 App ID／OpenID 並讀取暱稱。失敗或取消不綁定、不切換。HEAD 不消耗授權。
