@@ -1,6 +1,7 @@
 'use strict';
-(()=>{
+ (()=>{
  const $=s=>document.querySelector(s);let csrf='',revision=0,botInfo=null,botTemplates={},templateKind='',botBusy=false;
+ let previewData=null,lastTemplateField='#bot-template-text';
  let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null;
  let botGroups=[];
  async function request(path,data){
@@ -84,19 +85,72 @@
   const updated=info.revision!==botInfo?.revision?'；有新版配置，请重新载入':'';
   $('#bot-runtime').textContent=`当前配置第 ${info.revision} 版；${loaded}${runtime.checked_at?'；回报时间 '+new Date(runtime.checked_at).toLocaleString():''}${updated}`;
  }
- function templateState(){
-  $('#bot-template-state').textContent=Object.hasOwn(botTemplates,templateKind)?'正在编辑自定义模板':'正在使用默认模板';
+function templateState(){
+ const rich=Object.hasOwn(botTemplates,templateKind+botInfo.markdown_suffix);
+ $('#bot-template-state').textContent=(Object.hasOwn(botTemplates,templateKind)?'纯文字：自定义模板':'纯文字：默认模板')
+  +' · '+(rich?'Markdown：自定义模板':'Markdown：系统自动生成卡片');
+}
+function hidePreview(){
+ previewData=null;$('#bot-preview-modes').hidden=true;
+ $('#bot-preview-text').hidden=true;$('#bot-preview-render').hidden=true;
+}
+function rememberTemplate(){
+ if(!templateKind)return;
+ const text=$('#bot-template-text').value;
+ if(text===botInfo.default_template)delete botTemplates[templateKind];else botTemplates[templateKind]=text;
+ const rich=$('#bot-template-markdown').value;
+ const key=templateKind+botInfo.markdown_suffix;
+ if(!rich.trim())delete botTemplates[key];else botTemplates[key]=rich;
+}
+function showTemplate(){
+ templateKind=$('#bot-template-kind').value;
+ $('#bot-template-text').value=botTemplates[templateKind]??botInfo.default_template;
+ $('#bot-template-markdown').value=botTemplates[templateKind+botInfo.markdown_suffix]||'';
+ hidePreview();templateState();
+}
+// A deliberately small, escaped renderer for the QQ Markdown subset used by
+// the bot. Everything is HTML-escaped first; links are limited to http(s).
+function markdownToHtml(source){
+ const inline=raw=>{
+  let out=esc(raw);
+  out=out.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,(all,label,url)=>{
+   let parsed;try{parsed=new URL(url);}catch{return label;}
+   if(parsed.protocol!=='http:'&&parsed.protocol!=='https:')return label;
+   return `<a href="${url}" target="_blank" rel="noopener noreferrer">${label}</a>`;
+  });
+  return out.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>').replace(/\u200B/g,'');
+ };
+ let html='',list='';
+ const close=()=>{if(list){html+='</'+list+'>';list='';}};
+ for(const line of String(source||'').split('\n')){
+  const bare=line.replace(/\u200B/g,'').trim();
+  if(!bare){close();html+='<p class="bot-md-gap"></p>';continue;}
+  if(bare==='***'){close();html+='<hr>';continue;}
+  let match=line.match(/^(#{1,6})\s+(.*)$/);
+  if(match){close();const level=Math.min(6,match[1].length+2);html+=`<h${level}>${inline(match[2])}</h${level}>`;continue;}
+  match=line.match(/^[-*]\s+(.*)$/);
+  if(match){if(list!=='ul'){close();html+='<ul>';list='ul';}html+=`<li>${inline(match[1])}</li>`;continue;}
+  match=line.match(/^\d+\.\s+(.*)$/);
+  if(match){if(list!=='ol'){close();html+='<ol>';list='ol';}html+=`<li>${inline(match[1])}</li>`;continue;}
+  match=line.match(/^>\s+(.*)$/);
+  if(match){close();html+=`<blockquote>${inline(match[1])}</blockquote>`;continue;}
+  close();html+=`<p>${inline(line)}</p>`;
  }
- function rememberTemplate(){
-  if(!templateKind)return;
-  const value=$('#bot-template-text').value;
-  if(value===botInfo.default_template)delete botTemplates[templateKind];else botTemplates[templateKind]=value;
+ close();return html;
+}
+function showPreview(){
+ if(!previewData)return;
+ const mode=botForm.querySelector('[name="bot-preview-mode"]:checked').value;
+ const textEl=$('#bot-preview-text'),renderEl=$('#bot-preview-render');
+ if(mode==='render'){
+  textEl.hidden=true;renderEl.hidden=false;
+  renderEl.innerHTML=previewData.markdown?markdownToHtml(previewData.markdown)
+   :'<p class="field-help">此事件没有可送出的 Markdown 内容；投遞时会退回纯文字。</p>';
+ }else{
+  renderEl.hidden=true;textEl.hidden=false;
+  textEl.textContent=mode==='source'?(previewData.markdown||'（无 Markdown 内容）'):previewData.text;
  }
- function showTemplate(){
-  templateKind=$('#bot-template-kind').value;
-  $('#bot-template-text').value=botTemplates[templateKind]??botInfo.default_template;
-  $('#bot-preview-text').hidden=true;templateState();
- }
+}
  function botSetup(info){
   botInfo=info;botTemplates={...info.config.templates};templateKind='';
   botGroups=info.group_status.groups.map(group=>({...group}));renderGroups();groupDiagnostics(info.group_status);
@@ -134,14 +188,20 @@
   try{await work();}catch(problem){$('#bot-error').textContent=problem.message;}
   finally{botBusy=false;for(const fieldset of botForm.querySelectorAll('fieldset'))fieldset.disabled=false;for(const button of botForm.querySelectorAll('button'))button.disabled=false;$('#bot-revert').disabled=botInfo.revision===0;}
  }
- $('#bot-template-kind').addEventListener('change',()=>{rememberTemplate();showTemplate();});
- $('#bot-groups-refresh').addEventListener('click',()=>botAction(async()=>{const info=await request('/api/admin/bot-settings');botStatus(info);refreshGroups(info);$('#bot-saved').textContent='已刷新群组与诊断，保留未保存的修改。';}));
- $('#bot-group-add').addEventListener('click',()=>{const field=$('#bot-group-id');const id=field.value.trim();if(!/^[A-Za-z0-9_-]{1,128}$/.test(id)){$('#bot-error').textContent='请输入 QQ 事件中的有效群标识，不是 QQ 群号。';return;}rememberGroups();const existing=botGroups.find(group=>group.id===id);if(existing)existing.manual=true;else botGroups.push({id,name:'',replies:false,broadcast:false,manual:true,membership:'unknown'});renderGroups();field.value='';$('#bot-error').textContent='';});
- $('#bot-groups').addEventListener('click',event=>{const button=event.target.closest('[data-group-clear]');if(!button)return;rememberGroups();const group=botGroups.find(item=>item.id===button.dataset.groupClear);if(group)Object.assign(group,{name:'',replies:false,broadcast:false,manual:false,configured:false});renderGroups();});
- $('#bot-template-text').addEventListener('input',()=>{rememberTemplate();templateState();$('#bot-preview-text').hidden=true;});
- $('#bot-template-reset').addEventListener('click',()=>{delete botTemplates[templateKind];showTemplate();});
- $('#bot-template-variables').addEventListener('click',e=>{const button=e.target.closest('[data-variable]');if(!button)return;const field=$('#bot-template-text');field.setRangeText('{'+button.dataset.variable+'}',field.selectionStart,field.selectionEnd,'end');field.focus();rememberTemplate();templateState();$('#bot-preview-text').hidden=true;});
- $('#bot-preview').addEventListener('click',()=>{if(!botForm.reportValidity())return;const config=botDraft();botAction(async()=>{const result=await request('/api/admin/bot-preview',{config,kind:templateKind});$('#bot-preview-text').textContent=result.text;$('#bot-preview-text').hidden=false;});});
+$('#bot-template-kind').addEventListener('change',()=>{rememberTemplate();showTemplate();});
+$('#bot-groups-refresh').addEventListener('click',()=>botAction(async()=>{const info=await request('/api/admin/bot-settings');botStatus(info);refreshGroups(info);$('#bot-saved').textContent='已刷新群组与诊断，保留未保存的修改。';}));
+$('#bot-group-add').addEventListener('click',()=>{const field=$('#bot-group-id');const id=field.value.trim();if(!/^[A-Za-z0-9_-]{1,128}$/.test(id)){$('#bot-error').textContent='请输入 QQ 事件中的有效群标识，不是 QQ 群号。';return;}rememberGroups();const existing=botGroups.find(group=>group.id===id);if(existing)existing.manual=true;else botGroups.push({id,name:'',replies:false,broadcast:false,manual:true,membership:'unknown'});renderGroups();field.value='';$('#bot-error').textContent='';});
+$('#bot-groups').addEventListener('click',event=>{const button=event.target.closest('[data-group-clear]');if(!button)return;rememberGroups();const group=botGroups.find(item=>item.id===button.dataset.groupClear);if(group)Object.assign(group,{name:'',replies:false,broadcast:false,manual:false,configured:false});renderGroups();});
+$('#bot-template-text').addEventListener('focus',()=>{lastTemplateField='#bot-template-text';});
+$('#bot-template-markdown').addEventListener('focus',()=>{lastTemplateField='#bot-template-markdown';});
+$('#bot-template-text').addEventListener('input',()=>{rememberTemplate();templateState();hidePreview();});
+$('#bot-template-markdown').addEventListener('input',()=>{rememberTemplate();templateState();hidePreview();});
+$('#bot-template-reset').addEventListener('click',()=>{delete botTemplates[templateKind];showTemplate();});
+$('#bot-template-md-example').addEventListener('click',()=>{const field=$('#bot-template-markdown');field.value=botInfo.default_markdown_template;field.focus();rememberTemplate();templateState();hidePreview();});
+$('#bot-template-md-reset').addEventListener('click',()=>{$('#bot-template-markdown').value='';rememberTemplate();templateState();hidePreview();});
+$('#bot-template-variables').addEventListener('click',e=>{const button=e.target.closest('[data-variable]');if(!button)return;const field=$(lastTemplateField);field.focus();field.setRangeText('{'+button.dataset.variable+'}',field.selectionStart,field.selectionEnd,'end');rememberTemplate();templateState();hidePreview();});
+$('#bot-preview-modes').addEventListener('change',showPreview);
+$('#bot-preview').addEventListener('click',()=>{if(!botForm.reportValidity())return;const config=botDraft();botAction(async()=>{const result=await request('/api/admin/bot-preview',{config,kind:templateKind});previewData=result;$('#bot-preview-modes').hidden=false;showPreview();});});
  botForm.addEventListener('submit',e=>{e.preventDefault();const config=botDraft();botAction(async()=>{const result=await request('/api/admin/bot-settings',{config,base_revision:botInfo.revision});botSetup(result.bot);$('#bot-saved').textContent='机器人设置已保存，等待机器人回报载入状态。';});});
  $('#bot-reload').addEventListener('click',()=>botAction(async()=>{botSetup(await request('/api/admin/bot-settings'));$('#bot-saved').textContent='已重新载入，未保存的修改已清除。';}));
  $('#bot-revert').addEventListener('click',()=>botAction(async()=>{const result=await request('/api/admin/bot-revert',{base_revision:botInfo.revision});botSetup(result.bot);$('#bot-saved').textContent='已恢复上一版配置，并保存为新版本。';}));

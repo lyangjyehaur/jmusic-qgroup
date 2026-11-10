@@ -5,6 +5,7 @@ from pathlib import Path
 
 from qgroup_core import bot_outbox, bot_views, finance
 from qgroup_core.bot_views import estimated_over as _estimated_over
+from . import markdown as md
 
 COMMANDS = [
     {'name': '/活动', 'desc': '选择活动，查看时间与地点'},
@@ -27,6 +28,8 @@ ALIASES.update({
     'help': '帮助', 'events': '活动', 'todos': '待办', 'me': '我的',
     'settle': '结算', 'quota': '名额', 'join': '报名',
 })
+QUICK_COMMANDS = ('快捷指令：/名额 /待办 /出席（/签到） /同行 /退出 /待确认 /确认安排\n'
+                  '/地点 /规则 /款项 /账本 /已付款 /申报 /发起 /再约 /补报 /认领 /协办 /往期')
 HELP = ('群聚看板常用指令（简繁均可）：\n'
         '/活动  选择活动，查看时间与地点\n'
         '/报名  查看安排并进入报名\n'
@@ -34,9 +37,9 @@ HELP = ('群聚看板常用指令（简繁均可）：\n'
         '/结算  往期账单与收退款\n'
         '/管理  按权限查看活动待办\n'
         '/帮助  显示本说明\n\n'
-        '快捷指令：/名额 /待办 /出席（/签到） /同行 /退出 /待确认 /确认安排\n'
-        '/地点 /规则 /款项 /账本 /已付款 /申报 /发起 /再约 /补报 /认领 /协办 /往期\n'
-        '多场活动请点对应链接，或在指令后加 8 位活动短码，例如 /名额 a1b2c3d4。\n'
+        + QUICK_COMMANDS + '\n'
+        '多场活动请点对应链接，或在指令后加清单序号，例如 /名额 2 选第 2 场。\n'
+        '序号以最近一次 /活动 清单为准；活动增减后会变，短码仍可继续使用。\n'
         '指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。')
 
 
@@ -103,18 +106,32 @@ def candidates(db, command='活动'):
 
 
 def current_event(db, argument='', command='活动'):
-    if argument:
-        if not re.fullmatch(r'[a-fA-F0-9]{8,16}', argument):
-            raise SelectionError('活动短码应为 8–16 位字母 a–f 与数字，请重新选择活动。')
-        rows = db.execute("SELECT * FROM events WHERE id LIKE ? AND visibility='public' "
-                          "AND lifecycle!='draft' AND status!='deleted' LIMIT 2",
-                          (argument.lower()+'%',)).fetchall()
-        if not rows:
-            raise SelectionError('找不到可在本群查询的指定活动；请检查短码，并确认活动已发布且公开可见。')
-        if len(rows) != 1:
-            raise SelectionError('活动短码不唯一，请使用完整活动编号。')
-        return rows[0]
+    """Resolve a selection by list number (preferred) or legacy short code.
+
+    The number always refers to the same ``candidates(db, command)`` order the
+    selection list just showed, so ``/活动`` followed by ``/名额 2`` picks the
+    second row the user saw. Numbers are re-evaluated on every request: they
+    are a short-lived convenience, not a stable activity identifier.
+    """
     rows = candidates(db, command)
+    if argument:
+        if re.fullmatch(r'[1-8]', argument):
+            visible = rows[:8]
+            index = int(argument) - 1
+            if index >= len(visible):
+                raise SelectionError('序号 %s 不在本次清单（共 %d 场）；请重新发送 /%s 查看最新序号。'
+                                     % (argument, len(visible), command))
+            return visible[index]
+        if not re.fullmatch(r'[a-fA-F0-9]{8,16}', argument):
+            raise SelectionError('活动选择请用清单里的 1–8 序号，或 8–16 位活动短码；请重新选择活动。')
+        found = db.execute("SELECT * FROM events WHERE id LIKE ? AND visibility='public' "
+                           "AND lifecycle!='draft' AND status!='deleted' LIMIT 2",
+                           (argument.lower()+'%',)).fetchall()
+        if not found:
+            raise SelectionError('找不到可在本群查询的指定活动；请检查短码，并确认活动已发布且公开可见。')
+        if len(found) != 1:
+            raise SelectionError('活动短码不唯一，请使用完整活动编号。')
+        return found[0]
     return rows[0] if len(rows) == 1 else None
 
 
@@ -123,15 +140,15 @@ def _selection(db, command):
     if not rows:
         return ('目前没有可在本群查询的活动（没有进行中的公开活动，或该分类暂无已发布的公开活动）。\n'
                 '请到网站查看你有权访问的活动：\n'+bot_outbox.base_url()+'/'), None
-    lines = ['请选择活动，点对应链接继续：']
+    lines = ['请选择活动，点对应链接继续，或发送 /%s 序号（例如 /%s 1）：' % (command, command)]
     action = LINK_ACTIONS.get(command, ('settlement' if command == '结算' else 'detail', ''))[0]
     for index, event in enumerate(rows[:8], 1):
-        lines += ['%d. %s · %s [%s]' % (index, event['title'][:40],
-                  bot_outbox.local_time(event['starts_at'], event['timezone']), event['id'][:8]),
+        lines += ['%d. %s · %s' % (index, str(event['title'])[:40],
+                  bot_outbox.local_time(event['starts_at'], event['timezone'])),
                   bot_outbox.event_url(event['id'], action=action)]
     if len(rows) > 8:
         lines.append('更多活动请到网站查看：'+bot_outbox.base_url()+'/')
-    lines.append('也可发送 /%s 活动短码。' % command)
+    lines.append('序号以最近一次 /%s 清单为准；活动增减后会变，也可发送 8 位活动短码。' % command)
     return '\n'.join(lines), None
 
 
@@ -210,3 +227,71 @@ def answer(db, command, argument=''):
     else:
         return help_text(), None
     return '\n'.join(lines), None
+
+
+def _selection_markdown(db, command):
+    rows = candidates(db, command)
+    site = bot_outbox.base_url()
+    if not rows:
+        return md.render_no_events(site)
+    action = LINK_ACTIONS.get(command, ('settlement' if command == '结算' else 'detail', ''))[0]
+    items = [(str(event['title'])[:40],
+              bot_outbox.local_time(event['starts_at'], event['timezone']),
+              bot_outbox.event_url(event['id'], action=action))
+             for event in rows[:8]]
+    return md.render_selection(items, command, site, more=len(rows) > 8)
+
+
+def _generic_markdown(db, command, argument):
+    """Turn any remaining plain command answer into one consistent card.
+
+    Reusing ``answer()`` guarantees the Markdown body never states a different
+    fact than the plain-text fallback. The first line becomes a bold header
+    only when it looks like an activity heading; a long one-line notice stays
+    a bullet so it never becomes an oversized title.
+    """
+    plain = answer(db, command, argument)[0]
+    lines = [line for line in plain.split('\n') if line.strip()]
+    url = lines.pop() if lines and lines[-1].startswith(('http://', 'https://')) else ''
+    head = ''
+    if lines and (lines[0].startswith('【') or len(lines[0]) <= 42):
+        head = lines.pop(0)
+    return md.render_command(command, head, lines, url)
+
+
+def answer_markdown(db, command, argument=''):
+    """Build a msg_type=2 reply, or None when this command stays plain text.
+
+    Only system-authored fragments are stylised. Every activity title, place
+    and task string is escaped before reaching a renderer, so user text can
+    never become a link, a list item or a platform mention.
+    """
+    site = bot_outbox.base_url()
+    if command is None or command not in ALIASES.values() or command == '帮助':
+        prefix = '' if command == '帮助' else '未识别这条指令，请使用下列指令：'
+        return md.render_help(COMMANDS, site, QUICK_COMMANDS, prefix=prefix)
+    if command in ('我的', '发起') and not argument:
+        return _generic_markdown(db, command, argument)
+    try:
+        event = current_event(db, argument, command)
+    except SelectionError:
+        return None
+    if event is None:
+        return _selection_markdown(db, command)
+    title = str(event['title'])[:40]
+    when = bot_outbox.local_time(event['starts_at'], event['timezone'])
+    if command in ('活动', '往期'):
+        c = bot_views.counts(db, event['id'])
+        phase = {'scheduled': '待开始', 'ongoing': '进行中',
+                 'ended': '已结束', 'cancelled': '已取消'}[event['lifecycle']]
+        return md.render_event(title, when, [
+            ('地点', str(event['location'] or '')[:120]),
+            ('报名截止', bot_outbox.local_time(event['deadline'], event['timezone'])),
+            ('人数', '正式 %d 人，候补 %d 人' % (c['confirmed'], c['waiting'])),
+            ('当前阶段', '%s · %s' % (phase, bot_views.registration_label(event))),
+        ], bot_outbox.event_url(event['id']))
+    if command == '待办':
+        tasks = bot_views.public_tasks(db, event) or ['暂无公开状态提醒']
+        return md.render_tasks(title, when, tasks,
+                               bot_outbox.event_url(event['id'], action='todos'))
+    return _generic_markdown(db, command, argument)

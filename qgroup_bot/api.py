@@ -226,8 +226,11 @@ class QQBotAPI:
         return self.post('/v2/groups/%s/messages' % group_openid, payload)
 
     def reply_group(self, group_openid, text, *, msg_id=None, event_id=None, seq=1,
-                    keyboard=None):
-        body = {'msg_type': 0, 'content': text}
+                    keyboard=None, markdown=None):
+        # QQ rejects a body carrying both fields: when markdown is present,
+        # content must be absent (msg_type=2, custom markdown, no template).
+        body = ({'msg_type': 2, 'markdown': {'content': markdown}} if markdown
+                else {'msg_type': 0, 'content': text})
         if msg_id:
             body.update(msg_id=msg_id, msg_seq=seq)
         elif event_id:

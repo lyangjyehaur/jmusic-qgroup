@@ -177,7 +177,15 @@ def enqueue(db, event_id, kind, text, *, channel='group', target='',
     payload = {'text': text, 'msg_type': 0}
     if extra:payload.update(extra)
     if template_context is not None:
-        payload['_template_context'] = template_context
+        # ``markdown_text`` is an optional, additive payload field. An older
+        # bot simply ignores it and sends ``text``; a newer bot re-renders it
+        # from ``_template_context`` so a template edit still reaches queued
+        # but unsent rows. No schema or format migration is required.
+        context = dict(template_context)
+        rich = context.pop('_markdown', None)
+        payload['_template_context'] = context
+        if isinstance(rich, str) and rich.strip():
+            payload['markdown_text'] = rich
     if schedule_key:
         payload['_schedule_key'] = schedule_key
     # Callback commands must retain the activity from the card they belong to.
@@ -395,22 +403,56 @@ def build_message(db, event, kind, *, source='', after=None, config=None):
                    change_summary=str(event['change_summary'] or '')[:120],
                    cancellation_reason=str(event['cancellation_reason'] or '')[:120])
     context['_default_text'] = original
+    context['_label'] = LABELS.get(kind, '群聚看板')
+    context['_details_lines'] = [line for line in lines[1:-1] if line.strip()]
     if kind=='settlement_updated':
         from . import settlements
         snapshot=settlements.details(db,event['id'],_version(db,event['id']))
         if snapshot and snapshot.get('group_notice'):context['_settlement_notice']='\n'.join(settlement_notice(snapshot))
     config = config or bot_settings.read(db)['config']
     text = render_message(config,kind,context)
+    # A rich version is computed at queue time from the same frozen context.
+    # Any failure here is non-fatal: delivery stays on the plain-text body.
+    try:
+        context['_markdown'] = render_message(config, kind, context, markdown=True)
+    except Exception:
+        context['_markdown'] = None
     return text, buttons, context
 
 
-def render_message(config,kind,context):
-    text=bot_settings.render(config,kind,context) if kind in config['templates'] else context['_default_text']
-    required=context.get('_settlement_notice')
-    if required and required not in text:
-        text+='\n\n'+required
-        if len(text)>3800:text=context['_default_text']
-    return text
+def render_message(config,kind,context,markdown=False):
+    if not markdown:
+        text=bot_settings.render(config,kind,context) if kind in config['templates'] else context['_default_text']
+        required=context.get('_settlement_notice')
+        if required and required not in text:
+            text+='\n\n'+required
+            if len(text)>3800:text=context['_default_text']
+        return text
+    from . import bot_markdown as md
+    notice = [line for line in str(context.get('_settlement_notice') or '').split('\n')
+              if line.strip()]
+    try:
+        custom = bot_settings.render(config, kind, context, markdown=True)
+    except APIError:
+        return None
+    if custom:
+        text = custom
+        # The per-person settlement detail is a compliance requirement, not
+        # decoration: always append it when an operator opted into showing it.
+        if notice:
+            text += ('\n'+md.BLANK+'\n## 逐人应付\n'
+                     + '\n'.join('- ' + md.escape_markdown(line) for line in notice))
+    else:
+        url = str(context.get('url') or '')
+        if not url:
+            return None
+        facts = context.get('_details_lines')
+        if not isinstance(facts, list):
+            facts = [line for line in str(context.get('details') or '').split('\n')
+                     if line.strip()]
+        text = md.render_broadcast(str(context.get('_label') or LABELS.get(kind, '群聚看板')),
+                                   str(context.get('title') or ''), facts, url, notice=notice)
+    return None if md.content_problem(text) else text
 
 
 def compose(db, event, kind, *, source='', after=None):

@@ -27,6 +27,14 @@ VARIABLES = {
     'change_summary': '安排变更摘要', 'cancellation_reason': '取消原因',
 }
 DEFAULT_TEMPLATE = '{heading}\n{details}\n\n{url}'
+# An optional per-kind rich version lives in the same ``templates`` map under
+# ``<kind>@md``. Adding a key does not change the settings schema, so settings
+# written by older builds still validate; an older build only rejects them when
+# an admin saves from that old admin page (see docs/deployment-policy.md).
+MARKDOWN_SUFFIX = '@md'
+DEFAULT_MARKDOWN_TEMPLATE = ('## {heading}\n\u200B\n{details}\n\u200B\n'
+                             '[打开活动]({url})\n\u200B\n'
+                             '> 群内消息只提供入口；报名、确认及款项仍须在网站核对提交。')
 VARIABLE_LIMITS = dict(heading=120, details=2500, url=512, title=40,
                        starts_at=32, deadline=32, location=120, confirmed=20, waiting=20,
                        fee_policy=120, description=120, version=20,
@@ -111,7 +119,9 @@ def validate(config):
     except (ZoneInfoNotFoundError, ValueError):
         raise APIError('勿扰时区不正确')
     templates = config['templates']
-    if not isinstance(templates, dict) or any(k not in KINDS for k in templates):
+    if not isinstance(templates, dict) or any(
+            (key[:-len(MARKDOWN_SUFFIX)] if key.endswith(MARKDOWN_SUFFIX) else key) not in KINDS
+            for key in templates):
         raise APIError('消息模板类型不正确')
     for value in templates.values():
         validate_template(value)
@@ -139,10 +149,34 @@ def validate_template(value):
         raise APIError('模板展开后可能超过 4000 字，请减少重复变量或缩短内容')
 
 
-def render(config, kind, context):
-    value = config['templates'].get(kind, DEFAULT_TEMPLATE)
+def render(config, kind, context, *, markdown=False):
+    """Render one template. ``markdown=True`` looks for ``<kind>@md`` and
+    returns None when the admin did not write one; the caller then uses the
+    system-authored card instead.
+
+    Rich templates are still admin-authored, but every substituted value is
+    escaped. ``{url}`` stays a bare, already-system-generated URL so
+    ``[文字]({url})`` works; ``{details}`` becomes a bullet list with each
+    line escaped, because QQ Markdown has no code fences or tables.
+    """
+    key = kind + MARKDOWN_SUFFIX if markdown else kind
+    value = config['templates'].get(key)
+    if markdown and not value:
+        return None
+    value = value or DEFAULT_TEMPLATE
     validate_template(value)
-    text = value.format_map(context)
+    fields = dict(context)
+    if markdown:
+        from . import bot_markdown
+        for name, raw in list(fields.items()):
+            if name == 'url' or not isinstance(raw, str):
+                continue
+            if name == 'details':
+                fields[name] = '\n'.join('- ' + bot_markdown.escape_markdown(line)
+                                         for line in raw.split('\n') if line.strip())
+            else:
+                fields[name] = bot_markdown.escape_markdown(raw)
+    text = value.format_map(fields)
     if len(text) > 4000 or not text.strip():
         raise APIError('消息内容超出 4000 字，请缩短模板')
     return text
@@ -162,7 +196,8 @@ def preview(db, data):
                   minimum_participants=4, conditions_version=2, change_summary='集合时间调整',
                   cancellation_reason='天气原因', archived_at=None, registration_open=kind != 'registration_paused')
     context = bot_outbox.build_message(db, sample, kind, config=config)[2]
-    return dict(text=render(config, kind, context))
+    return dict(text=render(config, kind, context),
+                markdown=bot_outbox.render_message(config, kind, context, markdown=True))
 
 
 def view(db):
@@ -170,6 +205,8 @@ def view(db):
     result['kinds'] = KINDS
     result['variables'] = VARIABLES
     result['default_template'] = DEFAULT_TEMPLATE
+    result['default_markdown_template'] = DEFAULT_MARKDOWN_TEMPLATE
+    result['markdown_suffix'] = MARKDOWN_SUFFIX
     history = db.execute('SELECT * FROM bot_settings_history ORDER BY revision DESC LIMIT 21').fetchall()
     result['history'] = []
     for index, row in enumerate(history[:20]):

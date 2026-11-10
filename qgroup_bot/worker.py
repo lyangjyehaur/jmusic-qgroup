@@ -14,6 +14,7 @@ from qgroup_core import storage, bot_outbox, bot_views, bot_settings, bot_groups
 from qgroup_core.common import now
 from .api import hint, classify_error
 from . import observability as obs
+from . import markdown as md
 
 
 class OutboxWorker:
@@ -127,6 +128,24 @@ class OutboxWorker:
                     return '文字含未报备域名，拒绝发送'
         return None
 
+    def _keyboard_problem(self, keyboard):
+        """Jump buttons carry URLs too; they must obey the same allowlist."""
+        hosts = getattr(self.config, 'allowed_link_hosts', None)
+        if not hosts or not isinstance(keyboard, dict):
+            return None
+        rows = (keyboard.get('content') or {}).get('rows') or []
+        for row in rows:
+            for button in row.get('buttons') or []:
+                action = button.get('action') or {}
+                if action.get('type') != 0:
+                    continue
+                for match in re.finditer(r'https?://([^\s<>"\[\]{}]+)',
+                                         str(action.get('data') or '')):
+                    host = (urlsplit('https://' + match.group(1)).hostname or '').lower()
+                    if host and host not in hosts:
+                        return '按钮含未报备域名，拒绝发送'
+        return None
+
     def _group_state_path(self, group=None):
         suffix = '-'+obs.reference(group) if group else ''
         return Path(getattr(self.config, 'log_dir', Path(self.config.db).parent / 'bot-logs')) / ('bot-group-state'+suffix+'.json')
@@ -201,11 +220,12 @@ class OutboxWorker:
         if row['kind'] in bot_outbox.REMINDER_KINDS:
             with self._connect() as db:
                 event = db.execute('SELECT * FROM events WHERE id=?', (row['event_id'],)).fetchone()
-                planned = bot_outbox.compose(db, event, row['kind'])
+                planned = bot_outbox.build_message(db, event, row['kind'])
             if not planned:
                 self._mark(row, 'skipped', '提醒已不适用')
                 return 'skipped'
-            payload = {'text': planned[0], 'msg_type': 0}
+            payload = {'text': planned[0], 'msg_type': 0,
+                       'markdown_text': planned[2].get('_markdown')}
             buttons = [(label, data+' '+row['event_id'] if data else '', jump)
                        for label, data, jump in planned[1]]
             keyboard = bot_outbox._keyboard(buttons)
@@ -214,8 +234,28 @@ class OutboxWorker:
         elif payload.get('_template_context'):
             context = payload['_template_context']
             payload['text'] = bot_outbox.render_message(policy,row['kind'],context)
+            # Re-render from the frozen context so a template edit reaches
+            # queued but unsent rows, exactly like the plain-text body does.
+            try:
+                payload['markdown_text'] = bot_outbox.render_message(
+                    policy, row['kind'], context, markdown=True)
+            except Exception as exc:
+                payload['markdown_text'] = None
+                obs.event('outbox_markdown_fallback', level=logging.WARNING,
+                          **obs.error_fields(exc))
         body = {'msg_type': payload.get('msg_type', 0)}
-        if body['msg_type'] == 0:
+        rich = payload.get('markdown_text')
+        use_rich = (body['msg_type'] == 0 and getattr(self.config, 'markdown_replies', False)
+                    and isinstance(rich, str))
+        if use_rich:
+            problem = md.content_problem(rich, getattr(self.config, 'allowed_link_hosts', ()))
+            if problem:
+                obs.event('outbox_markdown_fallback', reason=problem)
+                use_rich = False
+        if use_rich:
+            # QQ rejects a body carrying both content and markdown.
+            body = {'msg_type': 2, 'markdown': {'content': rich}}
+        elif body['msg_type'] == 0:
             content = payload.get('text', '')
             if not isinstance(content, str) or not content.strip():
                 self._mark(row, 'failed', '文字内容为空，拒绝发送')
@@ -234,9 +274,14 @@ class OutboxWorker:
                 return 'failed'
             body.update(extra)
         if payload.get('keyboard'):
+            problem = self._keyboard_problem(payload['keyboard'])
+            if problem:
+                self._mark(row, 'failed', problem)
+                return 'failed'
             body['keyboard'] = payload['keyboard']
+        logged_text = body.get('content') or (body.get('markdown') or {}).get('content') or ''
         obs.event('outbox_prepared', msg_type=body['msg_type'], keyboard=bool(body.get('keyboard')),
-                  **obs.text_fields(body.get('content'), self.config))
+                  **obs.text_fields(logged_text, self.config))
         recorded = dict(body, _config_revision=settings['revision'], _group_ref=obs.reference(group))
         dry_run = self.config.dry_run if policy['dry_run'] is None else policy['dry_run']
         if dry_run:
@@ -310,6 +355,10 @@ class OutboxWorker:
         kind = classify_error(safe_code, status=http_status, data=data)
         obs.event('outbox_send_rejected', level=logging.WARNING, api_code=safe_code,
                   http_status=http_status, error_kind=kind)
+        if (body['msg_type'] == 2 and safe_code in md.MARKDOWN_REJECTION_CODES):
+            # Logged only. Never auto-resend a refused markdown body as text:
+            # the platform may already have delivered it.
+            obs.event('outbox_markdown_rejected', level=logging.WARNING, api_code=safe_code)
         if kind == 'unconfirmed':
             # 201/202 are async results. Never retry and risk a duplicate send.
             self._mark(row, 'skipped', '平台返回异步结果，未确认送出，需人工核对：' + message)

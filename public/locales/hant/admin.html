@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261110-activity1"><script defer src="/admin.js?v=20261110-activity1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>管理 · 群聚看板管理後臺</title><link rel="icon" href="/favicon.svg"><link rel="stylesheet" href="/style.css?v=20261111-markdown1"><script defer src="/admin.js?v=20261111-markdown1"></script>  <script defer src="/analytics.js?v=20261110-botconfig1"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
 </head>
 <body><main class="page admin-page"><a href="/">返回群聚看板</a><h1>管理後臺</h1><p id="admin-error" class="form-error" role="alert"></p>
@@ -53,12 +53,20 @@
   <fieldset><legend>消息模板</legend>
    <label class="field">通知類型<select id="bot-template-kind"></select></label>
    <p id="bot-template-state" class="field-help"></p>
-   <label class="field">模板內容<textarea id="bot-template-text" rows="8" maxlength="2000" spellcheck="false" translate="no"></textarea></label>
+   <label class="field">純文字模板（關閉 Markdown 或內容降級時使用）<textarea id="bot-template-text" rows="7" maxlength="2000" spellcheck="false" translate="no"></textarea></label>
    <p class="field-help">使用下方變量，可點擊插入。必須保留 {url}。{details} 是系統按事件生成的說明；自定義文字會按原文發送。模板最多 2000 字，變量展開後最多 4000 字。</p>
    <div id="bot-template-variables" class="bot-variables"></div>
-   <div class="bot-actions"><button id="bot-template-reset" type="button" class="button secondary">使用默認模板</button><button id="bot-preview" type="button" class="button secondary">預覽示例</button></div>
+   <label class="field">Markdown 模板（可選，留空由系統生成卡片）<textarea id="bot-template-markdown" rows="8" maxlength="2000" spellcheck="false" translate="no" placeholder="留空即使用系统卡片"></textarea></label>
+   <p class="field-help">僅在部署設置 KANBAN_BOT_MARKDOWN=1 時生效。可用 # 標題、**粗體**、- 清單、1. 序號清單、[文字]({url}) 與 &gt; 引用；QQ 不支持代碼區塊與表格。變量值會自動轉義，{details} 會轉成清單，仍須保留 {url}。留空時系統按事件自動生成卡片，且結算逐人明細固定附上。</p>
+   <div class="bot-actions"><button id="bot-template-reset" type="button" class="button secondary">使用默認純文字模板</button><button id="bot-template-md-example" type="button" class="button secondary">插入 Markdown 示例</button><button id="bot-template-md-reset" type="button" class="button secondary">清除 Markdown 模板</button><button id="bot-preview" type="button" class="button secondary">預覽示例</button></div>
    <p class="field-help">預覽只使用示例資料，不會發送群消息。新版模板適用於尚未發送且帶有事件快照的通知；舊版隊列保留原文。</p>
+   <div id="bot-preview-modes" class="bot-preview-modes" role="group" aria-label="預覽模式" hidden>
+    <label class="check-option"><input type="radio" name="bot-preview-mode" value="text" checked>純文字</label>
+    <label class="check-option"><input type="radio" name="bot-preview-mode" value="source">Markdown 原始碼</label>
+    <label class="check-option"><input type="radio" name="bot-preview-mode" value="render">Markdown 效果</label>
+   </div>
    <pre id="bot-preview-text" class="bot-preview" translate="no" aria-live="polite" hidden></pre>
+   <div id="bot-preview-render" class="bot-preview bot-preview-render" aria-live="polite" hidden></div>
   </fieldset>
   <div class="bot-actions"><button type="submit" class="button primary">保存機器人設置</button><button id="bot-reload" type="button" class="button secondary">重新載入</button></div>
   <p id="bot-saved" role="status"></p><p id="bot-error" class="form-error" role="alert"></p>

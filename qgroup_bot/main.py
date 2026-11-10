@@ -23,8 +23,9 @@ from qgroup_core import bot_settings, bot_groups, storage
 
 from .api import QQBotAPI
 from .config import Config
-from .replies import COMMANDS, answer, parse, read_db
+from .replies import COMMANDS, answer, answer_markdown, parse, read_db
 from .worker import OutboxWorker
+from . import markdown as md
 from . import observability as obs
 
 
@@ -41,6 +42,30 @@ def ws_connect():
 
 
 MENTION = re.compile(r'<@!?([A-Za-z0-9_-]+)>|<qqbot-at-user id="([A-Za-z0-9_-]+)"[^>]*>')
+
+
+def _markdown_reply(db, command, argument, config):
+    """Best-effort rich reply; any problem keeps the existing plain text.
+
+    The plain-text answer is always produced first and stays available, so a
+    renderer bug, a control character or an unreported link host can only
+    remove the extra formatting, never take the reply down.
+    """
+    if not getattr(config, 'markdown_replies', False):
+        return None
+    try:
+        value = answer_markdown(db, command, argument)
+        if value is None:
+            return None
+        problem = md.content_problem(value, getattr(config, 'allowed_link_hosts', ()))
+        if problem:
+            obs.event('reply_markdown_fallback', reason=problem)
+            return None
+        return value
+    except Exception as exc:
+        obs.event('reply_markdown_fallback', level=logging.WARNING,
+                  **obs.error_fields(exc))
+        return None
 
 
 def normalize_content(content):
@@ -403,10 +428,12 @@ class Bot:
                     await asyncio.to_thread(self.record_group, group, reason='replies_disabled')
                     return
                 text, keyboard = answer(db, command, argument)
+                markdown = _markdown_reply(db, command, argument, self.config)
             finally:
                 db.close()
-            obs.event('reply_prepared', msg_type=0, keyboard=bool(keyboard),
-                      **obs.text_fields(text, self.config))
+            obs.event('reply_prepared', msg_type=2 if markdown else 0,
+                      keyboard=bool(keyboard),
+                      **obs.text_fields(markdown or text, self.config))
             dry_run = self.config.dry_run if policy['dry_run'] is None else policy['dry_run']
             if dry_run:
                 obs.event('reply_simulated', sent=False, policy_dry_run=policy['dry_run'],
@@ -414,9 +441,16 @@ class Bot:
                 await asyncio.to_thread(self.record_group, group, reason='dry_run')
                 return
             obs.event('reply_sending', mode='message' if msg_id else 'interaction', seq=1)
+            kwargs = dict(msg_id=msg_id, event_id=event_id, seq=1, keyboard=keyboard)
+            # Keep the legacy call signature byte-for-byte when Markdown is off.
+            if markdown:
+                kwargs['markdown'] = markdown
             ok, code, data = await asyncio.to_thread(
-                self.api.reply_group, group, text,
-                msg_id=msg_id, event_id=event_id, seq=1, keyboard=keyboard)
+                self.api.reply_group, group, text, **kwargs)
+            if not ok and markdown and type(code) is int and code in md.MARKDOWN_REJECTION_CODES:
+                # Log only: auto-resending could duplicate a message the
+                # platform actually accepted. Turn the opt-in off to recover.
+                obs.event('reply_markdown_rejected', level=logging.WARNING, api_code=code)
             if not ok:
                 obs.event('reply_failed', level=logging.WARNING, api_code=code if type(code) is int else None,
                           elapsed_ms=round((time.monotonic()-started)*1000))

@@ -32,6 +32,11 @@ class Config:
         # Deployment default. Shared bot_settings may explicitly override it;
         # selecting "inherit deployment settings" keeps this value in effect.
         self.dry_run = os.environ.get('KANBAN_BOT_DRY_RUN', '1') != '0'
+        # Opt-in custom Markdown (msg_type=2) for passive replies AND active
+        # outbox broadcasts. Default off: an existing deployment must not
+        # change group messages silently. Real-device rendering of backslash
+        # escapes and zero-width blank lines is still unverified.
+        self.markdown_replies = os.environ.get('KANBAN_BOT_MARKDOWN', '0') == '1'
         # 2026-08-10 changelog unified the OpenAPI host. The previously
         # verified host remains an explicit fallback until the new one is
         # confirmed from this deployment; see QQBotAPI.gateway().
