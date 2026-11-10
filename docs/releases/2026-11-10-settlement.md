@@ -1,6 +1,6 @@
 # 指定結算人、墊付款抵扣與群收款通知
 
-發布範圍：`both`。目前為待發布紀錄，尚未填入正式映像或切換結果。
+2026-11-10 23:51:36（Asia/Taipei）完成正式切換。發布範圍：`both`。
 
 ## 行為
 
@@ -27,3 +27,27 @@ schema 維持 15，沒有資料遷移。沿用既有邀請 kind、JSON scopes、
 - 群投遞為受控模擬 API 驗收，未對正式群發測試消息，不代表已完成 QQ 平台真實收圖驗收。
 
 官方接口依據：[群聊富媒體上傳](https://bot.q.qq.com/wiki/develop/api-v2/autogen/api/v2_groups_group_openid_files.post.html)、[富媒體消息](https://bot.q.qq.com/wiki/develop/api-v2/server-inter/message/rich-media.html)。圖片由私有檔案以 `file_data` 上傳，`srv_send_msg=false` 取得 `file_info`，再用 `msg_type=7` 和 `media.file_info` 發送；不將私人碼庫改成公開 URL。
+
+## 正式版本與驗收結果
+
+| 階段／服務 | 來源 commit | 映像引用 | 實際 image ID |
+| --- | --- | --- | --- |
+| 發布前 web | `c19ede40b7a796e82d02f8c81695d4c05556d2c6` | `qgroup:20261110-entry1-c19ede4` | `sha256:50d8b7d1284d29d53987d776d865244f9efa29ba4373d0d7b7a15ddc943130b4` |
+| 發布前 bot | `017e2329e70e8a7c3786e7c3d8c832abaccbcc6d` | `qgroup:20261110-activity1-017e232` | `sha256:7e41b1b509235056e9c52f20ff5db1cc422d9318a53ea6499dae7066b6e22707` |
+| 發布後 web、bot | `4ed8b5be006180e3e92466e00184c0a196b4c4f1` | `qgroup:20261110-settlement1-4ed8b5b` | `sha256:045a395659c3fe2e077410289e6560d305ea3bef29f0bccb339ce0c1452d32eb` |
+
+- 明確來源提交建置一次，218 個追蹤檔案摘要與正式來源相符；來源壓縮檔 SHA-256 為 `ed7a77eb35d4683be637088802b5c424ab94da4723885ba6132856e980de078f`。正式 manifest 記錄兩邊實際版本。
+- 新映像內以 UID:GID `994:992`、無網路、無正式環境憑證與資料掛載執行 **418 項 Python 測試，全部通過**。本機 11 組 JavaScript 測試及簡繁 Chrome 手機流程通過。
+- 配對備份副本兩次初始化演練保留所有原始資料與圖片；正式 schema 維持 15。正式切換前後活動、管理員角色、bot 設定、指定角色、結算與財務資料摘要相同，舊財務不可變紀錄完整保留。
+- 先停止舊服務，再啟動新 web 和新 bot；兩邊均為預期 image ID、`healthy`、restart count 0；bot 啟動後有新的 READY、ACK 和 outbox poll，既有實際發送模式保持。
+- 外網簡繁首頁、結算／活動／付款等腳本、手冊、管理頁與共用 CSS 共 **21 項資源均 200 且摘要符合來源**；`/api/health` 200。
+- 未補記正式活動的實付金額，未自動重發歷史結算，未向 QQ 群發送驗收消息。舊帳單若缺墊付款，須由有權者編輯結算並確認實際付款，才能抵扣；真實 QQ 收圖仍待使用者發布後驗收。
+
+## 備份與回退組合
+
+- 演練備份：`/var/backups/qgroup/kanban-20261110-155012-703968.sqlite3` 及同名 `.images.tar.gz`。
+- 切換前備份：`/var/backups/qgroup/kanban-20261110-155050-075199.sqlite3` 及同名 `.images.tar.gz`。
+- 回退保存目錄：`/opt/qgroup-backups/settlement-4ed8b5b`，保留舊來源、Compose 環境、manifest、資料摘要、映像測試、演練及切換紀錄。兩個舊映像標籤保留。
+- 回退目標為上述發布前的混合組合，不能只恢復舊 `.env` 然後整組 `up`：其共用標籤只表達舊 web。必須取得部署鎖、停止新 bot／web、確認發布後資料與待送工作的相容性，保留資料庫和圖片，分別以舊 web 與舊 bot 的標籤啟動，再核對 image ID、健康與心跳。若新版已產生待送圖片，先處理不支援的工作；財務寫入不可透過覆蓋舊備份回退。
+
+本次發布後的本文件更新範圍為 `none`，不需再次建置或重啟服務；正式運行來源仍為上述功能提交。
