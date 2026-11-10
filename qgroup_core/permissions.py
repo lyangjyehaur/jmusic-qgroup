@@ -1,8 +1,8 @@
-"""Cohost scopes do not grant financial or ownership privileges."""
+"""Explicit event scopes; settlement authority is separately accepted."""
 import json
 from .common import APIError
 
-SCOPES = {'schedule','roster','attendance'}
+SCOPES = {'schedule','roster','attendance','settlement'}
 
 
 def scopes(db,event,viewer):

@@ -23,6 +23,11 @@ def library(db,user_id):
     return [view(row) for row in db.execute('SELECT * FROM user_payment_codes WHERE user_id=? AND archived_at IS NULL ORDER BY created_at DESC,id DESC',(user_id,))]
 
 
+def published_by(db,event_id,version,user_id):
+    row=db.execute('SELECT actor_id FROM settlement_history WHERE event_id=? AND version=?',(event_id,version)).fetchone()
+    return bool(row and row[0]==user_id)
+
+
 def create(db,user,data):
     kind=data.get('kind')
     if kind not in KINDS:raise APIError('请选择微信、支付宝或其他收款方式')
@@ -31,8 +36,8 @@ def create(db,user,data):
         source=data['source']
         if not isinstance(source,dict) or not isinstance(source.get('event_id'),str) or not re.fullmatch(r'[a-f0-9]{16}',source['event_id']) or type(source.get('version')) is not int or source['version']<1 or source.get('kind') not in KINDS:
             raise APIError('原版收款码引用不正确')
-        event=db.execute("SELECT * FROM events WHERE id=? AND owner_id=? AND status!='deleted'",(source['event_id'],user['id'])).fetchone()
-        if not event:raise APIError('只能保存自己发起活动的收款码',403)
+        event=db.execute("SELECT * FROM events WHERE id=? AND status!='deleted'",(source['event_id'],)).fetchone()
+        if not event or not published_by(db,event['id'],source['version'],user['id']):raise APIError('只能保存自己发布结算时使用的收款码',403)
         prior=next((raw for meta,raw in existing(db,event['id'],source['version']) if meta['kind']==source['kind']),None)
         if not prior:raise APIError('原版收款码不存在，请重新选择')
         raw=prior
@@ -79,7 +84,7 @@ def resolve(db,event,user,data,version):
         if 'qr_image' in data:
             raw=billing.qr_image(data['qr_image'])
             return [(dict(kind='other',name='',digest=hashlib.sha256(raw).hexdigest()),raw)] if raw else []
-        return existing(db,event['id'],version)
+        return existing(db,event['id'],version) if published_by(db,event['id'],version,user['id']) else []
     if 'qr_image' in data:raise APIError('请刷新收款码选择后重新预览')
     choices=data['payment_codes']
     if not isinstance(choices,list) or len(choices)>3:raise APIError('每种收款方式最多选择一张，合计最多三张')
@@ -96,6 +101,7 @@ def resolve(db,event,user,data,version):
             if not raw:raise APIError('请选择收款码图片')
             result.append((dict(kind=kind,name=string(choice,'name',40,False),digest=hashlib.sha256(raw).hexdigest()),raw))
         elif type(choice.get('version')) is int and 0<choice['version']<=version:
+            if not published_by(db,event['id'],choice['version'],user['id']):raise APIError('收款人已变更，请选择当前账号自己的收款码',403)
             prior=next(((meta,raw) for meta,raw in existing(db,event['id'],choice['version']) if meta['kind']==kind),None)
             if not prior:raise APIError('原版收款码不存在，请重新选择')
             result.append(prior)

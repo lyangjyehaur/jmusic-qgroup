@@ -4,7 +4,7 @@ import json
 import re
 from fractions import Fraction
 from .common import APIError, now, string
-from . import audit, billing, roster, media, payment_codes
+from . import audit, billing, roster, media, payment_codes, permissions
 
 ID=re.compile(r'[a-f0-9]{16}\Z')
 MAX_CENTS=999999999
@@ -41,10 +41,12 @@ def account_key(event_id,user_id):
 
 
 def context(db,event,user):
-    if event['owner_id']!=user['id']:raise APIError('只有发起者可以核对结算名单',403)
+    permissions.require(db,event,user['id'],'settlement')
     people=[];payers={}
     owner=db.execute('SELECT nickname FROM users WHERE id=?',(event['owner_id'],)).fetchone()[0]
     payers[account_key(event['id'],event['owner_id'])]=owner
+    for role in db.execute('SELECT r.user_id,u.nickname FROM event_roles r JOIN users u ON u.id=r.user_id WHERE r.event_id=?',(event['id'],)):
+        payers[account_key(event['id'],role['user_id'])]=role['nickname']
     versions={r[0]:json.loads(r[1]) for r in db.execute('SELECT version,snapshot_json FROM event_conditions WHERE event_id=?',(event['id'],))}
     for row in roster.rows(db,event['id']):
         if row['status']=='invited':continue
@@ -64,7 +66,10 @@ def context(db,event,user):
         for p in json.loads(row[0]).get('parties',[]):payers.setdefault(p['id'],p['name'])
     for i,p in enumerate(people,1):p['label']=p['name']+('（报名 '+str(i)+'）' if sum(q['name']==p['name'] for q in people)>1 else '')
     payer_list=[dict(id=k,name=v,label=v+('（付款人 '+str(i)+'）' if list(payers.values()).count(v)>1 else '')) for i,(k,v) in enumerate(payers.items(),1)]
-    return dict(people=people,payers=payer_list)
+    from . import finance
+    entries=finance.rows(db,event['id']);state=finance.project(entries)
+    return dict(people=people,payers=payer_list,collector=dict(id=account_key(event['id'],user['id']),name=db.execute('SELECT nickname FROM users WHERE id=?',(user['id'],)).fetchone()[0]),
+        has_merchant_records=bool(state['expenses'] or state['deposits']))
 
 
 def latest_version(db,event_id):
@@ -80,6 +85,8 @@ def decorate(db,event_id,bill):
     result=billing.serialize_settlement(bill)
     result['payment_codes']=payment_codes.descriptors(db,event_id,bill['version'])
     result['has_qr']=bool(result['payment_codes'])
+    actor=db.execute('SELECT actor_id FROM settlement_history WHERE event_id=? AND version=?',(event_id,bill['version'])).fetchone()
+    result['publisher_key']=account_key(event_id,actor[0]) if actor and actor[0] else None
     detail=details(db,event_id,bill['version'])
     if detail:
         result.update(mode='detailed',detail=detail,headcount=len(detail['people']),per_person_amount=None,rounding_difference_cents=0)
@@ -250,12 +257,40 @@ def calculate(db,event,user,data):
     reason=string(data,'reason',300,False)
     if current_version and not reason:raise APIError('修改或转换结算请填写原因')
     used_payers={v['payer_id'] for p in inputs for v in p['payments']}
+    if isinstance(data.get('merchant_payment'),dict):used_payers.add(data['merchant_payment'].get('payer_id'))
     custom_normal=[p for p in custom_normal if p['id'] in used_payers]
     snapshot=dict(people=people,items=calculated,payers=[dict(id=k,name=payers[k],label=payer_labels[k],amount_cents=v) for k,v in payer_totals.items()],
         total_cents=total,note=note,reason=reason,qr_digest=qr[0][0]['digest'] if qr else None,payment_codes=[meta for meta,_ in qr],
         rounding_rule='按最大余数补分，余数相同按本版冻结的报名顺序；每项独立分配。',
         input=dict(people=inputs,items=item_inputs,custom_payers=custom_normal))
+    snapshot['collector']=ctx['collector']
+    # Invoice liability and money already paid are separate facts. Freeze the
+    # journal projection in the preview token so concurrent cash changes require review.
+    from . import finance
+    journal=finance.rows(db,event['id']);state=finance.project(journal)
+    snapshot['journal_seq']=journal[-1]['seq'] if journal else 0
+    payment=data.get('merchant_payment')
+    if payment is not None:
+        if not isinstance(payment,dict) or payment.get('mode') not in ('unpaid','paid','recorded'):
+            raise APIError('请确认店家款项是否已经支付')
+        if payment['mode']=='paid':
+            if state['expenses'] or state['deposits']:raise APIError('已有店家款项记录，请选择已登记，并到收付款账本核对或补录',409)
+            tx=finance.transaction(db,event,user,dict(payment,kind='expense',funding='payer',custom_parties=[p for p in custom_normal if p['id']==payment.get('payer_id') and p['id'] not in finance.participants(db,event,user['id'])[0]]))
+            snapshot['merchant_payment']=tx
+            journal=journal+[dict(id='preview',seq=(journal[-1]['seq']+1 if journal else 1),kind='expense',payload=tx,reversal_of=None)]
+            state=finance.project(journal)
+        elif payment['mode']=='recorded' and not (state['expenses'] or state['deposits']):
+            raise APIError('尚无店家款项记录，请确认实际付款情况')
+    snapshot['balances']=[dict(id=k,name=payers.get(k,next((p['name'] for e in journal for p in e['payload'].get('parties',[]) if p['id']==k),'付款人')),
+        label=payer_labels.get(k,payers.get(k,'付款人')),
+        due_cents=payer_totals.get(k,0),contributed_cents=state['credit'].get(k,0),balance_cents=payer_totals.get(k,0)-state['credit'].get(k,0))
+        for k in dict.fromkeys([*payer_totals,*state['credit']])]
+    notice=data.get('group_notice',False)
+    if type(notice) is not bool:raise APIError('请确认是否向群发布结算明细与收款码')
+    snapshot['group_notice']=notice
     snapshot['changes']=changes(details(db,event['id'],current_version),snapshot)
+    previous=details(db,event['id'],current_version)
+    if previous and previous.get('collector')!=snapshot['collector']:snapshot['changes'].append('本版收款人：'+snapshot['collector']['name'])
     return snapshot,images,qr
 
 
@@ -265,7 +300,8 @@ def token(snapshot,event,version):
 
 def preview(db,event,user,data):
     snapshot,_,_=calculate(db,event,user,data)
-    return dict(snapshot=snapshot,preview_token=token(snapshot,event,data['base_version']),base_revision=event['revision'],base_version=data['base_version'])
+    from . import bot_outbox
+    return dict(snapshot=snapshot,group_preview='\n'.join(bot_outbox.settlement_notice(snapshot)) if snapshot.get('group_notice') else '',preview_token=token(snapshot,event,data['base_version']),base_revision=event['revision'],base_version=data['base_version'])
 
 
 def save(db,event,user,data):
@@ -277,7 +313,7 @@ def save(db,event,user,data):
     comparable=lambda s:{k:v for k,v in s.items() if k not in ('reason','changes')}
     if previous and comparable(previous)==comparable(snapshot):return
     stamp=now();next_version=version+1
-    fields=[k for k in ('people','items','payers','note','qr_digest','payment_codes') if not previous or previous.get(k)!=snapshot[k]]
+    fields=[k for k in ('people','items','payers','note','qr_digest','payment_codes','collector','merchant_payment','group_notice') if not previous or previous.get(k)!=snapshot.get(k)]
     row=db.execute('SELECT total_cents FROM settlements WHERE event_id=?',(event['id'],)).fetchone()
     db.execute('''INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,qr_image,updated_at,actor_id,actor_name,kind,changed_fields)
         VALUES(?,?,?,?,?,?,?,?,?,?,?)''',(event['id'],next_version,snapshot['total_cents'],max(1,len(snapshot['people'])),snapshot['note'],None,stamp,user['id'],user['nickname'],
@@ -288,6 +324,11 @@ def save(db,event,user,data):
     db.execute('''INSERT INTO settlements(event_id,total_cents,headcount,qr_image,note,updated_at) VALUES(?,?,?,?,?,?)
         ON CONFLICT(event_id) DO UPDATE SET total_cents=excluded.total_cents,headcount=excluded.headcount,qr_image=excluded.qr_image,note=excluded.note,updated_at=excluded.updated_at''',
         (event['id'],snapshot['total_cents'],max(1,len(snapshot['people'])),None,snapshot['note'],stamp))
+    if snapshot.get('merchant_payment'):
+        from . import finance
+        uid=hashlib.sha256((event['id']+':settlement:'+str(next_version)+':expense').encode()).hexdigest()[:16]
+        finance.append_entry(db,event,user,uid,'expense',snapshot['merchant_payment'])
+        audit.append(db,event,user,'finance_record',{},dict(operation=dict(id=uid,transaction=snapshot['merchant_payment'])),snapshot['reason'])
     audit.append(db,event,user,'settlement_saved',dict(version=version,total_amount=billing.money(row[0])) if row else {},
         dict(version=next_version,total_amount=billing.money(snapshot['total_cents']),mode='detailed',changed_fields=fields),snapshot['reason'])
     recipients={r[0] for r in db.execute("SELECT DISTINCT manager_id FROM attendees WHERE event_id=? AND status!='invited'",(event['id'],))}

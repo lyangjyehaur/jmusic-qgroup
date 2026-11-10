@@ -242,6 +242,87 @@ class WorkerTests(BotOutboxFixture, unittest.TestCase):
         with mock.patch.dict(os.environ, values):
             return Config()
 
+    def settlement_jobs(self):
+        from qgroup_core import payment_codes, settlements
+        from test_api import test_png
+        import hashlib
+        event_id=self.create_event()
+        with storage.connect(self.path) as db:
+            db.execute('DELETE FROM bot_outbox')
+            db.execute("UPDATE events SET lifecycle='ended' WHERE id=?",(event_id,))
+            db.execute("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,updated_at,actor_id,actor_name,kind,changed_fields) VALUES(?,1,10000,2,'',?,'u1','收款人','detailed_published','[]')",(event_id,now()))
+            snap=dict(group_notice=True,collector={'name':'收款人'},people=[dict(name='甲',due_cents=5000),dict(name='乙',due_cents=5000)],balances=[dict(name='甲',due_cents=5000,balance_cents=-5000),dict(name='乙',due_cents=5000,balance_cents=5000)])
+            db.execute('INSERT INTO settlement_details VALUES(?,1,?)',(event_id,json.dumps(snap)))
+            raw=test_png();payment_codes.attach(db,event_id,1,[(dict(kind='wechat',name='微信',digest=hashlib.sha256(raw).hexdigest()),raw),(dict(kind='alipay',name='支付宝',digest=hashlib.sha256(raw).hexdigest()),raw)])
+            bot_outbox._broadcast(db,event_id,'settlement_updated')
+            bot_outbox._broadcast(db,event_id,'settlement_updated')
+        self.assertEqual(len(self.rows()),3)
+        return event_id
+
+    def test_settlement_images_are_private_uploads_with_independent_delivery(self):
+        self.settlement_jobs();api=mock.Mock()
+        api.post.side_effect=lambda path,body:(True,0,{'file_info':'platform-file'}) if path.endswith('/files') else (True,0,{'id':'sent'})
+        worker=OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api)
+        result=worker.poll_once();self.assertEqual(result['sent'],3)
+        calls=api.post.call_args_list;self.assertEqual(len(calls),5)
+        self.assertIn('甲：50.00 元',calls[0].args[1]['content'])
+        self.assertIn('待补 50.00',calls[0].args[1]['content'])
+        self.assertEqual(calls[1].args[1]['srv_send_msg'],False)
+        self.assertIn('file_data',calls[1].args[1]);self.assertNotIn('url',calls[1].args[1])
+        self.assertEqual(calls[2].args[1],{'msg_type':7,'media':{'file_info':'platform-file'}})
+        self.assertEqual(worker.poll_once()['claimed'],0)
+
+    def test_settlement_dry_run_does_not_upload_or_claim_real_delivery(self):
+        self.settlement_jobs();api=mock.Mock()
+        result=OutboxWorker(self.config(),api).poll_once()
+        self.assertEqual(result['simulated'],3);api.post.assert_not_called()
+        self.assertTrue(all(r['simulated_at'] and not r['sent_at'] for r in self.rows()))
+
+    def test_only_failed_settlement_image_retries(self):
+        self.settlement_jobs();api=mock.Mock();uploads=0
+        def send(path,body):
+            nonlocal uploads
+            if path.endswith('/files'):
+                uploads+=1
+                return (False,50055001,{}) if uploads==2 else (True,0,{'file_info':'file'})
+            return True,0,{'id':'sent'}
+        api.post.side_effect=send;worker=OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api)
+        worker.poll_once();pending=next(r for r in self.rows() if r['status']=='pending')
+        self.assertEqual(sum(r['status']=='sent' for r in self.rows()),2)
+        before=len(api.post.call_args_list)
+        with storage.connect(self.path) as db:db.execute("UPDATE bot_outbox SET retry_at=NULL WHERE id=?",(pending['id'],))
+        worker.poll_once();self.assertEqual(len(api.post.call_args_list)-before,2)
+        self.assertTrue(all(r['status']=='sent' for r in self.rows()))
+
+    def test_failed_settlement_text_prevents_unexplained_qr_delivery(self):
+        self.settlement_jobs();api=mock.Mock();api.post.return_value=(False,304061,{})
+        OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api).poll_once()
+        self.assertEqual(api.post.call_count,1)
+        self.assertTrue(all(r['status']=='failed' for r in self.rows()))
+
+    def test_settlement_template_cannot_drop_reviewed_amounts_or_collector(self):
+        self.settlement_jobs();api=mock.Mock()
+        api.post.side_effect=lambda path,body:(True,0,{'file_info':'file'}) if path.endswith('/files') else (True,0,{})
+        from qgroup_core import bot_settings
+        with storage.connect(self.path) as db:
+            config=bot_settings.read(db)['config'];config['templates']['settlement_updated']='仅标题 {title}\n{url}'
+        with mock.patch('qgroup_bot.worker.bot_settings.read',return_value={'config':config,'revision':0}):
+            OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api).poll_once()
+        text=api.post.call_args_list[0].args[1]['content']
+        self.assertIn('收款人：收款人',text);self.assertIn('待补 50.00',text)
+
+    def test_stale_settlement_or_revoked_publisher_never_uploads(self):
+        for change in ('version','permission'):
+            event_id=self.settlement_jobs()
+            with storage.connect(self.path) as db:
+                if change=='version':
+                    db.execute("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,updated_at,actor_id,actor_name,kind,changed_fields) VALUES(?,2,0,1,'',?,'u1','收款人','detailed_edited','[]')",(event_id,now()))
+                else:
+                    db.execute("INSERT OR IGNORE INTO users(id,token_hash,nickname,created_at) VALUES('u2','hash2','新发起者',?)",(now(),))
+                    db.execute("UPDATE events SET owner_id='u2' WHERE id=?",(event_id,))
+            api=mock.Mock();OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0'),api).poll_once();api.post.assert_not_called()
+            with storage.connect(self.path) as db:db.execute('DELETE FROM bot_outbox')
+
     def test_dry_run_records_simulation_without_claiming_a_real_delivery(self):
         self.create_event()
         self.due_rows(2)

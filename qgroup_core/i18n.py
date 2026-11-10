@@ -87,6 +87,7 @@ def arrangement(value,locale):
 
 
 NOTIFICATIONS=(
+    (None,' 已另行指定结算人，你的结算权限已撤销'),
     (None,' 已递补为正式报名'),
     (None,' 的报名认领申请待核对'),
     (None,' 的款项记录有更新，请查看收付款账本'),
@@ -121,6 +122,7 @@ def notification(value,kind,locale):
 
 
 CHANGES=(
+    ('本版收款人：',None),
     ('新增',None),('不再列入本版：',None),
     (None,'：应付 ',None,' → ',None,' 元；共同份数 ',None,' → ',None),
     ('称呼：',None,' → ',None),

@@ -1,6 +1,6 @@
 'use strict';
 function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDetail,refresh,shortDate,timeRange,openEventForm,copyLink,eventUrl}) {
-  const scopes={schedule:"修改安排与开始／结束",roster:"管理报名",attendance:"核对出席"};
+  const scopes={schedule:"修改安排与开始／结束",roster:"管理报名",attendance:"核对出席",settlement:"发布结算、管理账款与使用本人收款码"};
   const attendanceNames={unknown:"未核对",present:"到场",absent:"缺席",late:"迟到",left:"早退"};
   let actionContext=null,conditionsContext=null,managementContext=null,attendanceContext=null,roleContext=null;
   const current=()=>state.events.find(e=>e.id===state.current);
@@ -18,10 +18,12 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
     if(e.pending_confirmation_count||e.declined_confirmation_count)html+=`<p class="activity-status">安排已变更${e.pending_confirmation_count?' · '+e.pending_confirmation_count+" 人待确认":''}${e.declined_confirmation_count?' · '+e.declined_confirmation_count+" 人暂不同意":''} <button class="text-button" data-activity="conditions">查看安排</button></p>`;
     if(e.fee_policy)html+=`<details class="event-policy"><summary>费用与退出规则</summary><p>${esc(e.fee_policy)}</p><p>退出期限：${shortDate(e.withdrawal_deadline,e.timezone)}。期限后退出需提交申请；是否负担费用须按已接受的约定协调，不会自动加收。</p></details>`;
     if(e.actual_started_at||e.actual_ended_at)html+=`<p data-advanced-only class="activity-status">${e.actual_started_at?"实际开始 "+shortDate(e.actual_started_at,e.timezone):''}${e.actual_started_at&&e.actual_ended_at?' · ':''}${e.actual_ended_at?"实际结束 "+shortDate(e.actual_ended_at,e.timezone):''}</p>`;
+    const settler=e.cohosts.find(p=>p.permissions.includes('settlement'));
+    if(settler)html+=`<p class="activity-status">指定结算人：${esc(settler.name)}</p>`;
     if(e.cohosts.length)html+=`<p data-advanced-only class="activity-status">协办：${e.cohosts.map(p=>esc(p.name)).join('、')}</p>`;
-    if(e.is_owner){
+    if(e.is_owner||e.management_scopes?.includes('settlement')){
       const states={pending:"待送",sending:"投递中",sent:"已发送",failed:"失败",skipped:"已作废",simulated:"模拟，未发送"};
-      html+=`<details data-advanced-only class="extra-settings"><summary>QQ 群同步 · ${e.bot_enabled?"已开启":"未开启"}</summary><p class="field-help">${e.bot_feature_enabled?"通知是否实际发送，以投递记录为准；已发送不代表群友已读。":"管理员尚未启用机器人，当前不会排入通知。"}</p>${(e.bot_delivery||[]).map(r=>`<p class="field-help">${esc({activity_published:"活动信息",conditions_changed:"安排变更",deadline_reminder:"截止提醒",estimated_over_reminder:"结束提醒",settlement_updated:"结算发布",finance_closed:"账务结清",finance_reopened:"重新核对",event_started:"实际开始",event_finished:"实际结束",event_cancelled:"活动取消",formation_confirmed:"成团确认",registration_paused:"暂停报名",registration_resumed:"恢复报名",ownership_changed:"管理交接"}[r.kind]||"活动通知")} · ${esc(states[r.state]||r.state)} · ${shortDate(r.sent_at||r.simulated_at||r.created_at)}${r.last_error&&r.state!=='simulated'?' · '+esc(r.last_error):''}${e.bot_enabled&&['failed','simulated'].includes(r.state)?` <button class="text-button" data-activity="bot_retry" data-id="${r.id}">重送通知</button>`:''}</p>`).join('')||"<p class=\"field-help\">暂无投递记录</p>"}</details>`;
+      html+=`<details data-advanced-only class="extra-settings"><summary>QQ 群同步 · ${e.bot_enabled?"已开启":"未开启"}</summary><p class="field-help">${e.bot_feature_enabled?"通知是否实际发送，以投递记录为准；已发送不代表群友已读。":"管理员尚未启用机器人，当前不会排入通知。"}</p>${(e.bot_delivery||[]).map(r=>`<p class="field-help">${esc(r.payment_kind?({wechat:"微信收款码",alipay:"支付宝收款码",other:"其他收款码"}[r.payment_kind]||"收款码"):{activity_published:"活动信息",conditions_changed:"安排变更",deadline_reminder:"截止提醒",estimated_over_reminder:"结束提醒",settlement_updated:"结算发布",finance_closed:"账务结清",finance_reopened:"重新核对",event_started:"实际开始",event_finished:"实际结束",event_cancelled:"活动取消",formation_confirmed:"成团确认",registration_paused:"暂停报名",registration_resumed:"恢复报名",ownership_changed:"管理交接"}[r.kind]||"活动通知")} · ${esc(states[r.state]||r.state)} · ${shortDate(r.sent_at||r.simulated_at||r.created_at)}${r.last_error&&r.state!=='simulated'?' · '+esc(r.last_error):''}${e.bot_enabled&&['failed','simulated'].includes(r.state)?` <button class="text-button" data-activity="bot_retry" data-id="${r.id}">重送通知</button>`:''}</p>`).join('')||"<p class=\"field-help\">暂无投递记录</p>"}</details>`;
     }
     return html;
   }
@@ -123,15 +125,16 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
   $('#conditions-form').addEventListener('submit',event=>{event.preventDefault();respond('accepted');});
   $('#decline-conditions').addEventListener('click',()=>respond('declined'));
   function managementUrl(e,token) {return location.origin+'/?event='+e.id+'&management_invite='+token;}
-  function openManagement(e) {
+  function openManagement(e,settlement=false) {
     managementContext=e;const form=$('#management-form');form.reset();
     const target=form.elements.attendee_id;
     target.innerHTML="<option value=\"\">专属链接，由持链接者接受</option>"+e.participants.filter(p=>!p.is_guest&&!p.is_me).map(p=>`<option value="${p.id}">${esc(p.nickname)}（仅限原报名浏览器）</option>`).join('');
     $('#management-roles').innerHTML=e.cohosts.length?e.cohosts.map(p=>`<div class="management-row"><div><strong>${esc(p.name)}</strong><p>${p.permissions.map(s=>scopes[s]).join('、')}</p></div><button class="text-button danger" type="button" data-activity="revoke_role" data-id="${p.id}">撤销</button></div>`).join(''):"<p class=\"muted\">暂无协办</p>";
-    $('#management-pending').innerHTML=e.pending_management.map(p=>`<div class="management-row"><div><strong>${esc(p.target_name)} · ${p.kind==='transfer'?"接任发起者":"协办"}</strong><p>${shortDate(p.expires_at)} 前有效</p></div><button class="text-button" type="button" data-activity="copy_role" data-id="${p.id}">复制链接</button><button class="text-button danger" type="button" data-activity="revoke_invite" data-id="${p.id}">撤销</button></div>`).join('');
-    $('#management-scopes').hidden=false;$('.form-error',form).textContent='';showDialog('management-dialog');
+    $('#management-pending').innerHTML=e.pending_management.map(p=>`<div class="management-row"><div><strong>${esc(p.target_name)} · ${p.kind==='transfer'?"接任发起者":p.permissions.includes('settlement')?"结算人":"协办"}</strong><p>${shortDate(p.expires_at)} 前有效</p></div><button class="text-button" type="button" data-activity="copy_role" data-id="${p.id}">复制链接</button><button class="text-button danger" type="button" data-activity="revoke_invite" data-id="${p.id}">撤销</button></div>`).join('');
+    form.elements.kind.value=settlement?'settlement':'cohost';$('#management-form .extra-settings').open=settlement;
+    $('#management-scopes').hidden=settlement;$('.form-error',form).textContent='';showDialog('management-dialog');
   }
-  $('#management-form [name=kind]').addEventListener('change',event=>{$('#management-scopes').hidden=event.target.value==='transfer';});
+  $('#management-form [name=kind]').addEventListener('change',event=>{$('#management-scopes').hidden=event.target.value!=='cohost';});
   $('#management-form').addEventListener('invalid',()=>{$('#management-form .extra-settings').open=true;},true);
   $('#management-form [name=attendee_id]').addEventListener('change',event=>{
     const e=managementContext,p=e.participants.find(p=>p.id===event.target.value);if(p)$('#management-form [name=target_name]').value=p.nickname;
@@ -140,16 +143,16 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
     event.preventDefault();const form=event.currentTarget,button=$('#save-management');if(button.disabled)return;button.disabled=true;
     try {
       const e=managementContext,selected=[...form.querySelectorAll('[name=permission]:checked')].map(input=>input.value);
-      const updated=await api(`/api/events/${e.id}/management/invitations`,'POST',{base_revision:e.revision,kind:form.elements.kind.value,target_name:form.elements.target_name.value.trim(),attendee_id:form.elements.attendee_id.value||null,permissions:selected,reason:form.elements.reason.value.trim()});
+      const updated=await api(`/api/events/${e.id}/management/invitations`,'POST',{base_revision:e.revision,kind:form.elements.kind.value==='settlement'?'cohost':form.elements.kind.value,target_name:form.elements.target_name.value.trim(),attendee_id:form.elements.attendee_id.value||null,permissions:form.elements.kind.value==='settlement'?['settlement']:selected,reason:form.elements.reason.value.trim()});
       await apply(updated,"交接邀请已生成，请只发送给指定接任人");openManagement(updated);
     }catch(problem){$('.form-error',form).textContent=problem.message;}
     finally{button.disabled=false;}
   });
   async function showManagementInvitation(id,token) {
     const info=await api(`/api/events/${id}/management/invitations/${token}`);roleContext={id,token,info};
-    $('#accept-role-title').textContent=info.kind==='transfer'?"接任发起者":"接受协办";
+    $('#accept-role-title').textContent=info.kind==='transfer'?"接任发起者":info.permissions.includes('settlement')?"接受结算责任":"接受协办";
     $('#accept-role-description').textContent=info.title+' · '+info.owner_name+" 邀请 "+info.target_name;
-    $('#accept-role-permissions').textContent=info.kind==='transfer'?"接受后，你将管理此活动的名单、安排和全部结算；原发起者不再拥有发起者权限。":info.permissions.map(p=>scopes[p]).join('、')+"。协办不能操作结算或转交活动。";
+    $('#accept-role-permissions').textContent=info.kind==='transfer'?"接受后，你将管理此活动的名单、安排和全部结算；原发起者不再拥有发起者权限。":info.permissions.map(p=>scopes[p]).join('、')+(info.permissions.includes('settlement')?"。结算时使用你自己的收款码；发起者保留管理权。":"。协办不能操作结算或转交活动。");
     $('#accept-role-form').reset();$('#accept-role-form .form-error').textContent='';showDialog('accept-role-dialog');
   }
   $('#accept-role-form').addEventListener('submit',event=>{
@@ -215,6 +218,7 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       if(action==='edit')openEventForm(e);
       else if(action==='conditions')openConditions(e);
       else if(action==='management')openManagement(e);
+      else if(action==='appoint_settlement')openManagement(e,true);
       else if(action==='attendance')openAttendance(e);
       else if(action==='onsite')openOnsite(e);
       else if(action==='copy_role'){const p=e.pending_management.find(p=>p.id===button.dataset.id);if(p)await copyLink(managementUrl(e,p.token));}

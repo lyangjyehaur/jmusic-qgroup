@@ -159,7 +159,7 @@ def _keyboard(buttons):
 
 def enqueue(db, event_id, kind, text, *, channel='group', target='',
             due_at=None, buttons=None, status='pending', schedule_key=None,
-            fact_key=None, recipient_user_id=None, template_context=None):
+            fact_key=None, recipient_user_id=None, template_context=None, extra=None):
     """Queue one message. Returns True when a new row was created."""
     if not _available(db) or not text:
         return False
@@ -175,6 +175,7 @@ def enqueue(db, event_id, kind, text, *, channel='group', target='',
                 return False
             target = selected
     payload = {'text': text, 'msg_type': 0}
+    if extra:payload.update(extra)
     if template_context is not None:
         payload['_template_context'] = template_context
     if schedule_key:
@@ -208,6 +209,8 @@ def retry(db, event, row_id):
                      (row_id,event['id'])).fetchone()
     if not row or not (row['status']=='failed' or row['last_error']=='dry-run'):
         raise APIError('只能重送失败或模拟的通知',409)
+    version=json.loads(row['payload_json']).get('_settlement_version')
+    if version and version!=_version(db,event['id']):raise APIError('结算已更新，请使用新版通知，不能重送旧收款码',409)
     if db.execute("SELECT 1 FROM bot_outbox WHERE event_id=? AND kind=? AND payload_json=? "
                   "AND status IN ('pending','sending')", (event['id'],row['kind'],row['payload_json'])).fetchone():
         raise APIError('这条通知已有待送任务，请等待投递结果',409)
@@ -246,10 +249,24 @@ def money(cents):
     return '%s%d.%02d' % (sign, value // 100, value % 100)
 
 
+def settlement_notice(snapshot):
+    lines=['收款人：'+snapshot.get('collector',{}).get('name','请到站内核对'),'逐人 AA：']
+    lines += [str(p.get('label') or p['name'])[:36]+'：'+money(p['due_cents'])+' 元' for p in snapshot.get('people',[])[:20]]
+    if len(snapshot.get('people',[]))>20:lines.append('其余人员 AA 请到活动页查看')
+    lines.append('付款账户待补／应退：')
+    for p in snapshot.get('balances',[])[:20]:
+        balance=p['balance_cents']
+        lines.append('%s：AA %s 元，%s' % (str(p.get('label') or p['name'])[:36],money(p['due_cents']),
+            '待补 '+money(balance)+' 元' if balance>0 else '应退／待偿还 '+money(-balance)+' 元' if balance<0 else '无需补款'))
+    if len(snapshot.get('balances',[]))>20:lines.append('其余人员请到活动页查看')
+    lines.append('以上为本版发布时金额，后续收退款以站内账本为准。')
+    return lines
+
+
 def _settlement_lines(db, event_id, version):
     # Explicit opt-in only: these lines DO contain participant names and
     # individual amounts. Operators must confirm the group accepts that.
-    if not settlement_detail() or not version:
+    if not version:
         return []
     row = db.execute('SELECT snapshot_json FROM settlement_details WHERE event_id=? AND version=?',
                      (event_id, version)).fetchone()
@@ -259,6 +276,8 @@ def _settlement_lines(db, event_id, version):
         snapshot = json.loads(row['snapshot_json'])
     except (ValueError, TypeError):
         return []
+    if snapshot.get('group_notice'):return settlement_notice(snapshot)
+    if 'group_notice' in snapshot or not settlement_detail():return []
     lines = []
     for payer in snapshot.get('payers', [])[:30]:
         name = str(payer.get('name') or payer.get('label') or '参加者')[:12]
@@ -376,9 +395,22 @@ def build_message(db, event, kind, *, source='', after=None, config=None):
                    change_summary=str(event['change_summary'] or '')[:120],
                    cancellation_reason=str(event['cancellation_reason'] or '')[:120])
     context['_default_text'] = original
+    if kind=='settlement_updated':
+        from . import settlements
+        snapshot=settlements.details(db,event['id'],_version(db,event['id']))
+        if snapshot and snapshot.get('group_notice'):context['_settlement_notice']='\n'.join(settlement_notice(snapshot))
     config = config or bot_settings.read(db)['config']
-    text = bot_settings.render(config, kind, context) if kind in config['templates'] else original
+    text = render_message(config,kind,context)
     return text, buttons, context
+
+
+def render_message(config,kind,context):
+    text=bot_settings.render(config,kind,context) if kind in config['templates'] else context['_default_text']
+    required=context.get('_settlement_notice')
+    if required and required not in text:
+        text+='\n\n'+required
+        if len(text)>3800:text=context['_default_text']
+    return text
 
 
 def compose(db, event, kind, *, source='', after=None):
@@ -484,7 +516,14 @@ def _broadcast(db, event_id, kind, source='', after=None):
                else None)
     created = enqueue(db, event_id, kind, planned[0], buttons=planned[1],
                       fact_key=str(version) if version is not None else 'revision:'+str(event['revision']),
-                      template_context=planned[2])
+                      template_context=planned[2],extra={'_settlement_version':version} if kind=='settlement_updated' else None)
+    if kind=='settlement_updated' and version:
+        from . import settlements, payment_codes
+        snapshot=settlements.details(db,event_id,version)
+        if snapshot and snapshot.get('group_notice'):
+            for code in payment_codes.frozen(db,event_id,version):
+                enqueue(db,event_id,kind,'收款码',fact_key=str(version)+':image:'+code['kind'],
+                    extra=dict(msg_type=7,_settlement_version=version,_settlement_image=code))
     if created and kind == 'activity_published':
         _schedule(db, event)
     return created

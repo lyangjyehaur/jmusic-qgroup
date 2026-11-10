@@ -64,9 +64,21 @@ def accept(db,event,user,token,data):
         db.execute("UPDATE management_invitations SET status='revoked' WHERE event_id=? AND status='pending'",(event['id'],))
         audit.notify(db,event['owner_id'],event['id'],'ownership_transferred',event['title']+' 已由 '+user['nickname']+' 接任发起者；你仍可管理自己的报名')
     else:
+        accepted=set(json.loads(invite['permissions_json']))
+        # Only one appointed settlement person. Preserve unrelated cohost duties.
+        if 'settlement' in accepted:
+            for role in db.execute('SELECT * FROM event_roles WHERE event_id=?',(event['id'],)).fetchall():
+                prior=set(json.loads(role['permissions_json']))
+                if role['user_id']!=user['id'] and 'settlement' in prior:
+                    prior.remove('settlement')
+                    if prior:db.execute('UPDATE event_roles SET permissions_json=? WHERE id=?',(json.dumps(sorted(prior)),role['id']))
+                    else:db.execute('DELETE FROM event_roles WHERE id=?',(role['id'],))
+                    audit.notify(db,role['user_id'],event['id'],'cohost_removed',event['title']+' 已另行指定结算人，你的结算权限已撤销')
+            prior=db.execute('SELECT permissions_json FROM event_roles WHERE event_id=? AND user_id=?',(event['id'],user['id'])).fetchone()
+            if prior:accepted.update(json.loads(prior[0]))
         db.execute('''INSERT INTO event_roles(id,event_id,user_id,permissions_json,created_at) VALUES(?,?,?,?,?)
             ON CONFLICT(event_id,user_id) DO UPDATE SET permissions_json=excluded.permissions_json''',
-            (secrets.token_hex(8),event['id'],user['id'],invite['permissions_json'],now()))
+            (secrets.token_hex(8),event['id'],user['id'],json.dumps(sorted(accepted)),now()))
         audit.notify(db,event['owner_id'],event['id'],'cohost_accepted',user['nickname']+' 已接受 '+event['title']+' 的协办邀请')
     db.execute("UPDATE management_invitations SET status='accepted',accepted_by=?,accepted_at=? WHERE id=?",(user['id'],now(),invite['id']))
     roster.grant(db,event['id'],user['id'])

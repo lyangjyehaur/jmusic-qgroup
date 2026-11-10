@@ -168,7 +168,13 @@ class PaymentCodeTests(unittest.TestCase):
         data.update(base_revision=event['revision'],base_version=1)
         self.assertEqual(self.other.request(self.url+'/settlement/preview','POST',data)[0],404)
         data['payment_codes']=[dict(kind='wechat',version=1)]
-        self.assertEqual(self.other.request(self.url+'/settlement/preview','POST',data)[0],200)
+        self.assertEqual(self.other.request(self.url+'/settlement/preview','POST',data)[0],403)
+        # Historical images remain readable; a new collector must explicitly
+        # select their own code instead of relabeling the previous owner's.
+        self.assertEqual(self.other.opener.open(self.base+event['settlement']['payment_codes'][0]['url']).read(),test_png())
+        data.pop('payment_codes')
+        status,preview=self.other.request(self.url+'/settlement/preview','POST',data)
+        self.assertEqual(status,200,preview);self.assertEqual(preview['snapshot']['payment_codes'],[])
 
     def test_same_selection_is_noop_but_type_or_label_change_requires_reason_and_new_version(self):
         code=self.upload(name='原称呼');data=self.data([dict(kind='wechat',code_id=code['id'])]);status,event=self.publish(data);self.assertEqual(status,200)

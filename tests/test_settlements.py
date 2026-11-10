@@ -3,6 +3,7 @@ import concurrent.futures
 import copy
 import hashlib
 import json
+import os
 import sqlite3
 import tempfile
 import threading
@@ -59,6 +60,114 @@ class DetailedSettlementTests(unittest.TestCase):
     def publish(self,data,client=None,headers=None):
         client=client or self.owner;status,result=self.preview(data,client);self.assertEqual(status,200,result)
         return client.request(self.url+'/settlement/detailed','PUT',{**data,'preview_token':result['preview_token']},headers=headers)
+
+    def appoint(self, client=None):
+        client=client or self.other
+        body=dict(kind='cohost',permissions=['settlement'],target_name='结算人',reason='实际付款人负责收款',base_revision=self.fresh()['revision'])
+        status,e=self.owner.request(self.url+'/management/invitations','POST',body);self.assertEqual(status,200,e)
+        token=e['pending_management'][-1]['token']
+        status,info=client.request(self.url+'/management/invitations/'+token);self.assertEqual(status,200,info)
+        status,e=client.request(self.url+'/management/invitations/'+token+'/accept','POST',dict(base_revision=info['base_revision'],accept_responsibility=True));self.assertEqual(status,200,e)
+        return e
+
+    def paid_data(self):
+        data=self.data()
+        owner_key=self.context['collector']['id']
+        data['people'][0].update(payments=[dict(payer_id=owner_key,share='1')],reason='本人承担自己的份额')
+        data['merchant_payment']=dict(mode='paid',payer_id=owner_key,amount='600',merchant='KTV',method='wechat',occurred_at=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat())
+        return data
+
+    def test_actual_payer_retains_aa_share_but_advance_offsets_it_atomically(self):
+        data=self.paid_data();status,p=self.preview(data);self.assertEqual(status,200,p)
+        owner=next(p for p in p['snapshot']['balances'] if p['id']==self.context['collector']['id'])
+        self.assertEqual(owner['due_cents'],8572);self.assertEqual(owner['balance_cents'],-51428)
+        with sqlite3.connect(server.DB) as db:self.assertEqual(db.execute('SELECT count(*) FROM finance_entries WHERE event_id=?',(self.event['id'],)).fetchone()[0],0)
+        body={**data,'preview_token':p['preview_token']};headers={'Idempotency-Key':uuid.uuid4().hex}
+        status,e=self.owner.request(self.url+'/settlement/detailed','PUT',body,headers=headers);self.assertEqual(status,200,e)
+        status,replayed=self.owner.request(self.url+'/settlement/detailed','PUT',body,headers=headers)
+        self.assertEqual(status,200,replayed);self.assertEqual(replayed['settlement']['version'],1)
+        self.assertEqual(e['finance']['my_outstanding_cents'],0)
+        self.assertEqual(e['finance']['my_refund_due_cents'],51428)
+        self.assertEqual(self.other.request(self.url)[1]['finance']['my_outstanding_cents'],51428)
+        # Editing a bill preserves the advance, rather than charging the payer again.
+        data=self.data();data['merchant_payment']={'mode':'recorded'}
+        status,e=self.publish(data);self.assertEqual(status,200,e)
+        with sqlite3.connect(server.DB) as db:self.assertEqual(db.execute('SELECT count(*) FROM finance_entries WHERE event_id=?',(self.event['id'],)).fetchone()[0],1)
+
+    def test_accepted_settlement_person_can_publish_manage_cash_and_use_only_own_codes(self):
+        data=self.data();self.assertEqual(self.preview(data,self.other)[0],403)
+        e=self.appoint();self.assertTrue(e['can_settle']);self.assertTrue(e['finance']['can_manage'])
+        self.assertFalse(e['can_edit_schedule']);self.assertFalse(e['can_manage_roster'])
+        image=base64.b64encode(test_png()).decode()
+        status,code=self.other.request('/api/payment-codes','POST',dict(kind='wechat',name='结算人本人',image=image));self.assertEqual(status,201,code)
+        data=self.data();data['payment_codes']=[dict(kind='wechat',code_id=code['id'])]
+        status,e=self.publish(data,self.other);self.assertEqual(status,200,e)
+        self.assertEqual(e['settlement']['detail']['collector']['name'],'代报者')
+        self.assertTrue(e['finance']['can_manage'])
+        status,ledger=self.other.request(self.url+'/finance');self.assertEqual(status,200,ledger)
+        command=dict(base_revision=e['revision'],command='record',id=uuid.uuid4().hex[:16],transaction=dict(
+            kind='expense',funding='payer',payer_id=e['settlement']['detail']['collector']['id'],amount='600',merchant='KTV',method='wechat',occurred_at=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat()))
+        status,review=self.other.request(self.url+'/finance/preview','POST',command);self.assertEqual(status,200,review)
+        status,e=self.other.request(self.url+'/finance','POST',{**command,'preview_token':review['preview_token']});self.assertEqual(status,200,e)
+        self.assertEqual(e['finance']['cost_cents'],60000)
+        data=self.data();data['payment_codes']=[dict(kind='wechat',version=1)]
+        self.assertEqual(self.preview(data,self.owner)[0],403)
+        data.pop('payment_codes');status,p=self.preview(data);self.assertEqual(status,200,p)
+        self.assertEqual(p['snapshot']['payment_codes'],[])
+        role=e['cohosts'][0]
+        status,e=self.owner.request(self.url+'/management/roles/'+role['id'],'DELETE',dict(base_revision=self.fresh()['revision'],reason='收回结算权限'));self.assertEqual(status,200,e)
+        self.assertEqual(self.preview(self.data(),self.other)[0],403)
+        self.assertFalse(self.other.request(self.url)[1]['finance']['can_manage'])
+
+    def test_merchant_confirmation_does_not_invent_money_and_rejects_duplicate_advance(self):
+        data=self.data();data['merchant_payment']={'mode':'recorded'}
+        self.assertEqual(self.preview(data)[0],400)
+        data['merchant_payment']={'mode':'unpaid'}
+        status,e=self.publish(data);self.assertEqual(status,200,e)
+        self.assertEqual(e['finance']['cost_cents'],0)
+        status,e=self.publish(self.paid_data());self.assertEqual(status,200,e)
+        self.assertEqual(self.preview(self.paid_data())[0],409)
+
+    def test_advance_and_bill_rollback_together_if_audit_fails(self):
+        data=self.paid_data();status,p=self.preview(data);self.assertEqual(status,200,p)
+        with mock.patch('qgroup_core.audit.append',side_effect=sqlite3.IntegrityError('injected')):
+            status,_=self.owner.request(self.url+'/settlement/detailed','PUT',{**data,'preview_token':p['preview_token']})
+            self.assertEqual(status,500)
+        self.assertIsNone(self.fresh()['settlement'])
+        with sqlite3.connect(server.DB) as db:self.assertEqual(db.execute('SELECT count(*) FROM finance_entries WHERE event_id=?',(self.event['id'],)).fetchone()[0],0)
+
+    def test_replacing_settlement_person_retains_other_cohost_scopes(self):
+        third=ModernClient(self.base).identify('新结算人')
+        e=self.appoint()
+        with sqlite3.connect(server.DB) as db:
+            db.execute('UPDATE event_roles SET permissions_json=? WHERE event_id=?',(json.dumps(['settlement','attendance']),e['id']))
+        e=self.appoint(third)
+        old=self.other.request(self.url)[1]
+        self.assertFalse(old['can_settle']);self.assertFalse(old['finance']['can_manage'])
+        self.assertIn('attendance',old['management_scopes'])
+        self.assertTrue(e['can_settle']);self.assertTrue(e['finance']['can_manage'])
+        self.assertEqual(sum('settlement' in r['permissions'] for r in e['cohosts']),1)
+
+    def test_settlement_person_can_retry_only_settlement_notifications(self):
+        self.appoint()
+        with sqlite3.connect(server.DB) as db:
+            db.execute('UPDATE events SET bot_enabled=1 WHERE id=?',(self.event['id'],))
+            ids=[]
+            for kind in ('settlement_updated','activity_published'):
+                cur=db.execute("INSERT INTO bot_outbox(event_id,kind,dedupe_key,channel,target,payload_json,status,created_at) VALUES(?,?,?,'group','',?,'failed',?)",
+                    (self.event['id'],kind,uuid.uuid4().hex,json.dumps({'text':'测试通知','msg_type':0}),datetime.now(timezone.utc).isoformat()))
+                ids.append(cur.lastrowid)
+        with mock.patch.dict(os.environ,{'KANBAN_BOT_ENABLED':'1'}):
+            e=self.other.request(self.url)[1]
+            self.assertEqual([r['kind'] for r in e['bot_delivery']],['settlement_updated'])
+            status,e=self.other.request(self.url,'PATCH',dict(base_revision=e['revision'],action='bot_retry',outbox_id=ids[0]));self.assertEqual(status,200,e)
+            self.assertEqual(self.other.request(self.url,'PATCH',dict(base_revision=e['revision'],action='bot_retry',outbox_id=ids[1]))[0],403)
+
+    def test_group_notice_contains_net_topups_and_current_collector(self):
+        data=self.paid_data();data['group_notice']=True
+        status,p=self.preview(data);self.assertEqual(status,200,p)
+        self.assertIn('AA 85.72',p['group_preview']);self.assertIn('应退／待偿还 514.28',p['group_preview'])
+        self.assertIn('待补 514.28',p['group_preview']);self.assertIn('收款人：发起者',p['group_preview'])
 
     def test_seven_seats_one_exempt_six_shares_600_and_manager_total(self):
         data=self.data();data['people'][-1].update(share='0',reason='陪同不参加唱歌，经确认免共同费用')

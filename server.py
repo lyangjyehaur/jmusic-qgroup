@@ -59,17 +59,18 @@ def serialize(db, event, viewer):
     result['ends_at'] = end_time(event).isoformat(timespec='seconds') if event['duration_hours'] else None
     result['is_owner'] = event['owner_id'] == viewer
     result['bot_feature_enabled'] = bot_outbox.enabled()
-    if result['is_owner']:
+    if permissions.has(db,event,viewer,'settlement'):
         result['bot_delivery'] = [dict(r, state='simulated' if r['simulated_at'] or r['last_error']=='dry-run' else r['status'])
-            for r in db.execute('''SELECT id,kind,status,attempts,last_error,created_at,sent_at,simulated_at
-                FROM bot_outbox WHERE event_id=? AND channel='group' ORDER BY id DESC LIMIT 8''', (event['id'],))]
+            for r in db.execute('''SELECT id,kind,status,attempts,last_error,created_at,sent_at,simulated_at,
+                json_extract(payload_json,'$._settlement_image.kind') AS payment_kind
+                FROM bot_outbox WHERE event_id=? AND channel='group' AND (? OR kind='settlement_updated') ORDER BY id DESC LIMIT 12''', (event['id'],result['is_owner']))]
     result['has_ended'] = has_ended(event)
     scopes = permissions.scopes(db,event,viewer)
     settled = bool(db.execute('SELECT 1 FROM settlements WHERE event_id=?',(event['id'],)).fetchone())
     result['phase'] = lifecycle.phase(event)
     result['estimated_over'] = lifecycle.estimated_over(event)
     terminal = event['lifecycle'] in ('ended','cancelled')
-    result['can_settle'] = result['is_owner'] and terminal
+    result['can_settle'] = 'settlement' in scopes and terminal
     result['can_finish'] = 'schedule' in scopes and not terminal and event['lifecycle']!='draft' and not event['archived_at']
     result['can_assist_schedule'] = not result['is_owner'] and permissions.can_assist_schedule(db,event,viewer) and not settled
     result['can_edit_schedule'] = ('schedule' in scopes or result['can_assist_schedule']) and not terminal and not event['archived_at'] and not settled

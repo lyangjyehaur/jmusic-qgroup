@@ -7,7 +7,7 @@
   <meta name="description" content="群聚看板：群组活动发布、报名接龙、候补管理与费用分摊。">
   <title>群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261110-activity1">
+  <link rel="stylesheet" href="/style.css?v=20261110-settlement1">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
   <script src="/i18n.js?v=20261109-privacy1" defer></script>
@@ -15,12 +15,12 @@
   <script src="/experience.js?v=20261110-bot2" defer></script>
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
-  <script src="/activity.js?v=20261110-adminedit1" defer></script>
+  <script src="/activity.js?v=20261110-settlement1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
-  <script src="/settlements.js?v=20261109-privacy1" defer></script>
+  <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
   <script src="/identity.js?v=20261110-qqbutton1" defer></script>
-  <script src="/app.js?v=20261110-entry1" defer></script>
+  <script src="/app.js?v=20261110-settlement1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -139,11 +139,14 @@
         <p id="invoice-legacy" class="activity-alert" hidden></p>
         <div id="invoice-items"></div><button class="text-button" type="button" data-advanced-only data-invoice="add-item">增加费用项目</button>
         <div id="invoice-roster-summary" class="invoice-roster-summary"></div>
+        <section><h3>店家款项</h3><label class="field">实际付款情况<select name="merchant_mode" required><option value="">请选择</option><option value="unpaid">尚未支付店家</option><option value="paid">一人已垫付，随结算登记</option><option value="recorded">已在收付款账本登记</option></select></label><div id="invoice-merchant-fields" hidden><label class="field">实际垫付人<select name="merchant_payer"></select></label><label class="field">实际已付金额（元）<input name="merchant_amount" inputmode="decimal"></label><label class="field">店家<input name="merchant_name" maxlength="80"></label><label class="field">实际付款时间<input name="merchant_time" type="datetime-local"></label><label class="field">付款方式<select name="merchant_method"><option value="wechat">微信</option><option value="alipay">支付宝</option><option value="qq">QQ</option><option value="cash">现金</option><option value="other">其他</option></select></label></div><p class="field-help">垫付人仍承担自己的 AA，已付店家的款项会抵扣应付；多人垫付或分次付款请到收付款账本登记。</p></section>
+        <p id="invoice-collector" class="activity-alert"></p><button class="text-button" id="invoice-appoint" type="button" hidden>指定结算人</button>
         <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
         <div data-advanced-only><h3 class="invoice-section-title">核对人员</h3><div id="invoice-people"></div></div>
         <details class="extra-settings" data-advanced-only><summary>添加其他付款人</summary><label class="field">付款人称呼<input id="invoice-custom-name" maxlength="24"></label><button class="text-button" type="button" data-invoice="add-custom">加入付款人选项</button><p class="field-help">加入后可在人员的「付款归属」中选择；同名不会自动合并。</p></details>
         <label class="field">结算备注 <span class="optional">选填</span><textarea name="note" maxlength="1000" rows="2"></textarea></label>
         <section class="invoice-codes"><h3>收款码</h3><div id="invoice-code-picker"></div></section>
+        <label class="check-option"><input name="group_notice" type="checkbox">向 QQ 群发布本版 AA 明细、待补金额及收款码</label><p id="invoice-group-hint" class="field-help"></p>
         <label class="field" id="invoice-reason-field" hidden>本次修改／转换原因<textarea name="reason" maxlength="300" rows="2"></textarea></label>
         <label class="check-option" id="invoice-convert" hidden><input type="checkbox" name="convert_legacy">新增逐人结算版本，保留原人均账单</label>
         <label class="check-option"><input type="checkbox" name="reviewed_roster" required>已核对结算名单、约定与金额</label>
@@ -242,7 +245,7 @@
   </dialog>
   <dialog id="management-dialog" class="dialog event-form-dialog" aria-labelledby="management-title">
     <form id="management-form" class="event-form"><div class="dialog-heading"><h2 id="management-title">协办与转交</h2><button class="icon-button" type="button" data-close="management-dialog" aria-label="关闭">×</button></div>
-      <div class="form-body"><div id="management-roles"></div><div id="management-pending"></div><details class="extra-settings"><summary>新增管理邀请</summary><label class="field">交接类型<select name="kind"><option value="cohost">邀请协办</option><option value="transfer">转交发起者</option></select></label><label class="field">接任人<select name="attendee_id"></select></label><label class="field">接任人称呼<input name="target_name" maxlength="24" required></label><fieldset id="management-scopes"><legend>协办权限</legend><label class="check-option"><input name="permission" value="schedule" type="checkbox">修改安排与开始／结束</label><label class="check-option"><input name="permission" value="roster" type="checkbox" checked>管理报名</label><label class="check-option"><input name="permission" value="attendance" type="checkbox" checked>核对出席</label></fieldset><label class="field">交接原因<textarea name="reason" rows="2" maxlength="200" required></textarea></label><p class="field-help">邀请 7 天内有效，需对方接受。未限制报名浏览器的专属链接，任何持链接者都能接受，请只发给指定接任人。转交后原发起者不再保留发起者权限；协办没有帐款与转交权限。</p></details></div>
+      <div class="form-body"><div id="management-roles"></div><div id="management-pending"></div><details class="extra-settings"><summary>新增管理邀请</summary><label class="field">交接类型<select name="kind"><option value="settlement">指定结算人</option><option value="cohost" selected>邀请协办</option><option value="transfer">转交发起者</option></select></label><label class="field">接任人<select name="attendee_id"></select></label><label class="field">接任人称呼<input name="target_name" maxlength="24" required></label><fieldset id="management-scopes"><legend>协办权限</legend><label class="check-option"><input name="permission" value="schedule" type="checkbox">修改安排与开始／结束</label><label class="check-option"><input name="permission" value="roster" type="checkbox" checked>管理报名</label><label class="check-option"><input name="permission" value="attendance" type="checkbox" checked>核对出席</label></fieldset><label class="field">交接原因<textarea name="reason" rows="2" maxlength="200" required></textarea></label><p class="field-help">邀请 7 天内有效，需对方接受。未限制报名浏览器的专属链接，任何持链接者都能接受，请只发给指定接任人。转交后原发起者不再保留发起者权限；结算人可发布结算、管理账款并使用自己的收款码，普通协办没有账款与转交权限。</p></details></div>
       <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="save-management" type="submit">生成交接邀请</button></div>
     </form>
   </dialog>

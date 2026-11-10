@@ -8,7 +8,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-from . import audit, billing, roster, settlements
+from . import audit, billing, roster, settlements, permissions
 from .common import APIError, date_value, now, string
 
 KINDS={'collection':'收款','refund':'退还参加者','reimbursement':'偿还垫付','expense':'支付店家',
@@ -56,6 +56,9 @@ def participants(db,event,viewer=None,entries=None,claims=None):
         if viewer and r['payer_id']==settlements.account_key(event['id'],viewer):owned.add(r['payer_id']);users[r['payer_id']]=viewer
     for r in db.execute('SELECT snapshot_json FROM settlement_details WHERE event_id=? ORDER BY version',(event['id'],)):
         snapshot=json.loads(r[0])
+        if snapshot.get('collector'):
+            p=snapshot['collector']
+            if p['id'] not in result:add(p['id'],p['name'])
         for p in snapshot['input'].get('custom_payers',[]):
             if p['id'] not in result:add(p['id'],p['name'])
         for p in snapshot['payers']:
@@ -147,8 +150,8 @@ def summary(db,event,viewer=None,entries=None,claims=None):
         my_balance_cents=sum(b['balance_cents'] for b in mine) if invoice and mine else None,
         my_outstanding_cents=sum(max(0,b['balance_cents']) for b in mine) if invoice and mine else None,
         my_refund_due_cents=sum(max(0,-b['balance_cents']) for b in mine) if invoice and mine else None,
-        pending_count=len(pending) if viewer==event['owner_id'] else sum(p['reporter_id']==viewer for p in pending),
-        can_manage=viewer==event['owner_id'],can_report=bool(owned) and event['lifecycle']!='draft',
+        pending_count=len(pending) if permissions.has(db,event,viewer,'settlement') else sum(p['reporter_id']==viewer for p in pending),
+        can_manage=permissions.has(db,event,viewer,'settlement'),can_report=bool(owned) and event['lifecycle']!='draft',
         balances=balances,custodians=[dict(parties[k],held_cents=v) for k,v in state['cash'].items()],
         last_seq=entries[-1]['seq'] if entries else 0)
 
@@ -168,11 +171,11 @@ def view(db,event,viewer,before=None,before_report=None):
         can_withdraw=not r['decision'] and r['reporter_id']==viewer,
         entry_id=next((e['id'] for e in entries if e['source_report_id']==r['id']),None),
         entry_reversed=any(e['id'] in state['reversed_ids'] for e in entries if e['source_report_id']==r['id']))
-        for r in claims if viewer==event['owner_id'] or r['reporter_id']==viewer]
+        for r in claims if permissions.has(db,event,viewer,'settlement') or r['reporter_id']==viewer]
     pending=[r for r in visible_reports if r['status']=='pending']
     decided=[r for r in reversed(visible_reports) if r['status']!='pending' and (before_report is None or r['seq']<before_report)]
     return dict(summary=s,close_blockers=blocked(s,sum(not c['decision'] for c in claims)),parties=list(parties.values()),reportable_ids=sorted(owned),
-        default_custodian_id=settlements.account_key(event['id'],event['owner_id']),
+        default_custodian_id=(bill(db,event['id'])[1] or {}).get('collector',{}).get('id') or settlements.account_key(event['id'],event['owner_id']),
         entries=[public_entry(e,state['reversed_ids']) for e in selected[:100]],
         next_before=selected[99]['seq'] if len(selected)>100 else None,
         reports=(pending if before_report is None else [])+decided[:100],
@@ -268,9 +271,9 @@ def blocked(s,pending):
 
 def prepare(db,event,user,data):
     if event['lifecycle']=='draft':raise APIError('发布活动后才能登记款项',409)
-    command=data.get('command');owner=user['id']==event['owner_id']
+    command=data.get('command');owner=permissions.has(db,event,user['id'],'settlement')
     if not isinstance(command,str):raise APIError('款项操作不正确')
-    if command not in ('report','withdraw') and not owner:raise APIError('只有发起者可以确认或更正款项',403)
+    if command not in ('report','withdraw') and not owner:raise APIError('只有发起者或指定结算人可以确认或更正款项',403)
     entries=rows(db,event['id']);claims=reports(db,event['id']);s=summary(db,event,user['id'],entries,claims)
     result=dict(command=command)
     if command in ('record','report'):
@@ -353,7 +356,7 @@ def save(db,event,user,data):
     audit_command={k:v for k,v in command.items() if k not in ('transaction','reason')} if private else command
     audit.append(db,event,user,'finance_'+action,dict(state=before['state']),dict(operation=audit_command,state=after['state']),
         '' if private else command.get('reason',command.get('transaction',{}).get('reason','')))
-    recipients={event['owner_id']}
+    recipients={event['owner_id']} | {r[0] for r in db.execute('SELECT user_id FROM event_roles WHERE event_id=?',(event['id'],)) if permissions.has(db,event,r[0],'settlement')}
     _,_,users=participants(db,event,user['id'])
     for p in command.get('transaction',{}).get('parties',[]):
         if p['id'] in users:recipients.add(users[p['id']])

@@ -78,28 +78,55 @@ function createSettlementUI({api,$,esc,showDialog,toast,renderDetail,refresh,pre
       $('#invoice-legacy').textContent=bill&&!detailed?`原人均结算 ¥${bill.total_amount} ÷ ${bill.headcount} 人，转换会新增版本，原账单不变。`:'';
       $('#invoice-reason-field').hidden=!bill;form().elements.reason.required=!!bill;
       form().elements.note.value=bill?.note||'';
-      codePicker.open(e,savedCodes.codes);
+      const ownCodes=bill?.publisher_key===roster.collector.id;
+      codePicker.open(ownCodes?e:{...e,settlement:null},savedCodes.codes);
+      $('#invoice-collector').textContent='本版收款人：'+roster.collector.name+'（当前发布账号）；请选择并核对本人的收款码。';
+      $('#invoice-appoint').hidden=!e.is_owner||!!e.archived_at;
+      form().elements.merchant_mode.value=roster.has_merchant_records?'recorded':'';
+      form().elements.merchant_payer.innerHTML=payerOptions(roster.collector.id);
+      form().elements.merchant_name.value=e.location;
+      const local=new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16);
+      form().elements.merchant_time.value=local;
+      form().elements.group_notice.checked=!!e.bot_enabled;
+      form().elements.group_notice.disabled=!e.bot_enabled||e.visibility!=='public';
+      $('#invoice-group-hint').textContent=e.bot_enabled?'发布预览中可核对群通知；实际发送结果请查看群同步记录。':'活动未开启公开群同步，本次不会发送群通知。';
+      merchantFields();
       renderPeople();renderItems();$('#preview-invoice').disabled=false;
       await BoardDrafts.bind('invoice-dialog','invoice:'+e.id,
         ()=>({event:ctx.event,roster:ctx.roster,people:ctx.people,items:ctx.items,custom:ctx.custom,paymentCodes:codePicker.value(),fields:BoardDrafts.fields(form())}),data=>{
+          if(data.roster.collector?.id!==ctx.roster.collector.id)return '草稿的发布账号已改变，请重新核对收款人与款项后填写';
           ctx={...ctx,event:data.event,roster:data.roster,people:data.people,items:data.items,custom:data.custom,preview:null,imageSequence:{},busy:0};
           BoardDrafts.fill(form(),data.fields);form().elements.reviewed_roster.checked=false;
           codePicker.restore(data.paymentCodes,data.qr);
-          renderPeople();renderItems();invalidate();
+          renderPeople();renderItems();merchantFields();invalidate();
           if(data.event.revision!==e.revision){$('#invoice-reload').hidden=false;return '草稿基于旧版名单或账单；请保留需要的文字并载入最新版后重新核对';}
         },()=>!!ctx?.busy);
     }catch(problem){$('#invoice-form .form-error').textContent=problem.message;}
   }
+  function merchantFields() {
+    const paid=form().elements.merchant_mode.value==='paid';$('#invoice-merchant-fields').hidden=!paid;
+    for(const key of ['merchant_payer','merchant_amount','merchant_name','merchant_time','merchant_method']){form().elements[key].disabled=!paid;form().elements[key].required=paid;}
+  }
+  $('#invoice-appoint').addEventListener('click',async()=>{
+    if(!ctx||ctx.busy)return;
+    try{await BoardDrafts.detach('invoice-dialog');$('#invoice-dialog').close();document.querySelector('[data-activity="appoint_settlement"]')?.click();}
+    catch(problem){$('#invoice-form .form-error').textContent=problem.message;}
+  });
+  form().elements.merchant_mode.addEventListener('change',merchantFields);
   function payload() {
     const people=ctx.people.filter(p=>p.include).map(p=>{const {include,...rest}=p;return clone(rest);});
     const items=settlementItemsPayload(ctx.items,people,ctx.event.duration_hours);
     const data={people,items,custom_payers:ctx.custom,note:form().elements.note.value.trim(),reason:form().elements.reason.value.trim(),base_revision:ctx.event.revision,base_version:ctx.event.settlement?.version||0,reviewed_roster:form().elements.reviewed_roster.checked,convert_legacy:form().elements.convert_legacy.checked};
     data.payment_codes=codePicker.value();
+    data.group_notice=form().elements.group_notice.checked&&!form().elements.group_notice.disabled;
+    data.merchant_payment={mode:form().elements.merchant_mode.value};
+    if(data.merchant_payment.mode==='paid')Object.assign(data.merchant_payment,{payer_id:form().elements.merchant_payer.value,amount:form().elements.merchant_amount.value.trim(),merchant:form().elements.merchant_name.value.trim(),occurred_at:new Date(form().elements.merchant_time.value).toISOString(),method:form().elements.merchant_method.value});
     return data;
   }
   function body(bill,eventId,imageUrl) {
     const d=bill.detail,personName=uid=>d.people.find(p=>p.id===uid)?.name||'参加者';
-    return `<p class="settlement-amount">总费用<strong>¥${centsText(d.total_cents)}</strong></p><p class="settlement-details">${d.people.length} 位结算人员 · ${bill.version?'第 '+bill.version+' 版':'待发布'}</p><details class="invoice-breakdown invoice-payers"><summary>付款明细</summary>${d.payers.map(p=>`<p><span>${esc(p.label||p.name)}</span><strong>¥${centsText(p.amount_cents)}</strong></p>`).join('')||'<p>无需付款</p>'}</details><details class="invoice-breakdown"><summary>逐人应付与分摊明细</summary>${d.people.map(p=>`<details class="invoice-person"><summary><span>${esc(p.label||p.name)}${p.share==='0'?' · 免共同 AA':''}</span><strong>¥${centsText(p.due_cents)}</strong></summary><p class="field-help">${names[p.status]} · ${attendance[p.attendance]} · 已接受约定第 ${p.accepted_conditions_version||'—'} 版</p><details class="event-policy"><summary>已接受的费用约定</summary><p>${esc(p.accepted_arrangement?.fee_policy||'原记录未填写费用规则')}</p></details><p class="field-help">共同 AA ${esc(p.share)} 份${p.reason?' · '+esc(p.reason):''}</p>${p.allocations.map(a=>`<p class="invoice-line"><span>${esc(d.items.find(i=>i.id===a.item_id)?.name)}</span><span>¥${centsText(a.amount_cents)}</span></p>`).join('')}<p class="field-help">${p.payments.map(v=>esc(v.label||v.name)+' ¥'+centsText(v.amount_cents)).join('、')}</p></details>`).join('')}</details><details class="invoice-breakdown"><summary>费用项目与消费凭证</summary>${d.items.map(item=>`<details class="invoice-person"><summary><span>${esc(item.name)} · ${kinds[item.kind]}</span><strong>¥${centsText(item.amount_cents)}</strong></summary><p class="field-help">${modes[item.mode]}${item.reason?' · '+esc(item.reason):''}</p>${item.breakdown.map(a=>`<p class="invoice-line"><span>${esc(personName(a.person_id))}${item.mode==='duration'?' · '+a.minutes+' 分钟':item.mode==='weights'?' · '+esc(a.weight)+' 份':''}</span><span>¥${centsText(a.amount_cents)}</span></p>`).join('')}${item.has_receipt&&bill.version?`<a class="invoice-image" href="${receiptUrl(eventId,bill.version,item.id)}" target="_blank" rel="noopener"><img src="${receiptUrl(eventId,bill.version,item.id)}" loading="lazy" alt="${esc(item.name)}消费凭证"></a>`:''}</details>`).join('')}<p class="field-help">${esc(d.rounding_rule)}</p></details>${d.note?`<p class="settlement-note">${esc(d.note)}</p>`:''}${d.reason?`<p class="field-help">本版原因：${esc(d.reason)}</p>`:''}${d.changes?.length?`<details class="invoice-breakdown"><summary>本版更改</summary>${d.changes.map(change=>`<p class="field-help">${esc(change)}</p>`).join('')}</details>`:''}${settlementCodeCards(bill,esc)}`;
+    const balances=d.balances?`<div class="invoice-breakdown invoice-balances"><h3>本版发布时待补／应退</h3>${d.balances.map(p=>`<p><span>${esc(p.label||p.name)} · AA ¥${centsText(p.due_cents)} · 已投入 ¥${centsText(p.contributed_cents)}</span><strong>${p.balance_cents>0?'待补 ¥'+centsText(p.balance_cents):p.balance_cents<0?'应退／待偿还 ¥'+centsText(-p.balance_cents):'无需补款'}</strong></p>`).join('')}<p class="field-help">后续收退款以收付款账本为准。</p></div>`:'';
+    return `${d.collector?`<p class="activity-alert">本版收款人：${esc(d.collector.name)}</p>`:''}${balances}<p class="settlement-amount">总费用<strong>¥${centsText(d.total_cents)}</strong></p><p class="settlement-details">${d.people.length} 位结算人员 · ${bill.version?'第 '+bill.version+' 版':'待发布'}</p><details class="invoice-breakdown invoice-payers"><summary>付款明细</summary>${d.payers.map(p=>`<p><span>${esc(p.label||p.name)}</span><strong>¥${centsText(p.amount_cents)}</strong></p>`).join('')||'<p>无需付款</p>'}</details><details class="invoice-breakdown"><summary>逐人应付与分摊明细</summary>${d.people.map(p=>`<details class="invoice-person"><summary><span>${esc(p.label||p.name)}${p.share==='0'?' · 免共同 AA':''}</span><strong>¥${centsText(p.due_cents)}</strong></summary><p class="field-help">${names[p.status]} · ${attendance[p.attendance]} · 已接受约定第 ${p.accepted_conditions_version||'—'} 版</p><details class="event-policy"><summary>已接受的费用约定</summary><p>${esc(p.accepted_arrangement?.fee_policy||'原记录未填写费用规则')}</p></details><p class="field-help">共同 AA ${esc(p.share)} 份${p.reason?' · '+esc(p.reason):''}</p>${p.allocations.map(a=>`<p class="invoice-line"><span>${esc(d.items.find(i=>i.id===a.item_id)?.name)}</span><span>¥${centsText(a.amount_cents)}</span></p>`).join('')}<p class="field-help">${p.payments.map(v=>esc(v.label||v.name)+' ¥'+centsText(v.amount_cents)).join('、')}</p></details>`).join('')}</details><details class="invoice-breakdown"><summary>费用项目与消费凭证</summary>${d.items.map(item=>`<details class="invoice-person"><summary><span>${esc(item.name)} · ${kinds[item.kind]}</span><strong>¥${centsText(item.amount_cents)}</strong></summary><p class="field-help">${modes[item.mode]}${item.reason?' · '+esc(item.reason):''}</p>${item.breakdown.map(a=>`<p class="invoice-line"><span>${esc(personName(a.person_id))}${item.mode==='duration'?' · '+a.minutes+' 分钟':item.mode==='weights'?' · '+esc(a.weight)+' 份':''}</span><span>¥${centsText(a.amount_cents)}</span></p>`).join('')}${item.has_receipt&&bill.version?`<a class="invoice-image" href="${receiptUrl(eventId,bill.version,item.id)}" target="_blank" rel="noopener"><img src="${receiptUrl(eventId,bill.version,item.id)}" loading="lazy" alt="${esc(item.name)}消费凭证"></a>`:''}</details>`).join('')}<p class="field-help">${esc(d.rounding_rule)}</p></details>${d.note?`<p class="settlement-note">${esc(d.note)}</p>`:''}${d.reason?`<p class="field-help">本版原因：${esc(d.reason)}</p>`:''}${d.changes?.length?`<details class="invoice-breakdown"><summary>本版更改</summary>${d.changes.map(change=>`<p class="field-help">${esc(change)}</p>`).join('')}</details>`:''}${settlementCodeCards(bill,esc)}`;
   }
   form().addEventListener('input',event=>{
     if(!ctx||event.target.matches('[data-advanced-toggle]'))return;invalidate();const el=event.target,uid=el.dataset.person,itemId=el.dataset.item,prop=el.dataset.prop;
@@ -134,7 +161,7 @@ function createSettlementUI({api,$,esc,showDialog,toast,renderDetail,refresh,pre
       const data=payload(),preview=await api(`/api/events/${ctx.event.id}/settlement/preview`,'POST',data);
       if(ctx!==current||at!==serial)return;
       ctx.preview={data:{...data,preview_token:preview.preview_token},snapshot:preview.snapshot};
-      $('#invoice-preview').innerHTML='<h3>发布预览</h3>'+body({detail:preview.snapshot,payment_codes:codePicker.cards(),has_qr:false},ctx.event.id,'')+'<p class="field-help">请核对以上应付；发布不会登记实收款；原已收款保留，新版差额在收付款账本查看。</p>';
+      $('#invoice-preview').innerHTML='<h3>发布预览</h3>'+body({detail:preview.snapshot,payment_codes:codePicker.cards(),has_qr:false},ctx.event.id,'')+(preview.snapshot.group_notice?'<h3>QQ 群通知预览</h3><p class="settlement-note">'+esc(preview.group_preview||'')+'</p><p class="field-help">上述所选收款码将逐张发送到群；未提供则只发送文字。</p>':'')+'<p class="field-help">发布将登记本次明确确认的店家垫付；其他收退款请在收付款账本登记。</p>';
       $('#invoice-preview').hidden=false;$('#publish-invoice').hidden=false;$('#preview-invoice').hidden=true;$('#publish-invoice').focus();
     }catch(problem){$('#invoice-form .form-error').textContent=problem.message;$('#invoice-reload').hidden=problem.status!==409;}
     finally{if(ctx===current)$('#preview-invoice').disabled=false;}
@@ -162,7 +189,7 @@ function createSettlementUI({api,$,esc,showDialog,toast,renderDetail,refresh,pre
     BoardDrafts.touch('invoice-dialog');
     if(action==='add-custom'){
       const name=$('#invoice-custom-name').value.trim();if(!name){toast('请填写付款人称呼');return;}
-      ctx.custom.push({id:'custom:'+id(),name});$('#invoice-custom-name').value='';renderPeople();toast('付款人已加入，可在人员付款归属中选择');
+      ctx.custom.push({id:'custom:'+id(),name});form().elements.merchant_payer.innerHTML=payerOptions(form().elements.merchant_payer.value);$('#invoice-custom-name').value='';renderPeople();toast('付款人已加入，可在人员付款归属中选择');
     }
   });
   return {open,body};

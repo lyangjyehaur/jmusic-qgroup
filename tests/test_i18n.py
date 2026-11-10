@@ -62,6 +62,11 @@ class LanguageTests(unittest.TestCase):
         self.assertEqual(source['label'],name+'（报名 2）')
         self.assertEqual(i18n.change(name+' 出席：unknown → present','hant'),name+' 出席：未登記 → 到場')
 
+    def test_collector_change_and_settlement_replacement_keep_account_names(self):
+        name='后台後臺结算人'
+        self.assertEqual(i18n.change('本版收款人：'+name,'hant'),'本版收款人：'+name)
+        self.assertEqual(i18n.notification(name+' 已另行指定结算人，你的结算权限已撤销','cohost_removed','hant'),name+' 已另行指定結算人，你的結算權限已撤銷')
+
     def test_joined_numeric_close_errors_and_original_reason(self):
         self.assertEqual(i18n.error('尚有待补款 ¥20.00；仍有活动代收资金未支出或退还','hant'),
                          '尚有待補款 ¥20.00；仍有活動代收資金未支出或退還')

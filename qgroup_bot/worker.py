@@ -1,5 +1,6 @@
 """Outbox delivery with bounded retries, claim fencing and send-time access checks."""
 import json
+import base64
 import logging
 import os
 import re
@@ -9,7 +10,7 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from qgroup_core import storage, bot_outbox, bot_views, bot_settings, bot_groups
+from qgroup_core import storage, bot_outbox, bot_views, bot_settings, bot_groups, settlements, payment_codes, permissions, media
 from qgroup_core.common import now
 from .api import hint, classify_error
 from . import observability as obs
@@ -67,6 +68,16 @@ class OutboxWorker:
         state = self._event_state(row['event_id'])
         if not bot_views.shareable(state):
             return '活动不再公开或已关闭群同步'
+        payload=json.loads(row['payload_json'])
+        if payload.get('_settlement_version'):
+            with self._connect() as db:
+                version=payload['_settlement_version']
+                if version!=settlements.latest_version(db,row['event_id']):return '结算已更新，旧版通知作废'
+                actor=db.execute('SELECT actor_id FROM settlement_history WHERE event_id=? AND version=?',(row['event_id'],version)).fetchone()
+                if not actor or not permissions.has(db,state,actor[0],'settlement'):return '原发布者的结算权限已撤销，请重新核对收款人并发布'
+                if payload.get('_settlement_image'):
+                    snapshot=settlements.details(db,row['event_id'],version)
+                    if not snapshot or not snapshot.get('group_notice') or payload['_settlement_image'] not in payment_codes.frozen(db,row['event_id'],version):return '收款码与本版结算不一致'
         if row['kind'] in bot_outbox.REMINDER_KINDS:
             if state['archived_at'] or state['lifecycle'] in ('ended', 'cancelled'):
                 return '活动已结束／取消／归档，排程提醒过期'
@@ -202,8 +213,7 @@ class OutboxWorker:
                 payload['keyboard'] = keyboard
         elif payload.get('_template_context'):
             context = payload['_template_context']
-            payload['text'] = (bot_settings.render(policy, row['kind'], context)
-                               if row['kind'] in policy['templates'] else context['_default_text'])
+            payload['text'] = bot_outbox.render_message(policy,row['kind'],context)
         body = {'msg_type': payload.get('msg_type', 0)}
         if body['msg_type'] == 0:
             content = payload.get('text', '')
@@ -217,6 +227,8 @@ class OutboxWorker:
             body['content'] = content
         else:
             extra = {k: v for k, v in payload.items() if k in ('content', 'media', 'file_info', 'markdown', 'image')}
+            if payload.get('_settlement_image'):
+                extra={'media':{'settlement_image':payload['_settlement_image']['kind']}}
             if not extra:
                 self._mark(row, 'failed', '非文字消息缺少内容字段，拒绝发送')
                 return 'failed'
@@ -253,8 +265,41 @@ class OutboxWorker:
         if postpone:
             self._mark(row, 'pending', '等待允许发送的时间', retry_at=postpone)
             return 'deferred'
+        if payload.get('_settlement_image'):
+            # Each image is its own durable job. Retrying an image never repeats
+            # the already-confirmed text or another confirmed image.
+            with self._connect() as db:
+                parents=db.execute("SELECT status,payload_json FROM bot_outbox WHERE event_id=? AND kind='settlement_updated' ORDER BY id DESC",(row['event_id'],)).fetchall()
+                parent=next((p for p in parents if json.loads(p['payload_json']).get('_settlement_version')==payload['_settlement_version'] and not json.loads(p['payload_json']).get('_settlement_image')),None)
+                if not parent or parent['status'] in ('failed','skipped'):
+                    self._mark(row,'failed','结算文字尚未确认送出，请先重送文字，再重送此图片')
+                    return 'failed'
+                if parent['status']!='sent':
+                    self._mark(row,'pending','等待结算文字送出',retry_at=(datetime.now(timezone.utc)+timedelta(seconds=10)).isoformat(timespec='seconds'))
+                    return 'deferred'
+                raw=media.read(db,payload['_settlement_image']['digest'])
+            ok,code,data=self.api.post('/v2/groups/%s/files' % group,dict(file_type=1,file_name='payment-code.png',file_data=base64.b64encode(raw).decode('ascii'),srv_send_msg=False))
+            if ok:
+                if not isinstance(data,dict) or not isinstance(data.get('file_info'),str) or not data['file_info']:
+                    return self._failed(row,'平台上传响应缺少 file_info，未发送图片')
+                body={'msg_type':7,'media':{'file_info':data['file_info']}}
+                if not self._owned(row):return 'skipped'
+                with self._connect() as db:latest=bot_settings.read(db,worker=True)
+                if latest['revision']!=settings['revision']:
+                    self._mark(row,'pending','群通知设置已变更，重新核对后发送',retry_at=now())
+                    return 'deferred'
+                reason=self._skip_reason(row,policy)
+                if reason:
+                    self._mark(row,'skipped',reason)
+                    return 'skipped'
+                ok,code,data=self.api.post('/v2/groups/%s/messages' % group,body)
+        else:
+            reason=self._skip_reason(row,policy)
+            if reason:
+                self._mark(row,'skipped',reason)
+                return 'skipped'
+            ok, code, data = self.api.post('/v2/groups/%s/messages' % group, body)
         obs.event('outbox_sending')
-        ok, code, data = self.api.post('/v2/groups/%s/messages' % group, body)
         if ok:
             persisted = self._mark(row, 'sent', sent=True, payload=recorded)
             obs.event('outbox_sent', sent_ref=obs.sent_reference(data), state_persisted=persisted)

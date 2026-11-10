@@ -111,7 +111,10 @@ def patch(db,event,user,data):
         action={'finished':'finish','cancelled':'cancel','open':'resume','closed':'pause','deleted':'remove'}.get(data.get('status'))
     assisted=not owner and action is None and 'title' in data and permissions.can_assist_schedule(db,event,user['id'])
     if assisted:audit.require_revision(event,data)
-    if action in ('cancel','archive','unarchive','publish','formation','remove','bot_sync','bot_retry'):
+    settlement_retry=action=='bot_retry' and type(data.get('outbox_id')) is int and bool(db.execute("SELECT 1 FROM bot_outbox WHERE id=? AND event_id=? AND kind='settlement_updated'",(data.get('outbox_id'),event['id'])).fetchone())
+    if settlement_retry:
+        permissions.require(db,event,user['id'],'settlement')
+    elif action in ('cancel','archive','unarchive','publish','formation','remove','bot_sync','bot_retry'):
         permissions.require(db,event,user['id'],'owner')
     elif not assisted:
         permissions.require(db,event,user['id'],'schedule')

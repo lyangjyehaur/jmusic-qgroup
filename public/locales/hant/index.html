@@ -7,7 +7,7 @@
   <meta name="description" content="群聚看板：群組活動發佈、報名接龍、候補管理與費用分攤。">
   <title>群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261110-activity1">
+  <link rel="stylesheet" href="/style.css?v=20261110-settlement1">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
   <script src="/i18n.js?v=20261109-privacy1" defer></script>
@@ -15,12 +15,12 @@
   <script src="/experience.js?v=20261110-bot2" defer></script>
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
-  <script src="/activity.js?v=20261110-adminedit1" defer></script>
+  <script src="/activity.js?v=20261110-settlement1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
-  <script src="/settlements.js?v=20261109-privacy1" defer></script>
+  <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
   <script src="/identity.js?v=20261110-qqbutton1" defer></script>
-  <script src="/app.js?v=20261110-entry1" defer></script>
+  <script src="/app.js?v=20261110-settlement1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -139,11 +139,14 @@
         <p id="invoice-legacy" class="activity-alert" hidden></p>
         <div id="invoice-items"></div><button class="text-button" type="button" data-advanced-only data-invoice="add-item">增加費用項目</button>
         <div id="invoice-roster-summary" class="invoice-roster-summary"></div>
+        <section><h3>店家款項</h3><label class="field">實際付款情況<select name="merchant_mode" required><option value="">請選擇</option><option value="unpaid">尚未支付店家</option><option value="paid">一人已墊付，隨結算登記</option><option value="recorded">已在收付款帳本登記</option></select></label><div id="invoice-merchant-fields" hidden><label class="field">實際墊付人<select name="merchant_payer"></select></label><label class="field">實際已付金額（元）<input name="merchant_amount" inputmode="decimal"></label><label class="field">店家<input name="merchant_name" maxlength="80"></label><label class="field">實際付款時間<input name="merchant_time" type="datetime-local"></label><label class="field">付款方式<select name="merchant_method"><option value="wechat">微信</option><option value="alipay">支付寶</option><option value="qq">QQ</option><option value="cash">現金</option><option value="other">其他</option></select></label></div><p class="field-help">墊付人仍承擔自己的 AA，已付店家的款項會抵扣應付；多人墊付或分次付款請到收付款帳本登記。</p></section>
+        <p id="invoice-collector" class="activity-alert"></p><button class="text-button" id="invoice-appoint" type="button" hidden>指定結算人</button>
         <label class="advanced-switch"><span>高級選項</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
         <div data-advanced-only><h3 class="invoice-section-title">核對人員</h3><div id="invoice-people"></div></div>
         <details class="extra-settings" data-advanced-only><summary>添加其他付款人</summary><label class="field">付款人稱呼<input id="invoice-custom-name" maxlength="24"></label><button class="text-button" type="button" data-invoice="add-custom">加入付款人選項</button><p class="field-help">加入後可在人員的「付款歸屬」中選擇；同名不會自動合併。</p></details>
         <label class="field">結算備註 <span class="optional">選填</span><textarea name="note" maxlength="1000" rows="2"></textarea></label>
         <section class="invoice-codes"><h3>收款碼</h3><div id="invoice-code-picker"></div></section>
+        <label class="check-option"><input name="group_notice" type="checkbox">向 QQ 群發佈本版 AA 明細、待補金額及收款碼</label><p id="invoice-group-hint" class="field-help"></p>
         <label class="field" id="invoice-reason-field" hidden>本次修改／轉換原因<textarea name="reason" maxlength="300" rows="2"></textarea></label>
         <label class="check-option" id="invoice-convert" hidden><input type="checkbox" name="convert_legacy">新增逐人結算版本，保留原人均帳單</label>
         <label class="check-option"><input type="checkbox" name="reviewed_roster" required>已核對結算名單、約定與金額</label>
@@ -242,7 +245,7 @@
   </dialog>
   <dialog id="management-dialog" class="dialog event-form-dialog" aria-labelledby="management-title">
     <form id="management-form" class="event-form"><div class="dialog-heading"><h2 id="management-title">協辦與轉交</h2><button class="icon-button" type="button" data-close="management-dialog" aria-label="關閉">×</button></div>
-      <div class="form-body"><div id="management-roles"></div><div id="management-pending"></div><details class="extra-settings"><summary>新增管理邀請</summary><label class="field">交接類型<select name="kind"><option value="cohost">邀請協辦</option><option value="transfer">轉交發起者</option></select></label><label class="field">接任人<select name="attendee_id"></select></label><label class="field">接任人稱呼<input name="target_name" maxlength="24" required></label><fieldset id="management-scopes"><legend>協辦權限</legend><label class="check-option"><input name="permission" value="schedule" type="checkbox">修改安排與開始／結束</label><label class="check-option"><input name="permission" value="roster" type="checkbox" checked>管理報名</label><label class="check-option"><input name="permission" value="attendance" type="checkbox" checked>核對出席</label></fieldset><label class="field">交接原因<textarea name="reason" rows="2" maxlength="200" required></textarea></label><p class="field-help">邀請 7 天內有效，需對方接受。未限制報名瀏覽器的專屬鏈接，任何持鏈接者都能接受，請只發給指定接任人。轉交後原發起者不再保留髮起者權限；協辦沒有帳款與轉交權限。</p></details></div>
+      <div class="form-body"><div id="management-roles"></div><div id="management-pending"></div><details class="extra-settings"><summary>新增管理邀請</summary><label class="field">交接類型<select name="kind"><option value="settlement">指定結算人</option><option value="cohost" selected>邀請協辦</option><option value="transfer">轉交發起者</option></select></label><label class="field">接任人<select name="attendee_id"></select></label><label class="field">接任人稱呼<input name="target_name" maxlength="24" required></label><fieldset id="management-scopes"><legend>協辦權限</legend><label class="check-option"><input name="permission" value="schedule" type="checkbox">修改安排與開始／結束</label><label class="check-option"><input name="permission" value="roster" type="checkbox" checked>管理報名</label><label class="check-option"><input name="permission" value="attendance" type="checkbox" checked>核對出席</label></fieldset><label class="field">交接原因<textarea name="reason" rows="2" maxlength="200" required></textarea></label><p class="field-help">邀請 7 天內有效，需對方接受。未限制報名瀏覽器的專屬鏈接，任何持鏈接者都能接受，請只發給指定接任人。轉交後原發起者不再保留髮起者權限；結算人可發佈結算、管理帳款並使用自己的收款碼，普通協辦沒有帳款與轉交權限。</p></details></div>
       <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" id="save-management" type="submit">生成交接邀請</button></div>
     </form>
   </dialog>
