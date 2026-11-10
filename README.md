@@ -83,7 +83,7 @@ node --check public/experience.js
 - 网站：https://kanban.danndann.cn
 - 应用 `/opt/qgroup`，systemd `qgroup.service` 与 `qgroup-bot.service`，两者以同一静态账号 `qgroupsvc` 非 root 运行。
 - 后端仅监听 `127.0.0.1:8791`。
-- 数据库 `/var/lib/qgroup/kanban.sqlite3`，StateDirectory 实际指向 `/var/lib/private/qgroup`。
+- 数据库 `/var/lib/qgroup/kanban.sqlite3`；改用静态账号后 systemd 的 `StateDirectory=qgroup` 就直接落在这里。原 `DynamicUser` 时代的 `/var/lib/private/qgroup` 已由 systemd 在首次启动时自动迁移过来（日志会写明），不要再往 private 路径找库。
 - 反向代理、TLS 由用户通过 **1Panel 标准流程**管理；目标 `http://127.0.0.1:8791`，使用现有通配符证书。不要手写 OpenResty 配置。
 
 每次升级先备份代码及 SQLite，以正式备份的隔离副本演练迁移，再停服务、最终快照、完整替换应用、启动迁移。上传 `server.py`、`qgroup_core/`、`public/`、`deploy/`、文档；不上传数据库。不要让旧、新写逻辑同时运行，不由 root 迁移实时库。
@@ -134,7 +134,7 @@ python3 deploy/verify_migration.py source.sqlite3 isolated-copy.sqlite3
 
 **被动查询**：`@bot /活动`、`/名额`、`/待办`、`/签到`、`/结算`、`/我的`、`/帮助`，可加活动 id 前 8 位指定活动；只 @ 不带指令时回当前活动卡（最快捷的报名入口）。`/待办` 直接映射 `boardTodos()` 那套既有聚合，不新增数据模型。指令面板 `/v2/panels` 与 keyboard 按钮为可选项，需在管理端核对 API 格式后开启。
 
-**启用顺序**：① 部署 `deploy/qgroup-bot.service` 与 `deploy/bot.env.example`（`/etc/qgroup/bot.env`，root 0600）；② 建静态系统账号 `qgroupsvc` 并让两个 service 都改用同一 `User/Group`——`qgroup` 这个名称已被 systemd 的 `DynamicUser` 占用（nss-systemd 动态提供，不能 useradd），且两个不同使用者会互相 chown 掉同一个 SQLite；`StateDirectory=qgroup` 会在启动时自动把 `/var/lib/private/qgroup` 设为该账号所有；③ 在**主服务**环境（`/etc/qgroup/qq.env`）加 `KANBAN_BOT_ENABLED=1`；④ 先以 dry-run 观察 outbox 内容，确认后再设 `KANBAN_BOT_DRY_RUN=0`。bot 行程需要 `websockets`（`python3 -m venv .venv-bot && .venv-bot/bin/pip install websockets`），主服务仍只有标准库依赖。
+**启用顺序**：① 部署 `deploy/qgroup-bot.service` 与 `deploy/bot.env.example`（`/etc/qgroup/bot.env`，root 0600）；② 建静态系统账号 `qgroupsvc` 并让两个 service 都改用同一 `User/Group`——`qgroup` 这个名称已被 systemd 的 `DynamicUser` 占用（nss-systemd 动态提供，不能 useradd），且两个不同使用者会互相 chown 掉同一个 SQLite；systemd 首次启动会把旧的 `/var/lib/private/qgroup` 自动迁移到 `/var/lib/qgroup`，不用手动搬库；③ 在**主服务**环境（`/etc/qgroup/qq.env`）加 `KANBAN_BOT_ENABLED=1`；④ 先以 dry-run 观察 outbox 内容，确认后再设 `KANBAN_BOT_DRY_RUN=0`。bot 行程需要 `websockets`，主服务仍只有标准库依赖；Debian 12 未装 `python3-venv` 时 `python3 -m venv` 会因缺 ensurepip 失败，改用 `python3 -m venv --without-pip .venv-bot` 再 `pip3 install --target .venv-bot/lib/python3.11/site-packages websockets`。
 
 **本版刻意未做**：身份绑定（事件 `union_openid` 实测为空、QQ 互联仍在审核）→ 因此 `@bot` 直接报名、`/我的` 回个别金额、@ 特定成员、私聊个人化金额都还不能用，前者一律回一次性站内链接；结算卡默认只给站内链接，逐人金额需显式设 `KANBAN_BOT_SETTLEMENT_DETAIL=1`，收款码图片（私有 `image_assets`，须走富媒体分片上传 `msg_type=7`，不能用图文卡片 `pic_url`）留待上线时调整；前端「同步到群」逐次勾选尚未做，目前由环境变量与 `KANBAN_BOT_BROADCAST_KINDS` 控制。**默认群消息不含昵称、账号 id 与个别金额**；但显式开启 `KANBAN_BOT_SETTLEMENT_DETAIL=1` 后，结算卡会列出参加者姓名与应付金额，等于在群里公开金流信息，开启前须确认群成员都同意，并在隐私政策与群内告知监听全群对话这件事。
 

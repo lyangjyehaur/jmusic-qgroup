@@ -12,7 +12,8 @@ Type=simple
 # 名稱不可用 qgroup：該名稱已由 nss-systemd 提供給 dynamic user。
 # 部署前先建立靜態系統帳號，並讓 qgroup.service 也改用同一個 User/Group：
 #   sudo useradd --system --home-dir /var/lib/qgroup --shell /usr/sbin/nologin qgroupsvc
-# StateDirectory 會在啟動時自動把 /var/lib/private/qgroup 設為該使用者所有。
+# 若原本是 DynamicUser，systemd 會在首次啟動時自動把 /var/lib/private/qgroup
+# 遷移到 /var/lib/qgroup 並設為該使用者所有，不需手動搬檔或 chown。
 User=qgroupsvc
 Group=qgroupsvc
 WorkingDirectory=/opt/qgroup

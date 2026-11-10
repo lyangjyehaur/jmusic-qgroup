@@ -5,7 +5,8 @@ After=network.target
 [Service]
 Type=simple
 # 與 qgroup-bot.service 共用同一個靜態帳號，兩者才能讀寫同一個 SQLite。
-# StateDirectory 會在啟動時自動處理 /var/lib/private/qgroup 的擁有者。
+# 若原本是 DynamicUser，systemd 會在首次啟動時自動把 /var/lib/private/qgroup
+# 遷移到 /var/lib/qgroup 並設為該使用者所有（兩個服務共用同一目錄）。
 User=qgroupsvc
 Group=qgroupsvc
 WorkingDirectory=/opt/qgroup
