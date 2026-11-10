@@ -168,6 +168,14 @@ class GroupRoutingTests(BotOutboxFixture, unittest.TestCase):
         self.create_event()
         self.assertEqual(self.rows(),[])
 
+    def test_manually_configured_disabled_group_is_retained_without_granting_access(self):
+        result=self.save(groups=[group('MANUAL')])
+        observed=next(g for g in result['group_status']['groups'] if g['id']=='MANUAL')
+        self.assertTrue(observed['configured'])
+        self.assertIsNone(observed['last_seen'])
+        self.assertFalse(observed['replies'])
+        self.assertFalse(observed['broadcast'])
+
     def test_old_environment_rows_are_not_redirected_on_first_explicit_target(self):
         self.create_event()
         self.assertTrue(all(r['target']=='' for r in self.rows()))

@@ -115,6 +115,7 @@ def view(db, config):
         policy = configured.get(group_id, {})
         groups.append(dict(item, id=group_id, name=policy.get('name', ''),
                            replies=policy.get('replies', False), broadcast=policy.get('broadcast', False),
+                           configured=group_id in configured,
                            reference=hashlib.sha256(group_id.encode()).hexdigest()[:20],
                            deployment_default=group_id == fallback))
     return dict(inherited=config.get('groups') is None, groups=groups,
