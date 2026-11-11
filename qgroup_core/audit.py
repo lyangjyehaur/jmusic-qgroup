@@ -27,7 +27,7 @@ def require_revision(event, data):
         raise APIError('活动或名单已有更新，请刷新后重新确认', 409)
 
 
-def append(db, event, user, action, before, after, reason=''):
+def append(db, event, user, action, before, after, reason='', *, queue_bot=True):
     if before == after:
         return
     version = db.execute('SELECT revision FROM events WHERE id=?', (event['id'],)).fetchone()[0] + 1
@@ -38,7 +38,10 @@ def append(db, event, user, action, before, after, reason=''):
          json.dumps(before,ensure_ascii=False),json.dumps(after,ensure_ascii=False),reason,now()))
     # Same transaction as the audit row: a broadcast describes a committed fact,
     # and de-duplication (not throttling) keeps one fact to one message.
-    bot_hook(db, bot_outbox.on_append, event, user, action, before, after, reason)
+    # Composite operations may defer this hook until their final write, while
+    # keeping it inside the caller's transaction (e.g. automatic registration).
+    if queue_bot:
+        bot_hook(db, bot_outbox.on_append, event, user, action, before, after, reason)
 
 
 def notify(db, user_id, event_id, kind, message):

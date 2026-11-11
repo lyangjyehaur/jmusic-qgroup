@@ -135,6 +135,12 @@ def current_event(db, argument='', command='活动'):
     return rows[0] if len(rows) == 1 else None
 
 
+def _event_when(event):
+    when = bot_outbox.local_time(event['starts_at'], event['timezone'])
+    countdown = bot_outbox.start_countdown(event)
+    return when + (' · ' + countdown if countdown else '')
+
+
 def _selection(db, command):
     rows = candidates(db, command)
     if not rows:
@@ -144,7 +150,7 @@ def _selection(db, command):
     action = LINK_ACTIONS.get(command, ('settlement' if command == '结算' else 'detail', ''))[0]
     for index, event in enumerate(rows[:8], 1):
         lines += ['%d. %s · %s' % (index, str(event['title'])[:40],
-                  bot_outbox.local_time(event['starts_at'], event['timezone'])),
+                  _event_when(event)),
                   bot_outbox.event_url(event['id'], action=action)]
     if len(rows) > 8:
         lines.append('更多活动请到网站查看：'+bot_outbox.base_url()+'/')
@@ -171,9 +177,15 @@ def answer(db, command, argument=''):
     url = bot_outbox.event_url(event['id'])
     c = bot_views.counts(db, event['id'])
     head = '【%s】%s' % (event['title'][:40], bot_outbox.local_time(event['starts_at'], event['timezone']))
+    countdown = bot_outbox.start_countdown(event)
+    if countdown:
+        head += '\n' + countdown
     if command in LINK_ACTIONS:
         action, explanation = LINK_ACTIONS[command]
-        return '\n'.join([head, explanation, '', bot_outbox.event_url(event['id'], action=action)]), None
+        text = '\n'.join([head, explanation, '', bot_outbox.event_url(event['id'], action=action)])
+        if command == '报名':
+            text = bot_views.with_roster(text, bot_views.roster_lines(db, event))
+        return text, None
     if command in ('活动', '往期'):
         phase = {'scheduled': '待开始', 'ongoing': '进行中', 'ended': '已结束', 'cancelled': '已取消'}[event['lifecycle']]
         lines = [head, '地点：'+event['location'], '报名截止：'+bot_outbox.local_time(event['deadline'], event['timezone']),
@@ -226,7 +238,10 @@ def answer(db, command, argument=''):
                  bot_outbox.event_url(event['id'], action='conditions')]
     else:
         return help_text(), None
-    return '\n'.join(lines), None
+    text = '\n'.join(lines)
+    if command in ('活动', '名额'):
+        text = bot_views.with_roster(text, bot_views.roster_lines(db, event))
+    return text, None
 
 
 def _selection_markdown(db, command):
@@ -236,7 +251,7 @@ def _selection_markdown(db, command):
         return md.render_no_events(site)
     action = LINK_ACTIONS.get(command, ('settlement' if command == '结算' else 'detail', ''))[0]
     items = [(str(event['title'])[:40],
-              bot_outbox.local_time(event['starts_at'], event['timezone']),
+              _event_when(event),
               bot_outbox.event_url(event['id'], action=action))
              for event in rows[:8]]
     return md.render_selection(items, command, site, more=len(rows) > 8)
@@ -281,18 +296,22 @@ def answer_markdown(db, command, argument=''):
         return _selection_markdown(db, command)
     title = str(event['title'])[:40]
     when = bot_outbox.local_time(event['starts_at'], event['timezone'])
+    countdown = bot_outbox.start_countdown(event)
     if command in ('活动', '往期'):
         c = bot_views.counts(db, event['id'])
         phase = {'scheduled': '待开始', 'ongoing': '进行中',
                  'ended': '已结束', 'cancelled': '已取消'}[event['lifecycle']]
-        return md.render_event(title, when, [
+        text = md.render_event(title, when, [
             ('地点', str(event['location'] or '')[:120]),
             ('报名截止', bot_outbox.local_time(event['deadline'], event['timezone'])),
             ('人数', '正式 %d 人，候补 %d 人' % (c['confirmed'], c['waiting'])),
             ('当前阶段', '%s · %s' % (phase, bot_views.registration_label(event))),
-        ], bot_outbox.event_url(event['id']))
+        ], bot_outbox.event_url(event['id']), countdown=countdown)
+        return (bot_views.with_roster(text, bot_views.roster_lines(db, event), markdown=True)
+                if command == '活动' else text)
     if command == '待办':
         tasks = bot_views.public_tasks(db, event) or ['暂无公开状态提醒']
         return md.render_tasks(title, when, tasks,
-                               bot_outbox.event_url(event['id'], action='todos'))
+                               bot_outbox.event_url(event['id'], action='todos'),
+                               countdown=countdown)
     return _generic_markdown(db, command, argument)

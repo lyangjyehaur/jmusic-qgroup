@@ -431,6 +431,10 @@ class Bot:
                 markdown = _markdown_reply(db, command, argument, self.config)
             finally:
                 db.close()
+            if not markdown and md.has_unapproved_link(
+                    text, getattr(self.config, 'allowed_link_hosts', ())):
+                obs.event('reply_skipped', reason='unreported_link_host')
+                return
             obs.event('reply_prepared', msg_type=2 if markdown else 0,
                       keyboard=bool(keyboard),
                       **obs.text_fields(markdown or text, self.config))

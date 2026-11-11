@@ -3,12 +3,10 @@ import json
 import base64
 import logging
 import os
-import re
 import time
 import uuid
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from urllib.parse import urlsplit
 
 from qgroup_core import storage, bot_outbox, bot_views, bot_settings, bot_groups, settlements, payment_codes, permissions, media
 from qgroup_core.common import now
@@ -120,12 +118,8 @@ class OutboxWorker:
             return '文字含控制字符，拒绝发送'
         if len(text) > 4000:
             return '文字超过 4000 字，拒绝发送'
-        hosts = getattr(self.config, 'allowed_link_hosts', None)
-        if hosts:
-            for match in re.finditer(r'https?://([^\s<>"\[\]{}]+)', text):
-                host = (urlsplit('https://' + match.group(1)).hostname or '').lower()
-                if host and host not in hosts:
-                    return '文字含未报备域名，拒绝发送'
+        if md.has_unapproved_link(text, getattr(self.config, 'allowed_link_hosts', ())):
+            return '文字含未报备域名，拒绝发送'
         return None
 
     def _keyboard_problem(self, keyboard):
@@ -139,11 +133,8 @@ class OutboxWorker:
                 action = button.get('action') or {}
                 if action.get('type') != 0:
                     continue
-                for match in re.finditer(r'https?://([^\s<>"\[\]{}]+)',
-                                         str(action.get('data') or '')):
-                    host = (urlsplit('https://' + match.group(1)).hostname or '').lower()
-                    if host and host not in hosts:
-                        return '按钮含未报备域名，拒绝发送'
+                if md.has_unapproved_link(str(action.get('data') or ''), hosts):
+                    return '按钮含未报备域名，拒绝发送'
         return None
 
     def _group_state_path(self, group=None):
@@ -232,7 +223,8 @@ class OutboxWorker:
             if keyboard:
                 payload['keyboard'] = keyboard
         elif payload.get('_template_context'):
-            context = payload['_template_context']
+            context = bot_outbox.delivery_context(payload['_template_context'],
+                                                  self._event_state(row['event_id']))
             payload['text'] = bot_outbox.render_message(policy,row['kind'],context)
             # Re-render from the frozen context so a template edit reaches
             # queued but unsent rows, exactly like the plain-text body does.

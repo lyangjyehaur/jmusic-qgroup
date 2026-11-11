@@ -45,7 +45,7 @@ _CONTROL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
 # Platform mention markup must never survive: a title containing
 # <qqbot-at-everyone /> would mention the whole group.
 _PLATFORM_TAG = re.compile(r'<\s*/?\s*qqbot-at-[^>]*>', re.IGNORECASE)
-_URL = re.compile(r'https?://([^\s<>"\[\]{}()]+)')
+_URL = re.compile(r'https?://([^\s<>"\[\]{}]+)', re.IGNORECASE)
 # [text](url) and ![alt](url) keep their visible text but lose the link; QQ's
 # autolink <https://...> loses the whole URL so it cannot become a hyperlink.
 _LINK = re.compile(r'!?\[([^\]]*)\]\([^)]*\)')
@@ -108,6 +108,23 @@ def system_time_change(previous, current):
     return '- **时间** ~~%s~~ → **%s**' % (before, after)
 
 
+def has_unapproved_link(text, allowed_hosts=()):
+    """Use the same URL allowlist for rich text, plain fallbacks and buttons."""
+    if not allowed_hosts:
+        return False
+    hosts = {str(host).strip().lower() for host in allowed_hosts if host}
+    for match in _URL.finditer(text):
+        try:
+            # Keep parentheses in userinfo, but drop a Markdown link's closing
+            # delimiter so links to a bare origin also pass the allowlist.
+            host = (urlsplit('https://' + match.group(1).rstrip(')')).hostname or '').lower()
+        except ValueError:
+            return True
+        if host not in hosts:
+            return True
+    return False
+
+
 def content_problem(text, allowed_hosts=()):
     """Return a refusal reason, or None when the markdown body is safe to send."""
     if not isinstance(text, str) or not text.strip():
@@ -116,12 +133,8 @@ def content_problem(text, allowed_hosts=()):
         return 'markdown 含控制字符'
     if len(text) > MAX_CHARS:
         return 'markdown 超过 4000 字'
-    if allowed_hosts:
-        hosts = {str(host).strip().lower() for host in allowed_hosts if host}
-        for match in _URL.finditer(text):
-            host = (urlsplit('https://' + match.group(1)).hostname or '').lower()
-            if host and host not in hosts:
-                return 'markdown 含未报备域名'
+    if has_unapproved_link(text, allowed_hosts):
+        return 'markdown 含未报备域名'
     return None
 
 
@@ -191,10 +204,13 @@ def render_command(command, head, body, url, link_label='打开活动'):
     return '\n'.join(lines)
 
 
-def render_event(title, when, facts, url, link_label='打开活动'):
+def render_event(title, when, facts, url, link_label='打开活动', *, countdown=''):
     """facts: sequence of (system label, value); values are sanitised here."""
     lines = ['## 活动详情', plain_line('活动名称：', title),
-             '**%s**' % when, BLANK]
+             '**%s**' % when]
+    if countdown:
+        lines.append('**%s**' % countdown)
+    lines.append(BLANK)
     for label, value in facts:
         lines.append('- **%s**　%s' % (label, plain_text(value)))
     lines += [BLANK, '[%s](%s)' % (link_label, url), BLANK,
@@ -202,9 +218,12 @@ def render_event(title, when, facts, url, link_label='打开活动'):
     return '\n'.join(lines)
 
 
-def render_tasks(title, when, tasks, url):
+def render_tasks(title, when, tasks, url, *, countdown=''):
     lines = ['## 待办', plain_line('活动名称：', title),
-             '**%s** · 活动状态摘要（不是你的个人待办）' % when, BLANK]
+             '**%s** · 活动状态摘要（不是你的个人待办）' % when]
+    if countdown:
+        lines.append('**%s**' % countdown)
+    lines.append(BLANK)
     items = ['- ' + plain_text(task) for task in tasks]
     lines += items or ['- 暂无公开状态提醒']
     lines += [BLANK, '认领、退出审批、款项申报及个人补退款，请登录网站按权限查看。',

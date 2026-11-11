@@ -1,5 +1,6 @@
 """Public group views. Personal actions always return to the authenticated site."""
 from datetime import datetime, timedelta, timezone
+import re
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 from .common import now
 
@@ -30,6 +31,59 @@ def counts(db, event_id):
                 pending=sum(r['confirmation_state'] == 'pending' for r in active),
                 declined=sum(r['confirmation_state'] == 'declined' for r in active),
                 withdrawals=sum(bool(r['withdrawal_requested']) for r in active))
+
+
+def roster_lines(db, event):
+    """Only public display names, in the site's party/person queue order."""
+    if (event is None or event['visibility'] != 'public'
+            or event['lifecycle'] == 'draft' or event['status'] == 'deleted'):
+        return []
+    from . import bot_markdown
+    people = db.execute('''SELECT COALESCE(u.nickname,a.name) AS nickname,a.status
+        FROM attendees a LEFT JOIN users u ON u.id=a.user_id
+        LEFT JOIN roster_parties p ON p.id=a.party_id
+        WHERE a.event_id=? AND a.status IN ('confirmed','waiting')
+        ORDER BY p.seq,a.seq''', (event['id'],)).fetchall()
+    groups = {'confirmed': [], 'waiting': []}
+    for person in people:
+        raw = re.sub(r'<@!?[^>]*>', '', str(person['nickname'] or ''))
+        name = bot_markdown.plain_text(raw)
+        # A display name must not introduce a bare URL or a platform mention,
+        # including in the plain fallback. Keep visible words from MD links.
+        name = re.sub(r'https?://\S+', '', name, flags=re.IGNORECASE)
+        name = re.sub(r'@(?:everyone|all)\b', '', name, flags=re.IGNORECASE)
+        name = name.replace('@', '').replace('＠', '').strip()
+        groups[person['status']].append(name[:24] or '未填写称呼')
+    lines = []
+    for status, label in (('confirmed', '正式报名'), ('waiting', '候补')):
+        names = groups[status]
+        line = '%s（%d 人）：%s' % (label, len(names), '、'.join(names[:10]) or '暂无')
+        if len(names) > 10:
+            line += '；其余 %d 人请到活动页查看' % (len(names) - 10)
+        lines.append(line)
+    return lines
+
+
+def with_roster(text, lines, *, markdown=False):
+    """Add a bounded optional section without displacing mandatory content."""
+    if not lines:
+        return text
+    from . import bot_markdown as md
+    section = ('\n'.join('- ' + md.plain_text(line) for line in lines)
+               if markdown else '\n'.join(lines))
+    gap = '\n' + md.BLANK + '\n' if markdown else '\n\n'
+    parts = text.split('\n')
+    # Place the section before the final standalone link, preserving footnotes.
+    link_index = next((i for i in range(len(parts) - 1, -1, -1)
+                       if parts[i].startswith(('https://', 'http://'))
+                       or re.fullmatch(r'\[[^\]]+\]\(https?://[^\s]+\)', parts[i])), None)
+    for content in (section, '报名名单较长，请到活动页查看完整名单。'):
+        decorated = ('\n'.join(parts[:link_index]) + gap + content + gap
+                     + '\n'.join(parts[link_index:]) if link_index is not None
+                     else text + gap + content)
+        if len(decorated) <= md.MAX_CHARS:
+            return decorated
+    return text
 
 
 def public_tasks(db, event):

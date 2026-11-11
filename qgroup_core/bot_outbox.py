@@ -6,8 +6,8 @@ Design contract (see README and docs/implementation-plan.md):
   *same* transaction as the business write. No HTTP call, no separate commit.
 * ``INSERT OR IGNORE`` plus a content-derived dedupe key means "the same fact
   is announced once"; it is de-duplication, not a rate limit.
-* Only de-identified text is queued. Personal notifications, nicknames and
-  individual amounts never reach a group unless an operator explicitly opts in.
+* Public registration names may accompany pre-event broadcasts. Personal
+  notifications and individual amounts require their separate opt-in policies.
 * Sending is a separate long-running process. A send failure never rolls back
   a registration, a settlement or an audit entry.
 
@@ -32,6 +32,11 @@ DEFAULT_BROADCAST = frozenset({
     'settlement_updated', 'deadline_reminder', 'estimated_over_reminder',
     'registration_paused', 'registration_resumed', 'finance_closed', 'finance_reopened',
     'ownership_changed',
+})
+
+ROSTER_KINDS = frozenset({
+    'activity_published', 'formation_confirmed', 'conditions_changed',
+    'deadline_reminder', 'registration_paused', 'registration_resumed',
 })
 
 # notify() kinds already produced by append() for the same state transition.
@@ -130,6 +135,59 @@ def local_time(value, zone=''):
         return moment.astimezone(_zone(zone)).strftime('%Y-%m-%d %H:%M')
     except (ValueError, TypeError, OverflowError):
         return str(value)[:16]
+
+
+def start_countdown(event, *, at=None):
+    """Describe time until the planned start without changing activity state."""
+    try:
+        if event['lifecycle'] != 'scheduled':
+            return ''
+        start = datetime.fromisoformat(str(event['starts_at']).replace('Z', '+00:00'))
+        if start.tzinfo is None:
+            start = start.replace(tzinfo=_zone(event['timezone']))
+        current = at if at is not None else datetime.now(timezone.utc)
+        seconds = (start.astimezone(timezone.utc) - current.astimezone(timezone.utc)).total_seconds()
+    except (KeyError, ValueError, TypeError, OverflowError):
+        return ''
+    if seconds <= 0:
+        return '已到计划开始时间'
+    if seconds < 60:
+        return '距开始：不足 1 分钟'
+    days, minutes = divmod(int(seconds // 60), 24 * 60)
+    hours, minutes = divmod(minutes, 60)
+    parts = [label % number for number, label in
+             ((days, '%d 天'), (hours, '%d 小时'), (minutes, '%d 分钟')) if number]
+    return '距开始：' + ' '.join(parts)
+
+
+def _countdown_event(event):
+    return {key: event[key] for key in ('starts_at', 'timezone', 'lifecycle')}
+
+
+def delivery_context(context, event):
+    """Refresh only the clock/state; do not mix a new schedule into old facts."""
+    result = dict(context)
+    if event is None:
+        result['_countdown_event'] = None
+        return result
+    frozen = context.get('_countdown_event')
+    if isinstance(frozen, dict):
+        same_schedule = (frozen.get('starts_at') == event['starts_at']
+                         and frozen.get('timezone') == event['timezone'])
+    else:
+        # Older web builds froze a formatted start, without countdown metadata.
+        same_schedule = context.get('starts_at') == local_time(event['starts_at'], event['timezone'])
+    result['_countdown_event'] = _countdown_event(event) if same_schedule else None
+    return result
+
+
+def _with_countdown(text, countdown, *, markdown=False):
+    if not countdown:
+        return text
+    head, separator, rest = text.partition('\n')
+    line = '**%s**' % countdown if markdown else countdown
+    decorated = head + '\n' + line + separator + rest
+    return decorated if len(decorated) <= 4000 else text
 
 
 def _available(db):
@@ -296,7 +354,7 @@ def _settlement_lines(db, event_id, version):
 
 
 def _compose_default(db, event, kind, *, source='', after=None):
-    """Build a de-identified group message. Returns (text, buttons) or None."""
+    """Build group facts. Returns (text, buttons) or None."""
     if not bot_views.shareable(event):
         return None
     action = {'activity_published':'join', 'conditions_changed':'conditions',
@@ -424,6 +482,9 @@ def build_message(db, event, kind, *, source='', after=None, config=None):
                    change_summary=str(event['change_summary'] or '')[:120],
                    cancellation_reason=str(event['cancellation_reason'] or '')[:120])
     context['_default_text'] = original
+    context['_countdown_event'] = _countdown_event(event)
+    if kind in ROSTER_KINDS:
+        context['_roster_lines'] = bot_views.roster_lines(db, event)
     context['_label'] = LABELS.get(kind, '群聚看板')
     context['_details_lines'] = [line for line in lines[1:-1] if line.strip()]
     if kind=='settlement_updated':
@@ -441,23 +502,45 @@ def build_message(db, event, kind, *, source='', after=None, config=None):
     return text, buttons, context
 
 
+def _without_settlement_notice(lines, notice):
+    """Remove the generated notice block before putting it in its own section."""
+    result = list(lines)
+    for index in range(len(result) - len(notice), -1, -1):
+        if result[index:index + len(notice)] == notice:
+            start = index - 1 if index and result[index - 1] == '逐人应付：' else index
+            del result[start:index + len(notice)]
+    return result
+
+
 def render_message(config,kind,context,markdown=False):
+    timing = context.get('_countdown_event')
+    countdown = start_countdown(timing) if isinstance(timing, dict) else ''
+    roster = context.get('_roster_lines') if kind in ROSTER_KINDS else None
     if not markdown:
         text=bot_settings.render(config,kind,context) if kind in config['templates'] else context['_default_text']
         required=context.get('_settlement_notice')
         if required and required not in text:
             text+='\n\n'+required
             if len(text)>3800:text=context['_default_text']
-        return text
+        return bot_views.with_roster(_with_countdown(text, countdown), roster)
     from . import bot_markdown as md
     notice = [line for line in str(context.get('_settlement_notice') or '').split('\n')
               if line.strip()]
+    if notice:
+        # Frozen contexts from both old and new web builds include the notice
+        # in details. Rich cards append it separately, including custom cards
+        # that omit {details}; remove that exact block without changing the
+        # stored context or the legacy plain-text fallback.
+        context = dict(context)
+        details = [line for line in str(context.get('details') or '').split('\n')
+                   if line.strip()]
+        context['details'] = '\n'.join(_without_settlement_notice(details, notice))
     try:
         custom = bot_settings.render(config, kind, context, markdown=True)
     except APIError:
         return None
     if custom:
-        text = custom
+        text = _with_countdown(custom, countdown, markdown=True)
         # The per-person settlement detail is a compliance requirement, not
         # decoration: always append it when an operator opted into showing it.
         if notice:
@@ -471,6 +554,8 @@ def render_message(config,kind,context,markdown=False):
         if not isinstance(facts, list):
             facts = [line for line in str(context.get('details') or '').split('\n')
                      if line.strip()]
+        if notice:
+            facts = _without_settlement_notice(facts, notice)
         # A reschedule is the one fact that benefits from styling. The line is
         # composed entirely from system-formatted timestamps, never user text;
         # admins can reproduce it in an @md template with {previous_starts_at}.
@@ -479,7 +564,13 @@ def render_message(config,kind,context,markdown=False):
                       if kind == 'conditions_changed' else None)
         text = md.render_broadcast(str(context.get('_label') or LABELS.get(kind, '群聚看板')),
                                    str(context.get('title') or ''), facts, url, notice=notice,
-                                   system_facts=(comparison,) if comparison else ())
+                                   system_facts=(['- **%s**' % countdown] if countdown else [])
+                                   + ([comparison] if comparison else []))
+    if countdown and len(text) > md.MAX_CHARS:
+        # Preserve required facts and settlement notices when decoration would
+        # push an otherwise valid card beyond the platform limit.
+        return render_message(config, kind, dict(context, _countdown_event=None), markdown=True)
+    text = bot_views.with_roster(text, roster, markdown=True)
     return None if md.content_problem(text) else text
 
 

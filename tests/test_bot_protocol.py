@@ -17,6 +17,7 @@ from qgroup_core import bot_settings
 from qgroup_bot.api import QQBotAPI, classify_error
 from qgroup_bot.config import Config
 from qgroup_bot.main import Bot, normalize_content, mentions_bot
+from qgroup_bot.markdown import MARKDOWN_REJECTION_CODES
 from qgroup_bot.replies import help_text
 from qgroup_bot import observability as obs
 
@@ -70,6 +71,11 @@ class ErrorEnvelopeTests(unittest.TestCase):
         self.assertEqual(classify_error(40054010, data={}), 'permanent')
         self.assertEqual(classify_error(40034105, data={}), 'authorization')
         self.assertEqual(classify_error(50055001, data={}), 'transient')
+
+    def test_markdown_rejection_codes_are_permanent(self):
+        for code in MARKDOWN_REJECTION_CODES:
+            with self.subTest(code=code):
+                self.assertEqual(classify_error(code, status=400, data={}), 'permanent')
 
     def test_platform_trace_is_bounded_and_never_stores_a_secret(self):
         obs.set_platform_trace('4a8a-trace-id')

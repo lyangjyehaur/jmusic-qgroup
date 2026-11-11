@@ -170,6 +170,9 @@ def render(config, kind, context, *, markdown=False):
     value = value or DEFAULT_TEMPLATE
     validate_template(value)
     fields = dict(context)
+    # Contexts queued before reschedule comparisons have no previous timestamp.
+    # Keep that optional value empty instead of reading newer activity facts.
+    fields.setdefault('previous_starts_at', '')
     if markdown:
         from . import bot_markdown
         for name, raw in list(fields.items()):
@@ -200,7 +203,7 @@ def preview(db, data):
                   minimum_participants=4, conditions_version=2, change_summary='集合时间调整',
                   cancellation_reason='天气原因', archived_at=None, registration_open=kind != 'registration_paused')
     context = bot_outbox.build_message(db, sample, kind, config=config)[2]
-    return dict(text=render(config, kind, context),
+    return dict(text=bot_outbox.render_message(config, kind, context),
                 markdown=bot_outbox.render_message(config, kind, context, markdown=True))
 
 

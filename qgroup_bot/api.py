@@ -9,6 +9,7 @@ import urllib.request
 from urllib.parse import urlsplit
 
 from . import observability as obs
+from .markdown import MARKDOWN_REJECTION_CODES
 
 # 2026-08-10 changelog unified the API host; the older token host is kept as a
 # fallback until the deployment confirms the new one end to end.
@@ -40,7 +41,7 @@ RATE_LIMIT_CODES = frozenset({40034100, 304049, 304050, 100001})
 HARD_REJECT_CODES = frozenset({
     304061, 40054010, 40054007, 40054005, 40034005, 40034128, 40034024,
     100007, 100016, 10004,
-})
+}) | MARKDOWN_REJECTION_CODES
 AUTHORIZATION_CODES = frozenset({
     40034105, 40034101, 40054003, 40054016, 40054002, 304064, 304031, 1100104,
 })

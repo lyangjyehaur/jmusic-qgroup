@@ -91,9 +91,13 @@ def create(db,user,data):
     event=db.execute('SELECT * FROM events WHERE id=?',(uid,)).fetchone()
     roster.grant(db,uid,user['id'])
     if lifecycle!='draft':conditions.publish(db,event,user)
-    audit.append(db,event,user,'event_created',{},public_snapshot(event))
+    snapshot=public_snapshot(event)
+    audit.append(db,event,user,'event_created',{},snapshot,queue_bot=False)
     if join_owner and lifecycle!='draft':
         roster.add_party(db,event,user,{'people':[{'is_self':True}]},require_preview=False)
+    # Freeze the publication roster after automatic registration, in this same
+    # transaction, while retaining event_created as the first audit record.
+    audit.bot_hook(db,bot_outbox.on_append,event,user,'event_created',{},snapshot,'')
     return uid
 
 

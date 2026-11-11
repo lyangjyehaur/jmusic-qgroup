@@ -9,6 +9,7 @@ import json
 import os
 import tempfile
 import unittest
+from copy import deepcopy
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from unittest import mock
@@ -16,6 +17,7 @@ from unittest import mock
 from qgroup_core import (bot_markdown, bot_outbox, bot_settings, events, storage)
 from qgroup_core.common import APIError, now
 from qgroup_bot.config import Config
+from qgroup_bot.markdown import MARKDOWN_REJECTION_CODES
 from qgroup_bot.replies import (ALIASES, HELP, SelectionError, answer, answer_markdown,
                                 candidates, current_event, read_db)
 from qgroup_bot.worker import OutboxWorker
@@ -293,6 +295,134 @@ class BroadcastMarkdownTests(Fixture, unittest.TestCase):
         self.assertIn('## 逐人应付', card)
         self.assertIn('待补 50.00 元', card)
 
+    def test_real_settlement_notice_appears_once_in_system_and_custom_cards(self):
+        self.event_id = self.event()
+        for version, size in ((1, 2), (2, 20)):
+            names = ['参加者%02d' % n + '姓名长' * 10 for n in range(size)]
+            snapshot = dict(group_notice=True, collector={'name': '收款人'},
+                            people=[dict(name=n, due_cents=5000) for n in names],
+                            balances=[dict(name=n, due_cents=5000, balance_cents=5000)
+                                      for n in names])
+            with storage.connect(self.path) as db:
+                db.execute("""INSERT INTO settlement_history(event_id,version,total_cents,
+                    headcount,note,updated_at,actor_id,actor_name,kind,changed_fields)
+                    VALUES(?,?,?,?,'',?,'u1','收款人','detailed_published','[]')""",
+                           (self.event_id, version, size * 5000, size, now()))
+                db.execute('INSERT INTO settlement_details VALUES(?,?,?)',
+                           (self.event_id, version, json.dumps(snapshot)))
+                plain, _, context = bot_outbox.build_message(
+                    db, self.latest_event(db), 'settlement_updated')
+            self.assertLess(len(plain), 4000)
+            frozen = deepcopy(context)
+            for template in (None, bot_settings.DEFAULT_MARKDOWN_TEMPLATE,
+                             '## 结算\n[打开]({url})'):
+                config = bot_settings.defaults()
+                if template:
+                    config['templates']['settlement_updated@md'] = template
+                for legacy in (False, True):
+                    with self.subTest(size=size, template=template, legacy=legacy):
+                        queued = deepcopy(context)
+                        if legacy:
+                            queued.pop('_details_lines')
+                        rich = bot_outbox.render_message(config, 'settlement_updated',
+                                                        queued, markdown=True)
+                        self.assertIsInstance(rich, str)
+                        self.assertEqual(rich.count('收款人：收款人'), 1)
+                        self.assertEqual(rich.count('## 逐人应付'), 1)
+                        for name in names:
+                            self.assertEqual(rich.count(name + '：50.00 元'), 1)
+                            self.assertEqual(rich.count(name + '：AA 50.00 元，待补 50.00 元'), 1)
+                        self.assertIsNone(bot_markdown.content_problem(rich, ('example.test',)))
+            self.assertEqual(context, frozen)
+            self.assertEqual(bot_outbox.render_message(bot_settings.defaults(),
+                                                      'settlement_updated', context), plain)
+        # Exercise queue-time composition and send-time re-rendering for the long card.
+        with storage.connect(self.path) as db:
+            db.execute('DELETE FROM bot_outbox')
+            bot_outbox.enqueue(db, self.event_id, 'settlement_updated', plain,
+                               template_context=context)
+        api = mock.Mock()
+        api.post.return_value = (True, 0, {'id': 'sent'})
+        worker = OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0', KANBAN_BOT_MARKDOWN='1'), api)
+        self.assertEqual(worker.poll_once()['sent'], 1)
+        body = api.post.call_args.args[1]
+        self.assertEqual(body['msg_type'], 2)
+        self.assertEqual(body['markdown']['content'].count('收款人：收款人'), 1)
+
+    def test_old_context_delivers_after_templates_add_previous_starts_at(self):
+        self.event_id = self.event()
+        with storage.connect(self.path) as db:
+            plain, _, context = bot_outbox.build_message(db, self.latest_event(db), 'conditions_changed')
+        context.pop('previous_starts_at')
+        for markdown in ('0', '1'):
+            with self.subTest(markdown=markdown):
+                with storage.connect(self.path) as db:
+                    db.execute('DELETE FROM bot_outbox')
+                    bot_outbox.enqueue(db, self.event_id, 'conditions_changed', plain,
+                                       template_context=context)
+                    settings = bot_settings.read(db)
+                    settings['config']['templates'] = {
+                        'conditions_changed': '原时间：{previous_starts_at}\n新时间：{starts_at}\n{url}',
+                        'conditions_changed@md': '## 安排变更\n原时间：{previous_starts_at}\n'
+                                                 '新时间：**{starts_at}**\n[打开]({url})',
+                    }
+                    bot_settings.save(db, dict(config=settings['config'],
+                                               base_revision=settings['revision']), 'u1')
+                intent = self.rows()[0]['payload_json']
+                api = mock.Mock()
+                api.post.return_value = (True, 0, {'id': 'sent'})
+                worker = OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0',
+                                                  KANBAN_BOT_MARKDOWN=markdown), api)
+                self.assertEqual(worker.poll_once()['sent'], 1)
+                api.post.assert_called_once()
+                body = api.post.call_args.args[1]
+                self.assertEqual(body['msg_type'], 2 if markdown == '1' else 0)
+                text = body['markdown']['content'] if markdown == '1' else body['content']
+                self.assertIn('原时间：\n', text)
+                self.assertIn(context['starts_at'], text)
+                self.assertEqual(self.rows()[0]['payload_json'], intent)
+
+    def test_markdown_rejections_stop_without_retry_or_plain_resend(self):
+        self.event_id = self.event()
+        with storage.connect(self.path) as db:
+            plain, _, context = bot_outbox.build_message(db, self.latest_event(db), 'activity_published')
+        for code in sorted(MARKDOWN_REJECTION_CODES):
+            with self.subTest(code=code):
+                with storage.connect(self.path) as db:
+                    db.execute('DELETE FROM bot_outbox')
+                    bot_outbox.enqueue(db, self.event_id, 'activity_published', plain,
+                                       template_context=context)
+                api = mock.Mock()
+                api.post.return_value = (False, code, {'code': code})
+                worker = OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0',
+                                                  KANBAN_BOT_MARKDOWN='1'), api)
+                self.assertEqual(worker.poll_once()['failed'], 1)
+                row = self.rows()[0]
+                self.assertEqual(row['status'], 'failed')
+                self.assertEqual(row['attempts'], 1)
+                self.assertIsNone(row['retry_at'])
+                self.assertEqual(worker.poll_once()['claimed'], 0)
+                api.post.assert_called_once()
+                self.assertEqual(api.post.call_args.args[1]['msg_type'], 2)
+
+    def test_mixed_case_external_urls_block_rich_and_plain_broadcasts(self):
+        self.event_id = self.event(location='HTTPS://evil.test/x')
+        with storage.connect(self.path) as db:
+            plain, _, context = bot_outbox.build_message(db, self.latest_event(db), 'activity_published')
+        for markdown in ('0', '1'):
+            with self.subTest(markdown=markdown):
+                with storage.connect(self.path) as db:
+                    db.execute('DELETE FROM bot_outbox')
+                    bot_outbox.enqueue(db, self.event_id, 'activity_published', plain,
+                                       template_context=context)
+                api = mock.Mock()
+                worker = OutboxWorker(self.config(KANBAN_BOT_DRY_RUN='0',
+                                                  KANBAN_BOT_MARKDOWN=markdown,
+                                                  KANBAN_BOT_ALLOWED_HOSTS='example.test'), api)
+                self.assertEqual(worker.poll_once()['failed'], 1)
+                self.assertIn('未报备域名', self.rows()[0]['last_error'])
+                api.post.assert_not_called()
+
     def test_enqueue_payload_is_additive_and_old_style_rows_still_work(self):
         self.event_id = self.event()
         new_payload = json.loads(self.rows()[0]['payload_json'])
@@ -349,7 +479,9 @@ class BroadcastMarkdownTests(Fixture, unittest.TestCase):
         keyboard = {'content': {'rows': [
             {'buttons': [{'action': {'type': 0, 'data': 'https://evil.test/x'}}]},
         ]}}
-        self.assertIn('未报备域名', worker._keyboard_problem(keyboard))
+        for scheme in ('https', 'HTTPS', 'HtTp'):
+            keyboard['content']['rows'][0]['buttons'][0]['action']['data'] = scheme + '://evil.test/x'
+            self.assertIn('未报备域名', worker._keyboard_problem(keyboard))
         self.assertIsNone(worker._keyboard_problem({'content': {'rows': [
             {'buttons': [{'action': {'type': 0, 'data': 'https://example.test/x'}}]},
         ]}}))

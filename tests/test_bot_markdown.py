@@ -117,6 +117,15 @@ class MarkdownReplyTests(unittest.TestCase):
         self.assertIsNotNone(md.content_problem('[x](https://evil.test)', ('example.test',)))
         self.assertIsNone(md.content_problem('[x](https://example.test/a?b=1)',
                                              ('example.test',)))
+        for scheme in ('http', 'https', 'HTTP', 'HTTPS', 'HtTpS'):
+            with self.subTest(scheme=scheme):
+                self.assertIsNotNone(md.content_problem('[x](%s://evil.test/x)' % scheme,
+                                                        ('example.test',)))
+                self.assertIsNone(md.content_problem('[x](%s://EXAMPLE.TEST/x)' % scheme,
+                                                     ('example.test',)))
+        self.assertIsNone(md.content_problem('[x](HTTPS://example.test)', ('example.test',)))
+        self.assertIsNotNone(md.content_problem(
+            '[x](HTTPS://example.test(user)@evil.test/x)', ('example.test',)))
 
     def test_reply_group_sends_msg_type_2_without_content(self):
         client = QQBotAPI(SimpleNamespace(sandbox=False, app_id='a', app_secret='b'))
@@ -261,6 +270,26 @@ class MarkdownReplyTests(unittest.TestCase):
             return bot.api.reply_group.call_args.kwargs
         self.assertNotIn('markdown', run(False))
         self.assertTrue(run(True)['markdown'].startswith('## 群聚看板'))
+
+    def test_passive_replies_and_plain_fallback_enforce_link_allowlist(self):
+        for enabled in (False, True):
+            for host, allowed in (('evil.test', False), ('example.test', True)):
+                with self.subTest(enabled=enabled, host=host):
+                    with storage.connect(self.path) as db:
+                        db.execute('UPDATE events SET title=?, location=? WHERE id=?',
+                                   ('测试活动', 'HTTPS://%s/x' % host, self.event_id))
+                    config = SimpleNamespace(db=self.path, group='allowed', dry_run=False,
+                                             sandbox=False, verbose_events=False,
+                                             markdown_replies=enabled,
+                                             allowed_link_hosts=('example.test',),
+                                             log_content=False, app_secret='')
+                    bot = Bot(config)
+                    bot.api.reply_group = mock.Mock(return_value=(True, 0, {}))
+                    asyncio.run(bot.reply(None, 'allowed', '地点', '', msg_id='message'))
+                    if allowed:
+                        bot.api.reply_group.assert_called_once()
+                    else:
+                        bot.api.reply_group.assert_not_called()
 
 
 if __name__ == '__main__':
