@@ -1,5 +1,7 @@
 # Bot 倒計時、報名名單與 Markdown 修正發布
 
+後續於 2026-11-11 15:58（Asia/Taipei）部署[報名成功群通知](2026-11-11-bot-signup-notifications.md)，正式來源改為 `ed72a204115b91a57748008581b873f8188ebc74`。以下保留本次切換當時的紀錄。
+
 2026-11-11 15:38（Asia/Taipei）完成 server2 `/opt/qgroup` 成套切換。發布範圍：`both`，web 產生 outbox／後台預覽，bot 消費相同快照及處理查詢。
 
 ## 行為
