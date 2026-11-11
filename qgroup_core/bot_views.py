@@ -33,18 +33,20 @@ def counts(db, event_id):
                 withdrawals=sum(bool(r['withdrawal_requested']) for r in active))
 
 
-def roster_lines(db, event, *, attendee_ids=None, prefix=''):
+def roster_lines(db, event, *, attendee_ids=None, prefix='', groups=None):
     """Only public display names, in the site's party/person queue order."""
     if (event is None or event['visibility'] != 'public'
             or event['lifecycle'] == 'draft' or event['status'] == 'deleted'):
         return []
     from . import bot_markdown
+    groups = groups if groups is not None else (('confirmed', '正式报名'), ('waiting', '候补'))
+    statuses = [status for status, _ in groups]
     people = db.execute('''SELECT a.id,COALESCE(u.nickname,a.name) AS nickname,a.status
         FROM attendees a LEFT JOIN users u ON u.id=a.user_id
         LEFT JOIN roster_parties p ON p.id=a.party_id
-        WHERE a.event_id=? AND a.status IN ('confirmed','waiting')
-        ORDER BY p.seq,a.seq''', (event['id'],)).fetchall()
-    groups = {'confirmed': [], 'waiting': []}
+        WHERE a.event_id=? AND a.status IN (%s)
+        ORDER BY p.seq,a.seq''' % ','.join('?' for _ in statuses), (event['id'], *statuses)).fetchall()
+    names_by_status = {status: [] for status in statuses}
     for person in people:
         if attendee_ids is not None and person['id'] not in attendee_ids:
             continue
@@ -55,10 +57,10 @@ def roster_lines(db, event, *, attendee_ids=None, prefix=''):
         name = re.sub(r'https?://\S+', '', name, flags=re.IGNORECASE)
         name = re.sub(r'@(?:everyone|all)\b', '', name, flags=re.IGNORECASE)
         name = name.replace('@', '').replace('＠', '').strip()
-        groups[person['status']].append(name[:24] or '未填写称呼')
+        names_by_status[person['status']].append(name[:24] or '未填写称呼')
     lines = []
-    for status, label in (('confirmed', '正式报名'), ('waiting', '候补')):
-        names = groups[status]
+    for status, label in groups:
+        names = names_by_status[status]
         line = '%s%s（%d 人）：%s' % (prefix, label, len(names), '、'.join(names[:10]) or '暂无')
         if len(names) > 10:
             line += '；其余 %d 人请到活动页查看' % (len(names) - 10)

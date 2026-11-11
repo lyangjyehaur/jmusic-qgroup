@@ -33,6 +33,7 @@ DEFAULT_BROADCAST = frozenset({
     'registration_paused', 'registration_resumed', 'finance_closed', 'finance_reopened',
     'ownership_changed',
     'registration_added',
+    'registration_changed',
 })
 
 ROSTER_KINDS = frozenset({
@@ -393,6 +394,15 @@ def _compose_default(db, event, kind, *, source='', after=None):
         lines += new_people
         lines += ['当前正式报名 %d 人，候补 %d 人' % (confirmed, waiting), '', url]
         buttons = [('活动详情', '', url), ('看名额', '/名额', '')]
+    elif kind == 'registration_changed':
+        changed = after.get('attendee_ids') if isinstance(after, dict) else None
+        changes = (bot_views.roster_lines(db, event, attendee_ids=set(changed),
+                    groups=(('withdrawn', '本次退出'), ('confirmed', '递补为正式')))
+                   if changed else ['退出或候补递补详情请到活动页查看。'])
+        lines = [head, '时间：%s' % when, '地点：%s' % event['location']]
+        lines += changes
+        lines += ['当前正式报名 %d 人，候补 %d 人' % (confirmed, waiting), '', url]
+        buttons = [('活动详情', '', url), ('看名额', '/名额', '')]
     elif kind == 'conditions_changed':
         version = event['conditions_version']
         lines = [head + '（第 %d 版）' % version,
@@ -618,6 +628,7 @@ LABELS = {
     'finance_reopened': '账务重新核对',
     'ownership_changed': '管理交接',
     'registration_added': '有人报名',
+    'registration_changed': '报名变动',
 }
 
 
@@ -725,8 +736,15 @@ def on_append(db, event, user, action, before, after, reason=''):
                    "WHERE event_id=? AND channel='group' AND status IN ('pending','sending')", (event['id'],))
     if action.startswith('event_'):
         _schedule(db, current)
+    previous = {p['id']: p['status'] for p in before.get('participants', [])}
+    changed = [p['id'] for p in after.get('participants', [])
+               if (p['status'] == 'withdrawn' and previous.get(p['id']) in ('confirmed', 'waiting'))
+               or (p['status'] == 'confirmed' and previous.get(p['id']) == 'waiting')]
+    if changed:
+        # One committed operation may withdraw a person and promote a party.
+        # Announce the final status delta once, without exposing private reasons.
+        _broadcast(db, current['id'], 'registration_changed', after={'attendee_ids': changed})
     if action in ('signup', 'attendee_confirm', 'invitation_accepted'):
-        previous = {p['id']: p['status'] for p in before.get('participants', [])}
         added = [p['id'] for p in after.get('participants', [])
                  if p['status'] in ('confirmed', 'waiting')
                  and previous.get(p['id']) not in ('confirmed', 'waiting')]

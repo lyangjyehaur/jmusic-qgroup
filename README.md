@@ -193,6 +193,8 @@ web 每次操作读取最新配置，bot 每次投递与指令回复读取最新
 
 **启用顺序**：① 按 `deploy/bot.env.example` 配置 `/etc/qgroup/bot.env`（root 0600，AppID／Secret／主要群）；② 主服务环境 `/etc/qgroup/qq.env` 配置 `KANBAN_BOT_ENABLED=1`；③ 隔离副本验证 schema 13 迁移，构建新映像并 `docker compose up -d`，共用 SQLite 与 UID/GID；④ 发起者选择适合群内公开的活动开启同步，在后台保持模拟模式核对记录；⑤ 验收后在后台把发送模式切为「实际发送」、先只开指令回复（`replies_enabled=1`、广播 `enabled=0`），政策即时生效、无需重建容器；只有后台选「沿用部署设置」时才改 `KANBAN_BOT_DRY_RUN=0` 并执行 `docker compose up -d --force-recreate bot`。修改 env_file 后只执行 `restart` 不会加载新环境。`websockets==17.4` 在 Dockerfile 中安装，主服务仍只需标准库。systemd 回退同样使用静态账号 `qgroupsvc`，不能与容器同时运行。
 
+**退出与递补通知**：公开活动开启群同步，且后台允许 `registration_changed`（「退出／候补递补」）时，正式／候补实际退出（含管理者撤销）会通知群聊。同次退出触发的候补递补合并为一则，分列退出者与递补为正式者、当前总人数及开始倒计时。增加名额、恢复报名、拆分整组候补产生的实际递补也通知。逾期退出申请待审或被拒不通知；批准实际退出才通知。取消待确认或未接受的邀请不通知，整场取消沿用活动取消通知。只公开显示称呼，不附退出原因、审批备注、账号或退款资料；事务回滚、重复请求、历史资料不额外发送。新配置默认包含此类型，已保存配置需另行勾选并保存。
+
 **后续能力**：尚未绑定 bot 与站内身份，因此不提供群内直接报名、个人金额、@ 点名或私聊通知。个人队列只保存指定收件人，未绑定不会投递，也不会转发到群。收款码富媒体、每次操作独立勾选通知仍待完成。连接／心跳健康监测已完成：WebSocket 保存 session 并支援 Resume、心跳 ACK 逾时重连，bot 将 `bot-health.json`（0600）写入 `KANBAN_BOT_LOG_DIR`，compose 的 bot healthcheck 读取同一路径。报名名单只公开显示名称，个人金额仍按单独的结算通知设置处理；`KANBAN_BOT_SETTLEMENT_DETAIL=1` 会公开逐人金额，需明确告知并取得同意后才开启。
 
 测试：`python3 -m unittest discover -s tests -p 'test_bot_*.py'`。完整业务测试应分别在全局开关关闭和开启时运行，验证迁移、权限、双语指令、模拟、重试及既有报名／账务流程。

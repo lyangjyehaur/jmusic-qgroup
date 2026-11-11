@@ -19,6 +19,7 @@ KINDS = {
     'registration_resumed': '恢复报名', 'finance_closed': '账务已结清',
     'finance_reopened': '账务重新核对', 'ownership_changed': '管理交接',
     'registration_added': '有人报名',
+    'registration_changed': '退出／候补递补',
 }
 VARIABLES = {
     'heading': '消息标题', 'details': '系统生成的事件说明', 'url': '活动操作链接',
