@@ -247,8 +247,8 @@ def _generic_markdown(db, command, argument):
 
     Reusing ``answer()`` guarantees the Markdown body never states a different
     fact than the plain-text fallback. The first line becomes a plain labelled
-    summary (never a ``##`` heading or a ``**...**`` wrapper) so any inline
-    Markdown in an activity title still renders on QQ.
+    summary (never a ``##`` heading or a ``**...**`` wrapper); user-authored
+    values are sanitised by the shared renderer.
     """
     plain = answer(db, command, argument)[0]
     lines = [line for line in plain.split('\n') if line.strip()]
@@ -263,10 +263,9 @@ def answer_markdown(db, command, argument=''):
     """Build a msg_type=2 reply, or None when this command stays plain text.
 
     Only system-authored fragments are stylised. Every activity title, place
-    and task string goes through ``escape_markdown()`` (folds newlines, drops
-    ``<qqbot-at-*>`` tags) and is placed on a plain line: QQ ignores inline
-    syntax inside a ``##`` heading and breaks on a ``**...**`` wrapper, so
-    user-authored bold/italic/strike/links must stay on a plain line.
+    and task string goes through ``plain_text()`` (strips QQ Markdown syntax,
+    platform mention tags and structural injection) before reaching a
+    renderer, so user input can never become a heading, emphasis or link.
     """
     site = bot_outbox.base_url()
     if command is None or command not in ALIASES.values() or command == '帮助':

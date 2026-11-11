@@ -57,7 +57,7 @@
    <p class="field-help">使用下方变量，可点击插入。必须保留 {url}。{details} 是系统按事件生成的说明；自定义文字会按原文发送。模板最多 2000 字，变量展开后最多 4000 字。</p>
    <div id="bot-template-variables" class="bot-variables"></div>
    <label class="field">Markdown 模板（可选，留空由系统生成卡片）<textarea id="bot-template-markdown" rows="8" maxlength="2000" spellcheck="false" translate="no" placeholder="留空即使用系统卡片"></textarea></label>
-   <p class="field-help">仅在部署设置 KANBAN_BOT_MARKDOWN=1 时生效。可用 # 标题、**粗体**、- 清单、1. 序号清单、[文字]({url}) 与 &gt; 引用；QQ 不支持代码区块与表格。变量值会自动转义，{details} 会转成清单，仍须保留 {url}。留空时系统按事件自动生成卡片，且结算逐人明细固定附上。</p>
+   <p class="field-help">仅在部署设置 KANBAN_BOT_MARKDOWN=1 时生效。可用 # 标题、**粗体**、~~删除线~~、- 清单、1. 序号清单、[文字]({url}) 与 &gt; 引用；QQ 不支持代码区块与表格。模板本文可写样式，变量值会过滤 Markdown 特殊符号、只留纯文字；改期通知可用 ~~{previous_starts_at}~~ → **{starts_at}** 对照旧／新时间。{details} 会转成清单，仍须保留 {url}。留空时系统按事件自动生成卡片，且结算逐人明细固定附上。</p>
    <div class="bot-actions"><button id="bot-template-reset" type="button" class="button secondary">使用默认纯文字模板</button><button id="bot-template-md-example" type="button" class="button secondary">插入 Markdown 示例</button><button id="bot-template-md-reset" type="button" class="button secondary">清除 Markdown 模板</button><button id="bot-preview" type="button" class="button secondary">预览示例</button></div>
    <p class="field-help">预览只使用示例资料，不会发送群消息。新版模板适用于尚未发送且带有事件快照的通知；旧版队列保留原文。</p>
    <div id="bot-preview-modes" class="bot-preview-modes" role="group" aria-label="预览模式" hidden>

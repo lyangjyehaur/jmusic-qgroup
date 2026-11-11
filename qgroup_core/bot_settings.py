@@ -22,7 +22,7 @@ KINDS = {
 VARIABLES = {
     'heading': '消息标题', 'details': '系统生成的事件说明', 'url': '活动操作链接',
     'title': '活动名称', 'starts_at': '开始时间', 'deadline': '报名截止',
-    'location': '地点', 'confirmed': '正式人数', 'waiting': '候补人数',
+    'previous_starts_at': '原开始时间', 'location': '地点', 'confirmed': '正式人数', 'waiting': '候补人数',
     'fee_policy': '费用说明', 'description': '活动说明', 'version': '相关版本',
     'change_summary': '安排变更摘要', 'cancellation_reason': '取消原因',
 }
@@ -36,7 +36,7 @@ DEFAULT_MARKDOWN_TEMPLATE = ('## {heading}\n\u200B\n{details}\n\u200B\n'
                              '[打开活动]({url})\n\u200B\n'
                              '> 群内消息只提供入口；报名、确认及款项仍须在网站核对提交。')
 VARIABLE_LIMITS = dict(heading=120, details=2500, url=512, title=40,
-                       starts_at=32, deadline=32, location=120, confirmed=20, waiting=20,
+                       starts_at=32, previous_starts_at=32, deadline=32, location=120, confirmed=20, waiting=20,
                        fee_policy=120, description=120, version=20,
                        change_summary=120, cancellation_reason=120)
 
@@ -154,13 +154,14 @@ def render(config, kind, context, *, markdown=False):
     returns None when the admin did not write one; the caller then uses the
     system-authored card instead.
 
-    Rich templates are still admin-authored, but every substituted value goes
-    through ``bot_markdown.escape_markdown`` (folds newlines, drops platform
-    mention tags; inline Markdown stays live). ``{url}`` stays a bare,
-    already-system-generated URL so ``[文字]({url})`` works; ``{details}``
-    becomes a bullet list, because QQ Markdown has no code fences or tables.
-    Put ``{heading}`` / ``{title}`` on a plain line: QQ does not render inline
-    syntax inside a ``##`` heading or a ``**...**`` wrapper.
+    Rich templates are admin-authored, but every substituted value is
+    sanitised by ``bot_markdown.plain_text``: QQ Markdown syntax is removed,
+    newlines are folded and platform mention tags are dropped. ``{url}`` stays
+    a bare, already-system-generated URL so ``[文字]({url})`` works;
+    ``{details}`` becomes a bullet list, because QQ Markdown has no code fences
+    or tables. The template body itself is trusted and may carry Markdown, so
+    ``~~{previous_starts_at}~~ → **{starts_at}**`` renders a reschedule while
+    both substituted timestamps remain plain words.
     """
     key = kind + MARKDOWN_SUFFIX if markdown else kind
     value = config['templates'].get(key)
@@ -175,10 +176,10 @@ def render(config, kind, context, *, markdown=False):
             if name == 'url' or not isinstance(raw, str):
                 continue
             if name == 'details':
-                fields[name] = '\n'.join('- ' + bot_markdown.escape_markdown(line)
+                fields[name] = '\n'.join('- ' + bot_markdown.plain_text(line)
                                          for line in raw.split('\n') if line.strip())
             else:
-                fields[name] = bot_markdown.escape_markdown(raw)
+                fields[name] = bot_markdown.plain_text(raw)
     text = value.format_map(fields)
     if len(text) > 4000 or not text.strip():
         raise APIError('消息内容超出 4000 字，请缩短模板')

@@ -385,6 +385,26 @@ def _compose_default(db, event, kind, *, source='', after=None):
     return '\n'.join(line for line in lines if line is not None), buttons
 
 
+def _previous_starts_at(db, event):
+    """System value: start time of the previous published arrangement version.
+
+    ``event_conditions`` stores an immutable snapshot per version (including
+    starts_at), so a reschedule comparison needs no schema change and no new
+    queue field. The returned string is system-formatted, never user text.
+    """
+    try:
+        row = db.execute('SELECT snapshot_json FROM event_conditions WHERE event_id=? '
+                         'AND version<? ORDER BY version DESC LIMIT 1',
+                         (event['id'], event['conditions_version'])).fetchone()
+        if not row:
+            return ''
+        previous = json.loads(row[0]).get('starts_at')
+        return local_time(previous, event['timezone']) if previous else ''
+    except Exception:
+        # A missing history or a malformed old snapshot must never break a send.
+        return ''
+
+
 def build_message(db, event, kind, *, source='', after=None, config=None):
     planned = _compose_default(db, event, kind, source=source, after=after)
     if not planned:
@@ -396,6 +416,7 @@ def build_message(db, event, kind, *, source='', after=None, config=None):
     confirmed, waiting, _ = _counts(db, event['id'])
     context = dict(heading=lines[0], details='\n'.join(lines[1:-1]).strip(), url=lines[-1],
                    title=str(event['title'])[:40], starts_at=local_time(event['starts_at'], event['timezone']),
+                   previous_starts_at=_previous_starts_at(db, event),
                    deadline=local_time(event['deadline'], event['timezone']), location=event['location'],
                    confirmed=str(confirmed), waiting=str(waiting), fee_policy=str(event['fee_policy'] or '')[:120],
                    description=str(event['description'] or '')[:120],
@@ -441,7 +462,7 @@ def render_message(config,kind,context,markdown=False):
         # decoration: always append it when an operator opted into showing it.
         if notice:
             text += ('\n'+md.BLANK+'\n## 逐人应付\n'
-                     + '\n'.join('- ' + md.escape_markdown(line) for line in notice))
+                     + '\n'.join('- ' + md.plain_text(line) for line in notice))
     else:
         url = str(context.get('url') or '')
         if not url:
@@ -450,8 +471,15 @@ def render_message(config,kind,context,markdown=False):
         if not isinstance(facts, list):
             facts = [line for line in str(context.get('details') or '').split('\n')
                      if line.strip()]
+        # A reschedule is the one fact that benefits from styling. The line is
+        # composed entirely from system-formatted timestamps, never user text;
+        # admins can reproduce it in an @md template with {previous_starts_at}.
+        comparison = (md.system_time_change(context.get('previous_starts_at'),
+                                            context.get('starts_at'))
+                      if kind == 'conditions_changed' else None)
         text = md.render_broadcast(str(context.get('_label') or LABELS.get(kind, '群聚看板')),
-                                   str(context.get('title') or ''), facts, url, notice=notice)
+                                   str(context.get('title') or ''), facts, url, notice=notice,
+                                   system_facts=(comparison,) if comparison else ())
     return None if md.content_problem(text) else text
 
 

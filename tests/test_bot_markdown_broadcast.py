@@ -159,26 +159,27 @@ class ListNumberTests(Fixture, unittest.TestCase):
 
 
 class BroadcastMarkdownTests(Fixture, unittest.TestCase):
-    def test_build_message_freezes_a_system_card(self):
+    def test_build_message_freezes_a_sanitised_system_card(self):
         self.event_id = self.event('唱K *特别* [点我](https://evil.test)')
         with storage.connect(self.path) as db:
             planned = bot_outbox.build_message(db, self.latest_event(db), 'activity_published')
         rich = planned[2]['_markdown']
         self.assertIsInstance(rich, str)
         self.assertTrue(rich.startswith('## 活动发起'))
-        self.assertIn('*特别*', rich)
-        self.assertIn('[点我](https://evil.test)', rich)
+        self.assertIn('活动名称：唱K 特别 点我', rich)
+        self.assertNotIn('*特别*', rich)
+        self.assertNotIn('[点我]', rich)
+        self.assertNotIn('evil.test', rich)
         self.assertNotIn('\\', rich)
         self.assertNotIn('<qqbot-at-everyone />', rich)
         self.assertIn('[打开活动](https://example.test/?event=', rich)
-        # A user-authored link to an unregistered host is deliberately caught
-        # by the allowlist, so the worker falls back to plain text instead of
-        # publishing a clickable off-site link inside a Markdown card.
-        self.assertIsNotNone(bot_markdown.content_problem(rich, ('example.test',)))
+        # User-authored Markdown can no longer produce a clickable off-site
+        # link, so the allowlist does not need to downgrade this card.
+        self.assertIsNone(bot_markdown.content_problem(rich, ('example.test',)))
         # The plain-text body is untouched by the rich version.
         self.assertIn('唱K *特别*', planned[0])
 
-    def test_admin_markdown_template_keeps_variables_as_markdown(self):
+    def test_admin_template_body_keeps_markdown_but_values_are_sanitised(self):
         config = bot_settings.defaults()
         config['templates']['activity_published'+bot_settings.MARKDOWN_SUFFIX] = (
             '## **{title}**\n\u200B\n{details}\n\u200B\n[打开活动]({url})')
@@ -187,7 +188,8 @@ class BroadcastMarkdownTests(Fixture, unittest.TestCase):
                        url='https://example.test/?event=abc', heading='h',
                        _label='活动发起', _details_lines=[])
         rich = bot_outbox.render_message(config, 'activity_published', context, markdown=True)
-        self.assertIn('*特别*', rich)
+        self.assertIn('## **唱K 特别**', rich)   # admin-written bold survives
+        self.assertNotIn('*特别*', rich)         # substituted value is sanitised
         self.assertNotIn('\\', rich)
         self.assertNotIn('<qqbot-at-everyone />', rich)
         self.assertIn('- 时间：周六', rich)
@@ -197,6 +199,63 @@ class BroadcastMarkdownTests(Fixture, unittest.TestCase):
         plain = bot_outbox.render_message(config, 'activity_published', context)
         self.assertIn('唱K *特别*', plain)
         self.assertIn('<qqbot-at-everyone />', plain)
+
+    def test_user_values_cannot_inject_markdown_through_a_template(self):
+        config = bot_settings.defaults()
+        config['templates']['activity_published'+bot_settings.MARKDOWN_SUFFIX] = (
+            '## {title}\n\u200B\n{details}\n\u200B\n[打开活动]({url})')
+        context = dict(_default_text='fallback',
+                       title='# 假标题\n~~删除~~ [x](https://evil.test)',
+                       details='- 伪装项\n> 伪装引用',
+                       url='https://example.test/?event=abc', heading='h',
+                       _label='活动发起', _details_lines=[])
+        rich = bot_outbox.render_message(config, 'activity_published', context, markdown=True)
+        self.assertIn('## 假标题 删除 x', rich)
+        self.assertNotIn('~~', rich)
+        self.assertNotIn('\n# ', rich)   # no injected heading line
+        self.assertNotIn('- - ', rich)   # no injected nested bullet
+        self.assertNotIn('https://evil.test', rich)
+        self.assertIsNone(bot_markdown.content_problem(rich, ('example.test',)))
+
+    def test_system_time_change_is_the_only_styled_user_adjacent_fact(self):
+        line = bot_markdown.system_time_change('11-13 18:00', '11-14 19:00')
+        self.assertEqual(line, '- **时间** ~~11-13 18:00~~ → **11-14 19:00**')
+        self.assertIsNone(bot_markdown.system_time_change('', '11-14 19:00'))
+        self.assertIsNone(bot_markdown.system_time_change('11-13 18:00', '11-13 18:00'))
+        # User-looking syntax in a system value can never escape the line.
+        self.assertNotIn('**加粗**', bot_markdown.system_time_change(
+            '11-13 **加粗**', '11-14 19:00'))
+
+    def test_reschedule_card_strikes_the_previous_time(self):
+        self.event_id = self.event('周末聚餐')
+        shifted = (datetime.fromisoformat(self.start) + timedelta(days=2)).isoformat(timespec='seconds')
+        with storage.connect(self.path) as db:
+            before = self.latest_event(db)
+            events.patch(db, before, self.user,
+                         dict(title='周末聚餐', category='约K', location='某KTV',
+                              starts_at=shifted, deadline=shifted, capacity=0,
+                              description='', duration_hours=3, join_owner=False,
+                              bot_enabled=True, reason='改期'))
+            planned = bot_outbox.build_message(db, self.latest_event(db), 'conditions_changed')
+        context = planned[2]
+        self.assertTrue(context['previous_starts_at'])
+        self.assertNotEqual(context['previous_starts_at'], context['starts_at'])
+        self.assertIn('- **时间** ~~%s~~ → **%s**' % (
+            context['previous_starts_at'], context['starts_at']), context['_markdown'])
+        self.assertIsNone(bot_markdown.content_problem(context['_markdown'], ('example.test',)))
+
+    def test_admin_template_can_style_system_timestamps(self):
+        config = bot_settings.defaults()
+        config['templates']['conditions_changed'+bot_settings.MARKDOWN_SUFFIX] = (
+            '## 安排变更\n\u200B\n~~{previous_starts_at}~~ → **{starts_at}**'
+            '\n\u200B\n[打开活动]({url})')
+        context = dict(_default_text='fallback', title='周末聚餐', heading='h',
+                       details='', url='https://example.test/?event=abc',
+                       previous_starts_at='11-13 18:00', starts_at='11-14 19:00',
+                       _label='安排变更', _details_lines=[])
+        rich = bot_outbox.render_message(config, 'conditions_changed', context, markdown=True)
+        self.assertIn('~~11-13 18:00~~ → **11-14 19:00**', rich)
+        self.assertIsNone(bot_markdown.content_problem(rich, ('example.test',)))
 
     def test_validate_accepts_rich_keys_but_rejects_unknown_ones(self):
         config = bot_settings.defaults()

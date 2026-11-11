@@ -36,8 +36,9 @@ class Config:
         # outbox broadcasts. Default off: an existing deployment must not
         # change group messages silently. Real-device checks (2026-11-11)
         # confirmed the documented syntax and markdown+keyboard; QQ has no
-        # escape mechanism, so user text keeps its own inline Markdown and
-        # outbound links are guarded by allowed_link_hosts.
+        # escape mechanism, so user-authored values are sanitised to plain
+        # words and only system fragments emit Markdown. Outbound links are
+        # guarded by allowed_link_hosts.
         self.markdown_replies = os.environ.get('KANBAN_BOT_MARKDOWN', '0') == '1'
         # 2026-08-10 changelog unified the OpenAPI host. The previously
         # verified host remains an explicit fallback until the new one is

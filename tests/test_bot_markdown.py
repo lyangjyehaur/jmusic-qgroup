@@ -1,6 +1,6 @@
 """Passive Markdown replies (msg_type=2): opt-in, fallback and link safety.
 
-Escaping and renderers now live in ``qgroup_core.bot_markdown``; the active
+Sanitising and renderers now live in ``qgroup_core.bot_markdown``; the active
 broadcast side and the web/bot payload contract are covered in
 ``test_bot_markdown_broadcast.py``. Checks are offline; nothing here claims a
 real QQ device rendered a markdown message correctly.
@@ -68,35 +68,46 @@ class MarkdownReplyTests(unittest.TestCase):
         finally:
             db.close()
 
-    def test_escape_keeps_inline_markdown_but_blocks_structural_injection(self):
-        value = md.escape_markdown(
-            '[点我](https://evil.test) **粗** <qqbot-at-everyone />\n# 标题')
-        # QQ has no escape syntax: real-device A/B/C/D probes rejected
-        # backslashes, zero-width insertions and full-width substitutions.
-        self.assertIn('[点我](https://evil.test)', value)
-        self.assertIn('**粗**', value)
-        self.assertIn('# 标题', value)
-        self.assertNotIn('\\', value)
-        self.assertNotIn('\u200B', value)
-        # Structural injection is still neutralised.
+    def test_plain_text_strips_user_markdown_and_structural_injection(self):
+        value = md.plain_text(
+            '[点我](https://evil.test) **粗** <qqbot-at-everyone />\n# 标题 '
+            '~~旧~~ _斜_ `代码` <https://evil.test/x>')
+        # QQ has no escape syntax: instead of trying to neutralise the markers,
+        # user-authored syntax is removed and only the words remain.
+        for word in ('点我', '粗', '标题', '旧', '斜', '代码'):
+            self.assertIn(word, value)
+        for marker in ('**', '~~', '`', '[', ']', 'https://', '<', '>',
+                       '\\', '\u200B', '\n', '# '):
+            self.assertNotIn(marker, value)
         self.assertNotIn('<qqbot-at-everyone />', value)
-        self.assertNotIn('\n', value)
-        self.assertEqual(md.escape_markdown('<qqbot-at-user id="7" /> 安安'), ' 安安')
-        self.assertEqual(md.escape_markdown('a\rb\tc'), 'a b c')
+        self.assertEqual(md.plain_text('<qqbot-at-user id="7" /> 安安'), '安安')
+        self.assertEqual(md.plain_text('a\rb\tc'), 'a b c')
+        # Ordinary punctuation is not Markdown by itself and stays readable.
+        self.assertEqual(md.plain_text('(周六) 3*5'), '(周六) 35')
 
-    def test_user_link_is_caught_by_the_outbound_allowlist(self):
+    def test_user_markdown_link_loses_its_target_and_never_blocks_the_card(self):
         rich = md.render_broadcast('活动发起', '唱K [点我](https://evil.test)', [],
                                    'https://example.test/?event=abc')
-        self.assertIn('[点我](https://evil.test)', rich)
-        self.assertIsNotNone(md.content_problem(rich, ('example.test',)))
+        self.assertIn('活动名称：唱K 点我', rich)
+        self.assertNotIn('[点我]', rich)
+        self.assertNotIn('evil.test', rich)
+        # Sanitising removes the link target, so the allowlist no longer has to
+        # downgrade a card just because a user pasted Markdown in the title.
+        self.assertIsNone(md.content_problem(rich, ('example.test',)))
         self.assertIsNone(md.content_problem(
             md.render_broadcast('活动发起', '唱K **特别**', [],
                                'https://example.test/?event=abc'),
             ('example.test',)))
+        # A bare URL with no Markdown syntax is still caught by the allowlist.
+        self.assertIsNotNone(md.content_problem(
+            md.render_broadcast('活动发起', '唱K https://evil.test/x', [],
+                               'https://example.test/?event=abc'),
+            ('example.test',)))
 
-    def test_escape_drops_control_characters(self):
-        self.assertNotIn('\x01', md.escape_markdown('a\x01b'))
-        self.assertEqual(md.escape_markdown(None), '')
+    def test_plain_text_drops_control_characters_and_empty_input(self):
+        self.assertNotIn('\x01', md.plain_text('a\x01b'))
+        self.assertEqual(md.plain_text(None), '')
+        self.assertEqual(md.plain_text(''), '')
 
     def test_content_problem_checks_length_controls_and_link_hosts(self):
         self.assertIsNone(md.content_problem('## ok\n[link](https://example.test/x)'))
@@ -140,47 +151,52 @@ class MarkdownReplyTests(unittest.TestCase):
     def test_unknown_command_gets_markdown_help_with_prefix(self):
         self.assertIn('未识别这条指令', self.markdown(None))
 
-    def test_activity_markdown_keeps_user_syntax_but_blocks_mentions(self):
+    def test_activity_markdown_sanitises_user_text_but_keeps_system_styling(self):
         rich = self.markdown('活动')
         plain = self.plain('活动')
-        # A user-authored title must sit on a plain line, not in a heading or
-        # inside a bold span: QQ renders neither position's inline syntax.
+        # A user-authored title sits on a labelled plain line; QQ ignores inline
+        # syntax inside a heading, and user values are sanitised anyway.
         self.assertTrue(rich.startswith('## 活动详情'))
-        self.assertIn('\n活动名称：唱K', rich)
-        # QQ has no escape syntax: inline markup stays live and renders cleanly.
-        self.assertIn('[点我](https://evil.test)', rich)
-        self.assertIn('**KTV**', rich)
+        self.assertIn('\n活动名称：唱K 特别 点我', rich)
+        self.assertIn('\n- **地点**', rich)     # system-authored styling survives
+        self.assertIn('\n**', rich)             # system time stays bold
+        self.assertNotIn('[点我]', rich)
+        self.assertNotIn('**KTV**', rich)
         self.assertNotIn('\\', rich)
+        self.assertNotIn('evil.test', rich)
         # Structural injection and platform mentions are still removed.
         self.assertNotIn('<qqbot-at-everyone />', rich)
         self.assertNotIn('\n第二行', rich)
+        self.assertIn('点我', rich)
+        self.assertIn('KTV', rich)
+        self.assertIn('第二行', rich)
+        # The plain-text fallback keeps the original user text verbatim.
         self.assertIn('[点我](https://evil.test)', plain)
         self.assertIn('[打开活动](https://example.test/?event=%s)' % self.event_id, rich)
-        # An off-site link authored by a user is caught by the allowlist, so
-        # this card falls back to plain text rather than becoming a hyperlink.
-        self.assertIsNotNone(md.content_problem(rich, ('example.test',)))
+        self.assertIsNone(md.content_problem(rich, ('example.test',)))
 
     def test_user_titles_are_never_in_headings_or_bold_wrappers(self):
         title = '周末 **加粗** _斜体_ ~~删除线~~'
+        clean = '周末 加粗 斜体 删除线'
         broadcast = md.render_broadcast('活动发起', title, [],
                                         'https://example.test/?event=abc')
         self.assertEqual(broadcast.splitlines()[0], '## 活动发起')
-        self.assertEqual(broadcast.splitlines()[1], '活动名称：' + title)
+        self.assertEqual(broadcast.splitlines()[1], '活动名称：' + clean)
         event = md.render_event(title, '11-13 18:00', [('地点', '某处')],
                                 'https://example.test/?event=abc')
         self.assertEqual(event.splitlines()[0], '## 活动详情')
-        self.assertEqual(event.splitlines()[1], '活动名称：' + title)
+        self.assertEqual(event.splitlines()[1], '活动名称：' + clean)
         selection = md.render_selection(
             [(title, '11-13 18:00', 'https://example.test/?event=abc')],
             '活动', 'https://example.test')
-        self.assertIn('1. ' + title, selection)
+        self.assertIn('1. ' + clean, selection)
         self.assertNotIn('1. **', selection)
         # A leading '#' or '-' in a title cannot inject a heading/list item.
         self.assertEqual(md.plain_line('活动名称：', '# 假标题\n第二行'),
-                         '活动名称：# 假标题 第二行')
+                         '活动名称：假标题 第二行')
         self.assertTrue(md.render_event('# 假标题', '11-13', [],
                                         'https://example.test/').splitlines()[1]
-                        .startswith('活动名称：# 假标题'))
+                        .startswith('活动名称：假标题'))
 
     def test_todos_markdown_is_a_list_and_never_names_a_person(self):
         text = self.markdown('待办')
@@ -190,7 +206,7 @@ class MarkdownReplyTests(unittest.TestCase):
         self.assertIn('[查看待办](https://example.test/?event=', text)
         self.assertNotIn('私密昵称', text)
 
-    def test_selection_markdown_keeps_user_links_but_allowlist_catches_them(self):
+    def test_selection_markdown_sanitises_user_titles(self):
         start = (datetime.now(timezone.utc) + timedelta(days=3)).isoformat(timespec='seconds')
         with storage.connect(self.path) as db:
             events.create(db, {'id': 'u1', 'nickname': '私密昵称'},
@@ -199,12 +215,13 @@ class MarkdownReplyTests(unittest.TestCase):
                      join_owner=False, bot_enabled=True))
         text = self.markdown('活动')
         self.assertTrue(text.startswith('## 选择活动'))
-        self.assertIn('\n1. 唱K', text)
+        self.assertIn('\n1. 唱K 特别 点我', text)
         self.assertIn('\n2. 第二场活动', text)
         self.assertNotIn('1. **', text)
         self.assertIn('[打开活动](https://example.test/?event=', text)
-        self.assertIn('[点我](https://evil.test)', text)
-        self.assertIsNotNone(md.content_problem(text, ('example.test',)))
+        self.assertNotIn('[点我]', text)
+        self.assertNotIn('evil.test', text)
+        self.assertIsNone(md.content_problem(text, ('example.test',)))
 
     def test_markdown_is_opt_in_by_default(self):
         with mock.patch.dict(os.environ, {'KANBAN_BOT_MARKDOWN': '0'}):

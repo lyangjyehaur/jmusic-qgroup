@@ -1,13 +1,13 @@
 """Bot-side Markdown entry point.
 
-Escaping, safety checks and renderers live in ``qgroup_core.bot_markdown`` so
+Sanitising, safety checks and renderers live in ``qgroup_core.bot_markdown`` so
 the web composer and the bot sender cannot drift apart. This module keeps the
 bot-only API (platform rejection codes) and re-exports the shared helpers for
 ``main.py``, ``worker.py``, ``replies.py`` and the existing tests.
 """
 from qgroup_core.bot_markdown import (  # noqa: F401  (re-exported API)
     BLANK, RULE, MAX_CHARS,
-    escape_markdown, plain_line, content_problem,
+    plain_text, plain_line, system_time_change, content_problem,
     render_broadcast, render_help, render_command, render_event, render_tasks,
     render_selection, render_no_events,
 )

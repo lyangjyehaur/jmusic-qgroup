@@ -1,7 +1,7 @@
 """Shared QQ custom-Markdown helpers (msg_type=2).
 
 Both services need the same rules: web composes queued broadcasts, bot composes
-passive replies and delivers both kinds. Keeping escaping and safety checks in
+passive replies and delivers both kinds. Keeping sanitising and safety checks in
 qgroup_core avoids two divergent implementations, while this module deliberately
 imports neither ``server`` nor ``qgroup_bot``.
 
@@ -20,15 +20,19 @@ Custom Markdown in group/single chats has been open to all bots since
 Real-device findings (2026-11-11, test group):
 * A card written with the documented syntax renders correctly. Backslash
   escapes, zero-width insertions next to syntax characters and full-width
-  substitutions all render badly; QQ documents no escape mechanism. So
-  user-authored inline **bold**, _italic_, [links](url) and ~~strike~~ stay
-  live; escape_markdown() neutralises only structural injection and
-  content_problem() enforces the outbound-link allowlist.
+  substitutions all render badly; QQ documents no escape mechanism at all.
 * Inline syntax does NOT render when user text is put in a ``##`` heading or
-  wrapped in a ``**...**`` span (nested same-marker emphasis closes early, and
-  the outer bold makes any inner bold invisible). User-authored text therefore
-  always sits on a plain line prefixed by a fixed system label: QQ renders it
-  correctly, and a leading '#', '-' or '1.' cannot inject block structure.
+  wrapped in a ``**...**`` span. A six-way comparison card confirmed that only
+  plain lines (bare text, fixed heading + plain line, plain list item) render
+  inline syntax correctly.
+
+Therefore the trust boundary is explicit: **only system-authored fragments may
+emit Markdown**. Every user-authored value (activity titles, places, notes,
+change summaries) goes through plain_text(), which removes QQ syntax characters
+and keeps the words. Styling that carries meaning -- for example a struck-out
+old time next to a bold new time after a reschedule -- is composed from system
+values by system_time_change(). Admin-written @md template bodies are trusted
+too, but every substituted value is sanitised before substitution.
 """
 import re
 from urllib.parse import urlsplit
@@ -38,44 +42,70 @@ RULE = '***'
 MAX_CHARS = 4000
 
 _CONTROL = re.compile(r'[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]')
-# Platform mention markup is the one construct that must never survive: a
-# title containing <qqbot-at-everyone /> would mention the whole group.
-# QQ's autolink <https://...> is left alone; only qqbot-at-* tags are removed.
+# Platform mention markup must never survive: a title containing
+# <qqbot-at-everyone /> would mention the whole group.
 _PLATFORM_TAG = re.compile(r'<\s*/?\s*qqbot-at-[^>]*>', re.IGNORECASE)
 _URL = re.compile(r'https?://([^\s<>"\[\]{}()]+)')
+# [text](url) and ![alt](url) keep their visible text but lose the link; QQ's
+# autolink <https://...> loses the whole URL so it cannot become a hyperlink.
+_LINK = re.compile(r'!?\[([^\]]*)\]\([^)]*\)')
+_AUTOLINK = re.compile(r'<\s*https?://[^>]*>', re.IGNORECASE)
+# QQ has no escape syntax: the only reliable way to stop user input from
+# becoming a heading, emphasis, strike, quote, image or autolink is to remove
+# the syntax characters. Brackets round Chinese text (e.g. (周六)) are kept:
+# they are not Markdown by themselves once [ ] are gone.
+_SYNTAX = re.compile(r'[*_`~<>\[\]!|\\#]')
 
 
-def escape_markdown(text):
-    """Keep inline Markdown live; remove only structural injection.
+def plain_text(text):
+    """Return user-authored text as plain words, with QQ Markdown stripped.
 
-    Newlines, tabs and control characters are folded into spaces so a title or
-    a note can never inject a heading, a list item or an extra paragraph.
-    Platform ``<qqbot-at-*>`` tags are dropped so user text cannot @everyone.
+    This is sanitising, not escaping. Real-device A/B/C/D probes showed
+    backslashes, zero-width insertions and full-width replacements all render
+    badly, and QQ documents no escape mechanism at all. So syntax is removed:
+    links collapse to their visible text, autolinks and platform mention tags
+    are dropped, emphasis/strike/heading/quote characters are removed, and
+    newlines, tabs and control characters are folded into single spaces.
 
-    Deliberately NOT escaped: ``*``, ``_``, ``~``, ``[``, ``]``, ``(``, ``)``,
-    ``#``, ``!`` and backticks. QQ has no escape syntax; backslashes, zero-width
-    insertions and full-width replacements were all rejected by a real-device
-    A/B/C/D comparison. Letting the documented syntax work is both the product
-    requirement and the only option that renders cleanly. Outbound link targets
-    are checked separately by content_problem() against the allowlist.
+    Only system-authored fragments may emit Markdown after this point. A bare
+    URL with no Markdown syntax is still visible to content_problem(), which
+    keeps the existing outbound-link allowlist as a second safety net.
     """
     value = str(text if text is not None else '')
     value = _CONTROL.sub(' ', value)
     value = value.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ')
-    return _PLATFORM_TAG.sub('', value)
+    value = value.replace(BLANK, '')
+    value = _PLATFORM_TAG.sub('', value)
+    value = _AUTOLINK.sub('', value)
+    value = _LINK.sub(lambda match: match.group(1), value)
+    value = _SYNTAX.sub('', value)
+    value = re.sub(r' {2,}', ' ', value).strip()
+    # A leading "- " / "1. " would still read as a nested list once a renderer
+    # prefixes the fact line with its own bullet. Time strings like 11-13 and
+    # negative numbers have no following space, so they are unaffected.
+    return re.sub(r'^\s*(?:[-+]\s+|\d+[.)]\s+)', '', value).strip()
 
 
 def plain_line(label, text):
-    """Put user-authored text on a plain line where QQ renders inline syntax.
+    """Put sanitised user text on a plain line with a fixed system label.
 
-    ``label`` is a fixed system string containing no Markdown. Real-device
-    probes showed QQ ignores inline emphasis inside a ``##`` heading and breaks
-    on a ``**...**`` wrapper around text that itself contains ``**``. A plain
-    line keeps ``**加粗**`` / ``_斜体_`` / ``~~删除线~~`` working, while the
-    label prevents a title starting with '#', '-' or '1.' from becoming a
-    heading or a list item.
+    ``label`` is a fixed system string. QQ ignores inline syntax inside a
+    ``##`` heading, so user values are never placed there; the label also stops
+    a leading '#' / '-' / '1.' from injecting heading or list structure.
     """
-    return label + escape_markdown(text)
+    return label + plain_text(text)
+
+
+def system_time_change(previous, current):
+    """System-authored reschedule fact: struck-out old time, bold new time.
+
+    Both values are system-formatted timestamps, never user text. Returns None
+    when there is no previous version or the time did not actually change.
+    """
+    before, after = plain_text(previous), plain_text(current)
+    if not before or not after or before == after:
+        return None
+    return '- **时间** ~~%s~~ → **%s**' % (before, after)
 
 
 def content_problem(text, allowed_hosts=()):
@@ -96,24 +126,28 @@ def content_problem(text, allowed_hosts=()):
 
 
 def render_broadcast(label, title, details, url, *, link_label='打开活动',
-                     notice=(), footnote='指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。'):
+                     notice=(), system_facts=(),
+                     footnote='指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。'):
     """System-authored card for one of the 14 active broadcast kinds.
 
-    ``label`` is the fixed event label, ``title`` the user-authored activity
-    name (placed on a plain line so its own inline Markdown renders),
-    ``details`` the already-composed fact lines and ``notice`` the per-person
-    settlement detail that an operator explicitly opted into. Only headings,
-    bullets, the link and the footnote are system-formatted.
+    ``label`` is a fixed event label, ``title`` the user-authored activity
+    name, ``details`` the already-composed fact lines and ``notice`` the
+    per-person settlement detail that an operator explicitly opted into.
+    User-authored values are sanitised; only headings, bullets, the link, the
+    footnote and ``system_facts`` carry Markdown. ``system_facts`` must be
+    built entirely from system values (see system_time_change) -- the caller is
+    responsible for never passing raw user text there.
     """
-    facts = ['- ' + escape_markdown(line) for line in details if str(line).strip()]
-    lines = ['## ' + escape_markdown(label), plain_line('活动名称：', title), BLANK]
+    facts = [str(line) for line in system_facts if str(line).strip()]
+    facts += ['- ' + plain_text(line) for line in details if str(line).strip()]
+    lines = ['## ' + plain_text(label), plain_line('活动名称：', title), BLANK]
     lines += facts or ['- 暂无其他说明']
     if notice:
         lines += [BLANK, '## 逐人应付']
-        lines += ['- ' + escape_markdown(line) for line in notice if str(line).strip()]
-    lines += [BLANK, '[%s](%s)' % (escape_markdown(link_label), url)]
+        lines += ['- ' + plain_text(line) for line in notice if str(line).strip()]
+    lines += [BLANK, '[%s](%s)' % (plain_text(link_label), url)]
     if footnote:
-        lines += [BLANK, '> ' + escape_markdown(footnote)]
+        lines += [BLANK, '> ' + plain_text(footnote)]
     return '\n'.join(lines)
 
 
@@ -121,15 +155,15 @@ def render_help(commands, site, shortcuts, prefix='',
                 selection_hint='多场活动点对应链接，或发送 **/名额 2** 选择清单里的第 2 场。'):
     lines = ['## 群聚看板 · 常用指令']
     if prefix:
-        lines.append('> ' + escape_markdown(prefix))
+        lines.append('> ' + plain_text(prefix))
     lines += [BLANK, '指令简繁均可，在群里 @ 机器人后发送：', BLANK]
     for item in commands:
-        lines.append('- **%s**　%s' % (escape_markdown(item['name']),
-                                      escape_markdown(item['desc'])))
+        lines.append('- **%s**　%s' % (plain_text(item['name']),
+                                      plain_text(item['desc'])))
     lines += [BLANK, RULE, BLANK]
     for line in str(shortcuts).split('\n'):
         if line.strip():
-            lines.append('- ' + escape_markdown(line))
+            lines.append('- ' + plain_text(line))
     lines += [BLANK, selection_hint, BLANK, RULE, BLANK,
               '[隐私政策](%s/privacy) · [联络与问题反馈](%s/contact)' % (site, site),
               BLANK,
@@ -143,27 +177,26 @@ def render_command(command, head, body, url, link_label='打开活动'):
 
     Every line comes from the already-composed plain text, so even a command
     we forgot to special-case keeps the same facts. The heading is a system
-    string; the summary line stays plain so any title or note it carries keeps
-    its own inline Markdown.
+    string; user-authored values in the summary and bullets are sanitised.
     """
-    lines = ['## /' + escape_markdown(command)]
+    lines = ['## /' + plain_text(command)]
     if head:
         lines.append(plain_line('查询结果：', head))
     lines.append(BLANK)
-    lines += ['- ' + escape_markdown(line) for line in body] or ['- 暂无其他说明']
+    lines += ['- ' + plain_text(line) for line in body] or ['- 暂无其他说明']
     if url:
-        lines += [BLANK, '[%s](%s)' % (escape_markdown(link_label), url)]
+        lines += [BLANK, '[%s](%s)' % (plain_text(link_label), url)]
     lines += [BLANK,
               '> 指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。']
     return '\n'.join(lines)
 
 
 def render_event(title, when, facts, url, link_label='打开活动'):
-    """facts: sequence of (system label, value); values are escaped here."""
+    """facts: sequence of (system label, value); values are sanitised here."""
     lines = ['## 活动详情', plain_line('活动名称：', title),
              '**%s**' % when, BLANK]
     for label, value in facts:
-        lines.append('- **%s**　%s' % (label, escape_markdown(value)))
+        lines.append('- **%s**　%s' % (label, plain_text(value)))
     lines += [BLANK, '[%s](%s)' % (link_label, url), BLANK,
               '> 指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。']
     return '\n'.join(lines)
@@ -172,7 +205,7 @@ def render_event(title, when, facts, url, link_label='打开活动'):
 def render_tasks(title, when, tasks, url):
     lines = ['## 待办', plain_line('活动名称：', title),
              '**%s** · 活动状态摘要（不是你的个人待办）' % when, BLANK]
-    items = ['- ' + escape_markdown(task) for task in tasks]
+    items = ['- ' + plain_text(task) for task in tasks]
     lines += items or ['- 暂无公开状态提醒']
     lines += [BLANK, '认领、退出审批、款项申报及个人补退款，请登录网站按权限查看。',
               BLANK, '[查看待办](%s)' % url]
@@ -184,19 +217,19 @@ def render_selection(items, command, site, more=False):
 
     The visible number IS the command argument: ``/名额 2`` resolves against the
     same candidate list, so users never need to copy an 8-character short code.
-    Titles are NOT wrapped in bold here: a user-authored ``**`` inside an
-    outer ``**...**`` never renders on QQ.
+    Titles are sanitised and NOT wrapped in bold: only system fragments emit
+    Markdown in this card.
     """
     lines = ['## 选择活动',
              '点对应链接继续，或发送 **/%s 序号**（例如 **/%s 1**）。'
-             % (escape_markdown(command), escape_markdown(command)),
+             % (plain_text(command), plain_text(command)),
              BLANK]
     for index, (title, when, url) in enumerate(items, 1):
         lines.append('%d. %s · %s · [打开活动](%s)'
-                     % (index, escape_markdown(title), when, url))
+                     % (index, plain_text(title), when, url))
     lines += [BLANK,
               '> 序号以最近一次 **/%s** 清单为准；活动增减后会变，可重新 /%s 查看。'
-              '仍可输入 8 位活动短码。' % (escape_markdown(command), escape_markdown(command))]
+              '仍可输入 8 位活动短码。' % (plain_text(command), plain_text(command))]
     if more:
         lines += [BLANK, '[更多活动请到网站查看](%s/)' % site]
     return '\n'.join(lines)
