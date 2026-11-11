@@ -41,14 +41,14 @@ def snapshot(db, event_id):
     return {row['id']:public_person(row) for row in rows(db,event_id)}
 
 
-def record(db, event, user, action, before, reason='', details=None):
+def record(db, event, user, action, before, reason='', details=None, *, queue_bot=True):
     after = snapshot(db,event['id'])
     changed = sorted(key for key in before.keys() | after.keys() if before.get(key) != after.get(key))
     prior = {'participants':[before[key] for key in changed if key in before]}
     current = {'participants':[after[key] for key in changed if key in after]}
     if details:
         current.update(details)
-    audit.append(db,event,user,action,prior,current,reason)
+    audit.append(db,event,user,action,prior,current,reason,queue_bot=queue_bot)
 
 
 def allocate(existing, capacity, candidates=(), queue_mode='individual'):
@@ -141,7 +141,7 @@ def preview(db, event, user, data):
         allocation=[dict(name=p['name'],status=status) for p,status in zip(people,statuses)])
 
 
-def add_party(db, event, user, data, require_preview=True):
+def add_party(db, event, user, data, require_preview=True, *, queue_bot=True):
     ensure_mutable(db,event)
     people, mode, intent, statuses, token = prepare(db,event,user,data)
     if require_preview and data.get('preview_token') != token:
@@ -161,7 +161,7 @@ def add_party(db, event, user, data, require_preview=True):
         conditions.accept_new(db,event,person_id,user)
     grant(db,event['id'],user['id'])
     rebalance(db,event)
-    record(db,event,user,'signup',before)
+    record(db,event,user,'signup',before,queue_bot=queue_bot)
 
 
 def lookup(db, event, uid):

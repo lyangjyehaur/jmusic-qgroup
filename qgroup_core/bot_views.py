@@ -33,19 +33,21 @@ def counts(db, event_id):
                 withdrawals=sum(bool(r['withdrawal_requested']) for r in active))
 
 
-def roster_lines(db, event):
+def roster_lines(db, event, *, attendee_ids=None, prefix=''):
     """Only public display names, in the site's party/person queue order."""
     if (event is None or event['visibility'] != 'public'
             or event['lifecycle'] == 'draft' or event['status'] == 'deleted'):
         return []
     from . import bot_markdown
-    people = db.execute('''SELECT COALESCE(u.nickname,a.name) AS nickname,a.status
+    people = db.execute('''SELECT a.id,COALESCE(u.nickname,a.name) AS nickname,a.status
         FROM attendees a LEFT JOIN users u ON u.id=a.user_id
         LEFT JOIN roster_parties p ON p.id=a.party_id
         WHERE a.event_id=? AND a.status IN ('confirmed','waiting')
         ORDER BY p.seq,a.seq''', (event['id'],)).fetchall()
     groups = {'confirmed': [], 'waiting': []}
     for person in people:
+        if attendee_ids is not None and person['id'] not in attendee_ids:
+            continue
         raw = re.sub(r'<@!?[^>]*>', '', str(person['nickname'] or ''))
         name = bot_markdown.plain_text(raw)
         # A display name must not introduce a bare URL or a platform mention,
@@ -57,7 +59,7 @@ def roster_lines(db, event):
     lines = []
     for status, label in (('confirmed', '正式报名'), ('waiting', '候补')):
         names = groups[status]
-        line = '%s（%d 人）：%s' % (label, len(names), '、'.join(names[:10]) or '暂无')
+        line = '%s%s（%d 人）：%s' % (prefix, label, len(names), '、'.join(names[:10]) or '暂无')
         if len(names) > 10:
             line += '；其余 %d 人请到活动页查看' % (len(names) - 10)
         lines.append(line)

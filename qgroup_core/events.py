@@ -94,7 +94,7 @@ def create(db,user,data):
     snapshot=public_snapshot(event)
     audit.append(db,event,user,'event_created',{},snapshot,queue_bot=False)
     if join_owner and lifecycle!='draft':
-        roster.add_party(db,event,user,{'people':[{'is_self':True}]},require_preview=False)
+        roster.add_party(db,event,user,{'people':[{'is_self':True}]},require_preview=False,queue_bot=False)
     # Freeze the publication roster after automatic registration, in this same
     # transaction, while retaining event_created as the first audit record.
     audit.bot_hook(db,bot_outbox.on_append,event,user,'event_created',{},snapshot,'')
@@ -178,7 +178,7 @@ def patch(db,event,user,data):
         db.execute("UPDATE events SET lifecycle='scheduled',registration_open=1,status='open',draft_join_owner=1 WHERE id=?",(event['id'],))
         updated=db.execute('SELECT * FROM events WHERE id=?',(event['id'],)).fetchone()
         conditions.publish(db,updated,user)
-        roster.add_party(db,updated,user,{'people':[{'is_self':True}]},require_preview=False)
+        roster.add_party(db,updated,user,{'people':[{'is_self':True}]},require_preview=False,queue_bot=False)
     elif action in ('pause','resume'):
         if terminal or settled or event['lifecycle']=='draft':raise APIError('这个活动不能切换报名状态',409)
         if action=='resume' and (event['deadline']<=now() or event['starts_at']<=now()):raise APIError('报名截止已过，请先调整安排或使用邀请补报名',409)

@@ -6,7 +6,7 @@ Design contract (see README and docs/implementation-plan.md):
   *same* transaction as the business write. No HTTP call, no separate commit.
 * ``INSERT OR IGNORE`` plus a content-derived dedupe key means "the same fact
   is announced once"; it is de-duplication, not a rate limit.
-* Public registration names may accompany pre-event broadcasts. Personal
+* Public registration names may accompany activity and signup broadcasts. Personal
   notifications and individual amounts require their separate opt-in policies.
 * Sending is a separate long-running process. A send failure never rolls back
   a registration, a settlement or an audit entry.
@@ -32,6 +32,7 @@ DEFAULT_BROADCAST = frozenset({
     'settlement_updated', 'deadline_reminder', 'estimated_over_reminder',
     'registration_paused', 'registration_resumed', 'finance_closed', 'finance_reopened',
     'ownership_changed',
+    'registration_added',
 })
 
 ROSTER_KINDS = frozenset({
@@ -384,6 +385,14 @@ def _compose_default(db, event, kind, *, source='', after=None):
         lines = [head, '发起者已确认成团，当前正式报名 %d 人' % confirmed,
                  '时间：%s' % when, '地点：%s' % event['location'], '', url]
         buttons = [('活动详情', '', url), ('看名额', '/名额', '')]
+    elif kind == 'registration_added':
+        added = after.get('attendee_ids') if isinstance(after, dict) else None
+        new_people = (bot_views.roster_lines(db, event, attendee_ids=set(added), prefix='本次')
+                      if added else ['本次新增报名请到活动页查看。'])
+        lines = [head, '时间：%s' % when, '地点：%s' % event['location']]
+        lines += new_people
+        lines += ['当前正式报名 %d 人，候补 %d 人' % (confirmed, waiting), '', url]
+        buttons = [('活动详情', '', url), ('看名额', '/名额', '')]
     elif kind == 'conditions_changed':
         version = event['conditions_version']
         lines = [head + '（第 %d 版）' % version,
@@ -608,6 +617,7 @@ LABELS = {
     'finance_closed': '账务已结清',
     'finance_reopened': '账务重新核对',
     'ownership_changed': '管理交接',
+    'registration_added': '有人报名',
 }
 
 
@@ -715,6 +725,14 @@ def on_append(db, event, user, action, before, after, reason=''):
                    "WHERE event_id=? AND channel='group' AND status IN ('pending','sending')", (event['id'],))
     if action.startswith('event_'):
         _schedule(db, current)
+    if action in ('signup', 'attendee_confirm', 'invitation_accepted'):
+        previous = {p['id']: p['status'] for p in before.get('participants', [])}
+        added = [p['id'] for p in after.get('participants', [])
+                 if p['status'] in ('confirmed', 'waiting')
+                 and previous.get(p['id']) not in ('confirmed', 'waiting')]
+        if added:
+            _broadcast(db, current['id'], 'registration_added', after={'attendee_ids': added})
+        return
     if action in ('event_updated', 'event_admin_updated'):
         before_event = before.get('event', before) if isinstance(before, dict) else {}
         if current['conditions_version'] != before_event.get('conditions_version', current['conditions_version']):

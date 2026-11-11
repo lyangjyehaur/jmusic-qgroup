@@ -141,7 +141,7 @@ def content_problem(text, allowed_hosts=()):
 def render_broadcast(label, title, details, url, *, link_label='打开活动',
                      notice=(), system_facts=(),
                      footnote='指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。'):
-    """System-authored card for one of the 14 active broadcast kinds.
+    """System-authored card for an active broadcast kind.
 
     ``label`` is a fixed event label, ``title`` the user-authored activity
     name, ``details`` the already-composed fact lines and ``notice`` the
