@@ -1,5 +1,7 @@
 # 報名成功群通知發布
 
+後續於 2026-11-11 16:15（Asia/Taipei）部署[退出與候補遞補通知](2026-11-11-bot-withdrawal-notifications.md)，正式來源改為 `9ca7bb57ae33b5adc4d2f1a66f06d733e0edf7a4`。以下保留本次切換當時紀錄。
+
 2026-11-11 15:58（Asia/Taipei）完成 server2 `/opt/qgroup` 成套切換及新通知開關啟用。發布範圍：`both`，web 在報名審計同一事務寫 outbox，bot 依新種類投遞，後台顯示獨立開關。
 
 ## 行為及設定
