@@ -1,4 +1,6 @@
-# Bot 報名名單（本機完成，未部署）
+# Bot 報名名單
+
+已於 2026-11-11 15:38（Asia/Taipei）成套部署；正式來源及驗收結果見[發布紀錄](releases/2026-11-11-bot-roster-countdown.md)。以下保留實作與本機驗證說明。
 
 發布範圍：`both`。web 產生 outbox 快照及後台模板預覽，bot 渲染查詢與投遞；共用核心新增可選 `_roster_lines`，無 schema 或設定變更。
 
