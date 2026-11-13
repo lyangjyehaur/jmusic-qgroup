@@ -93,6 +93,29 @@ class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
                 with storage.connect(self.path) as db:
                     self.assertEqual(len(time_polls.options(db,time_polls.get(db,p['id']))),60)
 
+    def test_delayed_rolling_notification_excludes_expired_candidates_without_rewriting_payload(self):
+        from datetime import datetime,timedelta
+        for mode in ('date','exact'):
+            with self.subTest(mode=mode):
+                data=date_poll_data() if mode=='date' else poll_data()
+                last=data['options'][-1]
+                data['deadline']=last['date']+'T23:59:00+08:00' if mode=='date' else (datetime.fromisoformat(last['starts_at'])-timedelta(minutes=1)).isoformat()
+                p=self.create_poll(**data)
+                with storage.connect(self.path) as db:
+                    poll=time_polls.get(db,p['id']);first=time_polls.options(db,poll)[0]
+                    expiry=time_polls.option_expires(first,poll)
+                    raw=db.execute('SELECT payload_json FROM bot_outbox WHERE poll_id=?',(p['id'],)).fetchone()[0]
+                with mock.patch('qgroup_core.time_polls.now',return_value=expiry),mock.patch('qgroup_core.bot_outbox.now',return_value=expiry):
+                    with storage.connect(self.path) as db:
+                        message=bot_outbox.build_poll_message(db,time_polls.get(db,p['id']))[0]
+                        self.assertIn('共 2 个候选',message)
+                        self.assertNotIn(p['options'][0]['date'],message)
+                        self.assertIn('过期候选停止收票',message)
+                    worker=self.worker();self.assertEqual(worker.poll_once()['sent'],1)
+                    self.assertIn('共 2 个候选',worker.api.post.call_args.args[1]['content'])
+                with storage.connect(self.path) as db:
+                    self.assertEqual(db.execute('SELECT payload_json FROM bot_outbox WHERE poll_id=?',(p['id'],)).fetchone()[0],raw)
+
     def test_disabled_owner_or_global_policy_or_kind_does_not_enqueue(self):
         self.create_poll(bot_enabled=False)
         self.assertEqual(self.rows(),[])

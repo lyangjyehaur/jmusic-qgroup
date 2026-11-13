@@ -111,6 +111,22 @@ def date_start(value, zone):
         raise APIError('请选择有效的候选日期')
 
 
+def option_expires(option, poll):
+    if 'time_mode' in poll.keys() and poll['time_mode']=='date':
+        day=date.fromisoformat(option_date(option,poll['timezone']))+timedelta(days=1)
+        return date_start(day.isoformat(),poll['timezone'])
+    return option['starts_at']
+
+
+def option_available(option, poll, moment=None):
+    return option_expires(option,poll) > (moment or now())
+
+
+def validate_deadline(deadline, candidates, poll, moment):
+    if not moment < deadline < max(option_expires(o,poll) for o in candidates):
+        raise APIError('投票截止需晚于现在，并早于最后一个候选的失效时间')
+
+
 def get(db, poll_id):
     poll = db.execute('SELECT * FROM time_polls WHERE id=?', (poll_id,)).fetchone()
     if not poll or poll['status']=='deleted':
@@ -142,12 +158,17 @@ def serialize(db, poll, viewer):
     counts = totals(db, poll)
     choices = {r['option_id']: r['choice'] for r in db.execute(
         'SELECT option_id,choice FROM time_poll_votes WHERE poll_id=? AND user_id=?', (poll['id'], viewer))}
-    status = 'closed' if poll['status'] == 'open' and poll['deadline'] <= now() else poll['status']
+    moment=now()
+    candidates=options(db,poll)
+    available={o['id'] for o in candidates if option_available(o,poll,moment)}
+    status = 'closed' if poll['status'] == 'open' and (poll['deadline'] <= moment or not available) else poll['status']
     date_only=poll['time_mode']=='date'
     opts = [dict(id=o['id'], date=option_date(o,poll['timezone']), starts_at=None if date_only else o['starts_at'],
                  ends_at=None if date_only else (datetime.fromisoformat(o['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat(),
-                 **counts[o['id']]) for o in options(db, poll)]
-    maximum = max(o['yes'] for o in opts)
+                 expired=o['id'] not in available, can_vote=bool(viewer and status=='open' and o['id'] in available),
+                 **counts[o['id']]) for o in candidates]
+    ranked=opts if poll['status']=='finalized' else [o for o in opts if o['id'] in available]
+    maximum = max((o['yes'] for o in ranked),default=0)
     result = {k: poll[k] for k in ('id','title','category','location','description','timezone','duration_hours',
         'capacity','minimum_participants','fee_policy','deadline','revision','vote_revision','created_at',
         'decided_at','selected_option_id','event_id','reason','time_mode')}
@@ -155,7 +176,7 @@ def serialize(db, poll, viewer):
     result.update(time_poll=True, status=status, is_owner=owner, can_remove=owner, my_choices=choices,
                   has_voted=bool(choices), can_vote=bool(viewer and status == 'open'),
                   can_manage=owner and status in ('open','closed'), options=opts,
-                  leading_option_ids=[o['id'] for o in opts if o['yes'] == maximum and maximum > 0],
+                  leading_option_ids=[o['id'] for o in ranked if o['yes'] == maximum and maximum > 0],
                   respondent_count=poll['respondent_count'] if poll['respondent_count'] is not None else db.execute(
                       'SELECT count(*) FROM time_poll_ballots WHERE poll_id=?', (poll['id'],)).fetchone()[0],
                   owner_name=db.execute('SELECT nickname FROM users WHERE id=?', (poll['owner_id'],)).fetchone()[0])
@@ -198,9 +219,12 @@ def create(db, user, data):
     if len(set(starts)) != len(starts):
         raise APIError('候选时段不能重复')
     deadline = date_value(data,'deadline')
-    if not now() < deadline < min(starts):
-        raise APIError('投票截止需晚于现在，并早于所有候选时段')
-    template = dict(data, starts_at=min(starts), deadline=deadline, visibility='public', bot_enabled=False,
+    moment=now(); definition=dict(time_mode=mode,timezone=zone)
+    candidates=[dict(starts_at=start) for start in starts]
+    if any(not option_available(o,definition,moment) for o in candidates):
+        raise APIError('候选时段已过期，请选择尚未失效的日期或时间')
+    validate_deadline(deadline,candidates,definition,moment)
+    template = dict(data, starts_at=max(option_expires(o,definition) for o in candidates), deadline=deadline, visibility='public', bot_enabled=False,
                     duration_hours=3 if mode=='date' else data.get('duration_hours',3))
     title,category,location,_,_,capacity,description,duration = events.event_values(template)
     _,_,zone,minimum,fee = events.settings(template)
@@ -222,21 +246,29 @@ def create(db, user, data):
 
 def vote(db, poll, user, data):
     audit.require_revision(poll,data)
-    if poll['status'] != 'open' or poll['deadline'] <= now():
+    moment=now()
+    if poll['status'] != 'open' or poll['deadline'] <= moment:
         raise APIError('投票已截止，请查看最终安排',409)
-    choices = data.get('choices')
-    option_ids = {o['id'] for o in options(db,poll)}
-    if (not isinstance(choices,list) or len(choices)!=len(option_ids)
-            or any(not isinstance(c,dict) or not isinstance(c.get('option_id'),str)
-                   or c.get('choice') not in ('yes','maybe','no') for c in choices)
-            or {c['option_id'] for c in choices} != option_ids):
-        raise APIError('请为每个候选时段选择可以、勉强可以或不行')
+    candidates=options(db,poll)
+    option_ids={o['id'] for o in candidates}
+    active_ids={o['id'] for o in candidates if option_available(o,poll,moment)}
+    if not active_ids:
+        raise APIError('候选时段均已过期，请查看最终安排',409)
+    choices=data.get('choices')
+    if (not isinstance(choices,list) or any(not isinstance(c,dict) or not isinstance(c.get('option_id'),str)
+            or c.get('choice') not in ('yes','maybe','no') for c in choices)):
+        raise APIError('请为每个未过期的候选选择可以、勉强可以或不行')
+    submitted={c['option_id'] for c in choices}
+    if len(submitted)!=len(choices) or not active_ids<=submitted<=option_ids:
+        raise APIError('候选已变化，请刷新并为每个未过期的候选填写选择',409)
     db.execute('''INSERT INTO time_poll_ballots VALUES(?,?,?) ON CONFLICT(poll_id,user_id)
         DO UPDATE SET updated_at=excluded.updated_at''', (poll['id'],user['id'],now()))
-    db.execute('DELETE FROM time_poll_votes WHERE poll_id=? AND user_id=?', (poll['id'],user['id']))
+    # Legacy clients may still submit every option. Expired choices stay frozen.
     for choice in choices:
-        db.execute('INSERT INTO time_poll_votes VALUES(?,?,?,?)',
-                   (poll['id'],user['id'],choice['option_id'],choice['choice']))
+        if choice['option_id'] not in active_ids:continue
+        db.execute('''INSERT INTO time_poll_votes VALUES(?,?,?,?)
+            ON CONFLICT(poll_id,user_id,option_id) DO UPDATE SET choice=excluded.choice''',
+            (poll['id'],user['id'],choice['option_id'],choice['choice']))
     db.execute('UPDATE time_polls SET vote_revision=vote_revision+1 WHERE id=?',(poll['id'],))
 
 
@@ -268,8 +300,7 @@ def manage(db, poll, user, data):
         db.execute("UPDATE time_polls SET status='closed' WHERE id=?",(poll['id'],))
     elif action == 'extend':
         deadline = date_value(data,'deadline')
-        if not now() < deadline < min(o['starts_at'] for o in options(db,poll)):
-            raise APIError('投票截止需晚于现在，并早于所有候选时段')
+        validate_deadline(deadline,options(db,poll),poll,now())
         db.execute("UPDATE time_polls SET deadline=?,status='open' WHERE id=?",(deadline,poll['id']))
         details['deadline'] = deadline
     elif action == 'cancel':
@@ -284,9 +315,12 @@ def manage(db, poll, user, data):
         selected = next((o for o in options(db,poll) if o['id']==data.get('option_id')),None)
         if selected is None:
             raise APIError('请选择本次投票的候选时段')
+        if not option_available(selected,poll):
+            raise APIError('该候选时段已过期，请选择尚未失效的日期或时间',409)
         counts = totals(db,poll)
+        eligible=[counts[o['id']]['yes'] for o in options(db,poll) if option_available(o,poll)]
         support = counts[selected['id']]['yes']
-        if (support == 0 or support < poll['minimum_participants'] or support < max(c['yes'] for c in counts.values())) and not reason:
+        if (support == 0 or support < poll['minimum_participants'] or support < max(eligible,default=0)) and not reason:
             raise APIError('未选最高票或未达最低人数，请填写仍决定举行的原因')
         start=selected['starts_at'];duration=poll['duration_hours']
         if poll['time_mode']=='date':

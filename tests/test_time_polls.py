@@ -132,7 +132,7 @@ class TimePollTests(unittest.TestCase):
     def test_date_validation_uses_local_midnight_and_rejects_mixed_payloads(self):
         data=date_poll_data();first=time_polls.date_start(data['options'][0]['date'],data['timezone'])
         for changes in (dict(time_mode='other'),dict(options=[data['options'][0]]*2),dict(options=[dict(date='2030-02-30'),data['options'][1]]),
-                        dict(options=poll_data()['options']),dict(deadline=first),dict(timezone=None)):
+                        dict(options=poll_data()['options']),dict(deadline=time_polls.date_start((date.fromisoformat(data['options'][-1]['date'])+timedelta(days=1)).isoformat(),data['timezone'])),dict(timezone=None)):
             with self.subTest(changes=changes),storage.connect(self.path) as db:
                 with self.assertRaises(APIError):time_polls.create(db,self.owner,dict(data,**changes))
         p=self.date_poll(timezone='America/New_York',**{k:v for k,v in date_poll_data('America/New_York').items() if k not in ('timezone',)})
@@ -187,6 +187,73 @@ class TimePollTests(unittest.TestCase):
         self.assertEqual(self.view()['respondent_count'],2)
         self.assertEqual(self.view()['revision'],1)
 
+    def test_rolling_exact_choices_freeze_expired_votes_and_rank_only_live_options(self):
+        data=poll_data();data['minimum_participants']=0;data['deadline']=(datetime.fromisoformat(data['options'][-1]['starts_at'])-timedelta(minutes=1)).isoformat()
+        with storage.connect(self.path) as db:self.poll_id=time_polls.create(db,self.owner,data)['id']
+        self.vote(self.voter,['yes','maybe','no']);self.vote(self.other,['yes','no','maybe'])
+        first=self.view()['options'][0]
+        with mock.patch('qgroup_core.time_polls.now',return_value=first['starts_at']):
+            p=self.view(self.voter['id']);self.assertEqual(p['status'],'open');self.assertTrue(p['can_vote'])
+            self.assertTrue(p['options'][0]['expired']);self.assertFalse(p['options'][0]['can_vote'])
+            self.assertNotIn(first['id'],p['leading_option_ids'])
+            # Legacy full submissions cannot change the frozen choice.
+            self.vote(self.voter,['no','yes','yes'])
+            p=self.view(self.voter['id']);self.assertEqual(p['my_choices'][first['id']],'yes')
+            self.assertEqual(p['options'][0]['yes'],2)
+            # New clients send only still-available options; old choices stay intact.
+            with storage.connect(self.path) as db:
+                poll=time_polls.get(db,self.poll_id)
+                time_polls.vote(db,poll,self.owner,dict(base_revision=poll['revision'],choices=[
+                    dict(option_id=o['id'],choice='no') for o in p['options'][1:]]))
+            self.assertNotIn(first['id'],self.view('owner')['my_choices'])
+            decision=self.decision();decision['reason']=''
+            with self.assertRaises(APIError):self.manage(decision)
+            # The past option had the most yes votes; it cannot force an override reason.
+            decision.update(option_id=p['options'][1]['id'],registration_deadline=p['options'][1]['starts_at'])
+            self.manage(decision)
+            self.assertEqual(self.view()['selected_option_id'],p['options'][1]['id'])
+
+    def test_date_choices_remain_open_through_local_day_and_can_extend_past_earlier_dates(self):
+        data=date_poll_data();last=data['options'][-1]['date']
+        data['deadline']=last+'T23:59:00+08:00'
+        with storage.connect(self.path) as db:self.poll_id=time_polls.create(db,self.owner,data)['id']
+        self.vote(self.voter,['yes']*3)
+        p=self.view();first=p['options'][0]
+        expiry=time_polls.date_start((date.fromisoformat(first['date'])+timedelta(days=1)).isoformat(),p['timezone'])
+        last_minute=(datetime.fromisoformat(expiry)-timedelta(seconds=1)).isoformat()
+        with mock.patch('qgroup_core.time_polls.now',return_value=last_minute):
+            self.assertFalse(self.view()['options'][0]['expired'])
+        with mock.patch('qgroup_core.time_polls.now',return_value=expiry):
+            self.assertTrue(self.view()['options'][0]['expired']);self.assertTrue(self.view('voter')['can_vote'])
+            self.manage(dict(action='close',base_revision=1))
+            self.manage(dict(action='extend',base_revision=2,deadline=data['deadline']))
+            self.vote(self.voter,['no','maybe','yes'])
+            self.assertEqual(self.view('voter')['my_choices'][first['id']],'yes')
+            with self.assertRaises(APIError):self.manage(self.date_decision())
+        definition=dict(time_mode='date',timezone='America/New_York')
+        start=time_polls.date_start('2030-03-10',definition['timezone'])
+        end=time_polls.option_expires(dict(starts_at=start),definition)
+        self.assertEqual(datetime.fromisoformat(end)-datetime.fromisoformat(start),timedelta(hours=23))
+        with mock.patch('qgroup_core.time_polls.now',return_value=data['deadline']):
+            self.assertEqual(self.view()['status'],'closed')
+            with self.assertRaises(APIError):self.vote(self.voter,['yes']*3)
+
+    def test_rolling_vote_validation_is_atomic_and_cannot_reopen_after_last_expiry(self):
+        p=self.view()
+        self.manage(dict(action='extend',base_revision=1,deadline=(datetime.fromisoformat(p['options'][-1]['starts_at'])-timedelta(seconds=1)).isoformat()))
+        with storage.connect(self.path) as db:
+            poll=time_polls.get(db,self.poll_id)
+            valid=[dict(option_id=o['id'],choice='yes') for o in p['options']]
+            for choices in (valid[:-1],valid+[valid[0]],valid[:-1]+[dict(option_id='unknown',choice='no')]):
+                with self.assertRaises(APIError):time_polls.vote(db,poll,self.voter,dict(base_revision=poll['revision'],choices=choices))
+            self.assertEqual(db.execute('SELECT count(*) FROM time_poll_ballots').fetchone()[0],0)
+        with mock.patch('qgroup_core.time_polls.now',return_value=p['options'][-1]['starts_at']):
+            with self.assertRaises(APIError):self.manage(dict(action='extend',base_revision=2,deadline=poll_data()['deadline']))
+            self.assertEqual(self.view()['status'],'closed')
+        data=poll_data();data['options'][0]['starts_at']=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat()
+        with storage.connect(self.path) as db:
+            with self.assertRaises(APIError):time_polls.create(db,self.owner,data)
+
     def test_closed_vote_can_be_reopened_without_losing_choices(self):
         self.vote(self.voter,['yes']*3)
         self.manage(dict(action='close',base_revision=1))
@@ -219,7 +286,7 @@ class TimePollTests(unittest.TestCase):
         for change in (dict(options=[]),dict(options=poll_data()['options'][:1]),
                        dict(options=[poll_data()['options'][0]]*2),dict(duration_hours=True),
                        dict(timezone='invalid'),dict(visibility='invitation'),
-                       dict(deadline=poll_data()['options'][0]['starts_at']),dict(capacity=-1)):
+                       dict(deadline=poll_data()['options'][-1]['starts_at']),dict(capacity=-1)):
             with self.subTest(change=change),storage.connect(self.path) as db:
                 with self.assertRaises(APIError):time_polls.create(db,self.owner,{**poll_data(),**change})
         for values in (['yes'],['yes','bad','no']):

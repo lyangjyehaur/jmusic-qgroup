@@ -68,6 +68,25 @@ for(const bundle of ['public','public/locales/hans','public/locales/hant']) {
   await ui.open('poll',false);
   assert.ok(!node('#time-poll-content').innerHTML.includes('data-poll-action="retry"'),bundle);
   assert.ok(!node('#time-poll-content').innerHTML.includes('data-poll-action="remove"'),bundle);
+  response={...base,id:'rolling',deadline:'2099-12-01T00:00:00Z',time_mode:'date',timezone:'UTC',
+    can_vote:true,my_choices:{},leading_option_ids:[],options:[
+      {id:'expired',date:'2099-11-14',expired:true,yes:3,maybe:0,no:0},
+      {id:'yes',date:'2099-11-16',expired:false,yes:0,maybe:0,no:0},
+      {id:'blank',date:'2099-11-17',expired:false,yes:0,maybe:0,no:0}]};
+  const groups={choice_expired:{value:''},choice_yes:{value:'yes'},choice_blank:{value:''}};
+  node('#time-poll-vote-form').elements=groups;
+  await ui.open('rolling',false);
+  html=node('#time-poll-content').innerHTML;
+  assert.equal((html.match(/type="radio"/g)||[]).length,6,'Three direct choices for each live candidate');
+  assert.ok(!html.includes('name="choice_expired"'),'Expired dates never request a new answer');
+  assert.ok(!html.includes('<select name="choice_'),'Voting no longer opens a dropdown for each date');
+  const savedCalls=calls.length;
+  click({target:{closest:selector=>selector==='[data-poll-action]'?{dataset:{pollAction:'fill',choice:'no'}}:null}});
+  assert.equal(groups.choice_yes.value,'yes','Bulk fill preserves individual selections');
+  assert.equal(groups.choice_blank.value,'no','Bulk fill completes only unanswered live dates');
+  assert.equal(groups.choice_expired.value,'','Bulk fill ignores expired dates');
+  assert.match(node('#poll-vote-progress').textContent,/2 \/ 2/);
+  assert.equal(calls.length,savedCalls,'Bulk fill never silently submits');
   const createHTML=fs.readFileSync(bundle+'/index.html','utf8').split('id="time-poll-form"')[1].split('</form>')[0];
   assert.match(createHTML,/<input name="bot_enabled" type="checkbox" checked>/,bundle);
   assert.ok(!createHTML.includes('name="option_count"'),bundle);

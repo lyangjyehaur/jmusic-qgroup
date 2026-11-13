@@ -203,7 +203,7 @@ async function refresh({loud=false, detail=true}={}) {
   refreshPromise=(async()=>{
     try {
       const result=await api('/api/events'); state.events=result.events; state.polls=result.time_polls||[]; state.loaded=true;
-      $('#load-error').hidden=true; renderBoard();
+      $('#load-error').hidden=true; renderBoard();timePollUI.refreshAvailability();
       if (detail && state.current && $('#detail-dialog').open) {
         const e=state.events.find(x=>x.id===state.current);
         // Do not discard a note while someone is typing it.

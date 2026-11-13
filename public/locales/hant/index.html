@@ -7,7 +7,7 @@
   <meta name="description" content="群聚看板：群組活動發佈、報名接龍、候補管理與費用分攤。">
   <title>群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261113-calendar1">
+  <link rel="stylesheet" href="/style.css?v=20261113-voting1">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
   <script src="/i18n.js?v=20261109-privacy1" defer></script>
@@ -16,12 +16,12 @@
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
   <script src="/activity.js?v=20261110-settlement1" defer></script>
-  <script src="/time-polls.js?v=20261113-flexible1" defer></script>
+  <script src="/time-polls.js?v=20261113-rolling1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
   <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
   <script src="/identity.js?v=20261110-qqbutton1" defer></script>
-  <script src="/app.js?v=20261110-settlement1" defer></script>
+  <script src="/app.js?v=20261113-rolling1" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -94,7 +94,7 @@
         <button type="button" class="button secondary full" data-poll-form-action="add">＋ 添加選項</button>
         <p id="poll-slot-count" class="field-help" role="status" aria-live="polite"></p>
         <p class="field-help">發佈後候選安排鎖定，需更改請取消後重新發起。</p>
-        <div class="form-row"><label class="field">投票截止日期<input name="deadline_date" type="date" required><span class="field-help">日期投票於當天 23:59 截止，需早於所有候選日期。</span></label><label id="poll-deadline-time" class="field" hidden>截止時間<input name="deadline_time" type="time" value="23:59" required disabled></label></div>
+        <div class="form-row"><label class="field">投票截止日期<input name="deadline_date" type="date" required><span id="poll-deadline-hint" class="field-help" role="status" aria-live="polite">請先選擇候選日期，投票截止需晚於現在，並早於最後一個候選的失效時間。</span></label><label id="poll-deadline-time" class="field" hidden>截止時間<input name="deadline_time" type="time" value="23:59" required disabled></label></div>
         <div class="form-row"><label class="field">正式活動人數上限<input name="capacity" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不限</span></label><label class="field">最低成團人數<input name="minimum_participants" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不設置</span></label></div>
         <label class="check-option"><input name="bot_enabled" type="checkbox" checked>發起投票時主動通知目標 QQ 群，定案後繼續同步正式活動</label>
         <p class="field-help">沿用管理員設置的通知目標群；請核對內容適合群成員查看。模擬模式只記錄，不發送，實際結果見投遞記錄。逐次投票不發群消息。也可複製鏈接分享；僅發起者可查看個人選擇，其他人只看到各時段合計。</p>

@@ -280,6 +280,9 @@ def build_poll_message(db,poll,*,config=None,candidates=None):
         return None
     candidates=list(candidates) if candidates is not None else db.execute(
         'SELECT starts_at FROM time_poll_options WHERE poll_id=? ORDER BY position',(poll['id'],)).fetchall()
+    from .time_polls import option_available
+    candidates=[o for o in candidates if option_available(o,poll)]
+    if not candidates:return None
     zone=poll['timezone']
     date_only='time_mode' in poll.keys() and poll['time_mode']=='date'
     title=str(poll['title'])[:40]
@@ -290,6 +293,7 @@ def build_poll_message(db,poll,*,config=None,candidates=None):
     if days:
         lines.append('候选日期：'+'、'.join(days) if len(days)<=5 else '候选日期范围：'+days[0]+' 至 '+days[-1]+'（日期可不连续）')
     if not date_only:lines.append('每场预计 %d 小时' % poll['duration_hours'])
+    lines.append('过期候选停止收票，其余候选可继续投票。')
     lines.append('完整候选日期与安排请打开投票页查看。')
     if date_only:lines.append('先选择可以参加的日期，开始时间与时长由发起者定案时补充，请再核对后报名。')
     lines+=['时区：'+zone,'预计地点：'+str(poll['location']),
