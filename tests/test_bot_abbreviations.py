@@ -1,6 +1,7 @@
 """External lookup contract and QQ routing, without calling the real service."""
 import asyncio
 import io
+import http.server
 import json
 import os
 import tempfile
@@ -67,11 +68,96 @@ class LookupTests(unittest.TestCase):
             '<qqbot-at-everyone />', '**正常**\n释义', '很'*100,
             *['候选%d' % i for i in range(100)]]}])
         text = self.lookup.answer('yyds')
-        self.assertIn('正常 释义', text)
-        for forbidden in ('untrusted', '@', '＠', '<', '**'):
+        self.assertIn('**正常** 释义', text)
+        for forbidden in ('untrusted', '@', '＠', '<qqbot-at'):
             self.assertNotIn(forbidden, text)
         self.assertIn('很'*100, text)
         self.assertIn('候选99', text)
+
+    def test_plain_definitions_keep_programming_and_math_symbols(self):
+        values = ['C#', 'F#', 'a_b', 'a < b', 'a > b', '2 * 3', '[原文]', '**文字**', 'a  +  b']
+        self.response([{'name': 'aa', 'trans': values}])
+        self.assertIn('：'+'、'.join(values)+'\n', self.lookup.answer('aa'))
+
+    def test_oversized_response_is_complete_but_not_cached(self):
+        self.lookup = AbbreviationLookup(cache_bytes=100)
+        values = ['完整释义'*100, '完整释义'*100]
+        self.response([{'name': 'aa', 'trans': values}])
+        self.assertIn('、'.join(values), self.lookup.answer('aa'))
+        self.assertEqual(self.lookup.cache_bytes, 0)
+        self.assertFalse(self.lookup.cache)
+
+    def test_cache_budget_evicts_old_entries_without_changing_answers(self):
+        self.lookup = AbbreviationLookup(cache_bytes=100)
+        with mock.patch('qgroup_bot.abbreviations.time.monotonic') as clock:
+            for index, term in enumerate(('aa', 'bb', 'cc')):
+                clock.return_value = 100+index*2
+                self.response([{'name': term, 'trans': ['正常释义']}])
+                self.assertIn('正常释义', self.lookup.answer(term))
+        self.assertLessEqual(self.lookup.cache_bytes, 100)
+        self.assertNotIn('aa', self.lookup.cache)
+        self.assertIn('cc', self.lookup.cache)
+
+    def test_wall_deadline_does_not_spawn_additional_abandoned_fetches(self):
+        release = threading.Event()
+        self.addCleanup(release.set)
+
+        def stuck(*args, **kwargs):
+            release.wait(2)
+            return io.BytesIO(b'[]')
+
+        self.open.side_effect = stuck
+        with mock.patch('qgroup_bot.abbreviations.TIMEOUT', .05):
+            import time
+            start = time.monotonic()
+            self.assertEqual(self.lookup.answer('aa'), UNAVAILABLE)
+            self.assertLess(time.monotonic()-start, .5)
+            self.lookup.next_request = 0
+            self.assertEqual(self.lookup.answer('bb'), UNAVAILABLE)
+            self.open.assert_called_once()
+            self.assertFalse(self.lookup.cache)
+        release.set()
+        self.assertTrue(self.lookup.network_lock.acquire(timeout=1))
+        self.lookup.network_lock.release()
+
+    def test_continuously_streaming_response_cannot_extend_total_deadline(self):
+        import time
+        raw = json.dumps([{'name': 'aa', 'trans': ['正常释义']}]).encode()
+
+        class Handler(http.server.BaseHTTPRequestHandler):
+            def log_message(self, *args):
+                pass
+            def do_POST(self):
+                self.rfile.read(int(self.headers['Content-Length']))
+                self.send_response(200)
+                self.send_header('Content-Length', str(len(raw)))
+                self.end_headers()
+                try:
+                    for offset in range(0, len(raw), 3):
+                        self.wfile.write(raw[offset:offset+3])
+                        self.wfile.flush()
+                        time.sleep(.02)
+                except (BrokenPipeError, ConnectionResetError):
+                    pass
+
+        server = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
+        thread = threading.Thread(target=server.serve_forever, kwargs={'poll_interval':.01}, daemon=True)
+        thread.start()
+        # setUp patches the shared module attribute; recover the real opener.
+        from urllib.request import build_opener
+        try:
+            with mock.patch('qgroup_bot.abbreviations.urllib.request.urlopen', build_opener().open), \
+                    mock.patch('qgroup_bot.abbreviations.API_URL', 'http://127.0.0.1:%d/' % server.server_port), \
+                    mock.patch('qgroup_bot.abbreviations.TIMEOUT', .08):
+                start = time.monotonic()
+                self.assertEqual(self.lookup.answer('aa'), UNAVAILABLE)
+                self.assertLess(time.monotonic()-start, .4)
+            self.assertTrue(self.lookup.network_lock.acquire(timeout=1))
+            self.lookup.network_lock.release()
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join(timeout=1)
 
     def test_all_candidates_keep_their_full_length_order_and_duplicates(self):
         for field in ('trans', 'inputting'):
@@ -190,6 +276,69 @@ class RoutingTests(unittest.TestCase):
         self.assertIn('reply_prepared', logged)
         self.assertIn('[已遮蔽]', logged)
         self.assertNotIn('傻逼', logged)
+
+    def test_qq_length_rejection_and_continuation_deliver_the_entire_result(self):
+        values = ['释义%d%s' % (i, '长'*80) for i in range(50)]
+        accepted, notices = [], []
+
+        def qq(group, text, **kwargs):
+            if len(text.encode('utf-8')) > 2200:
+                return False, 40054007, {}
+            (notices if '/缩写 继续 ' in text else accepted).append(text)
+            return True, 0, {}
+
+        self.bot.api.reply_group.side_effect = qq
+        data = [{'name': 'aa', 'trans': values}]
+        with mock.patch('qgroup_bot.replies.abbreviation_lookup', AbbreviationLookup()), \
+                mock.patch('qgroup_bot.abbreviations.urllib.request.urlopen',
+                           return_value=io.BytesIO(json.dumps(data).encode())) as upstream:
+            asyncio.run(self.bot.reply(None, 'allowed', '缩写', 'aa', msg_id='first'))
+            for index in range(10):
+                if not list(self.bot.abbreviation_delivery.root.glob('*.txt')):
+                    break
+                import re
+                argument = re.search(r'/缩写 (继续 [0-9a-f]+)', notices[-1]).group(1)
+                asyncio.run(self.bot.reply(None, 'allowed', '缩写', argument, msg_id='next%d' % index))
+            upstream.assert_called_once()
+        self.assertIn('：'+'、'.join(values)+'\n', ''.join(accepted))
+
+    def test_websocket_keeps_processing_ack_and_other_commands_during_lookup(self):
+        async def run():
+            started, release, other = asyncio.Event(), asyncio.Event(), asyncio.Event()
+            frames = [
+                {'op':0, 't':'GROUP_AT_MESSAGE_CREATE', 'd':{'content':'/缩写 aa'}},
+                {'op':11},
+                {'op':0, 't':'GROUP_AT_MESSAGE_CREATE', 'd':{'content':'/帮助'}}]
+
+            async def handle(ws, message):
+                if '缩写' in message['d']['content']:
+                    started.set()
+                    await release.wait()
+                else:
+                    self.assertTrue(started.is_set())
+                    self.assertIsNotNone(self.bot.last_ack)
+                    other.set()
+                    release.set()
+
+            class WS:
+                async def __aenter__(self):
+                    return self
+                async def __aexit__(self, *args):
+                    pass
+                async def __aiter__(self):
+                    for frame in frames:
+                        yield json.dumps(frame)
+                        await asyncio.sleep(0)
+                    await asyncio.wait_for(other.wait(), 1)
+
+            self.bot.api.gateway = mock.Mock(return_value='wss://example.test')
+            with mock.patch('qgroup_bot.main.ws_connect', return_value=lambda *a,**k:WS()), \
+                    mock.patch.object(self.bot, 'handle_dispatch', side_effect=handle):
+                await asyncio.wait_for(self.bot.websocket_loop(), 2)
+                await asyncio.gather(*list(self.bot.abbreviation_tasks))
+            self.assertTrue(other.is_set())
+
+        asyncio.run(run())
 
     def test_disallowed_group_disabled_replies_and_unmentioned_chat_never_query(self):
         with mock.patch('qgroup_bot.replies.abbreviation_lookup.answer') as lookup:

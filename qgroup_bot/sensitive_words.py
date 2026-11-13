@@ -11,11 +11,26 @@ REPLACEMENT = '[已遮蔽]'
 DEFAULT_FILE = Path(__file__).with_suffix('.json')
 
 
+@lru_cache(maxsize=1)
+def _script_map():
+    data = json.loads((Path(__file__).parent / 'wordlists' / 'traditional_to_simplified.json')
+                      .read_text(encoding='utf-8'))
+    if not isinstance(data, dict):
+        raise ValueError('invalid script conversion table')
+    value = data.get('map')
+    if not isinstance(value, dict) or any(
+            not isinstance(v, str) or len(k) != 1 or len(v) != 1 for k, v in value.items()):
+        raise ValueError('invalid script conversion table')
+    return value
+
+
 def _normalized(text):
     """Retain original offsets while ignoring separators and display variants."""
     chars, offsets = [], []
+    scripts = _script_map()
     for index, char in enumerate(text):
-        for normalized in unicodedata.normalize('NFKC', char).casefold():
+        for value in unicodedata.normalize('NFKC', char).casefold():
+            normalized = scripts.get(value, value)
             if unicodedata.category(normalized)[0] in ('L', 'N'):
                 chars.append(normalized)
                 offsets.append(index)
@@ -84,9 +99,9 @@ class WordMask:
         self.denied = _Automaton(_words(words))
         self.allowed = _Automaton(_words([] if allow_words is None else allow_words))
 
-    def mask(self, text):
+    def _spans(self, text):
         if not self.denied.edges[0]:
-            return text
+            return []
         normalized, offsets = _normalized(text)
         # An exception protects only matches fully inside that expression;
         # a longer denied term containing it must still be masked.
@@ -107,12 +122,43 @@ class WordMask:
             while spans and start < spans[-1][1]:
                 start = min(start, spans.pop()[0])
             spans.append((start, end))
+        return spans
+
+    @staticmethod
+    def _replace(text, spans):
         parts, position = [], 0
         for start, end in spans:
             parts.extend((text[position:start], REPLACEMENT))
             position = end
         parts.append(text[position:])
         return ''.join(parts)
+
+    def mask(self, text):
+        return self._replace(text, self._spans(text))
+
+    def mask_parts(self, parts):
+        """Check the assembled message while preserving candidate separators."""
+        text = ''.join(parts)
+        spans = self._spans(text)
+        if not spans:
+            return text
+        result, position, index = [], 0, 0
+        for part in parts:
+            end = position+len(part)
+            while index < len(spans) and spans[index][1] <= position:
+                index += 1
+            intersections = []
+            current = index
+            while current < len(spans) and spans[current][0] < end:
+                start, stop = spans[current]
+                intersections.append((max(start, position)-position, min(stop, end)-position))
+                current += 1
+            # Punctuation-only pieces are delimiters, not candidate content.
+            has_letters = any(c.isalnum() for char in part
+                              for c in unicodedata.normalize('NFKC', char))
+            result.append(self._replace(part, intersections) if has_letters else part)
+            position = end
+        return ''.join(result)
 
 
 @lru_cache(maxsize=1)

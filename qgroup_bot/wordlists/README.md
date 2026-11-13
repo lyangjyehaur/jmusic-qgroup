@@ -12,16 +12,19 @@
 | 同上 | `sensitive_word_allow.txt` | 12 | 同上 |
 | [konsheng/Sensitive-lexicon](https://github.com/konsheng/Sensitive-lexicon/tree/68a595fb24d31bd9f882c081b4252443a69ac57b) | `Vocabulary/政治类型.txt` | 303 | [MIT，保留原始完整授權](konsheng-LICENSE.txt) |
 | 同上 | `Vocabulary/反动词库.txt` | 551 | 同上 |
+| [BYVoid/OpenCC 1.1.9](https://github.com/BYVoid/OpenCC/tree/556ed22496d650bd0b13b6c163be9814637970ae) | `TSCharacters.txt`，僅字形比對 | 4,113 個映射 | [Apache-2.0](opencc-LICENSE.txt) |
 
 houbb 主詞庫最後檔案更新為 2025-07-19；konsheng 這兩份政治相關檔案分別為 2025-08-12、2024-02-26。倉庫有較新的其他檔案更新，不代表這些詞表也更新。不匯入輸入法字典、停用詞或名稱含 Tencent 的其他清單，也不將其宣稱為官方 QQ 詞庫。未直接匯入範圍較混雜的 GFW 補充表。houbb 的數字分類標籤是政治、毒品、色情、賭博、違法；本次使用其主詞庫，不把分類標籤檔額外列出的普通詞全部當成敏感詞。
 
 ## 衍生修改與維護
 
-`qgroup_bot/sensitive_words.json` 是上述資料的衍生檔案：去除行首尾空白／空行、合併去重並排序，加入 [local.json](local.json) 的簡繁辱罵／色情基礎詞及可維護例外。目前共 **64,578** 條原始禁用詞、12 條允許表達；匹配正規化後為 64,568 條不同禁用詞。
+`qgroup_bot/sensitive_words.json` 是上述資料的衍生檔案：去除行首尾空白／空行、合併去重並排序，加入 [local.json](local.json) 的簡繁辱罵／色情基礎詞及可維護例外。目前共 **64,578** 條原始禁用詞、12 條允許表達；匹配正規化後為 64,541 條不同禁用詞。
 
 明確排除 houbb 原始的 `b\u007f`、`q\u007f` 與 `柑\ue42f`：帶有控制或私用字元，正規化後只剩單一 `b`、`q` 或「柑」，會破壞 `nbnhhsh`、`QQ`、柑橘等普通文字。排除項目及原因保留在 `local.json` 的 `excluded_words`，沒有按長度或數量截斷其他詞條。
 
 允許表達只保護完全落在該表達內的命中；例如允許「曹操」時，較長且本身在禁用表的詞仍會遮蔽。重疊的允許表達不會拼接成更大豁免。允許規則也適用於額外禁用詞檔案，變更時應一併檢查例外是否仍合適。重疊的禁用命中則合併成一個完整遮蔽範圍，避免留下已命中詞的後半段。
+
+`traditional_to_simplified.json` 衍生自 OpenCC 的 `TSCharacters.txt`：每行只採第一個單字元簡體候選，轉成帶有來源說明的 JSON 映射。禁用詞、例外詞和待比對文字使用同一映射；只影響比對，不改寫正常釋義的原始簡繁文字。原始位置逐字保留，混合簡繁亦可命中。這是字元歸一化，不是語境翻譯，也不涵蓋全部諧音或異體寫法。映射隨版本打包載入，更新映射須重啟 bot；額外敏感詞檔仍可熱更新。
 
 新增／修正本機詞條時修改 `local.json`；更新上游時審查新快照及授權、更新 `sources.json` 的完整 SHA 與原始檔雜湊，再重新產生：
 

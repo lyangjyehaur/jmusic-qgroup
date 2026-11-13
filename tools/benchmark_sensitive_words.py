@@ -5,6 +5,7 @@ The regex baseline reproduces the previous matcher using the same full word
 list. It has no exception support; all timing samples are benign text.
 """
 import argparse
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -65,6 +66,9 @@ def worker(engine):
         text = (unit_text*((size//len(unit_text))+1))[:size]
         assert len(text) == size
         result['scan_%d_ms' % size] = sample(lambda: mask.mask(text), runs)
+        if engine == 'aho-corasick':
+            result['assembled_%d_ms' % size] = sample(
+                lambda: mask.mask_parts([text[:size//2], '、', text[size//2:]]), runs)
     # Repeated dictionary prefixes exercise failure transitions.
     result['prefix_10000_ms'] = sample(lambda: mask.mask('中'*10000), 3)
     unit = 1024*1024 if sys.platform == 'darwin' else 1024
@@ -88,6 +92,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--worker', choices=['regex', 'aho-corasick'])
     parser.add_argument('--runs', type=int, default=3)
+    parser.add_argument('--engines', nargs='+', choices=['regex', 'aho-corasick'],
+                        default=['regex', 'aho-corasick'])
     args = parser.parse_args()
     if args.runs < 1:
         parser.error('--runs must be positive')
@@ -96,8 +102,11 @@ def main():
         return
     data = json.loads(DEFAULT_FILE.read_text(encoding='utf-8'))
     print(json.dumps({'python': platform.python_version(), 'platform': platform.platform(),
-                      'dictionary_entries': len(data['words']), 'runs': args.runs}), flush=True)
-    for engine in ('regex', 'aho-corasick'):
+                      'dictionary_entries': len(data['words']), 'runs': args.runs,
+                      'dictionary_sha256': hashlib.sha256(DEFAULT_FILE.read_bytes()).hexdigest(),
+                      'conversion_sha256': hashlib.sha256((DEFAULT_FILE.parent / 'wordlists' /
+                          'traditional_to_simplified.json').read_bytes()).hexdigest()}), flush=True)
+    for engine in args.engines:
         results = []
         for _ in range(args.runs):
             raw = subprocess.check_output([sys.executable, __file__, '--worker', engine], text=True)

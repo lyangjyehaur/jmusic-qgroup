@@ -55,6 +55,18 @@ class WordMaskTests(unittest.TestCase):
         self.assertEqual(WordMask(['s']).mask('前ß后'), '前'+REPLACEMENT+'后')
         self.assertEqual(WordMask(['ff']).mask('前ﬃ后'), '前'+REPLACEMENT+'后')
 
+    def test_script_normalization_preserves_original_display(self):
+        mask = WordMask(['测试词', '法轮功', '习近平'])
+        for text in ('測試詞', '测試词', '法輪功', '習近\u200b平'):
+            with self.subTest(text=text):
+                self.assertEqual(mask.mask(text), REPLACEMENT)
+        self.assertEqual(mask.mask('音樂大師，永遠的神。'), '音樂大師，永遠的神。')
+
+    def test_assembled_matches_mask_each_candidate_without_losing_separators(self):
+        mask = WordMask(['测试词'])
+        self.assertEqual(mask.mask_parts(['前测试', '、', '词后', '\n', '测试词']),
+                         '前'+REPLACEMENT+'、'+REPLACEMENT+'后\n'+REPLACEMENT)
+
     def test_allowed_expressions_only_exempt_contained_matches(self):
         mask = WordMask(['测试', '大测试词'], ['测试词'])
         self.assertEqual(mask.mask('测试词，测试，大测试词'),
@@ -145,6 +157,11 @@ class FilteredLookupTests(unittest.TestCase):
         text = self.lookup.answer('fuck')
         self.assertNotIn('fuck', text)
         self.assertIn(REPLACEMENT+'：正常释义', text)
+
+    def test_cross_candidate_sensitive_phrase_is_masked_after_assembly(self):
+        self.response([{'name': 'aa', 'trans': ['测试', '词', '正常释义', '测试', '词']}])
+        self.assertIn('：'+REPLACEMENT+'、'+REPLACEMENT+'、正常释义、'+
+                      REPLACEMENT+'、'+REPLACEMENT+'\n', self.lookup.answer('aa'))
 
     def test_cached_response_rechecks_updated_rules_without_another_request(self):
         self.response([{'name': 'yyds', 'trans': ['新规则词', '测试词']}])

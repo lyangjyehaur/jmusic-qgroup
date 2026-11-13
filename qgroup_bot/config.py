@@ -62,6 +62,8 @@ class Config:
         self.log_dir = Path(os.environ.get('KANBAN_BOT_LOG_DIR') or self.db.parent / 'bot-logs').expanduser()
         self.log_content = os.environ.get('KANBAN_BOT_LOG_CONTENT', '0') == '1'
         self.log_content_limit = min(self._int('KANBAN_BOT_LOG_CONTENT_LIMIT', 500, 80), 2000)
+        # Transport page budget only; results are never truncated to this size.
+        self.abbreviation_page_bytes = self._int('KANBAN_BOT_ABBREVIATION_PAGE_BYTES', 2000, 4)
 
     @staticmethod
     def _float(key, default, minimum):

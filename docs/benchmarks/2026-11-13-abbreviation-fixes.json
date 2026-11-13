@@ -1,0 +1,78 @@
+[
+  {
+    "python": "3.9.6",
+    "platform": "macOS-27.2.1-arm64-arm-64bit",
+    "dictionary_entries": 64578,
+    "runs": 3,
+    "dictionary_sha256": "c0941f84001068274cacd451729af449321e20c263fbf40e3eb7806936aebbd7",
+    "conversion_sha256": "5c79973c51c2c7855bdd23c49a757636076c54d73934fd5dbff0930c2abe4c5a"
+  },
+  {
+    "engine": "aho-corasick",
+    "median": {
+      "cold_ms": 524.142,
+      "47_candidates_ms": 0.218,
+      "scan_300_ms": 0.207,
+      "assembled_300_ms": 0.21,
+      "scan_10000_ms": 7.354,
+      "assembled_10000_ms": 7.515,
+      "scan_100000_ms": 73.523,
+      "assembled_100000_ms": 76.2,
+      "prefix_10000_ms": 7.449,
+      "peak_before_reload_mib": 106.22,
+      "cached_rules_ms": 0.003,
+      "reload_ms": 525.586,
+      "peak_rss_mib": 179.3
+    },
+    "samples": [
+      {
+        "engine": "aho-corasick",
+        "cold_ms": 572.058,
+        "47_candidates_ms": 0.219,
+        "scan_300_ms": 0.217,
+        "assembled_300_ms": 0.211,
+        "scan_10000_ms": 7.415,
+        "assembled_10000_ms": 7.66,
+        "scan_100000_ms": 77.782,
+        "assembled_100000_ms": 75.479,
+        "prefix_10000_ms": 7.443,
+        "peak_before_reload_mib": 106.22,
+        "cached_rules_ms": 0.003,
+        "reload_ms": 586.516,
+        "peak_rss_mib": 174.14
+      },
+      {
+        "engine": "aho-corasick",
+        "cold_ms": 524.142,
+        "47_candidates_ms": 0.216,
+        "scan_300_ms": 0.207,
+        "assembled_300_ms": 0.21,
+        "scan_10000_ms": 7.114,
+        "assembled_10000_ms": 7.379,
+        "scan_100000_ms": 73.523,
+        "assembled_100000_ms": 76.2,
+        "prefix_10000_ms": 7.449,
+        "peak_before_reload_mib": 105.86,
+        "cached_rules_ms": 0.003,
+        "reload_ms": 515.02,
+        "peak_rss_mib": 179.3
+      },
+      {
+        "engine": "aho-corasick",
+        "cold_ms": 517.105,
+        "47_candidates_ms": 0.218,
+        "scan_300_ms": 0.206,
+        "assembled_300_ms": 0.209,
+        "scan_10000_ms": 7.354,
+        "assembled_10000_ms": 7.515,
+        "scan_100000_ms": 73.398,
+        "assembled_100000_ms": 83.075,
+        "prefix_10000_ms": 7.729,
+        "peak_before_reload_mib": 106.27,
+        "cached_rules_ms": 0.003,
+        "reload_ms": 525.586,
+        "peak_rss_mib": 179.75
+      }
+    ]
+  }
+]

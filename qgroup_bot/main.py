@@ -25,6 +25,7 @@ from .api import QQBotAPI
 from .config import Config
 from .replies import COMMANDS, answer, answer_markdown, parse, read_db
 from .worker import OutboxWorker
+from .abbreviation_delivery import AbbreviationDelivery, Page
 from . import markdown as md
 from . import observability as obs
 
@@ -147,6 +148,46 @@ class Bot:
         self.resolved_dry_run = None
         self.panels_done = False
         self.group_seen = {}
+        self._abbreviation_delivery = None
+        self.abbreviation_tasks = set()
+        self.abbreviation_io_lock = None
+
+    @property
+    def abbreviation_delivery(self):
+        if self._abbreviation_delivery is None:
+            self._abbreviation_delivery = AbbreviationDelivery(
+                Path(self.config.db).parent / 'bot-abbreviation-results',
+                getattr(self.config, 'abbreviation_page_bytes', 2000))
+        return self._abbreviation_delivery
+
+    def _abbreviation_lock(self):
+        if self.abbreviation_io_lock is None:
+            self.abbreviation_io_lock = asyncio.Lock()
+        return self.abbreviation_io_lock
+
+    def _abbreviation_dispatch(self, message):
+        payload = message.get('d') or {}
+        if message.get('t') == 'INTERACTION_CREATE':
+            content = ((payload.get('data') or {}).get('resolved') or {}).get('button_data')
+        elif message.get('t') in ('GROUP_AT_MESSAGE_CREATE', 'GROUP_MESSAGE_CREATE'):
+            content = payload.get('content')
+        else:
+            return False
+        return parse(str(content or ''))[0] == '缩写'
+
+    def _start_abbreviation_dispatch(self, ws, message):
+        # Bound jobs waiting for routing/sending as well as network work.
+        if len(self.abbreviation_tasks) >= 16:
+            obs.event('abbreviation_dispatch_overloaded')
+            return
+        task = asyncio.create_task(self.handle_dispatch(ws, message))
+        self.abbreviation_tasks.add(task)
+
+        def finished(task):
+            self.abbreviation_tasks.discard(task)
+            if not task.cancelled() and task.exception():
+                obs.event('abbreviation_dispatch_failed', **obs.error_fields(task.exception()))
+        task.add_done_callback(finished)
 
     def record_group(self, group_id, event_type=None, reason=None):
         """Store routing diagnostics only, never chat content or member IDs."""
@@ -445,7 +486,13 @@ class Bot:
                 db.close()
             if command == '缩写':
                 # External I/O must not hold a DB handle or block QQ heartbeats.
-                text, keyboard = await asyncio.to_thread(answer, None, command, argument)
+                async with self._abbreviation_lock():
+                    page = await asyncio.to_thread(self.abbreviation_delivery.continuation, group, argument)
+                if page is None:
+                    text, keyboard = await asyncio.to_thread(answer, None, command, argument)
+                    page = Page(text)
+                else:
+                    text, keyboard = page.text, None
                 markdown = None
             if not markdown and md.has_unapproved_link(
                     text, getattr(self.config, 'allowed_link_hosts', ())):
@@ -465,8 +512,16 @@ class Bot:
             # Keep the legacy call signature byte-for-byte when Markdown is off.
             if markdown:
                 kwargs['markdown'] = markdown
-            ok, code, data = await asyncio.to_thread(
-                self.api.reply_group, group, text, **kwargs)
+            if command == '缩写':
+                # Wait on the event loop rather than occupying executor
+                # threads behind the synchronous delivery/file lock.
+                async with self._abbreviation_lock():
+                    ok, code, data = await asyncio.to_thread(
+                        self.abbreviation_delivery.send, self.api, group, page,
+                        msg_id=msg_id, event_id=event_id)
+            else:
+                ok, code, data = await asyncio.to_thread(
+                    self.api.reply_group, group, text, **kwargs)
             if not ok and markdown and type(code) is int and code in md.MARKDOWN_REJECTION_CODES:
                 # Log only: auto-resending could duplicate a message the
                 # platform actually accepted. Turn the opt-in off to recover.
@@ -558,7 +613,10 @@ class Bot:
                     obs.event('websocket_reconnect_requested')
                     return
                 elif op == 0:
-                    await self.handle_dispatch(ws, message)
+                    if self._abbreviation_dispatch(message):
+                        self._start_abbreviation_dispatch(ws, message)
+                    else:
+                        await self.handle_dispatch(ws, message)
 
     async def run(self):
         await self.refresh_policy()
@@ -621,6 +679,11 @@ def main():
         bot.stopping = True
         if bot.heartbeat_task:
             bot.heartbeat_task.cancel()
+        pending = list(bot.abbreviation_tasks)
+        for task in pending:
+            task.cancel()
+        if pending:
+            loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
         obs.event('bot_stopping')
         loop.close()
     return 0
