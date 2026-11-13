@@ -40,4 +40,4 @@ worker 實際投遞前核對投票仍開放、期限未過且同步仍啟用，�
 
 schema 16 新增投票資料表；schema 17 新增投票同步欄位，重建 `bot_outbox` 以接受互斥的 `event_id`／`poll_id` 來源，保留既有工作 ID、內容、送達狀態、claim fence 及自增序號。事實欄位仍不可改寫；投票和活動各有去重約束。bot 的活動列表只查 `events`，投票不會被當作可報名活動，定案後才使用普通活動入口。新增 schema 與通知類型需 web／bot 成套發布；舊 bot 無法投遞投票通知，不以舊 bot 搭配新 web 上線。回退前需檢查未送投票工作及新版通知設定，不能單憑加欄位宣稱相容。
 
-執行 `python3 -m unittest discover -s tests -q`、`node tests/test_time_polls.js`、`node tests/test_client.js` 及既有前端回歸。`tests/test_time_poll_bot.py` 覆蓋發起通知、設定門檻、模擬／重送、過期／取消防護、模板、定案通知及 schema 17 保全／失敗回滾。遷移測試涵蓋舊 schema 副本、重複初始化；UI 使用隔離本機資料驗證建立、改票、定案及手機尺寸。未執行正式 QQ 投遞或部署。
+執行 `python3 -m unittest discover -s tests -q`、`node tests/test_time_polls.js`、`node tests/test_client.js` 及既有前端回歸。`tests/test_time_poll_bot.py` 覆蓋發起通知、設定門檻、模擬／重送、過期／取消防護、模板、定案通知及 schema 17 保全／失敗回滾。遷移測試涵蓋舊 schema 副本、重複初始化；UI 使用隔離本機資料驗證建立、改票、定案及手機尺寸。正式部署結果另記於發布紀錄；模擬測試不代表真實 QQ 投遞驗收。

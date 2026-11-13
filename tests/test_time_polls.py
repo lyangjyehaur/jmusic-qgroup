@@ -205,11 +205,13 @@ class TimePollTests(unittest.TestCase):
 
     def test_repeatable_migration_preserves_pre_poll_database(self):
         from deploy.verify_migration import verify
-        with storage.connect(self.path) as db:
-            for table in ('time_poll_votes','time_poll_ballots','time_poll_options','time_poll_history','time_polls'):
-                db.execute('DROP TABLE '+table)
-            db.execute('DELETE FROM schema_migrations WHERE version>=16')
-        verify(self.path,Path(self.tmp.name)/'migrated.sqlite3')
+        source=Path(self.tmp.name)/'schema15.sqlite3'
+        with mock.patch.object(time_polls,'migrate',lambda db:None):
+            storage.initialize(source)
+        with storage.connect(source) as db:
+            db.execute('INSERT INTO users VALUES(?,?,?,?)',('legacy','legacy-hash','旧用户',now()))
+            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],15)
+        verify(source,Path(self.tmp.name)/'migrated.sqlite3')
 
 
 class TimePollHTTPTests(unittest.TestCase):
