@@ -303,15 +303,15 @@ class RoutingTests(unittest.TestCase):
         self.assertIn('：'+'、'.join(values)+'\n', ''.join(accepted))
 
     def test_websocket_keeps_processing_ack_and_other_commands_during_lookup(self):
-        async def run():
+        async def run(first_payload):
             started, release, other = asyncio.Event(), asyncio.Event(), asyncio.Event()
             frames = [
-                {'op':0, 't':'GROUP_AT_MESSAGE_CREATE', 'd':{'content':'/缩写 aa'}},
+                {'op':0, 't':'GROUP_AT_MESSAGE_CREATE', 'd':first_payload},
                 {'op':11},
                 {'op':0, 't':'GROUP_AT_MESSAGE_CREATE', 'd':{'content':'/帮助'}}]
 
             async def handle(ws, message):
-                if '缩写' in message['d']['content']:
+                if self.bot._abbreviation_dispatch(message):
                     started.set()
                     await release.wait()
                 else:
@@ -338,7 +338,10 @@ class RoutingTests(unittest.TestCase):
                 await asyncio.gather(*list(self.bot.abbreviation_tasks))
             self.assertTrue(other.is_set())
 
-        asyncio.run(run())
+        for payload in ({'content':'/缩写 aa'},
+                        {'content':'','message_type':103,'msg_elements':[{'content':'这也太yyds了'}]}):
+            with self.subTest(payload=payload):
+                asyncio.run(run(payload))
 
     def test_disallowed_group_disabled_replies_and_unmentioned_chat_never_query(self):
         with mock.patch('qgroup_bot.replies.abbreviation_lookup.answer') as lookup:

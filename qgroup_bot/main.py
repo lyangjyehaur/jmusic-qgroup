@@ -26,6 +26,7 @@ from .config import Config
 from .replies import COMMANDS, answer, answer_markdown, parse, read_db
 from .worker import OutboxWorker
 from .abbreviation_delivery import AbbreviationDelivery, Page
+from .abbreviation_input import extract_argument, has_quote, query_argument, quoted_texts
 from . import markdown as md
 from . import observability as obs
 
@@ -76,6 +77,19 @@ def _markdown_reply(db, command, argument, config):
 def normalize_content(content):
     """Strip platform mention markup so the same @ is not counted twice."""
     return MENTION.sub(' ', str(content or '')).strip()
+
+
+def group_command(payload):
+    content = normalize_content(payload.get('content'))
+    command, argument = parse(content.replace('\r', ' ').replace('\n', ' '))
+    if content and command != '缩写':
+        return command, argument
+    if command == '缩写' and argument:
+        return command, query_argument(argument)
+    texts = quoted_texts(payload)
+    if texts is not None:
+        return '缩写', extract_argument(texts)
+    return command, argument
 
 
 def mentions_bot(mentions, bot_id, content):
@@ -171,6 +185,8 @@ class Bot:
             content = ((payload.get('data') or {}).get('resolved') or {}).get('button_data')
         elif message.get('t') in ('GROUP_AT_MESSAGE_CREATE', 'GROUP_MESSAGE_CREATE'):
             content = payload.get('content')
+            if not normalize_content(content) and has_quote(payload):
+                return True
         else:
             return False
         return parse(str(content or ''))[0] == '缩写'
@@ -443,16 +459,17 @@ class Bot:
             return
         message_id = payload.get('id')
         content = str(payload.get('content') or '')
+        command, argument = group_command(payload)
         fingerprint = '%s|%s|%s|%s' % (
             payload.get('group_openid') or '',
             author.get('id') or author.get('member_openid') or '',
-            normalize_content(content),
+            normalize_content(content) + ('|'+str(obs.reference(json.dumps(
+                payload.get('msg_elements'), sort_keys=True))) if has_quote(payload) else ''),
             payload.get('timestamp') or message_id or '')
         if self.duplicate(message_id, fingerprint):
             obs.event('message_ignored', reason='duplicate', fingerprint_ref=obs.reference(fingerprint))
             await asyncio.to_thread(self.record_group, group_id, reason='duplicate')
             return
-        command, argument = parse(content)
         obs.event('command_parsed', source='message', command=command or 'unknown',
                   argument_ref=obs.reference(argument), fingerprint_ref=obs.reference(fingerprint),
                   **obs.text_fields(content, self.config))
