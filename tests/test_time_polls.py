@@ -86,6 +86,30 @@ class TimePollTests(unittest.TestCase):
         self.assertEqual(self.view()['respondent_count'],1)
         self.assertEqual([o['yes'] for o in self.view()['options']],[1,0,0])
 
+    def test_many_date_and_exact_choices_support_revising_votes_and_finalization(self):
+        for mode in ('date','exact'):
+            with self.subTest(mode=mode):
+                data=date_poll_data() if mode=='date' else poll_data()
+                first=datetime.fromisoformat(data['options'][0]['date'] if mode=='date' else data['options'][0]['starts_at'])
+                data['options']=[dict(date=(first+timedelta(days=i*2)).date().isoformat()) if mode=='date' else
+                                 dict(starts_at=(first+timedelta(hours=i)).isoformat()) for i in range(40)]
+                with storage.connect(self.path) as db:self.poll_id=time_polls.create(db,self.owner,data)['id']
+                p=self.view();self.assertEqual(len(p['options']),40)
+                self.vote(self.voter,['maybe']*39+['yes'])
+                self.vote(self.voter,['no']*39+['yes'])
+                p=self.view(self.voter['id']);last=p['options'][-1]
+                self.assertEqual(len(p['my_choices']),40);self.assertEqual(p['respondent_count'],1)
+                self.assertEqual(p['my_choices'][p['options'][0]['id']],'no')
+                start=last['date']+'T19:30:00+08:00' if mode=='date' else last['starts_at']
+                decision=dict(action='finalize',base_revision=p['revision'],base_vote_revision=p['vote_revision'],
+                    option_id=last['id'],registration_deadline=start,accept_terms=True,reason='已确认安排')
+                if mode=='date':decision.update(starts_at=start,duration_hours=2)
+                self.manage(decision)
+                finalized=self.view();self.assertEqual(finalized['status'],'finalized')
+                self.assertEqual(finalized['selected_option_id'],last['id']);self.assertEqual(len(finalized['options']),40)
+                with storage.connect(self.path) as db:
+                    self.assertEqual(db.execute('SELECT count(*) FROM attendees WHERE event_id=?',(finalized['event_id'],)).fetchone()[0],1)
+
     def test_date_finalization_requires_explicit_time_within_selected_date(self):
         p=self.date_poll();valid=self.date_decision()
         for field in ('starts_at','duration_hours'):

@@ -185,8 +185,8 @@ def create(db, user, data):
     if data.get('visibility','public') != 'public':
         raise APIError('当前时间投票为公开可见，请勿填写私人信息')
     candidates = data.get('options')
-    if not isinstance(candidates, list) or not 2 <= len(candidates) <= 6 or any(not isinstance(c,dict) for c in candidates):
-        raise APIError('请提供 2–6 个候选时段')
+    if not isinstance(candidates, list) or len(candidates) < 2 or any(not isinstance(c,dict) for c in candidates):
+        raise APIError('请提供至少 2 个候选时段')
     mode=data.get('time_mode','exact')
     if mode not in ('date','exact'):raise APIError('请选择按日期或具体时间投票')
     zone=data.get('timezone','Asia/Shanghai')

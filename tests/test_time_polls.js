@@ -95,8 +95,13 @@ for(const bundle of ['public','public/locales/hans','public/locales/hant']) {
     const slots=Array.from({length:6},(_,i)=>({date:'2028-03-0'+(i+1),time:'18:00'}));
     this.fullCalendarSelection=slots;
   }`,context);
-  assert.throws(()=>vm.runInContext("pollToggleCalendarDate(fullCalendarSelection,'2028-03-09',()=>({date:''}))",context));
+  assert.equal(vm.runInContext("pollToggleCalendarDate(fullCalendarSelection,'2028-03-09',()=>({date:''})).length",context),7);
   assert.equal(vm.runInContext('fullCalendarSelection.length',context),6);
+  assert.equal(vm.runInContext(`(()=>{
+    let slots=[];
+    for(let i=1;i<=40;i++)slots=pollToggleCalendarDate(slots,pollAddDays('2028-02-01',i),()=>({date:'',time:'18:00'}));
+    return slots.filter(s=>s.date).length;
+  })()`,context),40,'Calendar selections continue across months without a count cap');
   assert.equal(vm.runInContext("pollToggleCalendarDate(fullCalendarSelection,'2028-03-03',()=>({date:''})).length",context),5);
   assert.equal(vm.runInContext("pollToggleCalendarDate([{date:'2028-03-03',time:'19:00'},{date:'2028-03-03',time:'21:00'}],'2028-03-03',()=>({date:'',time:'18:00'})).filter(s=>s.date).length",context),0);
 }

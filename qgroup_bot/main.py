@@ -438,10 +438,15 @@ class Bot:
                     obs.event('reply_skipped', reason='replies_disabled')
                     await asyncio.to_thread(self.record_group, group, reason='replies_disabled')
                     return
-                text, keyboard = answer(db, command, argument)
-                markdown = _markdown_reply(db, command, argument, self.config)
+                if command != '缩写':
+                    text, keyboard = answer(db, command, argument)
+                    markdown = _markdown_reply(db, command, argument, self.config)
             finally:
                 db.close()
+            if command == '缩写':
+                # External I/O must not hold a DB handle or block QQ heartbeats.
+                text, keyboard = await asyncio.to_thread(answer, None, command, argument)
+                markdown = None
             if not markdown and md.has_unapproved_link(
                     text, getattr(self.config, 'allowed_link_hosts', ())):
                 obs.event('reply_skipped', reason='unreported_link_host')

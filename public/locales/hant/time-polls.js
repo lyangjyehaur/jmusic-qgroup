@@ -15,7 +15,6 @@ function pollToggleCalendarDate(slots,day,makeSlot) {
   let next;
   if(slots.some(s=>s.date===day))next=slots.filter(s=>s.date!==day);
   else {
-    if(slots.filter(s=>s.date).length>=6)throw new Error("最多選擇 6 個選項，請先取消不需要的日期");
     next=slots.map(s=>({...s}));
     const empty=next.find(s=>!s.date);
     if(empty)empty.date=day;else next.push({...makeSlot(),date:day});
@@ -54,13 +53,13 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
   function renderCalendar() {
     const f=form().elements,today=wallDate(Date.now(),f.timezone.value).slice(0,10),earliest=f.exact_time.checked?today:pollAddDays(today,1);
     if(!calendarMonth)calendarMonth=earliest.slice(0,7);
-    const selected=new Set(slots.map(s=>s.date).filter(Boolean)),full=slots.filter(s=>s.date).length>=6;
+    const selected=new Set(slots.map(s=>s.date).filter(Boolean));
     const {offset,days}=pollMonthDays(calendarMonth);
     $('#poll-calendar-month').textContent=new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',year:'numeric',month:'long'}).format(new Date(calendarMonth+'-01T12:00:00Z'));
     $('#poll-calendar-weekdays').innerHTML=Array.from({length:7},(_,i)=>`<span>${esc(new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',weekday:'short'}).format(new Date('2024-01-0'+(i+1)+'T12:00:00Z')))}</span>`).join('');
-    $('#poll-calendar-days').innerHTML='<span aria-hidden="true"></span>'.repeat(offset)+days.map(day=>`<button type="button" class="poll-calendar-day${day===today?' today':''}" data-poll-form-action="day" data-day="${day}" aria-label="${esc(dayLabel(day))}" aria-pressed="${selected.has(day)}"${day===today?' aria-current="date"':''}${!selected.has(day)&&(day<earliest||full)?' disabled':''}>${Number(day.slice(-2))}</button>`).join('');
+    $('#poll-calendar-days').innerHTML='<span aria-hidden="true"></span>'.repeat(offset)+days.map(day=>`<button type="button" class="poll-calendar-day${day===today?' today':''}" data-poll-form-action="day" data-day="${day}" aria-label="${esc(dayLabel(day))}" aria-pressed="${selected.has(day)}"${day===today?' aria-current="date"':''}${!selected.has(day)&&day<earliest?' disabled':''}>${Number(day.slice(-2))}</button>`).join('');
     $('[data-poll-form-action="previous-month"]',form()).disabled=calendarMonth<=earliest.slice(0,7);
-    $('#poll-calendar-selection').textContent=`已選 ${selected.size} 個日期，可跨月選擇；最多 6 個選項。`;
+    $('#poll-calendar-selection').textContent=`已選 ${selected.size} 個日期，可繼續跨月選擇。${slots.length>14?"選項較多，建議聚焦最可能的日期；仍可繼續添加和發佈。":''}`;
   }
   function readSlots() {
     const f=form().elements;
@@ -91,8 +90,7 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     }
     const first=slots.map(s=>s.date).filter(Boolean).sort()[0];
     if(!exact&&first&&!f.deadline_date.dataset.touched)f.deadline_date.value=pollAddDays(first,-1);
-    $('[data-poll-form-action="add"]',form()).disabled=slots.length>=6;
-    $('#poll-slot-count').textContent=`${slots.length} / 6 個選項，至少保留 2 項`;
+    $('#poll-slot-count').textContent=`${slots.length} 個選項，至少保留 2 項。${slots.length>14?"選項較多，建議聚焦最可能的日期；仍可繼續添加和發佈。":''}`;
     renderCalendar();
   }
   function changedSlots(){renderSlots();form().dispatchEvent(new Event('change',{bubbles:true}));}
@@ -100,7 +98,7 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     const button=event.target.closest('[data-poll-form-action]');if(!button)return;
     const action=button.dataset.pollFormAction;readSlots();
     try{
-      if(action==='add'&&slots.length<6){slots.push(newSlot());changedSlots();form().elements['poll_day_'+slots.at(-1).key].focus();}
+      if(action==='add'){slots.push(newSlot());changedSlots();form().elements['poll_day_'+slots.at(-1).key].focus();}
       if(action==='remove'&&slots.length>2){slots=slots.filter(s=>s.key!==Number(button.dataset.key));changedSlots();}
       if(action==='previous-month'||action==='next-month'){
         calendarMonth=pollShiftMonth(calendarMonth,action==='previous-month'?-1:1);renderCalendar();
@@ -109,7 +107,7 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
       if(action==='day'){
         const day=button.dataset.day,removing=slots.some(s=>s.date===day);
         slots=pollToggleCalendarDate(slots,day,newSlot);changedSlots();
-        $('#poll-calendar-message').textContent=removing?"已取消該日期，其他日期會保留。":slots.filter(s=>s.date).length>=6?"已選滿 6 個選項，可先取消某日再換選。":"已加入候選，可繼續點選其他日期。";
+        $('#poll-calendar-message').textContent=removing?"已取消該日期，其他日期會保留。":"已加入候選，可繼續點選其他日期。";
         $(`[data-day="${day}"]`,form()).focus();
       }
     }catch(error){$('#poll-calendar-message').textContent=error.message;}
@@ -127,11 +125,11 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
         ()=>({fields:BoardDrafts.fields(form()),slots:readSlots().map(s=>({...s})),intent:form().dataset.intent}),
         data=>{
           BoardDrafts.fill(form(),data.fields);form().dataset.intent=data.intent;
-          if(Array.isArray(data.slots))slots=data.slots.slice(0,6).map(s=>newSlot(s.date,s.time));
+          if(Array.isArray(data.slots))slots=data.slots.map(s=>newSlot(s.date,s.time));
           else {
             const fields=Object.fromEntries(data.fields.map(v=>[v.name,v.value]));
             f.exact_time.checked=true;
-            slots=Array.from({length:Math.max(2,Math.min(6,Number(fields.option_count)||3))},(_,i)=>{const value=fields['slot_'+i]||'';return newSlot(value.slice(0,10),value.slice(11,16));});
+            slots=Array.from({length:Math.max(2,Number(fields.option_count)||3)},(_,i)=>{const value=fields['slot_'+i]||'';return newSlot(value.slice(0,10),value.slice(11,16));});
             f.deadline_date.value=(fields.deadline||'').slice(0,10);f.deadline_time.value=(fields.deadline||'').slice(11,16)||'23:59';
           }
           const first=slots.map(s=>s.date).filter(Boolean).sort()[0];if(first)calendarMonth=first.slice(0,7);

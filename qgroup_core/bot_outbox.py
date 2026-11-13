@@ -278,21 +278,19 @@ def poll_shareable(poll):
 def build_poll_message(db,poll,*,config=None,candidates=None):
     if not poll_shareable(poll):
         return None
-    candidates=candidates if candidates is not None else db.execute(
+    candidates=list(candidates) if candidates is not None else db.execute(
         'SELECT starts_at FROM time_poll_options WHERE poll_id=? ORDER BY position',(poll['id'],)).fetchall()
     zone=poll['timezone']
     date_only='time_mode' in poll.keys() and poll['time_mode']=='date'
     title=str(poll['title'])[:40]
     label='活动时间投票'
     heading='【%s】%s' % (label,title)
-    lines=['请一起选择方便参加的时段：']
-    for index,option in enumerate(candidates,1):
-        if date_only:
-            day=datetime.fromisoformat(option['starts_at']).astimezone(ZoneInfo(zone)).date().isoformat()
-            lines.append('%d. %s（具体时间待定）' % (index,day))
-        else:
-            end=(datetime.fromisoformat(option['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat()
-            lines.append('%d. %s – %s' % (index,local_time(option['starts_at'],zone),local_time(end,zone)))
+    days=sorted({datetime.fromisoformat(option['starts_at']).astimezone(ZoneInfo(zone)).date().isoformat() for option in candidates})
+    lines=['请一起选择方便参加的时段：','共 %d 个候选%s' % (len(candidates),'日期（具体时间待定）' if date_only else '时段')]
+    if days:
+        lines.append('候选日期：'+'、'.join(days) if len(days)<=5 else '候选日期范围：'+days[0]+' 至 '+days[-1]+'（日期可不连续）')
+    if not date_only:lines.append('每场预计 %d 小时' % poll['duration_hours'])
+    lines.append('完整候选日期与安排请打开投票页查看。')
     if date_only:lines.append('先选择可以参加的日期，开始时间与时长由发起者定案时补充，请再核对后报名。')
     lines+=['时区：'+zone,'预计地点：'+str(poll['location']),
             '投票截止：'+local_time(poll['deadline'],zone),

@@ -144,12 +144,15 @@ class ListNumberTests(Fixture, unittest.TestCase):
         self.assertIn('/名额 2', rich)
         self.assertNotIn('8 位活动短码', rich)
 
-    def test_every_command_now_has_a_safe_markdown_card(self):
+    def test_activity_commands_have_safe_cards_and_external_lookup_stays_plain(self):
         db = read_db(self.path)
         try:
             for command in sorted(set(ALIASES.values())):
                 with self.subTest(command=command):
                     rich = answer_markdown(db, command, '')
+                    if command == '缩写':
+                        self.assertIsNone(rich)
+                        continue
                     self.assertIsInstance(rich, str)
                     self.assertTrue(rich.startswith('## '))
                     self.assertIsNone(bot_markdown.content_problem(rich, ('example.test',)))

@@ -32,7 +32,7 @@ class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
             p=time_polls.get(db,self.poll_id)
             time_polls.manage(db,p,self.user,dict(action=action,base_revision=p['revision'],**values))
 
-    def test_publish_enqueues_once_with_candidate_times_and_no_event_or_roster(self):
+    def test_publish_enqueues_once_with_candidate_summary_and_no_event_or_roster(self):
         p=self.create_poll()
         with storage.connect(self.path) as db:
             self.assertFalse(bot_outbox.announce_poll(db,time_polls.get(db,p['id'])))
@@ -43,7 +43,7 @@ class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
         self.assertIsNone(row['event_id'])
         self.assertEqual(row['poll_id'],p['id'])
         text=json.loads(row['payload_json'])['text']
-        for phrase in ['活动时间投票','1. ','2. ','3. ','投票截止','投票不占名额','https://example.test/?poll='+p['id']]:
+        for phrase in ['活动时间投票','共 3 个候选时段','每场预计 2 小时','完整候选日期与安排请打开投票页查看','投票截止','投票不占名额','https://example.test/?poll='+p['id']]:
             self.assertIn(phrase,text)
         self.assertNotIn('发起者昵称不应外泄',text)
         self.assertEqual(p['bot_delivery'][0]['state'],'pending')
@@ -70,6 +70,28 @@ class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
         self.assertEqual(worker.poll_once()['sent'],1)
         self.assertIn('activity_published',[r['kind'] for r in self.rows()])
         self.assertIn('18:00',worker.api.post.call_args.args[1]['content'])
+
+    def test_many_options_use_compact_summary_in_queued_and_delivered_messages(self):
+        from datetime import datetime, timedelta
+        for mode in ('date','exact'):
+            with self.subTest(mode=mode):
+                data=date_poll_data() if mode=='date' else poll_data()
+                first=datetime.fromisoformat(data['options'][0]['date'] if mode=='date' else data['options'][0]['starts_at'])
+                options=[dict(date=(first+timedelta(days=i*2)).date().isoformat()) if mode=='date' else
+                         dict(starts_at=(first+timedelta(days=i*2)).isoformat()) for i in range(60)]
+                p=self.create_poll(**dict(data,options=options))
+                queued=json.loads(self.rows()[-1]['payload_json'])['text']
+                self.assertIn('共 60 个候选',queued)
+                self.assertIn('日期可不连续',queued)
+                self.assertIn('?poll='+p['id'],queued)
+                self.assertLess(len(queued),800)
+                worker=self.worker();self.assertEqual(worker.poll_once()['sent'],1)
+                content=worker.api.post.call_args.args[1]['content']
+                self.assertIn('共 60 个候选',content)
+                self.assertIn('?poll='+p['id'],content)
+                self.assertLess(len(content),800)
+                with storage.connect(self.path) as db:
+                    self.assertEqual(len(time_polls.options(db,time_polls.get(db,p['id']))),60)
 
     def test_disabled_owner_or_global_policy_or_kind_does_not_enqueue(self):
         self.create_poll(bot_enabled=False)

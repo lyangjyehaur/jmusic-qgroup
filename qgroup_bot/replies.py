@@ -7,6 +7,7 @@ from pathlib import Path
 from qgroup_core import bot_outbox, bot_views, finance
 from qgroup_core.bot_views import estimated_over as _estimated_over
 from . import markdown as md
+from .abbreviations import lookup as abbreviation_lookup
 
 COMMANDS = [
     {'name': '/活动', 'desc': '选择活动，查看时间与地点'},
@@ -19,7 +20,7 @@ COMMANDS = [
 ALIASES = {word: word for word in (
     '活动', '报名', '我的', '结算', '管理', '帮助', '名额', '待办', '出席',
     '同行', '退出', '发起', '再约', '待确认', '确认安排', '地点', '规则',
-    '款项', '账本', '已付款', '申报', '补报', '认领', '协办', '往期')}
+    '款项', '账本', '已付款', '申报', '补报', '认领', '协办', '往期', '缩写')}
 ALIASES.update({
     '活動': '活动', '報名': '报名', '結算': '结算', '幫助': '帮助', '名額': '名额',
     '待辦': '待办', '签到': '出席', '簽到': '出席', '發起': '发起', '再約': '再约',
@@ -28,9 +29,11 @@ ALIASES.update({
     '補報': '补报', '認領': '认领', '協辦': '协办',
     'help': '帮助', 'events': '活动', 'todos': '待办', 'me': '我的',
     'settle': '结算', 'quota': '名额', 'join': '报名',
+    '縮寫': '缩写', 'nbnhhsh': '缩写',
 })
 QUICK_COMMANDS = ('快捷指令：/名额 /待办 /出席（/签到） /同行 /退出 /待确认 /确认安排\n'
-                  '/地点 /规则 /款项 /账本 /已付款 /申报 /发起 /再约 /补报 /认领 /协办 /往期')
+                  '/地点 /规则 /款项 /账本 /已付款 /申报 /发起 /再约 /补报 /认领 /协办 /往期\n'
+                  '/缩写 yyds  查询拼音缩写（支持 /縮寫、/nbnhhsh；仅缩写发送至第三方查询）')
 HELP = ('群聚看板常用指令（简繁均可）：\n'
         '/活动  选择活动，查看时间与地点\n'
         '/报名  查看安排并进入报名\n'
@@ -164,6 +167,8 @@ def _selection(db, command):
 
 
 def answer(db, command, argument=''):
+    if command == '缩写':
+        return abbreviation_lookup.answer(argument), None
     if command == '帮助':
         return help_text(), None
     if command not in ALIASES.values():
@@ -287,6 +292,8 @@ def answer_markdown(db, command, argument=''):
     platform mention tags and structural injection) before reaching a
     renderer, so user input can never become a heading, emphasis or link.
     """
+    if command == '缩写':
+        return None
     site = bot_outbox.base_url()
     if command is None or command not in ALIASES.values() or command == '帮助':
         prefix = '' if command == '帮助' else '未识别这条指令，请使用下列指令：'
