@@ -1,6 +1,7 @@
 """Simplified-Chinese group UI; Simplified/Traditional command aliases."""
 import re
 import sqlite3
+from itertools import islice
 from pathlib import Path
 
 from qgroup_core import bot_outbox, bot_views, finance
@@ -94,15 +95,19 @@ class SelectionError(ValueError):
 
 def candidates(db, command='活动'):
     terminal = " AND lifecycle IN ('ended','cancelled')" if command == '往期' else ''
-    if command not in FINANCE_COMMANDS | {'往期', '待办', '管理', '再约'}:
+    active = command not in FINANCE_COMMANDS | {'往期', '待办', '管理', '再约'}
+    if active:
         terminal = " AND lifecycle IN ('scheduled','ongoing')"
     archived = '' if command == '往期' else ' AND archived_at IS NULL'
     order = ("CASE WHEN lifecycle IN ('ended','cancelled') THEN 0 ELSE 1 END, starts_at DESC"
              if command in FINANCE_COMMANDS else "ABS(strftime('%s',starts_at)-strftime('%s','now')),id")
     # Public queries are independent of the owner's active-broadcast opt-in.
-    return db.execute("SELECT * FROM events WHERE visibility='public' "
+    rows = db.execute("SELECT * FROM events WHERE visibility='public' "
                       "AND lifecycle!='draft' AND status!='deleted'" + terminal + archived +
-                      ' ORDER BY '+order+' LIMIT 9').fetchall()
+                      ' ORDER BY '+order)
+    # Apply the time-zone-aware cutoff before the list limit; every active
+    # command must share the same numbering as /活动.
+    return list(islice((event for event in rows if not active or not _estimated_over(event)), 9))
 
 
 def current_event(db, argument='', command='活动'):

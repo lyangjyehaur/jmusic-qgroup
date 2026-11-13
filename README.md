@@ -30,6 +30,7 @@ node --check public/settlements.js
 node --check public/finance.js
 node --check public/identity.js
 node tests/test_dates.js
+node tests/test_board.js
 node tests/test_settlement_payload.js
 node tests/test_client.js
 node tests/test_todos.js

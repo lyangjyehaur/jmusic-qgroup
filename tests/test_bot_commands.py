@@ -12,7 +12,8 @@ from zoneinfo import ZoneInfo
 from qgroup_core import events, storage
 from qgroup_core.common import now
 from qgroup_bot.main import Bot
-from qgroup_bot.replies import COMMANDS, HELP, _estimated_over, answer, parse, read_db
+from qgroup_bot.replies import (COMMANDS, HELP, _estimated_over, answer, answer_markdown,
+                               candidates, current_event, parse, read_db)
 
 
 class CommandTests(unittest.TestCase):
@@ -148,6 +149,58 @@ class CommandTests(unittest.TestCase):
                        "duration_hours=1 WHERE id=?", (local_naive, self.event_id))
             row = db.execute('SELECT * FROM events WHERE id=?', (self.event_id,)).fetchone()
         self.assertTrue(_estimated_over(row))
+
+    def test_overdue_events_are_hidden_from_active_lists_but_remain_manageable(self):
+        start = (datetime.now(timezone.utc) - timedelta(hours=3)).astimezone(
+            ZoneInfo('Asia/Taipei')).replace(tzinfo=None).isoformat(timespec='seconds')
+        with storage.connect(self.path) as db:
+            db.execute("UPDATE events SET starts_at=?,timezone='Asia/Taipei',duration_hours=1",
+                       (start,))
+        for command in ('活动', '报名', '名额', '地点', '规则', '出席'):
+            with self.subTest(command=command):
+                self.assertNotIn('唱K活动', self.answer(command))
+                with read_db(self.path) as db:
+                    self.assertNotIn('唱K活动', answer_markdown(db, command))
+        for command in ('管理', '待办', '结算'):
+            self.assertIn('唱K活动', self.answer(command))
+        self.assertIn('唱K活动', self.answer('活动', self.event_id[:8]))
+        self.assertNotIn('唱K活动', self.answer('往期'))
+        # Extending the planned duration makes it visible again without an
+        # actual lifecycle transition.
+        with storage.connect(self.path) as db:
+            db.execute('UPDATE events SET duration_hours=6')
+        self.assertIn('唱K活动', self.answer('活动'))
+
+    def test_overdue_filter_precedes_limit_and_keeps_active_command_numbers_aligned(self):
+        start = datetime.now(timezone.utc)
+        with storage.connect(self.path) as db:
+            source = db.execute('SELECT * FROM events WHERE id=?', (self.event_id,)).fetchone()
+            for index in range(10):
+                event_id = events.create(db, {'id': 'u1', 'nickname': 'test'},
+                    dict(title='过期待确认%d' % index, category='聚餐', location='餐厅',
+                         starts_at=source['starts_at'], deadline=source['deadline'],
+                         capacity=0, description='', duration_hours=1, join_owner=False))
+                db.execute('UPDATE events SET starts_at=? WHERE id=?',
+                           ((start - timedelta(hours=2)).isoformat(), event_id))
+            second = events.create(db, {'id': 'u1', 'nickname': 'test'},
+                dict(title='未来另一场', category='聚餐', location='餐厅',
+                     starts_at=(start + timedelta(days=3)).isoformat(),
+                     deadline=source['deadline'], capacity=0, description='',
+                     duration_hours=2, join_owner=False))
+        self.assertIn('未来另一场', self.answer('活动'))
+        self.assertNotIn('过期待确认', self.answer('活动'))
+        with read_db(self.path) as db:
+            self.assertNotIn('过期待确认', answer_markdown(db, '活动'))
+            for command in ('活动', '报名', '名额', '地点', '规则'):
+                self.assertEqual([e['id'] for e in candidates(db, command)],
+                                 [self.event_id, second])
+                self.assertEqual(current_event(db, '2', command)['id'], second)
+
+    def test_ongoing_events_without_an_estimated_end_remain_in_active_lists(self):
+        with storage.connect(self.path) as db:
+            db.execute("UPDATE events SET lifecycle='ongoing',starts_at=?,duration_hours=NULL",
+                       ((datetime.now(timezone.utc) - timedelta(days=1)).isoformat(),))
+        self.assertIn('唱K活动', self.answer('活动'))
 
     def test_simplified_and_traditional_commands_use_the_same_actions(self):
         pairs = [('活动','活動'),('报名','報名'),('名额','名額'),('待办','待辦'),

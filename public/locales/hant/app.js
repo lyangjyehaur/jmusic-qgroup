@@ -171,12 +171,13 @@ function eventStatus(e) {
   return ["可報名",''];
 }
 function renderBoard() {
-  const upcoming=state.events.filter(e=>!isPast(e)&&e.lifecycle!=='draft'&&!e.archived_at);
+  const isUpcoming=e=>!isPast(e)&&e.lifecycle!=='draft'&&!e.archived_at&&!e.estimated_over;
+  const upcoming=state.events.filter(isUpcoming);
   $('#archived-option').hidden=state.filter!=='past';
   $('#event-count').textContent=upcoming.length;
   $('#category-filter').hidden=new Set(state.events.map(e=>e.category)).size<2 && state.category==='全部';
   const list = state.events.filter(e => {
-    if(state.filter==='upcoming'&&(isPast(e)||e.lifecycle==='draft'||e.archived_at))return false;
+    if(state.filter==='upcoming'&&!isUpcoming(e))return false;
     if(state.filter==='past'&&(!isPast(e)||(e.archived_at&&!$('#include-archived').checked)))return false;
     if (state.filter==='mine' && !e.my_attendees?.length && !e.is_owner && !e.is_cohost && e.finance?.my_balance_cents==null) return false;
     return (state.category==='全部' || e.category===state.category) && (!state.search || `${e.title} ${e.location} ${e.description} ${e.owner_name}`.toLowerCase().includes(state.search));
