@@ -305,7 +305,7 @@ class CommandTests(unittest.TestCase):
             bot=Bot(config)
             bot.api.reply_group=mock.Mock(return_value=(True,0,{}))
             for event_type in ('GROUP_AT_MESSAGE_CREATE','INTERACTION_CREATE'):
-                payload={'id':event_type,'group_openid':group,'content':'/活動',
+                payload={'id':event_type,'group_openid':group,'content':'/活動','mentions':[{'is_you':True}],
                          'data':{'resolved':{'button_data':'/名額 '+self.event_id}}}
                 asyncio.run(bot.handle_dispatch(None,{'t':event_type,'d':payload}))
             bot.api.reply_group.assert_not_called()
@@ -317,7 +317,8 @@ class CommandTests(unittest.TestCase):
         config=SimpleNamespace(db=self.path,group='allowed',dry_run=False,sandbox=False,verbose_events=False)
         bot=Bot(config);bot.api.reply_group=mock.Mock(return_value=(True,0,{}))
         asyncio.run(bot.handle_dispatch(None,{'t':'GROUP_AT_MESSAGE_CREATE','d':
-            {'id':'message','group_openid':'allowed','content':'/名額 '+self.event_id}}))
+            {'id':'message','group_openid':'allowed','content':'/名額 '+self.event_id,
+             'mentions':[{'is_you':True}]}}))
         self.assertIn('正式 0 人',bot.api.reply_group.call_args.args[1])
 
     def test_mention_diagnostics_record_everyone_flag_without_chat_text(self):
@@ -330,10 +331,71 @@ class CommandTests(unittest.TestCase):
                  'mention_everyone':True,'mentions':[]}}))
         logged='\n'.join(logs.output)
         self.assertIn('"mention_everyone":"true"',logged)
-        self.assertIn('"reason":"not_addressed"',logged)
+        self.assertIn('"reason":"everyone_mention"',logged)
         self.assertNotIn('不要记录这段群聊正文',logged)
         self.assertNotIn('private-message-id',logged)
         bot.api.reply_group.assert_not_called()
+
+    def test_everyone_messages_never_trigger_replies_on_either_message_event(self):
+        from types import SimpleNamespace
+        markers = [
+            {'mention_everyone':True, 'content':'/帮助'},
+            {'content':'<qqbot-at-everyone /> /帮助'},
+            {'content':'<@everyone> /帮助'},
+            {'content':'<@all> /帮助'},
+            {'content':'<@!all> /帮助'},
+            {'content':'@全体成员 大家周末有空吗'},
+            {'content':'＠全體成員 大家週末有空嗎'},
+            {'content':'@全员 /活动'},
+            {'content':'@全員 /活動'},
+            {'content':'@everyone /帮助'},
+            {'content':'/帮助','mentions':[{'id':'all','is_you':True}]},
+        ]
+        for event_type in ('GROUP_AT_MESSAGE_CREATE','GROUP_MESSAGE_CREATE'):
+            for marker in markers:
+                for directly_mentioned in (False, True):
+                    with self.subTest(event_type=event_type,marker=marker,direct=directly_mentioned):
+                        bot=Bot(SimpleNamespace(db=self.path,group='allowed',dry_run=False,
+                                                sandbox=False,verbose_events=False))
+                        bot.api.reply_group=mock.Mock()
+                        payload={'id':'everyone','group_openid':'allowed',
+                                 'author':{'member_openid':'other-admin'},
+                                 'mentions':[{'is_you':True}] if directly_mentioned else [],**marker}
+                        with self.assertLogs(level='INFO') as logs:
+                            asyncio.run(bot.handle_dispatch(None,{'t':event_type,'d':payload}))
+                        self.assertIn('"reason":"everyone_mention"','\n'.join(logs.output))
+                        bot.api.reply_group.assert_not_called()
+
+    def test_at_event_without_direct_mention_does_not_trigger_reply(self):
+        from types import SimpleNamespace
+        for mentions in ([],[{'id':'someone-else'}],[{'id':'another-bot','bot':True}]):
+            with self.subTest(mentions=mentions):
+                bot=Bot(SimpleNamespace(db=self.path,group='allowed',dry_run=False,
+                                        sandbox=False,verbose_events=False))
+                bot.api.reply_group=mock.Mock()
+                with self.assertLogs(level='INFO') as logs:
+                    asyncio.run(bot.handle_dispatch(None,{'t':'GROUP_AT_MESSAGE_CREATE','d':
+                        {'id':'everyone-without-flag','group_openid':'allowed','content':'/帮助',
+                         'mentions':mentions}}))
+                self.assertIn('"reason":"not_addressed"','\n'.join(logs.output))
+                bot.api.reply_group.assert_not_called()
+
+    def test_direct_mentions_still_reply_with_or_without_the_everyone_field(self):
+        from types import SimpleNamespace
+        for event_type in ('GROUP_AT_MESSAGE_CREATE','GROUP_MESSAGE_CREATE'):
+            for marker in ({},{'mention_everyone':False}):
+                for mention in ({'mentions':[{'is_you':True}]},
+                                {'mentions':[{'id':'BOT1'}]},
+                                {'content':'<@!BOT1> /帮助'},
+                                {'content':'<qqbot-at-user id="BOT1" /> /帮助'}):
+                    with self.subTest(event_type=event_type,marker=marker,mention=mention):
+                        bot=Bot(SimpleNamespace(db=self.path,group='allowed',dry_run=False,
+                                                sandbox=False,verbose_events=False))
+                        bot.bot_id='BOT1'
+                        bot.api.reply_group=mock.Mock(return_value=(True,0,{}))
+                        asyncio.run(bot.handle_dispatch(None,{'t':event_type,'d':
+                            {'id':'direct','group_openid':'allowed','content':'/帮助',**marker,**mention}}))
+                        bot.api.reply_group.assert_called_once()
 
     def test_successful_reply_and_missing_everyone_flag_are_visible_in_info_logs(self):
         from types import SimpleNamespace

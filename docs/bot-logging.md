@@ -20,11 +20,13 @@ rg '这里替换为trace_id' /var/lib/qgroup/bot-logs/bot-events.jsonl*
 
 `reply_sent` 表示平台 API 接受了消息，不表示群友已读。`reply_simulated` 表示没有调用发送 API。发送前已经出现 `reply_sending`，但没有结果，说明进程可能在调用期间被终止；不能据此认定已发送或未发送。日志记录发送内容的 `text_chars`、`text_hash`，可以区分不同输出；默认不保留正文。
 
-同一消息可能以两种 QQ 事件送达。`input_ref` 可跨重复事件匹配；平台给出不同消息 ID 时，可用 `fingerprint_ref` 对照原有去重依据。`message_ignored` 的原因包括 `duplicate`、`not_addressed`、`group_not_allowed`、`bot_author`。
+同一消息可能以两种 QQ 事件送达。`input_ref` 可跨重复事件匹配；平台给出不同消息 ID 时，可用 `fingerprint_ref` 对照原有去重依据。`message_ignored` 的原因包括 `duplicate`、`not_addressed`、`everyone_mention`、`group_not_allowed`、`bot_author`。
 
 ## @全体与平台事件
 
 `message_received` 记录事件类型、`mentions_bot`、`mention_count` 与 `mention_everyone`。后者区分 `true`、`false`、`missing` 和 `invalid`，缺少字段不等于否定。不能只根据 `is_you=true` 宣称是单独 @ 机器人；QQ群是否提供明确的 @全体标记须用实际事件确认。
+
+`mentions_everyone` 汇总平台布尔旗标、全体提及 ID（`all`／`everyone`）、消息中的全体提及标记（如 `<qqbot-at-everyone />`）与简繁 `@全体成员`／`@全员` 等文字。识别为 @全体的消息一律忽略，记录 `everyone_mention`，即使同时提及机器人也不回复；不会按发送者的管理员身份放行。两种群消息事件均须有 `is_you`、机器人 ID 或对应提及标记等直接 @ 证据，不能只凭 `GROUP_AT_MESSAGE_CREATE` 事件名称回复。平台若同时省略全体旗标、ID 与标记，又把全体提及标成 `is_you`，仅凭现有字段仍无法区分，需核对实际事件。
 
 `KANBAN_BOT_VERBOSE=1` 额外记录平台事件类型与顶层字段名称，不输出完整 payload。这个设置不会改变是否回复或是否实际发送。
 

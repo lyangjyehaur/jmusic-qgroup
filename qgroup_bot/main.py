@@ -42,6 +42,10 @@ def ws_connect():
 
 
 MENTION = re.compile(r'<@!?([A-Za-z0-9_-]+)>|<qqbot-at-user id="([A-Za-z0-9_-]+)"[^>]*>')
+EVERYONE_MENTION = re.compile(
+    r'<qqbot-at-everyone\b[^>]*>|<@!?(?:all|everyone)>'
+    r'|[@＠](?:全体成员|全體成員|全员|全員|全体|全體)'
+    r'|(?<!\w)@(?:all|everyone)\b', re.IGNORECASE)
 
 
 def _markdown_reply(db, command, argument, config):
@@ -81,8 +85,6 @@ def mentions_bot(mentions, bot_id, content):
         if item.get('is_you') is True:
             return True
         if bot_id and item.get('id') == bot_id:
-            return True
-        if item.get('bot') is True and not bot_id:
             return True
     if bot_id:
         for match in MENTION.finditer(str(content or '')):
@@ -372,17 +374,26 @@ class Bot:
             return
         mentions = payload.get('mentions') or []
         mentioned = mentions_bot(mentions, self.bot_id, payload.get('content'))
+        mentions_everyone = (payload.get('mention_everyone') is True or
+                             bool(EVERYONE_MENTION.search(str(payload.get('content') or ''))) or
+                             any(isinstance(item,dict) and item.get('id') in ('all','everyone')
+                                 for item in mentions))
         everyone = ('missing' if 'mention_everyone' not in payload else
                     str(payload['mention_everyone']).lower() if type(payload['mention_everyone']) is bool else 'invalid')
         obs.event('message_received', event_type=event_type, mentions_bot=mentioned,
                   mention_everyone=everyone, mention_count=len(mentions) if isinstance(mentions,list) else None,
+                  mentions_everyone=mentions_everyone,
                   **union_diagnostics(payload.get('author') or {}, self.config))
         author = payload.get('author') or {}
         if author.get('bot'):
             obs.event('message_ignored', reason='bot_author')
             return
-        addressed = event_type == 'GROUP_AT_MESSAGE_CREATE' or mentioned
-        if not addressed:
+        if mentions_everyone:
+            obs.event('message_ignored', reason='everyone_mention')
+            return
+        # @everyone can also arrive as GROUP_AT_MESSAGE_CREATE. The event
+        # name alone is insufficient evidence that this bot was addressed.
+        if not mentioned:
             obs.event('message_ignored', reason='not_addressed')
             return
         if not await asyncio.to_thread(self.reply_group_allowed, group_id):

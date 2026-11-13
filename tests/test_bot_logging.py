@@ -146,7 +146,7 @@ class DeliveryLogTests(BotOutboxFixture,unittest.TestCase):
         bot=self.bot();bot.api.reply_group=mock.Mock(side_effect=RuntimeError('do-not-log-secret'))
         with self.assertLogs(obs.LOGGER,level='INFO') as captured:
             asyncio.run(bot.handle_dispatch(None,{'t':'GROUP_AT_MESSAGE_CREATE','d':
-                {'id':'input','group_openid':'allowed','content':'/帮助'}}))
+                {'id':'input','group_openid':'allowed','content':'/帮助','mentions':[{'is_you':True}]}}))
         rows=records(captured)
         self.assertEqual(rows[-1]['event'],'reply_failed')
         self.assertEqual(rows[-1]['error_type'],'RuntimeError')
@@ -156,7 +156,7 @@ class DeliveryLogTests(BotOutboxFixture,unittest.TestCase):
 
     def test_simulation_and_duplicate_are_distinct_from_real_sends(self):
         bot=self.bot(dry_run=True);bot.api.reply_group=mock.Mock()
-        payload={'id':'same-input','group_openid':'allowed','content':'/帮助'}
+        payload={'id':'same-input','group_openid':'allowed','content':'/帮助','mentions':[{'is_you':True}]}
         with self.assertLogs(obs.LOGGER,level='INFO') as captured:
             for _ in range(2):asyncio.run(bot.handle_dispatch(None,{'t':'GROUP_AT_MESSAGE_CREATE','d':payload}))
         rows=records(captured)
