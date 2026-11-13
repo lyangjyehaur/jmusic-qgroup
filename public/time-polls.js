@@ -2,11 +2,26 @@
 function pollAddDays(day,offset) {
   const date=new Date(day+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);return date.toISOString().slice(0,10);
 }
-function pollCalendarDays(start,end) {
-  const valid=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
-  if(!valid(start)||!valid(end)||end<start)throw new Error('请选择有效的起止日期，结束日期不能早于开始日期');
-  const days=[];for(let day=start;day<=end;day=pollAddDays(day,1)){if(days.length===6)throw new Error('一次最多加入 6 个日期，请缩短日期段');days.push(day);}
-  return days;
+function pollMonthDays(month) {
+  const first=new Date(month+'-01T12:00:00Z');
+  if(!/^\d{4}-\d{2}$/.test(month)||!Number.isFinite(first.getTime()))throw new Error('请选择有效月份');
+  const end=new Date(first);end.setUTCMonth(end.getUTCMonth()+1);end.setUTCDate(0);
+  return {offset:(first.getUTCDay()+6)%7,days:Array.from({length:end.getUTCDate()},(_,i)=>month+'-'+String(i+1).padStart(2,'0'))};
+}
+function pollShiftMonth(month,offset) {
+  const date=new Date(month+'-01T12:00:00Z');date.setUTCMonth(date.getUTCMonth()+offset);return date.toISOString().slice(0,7);
+}
+function pollToggleCalendarDate(slots,day,makeSlot) {
+  let next;
+  if(slots.some(s=>s.date===day))next=slots.filter(s=>s.date!==day);
+  else {
+    if(slots.filter(s=>s.date).length>=6)throw new Error('最多选择 6 个选项，请先取消不需要的日期');
+    next=slots.map(s=>({...s}));
+    const empty=next.find(s=>!s.date);
+    if(empty)empty.date=day;else next.push({...makeSlot(),date:day});
+  }
+  while(next.length<2)next.push(makeSlot());
+  return next.sort((a,b)=>Number(!a.date)-Number(!b.date)||a.date.localeCompare(b.date));
 }
 function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,shortDate,timeRange,wallDate,wallToISO,openDetail,copyLink,askConfirm}) {
   const labels={open:'时间投票中',closed:'投票截止 · 待定案',finalized:'已确定时间',cancelled:'投票已取消'};
@@ -31,11 +46,22 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     $('#time-poll-board').innerHTML=list.map(p=>`<a class="event-card poll-card" data-time-poll="${p.id}" href="${esc(pollUrl(p.id))}"><div class="card-heading"><h3 class="card-title">${esc(p.title)}</h3><span class="event-state waiting">${esc(labels[p.status])}</span></div><div class="card-facts"><span>${p.options.length} 个候选时段 · ${p.respondent_count} 人已投票</span><span>${shortDate(p.deadline,p.timezone)} 截止投票</span><span class="card-location">${esc(p.location)}</span></div><div class="card-bottom"><span>${p.has_voted?'已投票':p.is_owner?'我发起的':'一起选时间'}</span><span class="category-label">${esc(BoardI18n.category(p.category))}</span><span class="card-chevron" aria-hidden="true">›</span></div></a>`).join('');
     return list.length;
   }
-  let slots=[],slotSerial=0;
+  let slots=[],slotSerial=0,calendarMonth='';
   const newSlot=(day='',time='18:00')=>({key:++slotSerial,date:day,time});
   const dayLabel=day=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date(day+'T12:00:00Z'));
   const optionLabel=(p,o)=>p.time_mode==='date'?dayLabel(o.date):shortDate(o.starts_at,p.timezone);
   const optionFuture=(p,o)=>p.time_mode==='date'?o.date>=wallDate(Date.now(),p.timezone).slice(0,10):Date.parse(o.starts_at)>Date.now();
+  function renderCalendar() {
+    const f=form().elements,today=wallDate(Date.now(),f.timezone.value).slice(0,10),earliest=f.exact_time.checked?today:pollAddDays(today,1);
+    if(!calendarMonth)calendarMonth=earliest.slice(0,7);
+    const selected=new Set(slots.map(s=>s.date).filter(Boolean)),full=slots.filter(s=>s.date).length>=6;
+    const {offset,days}=pollMonthDays(calendarMonth);
+    $('#poll-calendar-month').textContent=new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',year:'numeric',month:'long'}).format(new Date(calendarMonth+'-01T12:00:00Z'));
+    $('#poll-calendar-weekdays').innerHTML=Array.from({length:7},(_,i)=>`<span>${esc(new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',weekday:'short'}).format(new Date('2024-01-0'+(i+1)+'T12:00:00Z')))}</span>`).join('');
+    $('#poll-calendar-days').innerHTML='<span aria-hidden="true"></span>'.repeat(offset)+days.map(day=>`<button type="button" class="poll-calendar-day${day===today?' today':''}" data-poll-form-action="day" data-day="${day}" aria-label="${esc(dayLabel(day))}" aria-pressed="${selected.has(day)}"${day===today?' aria-current="date"':''}${!selected.has(day)&&(day<earliest||full)?' disabled':''}>${Number(day.slice(-2))}</button>`).join('');
+    $('[data-poll-form-action="previous-month"]',form()).disabled=calendarMonth<=earliest.slice(0,7);
+    $('#poll-calendar-selection').textContent=`已选 ${selected.size} 个日期，可跨月选择；最多 6 个选项。`;
+  }
   function readSlots() {
     const f=form().elements;
     for(const slot of slots){slot.date=f['poll_day_'+slot.key].value;slot.time=f['poll_time_'+slot.key].value;}
@@ -52,7 +78,6 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     $('#poll-duration').hidden=!exact;f.duration_hours.disabled=!exact;
     $('#poll-deadline-time').hidden=!exact;f.deadline_time.disabled=!exact;
     $('#poll-mode-hint').textContent=exact?'逐项指定开始时间，发布前核对开始与结束；凌晨按实际日期选择。':'先投日期，开始时间和持续时长在定案时补充。选中某一天表示当天方便，再按最终安排确认报名。';
-    if(event?.target?.name==='range_start'&&f.range_end.value<f.range_start.value)f.range_end.value=f.range_start.value;
     for(const slot of slots){
       const input=f['poll_day_'+slot.key],clock=f['poll_time_'+slot.key],row=input.closest('.poll-slot');
       slot.date=input.value;slot.time=clock.value;input.min=earliest;
@@ -68,6 +93,7 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     if(!exact&&first&&!f.deadline_date.dataset.touched)f.deadline_date.value=pollAddDays(first,-1);
     $('[data-poll-form-action="add"]',form()).disabled=slots.length>=6;
     $('#poll-slot-count').textContent=`${slots.length} / 6 个选项，至少保留 2 项`;
+    renderCalendar();
   }
   function changedSlots(){renderSlots();form().dispatchEvent(new Event('change',{bubbles:true}));}
   form().addEventListener('click',event=>{
@@ -76,23 +102,26 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     try{
       if(action==='add'&&slots.length<6){slots.push(newSlot());changedSlots();form().elements['poll_day_'+slots.at(-1).key].focus();}
       if(action==='remove'&&slots.length>2){slots=slots.filter(s=>s.key!==Number(button.dataset.key));changedSlots();}
-      if(action==='range'){
-        const f=form().elements,days=pollCalendarDays(f.range_start.value,f.range_end.value||f.range_start.value);
-        const filled=slots.filter(s=>s.date),known=new Set(filled.map(s=>s.date)),added=days.filter(day=>!known.has(day));
-        if(filled.length+added.length>6)throw new Error('加入后超过 6 个选项，请缩短日期段或先移除不需要的选项');
-        slots=[...filled,...added.map(day=>newSlot(day))];while(slots.length<2)slots.push(newSlot());
-        changedSlots();$('#poll-range-message').textContent=added.length?`已按天加入 ${added.length} 个日期，已有日期会保留。`:'这些日期已在候选中，没有重复加入。';
+      if(action==='previous-month'||action==='next-month'){
+        calendarMonth=pollShiftMonth(calendarMonth,action==='previous-month'?-1:1);renderCalendar();
       }
-    }catch(error){$('#poll-range-message').textContent=error.message;}
+      if(action==='current-month'){calendarMonth=wallDate(Date.now(),form().elements.timezone.value).slice(0,7);renderCalendar();}
+      if(action==='day'){
+        const day=button.dataset.day,removing=slots.some(s=>s.date===day);
+        slots=pollToggleCalendarDate(slots,day,newSlot);changedSlots();
+        $('#poll-calendar-message').textContent=removing?'已取消该日期，其他日期会保留。':slots.filter(s=>s.date).length>=6?'已选满 6 个选项，可先取消某日再换选。':'已加入候选，可继续点选其他日期。';
+        $(`[data-day="${day}"]`,form()).focus();
+      }
+    }catch(error){$('#poll-calendar-message').textContent=error.message;}
   });
   async function openCreate() {
     try {
       await BoardDrafts.detach('time-poll-form-dialog');
       form().reset();delete form().elements.deadline_date.dataset.touched;form().dataset.intent=crypto.randomUUID();
       const f=form().elements,today=wallDate(Date.now(),f.timezone.value).slice(0,10);
-      f.range_start.value=pollAddDays(today,2);f.range_end.value=pollAddDays(today,3);
       f.deadline_date.value=pollAddDays(today,1);
-      slots=[newSlot(),newSlot()];$('#poll-range-message').textContent='';
+      calendarMonth=pollAddDays(today,1).slice(0,7);
+      slots=[newSlot(),newSlot()];$('#poll-calendar-message').textContent='';
       $('.form-error',form()).textContent='';renderSlots();showDialog('time-poll-form-dialog');
       await BoardDrafts.bind('time-poll-form-dialog','time-poll:new',
         ()=>({fields:BoardDrafts.fields(form()),slots:readSlots().map(s=>({...s})),intent:form().dataset.intent}),
@@ -105,6 +134,7 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
             slots=Array.from({length:Math.max(2,Math.min(6,Number(fields.option_count)||3))},(_,i)=>{const value=fields['slot_'+i]||'';return newSlot(value.slice(0,10),value.slice(11,16));});
             f.deadline_date.value=(fields.deadline||'').slice(0,10);f.deadline_time.value=(fields.deadline||'').slice(11,16)||'23:59';
           }
+          const first=slots.map(s=>s.date).filter(Boolean).sort()[0];if(first)calendarMonth=first.slice(0,7);
           f.deadline_date.dataset.touched='1';renderSlots();
         });
     }catch(error){toast(error.message);}

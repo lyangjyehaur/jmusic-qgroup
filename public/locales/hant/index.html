@@ -7,7 +7,7 @@
   <meta name="description" content="群聚看板：群組活動發佈、報名接龍、候補管理與費用分攤。">
   <title>群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261110-settlement1">
+  <link rel="stylesheet" href="/style.css?v=20261113-calendar1">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
   <script src="/i18n.js?v=20261109-privacy1" defer></script>
@@ -16,7 +16,7 @@
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
   <script src="/activity.js?v=20261110-settlement1" defer></script>
-  <script src="/time-polls.js?v=20261113-dates2" defer></script>
+  <script src="/time-polls.js?v=20261113-calendar1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
   <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
@@ -74,12 +74,18 @@
         <label class="field">預計地點<input name="location" required maxlength="120" placeholder="集合區域、場地或店家"></label>
         <label class="field">活動說明 <span class="optional">選填</span><textarea name="description" rows="3" maxlength="3000" placeholder="想做什麼、預計預算、集合方式等"></textarea></label>
         <label class="field">活動時區<select name="timezone"><option value="Asia/Shanghai">北京時間（UTC+8）</option><option value="Asia/Taipei">臺北時間（UTC+8）</option><option value="Asia/Hong_Kong">香港時間（UTC+8）</option><option value="Asia/Tokyo">東京時間（UTC+9）</option><option value="UTC">UTC</option></select></label>
-        <section class="poll-date-range" aria-labelledby="poll-date-range-title">
-          <h3 id="poll-date-range-title">先選方便的日期</h3>
-          <p class="field-help">選一天或一段日期，按天加入候選。也可在下面單獨添加，最多 6 項。</p>
-          <div class="form-row"><label class="field">從哪天<input name="range_start" type="date"></label><label class="field">到哪天<input name="range_end" type="date"></label></div>
-          <button type="button" class="button secondary full" data-poll-form-action="range">加入這些日期</button>
-          <p id="poll-range-message" class="field-help" role="status" aria-live="polite"></p>
+        <section class="poll-calendar" aria-labelledby="poll-calendar-title">
+          <h3 id="poll-calendar-title">點選方便的日期</h3>
+          <p class="field-help">可跳著選，也可翻月選擇。選中日期會高亮，再點一次取消該日的候選選項。</p>
+          <div class="poll-calendar-heading">
+            <button type="button" class="icon-button" data-poll-form-action="previous-month" aria-label="上個月">‹</button>
+            <strong id="poll-calendar-month" aria-live="polite"></strong>
+            <button type="button" class="icon-button" data-poll-form-action="next-month" aria-label="下個月">›</button>
+          </div>
+          <div id="poll-calendar-weekdays" class="poll-calendar-grid poll-calendar-weekdays" aria-hidden="true"></div>
+          <div id="poll-calendar-days" class="poll-calendar-grid" role="group" aria-labelledby="poll-calendar-month" aria-describedby="poll-calendar-selection"></div>
+          <div class="poll-calendar-footer"><p id="poll-calendar-selection" class="field-help" role="status" aria-live="polite"></p><button type="button" class="text-button" data-poll-form-action="current-month">本月</button></div>
+          <p id="poll-calendar-message" class="field-help" role="status" aria-live="polite"></p>
         </section>
         <label class="check-option poll-exact-switch"><input name="exact_time" type="checkbox">指定具體時間</label>
         <p id="poll-mode-hint" class="field-help">先投日期，開始時間和持續時長在定案時補充。選中某一天表示當天方便，再按最終安排確認報名。</p>

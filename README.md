@@ -12,7 +12,7 @@
 
 完整计划见 [实施计划](docs/implementation-plan.md)，接口见 [报名契约](docs/roster-contract.md) 、[P2 活动契约](docs/activity-contract.md)、[P3 结算契约](docs/settlement-contract.md) 与 [P4 收付款契约](docs/finance-contract.md)。P5 增加活动／结算（含图片）／款项本机草稿、未知操作查回与安全重试、动态待办、活动复制与导航，详见 [P5 恢复契约](docs/experience-contract.md)；QQ OAuth 登录、回调及账号绑定已实现，应用审核和真实授权仍待确认。
 
-新增[活動時間投票](docs/time-poll-contract.md)：2–6 個候選日期或精確時段、日期段快速加入、按需添加選項、逐項意願及改票、發起者定案後建立正式活動。投票不占報名名額；新投票預設開啟 QQ 群通知，定案後沿用同步設定，也可手動分享連結。涉及共用 schema 16–18 與 outbox，發布範圍為 `both`。
+新增[活動時間投票](docs/time-poll-contract.md)：2–6 個候選日期或精確時段、月曆點選不連續日期、按需添加選項、逐項意願及改票、發起者定案後建立正式活動。投票不占報名名額；新投票預設開啟 QQ 群通知，定案後沿用同步設定，也可手動分享連結。涉及共用 schema 16–18 與 outbox，發布範圍為 `both`。
 
 ## 本地运行及验证
 

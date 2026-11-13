@@ -73,12 +73,31 @@ for(const bundle of ['public','public/locales/hans','public/locales/hant']) {
   assert.ok(!createHTML.includes('name="option_count"'),bundle);
   assert.match(createHTML,/data-poll-form-action="add"/);
   assert.match(createHTML,/name="exact_time" type="checkbox">/);
-  assert.match(createHTML,/name="range_start" type="date"/);
-  assert.match(createHTML,/name="range_end" type="date"/);
-  const days=vm.runInContext("pollCalendarDays('2028-02-28','2028-03-01')",context);
-  assert.equal(JSON.stringify(days),'["2028-02-28","2028-02-29","2028-03-01"]');
-  assert.throws(()=>vm.runInContext("pollCalendarDays('2027-02-29','2027-03-01')",context));
-  assert.throws(()=>vm.runInContext("pollCalendarDays('2028-03-02','2028-03-01')",context));
-  assert.throws(()=>vm.runInContext("pollCalendarDays('2028-03-01','2028-03-07')",context));
+  assert.ok(!createHTML.includes('name="range_start"'),bundle);
+  assert.match(createHTML,/id="poll-calendar-days"/);
+  assert.match(createHTML,/data-poll-form-action="next-month"/);
+  const month=vm.runInContext("pollMonthDays('2028-02')",context);
+  assert.equal(month.offset,1);assert.equal(month.days.length,29);assert.equal(month.days.at(-1),'2028-02-29');
+  assert.equal(vm.runInContext("pollMonthDays('2027-02').days.length",context),28);
+  assert.throws(()=>vm.runInContext("pollMonthDays('2028-13')",context));
+  assert.equal(vm.runInContext("pollShiftMonth('2028-12',1)",context),'2029-01');
+  assert.equal(vm.runInContext("pollShiftMonth('2028-01',-1)",context),'2027-12');
+  const selection=vm.runInContext(`(()=>{
+    const make=()=>({date:'',time:'18:00'});
+    let slots=[{date:'2028-02-20',time:'19:30'},make()];
+    slots=pollToggleCalendarDate(slots,'2028-03-07',make);
+    slots=pollToggleCalendarDate(slots,'2028-02-25',make);
+    slots=pollToggleCalendarDate(slots,'2028-03-07',make);
+    return slots;
+  })()`,context);
+  assert.equal(JSON.stringify(selection),'[{"date":"2028-02-20","time":"19:30"},{"date":"2028-02-25","time":"18:00"}]','Skipping dates and crossing months never selects intervening days or loses existing times');
+  vm.runInContext(`{
+    const slots=Array.from({length:6},(_,i)=>({date:'2028-03-0'+(i+1),time:'18:00'}));
+    this.fullCalendarSelection=slots;
+  }`,context);
+  assert.throws(()=>vm.runInContext("pollToggleCalendarDate(fullCalendarSelection,'2028-03-09',()=>({date:''}))",context));
+  assert.equal(vm.runInContext('fullCalendarSelection.length',context),6);
+  assert.equal(vm.runInContext("pollToggleCalendarDate(fullCalendarSelection,'2028-03-03',()=>({date:''})).length",context),5);
+  assert.equal(vm.runInContext("pollToggleCalendarDate([{date:'2028-03-03',time:'19:00'},{date:'2028-03-03',time:'21:00'}],'2028-03-03',()=>({date:'',time:'18:00'})).filter(s=>s.date).length",context),0);
 }
 console.log('Time polls: active/mine/past filters, canonical categories and safe cards passed in all bundles');
