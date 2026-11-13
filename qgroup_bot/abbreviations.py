@@ -9,6 +9,7 @@ import urllib.request
 from collections import OrderedDict
 
 from . import observability as obs
+from .abbreviation_text import AbbreviationText, mask_text
 from .sensitive_words import load_mask
 
 API_URL = 'https://lab.magiconch.com/api/nbnhhsh/guess'
@@ -61,7 +62,7 @@ def _render(data, terms):
         name = item['name'].lower()
         if name in terms:
             entries[name] = item
-    parts = ['【缩写查询】可能含义：', '\n']
+    sections = ['【缩写查询】可能含义：\n']
     for term in terms:
         item = entries.get(term, {})
         translations = item.get('trans')
@@ -73,14 +74,9 @@ def _render(data, terms):
             label = '（待确认候选）'
         else:
             values, label = [], ''
-        parts.extend((term, label, '：'))
-        for index, value in enumerate(values or ['暂无可显示的释义']):
-            if index:
-                parts.append('、')
-            parts.append(value)
-        parts.append('\n')
-    parts.append('来源：能不能好好说话；含义依语境而定。')
-    return mask.mask_parts(parts)
+        sections.extend((term, label, '：', '、'.join(values or ['暂无可显示的释义']), '\n'))
+    sections.append('来源：能不能好好说话；含义依语境而定。')
+    return mask_text(AbbreviationText(sections), mask)
 
 
 class AbbreviationLookup:

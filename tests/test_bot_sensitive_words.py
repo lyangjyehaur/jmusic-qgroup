@@ -158,6 +158,30 @@ class FilteredLookupTests(unittest.TestCase):
         self.assertNotIn('fuck', text)
         self.assertIn(REPLACEMENT+'：正常释义', text)
 
+    def test_slg_header_does_not_combine_with_first_definition(self):
+        for field in ('trans', 'inputting'):
+            with self.subTest(field=field):
+                self.lookup = AbbreviationLookup()
+                self.response([{'name': 'slg', field: ['水灵根', 'g水', '测试词']}])
+                text = self.lookup.answer('slg')
+                label = '（待确认候选）' if field == 'inputting' else ''
+                self.assertIn('slg'+label+'：水灵根、'+REPLACEMENT+'、'+REPLACEMENT, text)
+
+    def test_result_fields_do_not_match_into_other_queries_or_footer(self):
+        self.response([{'name': 'aa', 'trans': ['结尾']},
+                       {'name': 'bb', 'trans': ['正文']}])
+        mask = WordMask(['结尾bb', '正文来源', 'aa'])
+        with mock.patch('qgroup_bot.abbreviations.load_mask', return_value=mask):
+            text = self.lookup.answer('aa bb')
+        self.assertIn(REPLACEMENT+'：结尾\nbb：正文\n来源：', text)
+
+    def test_candidate_punctuation_cannot_inject_semantic_boundaries(self):
+        self.response([{'name': 'slg', 'trans': ['水灵根', 'g：水', 'g\n水', 'g', '水']}])
+        with mock.patch('qgroup_bot.abbreviations.load_mask', return_value=WordMask(['g水'])):
+            text = self.lookup.answer('slg')
+        self.assertIn('slg：水灵根、'+REPLACEMENT+'、'+REPLACEMENT+'、'+
+                      REPLACEMENT+'、'+REPLACEMENT+'\n', text)
+
     def test_cross_candidate_sensitive_phrase_is_masked_after_assembly(self):
         self.response([{'name': 'aa', 'trans': ['测试', '词', '正常释义', '测试', '词']}])
         self.assertIn('：'+REPLACEMENT+'、'+REPLACEMENT+'、正常释义、'+

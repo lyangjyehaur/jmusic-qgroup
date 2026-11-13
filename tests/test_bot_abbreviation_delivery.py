@@ -7,6 +7,8 @@ import unittest
 from unittest import mock
 
 from qgroup_bot.abbreviation_delivery import AbbreviationDelivery, Page, TTL
+from qgroup_bot.abbreviation_text import AbbreviationText, mask_text
+from qgroup_bot.abbreviations import _render
 from qgroup_bot.sensitive_words import WordMask
 
 
@@ -134,6 +136,56 @@ class DeliveryTests(unittest.TestCase):
         with mock.patch('qgroup_bot.abbreviation_delivery.load_mask', return_value=WordMask(['新规则词'])):
             self.delivery.send(self.api, 'group', Page('新规则词'), msg_id='first')
         self.assertEqual(self.accepted, ['[已遮蔽]'])
+
+    def test_fresh_reply_preserves_rendered_boundaries_when_rules_change(self):
+        with mock.patch('qgroup_bot.abbreviations.load_mask', return_value=WordMask([])):
+            text = _render([{'name': 'slg', 'trans': ['水灵根', 'g水']}], ['slg'])
+        with mock.patch('qgroup_bot.abbreviation_delivery.load_mask', return_value=WordMask(['g水'])):
+            self.delivery.send(self.api, 'group', Page(text), msg_id='first')
+        self.assertIn('slg：水灵根、[已遮蔽]\n', self.accepted[0])
+
+    def test_long_result_keeps_boundaries_across_rule_edits_and_restart(self):
+        text = AbbreviationText(['长'*500+'\n', 'slg', '：', '水灵根、正常释义、'*80])
+        self.delivery.send(self.api, 'group', Page(text), msg_id='first')
+        token = self.token()
+        self.delivery = AbbreviationDelivery(self.root, page_bytes=200)
+        mask = WordMask(['g水', '正常释义'])
+        with mock.patch('qgroup_bot.abbreviation_delivery.load_mask', return_value=mask):
+            for index in range(40):
+                if not list(self.root.glob('*.txt')):
+                    break
+                page = self.delivery.continuation('group', '继续 '+token)
+                self.assertTrue(page.token)
+                self.delivery.send(self.api, 'group', page, msg_id='next%d' % index)
+        self.assertFalse(list(self.root.glob('*.txt')))
+        self.assertEqual(''.join(self.accepted), mask_text(text, mask))
+        self.assertIn('slg：水灵根', ''.join(self.accepted))
+
+    def test_cursor_inside_header_retains_boundary_after_body_rewrite(self):
+        token, meta = self.delivery._create('group', AbbreviationText(['slg', '：', '水灵根、g水']))
+        meta['offset'] = 2  # The next page starts at the g in slg.
+        self.delivery._save_meta(token, meta)
+        with mock.patch('qgroup_bot.abbreviation_delivery.load_mask', return_value=WordMask(['g水'])):
+            self.assertEqual(self.delivery.continuation('group', '继续 '+token).text,
+                             'g：水灵根、[已遮蔽]')
+            self.delivery = AbbreviationDelivery(self.root)
+            self.delivery.send(self.api, 'group', self.delivery.continuation('group', '继续 '+token),
+                               msg_id='next')
+        self.assertEqual(''.join(self.accepted), 'g：水灵根、[已遮蔽]')
+
+    def test_legacy_pending_result_without_boundaries_still_rechecks_rules(self):
+        token, _ = self.delivery._create('group', '新规则词')
+        with mock.patch('qgroup_bot.abbreviation_delivery.load_mask', return_value=WordMask(['新规则词'])):
+            self.assertEqual(self.delivery.continuation('group', '继续 '+token).text, '[已遮蔽]')
+
+    def test_corrupt_boundaries_do_not_return_unchecked_pending_text(self):
+        token, meta = self.delivery._create('group', AbbreviationText(['slg', '：', '水灵根']))
+        for ends in ([], [1], [3, 2, 15], ['bad', 15]):
+            meta['section_ends'] = ends
+            self.delivery._save_meta(token, meta)
+            page = self.delivery.continuation('group', '继续 '+token)
+            self.assertFalse(page.token)
+            self.assertNotIn('水灵根', page.text)
 
     def test_stale_continuation_snapshot_does_not_replay_acknowledged_content(self):
         text = '长'*1000

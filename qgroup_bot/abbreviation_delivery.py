@@ -14,6 +14,7 @@ import threading
 import time
 
 from . import observability as obs
+from .abbreviation_text import AbbreviationText, mask_text
 from .sensitive_words import load_mask
 
 CONTINUE = re.compile(r'^(?:继续|繼續|下一页|下一頁)(?:\s+([0-9a-f]{24}))?$')
@@ -74,6 +75,8 @@ class AbbreviationDelivery:
         token = secrets.token_hex(12)
         meta = dict(group=self._group(group), created=time.time(), offset=0,
                     budget=self.page_bytes, uncertain=False)
+        if isinstance(text, AbbreviationText):
+            meta['section_ends'] = text.section_ends()
         self._write(self._paths(token)[1], text.encode('utf-8'))
         self._save_meta(token, meta)
         return token, meta
@@ -86,9 +89,9 @@ class AbbreviationDelivery:
         body = self._body(token, meta)
         with body.open('rb') as handle:
             handle.seek(meta['offset'])
-            text = handle.read().decode('utf-8')
+            text = AbbreviationText.remaining(handle.read(), meta['offset'], meta.get('section_ends'))
         # Rule edits also apply to pending results; retain candidate delimiters.
-        masked = load_mask().mask_parts(re.split('([、\n])', text))
+        masked = mask_text(text, load_mask())
         if masked != text:
             # Publish the new body through one atomic metadata replacement.
             # A crash before that point leaves the old body/cursor intact.
@@ -96,6 +99,7 @@ class AbbreviationDelivery:
             self._write(new_body, masked.encode('utf-8'))
             meta['offset'] = 0
             meta['body'] = new_body.name
+            meta['section_ends'] = masked.section_ends()
             self._save_meta(token, meta)
             body.unlink(missing_ok=True)
         return meta, masked
@@ -149,7 +153,7 @@ class AbbreviationDelivery:
                 return self._call(api, group, '续读结果已过期，请重新查询缩写。', seq, kwargs)
         else:
             meta = None
-            text = load_mask().mask_parts(re.split('([、\n])', text))
+            text = mask_text(text, load_mask())
         if not text:
             return self._call(api, group, '该查询结果已全部显示。', seq, kwargs)
 
