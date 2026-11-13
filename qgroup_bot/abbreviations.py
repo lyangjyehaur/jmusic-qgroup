@@ -13,7 +13,6 @@ from . import observability as obs
 
 API_URL = 'https://lab.magiconch.com/api/nbnhhsh/guess'
 TIMEOUT = 4
-MAX_BYTES = 65536
 USAGE = ('用法：/缩写 yyds，也可用 /縮寫 或 /nbnhhsh。\n'
          '可用空格或逗号分隔，最多 5 个缩写；每个为 2–32 位英文字母或数字。\n'
          '仅将缩写发送到第三方「能不能好好说话」查询，候选含义仅供参考。')
@@ -43,11 +42,7 @@ def _values(values):
         if (not text or '@' in text or '＠' in text or '<' in text or '>' in text
                 or re.search(r'https?://|www\.', text, re.IGNORECASE)):
             continue
-        text = text[:40]
-        if text not in result:
-            result.append(text)
-        if len(result) == 5:
-            break
+        result.append(text)
     return result
 
 
@@ -107,10 +102,7 @@ class AbbreviationLookup:
                          'User-Agent': 'qgroup-bot/nbnhhsh'})
             try:
                 with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-                    raw = response.read(MAX_BYTES + 1)
-                if len(raw) > MAX_BYTES:
-                    raise ValueError('response too large')
-                text = _render(json.loads(raw), terms)
+                    text = _render(json.load(response), terms)
             except (urllib.error.URLError, TimeoutError, OSError, ValueError,
                     http.client.HTTPException) as exc:
                 obs.event('abbreviation_lookup_failed', error_type=type(exc).__name__)

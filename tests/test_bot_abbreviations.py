@@ -11,7 +11,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
 
-from qgroup_bot.abbreviations import (API_URL, MAX_BYTES, TIMEOUT, UNAVAILABLE,
+from qgroup_bot.abbreviations import (API_URL, TIMEOUT, UNAVAILABLE,
                                       USAGE, AbbreviationLookup)
 from qgroup_bot.main import Bot
 from qgroup_bot.replies import answer, answer_markdown, help_text, parse
@@ -61,16 +61,35 @@ class LookupTests(unittest.TestCase):
         self.assertIn('dd：暂无可显示的释义', text)
         self.assertNotIn('不应显示', text)
 
-    def test_upstream_content_is_bounded_and_cannot_inject_links_or_mentions(self):
+    def test_upstream_content_cannot_inject_links_or_mentions(self):
         self.response([{'name': 'yyds', 'trans': [
             'https://untrusted.test', 'www.untrusted.test', '@everyone', '＠全体成员',
             '<qqbot-at-everyone />', '**正常**\n释义', '很'*100,
             *['候选%d' % i for i in range(100)]]}])
         text = self.lookup.answer('yyds')
         self.assertIn('正常 释义', text)
-        for forbidden in ('untrusted', '@', '＠', '<', '**', '很'*41, '候选3'):
+        for forbidden in ('untrusted', '@', '＠', '<', '**'):
             self.assertNotIn(forbidden, text)
-        self.assertLess(len(text), 400)
+        self.assertIn('很'*100, text)
+        self.assertIn('候选99', text)
+
+    def test_all_candidates_keep_their_full_length_order_and_duplicates(self):
+        for field in ('trans', 'inputting'):
+            with self.subTest(field=field):
+                self.lookup = AbbreviationLookup()
+                values = ['释义%d%s' % (i, '长'*100) for i in range(100)]
+                values += [values[0], '长'*40+'甲', '长'*40+'乙']
+                self.response([{'name': 'yyds', field: values}])
+                text = self.lookup.answer('yyds')
+                self.assertIn('：'+'、'.join(values)+'\n', text)
+                self.assertEqual(text.count(values[0]), 2)
+
+    def test_valid_response_larger_than_64_kib_is_displayed_in_full(self):
+        values = ['释义%d%s' % (i, '长'*100) for i in range(300)]
+        data = [{'name': 'yyds', 'trans': values}]
+        self.assertGreater(len(json.dumps(data, ensure_ascii=False).encode()), 65536)
+        self.response(data)
+        self.assertIn('：'+'、'.join(values)+'\n', self.lookup.answer('yyds'))
 
     def test_errors_are_friendly_and_do_not_leak_response_or_exception_details(self):
         for failure in (TimeoutError('private detail'), urllib.error.URLError('secret'),
@@ -81,9 +100,9 @@ class LookupTests(unittest.TestCase):
                 self.assertEqual(self.lookup.answer('yyds'), UNAVAILABLE)
                 self.assertNotIn('secret', self.lookup.answer('yyds'))
 
-    def test_invalid_json_schema_and_oversize_response_are_handled(self):
+    def test_invalid_json_and_schema_are_handled(self):
         for raw in (b'not json', b'{}', b'[null]', b'[{"name":"yyds","trans":"bad"}]',
-                    b'[{"name":"yyds","trans":[42]}]', b'x'*(MAX_BYTES+1)):
+                    b'[{"name":"yyds","trans":[42]}]'):
             with self.subTest(raw=raw[:60]):
                 self.lookup = AbbreviationLookup()
                 self.open.return_value = io.BytesIO(raw)
@@ -144,6 +163,16 @@ class RoutingTests(unittest.TestCase):
         self.bot.api.reply_group.assert_called_once()
         self.assertIn('永远的神', self.bot.api.reply_group.call_args.args[1])
         self.assertNotIn('markdown', self.bot.api.reply_group.call_args.kwargs)
+
+    def test_reply_passes_the_entire_result_to_qq_without_truncation(self):
+        values = ['释义%d%s' % (i, '长'*100) for i in range(100)]
+        with mock.patch('qgroup_bot.replies.abbreviation_lookup', AbbreviationLookup()), \
+                mock.patch('qgroup_bot.abbreviations.urllib.request.urlopen',
+                           return_value=io.BytesIO(json.dumps(
+                               [{'name': 'yyds', 'trans': values}]).encode())):
+            asyncio.run(self.bot.reply(None, 'allowed', '缩写', 'yyds', msg_id='full'))
+        self.bot.api.reply_group.assert_called_once()
+        self.assertIn('：'+'、'.join(values)+'\n', self.bot.api.reply_group.call_args.args[1])
 
     def test_disallowed_group_disabled_replies_and_unmentioned_chat_never_query(self):
         with mock.patch('qgroup_bot.replies.abbreviation_lookup.answer') as lookup:
