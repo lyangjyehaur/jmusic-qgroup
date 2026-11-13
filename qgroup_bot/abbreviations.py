@@ -10,6 +10,7 @@ from collections import OrderedDict
 
 from . import markdown as md
 from . import observability as obs
+from .sensitive_words import load_mask
 
 API_URL = 'https://lab.magiconch.com/api/nbnhhsh/guess'
 TIMEOUT = 4
@@ -30,7 +31,7 @@ def _terms(argument):
     return terms
 
 
-def _values(values):
+def _values(values, mask):
     if not isinstance(values, list):
         raise ValueError('invalid translation list')
     result = []
@@ -42,13 +43,14 @@ def _values(values):
         if (not text or '@' in text or '＠' in text or '<' in text or '>' in text
                 or re.search(r'https?://|www\.', text, re.IGNORECASE)):
             continue
-        result.append(text)
+        result.append(mask.mask(text))
     return result
 
 
 def _render(data, terms):
     if not isinstance(data, list):
         raise ValueError('invalid response')
+    mask = load_mask()
     entries = {}
     for item in data:
         if not isinstance(item, dict) or not isinstance(item.get('name'), str):
@@ -61,14 +63,14 @@ def _render(data, terms):
         item = entries.get(term, {})
         translations = item.get('trans')
         if translations is not None:
-            values = _values(translations)
+            values = _values(translations, mask)
             label = ''
         elif 'trans' not in item and item.get('inputting'):
-            values = _values(item['inputting'])
+            values = _values(item['inputting'], mask)
             label = '（待确认候选）'
         else:
             values, label = [], ''
-        lines.append('%s%s：%s' % (term, label, '、'.join(values) if values else '暂无可显示的释义'))
+        lines.append('%s%s：%s' % (mask.mask(term), label, '、'.join(values) if values else '暂无可显示的释义'))
     lines.append('来源：能不能好好说话；含义依语境而定。')
     return '\n'.join(lines)
 
@@ -92,7 +94,11 @@ class AbbreviationLookup:
             cached = self.cache.get(key)
             if cached and cached[0] > current:
                 self.cache.move_to_end(key)
-                return cached[1]
+                try:
+                    return _render(cached[1], terms)
+                except (OSError, ValueError, KeyError, TypeError) as exc:
+                    obs.event('abbreviation_lookup_failed', error_type=type(exc).__name__)
+                    return UNAVAILABLE
             if current < self.next_request:
                 return '缩写查询过于频繁，请稍后再试。'
             self.next_request = current + 1
@@ -102,13 +108,14 @@ class AbbreviationLookup:
                          'User-Agent': 'qgroup-bot/nbnhhsh'})
             try:
                 with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-                    text = _render(json.load(response), terms)
+                    data = json.load(response)
+                text = _render(data, terms)
             except (urllib.error.URLError, TimeoutError, OSError, ValueError,
-                    http.client.HTTPException) as exc:
+                    http.client.HTTPException, KeyError, TypeError) as exc:
                 obs.event('abbreviation_lookup_failed', error_type=type(exc).__name__)
                 self.next_request = time.monotonic() + 10
                 return UNAVAILABLE
-            self.cache[key] = (time.monotonic() + 3600, text)
+            self.cache[key] = (time.monotonic() + 3600, data)
             self.cache.move_to_end(key)
             while len(self.cache) > 256:
                 self.cache.popitem(last=False)

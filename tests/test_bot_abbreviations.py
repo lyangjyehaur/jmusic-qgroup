@@ -174,6 +174,23 @@ class RoutingTests(unittest.TestCase):
         self.bot.api.reply_group.assert_called_once()
         self.assertIn('：'+'、'.join(values)+'\n', self.bot.api.reply_group.call_args.args[1])
 
+    def test_sensitive_words_are_masked_before_sending_and_output_logging(self):
+        self.bot.config.log_content = True
+        data = [{'name': 'yyds', 'trans': ['正常释义', '傻逼', '长'*100]}]
+        with mock.patch('qgroup_bot.replies.abbreviation_lookup', AbbreviationLookup()), \
+                mock.patch('qgroup_bot.abbreviations.urllib.request.urlopen',
+                           return_value=io.BytesIO(json.dumps(data).encode())), \
+                self.assertLogs('qgroup_bot.events', level='INFO') as logs:
+            asyncio.run(self.bot.reply(None, 'allowed', '缩写', 'yyds', msg_id='masked'))
+        self.bot.api.reply_group.assert_called_once()
+        text = self.bot.api.reply_group.call_args.args[1]
+        self.assertIn('正常释义、[已遮蔽]、'+'长'*100, text)
+        self.assertNotIn('傻逼', text)
+        logged = '\n'.join(logs.output)
+        self.assertIn('reply_prepared', logged)
+        self.assertIn('[已遮蔽]', logged)
+        self.assertNotIn('傻逼', logged)
+
     def test_disallowed_group_disabled_replies_and_unmentioned_chat_never_query(self):
         with mock.patch('qgroup_bot.replies.abbreviation_lookup.answer') as lookup:
             asyncio.run(self.bot.reply(None, 'other', '缩写', 'yyds', msg_id='other'))
