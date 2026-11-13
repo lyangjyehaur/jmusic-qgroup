@@ -108,6 +108,19 @@ def notify_managers(db,event,kind,message):
         audit.notify(db,uid,event['id'],kind,message)
 
 
+def removal_blocker(db,event):
+    if any(db.execute('SELECT 1 FROM '+table+' WHERE event_id=? LIMIT 1',(event['id'],)).fetchone()
+           for table in ('settlements','settlement_history','finance_entries','finance_reports')):
+        return '已有结算或款项记录，请保留活动并使用归档'
+    if db.execute('''SELECT 1 FROM attendees WHERE event_id=?
+        AND (user_id IS NULL OR user_id!=? OR manager_id!=?) LIMIT 1''',
+        (event['id'],event['owner_id'],event['owner_id'])).fetchone():
+        return '已有其他人的报名记录（含退出或代报名），请取消后归档'
+    if db.execute('SELECT 1 FROM event_roles WHERE event_id=? LIMIT 1',(event['id'],)).fetchone():
+        return '已有协办参与管理，请取消后归档'
+    return ''
+
+
 def patch(db,event,user,data):
     owner=event['owner_id']==user['id']
     action=data.get('action')
@@ -126,7 +139,7 @@ def patch(db,event,user,data):
     reason=string(data,'reason',200,False)
     settled=bool(db.execute('SELECT 1 FROM settlements WHERE event_id=?',(event['id'],)).fetchone())
     terminal=event['lifecycle'] in ('ended','cancelled')
-    if event['archived_at'] and action!='unarchive':
+    if event['archived_at'] and action not in ('unarchive','remove'):
         raise APIError('请先取消归档再修改活动；结算更正仍可从结算入口操作',409)
     if 'title' in data:
         if terminal or settled:
@@ -210,7 +223,11 @@ def patch(db,event,user,data):
         db.execute("UPDATE events SET formation_state='confirmed' WHERE id=?",(event['id'],))
         notify_managers(db,event,'formation_confirmed',event['title']+' 已由发起者确认成团')
     elif action=='remove':
-        raise APIError('请使用归档保留活动和帐务记录',409)
+        audit.require_revision(event,data)
+        blocked=removal_blocker(db,event)
+        if blocked:raise APIError(blocked,409)
+        db.execute("UPDATE events SET status='deleted',registration_open=0,bot_enabled=0 WHERE id=?",(event['id'],))
+        db.execute("UPDATE bot_outbox SET status='skipped',last_error='活动已删除' WHERE event_id=? AND status IN ('pending','sending')",(event['id'],))
     else:
         raise APIError('操作格式不正确')
     updated=db.execute('SELECT * FROM events WHERE id=?',(event['id'],)).fetchone()

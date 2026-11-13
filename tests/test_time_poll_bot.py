@@ -136,6 +136,25 @@ class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
         with storage.connect(self.path) as db:
             self.assertEqual(time_polls.get(db,p['id'])['status'],'open')
 
+    def test_remove_fences_claimed_poll_jobs(self):
+        self.create_poll()
+        worker=self.worker();claimed=worker.claim()[0]
+        self.manage('remove')
+        self.assertEqual(worker.deliver(claimed),'skipped')
+        worker.api.post.assert_not_called()
+        self.assertEqual(self.rows()[0]['status'],'skipped')
+        self.assertEqual(worker.poll_once()['claimed'],0)
+
+    def test_remove_unused_event_fences_all_pending_notifications(self):
+        event_id=self.create_event()
+        worker=self.worker();claimed=worker.claim()[0]
+        with storage.connect(self.path) as db:
+            event=db.execute('SELECT * FROM events WHERE id=?',(event_id,)).fetchone()
+            events.patch(db,event,self.user,dict(action='remove',base_revision=event['revision']))
+        self.assertEqual(worker.deliver(claimed),'skipped')
+        worker.api.post.assert_not_called()
+        self.assertEqual({r['status'] for r in self.rows()},{'skipped'})
+
     def test_migration_preserves_existing_delivery_fences_and_sequences(self):
         source=Path(self.tmp.name)/'schema16.sqlite3'
         target=Path(self.tmp.name)/'schema17.sqlite3'

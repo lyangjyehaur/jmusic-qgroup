@@ -58,6 +58,8 @@ def serialize(db, event, viewer):
     result.pop('owner_id')
     result['ends_at'] = end_time(event).isoformat(timespec='seconds') if event['duration_hours'] else None
     result['is_owner'] = event['owner_id'] == viewer
+    result['removal_blocker'] = events.removal_blocker(db,event) if result['is_owner'] else ''
+    result['can_remove'] = result['is_owner'] and event['status']!='deleted' and not result['removal_blocker']
     result['bot_feature_enabled'] = bot_outbox.enabled()
     if permissions.has(db,event,viewer,'settlement'):
         result['bot_delivery'] = [dict(r, state='simulated' if r['simulated_at'] or r['last_error']=='dry-run' else r['status'])
@@ -304,8 +306,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply({'notifications':[dict(row) for row in messages],'unread_count':unread})
             if path=='/api/events':
                 found = db.execute("SELECT * FROM events WHERE status!='deleted' ORDER BY starts_at").fetchall()
-                polls=db.execute('''SELECT * FROM time_polls WHERE status IN ('open','closed') OR owner_id=?
-                    OR EXISTS(SELECT 1 FROM time_poll_ballots b WHERE b.poll_id=time_polls.id AND b.user_id=?)
+                polls=db.execute('''SELECT * FROM time_polls WHERE status!='deleted' AND (status IN ('open','closed') OR owner_id=?
+                    OR EXISTS(SELECT 1 FROM time_poll_ballots b WHERE b.poll_id=time_polls.id AND b.user_id=?))
                     ORDER BY created_at DESC''',(viewer,viewer)).fetchall()
                 return self.reply({'events':[serialize(db,e,viewer) for e in found if roster.can_access(db,e,viewer)],
                     'time_polls':[time_polls.serialize(db,p,viewer) for p in polls]})
@@ -501,9 +503,10 @@ class Handler(BaseHTTPRequestHandler):
                     if poll_match[2]=='/votes' and self.command=='PUT':time_polls.vote(db,poll,user,data)
                     elif not poll_match[2] and self.command=='PATCH':time_polls.manage(db,poll,user,data)
                     else:raise APIError('不支持的时间投票操作',405)
-                    poll=time_polls.get(db,poll['id'])
+                    poll=db.execute('SELECT * FROM time_polls WHERE id=?',(poll['id'],)).fetchone()
                 else:raise APIError('时间投票不存在',404)
-                result=time_polls.serialize(db,poll,user['id'])
+                result=({'id':poll['id'],'status':'deleted'} if poll['status']=='deleted'
+                        else time_polls.serialize(db,poll,user['id']))
             elif self.command=='POST' and path=='/api/payment-codes':
                 if not user['nickname']:raise APIError('请先设置称呼')
                 result=payment_codes.create(db,user,data);status=201
@@ -617,7 +620,8 @@ class Handler(BaseHTTPRequestHandler):
                     else:
                         raise APIError('操作不存在',404)
                 event = db.execute('SELECT * FROM events WHERE id=?',(event['id'],)).fetchone()
-                result = serialize(db,event,user['id']) if roster.can_access(db,event,user['id']) else {'ok':True,'claim_pending':True}
+                result = ({'id':event['id'],'status':'deleted'} if event['status']=='deleted' else
+                          serialize(db,event,user['id']) if roster.can_access(db,event,user['id']) else {'ok':True,'claim_pending':True})
             if request_key:
                 db.execute('INSERT INTO request_results VALUES(?,?,?,?,?,?)',
                     (user['id'],request_key,signature,json.dumps(result,ensure_ascii=False),status,now()))

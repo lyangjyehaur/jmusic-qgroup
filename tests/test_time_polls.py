@@ -258,6 +258,54 @@ class TimePollHTTPTests(unittest.TestCase):
         self.assertNotIn('respondents',guest)
         self.assertEqual(guest['my_choices'],{})
 
+    def test_remove_hides_votes_and_links_but_preserves_history_and_recovery(self):
+        status,p=self.owner.request('/api/time-polls','POST',poll_data())
+        self.assertEqual(status,201)
+        url='/api/time-polls/'+p['id']
+        vote=dict(base_revision=p['revision'],choices=[dict(option_id=o['id'],choice='yes') for o in p['options']])
+        self.assertEqual(self.voter.request(url+'/votes','PUT',vote)[0],200)
+        self.assertEqual(self.voter.request(url,'PATCH',dict(action='remove',base_revision=p['revision']))[0],403)
+        self.assertFalse(self.voter.request(url)[1]['can_remove'])
+        key=uuid.uuid4().hex;data=dict(action='remove',base_revision=p['revision'])
+        status,result=self.owner.request(url,'PATCH',data,{'Idempotency-Key':key})
+        self.assertEqual((status,result),(200,dict(id=p['id'],status='deleted')))
+        self.assertEqual(self.owner.request(url,'PATCH',data,{'Idempotency-Key':key}),(status,result))
+        self.assertEqual(self.owner.request('/api/requests/'+key)[1]['result'],result)
+        for client in (self.owner,self.voter,self.guest):
+            self.assertEqual(client.request(url)[0],404)
+            self.assertEqual(client.request('/api/events')[1]['time_polls'],[])
+        self.assertEqual(self.voter.request(url+'/votes','PUT',vote)[0],404)
+        with storage.connect(server.DB) as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM time_poll_votes WHERE poll_id=?',(p['id'],)).fetchone()[0],3)
+            self.assertEqual(db.execute("SELECT count(*) FROM time_poll_history WHERE poll_id=? AND action='remove'",(p['id'],)).fetchone()[0],1)
+
+    def test_cancelled_and_finalized_polls_can_be_removed_independently(self):
+        for action in ('cancel','finalize'):
+            with self.subTest(action=action):
+                _,p=self.owner.request('/api/time-polls','POST',poll_data())
+                url='/api/time-polls/'+p['id']
+                data=dict(action=action,base_revision=p['revision'],reason='测试清理')
+                if action=='finalize':data.update(base_vote_revision=p['vote_revision'],option_id=p['options'][0]['id'],registration_deadline=p['options'][0]['starts_at'],accept_terms=True)
+                status,p=self.owner.request(url,'PATCH',data);self.assertEqual(status,200,p)
+                self.assertTrue(p['can_remove'])
+                self.assertEqual(self.owner.request(url,'PATCH',dict(action='remove',base_revision=1))[0],409)
+                self.assertEqual(self.owner.request(url,'PATCH',dict(action='remove',base_revision=p['revision']))[0],200)
+                if action=='finalize':
+                    event_url='/api/events/'+p['event_id']
+                    status,e=self.owner.request(event_url);self.assertEqual(status,200)
+                    self.assertTrue(e['can_remove'])
+                    self.assertEqual(self.owner.request(event_url,'PATCH',dict(action='remove',base_revision=e['revision']))[0],200)
+
+    def test_removed_formal_event_no_longer_has_a_dead_poll_link(self):
+        _,p=self.owner.request('/api/time-polls','POST',poll_data())
+        url='/api/time-polls/'+p['id']
+        data=dict(action='finalize',base_revision=p['revision'],base_vote_revision=p['vote_revision'],option_id=p['options'][0]['id'],registration_deadline=p['options'][0]['starts_at'],accept_terms=True,reason='测试')
+        status,p=self.owner.request(url,'PATCH',data);self.assertEqual(status,200,p)
+        event_url='/api/events/'+p['event_id'];_,e=self.owner.request(event_url)
+        self.assertEqual(self.owner.request(event_url,'PATCH',dict(action='remove',base_revision=e['revision']))[0],200)
+        status,p=self.owner.request(url)
+        self.assertEqual(status,200);self.assertTrue(p['event_deleted']);self.assertIsNone(p['event_id'])
+
     def test_writes_require_login_protocol_and_idempotency_key(self):
         self.assertEqual(self.guest.request('/api/time-polls','POST',poll_data())[0],401)
         self.assertEqual(self.owner.request('/api/time-polls','POST',poll_data(),{'X-Kanban-Version':'1'})[0],409)

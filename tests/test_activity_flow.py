@@ -75,6 +75,68 @@ class ActivityFlowTests(unittest.TestCase):
         e=self.fresh(client)
         return client.request(self.url+'/attendees/'+person['id']+'/conditions','PATCH',dict(base_revision=e['revision'],conditions_version=e['conditions_version'],decision=decision,**extra))
 
+    def test_owner_can_remove_unused_activity_and_recover_the_exact_result(self):
+        self.signup(self.owner,[dict(is_self=True)])
+        before=self.fresh()
+        self.assertTrue(before['can_remove'])
+        key=uuid.uuid4().hex
+        data=dict(action='remove',base_revision=before['revision'])
+        status,result=self.owner.request(self.url,'PATCH',data,{'Idempotency-Key':key})
+        self.assertEqual((status,result),(200,dict(id=before['id'],status='deleted')))
+        self.assertEqual(self.owner.request(self.url,'PATCH',data,{'Idempotency-Key':key}),(status,result))
+        self.assertEqual(self.owner.request('/api/requests/'+key)[1]['result'],result)
+        for client in (self.owner,self.other):
+            self.assertEqual(client.request(self.url)[0],404)
+            self.assertNotIn(before['id'],[e['id'] for e in client.request('/api/events')[1]['events']])
+        self.assertEqual(self.owner.request(self.url+'/conditions')[0],404)
+        with sqlite3.connect(server.DB) as db:
+            self.assertEqual(db.execute("SELECT count(*) FROM event_audit WHERE event_id=? AND action='event_remove'",(before['id'],)).fetchone()[0],1)
+            self.assertEqual(db.execute('SELECT count(*) FROM attendees WHERE event_id=?',(before['id'],)).fetchone()[0],1)
+
+    def test_remove_requires_owner_and_fresh_revision(self):
+        before=self.fresh()
+        self.assertFalse(self.fresh(self.other)['can_remove'])
+        self.assertEqual(self.action('remove',self.other)[0],403)
+        self.action('pause')
+        self.assertEqual(self.owner.request(self.url,'PATCH',dict(action='remove',base_revision=before['revision']))[0],409)
+        self.assertEqual(self.fresh()['status'],'closed')
+
+    def test_draft_and_archived_unused_activity_can_be_removed(self):
+        status,draft=self.owner.request('/api/events','POST',dict(self.data,lifecycle='draft'))
+        self.assertEqual(status,201)
+        self.assertTrue(draft['can_remove'])
+        self.assertEqual(self.owner.request('/api/events/'+draft['id'],'PATCH',dict(action='remove',base_revision=draft['revision']))[0],200)
+        self.action('cancel',reason='仅测试')
+        self.action('archive')
+        self.assertTrue(self.fresh()['can_remove'])
+        self.assertEqual(self.action('remove')[0],200)
+
+    def test_other_registration_still_blocks_removal_after_withdrawal(self):
+        e=self.signup(self.other,[dict(is_self=True)])
+        p=e['my_attendees'][0]
+        self.assertEqual(self.other.request(self.url+'/attendees/'+p['id'],'DELETE',dict(base_revision=e['revision']))[0],200)
+        e=self.fresh()
+        self.assertFalse(e['can_remove'])
+        self.assertIn('报名',e['removal_blocker'])
+        self.assertEqual(self.action('remove')[0],409)
+        self.assertEqual(self.action('cancel',reason='改期')[0],200)
+        self.assertEqual(self.action('archive')[0],200)
+        self.assertEqual(self.owner.request(self.url)[0],200)
+
+    def test_settlement_and_payment_claims_block_removal(self):
+        with server.connect() as db:
+            event=db.execute('SELECT * FROM events WHERE id=?',(self.event['id'],)).fetchone()
+            owner_id=event['owner_id']
+            db.execute("INSERT INTO finance_reports(id,event_id,reporter_id,reporter_name,payload_json,created_at) VALUES(?,?,?,'发起者','{}',?)",(uuid.uuid4().hex,event['id'],owner_id,server.now()))
+        self.assertEqual(self.action('remove')[0],409)
+        self.assertEqual(self.fresh()['status'],'open')
+        status,unused=self.owner.request('/api/events','POST',self.data)
+        self.assertEqual(status,201)
+        with server.connect() as db:
+            db.execute('INSERT INTO settlements(event_id,total_cents,headcount,updated_at) VALUES(?,0,1,?)',(unused['id'],server.now()))
+        status,result=self.owner.request('/api/events/'+unused['id'],'PATCH',dict(action='remove',base_revision=unused['revision']))
+        self.assertEqual(status,409,result)
+
     def test_p1_cached_response_replay_refreshes_schema_without_reexecuting(self):
         request_key=uuid.uuid4().hex
         status,event=self.owner.request('/api/events','POST',self.data,headers={'Idempotency-Key':request_key})

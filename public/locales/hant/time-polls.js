@@ -1,5 +1,5 @@
 'use strict';
-function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,shortDate,timeRange,wallDate,wallToISO,openDetail,copyLink}) {
+function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,shortDate,timeRange,wallDate,wallToISO,openDetail,copyLink,askConfirm}) {
   const labels={open:"時間投票中",closed:"投票截止 · 待定案",finalized:"已確定時間",cancelled:"投票已取消"};
   const choices={yes:"可以",maybe:"勉強可以",no:"不行"};
   let current=null;
@@ -12,6 +12,7 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
   }
   function renderBoard() {
     const list=(state.polls||[]).filter(p=>{
+      if(p.status==='deleted')return false;
       if(state.filter==='upcoming'&&!['open','closed'].includes(p.status))return false;
       if(state.filter==='past'&&!['finalized','cancelled'].includes(p.status))return false;
       if(state.filter==='mine'&&!p.is_owner&&!p.has_voted)return false;
@@ -53,6 +54,8 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     const options=p.options.map((o,i)=>`<div class="poll-option${p.selected_option_id===o.id?' selected':''}"><div class="poll-option-heading"><strong>時段 ${i+1}</strong>${p.selected_option_id===o.id?"<span class=\"event-state\">已選定</span>":p.leading_option_ids.includes(o.id)?"<span class=\"event-state\">最多人可以</span>":''}</div><p class="poll-time">${timeRange({...o,timezone:p.timezone})}</p><div class="poll-totals"><span>${o.yes} 人可以</span><span>${o.maybe} 人勉強可以</span><span>${o.no} 人不行</span></div>${canVote?`<label class="field poll-choice">我的選擇<select name="choice_${o.id}" required><option value="">請選擇</option>${Object.entries(choices).map(([value,label])=>`<option value="${value}"${p.my_choices[o.id]===value?' selected':''}>${label}</option>`).join('')}</select></label>`:p.my_choices[o.id]?`<p class="field-help">我的選擇：${esc(choices[p.my_choices[o.id]])}</p>`:''}</div>`).join('');
     $('#time-poll-content').innerHTML=`<p class="activity-status">${esc(labels[p.status])} · ${p.respondent_count} 人已投票</p><p class="field-help">${shortDate(p.deadline,p.timezone)} 截止 · ${esc(p.owner_name)} 發起<br>時區：${esc(p.timezone)}</p><p class="poll-location">地點：${esc(p.location)}</p>${p.description?`<p class="detail-description">${esc(p.description)}</p>`:''}${p.fee_policy?`<p class="detail-description">費用約定：${esc(p.fee_policy)}</p>`:''}<p class="field-help">${p.capacity?"正式活動上限 "+p.capacity+" 人":"正式活動人數不限"}${p.minimum_participants?" · 最低成團 "+p.minimum_participants+" 人":''}。投票不佔名額；定案後請重新報名。</p>${p.reason?`<p class="activity-alert">發起者說明：${esc(p.reason)}</p>`:''}<form id="time-poll-vote-form">${options}${canVote?`<button class="button primary full" type="submit">${p.has_voted?"更新我的選擇":"提交時間選擇"}</button>`:!state.me.authenticated&&p.status==='open'?"<button class=\"button primary full\" type=\"button\" data-poll-action=\"login\">登錄後投票</button>":''}<p class="form-error" role="alert"></p></form>${p.event_id?"<button type=\"button\" class=\"button primary full\" data-poll-action=\"event\">查看已定案活動並報名</button>":''}${owner?ownerTools(p):''}<p id="time-poll-error" class="form-error" role="alert"></p><button type="button" class="text-button full" data-poll-action="reload">刷新票數與安排</button>`;
     if(p.is_owner)$('#time-poll-content').innerHTML+=botStatus(p);
+    if(p.event_deleted)$('#time-poll-content').innerHTML+="<p class=\"field-help\">已定案的正式活動已刪除。</p>";
+    if(p.can_remove)$('#time-poll-content').innerHTML+="<button type=\"button\" class=\"text-button full danger\" data-poll-action=\"remove\">刪除投票</button>";
   }
   function botStatus(p) {
     const states={pending:"待送",sending:"投遞中",sent:"已發送",failed:"失敗",skipped:"已作廢",simulated:"模擬，未發送"};
@@ -124,6 +127,15 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     if(action==='login')withProfile(()=>open(current.id,false));
     if(action==='reload'&&current)open(current.id,false);
     if(action==='share'&&current)copyLink(`${current.title}\n一起選擇活動時間：\n${pollUrl(current.id)}`,"時間投票鏈接");
+    if(action==='remove'&&current?.can_remove){
+      const p=current;
+      askConfirm("刪除這次時間投票？",`投票及已有選擇將從看板移除，原鏈接失效，未發送的通知會停止。${p.event_id?"已生成的正式活動保留，需要另行刪除。":''}已發到 QQ 群的消息不會撤回。`,async()=>{
+        try{
+          await api('/api/time-polls/'+p.id,'PATCH',{action:'remove',base_revision:p.revision});
+          $('#time-poll-dialog').close();await refresh({detail:false});toast("投票已刪除");
+        }catch(error){$('#time-poll-error').textContent=error.message;}
+      });
+    }
     if(action==='event'&&current?.event_id){const id=current.event_id;$('#time-poll-dialog').dataset.fromHistory='1';$('#time-poll-dialog').close();openDetail(id);}
     if(['bot-sync','retry'].includes(action)&&current){
       const p=current,data={action:action==='retry'?'bot_retry':'bot_sync',base_revision:p.revision};

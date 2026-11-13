@@ -43,6 +43,7 @@ function createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDe
       if(!e.archived_at)buttons.push("<button data-activity=\"management\">協辦與轉交</button>");
       if(e.lifecycle!=='draft'&&e.lifecycle!=='cancelled'&&!e.archived_at)buttons.push("<button class=\"danger\" data-activity=\"cancel\">取消活動</button>");
       if(['ended','cancelled'].includes(e.lifecycle))buttons.push(`<button data-activity="${e.archived_at?'unarchive':'archive'}">${e.archived_at?"取消歸檔":"歸檔"}</button>`);
+      if(e.removal_blocker)buttons.push(`<p class="field-help">${esc(e.removal_blocker)}</p>`);
     }
     return `<div class="activity-tools"><div class="owner-tools">${buttons.join('')}</div></div>`;
   }

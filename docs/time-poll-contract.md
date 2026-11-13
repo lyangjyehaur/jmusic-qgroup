@@ -30,11 +30,13 @@ worker 實際投遞前核對投票仍開放、期限未過且同步仍啟用，�
 | `GET /api/time-polls/:id` | 公開詳情與合計；依登入身分附帶本人選擇及發起者管理資料 |
 | `POST /api/time-polls` | 建立投票 |
 | `PUT /api/time-polls/:id/votes` | 整份替換自己的各時段選擇 |
-| `PATCH /api/time-polls/:id` | `close`、`extend`、`cancel`、`finalize`、`bot_sync`、`bot_retry` |
+| `PATCH /api/time-polls/:id` | `close`、`extend`、`cancel`、`finalize`、`bot_sync`、`bot_retry`、`remove` |
 
 所有寫入使用現有協議 2、登入帳號、`Idempotency-Key` 及請求查回機制。投票／管理檢查 `base_revision`；改票只增加 `vote_revision`，不同人可依同一管理版本投票。定案另核對 `base_vote_revision`，其他人改票或清除選票後，過期票數須重新核對。重複定案只建立一場活動，消息或歷史寫入失敗會一併回滾。
 
 帳號關閉會清除私人選票；尚未定案合計隨之變動並增加票數版本，定案快照維持原合計。發起者須先定案或取消自己仍待處理的投票，才可關閉帳號。發起內容及管理歷史依現有共用記錄規則保留待審查。
+
+發起者可對任意未刪除狀態執行 `remove`：設 `status=deleted`、關閉同步、作廢 pending／sending 邀請並留操作歷史。名單與詳情不再返回，投票／管理返回 404；刪除回應使用 `{id,status:deleted}` 墓碑，支援相同請求重播及請求查回，不重做操作。原選票與歷史保留供資料審查；刪除投票不刪除已建立的正式活動。活動刪除後投票不再顯示該活動入口。
 
 ## 相容性與驗證
 

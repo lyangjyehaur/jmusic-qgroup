@@ -91,8 +91,8 @@ def migrate_notifications(db):
 
 def get(db, poll_id):
     poll = db.execute('SELECT * FROM time_polls WHERE id=?', (poll_id,)).fetchone()
-    if not poll:
-        raise APIError('时间投票不存在', 404)
+    if not poll or poll['status']=='deleted':
+        raise APIError('时间投票不存在或已删除', 404)
     return poll
 
 
@@ -128,13 +128,15 @@ def serialize(db, poll, viewer):
     result = {k: poll[k] for k in ('id','title','category','location','description','timezone','duration_hours',
         'capacity','minimum_participants','fee_policy','deadline','revision','vote_revision','created_at',
         'decided_at','selected_option_id','event_id','reason')}
-    result.update(time_poll=True, status=status, is_owner=owner, my_choices=choices,
+    result.update(time_poll=True, status=status, is_owner=owner, can_remove=owner, my_choices=choices,
                   has_voted=bool(choices), can_vote=bool(viewer and status == 'open'),
                   can_manage=owner and status in ('open','closed'), options=opts,
                   leading_option_ids=[o['id'] for o in opts if o['yes'] == maximum and maximum > 0],
                   respondent_count=poll['respondent_count'] if poll['respondent_count'] is not None else db.execute(
                       'SELECT count(*) FROM time_poll_ballots WHERE poll_id=?', (poll['id'],)).fetchone()[0],
                   owner_name=db.execute('SELECT nickname FROM users WHERE id=?', (poll['owner_id'],)).fetchone()[0])
+    if poll['event_id'] and db.execute("SELECT 1 FROM events WHERE id=? AND status='deleted'",(poll['event_id'],)).fetchone():
+        result.update(event_id=None,event_deleted=True)
     if owner:
         result['bot_enabled']=bool(poll['bot_enabled'])
         result['bot_feature_enabled']=bot_outbox.enabled(db)
@@ -207,6 +209,13 @@ def manage(db, poll, user, data):
     if poll['owner_id'] != user['id']:
         raise APIError('只有发起者可以管理时间投票',403)
     audit.require_revision(poll,data)
+    if poll['status']=='deleted':
+        raise APIError('时间投票不存在或已删除',404)
+    if data.get('action')=='remove':
+        db.execute("UPDATE time_polls SET status='deleted',bot_enabled=0,revision=revision+1 WHERE id=?",(poll['id'],))
+        db.execute("UPDATE bot_outbox SET status='skipped',last_error='时间投票已删除' WHERE poll_id=? AND status IN ('pending','sending')",(poll['id'],))
+        record(db,poll['id'],user,'remove',dict(previous_status=poll['status']))
+        return
     if poll['status'] not in ('open','closed'):
         raise APIError('时间投票已定案或取消',409)
     action = data.get('action')
