@@ -13,7 +13,7 @@ for(const bundle of ['public','public/locales/hans','public/locales/hant']) {
   const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   let response;
   const ui=context.createUI({$:node,state,esc,shortDate:()=> '11/15 18:00',
-    timeRange:()=> '11/15 18:00',wallDate:()=> '2099-11-15T17:00',
+    timeRange:()=> '11/15 18:00',wallDate:()=> '2099-11-15T17:00',wallToISO:value=>new Date(value+'Z').toISOString(),
     api:async(...args)=>{calls.push(args);return response;},showDialog(){},toast:message=>messages.push(message),
     refresh:async()=>{refreshes++;},askConfirm:(title,message,callback)=>{pendingConfirm=callback;}});
   const base={title:'<img src=x onerror=alert(1)>',location:'餐廳',description:'',owner_name:'甲',
@@ -46,6 +46,13 @@ for(const bundle of ['public','public/locales/hans','public/locales/hant']) {
   response={...response,status:'cancelled',can_manage:false};
   await ui.open('poll',false);
   assert.ok(node('#time-poll-content').innerHTML.includes('data-poll-action="remove"'),bundle);
+  response={...response,time_mode:'date',status:'open',can_manage:true,
+    options:[{id:'one',date:'2099-11-15',starts_at:null,ends_at:null,yes:0}]};
+  await ui.open('poll',false);html=node('#time-poll-content').innerHTML;
+  assert.ok(html.includes('2099'),bundle);
+  assert.ok(html.includes('name="final_start_time"'),bundle);
+  assert.ok(html.includes('name="final_duration_hours"'),bundle);
+  assert.ok(!html.includes('NaN'),bundle);
   const before=calls.length;
   click({target:{closest:selector=>selector==='[data-poll-action]'?{dataset:{pollAction:'remove'}}:null}});
   assert.equal(calls.length,before,'Deletion waits for confirmation');
@@ -63,5 +70,15 @@ for(const bundle of ['public','public/locales/hans','public/locales/hant']) {
   assert.ok(!node('#time-poll-content').innerHTML.includes('data-poll-action="remove"'),bundle);
   const createHTML=fs.readFileSync(bundle+'/index.html','utf8').split('id="time-poll-form"')[1].split('</form>')[0];
   assert.match(createHTML,/<input name="bot_enabled" type="checkbox" checked>/,bundle);
+  assert.ok(!createHTML.includes('name="option_count"'),bundle);
+  assert.match(createHTML,/data-poll-form-action="add"/);
+  assert.match(createHTML,/name="exact_time" type="checkbox">/);
+  assert.match(createHTML,/name="range_start" type="date"/);
+  assert.match(createHTML,/name="range_end" type="date"/);
+  const days=vm.runInContext("pollCalendarDays('2028-02-28','2028-03-01')",context);
+  assert.equal(JSON.stringify(days),'["2028-02-28","2028-02-29","2028-03-01"]');
+  assert.throws(()=>vm.runInContext("pollCalendarDays('2027-02-29','2027-03-01')",context));
+  assert.throws(()=>vm.runInContext("pollCalendarDays('2028-03-02','2028-03-01')",context));
+  assert.throws(()=>vm.runInContext("pollCalendarDays('2028-03-01','2028-03-07')",context));
 }
 console.log('Time polls: active/mine/past filters, canonical categories and safe cards passed in all bundles');

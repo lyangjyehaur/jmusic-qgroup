@@ -20,6 +20,7 @@ import os
 import uuid
 from datetime import datetime, timedelta, timezone
 from urllib.parse import urlencode
+from zoneinfo import ZoneInfo
 
 from .common import now, APIError
 from . import bot_views, bot_settings, bot_groups
@@ -280,13 +281,19 @@ def build_poll_message(db,poll,*,config=None,candidates=None):
     candidates=candidates if candidates is not None else db.execute(
         'SELECT starts_at FROM time_poll_options WHERE poll_id=? ORDER BY position',(poll['id'],)).fetchall()
     zone=poll['timezone']
+    date_only='time_mode' in poll.keys() and poll['time_mode']=='date'
     title=str(poll['title'])[:40]
     label='活动时间投票'
     heading='【%s】%s' % (label,title)
     lines=['请一起选择方便参加的时段：']
     for index,option in enumerate(candidates,1):
-        end=(datetime.fromisoformat(option['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat()
-        lines.append('%d. %s – %s' % (index,local_time(option['starts_at'],zone),local_time(end,zone)))
+        if date_only:
+            day=datetime.fromisoformat(option['starts_at']).astimezone(ZoneInfo(zone)).date().isoformat()
+            lines.append('%d. %s（具体时间待定）' % (index,day))
+        else:
+            end=(datetime.fromisoformat(option['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat()
+            lines.append('%d. %s – %s' % (index,local_time(option['starts_at'],zone),local_time(end,zone)))
+    if date_only:lines.append('先选择可以参加的日期，开始时间与时长由发起者定案时补充，请再核对后报名。')
     lines+=['时区：'+zone,'预计地点：'+str(poll['location']),
             '投票截止：'+local_time(poll['deadline'],zone),
             '每个时段可选：可以／勉强可以／不行，截止前可改票。',

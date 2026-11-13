@@ -16,7 +16,7 @@
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
   <script src="/activity.js?v=20261110-settlement1" defer></script>
-  <script src="/time-polls.js?v=20261113-polls1" defer></script>
+  <script src="/time-polls.js?v=20261113-dates2" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
   <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
@@ -73,16 +73,22 @@
         <label class="field">活動類型<select name="category"><option value="约K">唱歌</option><option value="聚餐">聚餐</option><option value="运动">運動</option><option value="出游">出遊</option><option value="游戏">遊戲</option><option value="其他">其他</option></select></label>
         <label class="field">預計地點<input name="location" required maxlength="120" placeholder="集合區域、場地或店家"></label>
         <label class="field">活動說明 <span class="optional">選填</span><textarea name="description" rows="3" maxlength="3000" placeholder="想做什麼、預計預算、集合方式等"></textarea></label>
-        <div class="form-row"><label class="field">候選時段數量<select name="option_count"><option value="2">2 個</option><option value="3" selected>3 個</option><option value="4">4 個</option><option value="5">5 個</option><option value="6">6 個</option></select></label><label class="field">每場持續小時<input name="duration_hours" type="number" min="1" max="24" value="3" required></label></div>
         <label class="field">活動時區<select name="timezone"><option value="Asia/Shanghai">北京時間（UTC+8）</option><option value="Asia/Taipei">臺北時間（UTC+8）</option><option value="Asia/Hong_Kong">香港時間（UTC+8）</option><option value="Asia/Tokyo">東京時間（UTC+9）</option><option value="UTC">UTC</option></select></label>
-        <p class="field-help">每個時段填寫完整日期與開始時間，凌晨按實際日期選擇。發佈後候選安排鎖定，需更改請取消後重新發起。</p>
-        <div class="poll-slot"><label class="field">候選時段 1<input name="slot_0" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
-        <div class="poll-slot"><label class="field">候選時段 2<input name="slot_1" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
-        <div class="poll-slot"><label class="field">候選時段 3<input name="slot_2" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
-        <div class="poll-slot" hidden><label class="field">候選時段 4<input name="slot_3" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
-        <div class="poll-slot" hidden><label class="field">候選時段 5<input name="slot_4" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
-        <div class="poll-slot" hidden><label class="field">候選時段 6<input name="slot_5" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
-        <label class="field">投票截止<input name="deadline" type="datetime-local" required><span class="field-help">早於所有候選時段；截止後由發起者定案，不自動發佈。</span></label>
+        <section class="poll-date-range" aria-labelledby="poll-date-range-title">
+          <h3 id="poll-date-range-title">先選方便的日期</h3>
+          <p class="field-help">選一天或一段日期，按天加入候選。也可在下面單獨添加，最多 6 項。</p>
+          <div class="form-row"><label class="field">從哪天<input name="range_start" type="date"></label><label class="field">到哪天<input name="range_end" type="date"></label></div>
+          <button type="button" class="button secondary full" data-poll-form-action="range">加入這些日期</button>
+          <p id="poll-range-message" class="field-help" role="status" aria-live="polite"></p>
+        </section>
+        <label class="check-option poll-exact-switch"><input name="exact_time" type="checkbox">指定具體時間</label>
+        <p id="poll-mode-hint" class="field-help">先投日期，開始時間和持續時長在定案時補充。選中某一天表示當天方便，再按最終安排確認報名。</p>
+        <div id="poll-duration" hidden><label class="field">每場持續小時<input name="duration_hours" type="number" min="1" max="24" value="3" required disabled></label></div>
+        <div id="poll-slots"></div>
+        <button type="button" class="button secondary full" data-poll-form-action="add">＋ 添加選項</button>
+        <p id="poll-slot-count" class="field-help" role="status" aria-live="polite"></p>
+        <p class="field-help">發佈後候選安排鎖定，需更改請取消後重新發起。</p>
+        <div class="form-row"><label class="field">投票截止日期<input name="deadline_date" type="date" required><span class="field-help">日期投票於當天 23:59 截止，需早於所有候選日期。</span></label><label id="poll-deadline-time" class="field" hidden>截止時間<input name="deadline_time" type="time" value="23:59" required disabled></label></div>
         <div class="form-row"><label class="field">正式活動人數上限<input name="capacity" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不限</span></label><label class="field">最低成團人數<input name="minimum_participants" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不設置</span></label></div>
         <label class="check-option"><input name="bot_enabled" type="checkbox" checked>發起投票時主動通知目標 QQ 群，定案後繼續同步正式活動</label>
         <p class="field-help">沿用管理員設置的通知目標群；請核對內容適合群成員查看。模擬模式只記錄，不發送，實際結果見投遞記錄。逐次投票不發群消息。也可複製鏈接分享；僅發起者可查看個人選擇，其他人只看到各時段合計。</p>

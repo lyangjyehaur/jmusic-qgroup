@@ -10,7 +10,7 @@ from qgroup_core.common import APIError, now
 from qgroup_bot.config import Config
 from qgroup_bot.worker import OutboxWorker
 from test_bot_outbox import BotOutboxFixture
-from test_time_polls import poll_data
+from test_time_polls import poll_data, date_poll_data
 
 
 class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
@@ -54,6 +54,22 @@ class TimePollBotTests(BotOutboxFixture, unittest.TestCase):
         worker.api.post.assert_called_once()
         self.assertIn('/groups/GROUP_OPENID_TEST/messages',worker.api.post.call_args.args[0])
         self.assertEqual(worker.poll_once()['claimed'],0)
+
+    def test_date_notification_has_dates_without_fabricated_hours_and_finalizes_normally(self):
+        p=self.create_poll(**date_poll_data())
+        worker=self.worker();self.assertEqual(worker.poll_once()['sent'],1)
+        text=worker.api.post.call_args.args[1]['content']
+        for option in p['options']:self.assertIn(option['date'],text)
+        self.assertIn('具体时间待定',text)
+        self.assertNotIn('00:00 –',text)
+        self.assertIn('开始时间与时长由发起者定案时补充',text)
+        worker.api.post.reset_mock()
+        day=p['options'][0]['date'];start=day+'T18:00:00+08:00'
+        self.manage('finalize',base_vote_revision=p['vote_revision'],accept_terms=True,reason='确认举行',
+            option_id=p['options'][0]['id'],starts_at=start,duration_hours=3,registration_deadline=start)
+        self.assertEqual(worker.poll_once()['sent'],1)
+        self.assertIn('activity_published',[r['kind'] for r in self.rows()])
+        self.assertIn('18:00',worker.api.post.call_args.args[1]['content'])
 
     def test_disabled_owner_or_global_policy_or_kind_does_not_enqueue(self):
         self.create_poll(bot_enabled=False)

@@ -1,4 +1,13 @@
 'use strict';
+function pollAddDays(day,offset) {
+  const date=new Date(day+'T12:00:00Z');date.setUTCDate(date.getUTCDate()+offset);return date.toISOString().slice(0,10);
+}
+function pollCalendarDays(start,end) {
+  const valid=value=>/^\d{4}-\d{2}-\d{2}$/.test(value)&&Number.isFinite(Date.parse(value+'T12:00:00Z'))&&new Date(value+'T12:00:00Z').toISOString().slice(0,10)===value;
+  if(!valid(start)||!valid(end)||end<start)throw new Error("请选择有效的起止日期，结束日期不能早于开始日期");
+  const days=[];for(let day=start;day<=end;day=pollAddDays(day,1)){if(days.length===6)throw new Error("一次最多加入 6 个日期，请缩短日期段");days.push(day);}
+  return days;
+}
 function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,shortDate,timeRange,wallDate,wallToISO,openDetail,copyLink,askConfirm}) {
   const labels={open:"时间投票中",closed:"投票截止 · 待定案",finalized:"已确定时间",cancelled:"投票已取消"};
   const choices={yes:"可以",maybe:"勉强可以",no:"不行"};
@@ -22,38 +31,93 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     $('#time-poll-board').innerHTML=list.map(p=>`<a class="event-card poll-card" data-time-poll="${p.id}" href="${esc(pollUrl(p.id))}"><div class="card-heading"><h3 class="card-title">${esc(p.title)}</h3><span class="event-state waiting">${esc(labels[p.status])}</span></div><div class="card-facts"><span>${p.options.length} 个候选时段 · ${p.respondent_count} 人已投票</span><span>${shortDate(p.deadline,p.timezone)} 截止投票</span><span class="card-location">${esc(p.location)}</span></div><div class="card-bottom"><span>${p.has_voted?"已投票":p.is_owner?"我发起的":"一起选时间"}</span><span class="category-label">${esc(BoardI18n.category(p.category))}</span><span class="card-chevron" aria-hidden="true">›</span></div></a>`).join('');
     return list.length;
   }
-  function updateOptions() {
-    const f=form().elements,count=Number(f.option_count.value),zone=f.timezone.value;
-    for(let i=0;i<6;i++){
-      const input=f['slot_'+i],row=input.closest('.poll-slot');
-      row.hidden=i>=count;input.disabled=i>=count;
-      const preview=$('.poll-slot-preview',row);
-      try {
-        const start=wallToISO(input.value,zone),end=new Date(Date.parse(start)+Number(f.duration_hours.value)*3600000).toISOString();
-        preview.textContent=timeRange({starts_at:start,ends_at:end,timezone:zone});
-      }catch{preview.textContent="请选择具体日期与时间";}
-    }
+  let slots=[],slotSerial=0;
+  const newSlot=(day='',time='18:00')=>({key:++slotSerial,date:day,time});
+  const dayLabel=day=>new Intl.DateTimeFormat(BoardI18n.locale,{timeZone:'UTC',year:'numeric',month:'long',day:'numeric',weekday:'short'}).format(new Date(day+'T12:00:00Z'));
+  const optionLabel=(p,o)=>p.time_mode==='date'?dayLabel(o.date):shortDate(o.starts_at,p.timezone);
+  const optionFuture=(p,o)=>p.time_mode==='date'?o.date>=wallDate(Date.now(),p.timezone).slice(0,10):Date.parse(o.starts_at)>Date.now();
+  function readSlots() {
+    const f=form().elements;
+    for(const slot of slots){slot.date=f['poll_day_'+slot.key].value;slot.time=f['poll_time_'+slot.key].value;}
+    return slots;
   }
+  function renderSlots() {
+    $('#poll-slots').innerHTML=slots.map((slot,i)=>`<div class="poll-slot"><div class="poll-slot-heading"><strong>选项 ${i+1}</strong><button type="button" class="text-button danger" data-poll-form-action="remove" data-key="${slot.key}" aria-label="移除选项 ${i+1}"${slots.length<=2?' disabled':''}>移除</button></div><div class="form-row"><label class="field">候选日期 ${i+1}<input name="poll_day_${slot.key}" type="date" value="${esc(slot.date)}" required></label><label class="field poll-slot-time">开始时间 ${i+1}<input name="poll_time_${slot.key}" type="time" value="${esc(slot.time)}" required></label></div><p class="poll-slot-preview field-help"></p></div>`).join('');
+    updateOptions();
+  }
+  function updateOptions(event) {
+    if(event?.target?.name==='deadline_date')event.target.dataset.touched='1';
+    const f=form().elements,exact=f.exact_time.checked,zone=f.timezone.value;
+    const today=wallDate(Date.now(),zone).slice(0,10),earliest=exact?today:pollAddDays(today,1);
+    $('#poll-duration').hidden=!exact;f.duration_hours.disabled=!exact;
+    $('#poll-deadline-time').hidden=!exact;f.deadline_time.disabled=!exact;
+    $('#poll-mode-hint').textContent=exact?"逐项指定开始时间，发布前核对开始与结束；凌晨按实际日期选择。":"先投日期，开始时间和持续时长在定案时补充。选中某一天表示当天方便，再按最终安排确认报名。";
+    if(event?.target?.name==='range_start'&&f.range_end.value<f.range_start.value)f.range_end.value=f.range_start.value;
+    for(const slot of slots){
+      const input=f['poll_day_'+slot.key],clock=f['poll_time_'+slot.key],row=input.closest('.poll-slot');
+      slot.date=input.value;slot.time=clock.value;input.min=earliest;
+      clock.disabled=!exact;clock.closest('label').hidden=!exact;
+      const preview=$('.poll-slot-preview',row);
+      try{
+        if(!slot.date)throw new Error();
+        if(exact){const start=wallToISO(slot.date+'T'+slot.time,zone),end=new Date(Date.parse(start)+Number(f.duration_hours.value)*3600000).toISOString();preview.textContent=timeRange({starts_at:start,ends_at:end,timezone:zone});}
+        else preview.textContent=dayLabel(slot.date)+" · 具体时间待定";
+      }catch{preview.textContent=exact?"请选择日期与开始时间":"请选择候选日期";}
+    }
+    const first=slots.map(s=>s.date).filter(Boolean).sort()[0];
+    if(!exact&&first&&!f.deadline_date.dataset.touched)f.deadline_date.value=pollAddDays(first,-1);
+    $('[data-poll-form-action="add"]',form()).disabled=slots.length>=6;
+    $('#poll-slot-count').textContent=`${slots.length} / 6 个选项，至少保留 2 项`;
+  }
+  function changedSlots(){renderSlots();form().dispatchEvent(new Event('change',{bubbles:true}));}
+  form().addEventListener('click',event=>{
+    const button=event.target.closest('[data-poll-form-action]');if(!button)return;
+    const action=button.dataset.pollFormAction;readSlots();
+    try{
+      if(action==='add'&&slots.length<6){slots.push(newSlot());changedSlots();form().elements['poll_day_'+slots.at(-1).key].focus();}
+      if(action==='remove'&&slots.length>2){slots=slots.filter(s=>s.key!==Number(button.dataset.key));changedSlots();}
+      if(action==='range'){
+        const f=form().elements,days=pollCalendarDays(f.range_start.value,f.range_end.value||f.range_start.value);
+        const filled=slots.filter(s=>s.date),known=new Set(filled.map(s=>s.date)),added=days.filter(day=>!known.has(day));
+        if(filled.length+added.length>6)throw new Error("加入后超过 6 个选项，请缩短日期段或先移除不需要的选项");
+        slots=[...filled,...added.map(day=>newSlot(day))];while(slots.length<2)slots.push(newSlot());
+        changedSlots();$('#poll-range-message').textContent=added.length?`已按天加入 ${added.length} 个日期，已有日期会保留。`:"这些日期已在候选中，没有重复加入。";
+      }
+    }catch(error){$('#poll-range-message').textContent=error.message;}
+  });
   async function openCreate() {
     try {
       await BoardDrafts.detach('time-poll-form-dialog');
-      form().reset();form().dataset.intent=crypto.randomUUID();
-      const f=form().elements;
-      f.deadline.value=wallDate(new Date(Date.now()+86400000),f.timezone.value);
-      for(let i=0;i<6;i++)f['slot_'+i].value=wallDate(new Date(Date.now()+(i+2)*86400000),f.timezone.value).slice(0,10)+'T18:00';
-      $('.form-error',form()).textContent='';updateOptions();showDialog('time-poll-form-dialog');
+      form().reset();delete form().elements.deadline_date.dataset.touched;form().dataset.intent=crypto.randomUUID();
+      const f=form().elements,today=wallDate(Date.now(),f.timezone.value).slice(0,10);
+      f.range_start.value=pollAddDays(today,2);f.range_end.value=pollAddDays(today,3);
+      f.deadline_date.value=pollAddDays(today,1);
+      slots=[newSlot(),newSlot()];$('#poll-range-message').textContent='';
+      $('.form-error',form()).textContent='';renderSlots();showDialog('time-poll-form-dialog');
       await BoardDrafts.bind('time-poll-form-dialog','time-poll:new',
-        ()=>({fields:BoardDrafts.fields(form()),intent:form().dataset.intent}),
-        data=>{BoardDrafts.fill(form(),data.fields);form().dataset.intent=data.intent;updateOptions();});
+        ()=>({fields:BoardDrafts.fields(form()),slots:readSlots().map(s=>({...s})),intent:form().dataset.intent}),
+        data=>{
+          BoardDrafts.fill(form(),data.fields);form().dataset.intent=data.intent;
+          if(Array.isArray(data.slots))slots=data.slots.slice(0,6).map(s=>newSlot(s.date,s.time));
+          else {
+            const fields=Object.fromEntries(data.fields.map(v=>[v.name,v.value]));
+            f.exact_time.checked=true;
+            slots=Array.from({length:Math.max(2,Math.min(6,Number(fields.option_count)||3))},(_,i)=>{const value=fields['slot_'+i]||'';return newSlot(value.slice(0,10),value.slice(11,16));});
+            f.deadline_date.value=(fields.deadline||'').slice(0,10);f.deadline_time.value=(fields.deadline||'').slice(11,16)||'23:59';
+          }
+          f.deadline_date.dataset.touched='1';renderSlots();
+        });
     }catch(error){toast(error.message);}
   }
   function render(p) {
     current=p;
     const canVote=p.can_vote,owner=p.can_manage;
     $('#time-poll-title').textContent=p.title;
-    const options=p.options.map((o,i)=>`<div class="poll-option${p.selected_option_id===o.id?' selected':''}"><div class="poll-option-heading"><strong>时段 ${i+1}</strong>${p.selected_option_id===o.id?"<span class=\"event-state\">已选定</span>":p.leading_option_ids.includes(o.id)?"<span class=\"event-state\">最多人可以</span>":''}</div><p class="poll-time">${timeRange({...o,timezone:p.timezone})}</p><div class="poll-totals"><span>${o.yes} 人可以</span><span>${o.maybe} 人勉强可以</span><span>${o.no} 人不行</span></div>${canVote?`<label class="field poll-choice">我的选择<select name="choice_${o.id}" required><option value="">请选择</option>${Object.entries(choices).map(([value,label])=>`<option value="${value}"${p.my_choices[o.id]===value?' selected':''}>${label}</option>`).join('')}</select></label>`:p.my_choices[o.id]?`<p class="field-help">我的选择：${esc(choices[p.my_choices[o.id]])}</p>`:''}</div>`).join('');
+    const options=p.options.map((o,i)=>`<div class="poll-option${p.selected_option_id===o.id?' selected':''}"><div class="poll-option-heading"><strong>时段 ${i+1}</strong>${p.selected_option_id===o.id?"<span class=\"event-state\">已选定</span>":p.leading_option_ids.includes(o.id)?"<span class=\"event-state\">最多人可以</span>":''}</div><p class="poll-time">${p.time_mode==='date'?esc(dayLabel(o.date))+" · 具体时间待定":timeRange({...o,timezone:p.timezone})}</p><div class="poll-totals"><span>${o.yes} 人可以</span><span>${o.maybe} 人勉强可以</span><span>${o.no} 人不行</span></div>${canVote?`<label class="field poll-choice">我的选择<select name="choice_${o.id}" required><option value="">请选择</option>${Object.entries(choices).map(([value,label])=>`<option value="${value}"${p.my_choices[o.id]===value?' selected':''}>${label}</option>`).join('')}</select></label>`:p.my_choices[o.id]?`<p class="field-help">我的选择：${esc(choices[p.my_choices[o.id]])}</p>`:''}</div>`).join('');
     $('#time-poll-content').innerHTML=`<p class="activity-status">${esc(labels[p.status])} · ${p.respondent_count} 人已投票</p><p class="field-help">${shortDate(p.deadline,p.timezone)} 截止 · ${esc(p.owner_name)} 发起<br>时区：${esc(p.timezone)}</p><p class="poll-location">地点：${esc(p.location)}</p>${p.description?`<p class="detail-description">${esc(p.description)}</p>`:''}${p.fee_policy?`<p class="detail-description">费用约定：${esc(p.fee_policy)}</p>`:''}<p class="field-help">${p.capacity?"正式活动上限 "+p.capacity+" 人":"正式活动人数不限"}${p.minimum_participants?" · 最低成团 "+p.minimum_participants+" 人":''}。投票不占名额；定案后请重新报名。</p>${p.reason?`<p class="activity-alert">发起者说明：${esc(p.reason)}</p>`:''}<form id="time-poll-vote-form">${options}${canVote?`<button class="button primary full" type="submit">${p.has_voted?"更新我的选择":"提交时间选择"}</button>`:!state.me.authenticated&&p.status==='open'?"<button class=\"button primary full\" type=\"button\" data-poll-action=\"login\">登录后投票</button>":''}<p class="form-error" role="alert"></p></form>${p.event_id?"<button type=\"button\" class=\"button primary full\" data-poll-action=\"event\">查看已定案活动并报名</button>":''}${owner?ownerTools(p):''}<p id="time-poll-error" class="form-error" role="alert"></p><button type="button" class="text-button full" data-poll-action="reload">刷新票数与安排</button>`;
     if(p.is_owner)$('#time-poll-content').innerHTML+=botStatus(p);
+    if(p.event_time)$('#time-poll-content').innerHTML+=`<p class="activity-alert">正式活动当前安排：${timeRange(p.event_time)}</p>`;
+    if(p.can_manage)updateFinalPreview();
     if(p.event_deleted)$('#time-poll-content').innerHTML+="<p class=\"field-help\">已定案的正式活动已删除。</p>";
     if(p.can_remove)$('#time-poll-content').innerHTML+="<button type=\"button\" class=\"text-button full danger\" data-poll-action=\"remove\">删除投票</button>";
   }
@@ -62,10 +126,26 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
     return `<details class="extra-settings"><summary>QQ 群通知 · ${p.bot_enabled?"已开启":"未开启"}</summary><p class="field-help">${p.bot_notice_enabled?"是否实际发送以投递记录为准，已发送不代表群友已读。":"管理员尚未启用机器人，当前不会排入通知。"}</p>${(p.bot_delivery||[]).map(r=>`<p class="field-help">${esc(states[r.state]||r.state)} · ${shortDate(r.sent_at||r.simulated_at||r.created_at,p.timezone)}${r.last_error&&r.state!=='simulated'?' · '+esc(r.last_error):''}${p.can_manage&&p.status==='open'&&p.bot_enabled&&['failed','simulated'].includes(r.state)?` <button type="button" class="text-button" data-poll-action="retry" data-id="${r.id}">重送通知</button>`:''}</p>`).join('')||"<p class=\"field-help\">暂无投递记录</p>"}${p.can_manage?`<button type="button" class="button secondary full" data-poll-action="bot-sync">${p.bot_enabled?"关闭主动群通知":"开启主动群通知"}</button><p class="field-help">开启后向后台设置的目标群发送公开投票安排；定案后的正式活动沿用此设置。模拟通知不会自动重送，需手动选择重送。</p>`:''}</details>`;
   }
   function ownerTools(p) {
-    const suggested=p.options.find(o=>p.leading_option_ids.includes(o.id)&&Date.parse(o.starts_at)>Date.now())||p.options.find(o=>Date.parse(o.starts_at)>Date.now());
-    const suggestedDeadline=suggested?wallDate(new Date(Math.max(Date.now()+60000,Date.parse(suggested.starts_at)-3600000)),p.timezone):'';
-    return `<section class="poll-management"><h3>发起者定案</h3><p class="field-help">请先确认场地与费用。最高票仅供参考；同票可自行选择，未选最高票或未达最低人数时须说明原因。</p><form id="time-poll-finalize-form"><label class="field">最终时段<select name="option_id" required>${p.options.map((o,i)=>`<option value="${o.id}"${o.id===suggested?.id?' selected':''}${Date.parse(o.starts_at)<=Date.now()?' disabled':''}>时段 ${i+1} · ${shortDate(o.starts_at,p.timezone)} · ${o.yes} 人可以</option>`).join('')}</select></label><label class="field">正式报名截止<input name="registration_deadline" type="datetime-local" value="${suggestedDeadline}" required></label><label class="field">定案说明 <span class="optional">选填</span><textarea name="reason" maxlength="200" rows="2" placeholder="同票选择、人数不足仍举行或场地安排等"></textarea></label><label class="check-option"><input name="accept_terms" type="checkbox" required>我已确认场地与安排，定案后开放正式报名；本人会自动报名，其他投票者需另行报名。</label><p class="form-error" role="alert"></p><button type="submit" class="button primary full">确定时间并发布活动</button></form><details class="extra-settings"><summary>截止、重新开放与取消</summary>${p.status==='open'?"<button type=\"button\" class=\"button secondary full\" data-poll-action=\"close\">提前截止投票</button>":''}<form id="time-poll-extend-form"><label class="field">新的投票截止<input type="datetime-local" name="deadline" value="${wallDate(p.deadline,p.timezone)}" required></label><p class="field-help">需早于所有候选时段，已有选择会保留。</p><p class="form-error" role="alert"></p><button class="button secondary full" type="submit">调整截止并开放投票</button></form><form id="time-poll-cancel-form"><label class="field">取消原因<textarea name="reason" maxlength="200" required rows="2"></textarea></label><p class="form-error" role="alert"></p><button class="button secondary full danger" type="submit">取消这次时间投票</button></form></details><details class="extra-settings"><summary>查看个人选择（仅发起者）</summary>${p.respondents.map(r=>`<div class="poll-respondent"><strong>${esc(r.name)}</strong><p>${p.options.map((o,i)=>`时段 ${i+1}：${esc(choices[r.choices[o.id]]||"未选择")}`).join(' · ')}</p></div>`).join('')||"<p class=\"field-help\">尚无人投票。</p>"}</details></section>`;
+    const suggested=p.options.find(o=>p.leading_option_ids.includes(o.id)&&optionFuture(p,o))||p.options.find(o=>optionFuture(p,o));
+    let suggestedDeadline='';
+    if(suggested){const start=p.time_mode==='date'?wallToISO(suggested.date+'T18:00',p.timezone):suggested.starts_at;suggestedDeadline=wallDate(new Date(Math.max(Date.now()+60000,Date.parse(start)-3600000)),p.timezone);}
+    return `<section class="poll-management"><h3>发起者定案</h3><p class="field-help">请先确认场地与费用。最高票仅供参考；同票可自行选择，未选最高票或未达最低人数时须说明原因。</p><form id="time-poll-finalize-form"><label class="field">最终时段<select name="option_id" required>${p.options.map((o,i)=>`<option value="${o.id}"${o.id===suggested?.id?' selected':''}${!optionFuture(p,o)?' disabled':''}>时段 ${i+1} · ${optionLabel(p,o)} · ${o.yes} 人可以</option>`).join('')}</select></label>${p.time_mode==='date'?"<div class=\"form-row\"><label class=\"field\">活动开始时间<input name=\"final_start_time\" type=\"time\" value=\"18:00\" required></label><label class=\"field\">持续小时<input name=\"final_duration_hours\" type=\"number\" min=\"1\" max=\"24\" value=\"3\" required></label></div><p class=\"poll-final-preview field-help\"></p>":''}<label class="field">正式报名截止<input name="registration_deadline" type="datetime-local" value="${suggestedDeadline}" required></label><label class="field">定案说明 <span class="optional">选填</span><textarea name="reason" maxlength="200" rows="2" placeholder="同票选择、人数不足仍举行或场地安排等"></textarea></label><label class="check-option"><input name="accept_terms" type="checkbox" required>我已确认场地与安排，定案后开放正式报名；本人会自动报名，其他投票者需另行报名。</label><p class="form-error" role="alert"></p><button type="submit" class="button primary full">确定时间并发布活动</button></form><details class="extra-settings"><summary>截止、重新开放与取消</summary>${p.status==='open'?"<button type=\"button\" class=\"button secondary full\" data-poll-action=\"close\">提前截止投票</button>":''}<form id="time-poll-extend-form"><label class="field">新的投票截止<input type="datetime-local" name="deadline" value="${wallDate(p.deadline,p.timezone)}" required></label><p class="field-help">需早于所有候选时段，已有选择会保留。</p><p class="form-error" role="alert"></p><button class="button secondary full" type="submit">调整截止并开放投票</button></form><form id="time-poll-cancel-form"><label class="field">取消原因<textarea name="reason" maxlength="200" required rows="2"></textarea></label><p class="form-error" role="alert"></p><button class="button secondary full danger" type="submit">取消这次时间投票</button></form></details><details class="extra-settings"><summary>查看个人选择（仅发起者）</summary>${p.respondents.map(r=>`<div class="poll-respondent"><strong>${esc(r.name)}</strong><p>${p.options.map((o,i)=>`时段 ${i+1}：${esc(choices[r.choices[o.id]]||"未选择")}`).join(' · ')}</p></div>`).join('')||"<p class=\"field-help\">尚无人投票。</p>"}</details></section>`;
   }
+  function updateFinalPreview(adjustDeadline=false) {
+    if(!current||current.time_mode!=='date')return;
+    const f=$('#time-poll-finalize-form');if(!f)return;
+    try{
+      const option=current.options.find(o=>o.id===f.elements.option_id.value),start=wallToISO(option.date+'T'+f.elements.final_start_time.value,current.timezone);
+      const end=new Date(Date.parse(start)+Number(f.elements.final_duration_hours.value)*3600000).toISOString();
+      $('.poll-final-preview',f).textContent=timeRange({starts_at:start,ends_at:end,timezone:current.timezone});
+      if(adjustDeadline&&!f.elements.registration_deadline.dataset.touched)f.elements.registration_deadline.value=wallDate(new Date(Math.max(Date.now()+60000,Date.parse(start)-3600000)),current.timezone);
+    }catch{$('.poll-final-preview',f).textContent="请选择日期、开始时间与持续时长";}
+  }
+  $('#time-poll-dialog').addEventListener('input',event=>{
+    if(event.target.name==='registration_deadline')event.target.dataset.touched='1';
+    if(['option_id','final_start_time','final_duration_hours'].includes(event.target.name))updateFinalPreview(true);
+  });
+  $('#time-poll-dialog').addEventListener('change',event=>{if(event.target.name==='option_id')updateFinalPreview(true);});
   async function open(id,changeUrl=true) {
     try {
       const poll=await api('/api/time-polls/'+id);render(poll);showDialog('time-poll-dialog');
@@ -88,8 +168,9 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
       const data={title:f.title.value.trim(),category:f.category.value,location:f.location.value.trim(),
         description:f.description.value.trim(),timezone:zone,bot_enabled:f.bot_enabled.checked,
         duration_hours:Number(f.duration_hours.value),capacity:Number(f.capacity.value),
-        minimum_participants:Number(f.minimum_participants.value),deadline:wallToISO(f.deadline.value,zone),
-        options:Array.from({length:Number(f.option_count.value)},(_,i)=>({starts_at:wallToISO(f['slot_'+i].value,zone)})),
+        minimum_participants:Number(f.minimum_participants.value),deadline:wallToISO(f.deadline_date.value+'T'+(f.exact_time.checked?f.deadline_time.value:'23:59'),zone),
+        time_mode:f.exact_time.checked?'exact':'date',
+        options:readSlots().map(s=>f.exact_time.checked?{starts_at:wallToISO(s.date+'T'+s.time,zone)}:{date:s.date}),
         client_intent:form().dataset.intent};
       const poll=await api('/api/time-polls','POST',data);
       await BoardDrafts.clear('time-poll-form-dialog');$('#time-poll-form-dialog').close();
@@ -111,6 +192,11 @@ function createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,
         if(action==='finalize')Object.assign(data,{option_id:f.elements.option_id.value,base_vote_revision:p.vote_revision,
           registration_deadline:wallToISO(f.elements.registration_deadline.value,p.timezone),
           reason:f.elements.reason.value.trim(),accept_terms:f.elements.accept_terms.checked});
+        if(action==='finalize'&&p.time_mode==='date'){
+          const option=p.options.find(o=>o.id===f.elements.option_id.value);
+          data.starts_at=wallToISO(option.date+'T'+f.elements.final_start_time.value,p.timezone);
+          data.duration_hours=Number(f.elements.final_duration_hours.value);
+        }
         if(action==='extend')data.deadline=wallToISO(f.elements.deadline.value,p.timezone);
         if(action==='cancel')data.reason=f.elements.reason.value.trim();
         updated=await api('/api/time-polls/'+p.id,'PATCH',data);

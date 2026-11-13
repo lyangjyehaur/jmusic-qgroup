@@ -1,11 +1,13 @@
 import concurrent.futures
 import json
+import sqlite3
 from pathlib import Path
 import tempfile
 import threading
 import unittest
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo
 from unittest import mock
 
 import server
@@ -20,6 +22,13 @@ def poll_data():
         timezone='Asia/Taipei',duration_hours=2,capacity=6,minimum_participants=2,
         deadline=(moment+timedelta(days=1)).isoformat(),
         options=[dict(starts_at=(moment+timedelta(days=d)).isoformat()) for d in (2,3,4)])
+
+
+def date_poll_data(zone='Asia/Taipei'):
+    today=datetime.now(ZoneInfo(zone)).date()
+    return dict(poll_data(),time_mode='date',timezone=zone,
+        deadline=datetime.combine(today+timedelta(days=1),time(20),ZoneInfo(zone)).isoformat(),
+        options=[dict(date=(today+timedelta(days=d)).isoformat()) for d in (3,4,5)])
 
 
 class TimePollTests(unittest.TestCase):
@@ -57,6 +66,77 @@ class TimePollTests(unittest.TestCase):
     def manage(self,data,user=None):
         with storage.connect(self.path) as db:
             time_polls.manage(db,time_polls.get(db,self.poll_id),user or self.owner,data)
+
+    def date_poll(self,**changes):
+        with storage.connect(self.path) as db:
+            self.poll_id=time_polls.create(db,self.owner,dict(date_poll_data(),**changes))['id']
+        return self.view()
+
+    def date_decision(self,**changes):
+        p=self.view();start=datetime.fromisoformat(p['options'][0]['date']+'T23:30:00').replace(tzinfo=ZoneInfo(p['timezone'])).astimezone(timezone.utc).isoformat()
+        return dict(action='finalize',base_revision=p['revision'],base_vote_revision=p['vote_revision'],option_id=p['options'][0]['id'],
+            starts_at=start,duration_hours=2,registration_deadline=start,accept_terms=True,reason='已核对时间',**changes)
+
+    def test_date_only_has_no_synthetic_start_time_or_duration(self):
+        p=self.date_poll()
+        self.assertEqual(p['time_mode'],'date');self.assertIsNone(p['duration_hours'])
+        self.assertEqual([o['date'] for o in p['options']],[o['date'] for o in date_poll_data()['options']])
+        self.assertTrue(all(o['starts_at'] is None and o['ends_at'] is None for o in p['options']))
+        self.vote(self.voter,['yes','maybe','no'])
+        self.assertEqual(self.view()['respondent_count'],1)
+        self.assertEqual([o['yes'] for o in self.view()['options']],[1,0,0])
+
+    def test_date_finalization_requires_explicit_time_within_selected_date(self):
+        p=self.date_poll();valid=self.date_decision()
+        for field in ('starts_at','duration_hours'):
+            data=dict(valid);data.pop(field)
+            with self.subTest(field=field),self.assertRaises(APIError):self.manage(data)
+        other_day=datetime.fromisoformat(valid['starts_at'])+timedelta(days=1)
+        for changes in (dict(starts_at=other_day.isoformat()),dict(duration_hours=True),dict(duration_hours=25),dict(duration_hours=0)):
+            with self.subTest(changes=changes),self.assertRaises(APIError):self.manage(dict(valid,**changes))
+        with storage.connect(self.path) as db:self.assertEqual(db.execute('SELECT count(*) FROM events').fetchone()[0],0)
+        self.vote(self.voter,['yes','no','maybe'])
+        with self.assertRaises(APIError):self.manage(valid)  # A stale decision cannot finalize newer ballots.
+        self.manage(self.date_decision());p=self.view()
+        self.assertEqual(p['status'],'finalized');self.assertEqual(p['options'][0]['date'],date_poll_data()['options'][0]['date'])
+        self.assertIsNone(p['options'][0]['starts_at'])
+        self.assertEqual(datetime.fromisoformat(p['event_time']['ends_at'])-datetime.fromisoformat(p['event_time']['starts_at']),timedelta(hours=2))
+        self.assertNotEqual(datetime.fromisoformat(p['event_time']['ends_at']).astimezone(ZoneInfo(p['timezone'])).date().isoformat(),p['options'][0]['date'])
+        with storage.connect(self.path) as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM attendees WHERE event_id=?',(p['event_id'],)).fetchone()[0],1)
+
+    def test_date_validation_uses_local_midnight_and_rejects_mixed_payloads(self):
+        data=date_poll_data();first=time_polls.date_start(data['options'][0]['date'],data['timezone'])
+        for changes in (dict(time_mode='other'),dict(options=[data['options'][0]]*2),dict(options=[dict(date='2030-02-30'),data['options'][1]]),
+                        dict(options=poll_data()['options']),dict(deadline=first),dict(timezone=None)):
+            with self.subTest(changes=changes),storage.connect(self.path) as db:
+                with self.assertRaises(APIError):time_polls.create(db,self.owner,dict(data,**changes))
+        p=self.date_poll(timezone='America/New_York',**{k:v for k,v in date_poll_data('America/New_York').items() if k not in ('timezone',)})
+        self.assertEqual(p['options'][0]['date'],date_poll_data('America/New_York')['options'][0]['date'])
+        start=time_polls.date_start('2030-03-10','America/New_York');end=time_polls.date_start('2030-03-11','America/New_York')
+        self.assertEqual(datetime.fromisoformat(end)-datetime.fromisoformat(start),timedelta(hours=23))
+        self.assertEqual(time_polls.option_date(dict(starts_at=start),'America/New_York'),'2030-03-10')
+
+    def test_schema_17_preserves_exact_poll_values_and_retries_failed_18(self):
+        from deploy.verify_migration import verify
+        source=Path(self.tmp.name)/'schema17.sqlite3'
+        with mock.patch.object(time_polls,'migrate_date_choices',lambda db:None):storage.initialize(source)
+        with storage.connect(source) as db:
+            db.execute('INSERT INTO users VALUES(?,?,?,?)',('old','old-hash','旧发起者',now()))
+            db.execute("INSERT INTO time_polls(id,owner_id,title,category,location,description,timezone,duration_hours,capacity,minimum_participants,fee_policy,deadline,created_at) VALUES('old-poll','old','旧投票','其他','原地点','','Asia/Taipei',2,6,0,'',?,?)",(poll_data()['deadline'],now()))
+            for i,option in enumerate(poll_data()['options']):db.execute('INSERT INTO time_poll_options VALUES(?,?,?,?)',('old-'+str(i),'old-poll',i,option['starts_at']))
+            db.execute("CREATE TRIGGER reject_v18 BEFORE INSERT ON schema_migrations WHEN NEW.version=18 BEGIN SELECT RAISE(ABORT,'injected'); END")
+        with self.assertRaises(sqlite3.IntegrityError):storage.initialize(source)
+        with storage.connect(source) as db:
+            self.assertNotIn('time_mode',[r['name'] for r in db.execute('PRAGMA table_info(time_polls)')])
+            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],17)
+            db.execute('DROP TRIGGER reject_v18')
+        target=Path(self.tmp.name)/'upgraded.sqlite3';verify(source,target)
+        with storage.connect(target) as db:
+            poll=time_polls.get(db,'old-poll');self.assertEqual(poll['time_mode'],'exact')
+            view=time_polls.serialize(db,poll,None)
+            self.assertEqual(view['duration_hours'],2)
+            self.assertTrue(all(o['starts_at'] and o['ends_at'] for o in view['options']))
 
     def test_poll_is_not_an_event_and_voting_never_reserves_a_place(self):
         self.vote(self.voter,['yes','maybe','no'])

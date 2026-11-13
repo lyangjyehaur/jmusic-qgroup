@@ -1,7 +1,8 @@
 """Availability polls precede normal events and never reserve roster places."""
 import json
 import secrets
-from datetime import datetime, timedelta
+from datetime import date, datetime, time, timedelta, timezone
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from . import audit, events, bot_outbox
 from .common import APIError, date_value, now, string
@@ -52,6 +53,7 @@ def migrate(db):
 
 def migrate_notifications(db):
     if db.execute('SELECT 1 FROM schema_migrations WHERE version=17').fetchone():
+        migrate_date_choices(db)
         return
     db.execute('ALTER TABLE time_polls ADD COLUMN bot_enabled INTEGER NOT NULL DEFAULT 0 CHECK(bot_enabled IN (0,1))')
     # Polls precede events. Preserve existing jobs and delivery fences while
@@ -87,6 +89,26 @@ def migrate_notifications(db):
           OR NEW.created_at!=OLD.created_at
         BEGIN SELECT RAISE(ABORT,'Outbox payload is immutable'); END''')
     db.execute('INSERT INTO schema_migrations VALUES(17,?)',(now(),))
+    migrate_date_choices(db)
+
+
+def migrate_date_choices(db):
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=18').fetchone():return
+    db.execute("ALTER TABLE time_polls ADD COLUMN time_mode TEXT NOT NULL DEFAULT 'exact' CHECK(time_mode IN ('date','exact'))")
+    db.execute('INSERT INTO schema_migrations VALUES(18,?)',(now(),))
+
+
+def option_date(option, zone):
+    return datetime.fromisoformat(option['starts_at']).astimezone(ZoneInfo(zone)).date().isoformat()
+
+
+def date_start(value, zone):
+    try:
+        if not isinstance(value,str) or len(value)!=10:raise ValueError()
+        day=date.fromisoformat(value)
+        return datetime.combine(day,time.min,ZoneInfo(zone)).astimezone(timezone.utc).isoformat(timespec='seconds')
+    except (ValueError,TypeError,OverflowError):
+        raise APIError('请选择有效的候选日期')
 
 
 def get(db, poll_id):
@@ -121,13 +143,15 @@ def serialize(db, poll, viewer):
     choices = {r['option_id']: r['choice'] for r in db.execute(
         'SELECT option_id,choice FROM time_poll_votes WHERE poll_id=? AND user_id=?', (poll['id'], viewer))}
     status = 'closed' if poll['status'] == 'open' and poll['deadline'] <= now() else poll['status']
-    opts = [dict(id=o['id'], starts_at=o['starts_at'],
-                 ends_at=(datetime.fromisoformat(o['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat(),
+    date_only=poll['time_mode']=='date'
+    opts = [dict(id=o['id'], date=option_date(o,poll['timezone']), starts_at=None if date_only else o['starts_at'],
+                 ends_at=None if date_only else (datetime.fromisoformat(o['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat(),
                  **counts[o['id']]) for o in options(db, poll)]
     maximum = max(o['yes'] for o in opts)
     result = {k: poll[k] for k in ('id','title','category','location','description','timezone','duration_hours',
         'capacity','minimum_participants','fee_policy','deadline','revision','vote_revision','created_at',
-        'decided_at','selected_option_id','event_id','reason')}
+        'decided_at','selected_option_id','event_id','reason','time_mode')}
+    if date_only:result['duration_hours']=None
     result.update(time_poll=True, status=status, is_owner=owner, can_remove=owner, my_choices=choices,
                   has_voted=bool(choices), can_vote=bool(viewer and status == 'open'),
                   can_manage=owner and status in ('open','closed'), options=opts,
@@ -137,6 +161,9 @@ def serialize(db, poll, viewer):
                   owner_name=db.execute('SELECT nickname FROM users WHERE id=?', (poll['owner_id'],)).fetchone()[0])
     if poll['event_id'] and db.execute("SELECT 1 FROM events WHERE id=? AND status='deleted'",(poll['event_id'],)).fetchone():
         result.update(event_id=None,event_deleted=True)
+    elif poll['event_id']:
+        event=db.execute('SELECT * FROM events WHERE id=?',(poll['event_id'],)).fetchone()
+        result['event_time']=dict(starts_at=event['starts_at'],ends_at=events.end_time(event).isoformat(),timezone=event['timezone'])
     if owner:
         result['bot_enabled']=bool(poll['bot_enabled'])
         result['bot_feature_enabled']=bot_outbox.enabled(db)
@@ -160,13 +187,21 @@ def create(db, user, data):
     candidates = data.get('options')
     if not isinstance(candidates, list) or not 2 <= len(candidates) <= 6 or any(not isinstance(c,dict) for c in candidates):
         raise APIError('请提供 2–6 个候选时段')
-    starts = [date_value(c,'starts_at') for c in candidates]
+    mode=data.get('time_mode','exact')
+    if mode not in ('date','exact'):raise APIError('请选择按日期或具体时间投票')
+    zone=data.get('timezone','Asia/Shanghai')
+    try:ZoneInfo(zone)
+    except (ValueError,TypeError,ZoneInfoNotFoundError):raise APIError('请选择有效时区')
+    if any(('starts_at' in c if mode=='date' else 'date' in c) for c in candidates):
+        raise APIError('请核对候选日期与具体时间模式')
+    starts = [date_start(c.get('date'),zone) if mode=='date' else date_value(c,'starts_at') for c in candidates]
     if len(set(starts)) != len(starts):
         raise APIError('候选时段不能重复')
     deadline = date_value(data,'deadline')
     if not now() < deadline < min(starts):
         raise APIError('投票截止需晚于现在，并早于所有候选时段')
-    template = dict(data, starts_at=min(starts), deadline=deadline, visibility='public', bot_enabled=False)
+    template = dict(data, starts_at=min(starts), deadline=deadline, visibility='public', bot_enabled=False,
+                    duration_hours=3 if mode=='date' else data.get('duration_hours',3))
     title,category,location,_,_,capacity,description,duration = events.event_values(template)
     _,_,zone,minimum,fee = events.settings(template)
     bot_enabled=events.bot_setting(dict(data,bot_enabled=data.get('bot_enabled',True)),'public')
@@ -174,13 +209,13 @@ def create(db, user, data):
         raise APIError('请选择有效时区')
     uid = secrets.token_hex(8)
     db.execute('''INSERT INTO time_polls(id,owner_id,title,category,location,description,timezone,
-        duration_hours,capacity,minimum_participants,fee_policy,deadline,created_at)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?)''',
-        (uid,user['id'],title,category,location,description,zone,duration,capacity,minimum,fee,deadline,now()))
+        duration_hours,capacity,minimum_participants,fee_policy,deadline,created_at,time_mode)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)''',
+        (uid,user['id'],title,category,location,description,zone,0 if mode=='date' else duration,capacity,minimum,fee,deadline,now(),mode))
     for index,start in enumerate(starts):
         db.execute('INSERT INTO time_poll_options VALUES(?,?,?,?)', (secrets.token_hex(8),uid,index,start))
     db.execute('UPDATE time_polls SET bot_enabled=? WHERE id=?',(int(bot_enabled),uid))
-    record(db,uid,user,'created',dict(options=starts,deadline=deadline))
+    record(db,uid,user,'created',dict(options=starts,deadline=deadline,time_mode=mode))
     audit.bot_hook(db,bot_outbox.announce_poll,get(db,uid))
     return get(db,uid)
 
@@ -253,20 +288,27 @@ def manage(db, poll, user, data):
         support = counts[selected['id']]['yes']
         if (support == 0 or support < poll['minimum_participants'] or support < max(c['yes'] for c in counts.values())) and not reason:
             raise APIError('未选最高票或未达最低人数，请填写仍决定举行的原因')
+        start=selected['starts_at'];duration=poll['duration_hours']
+        if poll['time_mode']=='date':
+            start=date_value(data,'starts_at')
+            if option_date(dict(starts_at=start),poll['timezone'])!=option_date(selected,poll['timezone']):
+                raise APIError('开始时间必须在选定的候选日期内')
+            duration=data.get('duration_hours')
+            if type(duration) is not int or not 1<=duration<=24:raise APIError('请选择持续时间（1–24 小时）')
         deadline = date_value(data,'registration_deadline')
-        if not now() < deadline <= selected['starts_at']:
+        if not now() < deadline <= start:
             raise APIError('报名截止需晚于现在，且不能晚于选定的开始时间')
         event_id = events.create(db,user,dict(title=poll['title'],category=poll['category'],location=poll['location'],
-            description=poll['description'],timezone=poll['timezone'],duration_hours=poll['duration_hours'],
+            description=poll['description'],timezone=poll['timezone'],duration_hours=duration,
             capacity=poll['capacity'],minimum_participants=poll['minimum_participants'],fee_policy=poll['fee_policy'],
-            starts_at=selected['starts_at'],deadline=deadline,visibility='public',bot_enabled=bool(poll['bot_enabled'])))
+            starts_at=start,deadline=deadline,visibility='public',bot_enabled=bool(poll['bot_enabled'])))
         db.execute('''UPDATE time_polls SET status='finalized',event_id=?,selected_option_id=?,reason=?,
             decided_at=?,result_json=?,respondent_count=? WHERE id=?''',
             (event_id,selected['id'],reason,now(),json.dumps(counts),
              db.execute('SELECT count(*) FROM time_poll_ballots WHERE poll_id=?',(poll['id'],)).fetchone()[0],poll['id']))
         for row in db.execute('SELECT user_id FROM time_poll_ballots WHERE poll_id=? AND user_id!=?',(poll['id'],user['id'])):
             audit.notify(db,row['user_id'],event_id,'time_poll_finalized',poll['title']+' 的时间已确定，请查看安排后报名')
-        details.update(event_id=event_id,option_id=selected['id'],counts=counts)
+        details.update(event_id=event_id,option_id=selected['id'],counts=counts,starts_at=start,duration_hours=duration)
     else:
         raise APIError('不支持的时间投票操作')
     if action in ('close','cancel','finalize'):
