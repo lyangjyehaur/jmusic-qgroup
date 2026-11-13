@@ -135,7 +135,7 @@ class RosterMessageTests(Fixture, unittest.TestCase):
             self.person(db, '正式甲')
             self.person(db, '候补乙', 'waiting')
             config = bot_settings.read(db)['config']
-            for kind in bot_outbox.DEFAULT_BROADCAST:
+            for kind in bot_outbox.DEFAULT_BROADCAST-{'time_poll_published'}:
                 config['templates'] = {kind: '{heading}\n{url}', kind + '@md': '## 提醒\n[查看]({url})'}
                 plain, _, context = bot_outbox.build_message(db, self.latest_event(db), kind, config=config)
                 for text in (plain, context['_markdown']):

@@ -11,6 +11,7 @@ from .common import APIError, now
 from . import bot_groups
 
 KINDS = {
+    'time_poll_published': '活动时间投票',
     'activity_published': '活动发起', 'formation_confirmed': '已成团',
     'conditions_changed': '安排变更', 'event_started': '活动开始',
     'event_finished': '活动结束', 'event_cancelled': '活动取消',
@@ -204,7 +205,12 @@ def preview(db, data):
                   location='示例餐厅', fee_policy='按实际消费 AA', description='示例活动说明',
                   minimum_participants=4, conditions_version=2, change_summary='集合时间调整',
                   cancellation_reason='天气原因', archived_at=None, registration_open=kind != 'registration_paused')
-    context = bot_outbox.build_message(db, sample, kind, config=config)[2]
+    if kind=='time_poll_published':
+        sample.update(status='open',duration_hours=2)
+        context=bot_outbox.build_poll_message(db,sample,config=config,candidates=[
+            dict(starts_at=(start+timedelta(days=offset)).isoformat()) for offset in range(3)])[2]
+    else:
+        context = bot_outbox.build_message(db, sample, kind, config=config)[2]
     return dict(text=bot_outbox.render_message(config, kind, context),
                 markdown=bot_outbox.render_message(config, kind, context, markdown=True))
 

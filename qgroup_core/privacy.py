@@ -48,6 +48,7 @@ def shared_records(db,uid):
         'settlement_history':('actor_id',),'finance_reports':('reporter_id',),
         'finance_report_actions':('actor_id',),'finance_entries':('actor_id',),
         'attendee_claims':('issuer_id','requester_id'), 'attendee_payment_origins':('payer_user_id',),
+        'time_polls':('owner_id',), 'time_poll_history':('actor_id',),
     }
     return {table:count for table,columns in checks.items()
             if (count:=db.execute('SELECT count(*) FROM '+table+' WHERE '+' OR '.join(c+'=?' for c in columns),(uid,)*len(columns)).fetchone()[0])}
@@ -75,6 +76,11 @@ def erase(db,uid,request_id,created_at):
         db.execute('''INSERT INTO admin_role_history(user_id,actor_ref,before_value,after_value,revision,created_at)
             VALUES(?,'account_closure',1,0,?,?)''',(uid,role['revision']+1,stamp))
     shared=shared_records(db,uid)
+    db.execute('''UPDATE time_polls SET vote_revision=vote_revision+1
+        WHERE status IN ('open','closed') AND id IN
+        (SELECT poll_id FROM time_poll_ballots WHERE user_id=?)''',(uid,))
+    db.execute('DELETE FROM time_poll_votes WHERE user_id=?',(uid,))
+    db.execute('DELETE FROM time_poll_ballots WHERE user_id=?',(uid,))
     db.execute('''DELETE FROM login_attempts WHERE provider='qq' AND EXISTS(
         SELECT 1 FROM external_identities x WHERE x.user_id=? AND x.provider='qq'
         AND x.client_id=login_attempts.app_id AND x.subject=login_attempts.openid)''',(uid,))
@@ -100,6 +106,8 @@ def erase(db,uid,request_id,created_at):
 
 def close(db,user,data):
     if data.get('confirm_close') is not True:raise APIError('请确认注销账号并申请删除资料')
+    if db.execute("SELECT 1 FROM time_polls WHERE owner_id=? AND status IN ('open','closed')",(user['id'],)).fetchone():
+        raise APIError('请先定案或取消仍由你管理的时间投票，再注销账号',409)
     if db.execute("SELECT 1 FROM events WHERE owner_id=? AND lifecycle NOT IN ('ended','cancelled') AND status!='deleted' AND archived_at IS NULL",(user['id'],)).fetchone():
         raise APIError('请先转交或结束仍由你管理的活动，再注销账号',409)
     request_id=secrets.token_hex(16);created_at=now()

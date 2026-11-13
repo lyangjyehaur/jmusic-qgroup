@@ -16,6 +16,7 @@
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
   <script src="/activity.js?v=20261110-settlement1" defer></script>
+  <script src="/time-polls.js?v=20261113-polls1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
   <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
@@ -53,6 +54,8 @@
       </div>
       <label class="check-option archived-option" id="archived-option" hidden><input id="include-archived" type="checkbox">含已歸檔</label>
       <div id="load-error" class="error-banner" role="alert" hidden></div>
+      <div class="poll-entry"><p>時間還沒定？先和大家選個合適的時段。</p><button type="button" class="button secondary" data-poll-action="create">發起時間投票</button></div>
+      <section id="time-poll-section" class="poll-section" aria-labelledby="time-poll-board-title" hidden><h2 id="time-poll-board-title">一起選時間</h2><div id="time-poll-board" class="board"></div></section>
       <div id="board" class="board" aria-live="polite"><div class="loading-state">加載中…</div></div>
     </section>
   </main>
@@ -60,6 +63,36 @@
     <nav class="footer-links" aria-label="頁腳導航"><a href="/guide.html">操作說明</a><a href="/privacy">隱私政策</a><a href="/contact">聯繫與投訴</a></nav>
     <div class="footer-meta"><span class="footer-author">由 <a href="https://danndann.cn" target="_blank" rel="noopener noreferrer" translate="no">飯糰</a> 製作</span><span class="footer-separator" aria-hidden="true">·</span><a class="footer-legal" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">渝ICP备16002872号-1</a></div>
   </footer>
+
+  <dialog id="time-poll-form-dialog" class="dialog event-form-dialog" aria-labelledby="time-poll-form-title">
+    <form id="time-poll-form" class="event-form">
+      <div class="dialog-heading"><h2 id="time-poll-form-title">發起時間投票</h2><button type="button" class="icon-button" data-close="time-poll-form-dialog" aria-label="關閉">×</button></div>
+      <div class="form-body">
+        <p class="activity-alert">先收集時間意願，定案後開放正式報名。投票公開可見，請勿填寫私人信息。</p>
+        <label class="field">活動標題<input name="title" required maxlength="60" placeholder="如：找個週末一起聚餐"></label>
+        <label class="field">活動類型<select name="category"><option value="约K">唱歌</option><option value="聚餐">聚餐</option><option value="运动">運動</option><option value="出游">出遊</option><option value="游戏">遊戲</option><option value="其他">其他</option></select></label>
+        <label class="field">預計地點<input name="location" required maxlength="120" placeholder="集合區域、場地或店家"></label>
+        <label class="field">活動說明 <span class="optional">選填</span><textarea name="description" rows="3" maxlength="3000" placeholder="想做什麼、預計預算、集合方式等"></textarea></label>
+        <div class="form-row"><label class="field">候選時段數量<select name="option_count"><option value="2">2 個</option><option value="3" selected>3 個</option><option value="4">4 個</option><option value="5">5 個</option><option value="6">6 個</option></select></label><label class="field">每場持續小時<input name="duration_hours" type="number" min="1" max="24" value="3" required></label></div>
+        <label class="field">活動時區<select name="timezone"><option value="Asia/Shanghai">北京時間（UTC+8）</option><option value="Asia/Taipei">臺北時間（UTC+8）</option><option value="Asia/Hong_Kong">香港時間（UTC+8）</option><option value="Asia/Tokyo">東京時間（UTC+9）</option><option value="UTC">UTC</option></select></label>
+        <p class="field-help">每個時段填寫完整日期與開始時間，凌晨按實際日期選擇。發佈後候選安排鎖定，需更改請取消後重新發起。</p>
+        <div class="poll-slot"><label class="field">候選時段 1<input name="slot_0" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot"><label class="field">候選時段 2<input name="slot_1" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot"><label class="field">候選時段 3<input name="slot_2" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot" hidden><label class="field">候選時段 4<input name="slot_3" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot" hidden><label class="field">候選時段 5<input name="slot_4" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot" hidden><label class="field">候選時段 6<input name="slot_5" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
+        <label class="field">投票截止<input name="deadline" type="datetime-local" required><span class="field-help">早於所有候選時段；截止後由發起者定案，不自動發佈。</span></label>
+        <div class="form-row"><label class="field">正式活動人數上限<input name="capacity" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不限</span></label><label class="field">最低成團人數<input name="minimum_participants" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不設置</span></label></div>
+        <label class="check-option"><input name="bot_enabled" type="checkbox" checked>發起投票時主動通知目標 QQ 群，定案後繼續同步正式活動</label>
+        <p class="field-help">沿用管理員設置的通知目標群；請核對內容適合群成員查看。模擬模式只記錄，不發送，實際結果見投遞記錄。逐次投票不發群消息。也可複製鏈接分享；僅發起者可查看個人選擇，其他人只看到各時段合計。</p>
+      </div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" type="submit">發佈投票</button></div>
+    </form>
+  </dialog>
+  <dialog id="time-poll-dialog" class="dialog event-form-dialog" aria-labelledby="time-poll-title">
+    <div class="event-form"><div class="dialog-heading"><h2 id="time-poll-title">時間投票</h2><button type="button" class="icon-button" data-close="time-poll-dialog" aria-label="關閉">×</button></div><div id="time-poll-content" class="form-body"></div><div class="form-footer"><button type="button" class="button secondary full" data-poll-action="share">複製投票鏈接</button></div></div>
+  </dialog>
 
   <dialog id="profile-dialog" class="dialog profile-dialog" aria-labelledby="profile-title">
     <form id="profile-form">
@@ -109,7 +142,7 @@
           <button id="event-merge-fee" type="button" class="text-button">併入注意事項</button>
         </div>
         <label class="field">最低成團人數<input name="minimum_participants" type="number" min="0" max="500" inputmode="numeric" value="0"><span class="field-help">0 表示不設置；未達標由發起者決定，不自動取消。</span></label>
-        <label class="check-option"><input name="bot_enabled" type="checkbox" aria-describedby="event-bot-help event-bot-visibility">主動將公開活動信息與重要節點發送到通知目標 QQ 群</label>
+        <label class="check-option"><input name="bot_enabled" type="checkbox" checked aria-describedby="event-bot-help event-bot-visibility">主動將公開活動信息與重要節點發送到通知目標 QQ 群</label>
         <p id="event-bot-help" class="field-help">允許回覆的群可查詢已發佈的公開活動；此開關只控制主動通知。請先核對內容適合群成員查看；邀請活動和草稿不對群公開。機器人模擬模式只記錄，不發送。</p>
         <p id="event-bot-visibility" class="field-help" hidden>當前為邀請可見，不對群公開，也不會主動發送通知。改為公開後，如需主動通知請重新勾選。</p>
         <label class="advanced-switch"><span>高級選項</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>

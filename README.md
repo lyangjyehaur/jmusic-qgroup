@@ -12,6 +12,8 @@
 
 完整计划见 [实施计划](docs/implementation-plan.md)，接口见 [报名契约](docs/roster-contract.md) 、[P2 活动契约](docs/activity-contract.md)、[P3 结算契约](docs/settlement-contract.md) 与 [P4 收付款契约](docs/finance-contract.md)。P5 增加活动／结算（含图片）／款项本机草稿、未知操作查回与安全重试、动态待办、活动复制与导航，详见 [P5 恢复契约](docs/experience-contract.md)；QQ OAuth 登录、回调及账号绑定已实现，应用审核和真实授权仍待确认。
 
+新增[活動時間投票](docs/time-poll-contract.md)：2–6 個候選時段、逐時段意願及改票、發起者定案後建立正式活動。投票不占報名名額；新投票預設開啟 QQ 群通知，定案後沿用同步設定，也可手動分享連結。涉及共用 schema 16–17 與 outbox，發布範圍為 `both`。
+
 ## 本地运行及验证
 
 Python 3.9+ 及系统 IANA 时区数据库，无第三方运行依赖。
@@ -26,11 +28,13 @@ node --check public/app.js
 node --check public/client.js
 node --check public/roster.js
 node --check public/activity.js
+node --check public/time-polls.js
 node --check public/settlements.js
 node --check public/finance.js
 node --check public/identity.js
 node tests/test_dates.js
 node tests/test_board.js
+node tests/test_time_polls.js
 node tests/test_settlement_payload.js
 node tests/test_client.js
 node tests/test_todos.js
@@ -146,7 +150,7 @@ ssh server2 'docker run --rm --user 994:992 --read-only --tmpfs /tmp:rw,size=64m
 | KANBAN_QQ_APP_ID | 空 | QQ 互联 App ID；未配置时隐藏 QQ 入口 |
 | KANBAN_QQ_APP_KEY | 空 | 仅服务器保存，禁止放前端或代码仓库 |
 | KANBAN_QQ_REDIRECT_URI | ORIGIN + /auth/qq/callback | 须与 QQ 平台登记一致，只接受同源固定路径 |
-| KANBAN_BOT_ENABLED | 0 | 后台尚未保存配置时的主动通知默认开关；还需发起者逐场开启群同步 |
+| KANBAN_BOT_ENABLED | 0 | 后台尚未保存配置时的主动通知默认开关；各场活动另有群同步设置 |
 | KANBAN_BOT_BASE_URL | https://kanban.danndann.cn | 群消息里的站内链接前缀 |
 | KANBAN_BOT_SCHEDULE | 1 | 后台尚未保存配置时的定时提醒默认开关；默认截止前 24 小时／预计结束提醒 |
 | KANBAN_BOT_SETTLEMENT_DETAIL | 0 | 1 才在群里列出逐人金额；**会同时公开参加者姓名**，默认只给站内链接 |
@@ -178,7 +182,7 @@ web 每次操作读取最新配置，bot 每次投递与指令回复读取最新
 
 独立的 `qgroup_bot` 行程通过 QQ 官方 WebSocket／OpenAPI v2 接收指令与发送通知。群回复、帮助和指令面板使用简中，指令同时接受简繁，例如 `/活动`／`/活動`、`/报名`／`/報名`、`/结算`／`/結算`、`/待办`／`/待辦`。裸 @ 显示活动；未知指令显示帮助。只回复后台明确允许的群；尚未设置群组政策时沿用 `KANBAN_BOT_GROUP`。
 
-**公开查询与主动通知分开**：允许回复的群可查询已发布、未删除的公开活动，无需开启活动的「QQ 群同步」；列表和指定短码查询使用相同的可见性限制。邀请活动与草稿不对群公开。主动通知仍须发起者逐场开启「QQ 群同步」，新旧活动默认关闭；开启前先核对标题、时间、地点、说明与费用。关闭同步会作废待送通知，但不影响公开活动查询；改为邀请可见则同时隐藏群查询并作废待送通知，发送前也再次验权。全局 `KANBAN_BOT_ENABLED=1` 只允许排队，不会替所有活动开启同步。
+**公开查询与主动通知分开**：允许回复的群可查询已发布、未删除的公开活动，无需开启活动的「QQ 群同步」；列表和指定短码查询使用相同的可见性限制。邀请活动与草稿不对群公开。新建公开活动的「QQ 群同步」默认勾选，发起者可取消；既有活动保留原设置。主动通知须该场活动开启同步；开启前先核对标题、时间、地点、说明与费用。关闭同步会作废待送通知，但不影响公开活动查询；改为邀请可见则同时隐藏群查询并作废待送通知，发送前也再次验权。全局 `KANBAN_BOT_ENABLED=1` 只允许排队，不会替所有活动开启同步。
 
 **分工与投递**：主服务在审计同一事务内写入 `bot_outbox`；挂钩异常仅记日志，不让报名或账务操作失败。schema 11 增加逐场开关、收件人、重试时间、模拟时间、实际投递内容与 claim 凭证，不重写旧业务数据。bot 不修改报名、结算或账本。改期会作废旧提醒并重排，提醒发出时重算人数。token、网络及响应解析异常逐条计入有限重试，按退避时间重试，不阻塞整批；claim 凭证阻止过期 worker 回写。网络发送后进程崩溃仍可能重复投递，不能保证恰好一次。
 

@@ -1,7 +1,7 @@
 'use strict';
 const $ = (s, root = document) => root.querySelector(s);
 const $$ = (s, root = document) => [...root.querySelectorAll(s)];
-const state = {events:[], me:{nickname:''}, filter:'upcoming', category:'全部', search:'', current:null, loaded:false};
+const state = {events:[], polls:[], me:{nickname:''}, filter:'upcoming', category:'全部', search:'', current:null, loaded:false};
 let profileContinuation = null, confirmCallback = null, toastTimer = null, refreshPromise = null;
 let eventTimeConfirmation = null;
 let dialogStack=[],detailSignature='',historyReturning=false,modalBack=false;
@@ -128,7 +128,7 @@ function placeToast() {
 }
 function showDialog(id) {
   const dialog=$('#'+id);
-  if (!dialog.open) {dialog.showModal();dialogStack=dialogStack.filter(item=>item!==dialog);dialogStack.push(dialog);if(id!=='detail-dialog'){dialog.dataset.modalToken=intentId();history.pushState({kanbanDialog:dialog.dataset.modalToken},'',location.href);}}
+  if (!dialog.open) {dialog.showModal();dialogStack=dialogStack.filter(item=>item!==dialog);dialogStack.push(dialog);if(!['detail-dialog','time-poll-dialog'].includes(id)){dialog.dataset.modalToken=intentId();history.pushState({kanbanDialog:dialog.dataset.modalToken},'',location.href);}}
   placeToast();
 }
 function setProfile() {
@@ -171,11 +171,12 @@ function eventStatus(e) {
   return ["可报名",''];
 }
 function renderBoard() {
+  const pollCount=typeof timePollUI==='undefined'?0:timePollUI.renderBoard();
   const isUpcoming=e=>!isPast(e)&&e.lifecycle!=='draft'&&!e.archived_at&&!e.estimated_over;
   const upcoming=state.events.filter(isUpcoming);
   $('#archived-option').hidden=state.filter!=='past';
   $('#event-count').textContent=upcoming.length;
-  $('#category-filter').hidden=new Set(state.events.map(e=>e.category)).size<2 && state.category==='全部';
+  $('#category-filter').hidden=new Set([...state.events,...(state.polls||[])].map(e=>e.category)).size<2 && state.category==='全部';
   const list = state.events.filter(e => {
     if(state.filter==='upcoming'&&!isUpcoming(e))return false;
     if(state.filter==='past'&&(!isPast(e)||(e.archived_at&&!$('#include-archived').checked)))return false;
@@ -184,6 +185,7 @@ function renderBoard() {
   });
   if (state.filter==='past') list.reverse();
   if (!list.length) {
+    if(pollCount){$('#board').innerHTML='';return;}
     const filtered=state.search || state.category!=='全部';
     const title=filtered?"没有符合条件的活动":state.filter==='mine'?"暂无参与的活动":state.filter==='past'?"暂无往期活动":"暂无活动";
     $('#board').innerHTML=`<div class="empty-state"><h3>${title}</h3>${!filtered&&state.filter==='mine'?"<button class=\"button secondary\" data-action=\"browse\">查看活动</button>":''}</div>`;
@@ -200,7 +202,7 @@ async function refresh({loud=false, detail=true}={}) {
   if (refreshPromise) return refreshPromise;
   refreshPromise=(async()=>{
     try {
-      const result=await api('/api/events'); state.events=result.events; state.loaded=true;
+      const result=await api('/api/events'); state.events=result.events; state.polls=result.time_polls||[]; state.loaded=true;
       $('#load-error').hidden=true; renderBoard();
       if (detail && state.current && $('#detail-dialog').open) {
         const e=state.events.find(x=>x.id===state.current);
@@ -224,6 +226,7 @@ function changeFilter(filter) {
 }
 function setUrlEvent(id) {
   const url=new URL(location.href);
+  if(id)url.searchParams.delete('poll');
   if(id) url.searchParams.set('event',id); else url.searchParams.delete('event');
   if(url.href!==location.href) history.pushState(null,'',url);
 }
@@ -304,7 +307,7 @@ async function openEventForm(e=null,copy=false) {
   }
   form.elements.withdrawal_deadline.value=e?wallDate(e.withdrawal_deadline,zone):form.elements.deadline.value;
   form.elements.visibility.value=e?.visibility||'public';form.elements.minimum_participants.value=e?.minimum_participants||0;
-  form.elements.bot_enabled.checked=!!e?.bot_enabled;
+  form.elements.bot_enabled.checked=e?!!e.bot_enabled:true;
   form.elements.bot_enabled.dataset.editable=String(!e||!!e.is_owner);
   $('#event-admin-assist').hidden=!e?.can_assist_schedule;
   form.elements.reason.required=!!e?.can_assist_schedule;
@@ -425,6 +428,7 @@ const profileCodes=createPaymentCodeLibraryUI({api,$,esc,prepareCode,askConfirm,
 const invoiceUI=createSettlementUI({api,$,esc,showDialog,toast,renderDetail,refresh,prepareCode,centsText,askConfirm});
 const financeUI=createFinanceUI({api,$,esc,showDialog,toast,renderDetail,refresh,centsText,wallDate,wallToISO,shortDate,withProfile});
 const activityUI=createActivityUI({api,$,state,esc,showDialog,toast,withProfile,renderDetail,refresh,shortDate,timeRange,openEventForm,copyLink:rosterUI.copyLink,eventUrl:rosterUI.eventUrl});
+const timePollUI=createTimePollUI({api,$,state,esc,showDialog,toast,withProfile,refresh,shortDate,timeRange,wallDate,wallToISO,openDetail,copyLink:rosterUI.copyLink});
 
 document.addEventListener('click',event=>{
   const close=event.target.closest('[data-close]');if(close){BoardDrafts.close($('#'+close.dataset.close));return;}
@@ -558,14 +562,20 @@ function syncModalHistory() {
 window.addEventListener('popstate',async()=>{
   if(modalBack){modalBack=false;syncModalHistory();return;}
   const top=dialogStack.filter(d=>d.open).slice(-1)[0];
-  if(top&&top.id!=='detail-dialog'){
+  if(top&&!['detail-dialog','time-poll-dialog'].includes(top.id)){
     // Restore this history entry before opening the unsaved-change question.
     if(BoardDrafts.isDirty(top.id)||top.querySelector('form[inert]'))history.pushState({kanbanDialog:top.dataset.modalToken},'',location.href);
     const closed=await BoardDrafts.close(top);
     if(!closed&&!BoardDrafts.isDirty(top.id)&&!top.querySelector('form[inert]'))history.pushState({kanbanDialog:top.dataset.modalToken},'',location.href);
     return;
   }
-  const id=new URL(location.href).searchParams.get('event');
+  const params=new URL(location.href).searchParams,pollId=params.get('poll');
+  if(pollId){
+    if($('#detail-dialog').open){$('#detail-dialog').dataset.fromHistory='1';$('#detail-dialog').close();}
+    await timePollUI.open(pollId,false);return;
+  }
+  if($('#time-poll-dialog').open){$('#time-poll-dialog').dataset.fromHistory='1';$('#time-poll-dialog').close();}
+  const id=params.get('event');
   if(id)openDetail(id,false);else if($('#detail-dialog').open){$('#detail-dialog').dataset.fromHistory='1';$('#detail-dialog').close();}
 });
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'){refresh();if($('#event-form-dialog').open)updateStartCountdown();}});
@@ -615,6 +625,7 @@ async function routeBotEntry(params) {
   else if(id&&managementInvite){try{await activityUI.showManagementInvitation(id,managementInvite);}catch(problem){toast(problem.message);}}
   else if(id&&participantInvite){try{await rosterUI.showInvitation(id,participantInvite);}catch(problem){toast(problem.message);}}
   else if(params.has('action'))await routeBotEntry(params);
+  else if(params.get('poll'))await timePollUI.open(params.get('poll'),false);
   else if(id)await openDetail(id,false);
   identityUI.receipt();
   identityUI.initQQRefresh();

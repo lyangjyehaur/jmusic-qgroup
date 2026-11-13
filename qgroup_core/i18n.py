@@ -87,6 +87,7 @@ def arrangement(value,locale):
 
 
 NOTIFICATIONS=(
+    (None,' 的时间已确定，请查看安排后报名'),
     (None,' 已另行指定结算人，你的结算权限已撤销'),
     (None,' 已递补为正式报名'),
     (None,' 的报名认领申请待核对'),

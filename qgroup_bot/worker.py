@@ -64,6 +64,12 @@ class OutboxWorker:
             return '目标群不在允许范围内'
         if not settings['enabled'] or row['kind'] not in settings['broadcast_kinds']:
             return '后台已关闭此类通知'
+        if row.get('poll_id'):
+            with self._connect() as db:
+                poll=db.execute('SELECT * FROM time_polls WHERE id=?',(row['poll_id'],)).fetchone()
+            if row['kind']!='time_poll_published' or not bot_outbox.poll_shareable(poll):
+                return '投票已截止、定案、取消或关闭群同步'
+            return None
         state = self._event_state(row['event_id'])
         if not bot_views.shareable(state):
             return '活动不再公开或已关闭群同步'
@@ -208,7 +214,17 @@ class OutboxWorker:
         payload = json.loads(row['payload_json'])
         if not isinstance(payload, dict):
             raise ValueError('invalid payload')
-        if row['kind'] in bot_outbox.REMINDER_KINDS:
+        if row.get('poll_id'):
+            with self._connect() as db:
+                poll=db.execute('SELECT * FROM time_polls WHERE id=?',(row['poll_id'],)).fetchone()
+                planned=bot_outbox.build_poll_message(db,poll,config=policy)
+            if not planned:
+                self._mark(row,'skipped','投票已不适用')
+                return 'skipped'
+            payload={'text':planned[0],'msg_type':0,'markdown_text':planned[2].get('_markdown')}
+            keyboard=bot_outbox._keyboard(planned[1])
+            if keyboard:payload['keyboard']=keyboard
+        elif row['kind'] in bot_outbox.REMINDER_KINDS:
             with self._connect() as db:
                 event = db.execute('SELECT * FROM events WHERE id=?', (row['event_id'],)).fetchone()
                 planned = bot_outbox.build_message(db, event, row['kind'])

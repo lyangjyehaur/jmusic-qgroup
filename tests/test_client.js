@@ -47,6 +47,17 @@ function page(scope){const box={BoardAnalytics:{request:(...args)=>analytics.pus
   // A completed create survives the crash window before the draft is cleared.
   const d=page('carol');await d.request('/api/events','POST',{client_intent:'one'});assert.equal(sent.length,at+1);
   await d.request('/api/events','POST',{client_intent:'two'});assert.equal(sent.length,at+2);assert.notEqual(originalKey,sent.at(-1).key);
+  // Poll creation recovers after a lost response and has its own stable namespace.
+  const pollClient=page('poll-owner'),pollStart=sent.length;
+  failAfterCommit=true;
+  await assert.rejects(pollClient.request('/api/time-polls','POST',{client_intent:'poll-draft'}));
+  const pollReload=page('poll-owner');
+  await pollReload.request('/api/time-polls','POST',{client_intent:'poll-draft'});
+  await pollReload.request('/api/time-polls','POST',{client_intent:'poll-draft'});
+  assert.equal(sent.length,pollStart+1);
+  const pollKey=sent.at(-1).key;
+  await pollReload.request('/api/events','POST',{client_intent:'poll-draft'});
+  assert.notEqual(sent.at(-1).key,pollKey);
   // Two tabs restoring the same creation draft must use the same server key.
   const e=page('eve'),f=page('eve');await Promise.all([e.request('/api/events','POST',{client_intent:'shared-draft'}),f.request('/api/events','POST',{client_intent:'shared-draft'})]);const shared=sent.filter(v=>v.data.client_intent==='shared-draft');assert.equal(new Set(shared.map(v=>v.key)).size,1);const stable=Buffer.from(await webcrypto.subtle.digest('SHA-256',new TextEncoder().encode('create shared-draft'))).toString('hex');assert.equal(shared[0].key,stable);
   // Repeating the same input after a completed operation is a fresh intent (A → B → A).

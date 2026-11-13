@@ -16,6 +16,7 @@
   <script src="/client.js?v=20261109-privacy1" defer></script>
   <script src="/roster.js?v=20261110-adminedit1" defer></script>
   <script src="/activity.js?v=20261110-settlement1" defer></script>
+  <script src="/time-polls.js?v=20261113-polls1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
   <script src="/settlements.js?v=20261110-settlement1" defer></script>
   <script src="/finance.js?v=20261109-privacy1" defer></script>
@@ -53,6 +54,8 @@
       </div>
       <label class="check-option archived-option" id="archived-option" hidden><input id="include-archived" type="checkbox">含已归档</label>
       <div id="load-error" class="error-banner" role="alert" hidden></div>
+      <div class="poll-entry"><p>时间还没定？先和大家选个合适的时段。</p><button type="button" class="button secondary" data-poll-action="create">发起时间投票</button></div>
+      <section id="time-poll-section" class="poll-section" aria-labelledby="time-poll-board-title" hidden><h2 id="time-poll-board-title">一起选时间</h2><div id="time-poll-board" class="board"></div></section>
       <div id="board" class="board" aria-live="polite"><div class="loading-state">加载中…</div></div>
     </section>
   </main>
@@ -60,6 +63,36 @@
     <nav class="footer-links" aria-label="页脚导航"><a href="/guide.html">操作说明</a><a href="/privacy">隐私政策</a><a href="/contact">联系与投诉</a></nav>
     <div class="footer-meta"><span class="footer-author">由 <a href="https://danndann.cn" target="_blank" rel="noopener noreferrer" translate="no">飯糰</a> 製作</span><span class="footer-separator" aria-hidden="true">·</span><a class="footer-legal" href="https://beian.miit.gov.cn/" target="_blank" rel="noopener noreferrer">渝ICP备16002872号-1</a></div>
   </footer>
+
+  <dialog id="time-poll-form-dialog" class="dialog event-form-dialog" aria-labelledby="time-poll-form-title">
+    <form id="time-poll-form" class="event-form">
+      <div class="dialog-heading"><h2 id="time-poll-form-title">发起时间投票</h2><button type="button" class="icon-button" data-close="time-poll-form-dialog" aria-label="关闭">×</button></div>
+      <div class="form-body">
+        <p class="activity-alert">先收集时间意愿，定案后开放正式报名。投票公开可见，请勿填写私人信息。</p>
+        <label class="field">活动标题<input name="title" required maxlength="60" placeholder="如：找个周末一起聚餐"></label>
+        <label class="field">活动类型<select name="category"><option value="约K">唱歌</option><option>聚餐</option><option>运动</option><option>出游</option><option>游戏</option><option>其他</option></select></label>
+        <label class="field">预计地点<input name="location" required maxlength="120" placeholder="集合区域、场地或店家"></label>
+        <label class="field">活动说明 <span class="optional">选填</span><textarea name="description" rows="3" maxlength="3000" placeholder="想做什么、预计预算、集合方式等"></textarea></label>
+        <div class="form-row"><label class="field">候选时段数量<select name="option_count"><option value="2">2 个</option><option value="3" selected>3 个</option><option value="4">4 个</option><option value="5">5 个</option><option value="6">6 个</option></select></label><label class="field">每场持续小时<input name="duration_hours" type="number" min="1" max="24" value="3" required></label></div>
+        <label class="field">活动时区<select name="timezone"><option value="Asia/Shanghai">北京时间（UTC+8）</option><option value="Asia/Taipei">台北时间（UTC+8）</option><option value="Asia/Hong_Kong">香港时间（UTC+8）</option><option value="Asia/Tokyo">东京时间（UTC+9）</option><option value="UTC">UTC</option></select></label>
+        <p class="field-help">每个时段填写完整日期与开始时间，凌晨按实际日期选择。发布后候选安排锁定，需更改请取消后重新发起。</p>
+        <div class="poll-slot"><label class="field">候选时段 1<input name="slot_0" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot"><label class="field">候选时段 2<input name="slot_1" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot"><label class="field">候选时段 3<input name="slot_2" type="datetime-local" required></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot" hidden><label class="field">候选时段 4<input name="slot_3" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot" hidden><label class="field">候选时段 5<input name="slot_4" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
+        <div class="poll-slot" hidden><label class="field">候选时段 6<input name="slot_5" type="datetime-local" required disabled></label><p class="poll-slot-preview field-help"></p></div>
+        <label class="field">投票截止<input name="deadline" type="datetime-local" required><span class="field-help">早于所有候选时段；截止后由发起者定案，不自动发布。</span></label>
+        <div class="form-row"><label class="field">正式活动人数上限<input name="capacity" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不限</span></label><label class="field">最低成团人数<input name="minimum_participants" type="number" min="0" max="500" value="0" required><span class="field-help">0 表示不设置</span></label></div>
+        <label class="check-option"><input name="bot_enabled" type="checkbox" checked>发起投票时主动通知目标 QQ 群，定案后继续同步正式活动</label>
+        <p class="field-help">沿用管理员设置的通知目标群；请核对内容适合群成员查看。模拟模式只记录，不发送，实际结果见投递记录。逐次投票不发群消息。也可复制链接分享；仅发起者可查看个人选择，其他人只看到各时段合计。</p>
+      </div>
+      <div class="form-footer"><p class="form-error" role="alert"></p><button class="button primary full" type="submit">发布投票</button></div>
+    </form>
+  </dialog>
+  <dialog id="time-poll-dialog" class="dialog event-form-dialog" aria-labelledby="time-poll-title">
+    <div class="event-form"><div class="dialog-heading"><h2 id="time-poll-title">时间投票</h2><button type="button" class="icon-button" data-close="time-poll-dialog" aria-label="关闭">×</button></div><div id="time-poll-content" class="form-body"></div><div class="form-footer"><button type="button" class="button secondary full" data-poll-action="share">复制投票链接</button></div></div>
+  </dialog>
 
   <dialog id="profile-dialog" class="dialog profile-dialog" aria-labelledby="profile-title">
     <form id="profile-form">
@@ -109,7 +142,7 @@
           <button id="event-merge-fee" type="button" class="text-button">并入注意事项</button>
         </div>
         <label class="field">最低成团人数<input name="minimum_participants" type="number" min="0" max="500" inputmode="numeric" value="0"><span class="field-help">0 表示不设置；未达标由发起者决定，不自动取消。</span></label>
-        <label class="check-option"><input name="bot_enabled" type="checkbox" aria-describedby="event-bot-help event-bot-visibility">主动将公开活动信息与重要节点发送到通知目标 QQ 群</label>
+        <label class="check-option"><input name="bot_enabled" type="checkbox" checked aria-describedby="event-bot-help event-bot-visibility">主动将公开活动信息与重要节点发送到通知目标 QQ 群</label>
         <p id="event-bot-help" class="field-help">允许回复的群可查询已发布的公开活动；此开关只控制主动通知。请先核对内容适合群成员查看；邀请活动和草稿不对群公开。机器人模拟模式只记录，不发送。</p>
         <p id="event-bot-visibility" class="field-help" hidden>当前为邀请可见，不对群公开，也不会主动发送通知。改为公开后，如需主动通知请重新勾选。</p>
         <label class="advanced-switch"><span>高级选项</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>

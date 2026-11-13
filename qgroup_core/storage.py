@@ -5,7 +5,7 @@ import secrets
 import sqlite3
 
 from .common import now
-from . import unionids, bot_settings, bot_groups
+from . import unionids, bot_settings, bot_groups, time_polls
 
 
 def connect(path):
@@ -379,6 +379,7 @@ def migrate_privacy(db):
         bot_settings.migrate(db)
         migrate_admin_roles(db)
         bot_groups.migrate(db)
+        time_polls.migrate(db)
         return
     db.execute("ALTER TABLE login_attempts ADD COLUMN privacy_version TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE login_attempts ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
@@ -399,6 +400,7 @@ def migrate_privacy(db):
     bot_settings.migrate(db)
     migrate_admin_roles(db)
     bot_groups.migrate(db)
+    time_polls.migrate(db)
 
 
 def migrate_bot(db):

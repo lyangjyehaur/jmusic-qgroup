@@ -27,6 +27,7 @@ from . import bot_views, bot_settings, bot_groups
 # Broadcast kinds are chosen by "the whole group needs to know or act",
 # not by a per-event message quota. Operators may extend or shrink the set.
 DEFAULT_BROADCAST = frozenset({
+    'time_poll_published',
     'activity_published', 'formation_confirmed', 'conditions_changed',
     'event_started', 'event_finished', 'event_cancelled',
     'settlement_updated', 'deadline_reminder', 'estimated_over_reminder',
@@ -219,13 +220,17 @@ def _keyboard(buttons):
 
 def enqueue(db, event_id, kind, text, *, channel='group', target='',
             due_at=None, buttons=None, status='pending', schedule_key=None,
-            fact_key=None, recipient_user_id=None, template_context=None, extra=None):
+            fact_key=None, recipient_user_id=None, template_context=None, extra=None, poll_id=None):
     """Queue one message. Returns True when a new row was created."""
     if not _available(db) or not text:
         return False
     if kind not in broadcast_kinds(db) and channel == 'group':
         return False
-    if channel == 'group' and not bot_views.shareable(_event(db, event_id)):
+    if poll_id:
+        poll=db.execute('SELECT * FROM time_polls WHERE id=?',(poll_id,)).fetchone()
+        if event_id is not None or kind!='time_poll_published' or channel!='group' or not poll_shareable(poll):
+            return False
+    elif channel == 'group' and not bot_views.shareable(_event(db, event_id)):
         return False
     if channel == 'group':
         policy = bot_settings.read(db)['config']
@@ -249,7 +254,7 @@ def enqueue(db, event_id, kind, text, *, channel='group', target='',
     if schedule_key:
         payload['_schedule_key'] = schedule_key
     # Callback commands must retain the activity from the card they belong to.
-    buttons = [(label, data+' '+event_id if data else '', jump)
+    buttons = [(label, data+' '+(event_id or poll_id) if data else '', jump)
                for label, data, jump in (buttons or [])]
     keyboard = _keyboard(buttons or [])
     if keyboard:
@@ -258,11 +263,64 @@ def enqueue(db, event_id, kind, text, *, channel='group', target='',
         recipient_user_id or '', fact_key or schedule_key or text)
     dedupe = hashlib.sha256(raw.encode('utf-8')).hexdigest()[:32]
     cursor = db.execute('''INSERT OR IGNORE INTO bot_outbox
-        (event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id)
-        VALUES(?,?,?,?,?,?,?,?,?,?)''',
+        (event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id,poll_id)
+        VALUES(?,?,?,?,?,?,?,?,?,?,?)''',
         (event_id, kind, dedupe, channel, target,
-         json.dumps(payload, ensure_ascii=False), due_at, status, now(), recipient_user_id))
+         json.dumps(payload, ensure_ascii=False), due_at, status, now(), recipient_user_id,poll_id))
     return cursor.rowcount > 0
+
+
+def poll_shareable(poll):
+    return bool(poll and poll['bot_enabled'] and poll['status']=='open' and poll['deadline']>now())
+
+
+def build_poll_message(db,poll,*,config=None,candidates=None):
+    if not poll_shareable(poll):
+        return None
+    candidates=candidates if candidates is not None else db.execute(
+        'SELECT starts_at FROM time_poll_options WHERE poll_id=? ORDER BY position',(poll['id'],)).fetchall()
+    zone=poll['timezone']
+    title=str(poll['title'])[:40]
+    label='活动时间投票'
+    heading='【%s】%s' % (label,title)
+    lines=['请一起选择方便参加的时段：']
+    for index,option in enumerate(candidates,1):
+        end=(datetime.fromisoformat(option['starts_at'])+timedelta(hours=poll['duration_hours'])).isoformat()
+        lines.append('%d. %s – %s' % (index,local_time(option['starts_at'],zone),local_time(end,zone)))
+    lines+=['时区：'+zone,'预计地点：'+str(poll['location']),
+            '投票截止：'+local_time(poll['deadline'],zone),
+            '每个时段可选：可以／勉强可以／不行，截止前可改票。',
+            '投票不占名额，发起者定案后需另行报名。']
+    url=base_url()+'/?poll='+poll['id']
+    context=dict.fromkeys(bot_settings.VARIABLES,'')
+    context.update(heading=heading,details='\n'.join(lines),url=url,title=title,
+        starts_at='待投票确定',deadline=local_time(poll['deadline'],zone),location=poll['location'],
+        description=str(poll['description'])[:120],fee_policy=str(poll['fee_policy'])[:120],
+        _label=label,_details_lines=lines,_default_text=heading+'\n'+'\n'.join(lines)+'\n\n'+url)
+    config=config or bot_settings.read(db)['config']
+    text=render_message(config,'time_poll_published',context)
+    context['_markdown']=render_message(config,'time_poll_published',context,markdown=True)
+    return text,[('选择活动时间','',url)],context
+
+
+def announce_poll(db,poll,fact_key=None):
+    if not _available(db):return False
+    planned=build_poll_message(db,poll)
+    if not planned:return False
+    return enqueue(db,None,'time_poll_published',planned[0],poll_id=poll['id'],buttons=planned[1],
+        template_context=planned[2],fact_key=fact_key or 'poll:'+poll['id'])
+
+
+def retry_poll(db,poll,row_id):
+    if type(row_id) is not int or not poll_shareable(poll):
+        raise APIError('当前投票未开放群同步，无法重送',409)
+    row=db.execute("SELECT * FROM bot_outbox WHERE id=? AND poll_id=? AND channel='group'",(row_id,poll['id'])).fetchone()
+    if not row or not (row['status']=='failed' or row['simulated_at'] or row['last_error']=='dry-run'):
+        raise APIError('只能重送失败或模拟的通知',409)
+    if db.execute("SELECT 1 FROM bot_outbox WHERE poll_id=? AND status IN ('pending','sending')",(poll['id'],)).fetchone():
+        raise APIError('已有通知等待发送，请勿重复重送',409)
+    if not announce_poll(db,poll,fact_key='retry:'+uuid.uuid4().hex):
+        raise APIError('管理员尚未开启此类通知或未设置目标群',409)
 
 
 def _event(db, event_id):

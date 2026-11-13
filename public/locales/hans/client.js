@@ -4,7 +4,7 @@ const BoardClient=(()=>{
   const random=()=>Array.from(crypto.getRandomValues(new Uint8Array(16)),v=>v.toString(16).padStart(2,'0')).join('');
   const prefix=()=>`request:${scope}:`;
   const setIdentity=value=>{scope=value||'';};
-  const finish=entry=>entry.path==='/api/events'?BoardStore.put(entry.key,{...entry,status:'done',at:Date.now()}):BoardStore.remove(entry.key);
+  const finish=entry=>['/api/events','/api/time-polls'].includes(entry.path)?BoardStore.put(entry.key,{...entry,status:'done',at:Date.now()}):BoardStore.remove(entry.key);
   async function transport(path,method='GET',data,key,identity=scope) {
     const headers={'X-Kanban-Version':'2'};
     if(identity)headers['X-Kanban-Identity']=identity;
@@ -53,7 +53,7 @@ const BoardClient=(()=>{
       let entry=await BoardStore.get(fingerprint);
       if(scope!==identity)throw new Error("浏览器身份已改变，请刷新页面");
       if(entry)return (await settle(entry,true)).result;
-      const createKey=path==='/api/events'&&data.client_intent?Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode('create '+data.client_intent))),v=>v.toString(16).padStart(2,'0')).join(''):random();
+      const createKey=['/api/events','/api/time-polls'].includes(path)&&data.client_intent?Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',new TextEncoder().encode((path==='/api/events'?'create ':'create time-poll ')+data.client_intent))),v=>v.toString(16).padStart(2,'0')).join(''):random();
       entry={key:fingerprint,scope:identity,requestKey:createKey,path,method,data,status:'pending',at:Date.now()};
       // Persist the exact ID, timestamp, revision and payload BEFORE sending the write.
       await BoardStore.put(fingerprint,entry);

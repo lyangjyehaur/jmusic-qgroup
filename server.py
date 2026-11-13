@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox
+from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox, time_polls
 from qgroup_core.events import event_values, end_time, has_ended
 from qgroup_core.common import APIError, now, string, date_value
 from qgroup_core.billing import money, settlement_values, qr_image, serialize_settlement
@@ -227,6 +227,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply({'ok':True,'protocol_version':2})
         assets = {'/privacy':('privacy.html','text/html; charset=utf-8'),'/contact':('contact.html','text/html; charset=utf-8'),'/admin':('admin.html','text/html; charset=utf-8'),'/admin.js':('admin.js','text/javascript; charset=utf-8'),'/analytics.js':('analytics.js','text/javascript; charset=utf-8'),'/qq-login.png':('qq-login.png','image/png'),'/payment-codes.js':('payment-codes.js','text/javascript; charset=utf-8'),'/i18n.js':('i18n.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/guide.html':('guide.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/activity.js':('activity.js','text/javascript; charset=utf-8'),
             '/identity.js':('identity.js','text/javascript; charset=utf-8'),'/storage.js':('storage.js','text/javascript; charset=utf-8'),'/experience.js':('experience.js','text/javascript; charset=utf-8'),'/finance.js':('finance.js','text/javascript; charset=utf-8'),'/settlements.js':('settlements.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/client.js':('client.js','text/javascript; charset=utf-8'),'/roster.js':('roster.js','text/javascript; charset=utf-8'),'/favicon.svg':('favicon.svg','image/svg+xml')}
+        assets['/time-polls.js']=('time-polls.js','text/javascript; charset=utf-8')
         if path in assets:
             filename, content_type = assets[path]
             locale=i18n.language(self.headers.get('Accept-Language'))
@@ -288,6 +289,8 @@ class Handler(BaseHTTPRequestHandler):
                 # Re-evaluate access and roles: a cached owner response must not survive a handover.
                 if isinstance(result,dict) and result.get('id') and 'starts_at' in result:
                     result=serialize(db,self.get_event(db,result['id'],viewer),viewer)
+                elif isinstance(result,dict) and result.get('time_poll'):
+                    result=time_polls.serialize(db,time_polls.get(db,result['id']),viewer)
                 elif isinstance(result,dict) and 'nickname' in result:
                     result={'nickname':user['nickname'],'draft_scope':draft_scope(user)}
                 return self.reply({'committed':True,'result':result})
@@ -301,7 +304,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self.reply({'notifications':[dict(row) for row in messages],'unread_count':unread})
             if path=='/api/events':
                 found = db.execute("SELECT * FROM events WHERE status!='deleted' ORDER BY starts_at").fetchall()
-                return self.reply({'events':[serialize(db,e,viewer) for e in found if roster.can_access(db,e,viewer)]})
+                polls=db.execute('''SELECT * FROM time_polls WHERE status IN ('open','closed') OR owner_id=?
+                    OR EXISTS(SELECT 1 FROM time_poll_ballots b WHERE b.poll_id=time_polls.id AND b.user_id=?)
+                    ORDER BY created_at DESC''',(viewer,viewer)).fetchall()
+                return self.reply({'events':[serialize(db,e,viewer) for e in found if roster.can_access(db,e,viewer)],
+                    'time_polls':[time_polls.serialize(db,p,viewer) for p in polls]})
+            poll_match=re.fullmatch(r'/api/time-polls/([a-f0-9]{16})',path)
+            if poll_match:
+                return self.reply(time_polls.serialize(db,time_polls.get(db,poll_match[1]),viewer))
             match = re.fullmatch(r'/api/events/([a-f0-9]{16})(.*)',path)
             if not match:
                 raise APIError('页面不存在',404)
@@ -455,7 +465,9 @@ class Handler(BaseHTTPRequestHandler):
                     event = self.get_event(db,uid,user['id'],allow_deleted=True)
                     if event['status']=='deleted' and event['owner_id']!=user['id']:
                         raise APIError('活动已移除',404)
-            new_route = suffix.startswith(('/claims','/finance','/roster','/attendees','/invitations','/management','/attendance','/onsite','/settlement/detailed','/settlement/preview')) or path=='/api/notifications/read' or path.startswith(('/api/account/','/api/payment-codes'))
+            new_route = suffix.startswith(('/claims','/finance','/roster','/attendees','/invitations','/management','/attendance','/onsite','/settlement/detailed','/settlement/preview')) or path=='/api/notifications/read' or path.startswith(('/api/account/','/api/payment-codes','/api/time-polls'))
+            if path.startswith('/api/time-polls') and not modern:
+                raise APIError('页面版本已更新，请刷新后重试',409)
             if event and not suffix and self.command=='PATCH' and 'title' in data and data.get('action') is None and event['owner_id']!=user['id'] and permissions.can_assist_schedule(db,event,user['id']):
                 if not modern or not request_key:raise APIError('管理员协助编辑请刷新页面后重试',409)
             if suffix.startswith('/finance') and not modern:raise APIError('页面版本已更新，请刷新后重试',409)
@@ -466,18 +478,33 @@ class Handler(BaseHTTPRequestHandler):
                 previous = db.execute('SELECT * FROM request_results WHERE user_id=? AND request_key=?',(user['id'],request_key)).fetchone()
                 if previous:
                     if previous['signature']!=signature:
-                        raise APIError('这份草稿对应的活动已创建，请从活动进入编辑' if path=='/api/events' and data.get('client_intent') else '同一请求标识不能用于不同内容',409)
+                        raise APIError('这份投票已创建，请从看板查看原投票' if path=='/api/time-polls' and data.get('client_intent') else '这份草稿对应的活动已创建，请从活动进入编辑' if path=='/api/events' and data.get('client_intent') else '同一请求标识不能用于不同内容',409)
                     result=json.loads(previous['response_json'])
                     # Preserve the business result without re-executing; refresh visibility and roles.
                     if isinstance(result,dict) and result.get('id') and 'starts_at' in result:
                         cached_event=self.get_event(db,result['id'],user['id'])
                         result=serialize(db,cached_event,user['id'])
+                    elif isinstance(result,dict) and result.get('time_poll'):
+                        result=time_polls.serialize(db,time_polls.get(db,result['id']),user['id'])
                     return self.reply(result,previous['response_status'])
             if event and event['status']=='deleted':
                 raise APIError('活动已移除',404)
             status = 200
             response_cookie = None
-            if self.command=='POST' and path=='/api/payment-codes':
+            if path.startswith('/api/time-polls'):
+                if not user['nickname']:raise APIError('请先设置称呼')
+                poll_match=re.fullmatch(r'/api/time-polls/([a-f0-9]{16})(/votes)?',path)
+                if path=='/api/time-polls' and self.command=='POST':
+                    poll=time_polls.create(db,user,data);status=201
+                elif poll_match:
+                    poll=time_polls.get(db,poll_match[1])
+                    if poll_match[2]=='/votes' and self.command=='PUT':time_polls.vote(db,poll,user,data)
+                    elif not poll_match[2] and self.command=='PATCH':time_polls.manage(db,poll,user,data)
+                    else:raise APIError('不支持的时间投票操作',405)
+                    poll=time_polls.get(db,poll['id'])
+                else:raise APIError('时间投票不存在',404)
+                result=time_polls.serialize(db,poll,user['id'])
+            elif self.command=='POST' and path=='/api/payment-codes':
                 if not user['nickname']:raise APIError('请先设置称呼')
                 result=payment_codes.create(db,user,data);status=201
             elif self.command=='DELETE' and re.fullmatch(r'/api/payment-codes/[a-f0-9]{16}',path):

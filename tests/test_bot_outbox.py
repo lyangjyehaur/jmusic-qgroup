@@ -558,7 +558,7 @@ class WorkerTests(BotOutboxFixture, unittest.TestCase):
         verify(source,target)
         with storage.connect(target) as db:
             self.assertEqual(db.execute('SELECT bot_enabled FROM events').fetchone()[0],0)
-            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],15)
+            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],17)
 
 
 if __name__ == '__main__':
