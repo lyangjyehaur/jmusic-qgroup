@@ -1,9 +1,10 @@
 """Local whole-word masking for third-party abbreviation explanations."""
+from bisect import bisect_right
+from collections import deque
 from functools import lru_cache
 import json
 import os
 from pathlib import Path
-import re
 import unicodedata
 
 REPLACEMENT = '[已遮蔽]'
@@ -21,45 +22,113 @@ def _normalized(text):
     return ''.join(chars), offsets
 
 
-class WordMask:
+def _words(words):
+    if not isinstance(words, list):
+        raise ValueError('sensitive words must be a JSON array')
+    normalized = set()
+    for word in words:
+        if not isinstance(word, str) or not word.strip():
+            raise ValueError('invalid sensitive word')
+        value, _ = _normalized(word)
+        if not value:
+            raise ValueError('invalid sensitive word')
+        normalized.add(value)
+    return sorted(normalized)
+
+
+class _Automaton:
+    """Sparse Aho–Corasick matcher; keep only the longest suffix per state.
+
+    Shorter matches at the same end are contained in the longest one, so
+    they cannot change the spans we mask. Avoid copying suffix output lists:
+    nested dictionary entries must not cause quadratic memory or scan time.
+    """
     def __init__(self, words):
-        if not isinstance(words, list):
-            raise ValueError('sensitive words must be a JSON array')
-        normalized = set()
+        self.edges, self.fail, self.length = [{}], [0], [0]
         for word in words:
-            if not isinstance(word, str) or not word.strip():
-                raise ValueError('invalid sensitive word')
-            value, _ = _normalized(word)
-            if not value:
-                raise ValueError('invalid sensitive word')
-            normalized.add(value)
-        ordered = sorted(normalized, key=lambda value: (-len(value), value))
-        self.pattern = re.compile('|'.join(map(re.escape, ordered))) if ordered else None
+            state = 0
+            for char in word:
+                child = self.edges[state].get(char)
+                if child is None:
+                    child = len(self.edges)
+                    self.edges[state][char] = child
+                    self.edges.append({})
+                    self.fail.append(0)
+                    self.length.append(0)
+                state = child
+            self.length[state] = len(word)
+        queue = deque(self.edges[0].values())
+        while queue:
+            state = queue.popleft()
+            for char, child in self.edges[state].items():
+                fallback = self.fail[state]
+                while fallback and char not in self.edges[fallback]:
+                    fallback = self.fail[fallback]
+                self.fail[child] = self.edges[fallback].get(char, 0)
+                self.length[child] = max(self.length[child], self.length[self.fail[child]])
+                queue.append(child)
+
+    def spans(self, text):
+        state = 0
+        for end, char in enumerate(text, 1):
+            while state and char not in self.edges[state]:
+                state = self.fail[state]
+            state = self.edges[state].get(char, 0)
+            length = self.length[state]
+            if length:
+                yield end-length, end
+
+
+class WordMask:
+    def __init__(self, words, allow_words=None):
+        self.denied = _Automaton(_words(words))
+        self.allowed = _Automaton(_words([] if allow_words is None else allow_words))
 
     def mask(self, text):
-        if self.pattern is None:
+        if not self.denied.edges[0]:
             return text
         normalized, offsets = _normalized(text)
+        # An exception protects only matches fully inside that expression;
+        # a longer denied term containing it must still be masked.
+        allowed = sorted(self.allowed.spans(normalized)) if self.allowed.edges[0] else []
+        starts, ends, furthest = [], [], 0
+        for start, end in allowed:
+            starts.append(start)
+            furthest = max(furthest, end)
+            ends.append(furthest)
+        spans = []
+        for start, end in self.denied.spans(normalized):
+            index = bisect_right(starts, start)-1
+            if index >= 0 and ends[index] >= end:
+                continue
+            start, end = offsets[start], offsets[end-1]+1
+            # Cover overlapping terms, including casefold expansions such
+            # as ß -> ss, without exposing a suffix or duplicating text.
+            while spans and start < spans[-1][1]:
+                start = min(start, spans.pop()[0])
+            spans.append((start, end))
         parts, position = [], 0
-        for match in self.pattern.finditer(normalized):
-            start, end = offsets[match.start()], offsets[match.end()-1]+1
+        for start, end in spans:
             parts.extend((text[position:start], REPLACEMENT))
             position = end
         parts.append(text[position:])
         return ''.join(parts)
 
 
-@lru_cache(maxsize=8)
+@lru_cache(maxsize=1)
 def _load(files):
-    words = []
+    words, allowed = [], []
     for name, _, _ in files:
         value = json.loads(Path(name).read_text(encoding='utf-8'))
         if Path(name) == DEFAULT_FILE:
+            if not isinstance(value, dict):
+                raise ValueError('bundled sensitive words must be a JSON object')
+            allowed = value.get('allow_words', [])
             value = value['words']
         if not isinstance(value, list):
             raise ValueError('sensitive words must be a JSON array')
         words.extend(value)
-    return WordMask(words)
+    return WordMask(words, allowed)
 
 
 def load_mask():

@@ -3,6 +3,7 @@ import io
 import json
 import os
 from pathlib import Path
+import random
 import tempfile
 import unittest
 from unittest import mock
@@ -40,6 +41,74 @@ class WordMaskTests(unittest.TestCase):
         for words in ('test', [42], [''], ['***']):
             with self.subTest(words=words), self.assertRaises(ValueError):
                 WordMask(words)
+
+    def test_overlapping_terms_cover_the_entire_union(self):
+        mask = WordMask(['甲乙', '乙丙', '乙丙丁'])
+        self.assertEqual(mask.mask('前甲乙丙丁后甲乙'),
+                         '前'+REPLACEMENT+'后'+REPLACEMENT)
+
+    def test_fallback_suffix_and_adjacent_matches(self):
+        mask = WordMask(['abcd', 'bce', 'ce', 'ef'])
+        self.assertEqual(mask.mask('abce ef'), 'a'+REPLACEMENT+' '+REPLACEMENT)
+
+    def test_casefold_expansions_preserve_original_offsets(self):
+        self.assertEqual(WordMask(['s']).mask('前ß后'), '前'+REPLACEMENT+'后')
+        self.assertEqual(WordMask(['ff']).mask('前ﬃ后'), '前'+REPLACEMENT+'后')
+
+    def test_allowed_expressions_only_exempt_contained_matches(self):
+        mask = WordMask(['测试', '大测试词'], ['测试词'])
+        self.assertEqual(mask.mask('测试词，测试，大测试词'),
+                         '测试词，'+REPLACEMENT+'，'+REPLACEMENT)
+        # Two overlapping exceptions do not allow a larger denied phrase.
+        self.assertEqual(WordMask(['abcde'], ['abc', 'cde']).mask('abcde'), REPLACEMENT)
+
+    def test_invalid_allow_list_is_rejected(self):
+        for allowed in ('abc', ['***'], [None]):
+            with self.subTest(allowed=allowed), self.assertRaises(ValueError):
+                WordMask(['测试'], allowed)
+
+    def test_invalid_bundled_dictionary_fails_closed(self):
+        with tempfile.TemporaryDirectory() as folder:
+            path = Path(folder) / 'bundled.json'
+            with mock.patch('qgroup_bot.sensitive_words.DEFAULT_FILE', path), mock.patch.dict(
+                    os.environ, {'KANBAN_BOT_SENSITIVE_WORDS_FILE': ''}):
+                for data in ([], {'words': None}, {'words': ['测试'], 'allow_words': 'bad'}):
+                    path.write_text(json.dumps(data))
+                    with self.subTest(data=data), self.assertRaises(ValueError):
+                        load_mask()
+
+    def test_randomized_matches_agree_with_exhaustive_span_coverage(self):
+        rng = random.Random(17)
+        for _ in range(120):
+            words = list({''.join(rng.choices('abc', k=rng.randint(1, 7))) for _ in range(15)})
+            allowed = [''.join(rng.choices('abc', k=rng.randint(2, 8))) for _ in range(3)]
+            text = ''.join(rng.choices('abcd', k=60))
+            exceptions = [(i, i+len(w)) for w in allowed
+                          for i in range(len(text)) if text.startswith(w, i)]
+            spans = sorted((i, i+len(w)) for w in words for i in range(len(text))
+                           if text.startswith(w, i) and not any(
+                               a <= i and i+len(w) <= b for a, b in exceptions))
+            merged = []
+            for start, end in spans:
+                if merged and start < merged[-1][1]:
+                    merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+                else:
+                    merged.append((start, end))
+            expected, position = [], 0
+            for start, end in merged:
+                expected.extend((text[position:start], REPLACEMENT))
+                position = end
+            expected.append(text[position:])
+            self.assertEqual(WordMask(words, allowed).mask(text), ''.join(expected))
+
+    def test_bundled_political_rules_and_upstream_exceptions(self):
+        with mock.patch.dict(os.environ, {'KANBAN_BOT_SENSITIVE_WORDS_FILE': ''}):
+            mask = load_mask()
+        for value in ('六四', '法轮功', '习近平'):
+            with self.subTest(value=value):
+                self.assertEqual(mask.mask(value), REPLACEMENT)
+        self.assertEqual(mask.mask('QQ，柑橘，曹操生日快乐，永远的神，音乐大师。'),
+                         'QQ，柑橘，曹操生日快乐，永远的神，音乐大师。')
 
 
 class FilteredLookupTests(unittest.TestCase):
