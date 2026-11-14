@@ -1,6 +1,6 @@
 # 合作方公開活動唯讀 API v1
 
-發布範圍：`web`。本機實作，尚未正式部署。部署後路徑以網站根網址為基準，例如 `https://kanban.danndann.cn/api/public/v1/events`；目前請使用本機測試網址。這是供第三方整合的獨立契約，原 `/api/events` 繼續供網站使用。
+發布範圍：`web`。2026-11-14 20:18（Asia/Taipei）已正式部署，網站根網址為 `https://kanban.danndann.cn`，活動列表為 `https://kanban.danndann.cn/api/public/v1/events`。這是供第三方整合的獨立契約，原 `/api/events` 繼續供網站使用。詳見[發布紀錄](releases/2026-11-14-partner-api.md)。
 
 ## 可公開內容
 
@@ -107,13 +107,13 @@
 以下金鑰變數由合作方後端的私密環境設定注入，範例不含真實金鑰。
 
 ```sh
-curl -H "Authorization: Bearer ${QGROUP_API_KEY}" 'http://127.0.0.1:8791/api/public/v1/events?limit=20'
-curl -H "Authorization: Bearer ${QGROUP_API_KEY}" 'http://127.0.0.1:8791/api/public/v1/events/0123456789abcdef'
+curl -H "Authorization: Bearer ${QGROUP_API_KEY}" 'https://kanban.danndann.cn/api/public/v1/events?limit=20'
+curl -H "Authorization: Bearer ${QGROUP_API_KEY}" 'https://kanban.danndann.cn/api/public/v1/events/0123456789abcdef'
 ```
 
 ```js
 // Node.js 後端範例；不要放到網頁前端。
-const base = 'http://127.0.0.1:8791'; // 正式部署後換成正式網站根網址
+const base = 'https://kanban.danndann.cn';
 const key = process.env.QGROUP_API_KEY;
 if (!key) throw new Error('Missing QGROUP_API_KEY');
 const response = await fetch(`${base}/api/public/v1/events?limit=20`, {
@@ -133,14 +133,14 @@ const page = await response.json();
 
 正式環境將實際設定放在 `/etc/qgroup/public-api.env`（root 所有、0600），Compose 僅 web 載入；systemd 的 qgroup.service 亦保留此 EnvironmentFile。更新檔案後，Compose 須依發布政策只重建 web 容器以重新載入環境（不是只執行 restart）；systemd 則重啟 qgroup.service。bot 不需要此金鑰，也不需要因此重啟。
 
-輪替時暫時保留舊、新兩把，讓對方切換成功後移除舊金鑰，再重新載入 web 環境。撤銷某合作方只需移除其金鑰；移除全部金鑰會關閉整組 API。這些操作尚未在正式環境執行。
+輪替時暫時保留舊、新兩把，讓對方切換成功後移除舊金鑰，再重新載入 web 環境。撤銷某合作方只需移除其金鑰；移除全部金鑰會關閉整組 API。本次已建立首把正式金鑰；換鑰與撤銷流程已於隔離測試驗證，尚未在正式環境執行。
 
 ## 相容性與驗證
 
 新增 `public_api.py` 僅由 `server.py` 匯入，Docker 明確納入此檔；Compose／systemd 僅為 web 新增可選金鑰環境檔。沒有 schema、outbox、共用核心行為、bot 入口或共用設定語意變更；原瀏覽器 API 的回應與權限保持既有契約。隱私政策與手冊補充合作方鑑權及資料範圍，帳號既有登入同意版本未變更。
 
-發布範圍為 `web`；本次不包含正式環境操作。正式單邊發布前仍須按 deployment-policy 記錄線上兩個服務實際版本與映像，驗證新版 web 搭配線上 bot；本機測試不能取代此發布門檻。
+發布範圍為 `web`；本次已完成正式單邊發布，bot 原容器、映像及啟動時間未變。部署已按 deployment-policy 記錄兩個服務實際版本與映像，驗證新版 web 搭配線上 bot；後續發布仍須重新通過相同門檻。
 
 驗證指令：`python3 -m unittest discover -s tests -p test_public_api.py -q`，以及專案完整 Python／前端回歸。新增測試涵蓋跨活動 ID、代報認領、註銷、可見性、分頁、包間快照、後端存取、HEAD／OPTIONS、方法限制及讀取零資料異動，以及缺少／錯誤／重複金鑰 header、錯誤配置、換鑰撤銷、Cookie 不可代替金鑰與日誌遮蔽。
 
-2026-11-14 鑑權版驗證：API 專項 14 項、完整 Python 682 項及全部 15 組前端測試通過，簡繁產物已重新生成，Python 編譯及 `git diff --check` 通過。本機 Docker daemon 未運行，未執行映像建置或容器測試；尚未建立正式金鑰、進行線上版本組合驗證或正式發布。
+2026-11-14 鑑權版驗證：API 專項 14 項、完整 Python 682 項及全部 15 組前端測試通過，簡繁產物已重新生成。核准來源的同一份 linux/amd64 映像匯入本機後，完成 682 項容器測試（skipped=8），退出碼 0、OOMKilled=false。正式配對備份的隔離副本完成重複初始化、資料／圖片完整性及原 bot 相容性驗證，schema 維持 19。正式 HTTP／HTTPS 及本機對外 HTTPS 驗證金鑰錯誤 401、有效金鑰 200、寫入 405；正式非公開活動的詳情／名單／包間均為 404。完整映像、版本、備份、回退及驗收結果見發布紀錄。
