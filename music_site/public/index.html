@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>日音成分匹配器 · 群友爱好匹配</title>
+<meta name="description" content="统计群友对日本音乐的爱好成分，找到和你口味最像的群友。">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="日音成分匹配器">
+<meta property="og:title" content="日音成分匹配器 · 群友爱好匹配">
+<meta property="og:description" content="选 5 个领域、15 个细分，看看群里谁和你口味最像。">
+<meta property="og:url" content="https://kanban.danndann.cn/music/">
+<meta property="og:image" content="https://kanban.danndann.cn/music/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="日音成分匹配器 · 群友爱好匹配">
+<meta name="twitter:description" content="选 5 个领域、15 个细分，看看群里谁和你口味最像。">
+<meta name="twitter:image" content="https://kanban.danndann.cn/music/og.png">
+<meta name="theme-color" content="#fff8fb">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="extra.css">
+<link rel="stylesheet" href="music.css">
+</head>
+<body>
+  <div id="wallLayer" aria-hidden="true">
+    <div class="wall-pane" id="wallA"></div>
+    <div class="wall-pane" id="wallB"></div>
+    <div class="wall-scrim"></div>
+  </div>
+<div class="bg-blob b1"></div><div class="bg-blob b2"></div>
+<main class="wrap">
+  <section class="card" id="musicLinkCard">
+    <p id="musicLinkStatus">正在检查登录状态…</p>
+    <label id="musicPrivacyLabel" class="tiny"><input id="musicPrivacy" type="checkbox">我已阅读并同意<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>，连接后将保存旧 QQ 账号与 QQ 登录身份的关联。</label>
+    <button class="primary" type="button" id="musicQQButton" hidden>使用 QQ 登录</button>
+    <p id="musicLinkError" class="error"></p>
+    <a href="/">返回群聚看板</a>
+  </section>
+  <header class="hero">
+    <div class="top-actions">
+      <button id="themeBtn" class="icon-btn" type="button" title="切换深色/浅色" aria-label="切换深色/浅色">🌙</button>
+    </div>
+    <h1>🎧 日音成分匹配器</h1>
+    <p class="sub">看看群友都在听什么，找到和你口味最像的人</p>
+    <div class="stats"><span id="statMembers">0 位群友</span><span>·</span><span id="statEntries">0 个词条</span><span id="statRecent" class="stats-recent" hidden></span></div>
+  </header>
+
+  <section id="joinView" class="card" hidden>
+    <h2>使用旧站账号登录</h2>
+    <p class="muted">使用原来的 QQ 号和口令找回成分，随后连接 QQ 登录。</p>
+    <form id="joinForm" novalidate>
+      <label>QQ 号<input id="qqInput" inputmode="numeric" autocomplete="off" maxlength="12" placeholder="请输入 QQ 号"></label>
+      <input id="nameInput" type="hidden" value="旧站会员">
+      <label>口令（4-6 位数字，用来确认是你本人）<input id="pinInput" type="password" inputmode="numeric" maxlength="6" autocomplete="off" placeholder="例如 1234"></label>
+      <p class="muted tiny">本站使用你提供的旧站资料副本。首次连接会保存旧账号与 QQ 登录身份的关联；<a href="privacy.html" target="_blank" rel="noopener">查看隐私政策</a>。</p>
+      <button type="submit" class="primary" id="joinBtn">进入成分表</button>
+      <p id="joinError" class="error"></p>
+    </form>
+  </section>
+
+  <section id="appView" hidden>
+    <div id="previewBar" class="preview-bar" hidden>👀 只读预览：可以逛，登录后才能选词条、保存匹配
+      <button id="previewLogin" class="link small" type="button">去登录 →</button></div>
+    <div class="shout-marquee" id="shoutTickerCard" hidden>
+      <span class="shout-marquee-tag">📢 喊话</span>
+      <div class="shout-marquee-view">
+        <div class="shout-marquee-track" id="shoutMarqueeTrack"></div>
+      </div>
+    </div>
+    <div class="who">
+      <span>你好，<b id="myName"></b> <span class="muted">（<span id="myQq"></span>）</span></span>
+      <span class="who-actions">
+        <button id="shareBtn" class="link small" type="button">分享我的成分</button>
+        <button id="switchBtn" class="link">返回看板</button>
+      </span>
+    </div>
+
+
+    <div class="page" id="page-board" data-page="board">
+    <section class="card compare-card" id="compareCard" hidden>
+      <h2>和群友比成分</h2>
+      <p class="muted tiny">输入对方 QQ，看看你们的成分重合度、共同词条和各自独有的词条。</p>
+      <div class="row compare-row">
+        <input id="cmpQQ" type="text" inputmode="numeric" maxlength="12" placeholder="对方的 QQ 号" autocomplete="off">
+        <button id="cmpBtn" class="primary" type="button">比一比</button>
+      </div>
+      <div id="cmpResult" class="cmp-result" hidden></div>
+    </section>
+
+    <section class="card board board-combined" id="boardCardMain">
+      <div class="board-head">
+        <h2 id="boardTitleMain">领域排行</h2>
+        <span class="muted tiny" id="boardHintMain">共 0 条</span>
+        <div class="head-actions">
+          <div class="view-switch" data-kind="main">
+            <button type="button" data-view="list" class="vs-btn active">列表</button>
+            <button type="button" data-view="bubble" class="vs-btn">气泡</button>
+          </div>
+          <button id="rankToggleMain" class="tri-toggle" type="button" aria-label="展开" hidden></button>
+        </div>
+      </div>
+      <div id="listViewMain">
+        <div id="rankListMain" class="rank-list"></div>
+      </div>
+      <div id="bubbleViewMain" hidden>
+        <div id="bubbleBoxMain" class="bubble-box"><svg id="bubbleSvgMain" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+    </section>
+
+
+
+    <section class="card board board-combined" id="boardCardSub">
+      <div class="board-head">
+        <h2 id="boardTitleSub">细分排行</h2>
+        <span class="muted tiny" id="boardHintSub">共 0 条</span>
+        <div class="head-actions">
+          <div class="view-switch" data-kind="sub">
+            <button type="button" data-view="list" class="vs-btn active">列表</button>
+            <button type="button" data-view="bubble" class="vs-btn">气泡</button>
+          </div>
+          <button id="rankToggleSub" class="tri-toggle" type="button" aria-label="展开" hidden></button>
+        </div>
+      </div>
+      <div id="listViewSub">
+        <div id="rankListSub" class="rank-list"></div>
+      </div>
+      <div id="bubbleViewSub" hidden>
+        <div id="bubbleBoxSub" class="bubble-box"><svg id="bubbleSvgSub" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      </div>
+    </section>
+    <section class="card create create-card" id="createCardBoard">
+      <details class="fold create-fold">
+        <summary class="fold-summary">
+          <span class="fold-title">没有你喜欢的？自己造一个</span>
+          <span class="muted tiny create-sum"></span>
+          <span class="fold-chev" aria-hidden="true"></span>
+        </summary>
+        <div class="row create-row">
+          <input class="create-input" maxlength="24" placeholder="歌手名 / 音乐领域" title="例：ヨルシカ、Vocaloid、City Pop">
+          <select class="create-kind cat-select" title="词条类型">
+            <option value="sub">细分</option>
+            <option value="main">领域</option>
+          </select>
+          <select class="create-cat cat-select" title="选择分类"></select>
+          <button class="create-btn primary" type="button" style="width:auto;margin-top:0">创建</button>
+        </div>
+        <p class="tiny create-hint"></p>
+        <div class="created-wrap" hidden>
+          <h3 class="subhead">我创建的词条 <span class="muted tiny">点「改」可以改名/分类，点「删」可以删掉</span></h3>
+          <div class="created-list"></div>
+        </div>
+      </details>
+    </section>
+    </div>
+
+    <div class="page" id="page-rest" data-page="rest">
+    <div class="page-lead"><span class="page-lead-ico">🎼</span><span>更多细分 · 搜歌手 / 乐队，点选你听过的</span></div>
+
+
+    <section class="card rank-card" id="restMainCard" hidden>
+      <details class="fold" id="restMainFold">
+        <summary class="fold-summary">
+          <span class="fold-title">更多领域</span>
+          <span class="muted tiny" id="restMainHint"></span>
+          <span class="fold-chev" aria-hidden="true"></span>
+        </summary>
+        <div id="rankListRestMain" class="rank-list"></div>
+      </details>
+    </section>
+
+    <section class="card rank-card" id="restCard" hidden>
+      <details class="fold" id="restFold" open>
+        <summary class="fold-summary">
+          <span class="fold-title">更多细分</span>
+          <span class="muted tiny" id="restHint"></span>
+        </summary>
+      <div class="search-row" id="searchRowSub">
+        <input id="searchInput" class="search-input" maxlength="12" autocomplete="off"
+               placeholder="查找细分：任意字 / 拼音首字母 / 全拼" title="例：夜、藤、D、S、yorushika（按 / 快速搜索）">
+        <button id="searchClear" class="search-clear" type="button" aria-label="清除搜索" hidden>×</button>
+        <span class="muted tiny" id="searchHint"></span>
+      </div>
+        <div class="cat-filter" id="catFilterRest"></div>
+        <div id="rankListRest" class="rank-list"></div>
+      </details>
+    </section>
+
+    <section class="card create create-card" id="createCard">
+      <details class="fold create-fold">
+        <summary class="fold-summary">
+          <span class="fold-title">没有你喜欢的？自己造一个</span>
+          <span class="muted tiny create-sum"></span>
+          <span class="fold-chev" aria-hidden="true"></span>
+        </summary>
+        <div class="row create-row">
+          <input class="create-input" maxlength="24" placeholder="歌手名 / 音乐领域" title="例：ヨルシカ、Vocaloid、City Pop">
+          <select class="create-kind cat-select" title="词条类型">
+            <option value="sub">细分</option>
+            <option value="main">领域</option>
+          </select>
+          <select class="create-cat cat-select" title="选择分类"></select>
+          <button class="create-btn primary" type="button" style="width:auto;margin-top:0">创建</button>
+        </div>
+        <p class="tiny create-hint"></p>
+        <div class="created-wrap" hidden>
+          <h3 class="subhead">我创建的词条 <span class="muted tiny">点「改」可以改名/分类，点「删」可以删掉</span></h3>
+          <div class="created-list"></div>
+        </div>
+      </details>
+    </section>
+    </div>
+
+    <div class="page" id="page-shout" data-page="shout">
+    <div class="page-lead"><span class="page-lead-ico">📢</span><span>喊话 · 找搭子、约唱歌、喊人一起玩</span></div>
+
+
+    <section class="card shout-card" id="shoutCard" hidden>
+      <div class="shout-head">
+        <h2>喊话板</h2>
+        <span class="muted tiny" id="shoutHint"></span>
+        <button id="shoutComposeBtn" class="primary small" type="button">我也喊一句</button>
+      </div>
+      <p class="muted tiny shout-desc">找搭子、约唱歌、喊人一起玩……每人每 24 小时一条，超过 30 天会收进「历史喊话」。点一条可以看是谁喊的。</p>
+      <div class="shout-compose" id="shoutCompose" hidden>
+        <textarea id="shoutInput" maxlength="140" rows="3" placeholder="例如：想找一位一起唱歌的朋友，周末下午有空"></textarea>
+        <div class="shout-compose-foot">
+          <span class="muted tiny" id="shoutCount">0/140</span>
+          <span class="muted tiny" id="shoutCooldown"></span>
+          <button id="shoutSubmit" class="primary small" type="button">发出去</button>
+        </div>
+        <p class="error" id="shoutError"></p>
+      </div>
+      <ul id="shoutList" class="shout-list"></ul>
+      <div class="shout-pager" id="shoutPager"></div>
+      <p class="muted tiny" id="shoutEmpty" hidden>还没有人喊话，来做第一个吧。</p>
+      <p class="muted tiny" id="shoutRotateHint" hidden>全部显示 · 点一条看是谁喊的</p>
+      <div class="shout-history">
+        <button class="shout-history-toggle" id="shoutHistoryBtn" type="button" aria-expanded="false">
+          历史喊话 <span id="shoutHistoryCount" class="muted tiny"></span>
+        </button>
+        <div id="shoutHistoryWrap" class="shout-history-wrap" hidden>
+          <ul id="shoutHistoryList" class="shout-history-list"></ul>
+          <div class="shout-history-foot">
+            <span class="muted tiny" id="shoutHistoryEmpty" hidden>还没有历史喊话。</span>
+            <button class="mini-toggle" id="shoutHistoryMore" type="button" hidden>加载更多</button>
+          </div>
+        </div>
+      </div>
+    </section>
+    </div>
+
+    <div class="page" id="page-mine" data-page="mine">
+    <div class="page-lead"><span class="page-lead-ico">⭐</span><span>已选 · 你选过的词条和想说的话</span></div>
+
+
+    <section class="card selection" id="selectionCard">
+      <div class="board-head">
+        <h2>你选的词条</h2>
+        <span class="muted tiny" id="selCount">0 / 10</span>
+        <div class="head-actions">
+          <button id="selToggle" class="tri-toggle" type="button" aria-expanded="true"></button>
+        </div>
+      </div>
+      <div id="selBody">
+        <div id="selChips" class="chips"></div>
+        <div id="selEmpty" class="sel-empty" hidden>
+          <p class="muted">还没有选词条。去「榜单」页点几首你熟悉的，再回来保存。</p>
+          <button id="selGoBoard" class="primary sel-cta" type="button">去榜单挑词条 →</button>
+        </div>
+        <div class="sel-actions">
+          <button id="saveBtn" class="primary" disabled>保存并匹配</button>
+          <button id="copySelBtn" class="link small" type="button">复制我的选择</button>
+        </div>
+        <p class="tiny">领域最多选 5 个、细分最多选 15 个。点词条可改熟悉程度，点 × 移除；保存后会按相似度从多到少列出和你最像的群友。</p>
+      </div>
+    </section>
+
+    <section class="card" id="noteCard">
+      <div class="board-head">
+        <h2>我想说的话</h2>
+        <span class="muted tiny">只对和你最像的那位群友可见</span>
+      </div>
+      <div id="noteView">
+        <p class="note-text" id="noteText"></p>
+        <div class="note-bar">
+          <span class="muted tiny" id="noteMeta"></span>
+          <button id="noteEdit" class="btn-ghost" type="button">修改</button>
+        </div>
+      </div>
+      <div id="noteEditWrap" hidden>
+        <textarea id="noteInput" class="note-input" maxlength="140" rows="3"
+          placeholder="写点想对同好说的话，比如：如果你也喜欢ヨルシカ，欢迎来找我聊～"></textarea>
+        <div class="note-bar">
+          <span class="muted tiny" id="noteCount">0 / 140</span>
+          <span class="note-actions">
+            <button id="noteCancel" class="btn-ghost" type="button">取消</button>
+            <button id="noteSave" class="primary" type="button" style="width:auto">保存留言</button>
+          </span>
+        </div>
+      </div>
+    </section>
+    <section class="card" id="genderCard" hidden>
+      <div class="board-head">
+        <h2>性别（可选）</h2>
+        <span class="muted tiny">注册时不填，这里随时可以改</span>
+      </div>
+      <p class="muted tiny">公开后：匹配卡会显示你的性别，分房时也能按同性别优先分组。不公开就只有你自己能看到。</p>
+      <div class="gender-row">
+        <label class="gender-opt"><input type="radio" name="genderPick" value=""> 保密</label>
+        <label class="gender-opt"><input type="radio" name="genderPick" value="female"> 女</label>
+        <label class="gender-opt"><input type="radio" name="genderPick" value="male"> 男</label>
+        <label class="gender-opt"><input type="radio" name="genderPick" value="custom"> 自定义</label>
+      </div>
+      <div class="row gender-custom-row">
+        <input type="text" id="genderCustom" class="gender-custom" maxlength="12" placeholder="写你希望的称呼（最多 12 字）" hidden>
+      </div>
+      <label class="gender-public"><input type="checkbox" id="genderPublic"> 公开性别（用于匹配显示与同性别分房）</label>
+      <div class="row">
+        <button type="button" id="genderSave" class="btn-ghost">保存性别设置</button>
+        <span id="genderHint" class="muted tiny"></span>
+      </div>
+    </section>
+    </div>
+
+    <div class="page" id="page-matches" data-page="matches">
+    <div class="page-lead"><span class="page-lead-ico">💞</span><span>同好 · 和你口味最像的群友</span></div>
+
+
+    <section class="card matches" id="matchesCard" hidden>
+      <h2>和你最像的群友</h2>
+      <div class="match-sort-row" id="matchSortRow">
+        <button type="button" class="sort-btn" data-sort="rare">稀有度优先</button>
+        <button type="button" class="sort-btn" data-sort="familiar">熟悉度优先</button>
+      </div>
+      <p class="muted tiny" id="matchesHint"></p>
+      <ol id="matchesList" class="matches-list"></ol>
+    </section>
+
+    <section class="card" id="clustersCard" hidden>
+      <details class="fold" id="clustersFold">
+        <summary class="fold-summary">
+          <span class="fold-title">群友口味小团体</span>
+          <span class="fold-chev" aria-hidden="true"></span>
+        </summary>
+        <p class="muted tiny" id="clustersHint"></p>
+        <div id="clustersList" class="clusters"></div>
+      </details>
+    </section>
+    </div>
+
+    <div class="page" id="page-room" data-page="room">
+    <div class="page-lead"><span class="page-lead-ico">🎤</span><span>包房 · 线下约 K 一键查包房匹配度</span></div>
+
+    <section class="card" id="roomCard">
+      <div class="board-head">
+        <h2>包房匹配度</h2>
+        <span class="muted tiny" id="roomHint">勾选要坐同一间包房的人</span>
+      </div>
+      <div class="room-step">
+        <div class="room-step-head"><span class="room-step-no">1</span><span>选人</span><label class="room-me-toggle"><input type="checkbox" id="roomIncludeMe"><span class="rm-switch" aria-hidden="true"><span class="rm-knob"></span></span><span class="rm-text">我自己也参与分房</span></label></div>
+        <div class="room-search-row">
+          <input id="roomSearch" class="room-search" type="text" placeholder="搜名字 / QQ 加人" autocomplete="off">
+          <button id="roomClear" class="btn-ghost" type="button">清空</button>
+        </div>
+        <p class="room-pool-hint" id="roomPoolHint">推荐顺序：和你的匹配度从高到低，靠后的随意排</p>
+        <div id="roomPool" class="room-pool"></div>
+        <div id="roomPicked" class="room-picked"></div>
+      </div>
+      <div class="room-step">
+        <div class="room-step-head"><span class="room-step-no">2</span><span>看匹配 / 分房</span></div>
+        <div class="room-action-grid">
+      <div class="room-actions">
+        <button id="roomQuery" class="primary" type="button">一键查询匹配度</button>
+      </div>
+      <div class="room-split-row">
+        <span class="room-split-label">自动分房</span>
+        <label class="room-same-gender" title="只对公开性别的人生效"><input type="checkbox" id="roomSameGender"><span class="rm-switch" aria-hidden="true"><span class="rm-knob"></span></span><span class="rm-text">同性别</span></label>
+        <div class="room-mode" id="roomMode" role="group" aria-label="分房方式">
+          <button type="button" class="room-mode-btn on" data-mode="rooms" aria-pressed="true">按房数</button>
+          <button type="button" class="room-mode-btn" data-mode="capacity" aria-pressed="false">按人数</button>
+        </div>
+        <input id="roomCount" class="room-num" type="number" min="2" max="6" placeholder="分几间" aria-label="分几间房">
+        <input id="roomCap" class="room-num" type="number" min="2" max="12" placeholder="每房几人" aria-label="每房几人" hidden>
+        <button id="roomSplit" class="btn-ghost" type="button">自动分房</button>
+      </div>
+        </div>
+      </div>
+      <p id="roomError" class="room-error" hidden></p>
+      <div id="roomResult" class="room-result" hidden></div>
+    </section>
+    </div>
+
+    <div class="page" id="page-event" data-page="event">
+      <section class="card" id="eventListCard">
+        <h2>群聚活动</h2>
+        <p class="muted tiny">数据来自「群聚看板」公开接口；报名截止后可一键按成分分房。</p>
+        <div class="event-toolbar">
+          <select id="eventLifecycle" aria-label="筛选活动状态">
+            <option value="">全部活动</option>
+            <option value="scheduled" selected>未开始 / 报名中</option>
+            <option value="ongoing">进行中</option>
+            <option value="ended">已结束</option>
+          </select>
+          <button type="button" id="eventRefresh" class="btn-ghost">刷新</button>
+        </div>
+        <p id="eventError" class="error" hidden></p>
+        <div id="eventList" class="event-list"></div>
+        <p id="eventEmpty" class="muted tiny" hidden>还没有活动。</p>
+      </section>
+      <section class="card" id="eventDetailCard" hidden>
+        <div class="event-detail-head">
+          <h2 id="eventTitle">活动</h2>
+          <button type="button" id="eventBack" class="btn-ghost">返回列表</button>
+        </div>
+        <p id="eventMeta" class="muted tiny"></p>
+        <div id="eventBadges" class="event-badges"></div>
+        <div class="event-grid">
+          <div>
+            <h3 class="event-sub">报名名单 <span id="eventPartCount" class="muted tiny"></span></h3>
+            <ul id="eventParticipants" class="event-parts"></ul>
+          </div>
+          <div>
+            <h3 class="event-sub">分房</h3>
+            <div class="room-mode" id="eventMode">
+              <button type="button" class="room-mode-btn on" data-mode="rooms" aria-pressed="true">按房数</button>
+              <button type="button" class="room-mode-btn" data-mode="capacity" aria-pressed="false">按人数</button>
+              <button type="button" class="room-mode-btn" data-mode="sizes" aria-pressed="false">自定义</button>
+            </div>
+            <div class="room-split-row">
+              <input type="number" id="eventValue" class="room-num" min="1" max="40" value="2" aria-label="房数或人数">
+              <input type="text" id="eventSizes" class="room-num room-num-wide" placeholder="8,8,6" aria-label="每间人数（逗号分隔）" hidden>
+              <button type="button" id="eventSplit" class="primary">自动分房</button>
+              <label class="room-same-gender" title="只对公开性别的人生效"><input type="checkbox" id="eventSameGender"><span class="rm-switch" aria-hidden="true"><span class="rm-knob"></span></span><span class="rm-text">同性别</span></label>
+              <label class="room-same-gender" title="报名人数变化时自动重新分房"><input type="checkbox" id="eventAutoSplit"><span class="rm-switch" aria-hidden="true"><span class="rm-knob"></span></span><span class="rm-text">实时分房</span></label>
+              <button type="button" id="eventShare" class="btn-ghost">分享图片</button>
+            </div>
+            <p id="eventShareHint" class="muted tiny"></p>
+            <canvas id="eventShareCanvas" width="1080" height="1500" hidden></canvas>
+            <p id="eventSplitHint" class="muted tiny"></p>
+            <div id="eventRooms" class="event-rooms"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="page" id="page-trend" data-page="trend">
+    <div class="page-lead"><span class="page-lead-ico">📈</span><span>动态 · 最近大家新加了什么</span></div>
+
+
+    <section class="card" id="trendCard" hidden>
+      <div class="board-head trend-head">
+        <h2>热度趋势</h2>
+        <span class="muted tiny" id="trendHint"></span>
+      </div>
+      <div class="dyn-sum" id="dynSummary"></div>
+      <div class="trend-wrap">
+        <svg id="trendSvgMain" class="trend-svg" viewBox="0 0 900 380" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+      <div id="trendLegendMain" class="trend-legend"></div>
+    </section>
+
+    <section class="card" id="trendGainCard" hidden>
+      <h2>这段时间涨得最多</h2>
+      <ul id="trendGainList" class="trend-list"></ul>
+    </section>
+
+    <div class="dyn-grid">
+      <section class="card" id="recentEntriesCard" hidden>
+        <h2>最近新增词条</h2>
+        <ul id="recentEntriesList" class="dyn-list"></ul>
+      </section>
+      <section class="card" id="recentMembersCard" hidden>
+        <h2>最近加入的群友</h2>
+        <ul id="recentMembersList" class="dyn-list"></ul>
+      </section>
+    </div>
+
+    <section class="card" id="dynShoutCard" hidden>
+      <h2>最近喊话</h2>
+      <ul id="dynShoutList" class="dyn-list"></ul>
+    </section>
+    </div>
+
+
+    <nav class="tabbar" id="tabBar" aria-label="页面切换">
+      <button type="button" class="tab" data-page="board"><span class="tab-ico">🏆</span><span class="tab-txt">榜单</span></button>
+      <button type="button" class="tab" data-page="rest"><span class="tab-ico">🎼</span><span class="tab-txt">更多细分</span></button>
+      <button type="button" class="tab" data-page="shout"><span class="tab-ico">📢</span><span class="tab-txt">喊话</span></button>
+      <button type="button" class="tab" data-page="mine"><span class="tab-ico">⭐</span><span class="tab-txt">成分栏</span></button>
+      <button type="button" class="tab" data-page="matches"><span class="tab-ico">💞</span><span class="tab-txt">同好</span></button>
+      <button type="button" class="tab" data-page="room"><span class="tab-ico">🎤</span><span class="tab-txt">包房</span></button>
+      <button type="button" class="tab" data-page="event"><span class="tab-ico">📅</span><span class="tab-txt">活动</span></button>
+      <button type="button" class="tab" data-page="trend"><span class="tab-ico">📈</span><span class="tab-txt">动态</span></button>
+    </nav>
+  </section>
+  <div id="mobBar" class="mob-bar">
+    <span id="mobCount">领域 0/5 · 细分 0/15</span>
+    <button id="mobSave" class="primary" type="button" disabled>保存并匹配</button>
+  </div>
+  <footer class="muted tiny">只在本站服务器保存 · 仅用于群内爱好匹配</footer>
+</main>
+<div id="toast" class="toast" hidden></div>
+<button id="toTop" class="to-top" type="button" aria-label="回到顶部" hidden>↑</button>
+
+<!-- 词条详情：谁选了这个词条 -->
+<div id="entryModal" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="entryModalTitle"></h3>
+      <button class="icon-btn" id="entryModalClose" type="button">✕</button>
+    </div>
+    <p class="muted tiny" id="entryModalSub"></p>
+    <div id="entryMembers" class="member-list"></div>
+    <button id="entryToggleBtn" class="primary" type="button">选这个词条</button>
+  </div>
+</div>
+
+<!-- 分享卡片 -->
+<div id="shareModal" class="modal" hidden>
+  <div class="modal-card share-card">
+    <div class="modal-head">
+      <h3>我的日音成分</h3>
+      <button class="icon-btn" id="shareClose" type="button">✕</button>
+    </div>
+    <canvas id="shareCanvas" width="720" height="1040"></canvas>
+    <div class="share-actions">
+      <button id="shareDownload" class="primary small" type="button">保存图片</button>
+      <button id="shareNative" class="link small" type="button" hidden>分享给朋友</button>
+    </div>
+    <p class="muted tiny">图片可以直接发到群里。</p>
+  </div>
+</div>
+
+<!-- 群友成分：点匹配结果看 TA 的词条 -->
+<div id="memberModal" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3 id="memberModalTitle"></h3>
+      <button class="icon-btn" id="memberModalClose" type="button">✕</button>
+    </div>
+    <p class="muted tiny" id="memberModalSub"></p>
+    <div id="memberModalList" class="member-list"></div>
+  </div>
+</div>
+
+
+<button id="updateBanner" class="update-banner" type="button" hidden>有新版本，点我刷新</button>
+
+<!-- 喊话详情 -->
+<div id="shoutModal" class="modal" hidden>
+  <div class="modal-card">
+    <div class="modal-head">
+      <h3>喊话</h3>
+      <button class="icon-btn" id="shoutModalClose" type="button">✕</button>
+    </div>
+    <p id="shoutModalText" class="shout-modal-text"></p>
+    <p class="muted tiny" id="shoutModalFrom"></p>
+    <div class="row shout-modal-actions">
+      <button id="shoutCopyQQ" class="primary small" type="button">复制 QQ</button>
+      <button id="shoutCopyText" class="copy-btn" type="button">复制内容</button>
+    </div>
+  </div>
+</div>
+
+
+<script src="initials.js"></script>
+<script src="link.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

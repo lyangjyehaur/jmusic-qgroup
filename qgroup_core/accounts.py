@@ -73,7 +73,8 @@ def return_path(value):
     if value is None:return '/'
     if not isinstance(value,str) or len(value)>4096 or '\\' in value or any(ord(c)<32 for c in value):raise APIError('返回地址不正确')
     parsed=urlsplit(value)
-    if parsed.scheme or parsed.netloc or parsed.path!='/' or parsed.fragment:raise APIError('返回地址不正确')
+    if parsed.scheme or parsed.netloc or parsed.fragment or not (parsed.path=='/' or value=='/music/'):
+        raise APIError('返回地址不正确')
     return value
 
 

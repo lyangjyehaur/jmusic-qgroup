@@ -1,0 +1,38 @@
+name: qgroup-music
+services:
+  music:
+    image: ${QGROUP_MUSIC_IMAGE:?Specify an immutable music image}
+    container_name: qgroup-music
+    network_mode: host
+    user: "994:992"
+    env_file:
+      - /etc/qgroup/music.env
+      - /etc/qgroup/music-partner.env
+    environment:
+      JPM_PORT: "8788"
+      JPM_DATA: /data/data.json
+      KANBAN_ORIGIN: https://kanban.danndann.cn
+      KANBAN_SECURE_COOKIE: "1"
+    volumes:
+      - /var/lib/qgroup-music:/data
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=16m
+    security_opt:
+      - no-new-privileges:true
+    cap_drop: [ALL]
+    mem_limit: 128m
+    memswap_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    init: true
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: {max-size: "5m", max-file: "3"}
+    healthcheck:
+      test: ["CMD", "python3", "-c", "import os,urllib.request; r=urllib.request.Request('http://127.0.0.1:8788/api/health',headers={'X-Music-Proxy-Key':os.environ['KANBAN_MUSIC_PROXY_KEY'],'X-Music-Identity':'e30='}); urllib.request.urlopen(r,timeout=3).read()"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s

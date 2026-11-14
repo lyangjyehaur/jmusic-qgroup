@@ -27,6 +27,7 @@ COPY --chown=qgroupsvc:qgroupsvc qgroup_bot/ ./qgroup_bot/
 COPY --chown=qgroupsvc:qgroupsvc public/ ./public/
 COPY --chown=qgroupsvc:qgroupsvc deploy/ ./deploy/
 COPY --chown=qgroupsvc:qgroupsvc tests/ ./tests/
+COPY --chown=qgroupsvc:qgroupsvc music_site/ ./music_site/
 
 USER qgroupsvc
 # Informational only: the compose file uses host networking (see compose.yaml).

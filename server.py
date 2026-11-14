@@ -20,6 +20,7 @@ from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
 import public_api
+from qgroup_core import music_proxy
 from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox, time_polls, rooms
 from qgroup_core.events import event_values, end_time, has_ended
 from qgroup_core.common import APIError, now, string, date_value
@@ -643,6 +644,8 @@ class Handler(BaseHTTPRequestHandler):
     def handle_request(self):
         path = urlparse(self.path).path
         try:
+            if path == '/music' or path.startswith('/music/'):
+                return music_proxy.serve(self, connect)
             if path == public_api.PREFIX or path.startswith(public_api.PREFIX + '/'):
                 if self.command == 'OPTIONS':
                     return self.reply(b'', 204)
