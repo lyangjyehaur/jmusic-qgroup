@@ -53,6 +53,8 @@ services:
         required: true
       - path: ${QGROUP_ENV_DIR:-/etc/qgroup}/admin.env
         required: false
+      - path: ${QGROUP_ENV_DIR:-/etc/qgroup}/public-api.env
+        required: false
     environment:
       KANBAN_DB: /var/lib/qgroup/kanban.sqlite3
       KANBAN_HOST: 127.0.0.1

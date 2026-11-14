@@ -14,6 +14,8 @@
 
 新增[活動時間投票](docs/time-poll-contract.md)：至少 2 個候選日期或精確時段，無固定選項數量上限、月曆點選不連續日期、按需添加選項、逐項意願及改票、發起者定案後建立正式活動。投票不占報名名額；新投票預設開啟 QQ 群通知，定案後沿用同步設定，也可手動分享連結。涉及共用 schema 16–18 與 outbox，發布範圍為 `both`。
 
+新增[合作方公開活動唯讀 API v1](docs/public-api.md)：提供已發布公開活動、逐人報名與站內帳號 ID 對照、預分／實際包間安排；整組查詢須帶合作方 Bearer 金鑰，由後端串接。未設定金鑰即停用。獨立於瀏覽器 API，不提供 QQ 識別碼、報名備註、出勤及款項。發布範圍 `web`；目前為本機實作，尚未正式部署。
+
 ## 本地运行及验证
 
 Python 3.9+ 及系统 IANA 时区数据库，无第三方运行依赖。
@@ -152,6 +154,7 @@ docker run --rm --network none --user 994:992 --read-only \
 | KANBAN_ORIGIN | 空，按 Host 判断 | 生产设 https://kanban.danndann.cn |
 | KANBAN_SECURE_COOKIE | 0 | HTTPS 设 1 |
 | KANBAN_ADMIN_KEY_HASH | 空 | 长随机管理凭证的 SHA256；由 root 0600 的 /etc/qgroup/admin.env 提供 |
+| KANBAN_PUBLIC_API_KEYS | 空＝停用合作方 API | 逗号分隔的合作方只读金钥，最多 20 把、每把 32–128 位英数／_／-；由 root 0600 的 /etc/qgroup/public-api.env 提供，修改后重新载入 web 环境 |
 | KANBAN_QQ_APP_ID | 空 | QQ 互联 App ID；未配置时隐藏 QQ 入口 |
 | KANBAN_QQ_APP_KEY | 空 | 仅服务器保存，禁止放前端或代码仓库 |
 | KANBAN_QQ_REDIRECT_URI | ORIGIN + /auth/qq/callback | 须与 QQ 平台登记一致，只接受同源固定路径 |

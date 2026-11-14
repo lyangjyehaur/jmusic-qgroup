@@ -21,7 +21,7 @@ RUN groupadd --gid "${QGROUP_GID}" qgroupsvc \
 WORKDIR /app
 
 # Explicit COPY instead of COPY . .: no build context secret can be baked in.
-COPY --chown=qgroupsvc:qgroupsvc server.py ./server.py
+COPY --chown=qgroupsvc:qgroupsvc server.py public_api.py ./
 COPY --chown=qgroupsvc:qgroupsvc qgroup_core/ ./qgroup_core/
 COPY --chown=qgroupsvc:qgroupsvc qgroup_bot/ ./qgroup_bot/
 COPY --chown=qgroupsvc:qgroupsvc public/ ./public/

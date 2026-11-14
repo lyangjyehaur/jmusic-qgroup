@@ -19,6 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+import public_api
 from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox, time_polls, rooms
 from qgroup_core.events import event_values, end_time, has_ended
 from qgroup_core.common import APIError, now, string, date_value
@@ -127,15 +128,22 @@ class Handler(BaseHTTPRequestHandler):
         message = re.sub(r'([?&](?:invite|attendee_invite|management_invite|claim|account_link)=)[^&\s"]+', r'\1[redacted]', message)
         message = re.sub(r'([?&](?:code|state|access_token|client_secret)=)[^&\s"]+', r'\1[redacted]', message)
         message = re.sub(r'(/auth/qq/callback)\?[^\s"]*', r'\1?[redacted]', message)
+        message = re.sub(r'(/api/public/v1(?:/[^\s?\"]*)?)\?[^\s\"]*', r'\1?[redacted]', message)
         logging.info('%s %s', self.address_string(), message)
 
     def reply(self, data, status=200, cookie=None, content_type='application/json; charset=utf-8', admin_cookie=None):
         locale=i18n.language(self.headers.get('Accept-Language'))
-        body = json.dumps(i18n.payload(data,locale), ensure_ascii=False).encode() if isinstance(data, (dict, list)) else data
+        public = urlparse(self.path).path == public_api.PREFIX or urlparse(self.path).path.startswith(public_api.PREFIX + '/')
+        body = json.dumps(data if public else i18n.payload(data,locale), ensure_ascii=False).encode() if isinstance(data, (dict, list)) else data
         self.send_response(status)
         self.send_header('Content-Type', content_type)
-        self.send_header('Content-Language', 'zh-Hans' if locale=='hans' else 'zh-Hant')
-        self.send_header('Vary','Accept-Language')
+        if public:
+            self.send_header('Allow', 'GET, HEAD, OPTIONS')
+            if status == 401:
+                self.send_header('WWW-Authenticate', 'Bearer realm="qgroup-partner-api"')
+        else:
+            self.send_header('Content-Language', 'zh-Hans' if locale=='hans' else 'zh-Hant')
+            self.send_header('Vary','Accept-Language')
         self.send_header('Content-Length', str(len(body)))
         self.send_header('Cache-Control', 'no-store' if self.path.startswith(('/api/','/auth/')) else 'no-cache')
         self.send_header('X-Content-Type-Options', 'nosniff')
@@ -635,6 +643,16 @@ class Handler(BaseHTTPRequestHandler):
     def handle_request(self):
         path = urlparse(self.path).path
         try:
+            if path == public_api.PREFIX or path.startswith(public_api.PREFIX + '/'):
+                if self.command == 'OPTIONS':
+                    return self.reply(b'', 204)
+                public_api.authorize(self.headers)
+                if self.command not in ('GET', 'HEAD'):
+                    raise APIError('Public API is read-only', 405)
+                with connect() as db:
+                    db.execute('PRAGMA query_only=ON')
+                    db.execute('BEGIN')
+                    return self.reply(public_api.read(db, path, urlparse(self.path).query))
             if self.command in ('GET','HEAD'):
                 return self.read_request(path)
             return self.write_request(path)
@@ -646,7 +664,7 @@ class Handler(BaseHTTPRequestHandler):
             logging.exception('Request failed')
             self.reply({'error':'暂时无法完成操作，请稍后重试'},500)
 
-    do_GET = do_HEAD = do_POST = do_PUT = do_PATCH = do_DELETE = handle_request
+    do_GET = do_HEAD = do_POST = do_PUT = do_PATCH = do_DELETE = do_OPTIONS = handle_request
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(message)s')

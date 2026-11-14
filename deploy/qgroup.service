@@ -19,6 +19,7 @@ Environment=KANBAN_SECURE_COOKIE=1
 Environment=KANBAN_ORIGIN=https://kanban.danndann.cn
 EnvironmentFile=-/etc/qgroup/qq.env
 EnvironmentFile=-/etc/qgroup/admin.env
+EnvironmentFile=-/etc/qgroup/public-api.env
 ExecStart=/usr/bin/python3 /opt/qgroup/server.py
 Restart=on-failure
 RestartSec=3
