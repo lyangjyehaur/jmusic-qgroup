@@ -1,4 +1,4 @@
-const CACHE = 'qgroup-music-v1';
+const CACHE = 'qgroup-music-v2';
 const ASSETS = [
   './',
   './index.html',

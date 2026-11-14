@@ -13,7 +13,7 @@
 - music Cookie 名稱 `music_session`，HttpOnly、Secure、SameSite=Lax、Path=/music/。原口令不存入 localStorage。
 - Service Worker scope 為 `/music/`，只管理 `qgroup-music-*` 快取，不快取 API／登入頁導覽；不清理看板快取。
 - music JSON 與身分 SQLite 都在 `/var/lib/qgroup-music`；不掛載、不寫入看板 SQLite。
-- 只讀成分接口須登入。原成分站管理／備份下載接口停用；此首版只接受已有口令的舊會員，不開放舊式註冊。
+- 只讀成分接口須登入。成分站管理頁為 `/music/admin.html`，沿用主站管理員權限與 CSRF；舊站密碼／token 不再生效。會員仍透過舊口令或既有對應接入，不開放未驗證 QQ 號的舊式註冊。
 
 ## 關聯
 
@@ -31,6 +31,10 @@
 修改時先查找並選擇有效看板帳號，核對 QQ 後保存；已屬於其他成分的帳號會拒絕覆蓋。修正會撤銷舊 OAuth 關聯，建立新管理員預先對應。解除同時清除 prelink、OAuth link 與舊站會話，保留成分資料；有舊 PIN 的會員可重新走授權關聯，無 PIN 者由管理員協助。過期頁面不可覆蓋新關聯。
 
 管理操作只經主站已驗證的管理員／管理憑證及 CSRF 轉接，本機服務不接收瀏覽器的管理 Cookie；公開 `/music/` 轉接不能偽造管理身分。身分庫新增 `link_overrides` 與 `link_audit`，修正／解除與稽核同一 SQLite 交易提交，JSON 是可重播的相容欄位；重啟不會從舊 JSON 復活已解除關聯。每次修改前保存配對備份，後台顯示最近 20 筆變更。刪除會員時同步清理對應的覆寫與稽核。
+
+`/music/admin.html` 提供原詞條建立／編輯／刪除／合併、會員與選擇查看、舊 PIN 重設、會員刪除、喊話管理、壁紙及成分 JSON 匯出／歷史備份下載。管理員不需先註冊成分會員；每次 API 存取重新驗證主站權限。會員刪除／全站重置先記錄 durable erasure ledger，再清理身分與資料；歷史 JSON 下載也套用最新刪除紀錄，不復活已刪會員。主站帳號與活動不受影響。
+
+壁紙保存在資料卷 `walls/`，首次從隨附清單初始化；支援 PNG/JPG/WebP、單張 2 MiB，與 JSON／SQLite 一起配對備份。匯出的 JSON 含私人資料，但不含身分庫或管理憑證，完整故障恢復仍需伺服器成套備份與最新刪除 ledger。備份匯出不會把舊管理口令重新啟用。
 
 此關聯證明使用者能操作舊站帳號與授權的 QQ 身分，不代表騰訊回傳或驗證了相同的 QQ 號碼。
 

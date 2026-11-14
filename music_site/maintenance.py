@@ -27,11 +27,7 @@ def replay(folder, store):
     if not ledger.exists(): return
     erased={json.loads(line)['qq'] for line in ledger.read_text().splitlines() if line.strip()}
     data=json.loads((folder/'data.json').read_text())
-    for qq in erased: data['members'].pop(qq,None)
-    for entry in data['entries'].values():
-        if str(entry.get('createdBy') or '') in erased: entry['createdBy']=''
-    for key in ('shouts','shoutHistory'):
-        data[key]=[item for item in data.get(key,[]) if str(item.get('qq') or '') not in erased]
+    sanitize(data,erased)
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         for qq in erased:
@@ -40,6 +36,21 @@ def replay(folder, store):
     temporary=folder/'data.json.tmp'
     temporary.write_text(json.dumps(data,ensure_ascii=False,indent=1));temporary.chmod(0o600)
     os.replace(temporary,folder/'data.json')
+
+
+def sanitize(data, erased):
+    for qq in erased:data['members'].pop(qq,None)
+    for entry in data['entries'].values():
+        if str(entry.get('createdBy') or '') in erased: entry['createdBy']=''
+    for key in ('shouts','shoutHistory'):
+        data[key]=[item for item in data.get(key,[]) if str(item.get('qq') or '') not in erased]
+
+
+def record_erasures(folder, qqs):
+    with open(Path(folder)/'erasures.jsonl','a') as ledger:
+        os.chmod(ledger.name,0o600)
+        for qq in qqs:ledger.write(json.dumps({'qq':qq,'erased_at':time.time()})+'\n')
+        ledger.flush();os.fsync(ledger.fileno())
 
 
 def backup_pair(folder, store):
@@ -53,7 +64,8 @@ def backup_pair(folder, store):
     with store.connect() as source, sqlite3.connect(temporary/'identity.sqlite3') as target:
         source.backup(target)
     if (folder/'erasures.jsonl').exists(): shutil.copyfile(folder/'erasures.jsonl',temporary/'erasures.jsonl')
-    for path in temporary.iterdir(): path.chmod(0o600)
+    if (folder/'walls').is_dir():shutil.copytree(folder/'walls',temporary/'walls')
+    for path in temporary.rglob('*'): path.chmod(0o700 if path.is_dir() else 0o600)
     target=root/stamp
     if target.exists(): shutil.rmtree(target)
     os.replace(temporary,target)

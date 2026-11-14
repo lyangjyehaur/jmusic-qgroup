@@ -56,7 +56,7 @@
     fetch('/music/walls/manifest.json', { cache: 'no-cache' })
       .then((r) => r.json())
       .then((m) => {
-        const items = ((m && m.items) || []).filter((x) => x && x.src && x.enabled !== false);
+        const items = ((m && m.items) || []).filter((x) => x && x.src && x.enabled !== false).map((x) => ({...x, src: x.src.startsWith('/walls/') ? '/music' + x.src : x.src}));
         if (!items.length) { document.documentElement.classList.add('no-wall'); return; }
         const secs = Math.max(8, Number(m.rotateSeconds) || 24);
         let front = 0;

@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from . import upstream
 from .identity_store import Store, Rejected
 from .maintenance import service_lock, replay, backup_pair
-from . import admin_links
+from . import admin_links, administration
 
 STORE = None
 ORIGIN = os.environ.get('KANBAN_ORIGIN', 'https://kanban.danndann.cn')
@@ -35,6 +35,36 @@ def board_member_map():
 
 class Handler(upstream.Handler):
     timeout = 15
+
+    def require_admin(self, body):
+        return bool(self.context().get('admin_actor'))
+
+    def api_admin_wall_upload(self,body):
+        import base64
+        match=re.fullmatch(r'data:image/(png|jpeg|jpg|webp);base64,(.+)',str(body.get('data') or ''),re.S)
+        if not match:raise Rejected('壁纸只支持 PNG、JPG 或 WebP',400)
+        try:blob=base64.b64decode(match[2],validate=True)
+        except ValueError:raise Rejected('图片数据损坏',400) from None
+        valid={'png':blob.startswith(b'\x89PNG\r\n\x1a\n'),'jpeg':blob.startswith(b'\xff\xd8\xff'),
+               'jpg':blob.startswith(b'\xff\xd8\xff'),'webp':blob.startswith(b'RIFF') and blob[8:12]==b'WEBP'}
+        if not valid[match[1]]:raise Rejected('图片格式与内容不一致',400)
+        return super().api_admin_wall_upload(body)
+
+    def serve_static(self,path):
+        if path=='/admin':path='/admin.html'
+        if path.startswith('/walls/'):
+            name=path[len('/walls/'):]
+            if not re.fullmatch(r'[A-Za-z0-9_.-]+',name) or name.startswith('.'):
+                return self.send_text('not found',404)
+            source=Path(upstream.WALLS_DIR)/name
+            if not source.is_file():return self.send_text('not found',404)
+            payload=source.read_bytes()
+            self.send_response(200)
+            self.send_header('Content-Type',upstream.CTYPES.get(source.suffix.lower(),'application/octet-stream'))
+            self.send_header('Content-Length',str(len(payload)));self.send_header('Cache-Control','no-cache')
+            self.end_headers();self.wfile.write(payload)
+            return
+        return super().serve_static(path)
 
     def end_headers(self):
         self.send_header('X-Content-Type-Options', 'nosniff')
@@ -100,6 +130,19 @@ class Handler(upstream.Handler):
             context = self.context()
             parsed = urlsplit(self.path)
             path = parsed.path
+            if path.startswith('/api/admin/') or path=='/api/export':
+                if not context.get('admin_actor'):raise Rejected('请先登录看板管理后台',401)
+                folder=Path(upstream.DATA_FILE).parent
+                with upstream._lock:
+                    if path=='/api/admin/session':return self.send_json(dict(authenticated=True,csrf=context.get('admin_csrf','')))
+                    if path=='/api/admin/state':return self.send_json(dict(entries=upstream.entries_payload(),memberCount=len(upstream.data['members'])))
+                    if path=='/api/admin/backups':
+                        root=folder/'paired-backups'
+                        return self.send_json(dict(backups=[dict(name=p.name,size=(p/'data.json').stat().st_size) for p in sorted(root.iterdir(),reverse=True) if re.fullmatch(r'[0-9]{8}-[0-9]{6}',p.name) and (p/'data.json').is_file()]) if root.exists() else dict(backups=[]))
+                    if path in ('/api/export','/api/admin/backup'):
+                        name=parse_qs(parsed.query).get('name',[''])[0] if path.endswith('/backup') else None
+                        return self.send_download('music-data-'+(name or time.strftime('%Y%m%d-%H%M%S'))+'.json',administration.snapshot(folder,name))
+                    raise Rejected('操作不存在',404)
             qq = self.current_qq(context)
             if path == '/api/session':
                 session = STORE.session(self.token())
@@ -107,7 +150,7 @@ class Handler(upstream.Handler):
                                        'qq_connected': bool(context.get('openid')),
                                        'legacy': bool(session and qq), 'pending': bool(session and session['pending_until']>time.time()),
                                        'qq': qq, 'name': upstream.data['members'].get(qq, {}).get('name', '')})
-            if path.startswith('/api/admin') or path == '/api/export' or path.startswith('/admin'):
+            if path.startswith('/api/admin'):
                 return self.send_json({'error':'此副本暂不开放旧管理后台'}, 403)
             if path.startswith('/api/') and path != '/api/health':
                 if not qq:
@@ -125,20 +168,39 @@ class Handler(upstream.Handler):
     def do_POST(self):
         try:
             context = self.context()
+            path = urlsplit(self.path).path
             if (self.headers.get('Origin') != ORIGIN
                     or self.headers.get('Sec-Fetch-Site') == 'cross-site'
                     or self.headers.get_content_type() != 'application/json'):
                 raise Rejected('请从成分站页面操作', 403)
             try:
                 length = int(self.headers.get('Content-Length', '0'))
-                if not 0 < length <= 65536:
+                limit=3*1024*1024 if path=='/api/admin/wall/upload' and context.get('admin_actor') else 65536
+                if not 0 < length <= limit:
                     raise ValueError()
                 body = json.loads(self.rfile.read(length))
                 if not isinstance(body, dict):
                     raise ValueError()
             except (ValueError, UnicodeError):
                 raise Rejected('请求格式不正确', 400) from None
-            path = urlsplit(self.path).path
+            if path.startswith('/api/admin/'):
+                if not context.get('admin_actor'):raise Rejected('请先登录看板管理后台',401)
+                routes={'create':self.api_admin_create,'edit':self.api_admin_edit,'delete':self.api_admin_delete,
+                    'merge':self.api_admin_merge,'pin':self.api_admin_pin,'members':self.api_admin_members,
+                    'shout/list':self.api_admin_shout_list,'shout/delete':self.api_admin_shout_delete,
+                    'walls':self.api_admin_walls,'wall/upload':self.api_admin_wall_upload,
+                    'wall/delete':self.api_admin_wall_delete,'wall/config':self.api_admin_wall_config,
+                    'wall/toggle':self.api_admin_wall_toggle,'wall/move':self.api_admin_wall_move}
+                suffix=path[len('/api/admin/'):]
+                with upstream._lock:
+                    if suffix=='member/board':raise Rejected('请在看板管理后台的成分站关联中修改实际关联',409)
+                    if suffix in ('member/delete','reset'):
+                        backup_pair(Path(upstream.DATA_FILE).parent,STORE)
+                        return self.send_json(administration.erase(Path(upstream.DATA_FILE).parent,STORE,body,reset=suffix=='reset'))
+                    fn=routes.get(suffix)
+                    if not fn:raise Rejected('操作不存在',404)
+                    if suffix not in ('members','shout/list','walls'):backup_pair(Path(upstream.DATA_FILE).parent,STORE)
+                    return fn(body)
             if path == '/api/internal/admin-links':
                 actor=context.get('admin_actor')
                 if not isinstance(actor,str) or not actor:
@@ -211,6 +273,7 @@ def main():
     os.umask(0o077)
     lock = service_lock(folder)
     STORE = Store(folder/'identity.sqlite3')
+    administration.configure_walls(folder)
     replay(folder, STORE)
     upstream.load()
     upstream.board_member_map = board_member_map

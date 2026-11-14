@@ -5,10 +5,11 @@ import http.client
 import json
 import os
 import re
+import secrets
 from http.cookies import SimpleCookie, CookieError
 from urllib.parse import urlsplit
 
-from . import identity, qq_oauth
+from . import identity, qq_oauth, admin
 from .common import APIError, now
 
 
@@ -28,6 +29,12 @@ def serve(handler, connect):
         raise APIError('成分站路径不正确', 400)
     if handler.command not in ('GET', 'HEAD', 'POST'):
         raise APIError('成分站不支持此操作', 405)
+    privileged=parsed.path.startswith('/music/api/admin/') or parsed.path=='/music/api/export'
+    access=None
+    if privileged:
+        with connect() as db:access=admin.authority(db,handler.headers)
+        if handler.command=='POST' and not secrets.compare_digest(handler.headers.get('X-Kanban-Admin',''),admin.csrf(access['digest'])):
+            raise APIError('管理页面已过期，请刷新后重试',403)
     body = None
     if handler.command == 'POST':
         handler.check_write()
@@ -37,10 +44,14 @@ def serve(handler, connect):
             length = int(handler.headers.get('Content-Length', '0'))
         except ValueError:
             raise APIError('请求格式不正确') from None
-        if not 0 < length <= 65536:
+        limit=3*1024*1024 if privileged and parsed.path=='/music/api/admin/wall/upload' else 65536
+        if not 0 < length <= limit:
             raise APIError('请求内容过大或为空', 413)
         body = handler.rfile.read(length)
     context = {'session': identity.session_hash(handler.headers)}
+    if access:
+        context['admin_actor']='account:'+access['user_id'] if access['user_id'] else 'credential:'+access['digest']
+        context['admin_csrf']=admin.csrf(access['digest'])
     with connect() as db:
         user, _ = handler.identity(db)
         settings = qq_oauth.config()
@@ -81,7 +92,7 @@ def serve(handler, connect):
         if len(payload) > 4 * 1024 * 1024:
             raise OSError('upstream response limit')
         handler.send_response(response.status)
-        allowed = {'content-type', 'content-encoding', 'etag', 'vary', 'cache-control', 'content-security-policy',
+        allowed = {'content-type', 'content-encoding', 'content-disposition', 'etag', 'vary', 'cache-control', 'content-security-policy',
                    'x-content-type-options', 'referrer-policy', 'x-frame-options'}
         for key, value in response.getheaders():
             if key.lower() in allowed:

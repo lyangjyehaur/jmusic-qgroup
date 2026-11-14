@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>管理员 · 日音成分匹配器</title>
+<meta name="theme-color" content="#fff8fb">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="extra.css">
+</head>
+<body>
+<div class="bg-blob b1"></div><div class="bg-blob b2"></div>
+<main class="wrap admin-wrap">
+  <header class="hero">
+    <div class="top-actions">
+      <a class="icon-btn" href="index.html" title="返回首页">←</a>
+      <button id="themeBtn" class="icon-btn" type="button" title="切换深色/浅色">🌙</button>
+      <button id="wallJump" class="icon-btn" type="button" title="管理壁纸" hidden>🖼️</button>
+    </div>
+    <h1>管理员后台</h1>
+    <p class="sub">管理词条、群友、壁纸、留言与备份 · <a href="/admin#music-links-section">管理账号关联</a></p>
+  </header>
+
+  <section id="loginCard" class="card"><h2>使用看板管理员身份</h2><p id="loginError" class="error"></p><p class="muted">请先在看板管理后台登录，再返回本页。</p><a href="/admin" class="primary">前往看板管理后台</a></section>
+  <section id="adminCard" class="card" hidden>
+    <div class="board-head">
+      <h2>词条管理</h2>
+      <span class="muted tiny" id="adminHint"></span>
+    </div>
+    <p class="admin-note">每行改完点「保存」；不想要的词条点「删除」——会同时从群友的选择里移除，删了就找不回来了。</p>
+    <div class="row admin-search">
+      <input id="adminSearch" type="search" placeholder="搜索词条：输入名字任意字" autocomplete="off">
+      <button id="adminSearchClear" type="button" class="link small">清空</button>
+    </div>
+    <div class="row admin-create">
+      <input id="newEntryText" maxlength="24" placeholder="新词条名，如 米津玄師 / Vocaloid">
+      <select id="newEntryCat" class="cat-select" title="分类">
+        <option>歌手</option><option>乐队</option><option>组合</option><option>偶像</option><option>Vocaloid P</option><option>作曲家</option><option>社团</option><option>企划</option><option>其他</option>
+      </select>
+      <select id="newEntryKind" class="cat-select" title="类型">
+        <option value="main">领域</option><option value="sub" selected>细分</option>
+      </select>
+      <button id="newEntryBtn" type="button" class="primary small">创建词条</button>
+    </div>
+    <div class="table-wrap">
+    <table class="admin-table">
+      <thead><tr><th>词条</th><th>分类</th><th>类型</th><th>人数</th><th>创建者</th><th>操作</th></tr></thead>
+      <tbody id="entryTbody"></tbody>
+    </table>
+    </div>
+
+    <div class="admin-section">
+      <h3>词条合并</h3>
+      <p class="admin-note">把「从」这个词条并进「到」：两边的选择会合并到一起，然后删掉「从」。用于ヨルシカ / Yorushika 这类同义条目。</p>
+      <div class="row">
+        <select id="mergeFrom" class="cat-select" title="准备删除的词条"></select>
+        <span class="muted tiny">并入 →</span>
+        <select id="mergeTo" class="cat-select" title="保留的词条"></select>
+        <button id="mergeBtn" type="button" class="primary small">合并</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>重置群友口令</h3>
+      <p class="admin-note">群友忘了口令或换人用时，在这里给他设一个新口令（4-6 位数字）。</p>
+      <div class="row">
+        <input id="pinQQ" placeholder="群友 QQ 号" maxlength="12" inputmode="numeric">
+        <input id="pinNew" placeholder="新口令 4-6 位数字" maxlength="6" inputmode="numeric">
+        <button id="pinBtn" type="button" class="primary small">重置口令</button>
+      </div>
+    </div>
+
+    <div class="admin-section">
+      <h3>壁纸管理</h3>
+      <p class="admin-note">上传的图片会加入首页轮换队列（支持 png / jpg / webp，单张 ≤2MB）。勾选「参与轮换」才会出现在首页，顺序可上下调整。</p>
+      <div class="row wall-bar">
+        <span class="muted tiny">共 <b id="wallCount">0</b> 张 · 参与轮换 <b id="wallOnCount">0</b> 张</span>
+        <button id="wallAllOn" type="button" class="link small">全部启用</button>
+        <button id="wallAllOff" type="button" class="link small danger">全部停用</button>
+      </div>
+      <div class="row wall-upload">
+        <input id="wallFile" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+        <label class="muted tiny" style="display:flex;align-items:center;gap:6px">切换间隔
+          <input id="wallSecs" type="number" min="8" max="600" step="1" value="24" class="cat-select" style="width:78px">
+          秒
+        </label>
+        <button id="wallSecsBtn" type="button" class="primary small">保存间隔</button>
+      </div>
+      <p id="wallHint" class="admin-note"></p>
+      <div class="wall-grid" id="wallGrid"></div>
+    </div>
+
+    <div class="admin-section">
+      <h3>数据与备份</h3>
+      <p class="admin-note">可下载含私人资料的成分 JSON，请妥善保管。服务器另保存包含身份关联和壁纸的成套备份，最多保留 30 份及 14 天；仅有 JSON 不能完整恢复登录关联。</p>
+      <div class="share-actions" style="justify-content:flex-start">
+        <button id="exportBtn" type="button" class="primary small">导出全部数据</button>
+        <button id="backupBtn" type="button" class="link small">刷新备份列表</button>
+      </div>
+      <ul class="backup-list" id="backupList"></ul>
+    </div>
+
+    <div class="admin-section">
+      <h3>喊话管理</h3>
+      <p class="admin-note">当前喊话板上的消息和历史归档；删除后会从两边同时移除。</p>
+      <div class="share-actions" style="justify-content:flex-start">
+        <button id="shoutRefresh" type="button" class="link small">刷新喊话列表</button>
+        <span class="muted tiny" id="shoutAdminHint"></span>
+      </div>
+      <div class="table-wrap">
+        <table class="admin-table" id="shoutTable">
+          <thead><tr><th>状态</th><th>内容</th><th>来自</th><th>时间</th><th>操作</th></tr></thead>
+          <tbody id="shoutList"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="admin-section admin-danger">
+      <h3>危险操作</h3>
+      <p class="admin-note">清空所有词条和群友记录（会先自动备份一次）。输入 RESET 确认。</p>
+      <div class="row">
+        <input id="resetInput" placeholder="输入 RESET 确认" maxlength="8">
+        <button id="resetBtn" type="button" class="primary small">清空数据</button>
+      </div>
+    </div>
+
+    <p class="admin-note" style="margin-top:16px">管理权限沿用看板登录，退出或撤销管理员权限后即失效。</p>
+  </section>
+
+<section id="membersCard" class="card" hidden>
+  <div class="board-head">
+    <h2>群友账号</h2>
+    <span class="muted tiny" id="membersHint"></span>
+  </div>
+  <p class="muted tiny" style="margin:6px 2px 10px">只读列表：QQ、名字、自建数量、已选词条（含熟悉度）。看板 ID 在主站「成分站关联」统一维护。口令是加盐哈希，后台只能看到是否已设置、看不到原文，忘记可用上面「重置群友口令」。</p>
+  <div class="row admin-search">
+    <input id="memberSearch" type="search" placeholder="按 QQ / 名字搜索" autocomplete="off">
+    <button id="memberSearchClear" class="link small" type="button">清空</button>
+  </div>
+  <div class="table-wrap">
+    <table class="admin-table member-table">
+      <thead><tr><th>群友</th><th>自建</th><th>已选词条</th><th>看板 ID</th><th>操作</th></tr></thead>
+      <tbody id="memberList"></tbody>
+    </table>
+  </div>
+</section>
+</main>
+<div id="toast" class="toast" hidden></div>
+<script src="admin.js?v=20261115-admin1"></script>
+</body>
+</html>

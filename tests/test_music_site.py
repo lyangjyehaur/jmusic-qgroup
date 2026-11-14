@@ -15,7 +15,7 @@ from unittest import mock
 
 import server
 from music_site import service
-from music_site import admin_links
+from music_site import admin_links, administration
 from music_site.identity_store import Store, Rejected
 from qgroup_core import accounts
 from test_roster import ModernClient
@@ -219,6 +219,85 @@ class MusicTests(unittest.TestCase):
         with server.connect() as db:db.execute('UPDATE user_admin_roles SET is_admin=0 WHERE user_id=?',(uid,))
         self.assertEqual(self.request('/api/admin/music-links')[0],401)
         self.assertEqual(self.music_change(self.client,account_csrf,row,'')[0],401)
+
+    def test_full_admin_uses_board_authority_without_music_membership(self):
+        manager,csrf=self.music_admin()
+        self.assertEqual(self.request('/music/api/admin/session',client=manager)[1]['csrf'],csrf)
+        self.assertEqual(self.request('/music/api/admin/state',client=manager)[1]['memberCount'],2)
+        data={}
+        self.assertEqual(self.request('/music/api/admin/members','POST',data,manager)[0],403)
+        self.assertEqual(self.request('/music/api/admin/members','POST',data,manager,{'X-Kanban-Admin':csrf})[1]['total'],2)
+        for path in ('/music/api/admin/session','/music/api/admin/state','/music/api/admin/backups','/music/api/export'):
+            self.assertEqual(self.request(path)[0],401,path)
+        with mock.patch.dict(os.environ,{'KANBAN_ADMIN_KEY_HASH':'revoked'}):
+            self.assertEqual(self.request('/music/api/admin/state',client=manager)[0],401)
+        self.assertEqual(self.request('/music/api/admin/login','POST',{'password':'jpadmin'},manager,{'X-Kanban-Admin':csrf})[0],404)
+
+    def test_full_admin_entry_edits_merges_and_deletion_preserve_consistent_selections(self):
+        manager,csrf=self.music_admin();headers={'X-Kanban-Admin':csrf}
+        def post(action,body):
+            status,result=self.request('/music/api/admin/'+action,'POST',body,manager,headers)
+            self.assertEqual(status,200,result);return result
+        added=post('create',dict(text='new-artist',category='其他',kind='sub'))['entry']['id']
+        post('edit',dict(entryId=added,text='edited-artist'))
+        service.upstream.data['members']['10001']['selection']=[dict(id='e1',level=4),dict(id=added,level=1)]
+        service.upstream.save()
+        post('merge',dict(fromId='e1',toId=added))
+        self.assertNotIn('e1',service.upstream.data['entries'])
+        self.assertEqual(service.upstream.data['members']['10001']['selection'],[dict(id=added,level=4)])
+        post('delete',dict(entryId=added))
+        self.assertEqual(service.upstream.data['members']['10001']['selection'],[])
+        post('pin',dict(qq='10002',pin='987654'))
+        self.assertEqual(self.legacy('10002',pin='987654')[0],200)
+
+    def test_full_admin_member_erasure_cleans_identity_and_historical_exports(self):
+        manager,csrf=self.music_admin();headers={'X-Kanban-Admin':csrf}
+        service.STORE.import_prelinks([dict(qq='10001',user_id='synthetic-user')])
+        service.STORE.new_session('10001')
+        service.upstream.data['shouts']=[dict(qq='10001',id='s1',createdAt=int(time.time()),text='private shout')]
+        service.upstream.save()
+        self.assertEqual(self.request('/music/api/admin/member/delete','POST',dict(qq='10001',confirm='wrong'),manager,headers)[0],400)
+        self.assertEqual(self.request('/music/api/admin/member/delete','POST',dict(qq='10001',confirm='DELETE'),manager,headers)[0],200)
+        self.assertIsNone(service.STORE.link_for_qq('10001'))
+        self.assertNotIn('10001',service.upstream.data['members'])
+        self.assertEqual(service.upstream.data['shouts'],[])
+        self.assertEqual(service.upstream.data['entries']['e1']['createdBy'],'')
+        backups=self.request('/music/api/admin/backups',client=manager)[1]['backups']
+        self.assertTrue(backups)
+        for path in ('/music/api/export','/music/api/admin/backup?name='+backups[0]['name']):
+            status,result=self.request(path,client=manager)
+            self.assertEqual(status,200,result)
+            self.assertNotIn('10001',result['members'])
+            self.assertNotIn('adminPasswordHash',result['settings'])
+        self.assertEqual(self.request('/music/api/admin/backup?name=../identity.sqlite3',client=manager)[0],400)
+        self.assertEqual(self.request('/music/api/admin/reset','POST',dict(confirm='RESET'),manager,headers)[0],200)
+        self.assertEqual(service.upstream.data['members'],{})
+        self.assertEqual(service.upstream.data['entries'],{})
+
+    def test_full_admin_wallpapers_are_persistent_bounded_and_in_paired_backups(self):
+        import base64
+        from test_api import test_png
+        from music_site.maintenance import backup_pair
+        names=('WALLS_DIR','WALLS_MANIFEST','WALL_MAX_BYTES','WALL_EXTS')
+        old={name:getattr(service.upstream,name) for name in names}
+        for name,value in old.items():self.addCleanup(setattr,service.upstream,name,value)
+        administration.configure_walls(self.folder)
+        manager,csrf=self.music_admin();headers={'X-Kanban-Admin':csrf}
+        data='data:image/png;base64,'+base64.b64encode(test_png()).decode()
+        status,result=self.request('/music/api/admin/wall/upload','POST',dict(name='test wallpaper',data=data),manager,headers)
+        self.assertEqual(status,200,result)
+        src=result['walls']['items'][0]['src']
+        with urllib.request.urlopen(self.base+'/music'+src) as response:
+            self.assertEqual(response.status,200)
+            self.assertEqual(response.headers.get_content_type(),'image/png')
+        administration.configure_walls(self.folder)
+        self.assertEqual(service.upstream.walls_payload()['items'][0]['src'],src)
+        backup_pair(self.folder,service.STORE)
+        self.assertTrue(any((p/'walls'/src.rsplit('/',1)[-1]).exists() for p in (self.folder/'paired-backups').iterdir()))
+        for value in ('data:image/svg+xml;base64,PHN2Zy8+','data:image/png;base64,bm90IGFuIGltYWdl'):
+            self.assertEqual(self.request('/music/api/admin/wall/upload','POST',dict(data=value),manager,headers)[0],400)
+        status,_=self.request('/music/api/admin/wall/upload','POST',dict(data='data:image/png;base64,'+base64.b64encode(b'\x89PNG\r\n\x1a\n'+b'x'*(2*1024*1024)).decode()),manager,headers)
+        self.assertEqual(status,400)
 
     def test_legacy_login_preserves_data_and_enforces_ownership(self):
         self.assertEqual(self.request('/music/api/me?qq=10001')[0],401)
