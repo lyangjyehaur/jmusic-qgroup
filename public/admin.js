@@ -2,7 +2,7 @@
  (()=>{
  const $=s=>document.querySelector(s);let csrf='',revision=0,botInfo=null,botTemplates={},templateKind='',botBusy=false;
  let previewData=null,lastTemplateField='#bot-template-text';
- let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null;
+ let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null,metadataUser=null,metadataBusy=false;
  let botGroups=[];
  async function request(path,data){
   let status=0,outcome='network_error';
@@ -23,7 +23,7 @@
   $('#users-summary').textContent=`共 ${info.total} 个账号`;
   $('#users-page').textContent=info.total?`${Math.floor(info.offset/info.limit)+1} / ${Math.ceil(info.total/info.limit)}`:'0 / 0';
   $('#users-prev').disabled=usersBusy||info.offset===0;$('#users-next').disabled=usersBusy||info.offset+info.limit>=info.total;
-  $('#admin-users').innerHTML=info.users.map(user=>`<article class="admin-user"><div class="admin-user-heading"><strong>${esc(user.nickname||'未设置称呼')}</strong><span class="admin-user-role">${user.is_admin?'管理员':'普通用户'}${user.id===currentUserId?' · 当前账号':''}</span></div><p class="receipt-id" translate="no">${esc(user.id)}</p><p class="field-help">${user.identities.length?user.identities.map(item=>`${esc(item.provider==='qq'?'QQ 绑定昵称':item.provider)}：<span translate="no">${esc(item.display_name)}</span>${item.provider==='qq'?` · UnionID：${item.unionid_bound?'已取得':'待补齐'}`:''}`).join('；'):'未绑定第三方账号'}${user.identities.some(item=>item.provider==='qq')?'':' · UnionID：未绑定 QQ'}</p><p class="field-help">注册时间：${esc(new Date(user.created_at).toLocaleString())}</p><button type="button" class="button secondary" data-admin-user="${esc(user.id)}" ${usersBusy||(user.id===currentUserId&&user.is_admin)?'disabled':''}>${user.is_admin?'撤销管理员':'设为管理员'}</button>${user.id===currentUserId?'<p class="field-help">当前账号的管理员权限须由其他管理员撤销。</p>':''}</article>`).join('')||'<p class="field-help">没有符合条件的账号</p>';
+  $('#admin-users').innerHTML=info.users.map(user=>`<article class="admin-user"><div class="admin-user-heading"><strong>${esc(user.nickname||'未设置称呼')}</strong><span class="admin-user-role">${user.is_admin?'管理员':'普通用户'}${user.id===currentUserId?' · 当前账号':''}</span></div><p class="receipt-id" translate="no">${esc(user.id)}</p><p class="field-help">${user.identities.length?user.identities.map(item=>`${esc(item.provider==='qq'?'QQ 绑定昵称':item.provider)}：<span translate="no">${esc(item.display_name)}</span>${item.provider==='qq'?` · UnionID：${item.unionid_bound?'已取得':'待补齐'}`:''}`).join('；'):'未绑定第三方账号'}${user.identities.some(item=>item.provider==='qq')?'':' · UnionID：未绑定 QQ'}</p><p class="field-help">手动关联 QQ 号：<span translate="no">${esc(user.manual_qq||'未填写')}</span></p>${user.note?`<p class="field-help admin-user-note">内部备注：<span translate="no">${esc(user.note)}</span></p>`:''}<p class="field-help">注册时间：${esc(new Date(user.created_at).toLocaleString())}</p><div class="bot-actions"><button type="button" class="button secondary" data-user-metadata="${esc(user.id)}" ${usersBusy?'disabled':''}>编辑备注与 QQ 号</button><button type="button" class="button secondary" data-admin-user="${esc(user.id)}" ${usersBusy||(user.id===currentUserId&&user.is_admin)?'disabled':''}>${user.is_admin?'撤销管理员':'设为管理员'}</button></div>${user.id===currentUserId?'<p class="field-help">当前账号的管理员权限须由其他管理员撤销。</p>':''}</article>`).join('')||'<p class="field-help">没有符合条件的账号</p>';
  }
  async function loadUsers(){
   usersInfo=await request('/api/admin/users?'+new URLSearchParams({search:usersSearch,unionid:usersFilter,offset:String(usersOffset)}));
@@ -41,7 +41,44 @@
  $('#users-reload').addEventListener('click',()=>usersAction(loadUsers));
  $('#users-prev').addEventListener('click',()=>{if(usersBusy)return;usersOffset=Math.max(0,usersOffset-20);usersAction(loadUsers);});
  $('#users-next').addEventListener('click',()=>{if(usersBusy)return;usersOffset+=20;usersAction(loadUsers);});
+ function fillMetadata(user){
+  metadataUser=user;
+  $('#users-metadata-name').textContent=user.nickname||'未设置称呼';
+  $('#users-metadata-id').textContent=user.id;
+  $('#users-metadata-form').elements.manual_qq.value=user.manual_qq;
+  $('#users-metadata-form').elements.note.value=user.note;
+  $('#users-metadata-error').textContent='';
+ }
+ async function metadataAction(work){
+  if(metadataBusy)return;metadataBusy=true;$('#users-metadata-error').textContent='';
+  for(const field of $('#users-metadata-form').elements)field.disabled=true;
+  try{await work();}catch(problem){$('#users-metadata-error').textContent=problem.message;}
+  finally{metadataBusy=false;for(const field of $('#users-metadata-form').elements)field.disabled=false;}
+ }
+ $('#users-metadata').addEventListener('cancel',e=>{if(metadataBusy)e.preventDefault();});
+ $('#users-metadata-cancel').addEventListener('click',()=>{if(!metadataBusy)$('#users-metadata').close();});
+ $('#users-metadata-reload').addEventListener('click',()=>metadataAction(async()=>{
+  const info=await request('/api/admin/users?'+new URLSearchParams({search:metadataUser.id}));
+  const user=info.users.find(item=>item.id===metadataUser.id);
+  if(!user)throw new Error('账号不存在或已注销');
+  fillMetadata(user);
+ }));
+ $('#users-metadata-form').addEventListener('submit',e=>{
+  e.preventDefault();
+  const fields=e.currentTarget.elements;
+  const data={user_id:metadataUser.id,note:fields.note.value,manual_qq:fields.manual_qq.value,base_revision:metadataUser.metadata_revision};
+  metadataAction(async()=>{
+   await request('/api/admin/users/metadata',data);
+   $('#users-metadata').close();$('#users-saved').textContent='已保存内部备注与手动 QQ 关联';
+   await usersAction(loadUsers);
+  });
+ });
  $('#admin-users').addEventListener('click',e=>{
+  const edit=e.target.closest('[data-user-metadata]');
+  if(edit&&!usersBusy){
+   const user=usersInfo.users.find(item=>item.id===edit.dataset.userMetadata);if(!user)return;
+   fillMetadata(user);$('#users-metadata').showModal();return;
+  }
   const button=e.target.closest('[data-admin-user]');if(!button||usersBusy)return;
   const user=usersInfo.users.find(item=>item.id===button.dataset.adminUser);if(!user)return;
   pendingUser=user;

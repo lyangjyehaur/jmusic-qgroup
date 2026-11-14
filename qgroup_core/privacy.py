@@ -88,7 +88,7 @@ def erase(db,uid,request_id,created_at):
     for session in sessions:logout(db,session)
     db.execute('DELETE FROM browser_accounts WHERE user_id=?',(uid,))
     for table in ('external_profiles','external_identities','qq_accounts','qq_attempts','login_attempts',
-                  'privacy_consents','user_payment_codes','notifications','request_results','device_links'):
+                  'privacy_consents','user_payment_codes','notifications','request_results','device_links','admin_user_metadata'):
         db.execute('DELETE FROM '+table+' WHERE user_id=?',(uid,))
     db.execute('''DELETE FROM image_assets WHERE NOT EXISTS(SELECT 1 FROM user_payment_codes WHERE digest=image_assets.digest)
         AND NOT EXISTS(SELECT 1 FROM settlement_code_images WHERE digest=image_assets.digest)

@@ -161,6 +161,9 @@ class PublicAPITests(unittest.TestCase):
 
     def test_private_fields_are_allowlisted_and_person_statuses_are_filtered(self):
         with server.connect() as db:
+            for index,row in enumerate(db.execute('SELECT id FROM users').fetchall()):
+                db.execute('INSERT INTO admin_user_metadata VALUES(?,?,?,?,?,?)',
+                    (row['id'],'PRIVATE_ADMIN_NOTE',str(987654000+index),1,'now','test'))
             db.execute("UPDATE attendees SET note='PRIVATE_NOTE',attendance_note='PRIVATE_ATTENDANCE',withdrawal_reason='PRIVATE_REASON' WHERE event_id=?", (self.event_id,))
             db.execute("UPDATE attendees SET status='invited',invitation_token='PRIVATE_TOKEN' WHERE id=?", (self.people[0]['id'],))
             db.execute("UPDATE attendees SET status='withdrawn' WHERE id=?", (self.people[1]['id'],))
@@ -171,6 +174,13 @@ class PublicAPITests(unittest.TestCase):
         self.assertEqual(payload['event']['counts'], dict(confirmed=0, waiting=1, tentative=1))
         encoded = json.dumps(payload)
         self.assertNotIn('PRIVATE_', encoded)
+        for suffix in ('','/participants','/rooms'):
+            result=str(self.partner.request(self.public_url+suffix)[1])
+            for private in ('PRIVATE_ADMIN_NOTE','987654','manual_qq','metadata_revision'):
+                self.assertNotIn(private,result)
+        for client in (ModernClient(self.base),self.owner):
+            result=str(client.request(self.url)[1])
+            self.assertNotIn('PRIVATE_ADMIN_NOTE',result);self.assertNotIn('987654',result)
         for person in payload['participants']:
             self.assertEqual(set(person), {'attendee_id', 'user_id', 'name', 'status', 'confirmation_state'})
         for key in ('finance', 'settlement', 'share_token', 'owner_id', 'invite_token', 'bot_delivery'):

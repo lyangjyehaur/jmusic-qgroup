@@ -144,7 +144,7 @@ class TimePollTests(unittest.TestCase):
     def test_schema_17_preserves_exact_poll_values_and_retries_failed_18(self):
         from deploy.verify_migration import verify
         source=Path(self.tmp.name)/'schema17.sqlite3'
-        with mock.patch.object(time_polls,'migrate_date_choices',lambda db:None),mock.patch('qgroup_core.rooms.migrate',lambda db:None):storage.initialize(source)
+        with mock.patch.object(time_polls,'migrate_date_choices',lambda db:None),mock.patch('qgroup_core.rooms.migrate',lambda db:None),mock.patch.object(storage,'migrate_user_metadata',lambda db:None):storage.initialize(source)
         with storage.connect(source) as db:
             db.execute('INSERT INTO users VALUES(?,?,?,?)',('old','old-hash','旧发起者',now()))
             db.execute("INSERT INTO time_polls(id,owner_id,title,category,location,description,timezone,duration_hours,capacity,minimum_participants,fee_policy,deadline,created_at) VALUES('old-poll','old','旧投票','其他','原地点','','Asia/Taipei',2,6,0,'',?,?)",(poll_data()['deadline'],now()))
@@ -377,7 +377,7 @@ class TimePollTests(unittest.TestCase):
     def test_repeatable_migration_preserves_pre_poll_database(self):
         from deploy.verify_migration import verify
         source=Path(self.tmp.name)/'schema15.sqlite3'
-        with mock.patch.object(time_polls,'migrate',lambda db:None),mock.patch('qgroup_core.rooms.migrate',lambda db:None):
+        with mock.patch.object(time_polls,'migrate',lambda db:None),mock.patch('qgroup_core.rooms.migrate',lambda db:None),mock.patch.object(storage,'migrate_user_metadata',lambda db:None):
             storage.initialize(source)
         with storage.connect(source) as db:
             db.execute('INSERT INTO users VALUES(?,?,?,?)',('legacy','legacy-hash','旧用户',now()))

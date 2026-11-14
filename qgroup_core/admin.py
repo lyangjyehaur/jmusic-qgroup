@@ -1,6 +1,7 @@
 """Explicit account administrator roles and bootstrap credential sessions."""
 import hashlib
 import os
+import re
 import secrets
 from http import cookies
 from . import accounts,identity,bot_settings
@@ -63,15 +64,22 @@ def users(db,headers,query):
     if unionid not in filters:raise APIError('UnionID 筛选条件不正确')
     where='''NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)
         AND (?='' OR instr(lower(u.id),lower(?))>0 OR instr(lower(u.nickname),lower(?))>0
-        OR EXISTS(SELECT 1 FROM external_identities e WHERE e.user_id=u.id AND instr(lower(e.display_name),lower(?))>0))'''
+        OR EXISTS(SELECT 1 FROM external_identities e WHERE e.user_id=u.id AND instr(lower(e.display_name),lower(?))>0)
+        OR EXISTS(SELECT 1 FROM admin_user_metadata m WHERE m.user_id=u.id
+            AND (instr(lower(m.note),lower(?))>0 OR instr(m.manual_qq,?)>0)))'''
     where+=' AND ('+filters[unionid]+')'
-    params=(search,)*4
+    params=(search,)*6
     total=db.execute('SELECT count(*) FROM users u WHERE '+where,params).fetchone()[0]
     rows=db.execute('''SELECT u.id,u.nickname,u.created_at,COALESCE(r.is_admin,0) AS is_admin,
-        COALESCE(r.revision,0) AS revision FROM users u LEFT JOIN user_admin_roles r ON r.user_id=u.id
+        COALESCE(r.revision,0) AS revision,COALESCE(m.note,'') AS note,
+        COALESCE(m.manual_qq,'') AS manual_qq,COALESCE(m.revision,0) AS metadata_revision,
+        m.updated_at AS metadata_updated_at FROM users u LEFT JOIN user_admin_roles r ON r.user_id=u.id
+        LEFT JOIN admin_user_metadata m ON m.user_id=u.id
         WHERE '''+where+' ORDER BY u.created_at DESC,u.id LIMIT 20 OFFSET ?',(*params,offset)).fetchall()
     return dict(users=[dict(id=r['id'],nickname=r['nickname'],created_at=r['created_at'],is_admin=bool(r['is_admin']),
-                           revision=r['revision'],identities=accounts.linked(db,r['id'])) for r in rows],
+                           revision=r['revision'],identities=accounts.linked(db,r['id']),
+                           note=r['note'],manual_qq=r['manual_qq'],metadata_revision=r['metadata_revision'],
+                           metadata_updated_at=r['metadata_updated_at']) for r in rows],
                 total=total,offset=offset,limit=20)
 
 
@@ -102,6 +110,28 @@ def bot_view(db,headers):
     return bot_settings.view(db)
 
 
+def set_metadata(db,access,data):
+    uid=data.get('user_id');note=data.get('note');qq=data.get('manual_qq');revision=data.get('base_revision')
+    if not isinstance(uid,str) or not isinstance(note,str) or not isinstance(qq,str) or type(revision) is not int or revision<0:
+        raise APIError('用户备注格式不正确')
+    note=note.strip();qq=qq.strip()
+    if len(note)>1000:raise APIError('内部备注最多 1000 字')
+    if qq and not re.fullmatch(r'[1-9][0-9]{4,11}',qq):raise APIError('QQ 号须为 5 至 12 位数字，且不能以 0 开头')
+    if not db.execute('''SELECT 1 FROM users u WHERE id=?
+        AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)''',(uid,)).fetchone():
+        raise APIError('账号不存在或已注销',404)
+    current=db.execute('SELECT * FROM admin_user_metadata WHERE user_id=?',(uid,)).fetchone()
+    if revision!=(current['revision'] if current else 0):raise APIError('该账号的备注或 QQ 号已被修改，请重新载入后重试',409)
+    if qq and db.execute('SELECT 1 FROM admin_user_metadata WHERE manual_qq=? AND user_id!=?',(qq,uid)).fetchone():
+        raise APIError('该 QQ 号已关联其他账号，请先核对并解除原关联',409)
+    if (note,qq)!=((current['note'],current['manual_qq']) if current else ('','')):
+        actor='account:'+access['user_id'] if access['user_id'] else 'credential:'+access['digest']
+        db.execute('''INSERT INTO admin_user_metadata VALUES(?,?,?,?,?,?) ON CONFLICT(user_id)
+            DO UPDATE SET note=excluded.note,manual_qq=excluded.manual_qq,revision=excluded.revision,
+            updated_at=excluded.updated_at,updated_by=excluded.updated_by''',(uid,note,qq,revision+1,now(),actor))
+    return dict(ok=True)
+
+
 def login(db,data):
     configured=os.environ.get('KANBAN_ADMIN_KEY_HASH','')
     supplied=data.get('key')
@@ -123,6 +153,7 @@ def command(db,headers,path,data):
             privacy.logout(db,identity.session_hash(headers))
         return dict(ok=True,logout_account=access['auth_method']=='account'),''
     if path=='/api/admin/users':return set_role(db,access,data),None
+    if path=='/api/admin/users/metadata':return set_metadata(db,access,data),None
     if path=='/api/admin/privacy-review':
         from . import privacy
         return privacy.review(db,data),None

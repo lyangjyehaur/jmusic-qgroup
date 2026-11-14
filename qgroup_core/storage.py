@@ -100,6 +100,16 @@ def migrate_admin_roles(db):
     db.execute('INSERT INTO schema_migrations VALUES(14,?)',(now(),))
 
 
+def migrate_user_metadata(db):
+    if db.execute('SELECT 1 FROM schema_migrations WHERE version=20').fetchone():return
+    db.execute('''CREATE TABLE admin_user_metadata(
+        user_id TEXT PRIMARY KEY REFERENCES users(id),
+        note TEXT NOT NULL DEFAULT '',manual_qq TEXT NOT NULL DEFAULT '',
+        revision INTEGER NOT NULL,updated_at TEXT NOT NULL,updated_by TEXT NOT NULL)''')
+    db.execute("CREATE UNIQUE INDEX admin_user_metadata_qq ON admin_user_metadata(manual_qq) WHERE manual_qq!=''")
+    db.execute('INSERT INTO schema_migrations VALUES(20,?)',(now(),))
+
+
 def migrate_roster(db):
     db.execute('''CREATE TABLE IF NOT EXISTS schema_migrations (
         version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)''')
@@ -381,6 +391,7 @@ def migrate_privacy(db):
         bot_groups.migrate(db)
         time_polls.migrate(db)
         rooms.migrate(db)
+        migrate_user_metadata(db)
         return
     db.execute("ALTER TABLE login_attempts ADD COLUMN privacy_version TEXT NOT NULL DEFAULT ''")
     db.execute("ALTER TABLE login_attempts ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''")
@@ -403,6 +414,7 @@ def migrate_privacy(db):
     bot_groups.migrate(db)
     time_polls.migrate(db)
     rooms.migrate(db)
+    migrate_user_metadata(db)
 
 
 def migrate_bot(db):

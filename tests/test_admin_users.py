@@ -10,7 +10,7 @@ from unittest import mock
 
 import server
 from deploy.verify_migration import verify
-from qgroup_core import accounts, storage
+from qgroup_core import accounts, privacy, storage
 from test_roster import ModernClient
 
 
@@ -44,6 +44,98 @@ class AdminUserTests(unittest.TestCase):
         return (client or self.manager).request('/api/admin/users','POST',
             dict(user_id=uid,is_admin=value,base_revision=revision,**extra),
             headers={'X-Kanban-Admin':csrf or self.info['csrf']})
+
+    def metadata(self,uid=None,note='人工核对备注',qq='123456789',revision=0,client=None,csrf=None):
+        return (client or self.manager).request('/api/admin/users/metadata','POST',
+            dict(user_id=uid or self.uid,note=note,manual_qq=qq,base_revision=revision),
+            headers={'X-Kanban-Admin':csrf or self.info['csrf']})
+
+    def test_metadata_requires_admin_csrf_and_same_origin(self):
+        for client in (ModernClient(self.base),self.member):
+            self.assertEqual(self.metadata(client=client)[0],401)
+        data=dict(user_id=self.uid,note='私有',manual_qq='12345',base_revision=0)
+        for headers in ({},{'X-Kanban-Admin':'wrong'},
+                        {'X-Kanban-Admin':self.info['csrf'],'Origin':'https://evil.test'}):
+            self.assertEqual(self.manager.request('/api/admin/users/metadata','POST',data,headers=headers)[0],403)
+        self.role(self.other_uid,True)
+        csrf=self.other.request('/api/admin/session')[1]['csrf']
+        self.assertEqual(self.metadata(client=self.other,csrf=csrf)[0],200)
+        with server.connect() as db:
+            self.assertEqual(db.execute('SELECT updated_by FROM admin_user_metadata').fetchone()[0],'account:'+self.other_uid)
+
+    def test_metadata_persists_searches_and_keeps_login_identity_separate(self):
+        from urllib.parse import urlencode
+        note='后台後臺 <script> & 人工核对\n第二行'
+        with server.connect() as db:
+            db.execute("INSERT INTO external_identities VALUES('qq','app','subject',?,'QQ昵称','now')",(self.uid,))
+        self.assertEqual(self.metadata(note='  '+note+'  ',qq=' 123456789 ')[0],200)
+        server.initialize()
+        for search in ('后台後臺','123456789'):
+            status,info=self.manager.request('/api/admin/users?'+urlencode(dict(search=search)))
+            self.assertEqual(status,200);self.assertEqual(info['total'],1)
+            row=info['users'][0]
+            self.assertEqual(row['id'],self.uid);self.assertEqual(row['note'],note)
+            self.assertEqual(row['manual_qq'],'123456789');self.assertEqual(row['metadata_revision'],1)
+            self.assertEqual(row['revision'],0);self.assertIsNotNone(row['metadata_updated_at'])
+            self.assertFalse(row['identities'][0]['unionid_bound'])
+        for path in ('/api/me','/api/account'):
+            result=str(self.member.request(path)[1])
+            for private in (note,'123456789','manual_qq','metadata_revision'):
+                self.assertNotIn(private,result)
+        with server.connect() as db:
+            self.assertEqual(db.execute('SELECT subject FROM external_identities WHERE user_id=?',(self.uid,)).fetchone()[0],'subject')
+            self.assertEqual(db.execute('SELECT count(*) FROM external_unionids').fetchone()[0],0)
+
+    def test_metadata_conflicts_are_independent_of_roles_and_can_be_cleared(self):
+        self.assertEqual(self.metadata()[0],200)
+        self.assertEqual(self.role(self.uid,True)[0],200)
+        self.assertEqual(self.metadata(note='覆盖',revision=0)[0],409)
+        self.assertEqual(self.metadata(revision=1)[0],200)  # Idempotent save preserves revision.
+        self.assertEqual(self.metadata(uid=self.other_uid)[0],409)
+        self.assertEqual(self.metadata(note='',qq='',revision=1)[0],200)
+        self.assertEqual(self.metadata(uid=self.other_uid)[0],200)
+        self.assertEqual(self.metadata(note='旧页面',qq='',revision=1)[0],409)
+        row=next(u for u in self.manager.request('/api/admin/users')[1]['users'] if u['id']==self.uid)
+        self.assertEqual((row['note'],row['manual_qq'],row['metadata_revision'],row['revision']),('','',2,1))
+
+    def test_metadata_validates_optional_strings_qq_and_revision(self):
+        for kwargs in (dict(note=None),dict(note='字'*1001),dict(qq=123456),dict(qq='１２３４５'),
+                       dict(qq='012345'),dict(qq='1234'),dict(qq='1'*13),dict(qq='12 345'),
+                       dict(qq='12345\n6'),dict(revision=True),dict(revision=-1),dict(revision='0')):
+            with self.subTest(kwargs=kwargs):self.assertEqual(self.metadata(**kwargs)[0],400)
+        self.assertEqual(self.metadata(uid='missing')[0],404)
+        self.assertEqual(self.metadata(note='字'*1000,qq='12345')[0],200)
+        self.assertEqual(self.metadata(note='',qq='123456789012',revision=1)[0],200)
+
+    def test_metadata_erased_on_closure_and_backup_restore_replay(self):
+        self.assertEqual(self.metadata()[0],200)
+        old=Path(self.tmp.name)/'before-close.sqlite3'
+        with server.connect() as db,sqlite3.connect(old) as copy:db.backup(copy)
+        self.assertEqual(self.member.request('/api/auth/close','POST',dict(confirm_close=True))[0],200)
+        self.assertEqual(self.metadata(revision=1)[0],404)
+        with server.connect() as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM admin_user_metadata WHERE user_id=?',(self.uid,)).fetchone())
+        old.with_suffix('.erasures.jsonl').write_bytes(server.DB.with_suffix('.erasures.jsonl').read_bytes())
+        storage.initialize(old);privacy.recover(old);privacy.recover(old)
+        with storage.connect(old) as db:
+            self.assertIsNone(db.execute('SELECT 1 FROM admin_user_metadata WHERE user_id=?',(self.uid,)).fetchone())
+        self.assertEqual(self.metadata(uid=self.other_uid)[0],200)
+
+    def test_schema_19_upgrade_preserves_users_and_metadata_on_repeat(self):
+        source=Path(self.tmp.name)/'v19.sqlite3';destination=Path(self.tmp.name)/'v20.sqlite3'
+        with server.connect() as db,sqlite3.connect(source) as copy:db.backup(copy)
+        with sqlite3.connect(source) as db:
+            db.execute('DROP TABLE admin_user_metadata')
+            db.execute('DELETE FROM schema_migrations WHERE version=20')
+            db.execute("CREATE TRIGGER fail_metadata_migration BEFORE INSERT ON schema_migrations WHEN NEW.version=20 BEGIN SELECT RAISE(ABORT,'injected'); END")
+        with self.assertRaises(sqlite3.IntegrityError):storage.initialize(source)
+        with storage.connect(source) as db:
+            self.assertIsNone(db.execute("SELECT 1 FROM sqlite_master WHERE name='admin_user_metadata'").fetchone())
+            db.execute('DROP TRIGGER fail_metadata_migration')
+        verify(source,destination)
+        with storage.connect(destination) as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM admin_user_metadata').fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT nickname FROM users WHERE id=?',(self.uid,)).fetchone()[0],'成员甲')
 
     def test_directory_and_role_writes_require_admin_and_csrf(self):
         guest=ModernClient(self.base)
@@ -176,7 +268,7 @@ class AdminUserTests(unittest.TestCase):
         verify(source,destination)
         with storage.connect(destination) as db:
             self.assertEqual(db.execute('SELECT count(*) FROM user_admin_roles').fetchone()[0],0)
-            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],19)
+            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],20)
 
 
 if __name__=='__main__':unittest.main()
