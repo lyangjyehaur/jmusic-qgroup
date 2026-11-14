@@ -1,6 +1,8 @@
 # 群聚看板
 
-私有原始碼倉庫：[git.dan.tw/dan/qgroup](https://git.dan.tw/dan/qgroup)，主分支為 `main`。推送原始碼不會自動部署，線上更新仍按下方 server2 部署與保全流程進行。資料庫、使用者上傳圖片、伺服器環境設定及本機管理憑證不納入 Git。
+私有原始碼倉庫：[git.dan.tw/dan/qgroup](https://git.dan.tw/dan/qgroup) 與 [GitHub lyangjyehaur/qgroup](https://github.com/lyangjyehaur/qgroup)，主分支為 `main`。兩邊保存相同提交及完整 main 歷史，提交 SHA、作者和時間不變。推送原始碼不會自動部署，線上更新仍按下方 server2 部署與保全流程進行。資料庫、使用者上傳圖片、伺服器環境設定及本機管理憑證不納入 Git。
+
+本機 `origin` 保留 git.dan.tw 作為抓取及發布來源，設定兩個 push URL，使 `git push origin main` 同步推送兩邊；另有 `github` remote 供單獨核對與重試。Git 設定不隨 clone 傳遞，新 checkout 須確認／補上雙遠端設定。兩邊推送非原子操作，完成後須核對兩個遠端 main 的 SHA；其中一邊失敗時補推並再次核對，不把單邊成功當成同步完成。
 
 功能分支驗證後先整合並推送 `main`；正式新版本只從遠端 main 歷史中的明確提交建置。發布前必須執行 `deploy/check_release_source.py`，不從未合併功能分支或未提交工作目錄直接上線；詳見[分支與發布來源](docs/deployment-policy.md#分支與發布來源)。
 
