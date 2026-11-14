@@ -19,7 +19,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
-from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox, time_polls
+from qgroup_core import storage, roster, audit, events, billing, conditions, permissions, management, attendance, lifecycle, settlements, finance, identity, i18n, media, payment_codes, qq_oauth, accounts, admin, privacy, bot_outbox, time_polls, rooms
 from qgroup_core.events import event_values, end_time, has_ended
 from qgroup_core.common import APIError, now, string, date_value
 from qgroup_core.billing import money, settlement_values, qr_image, serialize_settlement
@@ -94,6 +94,8 @@ def serialize(db, event, viewer):
     result['draft_join_owner'] = bool(event['draft_join_owner']) if result['is_owner'] else None
     result['can_join'] = roster.is_open(event)
     result['withdrawal_deadline'] = event['withdrawal_deadline'] or event['deadline']
+    result['room_plan'] = rooms.plan(db,event['id'])
+    result['can_manage_rooms'] = result['is_owner'] and not event['archived_at'] and event['lifecycle'] not in ('draft','cancelled') and not settled
     result['protocol_version'] = 2
     result['share_token'] = event['invite_token'] if result['is_owner'] and event['visibility']=='invitation' else None
     result.pop('invite_token',None)
@@ -228,7 +230,7 @@ class Handler(BaseHTTPRequestHandler):
                 db.execute('SELECT 1').fetchone()
             return self.reply({'ok':True,'protocol_version':2})
         assets = {'/privacy':('privacy.html','text/html; charset=utf-8'),'/contact':('contact.html','text/html; charset=utf-8'),'/admin':('admin.html','text/html; charset=utf-8'),'/admin.js':('admin.js','text/javascript; charset=utf-8'),'/analytics.js':('analytics.js','text/javascript; charset=utf-8'),'/qq-login.png':('qq-login.png','image/png'),'/payment-codes.js':('payment-codes.js','text/javascript; charset=utf-8'),'/i18n.js':('i18n.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/guide.html':('guide.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/activity.js':('activity.js','text/javascript; charset=utf-8'),
-            '/identity.js':('identity.js','text/javascript; charset=utf-8'),'/storage.js':('storage.js','text/javascript; charset=utf-8'),'/experience.js':('experience.js','text/javascript; charset=utf-8'),'/finance.js':('finance.js','text/javascript; charset=utf-8'),'/settlements.js':('settlements.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/client.js':('client.js','text/javascript; charset=utf-8'),'/roster.js':('roster.js','text/javascript; charset=utf-8'),'/favicon.svg':('favicon.svg','image/svg+xml')}
+            '/identity.js':('identity.js','text/javascript; charset=utf-8'),'/storage.js':('storage.js','text/javascript; charset=utf-8'),'/experience.js':('experience.js','text/javascript; charset=utf-8'),'/rooms.js':('rooms.js','text/javascript; charset=utf-8'),'/finance.js':('finance.js','text/javascript; charset=utf-8'),'/settlements.js':('settlements.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/client.js':('client.js','text/javascript; charset=utf-8'),'/roster.js':('roster.js','text/javascript; charset=utf-8'),'/favicon.svg':('favicon.svg','image/svg+xml')}
         assets['/time-polls.js']=('time-polls.js','text/javascript; charset=utf-8')
         if path in assets:
             filename, content_type = assets[path]
@@ -467,12 +469,12 @@ class Handler(BaseHTTPRequestHandler):
                     event = self.get_event(db,uid,user['id'],allow_deleted=True)
                     if event['status']=='deleted' and event['owner_id']!=user['id']:
                         raise APIError('活动已移除',404)
-            new_route = suffix.startswith(('/claims','/finance','/roster','/attendees','/invitations','/management','/attendance','/onsite','/settlement/detailed','/settlement/preview')) or path=='/api/notifications/read' or path.startswith(('/api/account/','/api/payment-codes','/api/time-polls'))
+            new_route = suffix.startswith(('/rooms','/claims','/finance','/roster','/attendees','/invitations','/management','/attendance','/onsite','/settlement/detailed','/settlement/preview')) or path=='/api/notifications/read' or path.startswith(('/api/account/','/api/payment-codes','/api/time-polls'))
             if path.startswith('/api/time-polls') and not modern:
                 raise APIError('页面版本已更新，请刷新后重试',409)
             if event and not suffix and self.command=='PATCH' and 'title' in data and data.get('action') is None and event['owner_id']!=user['id'] and permissions.can_assist_schedule(db,event,user['id']):
                 if not modern or not request_key:raise APIError('管理员协助编辑请刷新页面后重试',409)
-            if suffix.startswith('/finance') and not modern:raise APIError('页面版本已更新，请刷新后重试',409)
+            if suffix.startswith(('/finance','/rooms')) and not modern:raise APIError('页面版本已更新，请刷新后重试',409)
             if (modern or new_route) and not request_key:
                 raise APIError('页面版本已更新，请刷新后重试',409)
             signature = hashlib.sha256((self.command+' '+path+' '+json.dumps(data,sort_keys=True,ensure_ascii=False)).encode()).hexdigest()
@@ -555,7 +557,9 @@ class Handler(BaseHTTPRequestHandler):
                 else:
                     if modern or new_route:
                         audit.require_revision(event,data)
-                    if suffix.startswith('/claims') and self.command=='POST':
+                    if suffix=='/rooms' and self.command=='PUT':
+                        rooms.save_plan(db,event,user,data)
+                    elif suffix.startswith('/claims') and self.command=='POST':
                         identity.claim_command(db,event,user,suffix,data)
                     elif suffix=='/finance/preview' and self.command=='POST':
                         return self.reply(finance.preview(db,event,user,data))

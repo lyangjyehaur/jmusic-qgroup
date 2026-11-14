@@ -8,7 +8,7 @@ import json
 import re
 from datetime import datetime, timezone
 
-from . import audit, billing, roster, settlements, permissions
+from . import audit, billing, roster, settlements, permissions, rooms
 from .common import APIError, date_value, now, string
 
 KINDS={'collection':'收款','refund':'退还参加者','reimbursement':'偿还垫付','expense':'支付店家',
@@ -141,15 +141,19 @@ def summary(db,event,viewer=None,entries=None,claims=None):
     pending=[p for p in claims if not p['decision']]
     closed=bool(entries and entries[-1]['kind']=='close' and entries[-1]['payload']['bill_version']==version and not pending)
     status='closed' if closed else 'collecting' if invoice else 'unpublished'
-    mine=[b for b in balances if viewer and b['id'] in my_keys(db,event,viewer)]
-    return dict(state=status,bill_version=version,detailed=bool(invoice),has_records=bool(entries or claims),
+    mine_ids=my_keys(db,event,viewer)
+    mine=[b for b in balances if b['id'] in mine_ids]
+    room_balances=rooms.reconciliation(invoice,entries) if invoice and invoice.get('rooms') else []
+    scoped=[b for r in room_balances for b in r['balances']]
+    room_mine=[b for b in scoped if b['id'] in mine_ids]
+    return dict(room_balances=room_balances,state=status,bill_version=version,detailed=bool(invoice),has_records=bool(entries or claims),
         total_due_cents=invoice['total_cents'] if invoice else None,cost_cents=state['cost_cents'],
         held_cents=state['held_cents'],deposit_cents=state['deposit_cents'],
-        outstanding_cents=sum(max(0,b['balance_cents']) for b in balances) if invoice else None,
-        refund_due_cents=sum(max(0,-b['balance_cents']) for b in balances) if invoice else None,
-        my_balance_cents=sum(b['balance_cents'] for b in mine) if invoice and mine else None,
-        my_outstanding_cents=sum(max(0,b['balance_cents']) for b in mine) if invoice and mine else None,
-        my_refund_due_cents=sum(max(0,-b['balance_cents']) for b in mine) if invoice and mine else None,
+        outstanding_cents=sum(max(0,b['balance_cents']) for b in (scoped or balances)) if invoice else None,
+        refund_due_cents=sum(max(0,-b['balance_cents']) for b in (scoped or balances)) if invoice else None,
+        my_balance_cents=sum(b['balance_cents'] for b in (room_mine if room_balances else mine)) if invoice and mine else None,
+        my_outstanding_cents=sum(max(0,b['balance_cents']) for b in (room_mine if room_balances else mine)) if invoice and mine else None,
+        my_refund_due_cents=sum(max(0,-b['balance_cents']) for b in (room_mine if room_balances else mine)) if invoice and mine else None,
         pending_count=len(pending) if permissions.has(db,event,viewer,'settlement') else sum(p['reporter_id']==viewer for p in pending),
         can_manage=permissions.has(db,event,viewer,'settlement'),can_report=bool(owned) and event['lifecycle']!='draft',
         balances=balances,custodians=[dict(parties[k],held_cents=v) for k,v in state['cash'].items()],
@@ -174,7 +178,7 @@ def view(db,event,viewer,before=None,before_report=None):
         for r in claims if permissions.has(db,event,viewer,'settlement') or r['reporter_id']==viewer]
     pending=[r for r in visible_reports if r['status']=='pending']
     decided=[r for r in reversed(visible_reports) if r['status']!='pending' and (before_report is None or r['seq']<before_report)]
-    return dict(summary=s,close_blockers=blocked(s,sum(not c['decision'] for c in claims)),parties=list(parties.values()),reportable_ids=sorted(owned),
+    return dict(rooms=rooms.current(db,event['id']),summary=s,close_blockers=blocked(s,sum(not c['decision'] for c in claims)),parties=list(parties.values()),reportable_ids=sorted(owned),
         default_custodian_id=(bill(db,event['id'])[1] or {}).get('collector',{}).get('id') or settlements.account_key(event['id'],event['owner_id']),
         entries=[public_entry(e,state['reversed_ids']) for e in selected[:100]],
         next_before=selected[99]['seq'] if len(selected)>100 else None,
@@ -196,7 +200,7 @@ def identifier(data,key):
     return value
 
 
-def transaction(db,event,user,data,reporting=False):
+def transaction(db,event,user,data,reporting=False,room_definitions=None):
     if not isinstance(data,dict):raise APIError('款项格式不正确')
     kind=data.get('kind')
     if not isinstance(kind,str) or kind not in KINDS:raise APIError('请选择款项类型')
@@ -248,6 +252,14 @@ def transaction(db,event,user,data,reporting=False):
         if not reference or reference['kind'] not in expected:raise APIError('请选择本活动对应的店家支出或订金记录')
         result.update(reference_id=reference_id,merchant=json.loads(reference['payload_json'])['merchant'])
         if kind=='deposit_apply' and not result['reason']:raise APIError('订金抵消费或押金转损失需填写依据，并核对结算费用')
+    definitions=rooms.current(db,event['id']) if room_definitions is None else room_definitions
+    room_id=data.get('room_id')
+    if definitions or room_id:
+        room=next((r for r in definitions if r['id']==room_id),None)
+        if not room:raise APIError('请为款项选择本活动的包间')
+        if 'reference_id' in result and json.loads(reference['payload_json']).get('room_id')!=room_id:
+            raise APIError('退款或订金处理须与原款项属于同一包间')
+        result.update(room_id=room_id,room_name=room['name'])
     if reporting and (not owned or result.get('payer_id') not in owned):raise APIError('只能申报本人或自己管理的未绑定同行款项',403)
     if custom and any(p['id'] not in used for p in custom):raise APIError('新款项人员必须用于本次记录')
     result['parties']=[parties[k] for k in dict.fromkeys(used)]
@@ -263,6 +275,7 @@ def blocked(s,pending):
         if s['outstanding_cents']:result.append('尚有待补款 ¥'+billing.money(s['outstanding_cents']))
         if s['refund_due_cents']:result.append('尚有应退／待偿还 ¥'+billing.money(s['refund_due_cents']))
         if s['cost_cents']!=s['total_due_cents']:result.append('已付店家净消费与结算总额尚未对平')
+    if any(r['total_cents']!=r['cost_cents'] for r in s.get('room_balances',[])):result.append('各包间已付店家消费与各自账单尚未对平')
     if s['deposit_cents']:result.append('尚有未退回或未抵扣的订金／押金')
     if s['held_cents']:result.append('仍有活动代收资金未支出或退还')
     if pending:result.append('仍有待核对的款项申报')
@@ -276,6 +289,7 @@ def prepare(db,event,user,data):
     if command not in ('report','withdraw') and not owner:raise APIError('只有发起者或指定结算人可以确认或更正款项',403)
     entries=rows(db,event['id']);claims=reports(db,event['id']);s=summary(db,event,user['id'],entries,claims)
     result=dict(command=command)
+    strict_rooms=bool((bill(db,event['id'])[1] or {}).get('rooms'))
     if command in ('record','report'):
         result['id']=identifier(data,'id')
         if db.execute('SELECT 1 FROM finance_entries WHERE id=? UNION ALL SELECT 1 FROM finance_reports WHERE id=?',(result['id'],result['id'])).fetchone():
@@ -287,6 +301,7 @@ def prepare(db,event,user,data):
         else:
             candidate=dict(id=result['id'],seq=s['last_seq']+1,kind=result['transaction']['kind'],payload=result['transaction'],reversal_of=None)
             project(entries+[candidate])
+            rooms.validate_journal(entries+[candidate],rooms.current(db,event['id']),strict=strict_rooms)
     elif command in ('accept','reject','withdraw'):
         report_id=identifier(data,'report_id');claim=next((c for c in claims if c['id']==report_id),None)
         if not claim or (not owner and claim['reporter_id']!=user['id']):raise APIError('申报不存在或无权处理',404)
@@ -295,13 +310,17 @@ def prepare(db,event,user,data):
         result.update(report_id=report_id,reason=string(data,'reason',300,command=='reject'))
         if command=='accept':
             result.update(id=report_id,transaction=claim['payload'])
-            project(entries+[dict(id=report_id,seq=s['last_seq']+1,kind=claim['payload']['kind'],payload=claim['payload'],reversal_of=None)])
+            candidate=dict(id=report_id,seq=s['last_seq']+1,kind=claim['payload']['kind'],payload=claim['payload'],reversal_of=None)
+            project(entries+[candidate])
+            rooms.validate_journal(entries+[candidate],rooms.current(db,event['id']),strict=strict_rooms)
     elif command=='reverse':
         uid=identifier(data,'entry_id');original=next((e for e in entries if e['id']==uid),None)
         if not original or original['kind'] not in KINDS:raise APIError('只能冲销本活动已确认的款项',404)
         if uid in project(entries)['reversed_ids']:raise APIError('这笔款项已经冲销',409)
         result.update(entry_id=uid,reason=string(data,'reason',300))
-        project(entries+[dict(id='preview-reversal',seq=s['last_seq']+1,kind='reversal',payload={},reversal_of=uid)])
+        candidate=dict(id='preview-reversal',seq=s['last_seq']+1,kind='reversal',payload={},reversal_of=uid)
+        project(entries+[candidate])
+        rooms.validate_journal(entries+[candidate],rooms.current(db,event['id']),strict=strict_rooms)
     elif command=='close':
         if s['state']=='closed':raise APIError('账务已结清，无需重复操作',409)
         problems=blocked(s,sum(not c['decision'] for c in claims))

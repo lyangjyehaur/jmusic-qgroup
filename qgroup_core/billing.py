@@ -76,6 +76,8 @@ def qr_image(value):
 
 
 def save(db, event, user, data):
+    from . import rooms
+    if rooms.plan(db,event['id']):raise APIError('活动已设置包间，请刷新页面并核对实际包间后结算',409)
     if event['owner_id'] != user['id']:
         raise APIError('只有发起者可以填写结算',403)
     if not has_ended(event) and event['lifecycle']!='cancelled':

@@ -467,4 +467,4 @@ class ActivityMigrationTests(unittest.TestCase):
                 e=db.execute('SELECT * FROM events').fetchone();self.assertEqual(tuple(e[c] for c in columns),before)
                 self.assertEqual(e['lifecycle'],'scheduled');self.assertIsNone(e['timezone']);self.assertIsNone(e['actual_ended_at'])
                 self.assertEqual(db.execute('SELECT count(*) FROM event_conditions').fetchone()[0],1)
-                self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],18)
+                self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],19)

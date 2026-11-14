@@ -176,7 +176,7 @@ class AdminUserTests(unittest.TestCase):
         verify(source,destination)
         with storage.connect(destination) as db:
             self.assertEqual(db.execute('SELECT count(*) FROM user_admin_roles').fetchone()[0],0)
-            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],18)
+            self.assertEqual(db.execute('SELECT max(version) FROM schema_migrations').fetchone()[0],19)
 
 
 if __name__=='__main__':unittest.main()

@@ -385,6 +385,15 @@ def money(cents):
 
 
 def settlement_notice(snapshot):
+    if snapshot.get('rooms'):
+        lines=['按实际包间结算：']
+        for room in snapshot.get('room_balances',[])[:10]:
+            lines.append(str(room['name'])[:40]+' · '+money(room['total_cents'])+' 元 · 收款人：'+str(room.get('payer_label',room['payer_name']))[:36])
+            for transfer in room['transfers'][:10]:
+                lines.append(str(transfer['from_name'])[:36]+' → '+str(transfer['to_name'])[:36]+'：'+money(transfer['amount_cents'])+' 元')
+            if len(room['transfers'])>10:lines.append('其余转款请到活动页查看')
+        lines.append('逐人 AA、全部包间及后续收退款请到活动页和账本核对；本版不附统一收款码。')
+        return lines
     lines=['收款人：'+snapshot.get('collector',{}).get('name','请到站内核对'),'逐人 AA：']
     lines += [str(p.get('label') or p['name'])[:36]+'：'+money(p['due_cents'])+' 元' for p in snapshot.get('people',[])[:20]]
     if len(snapshot.get('people',[]))>20:lines.append('其余人员 AA 请到活动页查看')

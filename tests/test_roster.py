@@ -431,7 +431,7 @@ class RosterMigrationTests(unittest.TestCase):
                 self.assertNotIn('revision',{r['name'] for r in db.execute('PRAGMA table_info(events)')})
             server.storage.initialize(path)
             with server.storage.connect(path) as db:
-                self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],18)
+                self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],19)
                 self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
 
     def test_legacy_roster_sessions_and_bill_survive_repeatable_migration(self):
@@ -463,7 +463,7 @@ class RosterMigrationTests(unittest.TestCase):
                     self.assertEqual(db.execute('SELECT user_id FROM browser_sessions WHERE token_hash=?',(token_hash,)).fetchone()[0],'owner')
                     self.assertEqual(tuple(db.execute('SELECT total_cents,headcount,qr_image,note FROM settlements').fetchone()),(10001,7,test_png(),'原结算备注'))
                     self.assertEqual(db.execute('SELECT count(*) FROM settlement_history').fetchone()[0],1)
-                    self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],18)
+                    self.assertEqual(db.execute('SELECT MAX(version) FROM schema_migrations').fetchone()[0],19)
                     self.assertFalse(db.execute('PRAGMA foreign_key_check').fetchall())
                     with self.assertRaises(sqlite3.IntegrityError):
                         db.execute("DELETE FROM registrations")

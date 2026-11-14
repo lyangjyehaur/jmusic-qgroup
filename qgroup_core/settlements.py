@@ -4,7 +4,7 @@ import json
 import re
 from fractions import Fraction
 from .common import APIError, now, string
-from . import audit, billing, roster, media, payment_codes, permissions
+from . import audit, billing, roster, media, payment_codes, permissions, rooms
 
 ID=re.compile(r'[a-f0-9]{16}\Z')
 MAX_CENTS=999999999
@@ -69,7 +69,8 @@ def context(db,event,user):
     from . import finance
     entries=finance.rows(db,event['id']);state=finance.project(entries)
     return dict(people=people,payers=payer_list,collector=dict(id=account_key(event['id'],user['id']),name=db.execute('SELECT nickname FROM users WHERE id=?',(user['id'],)).fetchone()[0]),
-        has_merchant_records=bool(state['expenses'] or state['deposits']))
+        has_merchant_records=bool(state['expenses'] or state['deposits']),rooms=rooms.plan(db,event['id']),
+        room_record_ids=sorted({p['entry']['payload']['room_id'] for p in [*state['expenses'].values(),*state['deposits'].values()] if p['entry']['payload'].get('room_id')}))
 
 
 def latest_version(db,event_id):
@@ -149,6 +150,9 @@ def changes(before,after):
 def calculate(db,event,user,data):
     current_version=validate_version(db,event,data)
     ctx=context(db,event,user)
+    previous=details(db,event['id'],current_version)
+    if 'rooms' not in data and (rooms.plan(db,event['id']) or (previous or {}).get('rooms')):
+        raise APIError('活动已设置包间，请刷新页面并核对实际包间后结算',409)
     if data.get('reviewed_roster') is not True:raise APIError('请先逐人核对结算名单及费用约定')
     if db.execute('SELECT 1 FROM settlements WHERE event_id=?',(event['id'],)).fetchone() and not details(db,event['id'],current_version) and data.get('convert_legacy') is not True:
         raise APIError('旧人均账单需要明确确认转换；旧版本将完整保留')
@@ -194,7 +198,18 @@ def calculate(db,event,user,data):
         people.append(dict(original,share=share,reason=reason,due_cents=0,allocations=[],payments=[]))
         inputs.append(dict(id=uid,share=share,reason=reason,payment_mode=mode,payments=normalized))
     by_id={p['id']:p for p in people}
+    if not data.get('rooms') and rooms.journal_room_ids(db,event['id']):raise APIError('已有包间款项，请保留包间结算并核对各包间费用',409)
+    room_input=rooms.normalize(data['rooms'],by_id,payers,final=True) if data.get('rooms') else []
+    for room in room_input:room['payer_label']=payer_labels[room['payer_id']]
+    if user['id']!=event['owner_id']:
+        arrangement=lambda rows:[{k:r[k] for k in ('id','name','payer_id','person_ids')} for r in rows]
+        if arrangement(room_input)!=arrangement(rooms.current(db,event['id'])):
+            raise APIError('只有发起者可以调整实际包间人员及付款人',403)
     items=data.get('items')
+    if room_input:
+        items=[dict(id=r['id'],name=r['name'],amount=r['amount'],scope='selected',mode='shares',kind='expense',
+            reason='按已核对的实际包间分摊',allocations=[dict(person_id=uid) for uid in r['person_ids']]) for r in room_input]
+    elif 'rooms' in data and not isinstance(data['rooms'],list):raise APIError('请核对包间设置')
     if not isinstance(items,list) or not 1<=len(items)<=50:raise APIError('请填写 1–50 项费用，免费活动可填 0 元')
     calculated=[];item_inputs=[];images={};seen=set();total=0
     for item in items:
@@ -252,25 +267,51 @@ def calculate(db,event,user,data):
             key=v['payer_id'];payer_totals[key]=payer_totals.get(key,0)+cents
             p['payments'].append(dict(payer_id=key,name=payers[key],label=payer_labels[key],amount_cents=cents))
     note=string(data,'note',1000,False)
-    qr=payment_codes.resolve(db,event,user,data,current_version)
+    if room_input and (data.get('payment_codes') or data.get('qr_image')):
+        raise APIError('包间结算请按各包间收款人转账，本版不附统一收款码')
+    qr=payment_codes.resolve(db,event,user,{**data,'payment_codes':[]} if room_input else data,current_version)
     if sum(len(im) for im in images.values())+sum(len(raw) for _,raw in qr)>6*1024*1024:raise APIError('本版图片合计超过 6 MiB，请压缩后重试')
     reason=string(data,'reason',300,False)
     if current_version and not reason:raise APIError('修改或转换结算请填写原因')
     used_payers={v['payer_id'] for p in inputs for v in p['payments']}
     if isinstance(data.get('merchant_payment'),dict):used_payers.add(data['merchant_payment'].get('payer_id'))
+    used_payers.update(r['payer_id'] for r in room_input)
     custom_normal=[p for p in custom_normal if p['id'] in used_payers]
     snapshot=dict(people=people,items=calculated,payers=[dict(id=k,name=payers[k],label=payer_labels[k],amount_cents=v) for k,v in payer_totals.items()],
         total_cents=total,note=note,reason=reason,qr_digest=qr[0][0]['digest'] if qr else None,payment_codes=[meta for meta,_ in qr],
         rounding_rule='按最大余数补分，余数相同按本版冻结的报名顺序；每项独立分配。',
         input=dict(people=inputs,items=item_inputs,custom_payers=custom_normal))
-    snapshot['collector']=ctx['collector']
+    if room_input:
+        snapshot['rooms']=[dict(id=r['id'],name=r['name'],payer_id=r['payer_id'],payer_name=r['payer_name'],payer_label=r['payer_label'],person_ids=r['person_ids']) for r in room_input]
+        snapshot['input']['rooms']=room_input
+    else:snapshot['collector']=ctx['collector']
     # Invoice liability and money already paid are separate facts. Freeze the
     # journal projection in the preview token so concurrent cash changes require review.
     from . import finance
     journal=finance.rows(db,event['id']);state=finance.project(journal)
     snapshot['journal_seq']=journal[-1]['seq'] if journal else 0
     payment=data.get('merchant_payment')
-    if payment is not None:
+    if room_input:
+        if payment is not None:raise APIError('包间结算请分别核对各包间付款情况')
+        rooms.validate_journal(journal,snapshot['rooms'],strict=True)
+        payment_details=data.get('room_payment_details',{})
+        if not isinstance(payment_details,dict):raise APIError('请核对各包间的实际付款时间与方式')
+        snapshot['merchant_payments']=[]
+        for r in room_input:
+            room_state=finance.project(rooms.scoped_entries(journal,r['id']))
+            if r['merchant_mode']=='recorded' and not (room_state['expenses'] or room_state['deposits']):
+                raise APIError('该包间尚无店家款项记录，请确认实际付款情况')
+            if r['merchant_mode']!='paid':continue
+            if room_state['expenses'] or room_state['deposits']:raise APIError('该包间已有店家款项，请选已登记并到账本补录',409)
+            tx=finance.transaction(db,event,user,dict(payment_details,kind='expense',funding='payer',
+                payer_id=r['payer_id'],amount=r['paid_amount'],room_id=r['id'],merchant=r['name'],
+                custom_parties=[p for p in custom_normal if p['id']==r['payer_id'] and p['id'] not in finance.participants(db,event,user['id'])[0]]),room_definitions=snapshot['rooms'])
+            snapshot['merchant_payments'].append(tx)
+            journal=journal+[dict(id='preview:'+r['id'],seq=snapshot['journal_seq']+len(snapshot['merchant_payments']),kind='expense',payload=tx,reversal_of=None)]
+        rooms.validate_journal(journal,snapshot['rooms'],strict=True)
+        state=finance.project(journal)
+        snapshot['room_balances']=rooms.reconciliation(snapshot,journal)
+    elif payment is not None:
         if not isinstance(payment,dict) or payment.get('mode') not in ('unpaid','paid','recorded'):
             raise APIError('请确认店家款项是否已经支付')
         if payment['mode']=='paid':
@@ -290,7 +331,9 @@ def calculate(db,event,user,data):
     snapshot['group_notice']=notice
     snapshot['changes']=changes(details(db,event['id'],current_version),snapshot)
     previous=details(db,event['id'],current_version)
-    if previous and previous.get('collector')!=snapshot['collector']:snapshot['changes'].append('本版收款人：'+snapshot['collector']['name'])
+    if previous and snapshot.get('collector') and previous.get('collector')!=snapshot['collector']:
+        snapshot['changes'].append('本版收款人：'+snapshot['collector']['name'])
+    if previous and previous.get('rooms',[])!=snapshot.get('rooms',[]):snapshot['changes'].append('包间人员或付款人已变更，请核对各包间收款明细')
     return snapshot,images,qr
 
 
@@ -313,7 +356,7 @@ def save(db,event,user,data):
     comparable=lambda s:{k:v for k,v in s.items() if k not in ('reason','changes')}
     if previous and comparable(previous)==comparable(snapshot):return
     stamp=now();next_version=version+1
-    fields=[k for k in ('people','items','payers','note','qr_digest','payment_codes','collector','merchant_payment','group_notice') if not previous or previous.get(k)!=snapshot.get(k)]
+    fields=[k for k in ('people','items','payers','note','qr_digest','payment_codes','collector','merchant_payment','merchant_payments','rooms','group_notice') if not previous or previous.get(k)!=snapshot.get(k)]
     row=db.execute('SELECT total_cents FROM settlements WHERE event_id=?',(event['id'],)).fetchone()
     db.execute('''INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,qr_image,updated_at,actor_id,actor_name,kind,changed_fields)
         VALUES(?,?,?,?,?,?,?,?,?,?,?)''',(event['id'],next_version,snapshot['total_cents'],max(1,len(snapshot['people'])),snapshot['note'],None,stamp,user['id'],user['nickname'],
@@ -324,6 +367,11 @@ def save(db,event,user,data):
     db.execute('''INSERT INTO settlements(event_id,total_cents,headcount,qr_image,note,updated_at) VALUES(?,?,?,?,?,?)
         ON CONFLICT(event_id) DO UPDATE SET total_cents=excluded.total_cents,headcount=excluded.headcount,qr_image=excluded.qr_image,note=excluded.note,updated_at=excluded.updated_at''',
         (event['id'],snapshot['total_cents'],max(1,len(snapshot['people'])),None,snapshot['note'],stamp))
+    for index,tx in enumerate(snapshot.get('merchant_payments',[])):
+        from . import finance
+        uid=hashlib.sha256((event['id']+':settlement:'+str(next_version)+':room:'+str(index)).encode()).hexdigest()[:16]
+        finance.append_entry(db,event,user,uid,'expense',tx)
+        audit.append(db,event,user,'finance_record',{},dict(operation=dict(id=uid,transaction=tx)),snapshot['reason'])
     if snapshot.get('merchant_payment'):
         from . import finance
         uid=hashlib.sha256((event['id']+':settlement:'+str(next_version)+':expense').encode()).hexdigest()[:16]

@@ -7,7 +7,7 @@
   <meta name="description" content="群聚看板：群組活動發佈、報名接龍、候補管理與費用分攤。">
   <title>群聚看板</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="/style.css?v=20261113-voting1">
+  <link rel="stylesheet" href="/style.css?v=20261114-roomcards2">
   <script defer src="/analytics.js?v=20261109-umami2"></script>
   <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script>
   <script src="/i18n.js?v=20261109-privacy1" defer></script>
@@ -18,10 +18,11 @@
   <script src="/activity.js?v=20261110-settlement1" defer></script>
   <script src="/time-polls.js?v=20261113-rolling1" defer></script>
   <script src="/payment-codes.js?v=20261109-privacy1" defer></script>
-  <script src="/settlements.js?v=20261110-settlement1" defer></script>
-  <script src="/finance.js?v=20261109-privacy1" defer></script>
+  <script src="/rooms.js?v=20261114-roomcards2" defer></script>
+  <script src="/settlements.js?v=20261114-rooms1" defer></script>
+  <script src="/finance.js?v=20261114-rooms1" defer></script>
   <script src="/identity.js?v=20261110-qqbutton1" defer></script>
-  <script src="/app.js?v=20261113-rolling1" defer></script>
+  <script src="/app.js?v=20261114-roomcards2" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -182,9 +183,10 @@
       <div class="dialog-heading"><h2 id="invoice-title">活動結算</h2><button type="button" class="icon-button" data-close="invoice-dialog" aria-label="關閉">×</button></div>
       <div class="form-body">
         <p id="invoice-legacy" class="activity-alert" hidden></p>
-        <div id="invoice-items"></div><button class="text-button" type="button" data-advanced-only data-invoice="add-item">增加費用項目</button>
+        <label class="check-option"><input name="room_mode" type="checkbox">按實際包間結算</label><fieldset id="invoice-rooms" hidden disabled></fieldset>
+        <fieldset id="invoice-ordinary-items"><div id="invoice-items"></div><button class="text-button" type="button" data-advanced-only data-invoice="add-item">增加費用項目</button></fieldset>
         <div id="invoice-roster-summary" class="invoice-roster-summary"></div>
-        <section><h3>店家款項</h3><label class="field">實際付款情況<select name="merchant_mode" required><option value="">請選擇</option><option value="unpaid">尚未支付店家</option><option value="paid">一人已墊付，隨結算登記</option><option value="recorded">已在收付款帳本登記</option></select></label><div id="invoice-merchant-fields" hidden><label class="field">實際墊付人<select name="merchant_payer"></select></label><label class="field">實際已付金額（元）<input name="merchant_amount" inputmode="decimal"></label><label class="field">店家<input name="merchant_name" maxlength="80"></label><label class="field">實際付款時間<input name="merchant_time" type="datetime-local"></label><label class="field">付款方式<select name="merchant_method"><option value="wechat">微信</option><option value="alipay">支付寶</option><option value="qq">QQ</option><option value="cash">現金</option><option value="other">其他</option></select></label></div><p class="field-help">墊付人仍承擔自己的 AA，已付店家的款項會抵扣應付；多人墊付或分次付款請到收付款帳本登記。</p></section>
+        <section id="invoice-merchant"><h3>店家款項</h3><label class="field">實際付款情況<select name="merchant_mode" required><option value="">請選擇</option><option value="unpaid">尚未支付店家</option><option value="paid">一人已墊付，隨結算登記</option><option value="recorded">已在收付款帳本登記</option></select></label><div id="invoice-merchant-fields" hidden><label class="field">實際墊付人<select name="merchant_payer"></select></label><label class="field">實際已付金額（元）<input name="merchant_amount" inputmode="decimal"></label><label class="field">店家<input name="merchant_name" maxlength="80"></label><label class="field">實際付款時間<input name="merchant_time" type="datetime-local"></label><label class="field">付款方式<select name="merchant_method"><option value="wechat">微信</option><option value="alipay">支付寶</option><option value="qq">QQ</option><option value="cash">現金</option><option value="other">其他</option></select></label></div><p class="field-help">墊付人仍承擔自己的 AA，已付店家的款項會抵扣應付；多人墊付或分次付款請到收付款帳本登記。</p></section>
         <p id="invoice-collector" class="activity-alert"></p><button class="text-button" id="invoice-appoint" type="button" hidden>指定結算人</button>
         <label class="advanced-switch"><span>高級選項</span><input type="checkbox" role="switch" data-advanced-toggle><span class="switch-track" aria-hidden="true"></span></label>
         <div data-advanced-only><h3 class="invoice-section-title">核對人員</h3><div id="invoice-people"></div></div>
@@ -201,6 +203,9 @@
     </form>
   </dialog>
 
+  <dialog id="rooms-dialog" class="dialog event-form-dialog" aria-labelledby="rooms-title">
+    <form id="rooms-form" class="event-form"><div class="dialog-heading"><h2 id="rooms-title">預分包間</h2><button type="button" class="icon-button" data-close="rooms-dialog" aria-label="關閉">×</button></div><div class="form-body"><p class="field-help">由發起者分配人員及指定付款人；可先保存部分分配。這裡只保存安排，結算時再核對實際包間、費用及已付款項。分配不改變原報名及費用約定。</p><div id="rooms-editor"></div></div><div class="form-footer"><p class="form-error" role="alert"></p><button type="button" class="text-button full" id="rooms-reload" hidden>載入最新版（替換當前輸入）</button><button type="submit" class="button primary full" id="rooms-save">保存包間安排</button></div></form>
+  </dialog>
   <dialog id="finance-dialog" class="dialog event-form-dialog" aria-labelledby="finance-title">
     <div class="event-form"><div class="dialog-heading"><h2 id="finance-title">收付款帳本</h2><button class="icon-button" data-close="finance-dialog" aria-label="關閉">×</button></div><div class="form-body"><p id="finance-error" class="form-error" role="alert"></p><div id="finance-content"></div></div><div class="form-footer"><button type="button" class="text-button full" data-finance="refresh">刷新帳本</button></div></div>
   </dialog>

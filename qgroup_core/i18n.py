@@ -150,7 +150,7 @@ def change(value,locale):
     if status:
         return status[1]+text(' 出席：',locale)+text(ATTENDANCE_LABELS[status[2]],locale)+' → '+text(ATTENDANCE_LABELS[status[3]],locale)
     # These two complete sentences contain no user interpolation.
-    if value in ('发布逐人核对后的费用与付款归属；旧人均版本如有则保留原样。','收款码已变更，旧图仍可在历史版本查看','收款码或收款方式已变更，旧图仍可在历史版本查看'):
+    if value in ('发布逐人核对后的费用与付款归属；旧人均版本如有则保留原样。','收款码已变更，旧图仍可在历史版本查看','收款码或收款方式已变更，旧图仍可在历史版本查看','包间人员或付款人已变更，请核对各包间收款明细'):
         return text(value,locale)
     for parts in CHANGES:
         rendered=template(value,parts,locale)
@@ -162,6 +162,8 @@ def payload(value,locale):
     if isinstance(value,list):return [payload(item,locale) for item in value]
     if not isinstance(value,dict):return value
     result={key:payload(item,locale) for key,item in value.items()}
+    if isinstance(value.get('payer_label'),str) and isinstance(value.get('payer_name'),str):
+        result['payer_label']=payload(dict(name=value['payer_name'],label=value['payer_label']),locale)['label']
     if 'default_template' in value and isinstance(value.get('kinds'),dict):
         result['kinds']={key:text(label,locale) for key,label in value['kinds'].items()}
         result['variables']={key:text(label,locale) for key,label in value['variables'].items()}
