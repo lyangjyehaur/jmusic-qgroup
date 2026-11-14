@@ -35,9 +35,18 @@
 <main class="wrap">
   <section class="card" id="musicLinkCard">
     <p id="musicLinkStatus">正在检查登录状态…</p>
-    <label id="musicPrivacyLabel" class="tiny"><input id="musicPrivacy" type="checkbox">我已阅读并同意<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>，连接后将保存旧 QQ 账号与 QQ 登录身份的关联。</label>
+    <label id="musicPrivacyLabel" class="tiny"><input id="musicPrivacy" type="checkbox">我已阅读并同意<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>及账号关联说明。</label>
     <button class="primary" type="button" id="musicQQButton" hidden>使用 QQ 登录</button>
+    <button type="button" id="musicCancelLink" hidden>取消本次关联</button>
+    <form id="musicCreateForm" hidden>
+      <h2>第一次使用成分站？</h2>
+      <p class="muted">使用当前看板账号建立成分，无需填写 QQ 号。已有旧成分请用下方原口令找回；忘记口令可联系管理员。</p>
+      <label>成分昵称<input id="musicNewName" maxlength="24" autocomplete="nickname" required></label>
+      <label class="tiny"><input id="musicNewConsent" type="checkbox" required>我已阅读<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>，确认建立空白成分并用于群友匹配。</label>
+      <button type="submit" class="primary" id="musicCreateButton">建立我的成分</button>
+    </form>
     <p id="musicLinkError" class="error"></p>
+    <p class="tiny">忘记旧口令、账号冲突或需要迁移资料？<a href="mailto:203008876@qq.com">联系管理员</a>核对，原有资料不会自动覆盖。</p>
     <a href="/">返回群聚看板</a>
   </section>
   <header class="hero">
@@ -83,9 +92,9 @@
     <div class="page" id="page-board" data-page="board">
     <section class="card compare-card" id="compareCard" hidden>
       <h2>和群友比成分</h2>
-      <p class="muted tiny">输入对方 QQ，看看你们的成分重合度、共同词条和各自独有的词条。</p>
+      <p class="muted tiny">输入对方 QQ 号或成分 ID，看看你们的成分重合度、共同词条和各自独有的词条。</p>
       <div class="row compare-row">
-        <input id="cmpQQ" type="text" inputmode="numeric" maxlength="12" placeholder="对方的 QQ 号" autocomplete="off">
+        <input id="cmpQQ" type="text" maxlength="26" placeholder="对方的 QQ 号或成分 ID" autocomplete="off">
         <button id="cmpBtn" class="primary" type="button">比一比</button>
       </div>
       <div id="cmpResult" class="cmp-result" hidden></div>
@@ -568,6 +577,7 @@
 
 
 <script src="initials.js"></script>
+<script src="member-id.js"></script>
 <script src="link.js"></script>
 <script src="app.js"></script>
 </body>

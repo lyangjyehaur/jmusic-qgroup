@@ -19,13 +19,13 @@
   $('#privacy-requests').innerHTML=items.map(item=>`<section class="privacy-request"><p><strong>${item.status==='completed'?'个人账号资料已删除':'共用记录待核对'}</strong> · ${esc(item.created_at)}</p><p class="receipt-id">${esc(item.id)}</p><p class="field-help">${esc(Object.entries(item.shared_records).map(([table,count])=>table+': '+count).join('；')||'无关联共用记录')}</p><form data-privacy-request="${esc(item.id)}"><label class="field">处理说明<textarea name="note" required maxlength="1000">${esc(item.note)}</textarea></label><button class="button secondary" type="submit">保存处理说明</button></form></section>`).join('')||'<p class="field-help">暂无资料删除申请</p>';
  }
  const error=problem=>{$('#admin-error').textContent=problem.message;};
- const musicStatuses={unlinked:'未关联',prelinked:'管理员预先对应',oauth:'已完成 QQ 授权'};
+ const musicStatuses={unlinked:'未关联',prelinked:'看板账号关联',oauth:'已完成 QQ 授权'};
  function renderMusic(){
   if(!musicInfo)return;
   const fields=$('#music-links-search').elements,search=fields.search.value.trim().toLowerCase(),status=fields.status.value;
   const rows=musicInfo.members.filter(m=>(status==='all'||status===m.status)&&[m.qq,m.name,m.user_id,m.board_name].some(value=>String(value).toLowerCase().includes(search)));
   $('#music-links-summary').textContent=`共 ${musicInfo.members.length} 位成分会员，${musicInfo.members.filter(m=>m.user_id).length} 位已关联；显示 ${rows.length} 位`;
-  $('#music-links-list').innerHTML=rows.map(m=>`<article class="admin-user"><div class="admin-user-heading"><strong translate="no">${esc(m.name||m.qq)}</strong><span class="admin-user-role">${esc(musicStatuses[m.status])}</span></div><p class="field-help">成分 QQ 号：<span translate="no">${esc(m.qq)}</span></p><p class="field-help">看板账号：<span translate="no">${esc(m.user_id?(m.board_name||'—'):'—')}</span>${m.user_id&&!m.board_active?' · 账号不存在或已注销':''}</p>${m.user_id?`<p class="receipt-id" translate="no">${esc(m.user_id)}</p>`:''}${!m.has_pin&&!m.user_id?'<p class="field-help">没有旧口令，须由管理员核对后建立关联。</p>':''}<button type="button" class="button secondary" data-music-qq="${esc(m.qq)}" ${musicBusy?'disabled':''}>${m.user_id?'修改或解除关联':'建立关联'}</button></article>`).join('')||'<p class="field-help">没有符合条件的成分会员</p>';
+  $('#music-links-list').innerHTML=rows.map(m=>`<article class="admin-user"><div class="admin-user-heading"><strong translate="no">${esc(m.name||m.qq)}</strong><span class="admin-user-role">${esc(musicStatuses[m.status])}</span></div><p class="field-help">${/^\d{4,12}$/.test(m.qq)?'成分 QQ 号':'成分 ID'}：<span translate="no">${esc(m.qq)}</span></p><p class="field-help">看板账号：<span translate="no">${esc(m.user_id?(m.board_name||'—'):'—')}</span>${m.user_id&&!m.board_active?' · 账号不存在或已注销':''}</p>${m.user_id?`<p class="receipt-id" translate="no">${esc(m.user_id)}</p>`:''}${!m.has_pin&&!m.user_id?'<p class="field-help">没有旧口令，须由管理员核对后建立关联。</p>':''}<button type="button" class="button secondary" data-music-qq="${esc(m.qq)}" ${musicBusy?'disabled':''}>${m.user_id?'修改或解除关联':'建立关联'}</button></article>`).join('')||'<p class="field-help">没有符合条件的成分会员</p>';
   $('#music-links-history').innerHTML=musicInfo.history.map(item=>`<p class="field-help"><span translate="no">${esc(item.qq)}</span>：<span translate="no">${esc(item.before_user_id||'—')}</span> → <span translate="no">${esc(item.after_user_id||'—')}</span><br><span translate="no">${esc(item.actor_name)}</span> · ${esc(new Date(item.created*1000).toLocaleString())}</p>`).join('')||'<p class="field-help">暂无关联变更记录</p>';
  }
  async function loadMusic(){musicInfo=await request('/api/admin/music-links');renderMusic();}
@@ -38,7 +38,7 @@
  }
  function fillMusic(member){
   musicMember=member;$('#music-link-form').reset();
-  $('#music-link-member').textContent=`${member.name||'—'} · QQ ${member.qq}`;
+  $('#music-link-member').textContent=`${member.name||'—'} · ${/^\d{4,12}$/.test(member.qq)?'QQ 号':'成分 ID'} ${member.qq}`;
   $('#music-link-current').textContent=member.user_id?`${member.board_name||'—'} · ${member.user_id}`:'—';
   $('#music-link-form').elements.user_id.innerHTML='<option value="">请先查找并选择账号</option>';
   $('#music-link-error').textContent='';$('#music-link-unlink').hidden=!member.user_id;

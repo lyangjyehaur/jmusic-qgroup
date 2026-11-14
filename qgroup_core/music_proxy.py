@@ -57,6 +57,7 @@ def serve(handler, connect):
         settings = qq_oauth.config()
         if user:
             context['user_id'] = user['id']
+            context['nickname'] = user['nickname']
         if user and settings:
             external = db.execute("SELECT client_id,subject FROM external_identities WHERE provider='qq' AND client_id=? AND user_id=?",
                                   (settings['app_id'], user['id'])).fetchone()

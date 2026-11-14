@@ -19,13 +19,13 @@
   $('#privacy-requests').innerHTML=items.map(item=>`<section class="privacy-request"><p><strong>${item.status==='completed'?"個人帳號資料已刪除":"共用記錄待核對"}</strong> · ${esc(item.created_at)}</p><p class="receipt-id">${esc(item.id)}</p><p class="field-help">${esc(Object.entries(item.shared_records).map(([table,count])=>table+': '+count).join('；')||"無關聯共用記錄")}</p><form data-privacy-request="${esc(item.id)}"><label class="field">處理說明<textarea name="note" required maxlength="1000">${esc(item.note)}</textarea></label><button class="button secondary" type="submit">保存處理說明</button></form></section>`).join('')||"<p class=\"field-help\">暫無資料刪除申請</p>";
  }
  const error=problem=>{$('#admin-error').textContent=problem.message;};
- const musicStatuses={unlinked:"未關聯",prelinked:"管理員預先對應",oauth:"已完成 QQ 授權"};
+ const musicStatuses={unlinked:"未關聯",prelinked:"看板帳號關聯",oauth:"已完成 QQ 授權"};
  function renderMusic(){
   if(!musicInfo)return;
   const fields=$('#music-links-search').elements,search=fields.search.value.trim().toLowerCase(),status=fields.status.value;
   const rows=musicInfo.members.filter(m=>(status==='all'||status===m.status)&&[m.qq,m.name,m.user_id,m.board_name].some(value=>String(value).toLowerCase().includes(search)));
   $('#music-links-summary').textContent=`共 ${musicInfo.members.length} 位成分會員，${musicInfo.members.filter(m=>m.user_id).length} 位已關聯；顯示 ${rows.length} 位`;
-  $('#music-links-list').innerHTML=rows.map(m=>`<article class="admin-user"><div class="admin-user-heading"><strong translate="no">${esc(m.name||m.qq)}</strong><span class="admin-user-role">${esc(musicStatuses[m.status])}</span></div><p class="field-help">成分 QQ 號：<span translate="no">${esc(m.qq)}</span></p><p class="field-help">看板帳號：<span translate="no">${esc(m.user_id?(m.board_name||'—'):'—')}</span>${m.user_id&&!m.board_active?" · 帳號不存在或已註銷":''}</p>${m.user_id?`<p class="receipt-id" translate="no">${esc(m.user_id)}</p>`:''}${!m.has_pin&&!m.user_id?"<p class=\"field-help\">沒有舊口令，須由管理員核對後建立關聯。</p>":''}<button type="button" class="button secondary" data-music-qq="${esc(m.qq)}" ${musicBusy?'disabled':''}>${m.user_id?"修改或解除關聯":"建立關聯"}</button></article>`).join('')||"<p class=\"field-help\">沒有符合條件的成分會員</p>";
+  $('#music-links-list').innerHTML=rows.map(m=>`<article class="admin-user"><div class="admin-user-heading"><strong translate="no">${esc(m.name||m.qq)}</strong><span class="admin-user-role">${esc(musicStatuses[m.status])}</span></div><p class="field-help">${/^\d{4,12}$/.test(m.qq)?"成分 QQ 號":"成分 ID"}：<span translate="no">${esc(m.qq)}</span></p><p class="field-help">看板帳號：<span translate="no">${esc(m.user_id?(m.board_name||'—'):'—')}</span>${m.user_id&&!m.board_active?" · 帳號不存在或已註銷":''}</p>${m.user_id?`<p class="receipt-id" translate="no">${esc(m.user_id)}</p>`:''}${!m.has_pin&&!m.user_id?"<p class=\"field-help\">沒有舊口令，須由管理員核對後建立關聯。</p>":''}<button type="button" class="button secondary" data-music-qq="${esc(m.qq)}" ${musicBusy?'disabled':''}>${m.user_id?"修改或解除關聯":"建立關聯"}</button></article>`).join('')||"<p class=\"field-help\">沒有符合條件的成分會員</p>";
   $('#music-links-history').innerHTML=musicInfo.history.map(item=>`<p class="field-help"><span translate="no">${esc(item.qq)}</span>：<span translate="no">${esc(item.before_user_id||'—')}</span> → <span translate="no">${esc(item.after_user_id||'—')}</span><br><span translate="no">${esc(item.actor_name)}</span> · ${esc(new Date(item.created*1000).toLocaleString())}</p>`).join('')||"<p class=\"field-help\">暫無關聯變更記錄</p>";
  }
  async function loadMusic(){musicInfo=await request('/api/admin/music-links');renderMusic();}
@@ -38,7 +38,7 @@
  }
  function fillMusic(member){
   musicMember=member;$('#music-link-form').reset();
-  $('#music-link-member').textContent=`${member.name||'—'} · QQ ${member.qq}`;
+  $('#music-link-member').textContent=`${member.name||'—'} · ${/^\d{4,12}$/.test(member.qq)?"QQ 號":"成分 ID"} ${member.qq}`;
   $('#music-link-current').textContent=member.user_id?`${member.board_name||'—'} · ${member.user_id}`:'—';
   $('#music-link-form').elements.user_id.innerHTML="<option value=\"\">請先查找並選擇帳號</option>";
   $('#music-link-error').textContent='';$('#music-link-unlink').hidden=!member.user_id;

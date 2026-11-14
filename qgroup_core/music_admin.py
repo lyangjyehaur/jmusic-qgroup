@@ -3,6 +3,7 @@ import base64
 import http.client
 import json
 import os
+import re
 
 from . import admin
 from .common import APIError
@@ -46,7 +47,8 @@ def view(db, headers):
 
 def change(db,access,data):
     qq=data.get('qq');uid=data.get('user_id');revision=data.get('base_revision')
-    if not all(isinstance(value,str) for value in (qq,uid,revision)) or len(qq)>12 or len(uid)>100 or len(revision)!=64:
+    if (not all(isinstance(value,str) for value in (qq,uid,revision))
+            or not re.fullmatch(r'(?:[0-9]{4,12}|m_[a-f0-9]{24})',qq) or len(uid)>100 or len(revision)!=64):
         raise APIError('成分站关联格式不正确')
     if uid and not db.execute('''SELECT 1 FROM users WHERE id=?
         AND NOT EXISTS(SELECT 1 FROM privacy_requests WHERE user_id=?)''',(uid,uid)).fetchone():

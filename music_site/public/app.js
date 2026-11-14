@@ -1,6 +1,8 @@
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
+  const memberLabel = window.musicMemberLabel;
+  const memberKind = window.musicMemberKind;
   const NS = 'http://www.w3.org/2000/svg';
   const MAX_SEL = 20;
   const MAX_CREATE = 8;
@@ -1506,7 +1508,7 @@
       }
       const qq = document.createElement('span');
       qq.className = 'qq';
-      qq.textContent = 'QQ ' + m.qq;
+      qq.textContent = memberLabel(m.qq);
       name.appendChild(qq);
       if (m.nicheShared) {
         const nb = document.createElement('span');
@@ -1629,8 +1631,8 @@
       const bQq = document.createElement('button');
       bQq.type = 'button';
       bQq.className = 'copy-btn';
-      bQq.textContent = '复制QQ号';
-      bQq.addEventListener('click', () => copyText(String(m.qq), 'QQ 号'));
+      bQq.textContent = '复制' + memberKind(m.qq);
+      bQq.addEventListener('click', () => copyText(String(m.qq), memberKind(m.qq)));
       const bView = document.createElement('button');
       bView.type = 'button';
       bView.className = 'copy-btn';
@@ -1715,7 +1717,7 @@
         }
         const qq = document.createElement('span');
         qq.className = 'qq';
-        qq.textContent = 'QQ ' + m.qq;
+        qq.textContent = memberLabel(m.qq);
         nm.appendChild(qq);
         const meta = document.createElement('div');
         meta.className = 'sparse-meta muted tiny';
@@ -1793,7 +1795,7 @@
 
   async function openMemberModal(match) {
     $('memberModalTitle').textContent = match.name + ' 的成分';
-    $('memberModalSub').textContent = 'QQ ' + match.qq + (match.gender ? ' · ' + (match.gender === 'female' ? '女' : (match.gender === 'male' ? '男' : match.gender)) : '');
+    $('memberModalSub').textContent = memberLabel(match.qq) + (match.gender ? ' · ' + (match.gender === 'female' ? '女' : (match.gender === 'male' ? '男' : match.gender)) : '');
     $('memberModalList').innerHTML = '<p class="muted tiny">加载中…</p>';
     $('memberModal').hidden = false;
     try {
@@ -1934,7 +1936,7 @@
         name.textContent = m.name;
         const qq = document.createElement('span');
         qq.className = 'member-qq';
-        qq.textContent = m.qq;
+        qq.textContent = memberLabel(m.qq);
         const bn = document.createElement('button');
         bn.className = 'copy-btn';
         bn.type = 'button';
@@ -1943,8 +1945,8 @@
         const bq = document.createElement('button');
         bq.className = 'copy-btn';
         bq.type = 'button';
-        bq.textContent = '复制QQ号';
-        bq.onclick = () => copyText(String(m.qq), 'QQ 号');
+        bq.textContent = '复制' + memberKind(m.qq);
+        bq.onclick = () => copyText(String(m.qq), memberKind(m.qq));
         row.append(name, qq, bn, bq);
         box.appendChild(row);
       });
@@ -2010,7 +2012,7 @@
     ctx.fillText(name || '匿名群友', 48, 236);
     ctx.fillStyle = muted;
     ctx.font = '500 24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText('QQ ' + ((member && member.qq) || (identity && identity.qq) || '') + ' · 共选 ' + selection.size + ' 个词条', 48, 278);
+    ctx.fillText(memberLabel((member && member.qq) || (identity && identity.qq) || '') + ' · 共选 ' + selection.size + ' 个词条', 48, 278);
 
     // 词条列表：领域单独一段（大字），细分一段（小字）
     let y = 356;
@@ -2087,7 +2089,7 @@
       ctx.fillText('和我最像的群友', 72, boxY);
       ctx.fillStyle = ink;
       ctx.font = '700 30px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-      ctx.fillText(top.name + '（QQ ' + top.qq + '）', 72, boxY + 44);
+      ctx.fillText(top.name + '（' + memberLabel(top.qq) + '）', 72, boxY + 44);
       ctx.fillStyle = dark ? '#ff9fc4' : '#c2407a';
       ctx.font = '700 24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
       const topPct = (typeof top.matchPercent === 'number') ? top.matchPercent : (top.similarity || 0);
@@ -2343,7 +2345,7 @@
         main.appendChild(nm);
         const meta = document.createElement('div');
         meta.className = 'dyn-meta';
-        meta.textContent = 'QQ ' + (m.qq || '') + ' · ' + ago(m.createdAt);
+        meta.textContent = memberLabel(m.qq) + ' · ' + ago(m.createdAt);
         li.append(main, meta);
         rml.appendChild(li);
       });
@@ -2543,9 +2545,10 @@
   function openShoutModal(s) {
     if (!s) return;
     $('shoutModalText').textContent = s.text;
-    $('shoutModalFrom').textContent = `来自：${s.name} · QQ ${s.qq} · ${shoutTimeText(s.createdAt)}`;
+    $('shoutModalFrom').textContent = `来自：${s.name} · ${memberLabel(s.qq)} · ${shoutTimeText(s.createdAt)}`;
     $('shoutModal').hidden = false;
-    $('shoutCopyQQ').onclick = () => copyText(s.qq, 'QQ 号');
+    $('shoutCopyQQ').textContent = '复制' + memberKind(s.qq);
+    $('shoutCopyQQ').onclick = () => copyText(s.qq, memberKind(s.qq));
     $('shoutCopyText').onclick = () => copyText(s.text, '喊话内容');
   }
   function closeShoutModal() { $('shoutModal').hidden = true; }
@@ -2659,7 +2662,7 @@
       txt.addEventListener('click', () => openShoutModal(s));
       const meta = document.createElement('span');
       meta.className = 'shout-history-meta';
-      meta.textContent = `${s.name} · QQ ${s.qq} · ${shoutTimeText(s.createdAt)}`;
+      meta.textContent = `${s.name} · ${memberLabel(s.qq)} · ${shoutTimeText(s.createdAt)}`;
       li.append(txt, meta);
       list.appendChild(li);
     });
@@ -3106,7 +3109,7 @@
     const cmpCard = $('compareCard'); if (cmpCard) cmpCard.hidden = previewMode;
     const sb = $('shareBtn'), sw = $('switchBtn'); if (sb) sb.hidden = previewMode; if (sw) sw.hidden = previewMode;
     $('myName').textContent = previewMode ? '游客预览' : member.name;
-    $('myQq').textContent = previewMode ? '只读' : member.qq;
+    $('myQq').textContent = previewMode ? '只读' : memberLabel(member.qq);
     renderAll();
     if (window.__showPage) window.__showPage('board', { force: true, anim: false });
     syncShoutHeight();
@@ -3226,9 +3229,9 @@
     if (previewMode) { toast('只读预览中：登录后才能比对'); return; }
     const input = $('cmpQQ');
     const qq = (input.value || '').trim();
-    if (!/^\d{4,12}$/.test(qq)) { toast('请输入 4-12 位 QQ 号'); input.focus(); return; }
+    if (!/^(?:\d{4,12}|m_[a-f0-9]{24})$/.test(qq)) { toast('请输入 QQ 号或完整的成分 ID'); input.focus(); return; }
     if (!identity) return;
-    if (qq === String(identity.qq)) { toast('这是你自己，换一个人的 QQ 吧'); return; }
+    if (qq === String(identity.qq)) { toast('这是你自己，换一个人的 QQ 号或成分 ID 吧'); return; }
     const btn = $('cmpBtn');
     btn.disabled = true; btn.textContent = '比对中…';
     try {
@@ -3249,8 +3252,8 @@
     head.className = 'cmp-head';
     const who = document.createElement('div');
     who.className = 'cmp-who';
-    who.innerHTML = '<b>' + esc(d.me.name) + '</b> <span class="muted tiny">QQ ' + esc(d.me.qq) + '</span>'
-      + ' <em>vs</em> <b>' + esc(d.other.name) + '</b> <span class="muted tiny">QQ ' + esc(d.other.qq) + '</span>';
+    who.innerHTML = '<b>' + esc(d.me.name) + '</b> <span class="muted tiny">' + esc(memberLabel(d.me.qq)) + '</span>'
+      + ' <em>vs</em> <b>' + esc(d.other.name) + '</b> <span class="muted tiny">' + esc(memberLabel(d.other.qq)) + '</span>';
     const badge = document.createElement('div');
     badge.className = 'cmp-score';
     badge.innerHTML = '<b>0%</b><span>' + esc(d.stats.label || '') + '</span>';
@@ -3660,6 +3663,7 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   }
 
+  const memberLabel = window.musicMemberLabel;
   const POOL_TOP = 16;
 
   function shuffle(arr) {
@@ -3768,7 +3772,7 @@
       b.className = 'room-chip' + (picked.has(m.qq) ? ' on' : '');
       b.textContent = m.name;
       const sc = window.__roomScores && window.__roomScores.get(String(m.qq));
-      b.title = 'QQ ' + m.qq + ' · ' + m.count + ' 个词条' + (sc ? ' · 和你的匹配度 ' + sc + '%' : '');
+      b.title = memberLabel(m.qq) + ' · ' + m.count + ' 个词条' + (sc ? ' · 和你的匹配度 ' + sc + '%' : '');
       b.addEventListener('click', () => {
         if (picked.has(m.qq)) picked.delete(m.qq);
         else picked.set(m.qq, m.name);

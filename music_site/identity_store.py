@@ -35,6 +35,7 @@ class Store:
                 CREATE TABLE IF NOT EXISTS link_audit(
                     id INTEGER PRIMARY KEY AUTOINCREMENT,qq TEXT NOT NULL,actor TEXT NOT NULL,
                     before_user_id TEXT NOT NULL,after_user_id TEXT NOT NULL,created REAL NOT NULL);
+                CREATE TABLE IF NOT EXISTS native_profiles(qq TEXT PRIMARY KEY,payload TEXT NOT NULL);
             ''')
 
     def connect(self):
@@ -97,8 +98,10 @@ class Store:
                 return ''
             if context.get('app_id') and context.get('openid'):
                 try:
-                    db.execute("INSERT INTO links(qq,app_id,openid,user_id,created,source) VALUES(?,?,?,?,?,'admin_board_user_id')",
-                               (prelink['qq'],context['app_id'],context['openid'],context['user_id'],time.time()))
+                    native=db.execute('SELECT 1 FROM native_profiles WHERE qq=?',(prelink['qq'],)).fetchone()
+                    db.execute('INSERT INTO links(qq,app_id,openid,user_id,created,source) VALUES(?,?,?,?,?,?)',
+                               (prelink['qq'],context['app_id'],context['openid'],context['user_id'],time.time(),
+                                'board_profile' if native else 'admin_board_user_id'))
                 except sqlite3.IntegrityError:
                     return ''
             return prelink['qq']
@@ -109,6 +112,35 @@ class Store:
             db.execute('BEGIN IMMEDIATE')
             for record in records:
                 db.execute('INSERT INTO prelinks VALUES(?,?,?)', (record['qq'],record['user_id'],time.time()))
+
+    def create_profile(self, context, name):
+        """Journal a board-owned profile and its mapping in one transaction.
+
+        The JSON projection can be repaired after a crash. The random member ID
+        is deliberately unrelated to QQ numbers or provider identifiers.
+        """
+        uid=context.get('user_id')
+        if not uid:raise Rejected('请先登录看板或使用 QQ 登录',401)
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            for table in ('links','prelinks'):
+                row=db.execute('SELECT qq FROM '+table+' WHERE user_id=?',(uid,)).fetchone()
+                if row:return row['qq']
+            if context.get('openid') and db.execute('SELECT 1 FROM links WHERE app_id=? AND openid=?',
+                    (context.get('app_id',''),context['openid'])).fetchone():
+                raise Rejected('QQ 身份已有其他关联，请联系管理员核对',409)
+            qq='m_'+secrets.token_hex(12)
+            stamp=time.time()
+            member=dict(qq=qq,name=name,consent=True,selection=[],created=[],createdAt=int(stamp),
+                        lastJoinAt=int(stamp),boardUserId=uid,gender='',genderPublic=False,note='')
+            db.execute('INSERT INTO native_profiles VALUES(?,?)',(qq,json.dumps(member,ensure_ascii=False)))
+            db.execute('INSERT INTO prelinks VALUES(?,?,?)',(qq,uid,stamp))
+            return qq
+
+    def recover_profiles(self, data):
+        with self.connect() as db:
+            for row in db.execute('SELECT qq,payload FROM native_profiles'):
+                data['members'].setdefault(row['qq'],json.loads(row['payload']))
 
     def admin_state(self, db, qq):
         link=db.execute('SELECT * FROM links WHERE qq=?',(qq,)).fetchone()
@@ -147,6 +179,10 @@ class Store:
             row = db.execute('SELECT * FROM sessions WHERE token_hash=? AND expires>?', (self.digest(token), time.time())).fetchone()
             if not row:
                 raise Rejected('请先用旧站 QQ 号和口令登录', 401)
+            for table in ('links','prelinks'):
+                if context.get('user_id') and db.execute('SELECT 1 FROM '+table+' WHERE user_id=?',
+                        (context['user_id'],)).fetchone():
+                    raise Rejected('当前看板账号已有成分，请联系管理员核对并迁移，原资料不会覆盖',409)
             if (db.execute('SELECT 1 FROM links WHERE qq=?', (row['qq'],)).fetchone()
                     or db.execute('SELECT 1 FROM prelinks WHERE qq=?', (row['qq'],)).fetchone()):
                 raise Rejected('此旧账号已经连接，请使用 QQ 登录')

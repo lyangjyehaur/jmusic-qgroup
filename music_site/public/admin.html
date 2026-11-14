@@ -133,9 +133,9 @@
     <h2>群友账号</h2>
     <span class="muted tiny" id="membersHint"></span>
   </div>
-  <p class="muted tiny" style="margin:6px 2px 10px">只读列表：QQ、名字、自建数量、已选词条（含熟悉度）。看板 ID 在主站「成分站关联」统一维护。口令是加盐哈希，后台只能看到是否已设置、看不到原文，忘记可用上面「重置群友口令」。</p>
+  <p class="muted tiny" style="margin:6px 2px 10px">只读列表：QQ 号或成分 ID、名字、自建数量、已选词条（含熟悉度）。看板 ID 在主站「成分站关联」统一维护。口令是加盐哈希，后台只能看到是否已设置、看不到原文，忘记可用上面「重置群友口令」。</p>
   <div class="row admin-search">
-    <input id="memberSearch" type="search" placeholder="按 QQ / 名字搜索" autocomplete="off">
+    <input id="memberSearch" type="search" placeholder="按 QQ / 成分 ID / 名字搜索" autocomplete="off">
     <button id="memberSearchClear" class="link small" type="button">清空</button>
   </div>
   <div class="table-wrap">
@@ -147,6 +147,7 @@
 </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="admin.js?v=20261115-admin1"></script>
+<script src="member-id.js"></script>
+<script src="admin.js?v=20261115-onboarding1"></script>
 </body>
 </html>

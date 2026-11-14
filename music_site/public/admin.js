@@ -391,7 +391,7 @@
       }
       const qq = document.createElement('div');
       qq.className = 'muted tiny';
-      qq.textContent = 'QQ ' + m.qq + (m.hasPin ? ' · 口令已设置' : ' · 未设置口令');
+      qq.textContent = window.musicMemberLabel(m.qq) + (m.hasPin ? ' · 旧口令已设置' : ' · 使用看板账号登录');
       c1.append(nm, qq);
       const c2 = document.createElement('td');
       c2.textContent = (m.createdCount || 0) + ' 个';
@@ -426,7 +426,7 @@
       del.className = 'link small danger';
       del.textContent = '删账号';
       del.addEventListener('click', async () => {
-        if (!confirm('确定删除「' + (m.name || m.qq) + '」（QQ ' + m.qq + '）这个账号吗？会同步清理成分关联、会话及该用户的留言；词条保留但移除创建者身份。')) return;
+        if (!confirm('确定删除「' + (m.name || m.qq) + '」（' + window.musicMemberLabel(m.qq) + '）这个账号吗？会同步清理成分关联、会话及该用户的留言；词条保留但移除创建者身份。')) return;
         try {
           await api('/api/admin/member/delete', { qq: m.qq, confirm: 'DELETE' });
           toast('已删除账号');

@@ -68,6 +68,7 @@ class MusicTests(unittest.TestCase):
                         for qq in ('10001','10002')},
             'entries':{'e1':{'id':'e1','text':'Artist','category':'歌手','kind':'sub','createdBy':'10001'}},
             'settings':{},'shouts':[],'shoutHistory':[],'trend':[]}
+        (self.folder/'data.json').write_text(json.dumps(service.upstream.data))
         service.STORE = Store(self.folder/'identity.sqlite3')
         self.client = ModernClient(self.base)
         self.client.request('/api/me')
@@ -78,11 +79,11 @@ class MusicTests(unittest.TestCase):
     def legacy(self, qq='10001', client=None, pin='123456'):
         return self.request('/music/api/join','POST',{'qq':qq,'pin':pin,'consent':True},client)
 
-    def authorize(self, client=None, subject='A'*32):
+    def authorize(self, client=None, subject='A'*32, mode='login', finish_status=200):
         client = client or self.client
         client.request('/api/me')
         status,result = client.request('/api/auth/qq/start','POST',{
-            'mode':'login','confirm':True,'return_path':'/music/',
+            'mode':mode,'confirm':True,'return_path':'/music/',
             'accept_privacy':True,'privacy_version':server.privacy.VERSION})
         self.assertEqual(status,200,result)
         state = urllib.parse.parse_qs(urllib.parse.urlsplit(result['authorize_url']).query)['state'][0]
@@ -94,9 +95,156 @@ class MusicTests(unittest.TestCase):
             self.assertEqual(response.code,303); response.close()
         ready = client.request('/api/auth/qq/status')[1]
         status,result = client.request('/api/auth/qq/finish','POST',{'attempt_id':ready['attempt_id'],'confirm':True})
-        self.assertEqual(status,200,result)
+        self.assertEqual(status,finish_status,result)
+        if status!=200:return result
         self.assertEqual(result['return_path'],'/music/')
         return client.request('/api/me')[1]
+
+    def name_account(self):
+        with server.connect() as db:db.execute('UPDATE site_settings SET allow_name_registration=1 WHERE id=1')
+        status,result=self.request('/api/register','POST',dict(nickname='board member',confirm=True,
+            accept_privacy=True,privacy_version=server.privacy.VERSION))
+        self.assertEqual(status,200,result)
+        with server.connect() as db:return db.execute("SELECT id FROM users WHERE nickname='board member'").fetchone()[0]
+
+    def create_profile(self, **body):
+        return self.request('/music/api/profile/create','POST',dict(name='new music member',consent=True,confirm_new=True,**body))
+
+    def test_new_profile_requires_board_login_and_explicit_consent(self):
+        self.assertEqual(self.create_profile()[0],401)
+        self.name_account()
+        for body in ({},{'consent':True},{'confirm_new':True}):
+            self.assertEqual(self.request('/music/api/profile/create','POST',body)[0],400)
+        self.assertEqual(self.request('/music/api/profile/create','POST',dict(consent=True,confirm_new=True),
+            headers={'Origin':'https://other.test'})[0],403)
+        self.assertEqual(len(service.upstream.data['members']),2)
+
+    def test_board_only_name_account_can_create_and_retry_without_duplicate_or_qq(self):
+        uid=self.name_account()
+        state=self.request('/music/api/session')[1]
+        self.assertTrue(state['board_authenticated']);self.assertFalse(state['authenticated'])
+        self.assertEqual(state['board_name'],'board member')
+        self.assertEqual(self.create_profile()[0],200)
+        member=self.request('/music/api/me')[1]['member'];mid=member['qq']
+        self.assertRegex(mid,r'^m_[a-f0-9]{24}$')
+        self.assertFalse(member['hasPin'])
+        self.assertEqual(service.STORE.link_for_qq(mid)['user_id'],uid)
+        self.assertEqual(self.request('/music/api/selection','POST',{'selection':[dict(id='e1',level=4)]})[0],200)
+        self.assertEqual(self.create_profile()[0],200)
+        self.assertEqual(len(service.upstream.data['members']),3)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['selection'][0]['level'],4)
+        self.assertEqual(self.request('/music/api/compare?qq=10001')[0],200)
+        with server.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM users').fetchone()[0],1)
+            self.assertEqual(db.execute('SELECT count(*) FROM external_identities').fetchone()[0],0)
+
+    def test_neither_account_qq_login_then_new_profile_and_fresh_device(self):
+        self.authorize()
+        self.assertEqual(self.request('/music/api/me')[0],401)
+        self.assertEqual(self.create_profile()[0],200)
+        mid=self.request('/music/api/me')[1]['member']['qq']
+        fresh=ModernClient(self.base);self.authorize(fresh)
+        self.assertEqual(self.request('/music/api/me',client=fresh)[1]['member']['qq'],mid)
+        self.assertEqual(len(service.upstream.data['members']),3)
+
+    def test_name_only_board_and_legacy_bind_qq_preserves_board_account(self):
+        uid=self.name_account()
+        self.assertEqual(self.legacy()[0],200)
+        self.assertEqual(self.request('/music/api/link/start','POST',{})[0],200)
+        self.authorize(mode='bind')
+        self.assertEqual(self.complete()[0],200)
+        self.assertEqual(service.STORE.link_for_qq('10001')['user_id'],uid)
+        with server.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM users').fetchone()[0],1)
+            self.assertEqual(db.execute('SELECT user_id FROM external_identities').fetchone()[0],uid)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['note'],'private-10001')
+
+    def test_native_profile_keeps_same_board_identity_when_later_binding_qq(self):
+        uid=self.name_account();self.create_profile()
+        mid=self.request('/music/api/me')[1]['member']['qq']
+        self.authorize(mode='bind')
+        self.assertEqual(service.STORE.link_for_qq(mid)['user_id'],uid)
+        fresh=ModernClient(self.base);self.authorize(fresh)
+        self.assertEqual(self.request('/music/api/me',client=fresh)[1]['member']['qq'],mid)
+
+    def test_qq_already_on_other_board_account_does_not_switch_name_account(self):
+        other=ModernClient(self.base);self.authorize(other)
+        uid=self.name_account();self.legacy();self.request('/music/api/link/start','POST',{})
+        self.authorize(mode='bind',finish_status=409)
+        self.assertEqual(self.complete()[0],401)
+        self.assertIsNone(service.STORE.link_for_qq('10001'))
+        with server.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM users').fetchone()[0],2)
+            self.assertEqual(db.execute('SELECT id FROM users WHERE nickname=?',('board member',)).fetchone()[0],uid)
+        self.assertEqual(self.request('/api/me')[1]['nickname'],'board member')
+        self.assertEqual(self.request('/music/api/link/cancel','POST',{})[0],200)
+        self.assertFalse(self.request('/music/api/session')[1]['pending'])
+        self.assertEqual(self.request('/music/api/me')[1]['member']['qq'],'10001')
+
+    def test_new_profile_does_not_override_legacy_claim_or_existing_mapping(self):
+        self.authorize();self.legacy()
+        self.assertEqual(self.create_profile()[0],409)
+        self.request('/music/api/link/start','POST',{});self.authorize(mode='bind');self.complete()
+        self.assertEqual(self.create_profile()[0],200)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['qq'],'10001')
+        self.assertEqual(self.legacy('10002')[0],409)
+        self.assertEqual(len(service.upstream.data['members']),2)
+
+    def test_deleted_native_profile_can_be_recreated_without_restoring_old_data(self):
+        from music_site.maintenance import replay
+        self.name_account();self.create_profile()
+        old=self.request('/music/api/me')[1]['member']['qq']
+        self.request('/music/api/note','POST',dict(note='erased secret'))
+        manager,csrf=self.music_admin()
+        self.assertEqual(self.request('/music/api/admin/member/delete','POST',dict(qq=old,confirm='DELETE'),
+            manager,{'X-Kanban-Admin':csrf})[0],200)
+        self.assertEqual(self.request('/music/api/me')[0],401)
+        self.assertEqual(self.create_profile()[0],200)
+        new=self.request('/music/api/me')[1]['member']['qq'];self.assertNotEqual(new,old)
+        replay(self.folder,service.STORE);service.upstream.load()
+        service.STORE.recover_profiles(service.upstream.data)
+        self.assertNotIn(old,service.upstream.data['members'])
+        self.assertIn(new,service.upstream.data['members'])
+        self.assertEqual(self.request('/music/api/me')[1]['member']['note'],'')
+        for backup in self.request('/music/api/admin/backups',client=manager)[1]['backups']:
+            exported=self.request('/music/api/admin/backup?name='+backup['name'],client=manager)[1]
+            self.assertNotIn(old,exported['members'])
+
+    def test_interrupted_native_creation_replays_without_replacing_existing_preferences(self):
+        uid=self.name_account()
+        mid=service.STORE.create_profile(dict(user_id=uid),'recovered member')
+        self.assertNotIn(mid,service.upstream.data['members'])
+        self.assertEqual(self.create_profile()[0],200)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['name'],'recovered member')
+        service.upstream.data['members'][mid]['note']='newer note'
+        service.STORE.recover_profiles(service.upstream.data)
+        self.assertEqual(service.upstream.data['members'][mid]['note'],'newer note')
+
+    def test_concurrent_creation_has_only_one_profile_and_mapping(self):
+        from concurrent.futures import ThreadPoolExecutor
+        self.name_account()
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            results=list(executor.map(lambda _:self.create_profile(),range(2)))
+        self.assertEqual([status for status,_ in results],[200,200])
+        self.assertEqual(len(service.upstream.data['members']),3)
+        with service.STORE.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM native_profiles').fetchone()[0],1)
+            self.assertEqual(db.execute('SELECT count(*) FROM prelinks').fetchone()[0],1)
+
+    def test_admin_can_reassign_duplicate_native_profile_to_old_profile_without_erasure(self):
+        uid=self.name_account();self.create_profile()
+        native=self.request('/music/api/me')[1]['member']['qq']
+        self.request('/music/api/note','POST',dict(note='preserve this separately'))
+        manager,csrf=self.music_admin()
+        rows=self.music_rows(manager)
+        self.assertEqual(self.music_change(manager,csrf,rows['10001'],uid)[0],409)
+        self.assertEqual(self.music_change(manager,csrf,rows[native],'')[0],200)
+        self.assertEqual(self.music_change(manager,csrf,rows['10001'],uid)[0],200)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['qq'],'10001')
+        self.assertEqual(service.upstream.data['members'][native]['note'],'preserve this separately')
+        service.STORE.recover_profiles(service.upstream.data)
+        admin_links.projection(service.upstream.data,service.STORE)
+        self.assertEqual(service.upstream.data['members'][native]['boardUserId'],'')
 
     def complete(self, client=None):
         return self.request('/music/api/link/complete','POST',{},client)

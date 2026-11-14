@@ -94,11 +94,11 @@ class Handler(upstream.Handler):
 
     def current_qq(self, context):
         linked = STORE.linked_qq(context)
-        if linked:
+        if linked and linked in upstream.data['members']:
             return linked
         session = STORE.session(self.token())
         # Once connected, a short legacy PIN cannot act as an alternative login.
-        if session and not STORE.link_for_qq(session['qq']):
+        if session and session['qq'] in upstream.data['members'] and not STORE.link_for_qq(session['qq']):
             return session['qq']
         return ''
 
@@ -147,6 +147,8 @@ class Handler(upstream.Handler):
             if path == '/api/session':
                 session = STORE.session(self.token())
                 return self.send_json({'authenticated': bool(qq), 'linked': bool(STORE.linked_qq(context)),
+                                       'board_authenticated': bool(context.get('user_id')),
+                                       'board_name': context.get('nickname',''),
                                        'qq_connected': bool(context.get('openid')),
                                        'legacy': bool(session and qq), 'pending': bool(session and session['pending_until']>time.time()),
                                        'qq': qq, 'name': upstream.data['members'].get(qq, {}).get('name', '')})
@@ -225,7 +227,9 @@ class Handler(upstream.Handler):
                     if not member or not member.get('pinHash') or not upstream.pin_ok(pin, member['pinHash']):
                         raise Rejected('旧账号或口令不正确；忘记口令请联系管理员', 403)
                     if STORE.link_for_qq(qq):
-                        raise Rejected('此账号已经连接 QQ，请使用 QQ 登录', 409)
+                        raise Rejected('此成分已关联看板，请使用对应看板账号登录；无法登录请联系管理员', 409)
+                    if STORE.linked_qq(context):
+                        raise Rejected('当前看板账号已有成分，请联系管理员核对并迁移，原资料不会覆盖',409)
                     token = STORE.new_session(qq)
                     STORE.logout(self.token())
                     return self.json_reply({'member':upstream.member_payload(member), 'entries':upstream.entries_payload(),
@@ -233,8 +237,37 @@ class Handler(upstream.Handler):
             if path == '/api/logout':
                 STORE.logout(self.token())
                 return self.json_reply({'ok':True}, token='')
+            if path == '/api/profile/create':
+                if not context.get('user_id'):raise Rejected('请先登录看板或使用 QQ 登录',401)
+                if body.get('consent') is not True or body.get('confirm_new') is not True:
+                    raise Rejected('请确认建立空白成分；有旧资料请先找回旧账号',400)
+                name=upstream.clean_text(body.get('name',context.get('nickname','')),upstream.MAX_NAME_LEN)
+                if not name:raise Rejected('请输入成分昵称',400)
+                with upstream._lock:
+                    STORE.recover_profiles(upstream.data)
+                    linked=STORE.linked_qq(context)
+                    if linked:
+                        admin_links.projection(upstream.data,STORE)
+                        upstream.save()
+                        return self.send_json({'ok':True,'existing':True})
+                    if self.current_qq(context):raise Rejected('已登录旧成分，请先连接 QQ 登录，保留原资料',409)
+                    # Do not create around a mapping whose OAuth identity no longer matches.
+                    with STORE.connect() as db:
+                        if db.execute('SELECT 1 FROM links WHERE user_id=?',(context['user_id'],)).fetchone():
+                            raise Rejected('当前账号的成分关联需要核对，请联系管理员',409)
+                    if upstream.find_member_by_name(name):raise Rejected('此成分昵称已被使用，请换一个昵称；如是你的旧成分请先找回',409)
+                    backup_pair(Path(upstream.DATA_FILE).parent,STORE)
+                    STORE.create_profile(context,name)
+                    STORE.recover_profiles(upstream.data)
+                    admin_links.projection(upstream.data,STORE)
+                    upstream.save()
+                    return self.send_json({'ok':True,'existing':False})
             if path == '/api/link/start':
                 STORE.begin(self.token(), context)
+                return self.send_json({'ok':True})
+            if path == '/api/link/cancel':
+                with STORE.connect() as db:
+                    db.execute("UPDATE sessions SET source_session='',pending_until=0 WHERE token_hash=?",(STORE.digest(self.token()),))
                 return self.send_json({'ok':True})
             if path == '/api/link/complete':
                 # The authoritative mapping is already committed; the old board
@@ -276,6 +309,7 @@ def main():
     administration.configure_walls(folder)
     replay(folder, STORE)
     upstream.load()
+    STORE.recover_profiles(upstream.data)
     upstream.board_member_map = board_member_map
     admin_links.projection(upstream.data,STORE)
     last_backup = [0.0]
