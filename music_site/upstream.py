@@ -717,7 +717,8 @@ def trend_loop():
             now = time.time()
             nxt = (int(now // TREND_INTERVAL) + 1) * TREND_INTERVAL
             time.sleep(max(5, nxt - now))
-            trend_snapshot(force=True)
+            with _lock:
+                trend_snapshot(force=True)
         except Exception:
             time.sleep(30)
 
