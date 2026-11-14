@@ -2,7 +2,7 @@
 
 ## 分支與正式發布來源
 
-- 原始碼同時推送至 git.dan.tw/dan/qgroup 與 GitHub 私有倉庫 lyangjyehaur/qgroup，保留完整提交歷史。`origin` 的抓取及發布來源維持 git.dan.tw；本機可用兩個 push URL 同步推送，另保留 `github` remote。Git 設定不隨 clone 傳遞，每次推送前確認兩邊設定，完成後核對兩個遠端分支 SHA；任一邊失敗須補推，不宣稱已完成雙邊同步。
+- 原始碼同時推送至 git.dan.tw/dan/qgroup 與 GitHub 公開倉庫 lyangjyehaur/qgroup，保留完整提交歷史。`origin` 的抓取及發布來源維持 git.dan.tw；本機可用兩個 push URL 同步推送，另保留 `github` remote。Git 設定不隨 clone 傳遞，每次推送前確認兩邊設定，完成後核對兩個遠端分支 SHA；任一邊失敗須補推，不宣稱已完成雙邊同步。
 
 - 功能在 `codex/*` 分支開發；驗證完成後先整合並推送 `main`，再安排正式發布。不得從尚未合入遠端 `main` 的功能提交直接發布。
 - 正式新版本須指定完整 commit SHA，並執行 `python3 deploy/check_release_source.py --commit <完整 SHA>`。檢查通過後只封存該提交，在乾淨暫存目錄建置；不得直接封存任意 `HEAD` 或把未提交工作目錄上傳建置。
