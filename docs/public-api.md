@@ -1,5 +1,7 @@
 # 合作方公開活動唯讀 API v1
 
+對外提供請使用[合作方接入說明](partner-api-integration.md)；本文件保留完整契約與內部維運資訊。
+
 發布範圍：`web`。2026-11-14 20:18（Asia/Taipei）已正式部署，網站根網址為 `https://kanban.danndann.cn`，活動列表為 `https://kanban.danndann.cn/api/public/v1/events`。這是供第三方整合的獨立契約，原 `/api/events` 繼續供網站使用。詳見[發布紀錄](releases/2026-11-14-partner-api.md)。
 
 ## 可公開內容
