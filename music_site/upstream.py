@@ -1045,6 +1045,8 @@ class Handler(BaseHTTPRequestHandler):
                             "count": counts.get(eid, 0),
                         })
                     payload = member_payload(m)
+                    if viewer != qq and not m.get("genderPublic"):
+                        payload["gender"] = ""
                     if not self.note_allowed(viewer, qq):
                         payload["note"] = ""
                     return self.send_json({

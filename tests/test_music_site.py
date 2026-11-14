@@ -200,6 +200,21 @@ class MusicTests(unittest.TestCase):
         self.assertEqual(self.legacy('10003')[0],403)
         self.assertEqual(len(service.upstream.data['members']),2)
 
+    def test_other_members_private_gender_and_note_stay_private(self):
+        self.legacy()
+        service.upstream.data['members']['10002'].update(gender='private gender',genderPublic=False)
+        service.upstream.data['members']['10001'].update(gender='own gender',genderPublic=False)
+        with mock.patch.object(service.Handler,'note_allowed',return_value=False):
+            result=self.request('/music/api/member?qq=10002&me=10002')[1]
+            self.assertEqual(result['member']['gender'],'')
+            self.assertEqual(result['member']['note'],'')
+            compared=self.request('/music/api/compare?qq=10002&me=10002')[1]
+            self.assertEqual(compared['other']['note'],'')
+            self.assertEqual(compared['otherNote'],'')
+        self.assertEqual(self.request('/music/api/me')[1]['member']['gender'],'own gender')
+        service.upstream.data['members']['10002']['genderPublic']=True
+        self.assertEqual(self.request('/music/api/member?qq=10002')[1]['member']['gender'],'private gender')
+
     def test_bruteforce_limit_persists_in_private_store(self):
         for _ in range(8): self.assertEqual(self.legacy(pin='000000')[0],403)
         service.STORE = Store(self.folder/'identity.sqlite3')
