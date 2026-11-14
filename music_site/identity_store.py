@@ -36,6 +36,11 @@ class Store:
                     id INTEGER PRIMARY KEY AUTOINCREMENT,qq TEXT NOT NULL,actor TEXT NOT NULL,
                     before_user_id TEXT NOT NULL,after_user_id TEXT NOT NULL,created REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS native_profiles(qq TEXT PRIMARY KEY,payload TEXT NOT NULL);
+                CREATE TABLE IF NOT EXISTS profile_contacts(qq TEXT PRIMARY KEY,number TEXT NOT NULL,updated REAL NOT NULL);
+                CREATE UNIQUE INDEX IF NOT EXISTS contact_number ON profile_contacts(number) WHERE number!='';
+                CREATE TABLE IF NOT EXISTS entry_intents(
+                    token_hash TEXT PRIMARY KEY,qq TEXT NOT NULL,source_session TEXT NOT NULL,
+                    target_user_id TEXT NOT NULL,payload TEXT NOT NULL,expires REAL NOT NULL);
             ''')
 
     def connect(self):
@@ -141,6 +146,42 @@ class Store:
         with self.connect() as db:
             for row in db.execute('SELECT qq,payload FROM native_profiles'):
                 data['members'].setdefault(row['qq'],json.loads(row['payload']))
+
+    def entry_start(self, context, payload, qq=''):
+        if not context.get('session'):raise Rejected('请刷新页面后重试',401)
+        token=secrets.token_urlsafe(32)
+        with self.connect() as db:
+            db.execute('DELETE FROM entry_intents WHERE expires<?',(time.time(),))
+            db.execute('INSERT INTO entry_intents VALUES(?,?,?,?,?,?)',
+                       (self.digest(token),qq,context['session'],context.get('user_id',''),
+                        json.dumps(payload,ensure_ascii=False),time.time()+600))
+        return token
+
+    def entry(self, token):
+        with self.connect() as db:
+            db.execute('DELETE FROM entry_intents WHERE expires<?',(time.time(),))
+            return db.execute('SELECT * FROM entry_intents WHERE token_hash=?',(self.digest(token),)).fetchone()
+
+    def entry_proof(self, token, context):
+        row=self.entry(token)
+        if not row:raise Rejected('进入请求已过期，请重新点击进入成分站',401)
+        if (not all(context.get(k) for k in ('app_id','openid','user_id','oauth_attempt','oauth_source'))
+                or context['oauth_source']!=row['source_session']
+                or row['target_user_id'] and row['target_user_id']!=context['user_id']):
+            raise Rejected('请完成本次 QQ 授权后再进入',401)
+        with self.connect() as db:
+            if db.execute('SELECT 1 FROM used_oauth WHERE attempt=?',(context['oauth_attempt'],)).fetchone():
+                raise Rejected('本次授权已使用，请重新进入',409)
+        return json.loads(row['payload'])
+
+    def entry_finish(self, token, context):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            db.execute('INSERT INTO used_oauth VALUES(?,?)',(context['oauth_attempt'],time.time()))
+            db.execute('DELETE FROM entry_intents WHERE token_hash=?',(self.digest(token),))
+
+    def entry_cancel(self, token):
+        with self.connect() as db:db.execute('DELETE FROM entry_intents WHERE token_hash=?',(self.digest(token),))
 
     def admin_state(self, db, qq):
         link=db.execute('SELECT * FROM links WHERE qq=?',(qq,)).fetchone()

@@ -1,6 +1,6 @@
 [hidden] { display: none !important; }
 #musicLinkCard { margin-bottom: 1rem; }
 #musicPrivacyLabel { display: block; margin: .75rem 0; }
-#musicQQButton { margin: .5rem 0; }
-#musicNewConsent { width: auto; }
+#musicEntryButton { margin: .5rem 0; }
+#musicPrivacy { width: auto; }
 .who, .qq, .member-qq, #memberModalSub { overflow-wrap: anywhere; }

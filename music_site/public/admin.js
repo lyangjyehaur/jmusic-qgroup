@@ -67,7 +67,7 @@
       opt.body = JSON.stringify(body);
     }
     const r = await fetch('/music' + path, opt);
-    const j = await r.json().catch(() => ({}));
+    const j = window.musicRememberContacts(await r.json().catch(() => ({})));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
   }
@@ -364,7 +364,7 @@
     const tb = $('memberList');
     if (!tb) return;
     const q = memberQuery.toLowerCase();
-    const list = membersCache.filter((m) => !q || String(m.qq).includes(q) || String(m.name || '').toLowerCase().includes(q));
+    const list = membersCache.filter((m) => !q || (String(m.qq).includes(q) || window.musicMemberValue(m.qq).includes(q)) || String(m.name || '').toLowerCase().includes(q));
     $('membersHint').textContent = '共 ' + membersCache.length + ' 位群友' + (q ? ' · 匹配 ' + list.length + ' 位' : '');
     tb.innerHTML = '';
     if (!list.length) {

@@ -25,7 +25,7 @@ def configure_walls(folder):
     upstream.WALL_EXTS={'png':'png','jpeg':'jpg','jpg':'jpg','webp':'webp'}
 
 
-def snapshot(folder, name=None):
+def snapshot(folder, name=None, store=None):
     folder=Path(folder)
     if name is None:
         data=copy.deepcopy(upstream.data)
@@ -36,6 +36,9 @@ def snapshot(folder, name=None):
         data=json.loads(source.read_text())
     ledger=folder/'erasures.jsonl'
     if ledger.exists():sanitize(data,{json.loads(line)['qq'] for line in ledger.read_text().splitlines() if line.strip()})
+    if store:
+        from .contacts import project
+        project(data,store)
     data.get('settings',{}).pop('adminPasswordHash',None)
     return data
 

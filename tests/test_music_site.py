@@ -110,6 +110,130 @@ class MusicTests(unittest.TestCase):
     def create_profile(self, **body):
         return self.request('/music/api/profile/create','POST',dict(name='new music member',consent=True,confirm_new=True,**body))
 
+    def start_entry(self, **body):
+        return self.request('/music/api/entry/start','POST',dict(consent=True,**body))
+
+    def finish_entry(self):
+        return self.request('/music/api/entry/complete','POST',{})
+
+    def test_combined_guest_entry_creates_only_after_fresh_oauth_and_reuses_on_new_device(self):
+        status,result=self.start_entry(contactQQ='23456789')
+        self.assertEqual(status,200,result);self.assertFalse(result['complete'])
+        self.assertEqual(len(service.upstream.data['members']),2)
+        self.assertEqual(self.finish_entry()[0],401)
+        self.assertEqual(self.request('/music/api/session')[1]['entry_contactQQ'],'23456789')
+        self.authorize()
+        self.assertEqual(self.finish_entry()[0],200)
+        member=self.request('/music/api/me')[1]['member'];mid=member['qq']
+        self.assertEqual(member['contactQQ'],'23456789')
+        self.assertEqual(member['contactQQSource'],'self_reported')
+        self.assertEqual(self.finish_entry()[0],401)
+        fresh=ModernClient(self.base);self.authorize(fresh)
+        self.assertEqual(self.request('/music/api/me',client=fresh)[1]['member']['qq'],mid)
+        self.assertEqual(len(service.upstream.data['members']),3)
+
+    def test_combined_name_account_binds_without_changing_user_and_blank_qq_is_allowed(self):
+        uid=self.name_account()
+        self.assertEqual(self.start_entry()[0],200)
+        self.authorize(mode='bind');self.assertEqual(self.finish_entry()[0],200)
+        member=self.request('/music/api/me')[1]['member']
+        self.assertEqual(member['contactQQ'],'')
+        self.assertEqual(service.STORE.link_for_qq(member['qq'])['user_id'],uid)
+        self.assertEqual(len(service.upstream.data['members']),3)
+
+    def test_combined_already_qq_authenticated_enters_immediately_and_is_idempotent(self):
+        self.authorize()
+        for _ in range(2):
+            status,result=self.start_entry(contactQQ='23456789')
+            self.assertEqual(status,200,result);self.assertTrue(result['complete'])
+        self.assertEqual(len(service.upstream.data['members']),3)
+        self.assertFalse(self.request('/music/api/session')[1]['pending_entry'])
+
+    def test_contact_is_lookup_alias_and_never_a_write_identity(self):
+        self.authorize();self.start_entry(contactQQ='23456789')
+        mid=self.request('/music/api/me')[1]['member']['qq']
+        self.request('/music/api/selection','POST',dict(selection=[dict(id='e1',level=4)]))
+        other=ModernClient(self.base);self.legacy(client=other)
+        for path,key in [('member','member'),('compare','other')]:
+            status,result=self.request('/music/api/'+path+'?qq=23456789&me='+mid,client=other)
+            self.assertEqual(status,200,result);self.assertEqual(result[key]['qq'],mid)
+            self.assertEqual(result[key]['contactQQ'],'23456789')
+            self.assertNotIn('openid',json.dumps(result).lower())
+        self.assertEqual(self.request('/music/api/profile/contact','POST',dict(qq=mid,contactQQ='34567890'),client=other)[0],403)
+        self.assertEqual(self.request('/music/api/note','POST',dict(qq='23456789',note='impersonate'),client=other)[0],403)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['selection'][0]['level'],4)
+
+    def test_contact_conflicts_reject_old_and_new_numbers_without_claiming(self):
+        self.authorize()
+        for value in ('10001','10002'):
+            self.assertEqual(self.start_entry(contactQQ=value)[0],409)
+        self.assertEqual(len(service.upstream.data['members']),2)
+        self.assertEqual(self.start_entry(contactQQ='23456789')[0],200)
+        other=ModernClient(self.base);self.authorize(other,subject='B'*32)
+        self.assertEqual(self.request('/music/api/entry/start','POST',dict(consent=True,contactQQ='23456789'),client=other)[0],409)
+        self.assertEqual(len(service.upstream.data['members']),3)
+        self.assertIsNone(service.STORE.link_for_qq('10001'))
+        self.assertEqual(self.request('/music/api/profile/contact','POST',dict(contactQQ='10001'))[0],409)
+
+    def test_contact_change_clear_restart_and_historical_export_keep_current_value(self):
+        from music_site import contacts
+        self.authorize();self.start_entry(contactQQ='23456789')
+        mid=self.request('/music/api/me')[1]['member']['qq']
+        old='20261115-010000';backup=self.folder/'paired-backups'/old;backup.mkdir(parents=True)
+        (backup/'data.json').write_text(json.dumps(service.upstream.data))
+        self.request('/music/api/selection','POST',dict(selection=[dict(id='e1',level=4)]))
+        manager,csrf=self.music_admin()
+        for value in ('34567890',''):
+            status,result=self.request('/music/api/profile/contact','POST',dict(contactQQ=value))
+            self.assertEqual(status,200,result)
+            self.assertEqual(self.request('/music/api/member?qq=23456789')[0],404)
+            export=self.request('/music/api/admin/backup?name='+old,client=manager)[1]
+            self.assertEqual(export['members'][mid]['contactQQ'],value)
+            service.upstream.data['members'][mid]['contactQQ']='23456789'
+            service.STORE=Store(self.folder/'identity.sqlite3');contacts.project(service.upstream.data,service.STORE)
+            member=self.request('/music/api/me')[1]['member']
+            self.assertEqual(member['qq'],mid);self.assertEqual(member['contactQQ'],value)
+            self.assertEqual(member['selection'][0]['level'],4)
+        self.assertEqual(self.request('/music/api/member?qq=34567890')[0],404)
+        self.assertEqual(self.request('/music/api/member?qq='+mid)[0],200)
+        self.assertEqual(self.request('/music/api/admin/member/delete','POST',dict(qq=mid,confirm='DELETE'),manager,{'X-Kanban-Admin':csrf})[0],200)
+        with service.STORE.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM profile_contacts').fetchone()[0],0)
+        self.assertEqual(self.start_entry(contactQQ='23456789')[0],200)
+        self.assertNotEqual(self.request('/music/api/me')[1]['member']['qq'],mid)
+
+    def test_entry_intent_rejects_wrong_source_target_expiry_and_replay(self):
+        store=service.STORE
+        source=dict(session='source',user_id='u1')
+        proof=dict(oauth_source='source',oauth_attempt='fresh',app_id='app',openid='open',user_id='u1')
+        token=store.entry_start(source,dict(name='new',contactQQ=''))
+        for bad in ({},dict(proof,oauth_source='other'),dict(proof,user_id='u2')):
+            with self.assertRaises(Rejected):store.entry_proof(token,bad)
+        self.assertEqual(store.entry_proof(token,proof)['name'],'new')
+        store.entry_finish(token,proof)
+        with self.assertRaises(Rejected):store.entry_proof(token,proof)
+        token=store.entry_start(source,{})
+        with self.assertRaises(Rejected):store.entry_proof(token,proof)
+        with store.connect() as db:db.execute('UPDATE entry_intents SET expires=0')
+        with self.assertRaises(Rejected):store.entry_proof(token,dict(proof,oauth_attempt='next'))
+
+    def test_entry_cancel_and_legacy_guard_preserve_old_profile(self):
+        self.start_entry();self.request('/music/api/link/cancel','POST',{})
+        self.assertFalse(self.request('/music/api/session')[1]['pending_entry'])
+        self.assertEqual(self.finish_entry()[0],401)
+        self.legacy()
+        self.assertEqual(self.start_entry()[0],409)
+        self.request('/music/api/link/start','POST',{})
+        self.request('/music/api/link/cancel','POST',{})
+        self.assertEqual(self.request('/music/api/me')[1]['member']['qq'],'10001')
+        self.assertEqual(len(service.upstream.data['members']),2)
+
+    def test_contact_input_validation_and_consent(self):
+        self.assertEqual(self.request('/music/api/entry/start','POST',{})[0],400)
+        for value in ('123','01234','x1234','1'*13,None,12345):
+            self.assertEqual(self.start_entry(contactQQ=value)[0],400)
+        self.assertEqual(self.request('/music/api/profile/contact','POST',dict(contactQQ='23456789'))[0],401)
+
     def test_new_profile_requires_board_login_and_explicit_consent(self):
         self.assertEqual(self.create_profile()[0],401)
         self.name_account()

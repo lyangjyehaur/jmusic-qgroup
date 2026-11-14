@@ -31,7 +31,7 @@ def replay(folder, store):
     with store.connect() as db:
         db.execute('BEGIN IMMEDIATE')
         for qq in erased:
-            for table in ('links','prelinks','sessions','link_overrides','link_audit','native_profiles'):
+            for table in ('links','prelinks','sessions','link_overrides','link_audit','native_profiles','profile_contacts','entry_intents'):
                 db.execute('DELETE FROM '+table+' WHERE qq=?',(qq,))
     temporary=folder/'data.json.tmp'
     temporary.write_text(json.dumps(data,ensure_ascii=False,indent=1));temporary.chmod(0o600)

@@ -35,16 +35,22 @@
 <main class="wrap">
   <section class="card" id="musicLinkCard">
     <p id="musicLinkStatus">正在检查登录状态…</p>
-    <label id="musicPrivacyLabel" class="tiny"><input id="musicPrivacy" type="checkbox">我已阅读并同意<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>及账号关联说明。</label>
-    <button class="primary" type="button" id="musicQQButton" hidden>使用 QQ 登录</button>
-    <button type="button" id="musicCancelLink" hidden>取消本次关联</button>
-    <form id="musicCreateForm" hidden>
-      <h2>第一次使用成分站？</h2>
-      <p class="muted">使用当前看板账号建立成分，无需填写 QQ 号。已有旧成分请用下方原口令找回；忘记口令可联系管理员。</p>
-      <label>成分昵称<input id="musicNewName" maxlength="24" autocomplete="nickname" required></label>
-      <label class="tiny"><input id="musicNewConsent" type="checkbox" required>我已阅读<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>，确认建立空白成分并用于群友匹配。</label>
-      <button type="submit" class="primary" id="musicCreateButton">建立我的成分</button>
+    <form id="musicEntryForm" hidden>
+      <label id="musicNameField">成分昵称（选填，默认使用登录昵称）<input id="musicNewName" maxlength="24" autocomplete="nickname"></label>
+      <label id="musicEntryQQField">QQ 号（选填）<input id="musicEntryQQ" inputmode="numeric" maxlength="12" autocomplete="off" aria-describedby="musicQQPurpose"></label>
+      <p class="muted tiny" id="musicQQPurpose">QQ 号由你自行填写，用于已登录成员按 QQ 号查询、匹配成分及复制联系；不是腾讯验证的号码。不填也可使用成分站，之后可修改或清空。</p>
+      <label id="musicPrivacyLabel" class="tiny"><input id="musicPrivacy" type="checkbox" required>我已阅读并同意<a href="privacy.html" target="_blank" rel="noopener">隐私政策</a>及账号关联说明；首次使用自动建立成分，旧成分请先用原口令找回。</label>
+      <button class="primary" type="submit" id="musicEntryButton">QQ 登录并进入成分站</button>
     </form>
+    <button type="button" id="musicCancelLink" hidden>取消本次操作</button>
+    <details id="musicContactDetails" hidden>
+      <summary>用于查询和匹配的 QQ 号（选填）</summary>
+      <form id="musicContactForm">
+        <label>QQ 号<input id="musicContactQQ" inputmode="numeric" maxlength="12" autocomplete="off"></label>
+        <p class="muted tiny">自行填写，用于已登录成员按 QQ 号查询、匹配成分及复制联系，未经腾讯验证。留空保存即可清除；不影响登录和已有成分。</p>
+        <button type="submit" id="musicContactSave">保存 QQ 号</button>
+      </form>
+    </details>
     <p id="musicLinkError" class="error"></p>
     <p class="tiny">忘记旧口令、账号冲突或需要迁移资料？<a href="mailto:203008876@qq.com">联系管理员</a>核对，原有资料不会自动覆盖。</p>
     <a href="/">返回群聚看板</a>

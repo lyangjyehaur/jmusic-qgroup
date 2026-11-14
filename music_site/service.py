@@ -14,7 +14,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from . import upstream
 from .identity_store import Store, Rejected
 from .maintenance import service_lock, replay, backup_pair
-from . import admin_links, administration
+from . import admin_links, administration, contacts
 
 STORE = None
 ORIGIN = os.environ.get('KANBAN_ORIGIN', 'https://kanban.danndann.cn')
@@ -35,6 +35,33 @@ def board_member_map():
 
 class Handler(upstream.Handler):
     timeout = 15
+
+    def send_json(self, value, status=200):
+        return super().send_json(contacts.payload(upstream.data,value),status)
+
+    def enter_profile(self, context, body):
+        # Caller holds upstream._lock across journal creation and JSON projection.
+        if not context.get('user_id'):raise Rejected('请先登录看板或使用 QQ 登录',401)
+        name=upstream.clean_text(body.get('name') or context.get('nickname',''),upstream.MAX_NAME_LEN)
+        if not name:raise Rejected('请输入成分昵称',400)
+        STORE.recover_profiles(upstream.data)
+        contacts.project(upstream.data,STORE)
+        linked=STORE.linked_qq(context)
+        value=body.get('contactQQ')
+        if value is not None:contacts.validate(upstream.data,STORE,linked or '',value)
+        if not linked:
+            if self.current_qq(context):raise Rejected('已登录旧成分，请先连接 QQ 登录，保留原资料',409)
+            with STORE.connect() as db:
+                if db.execute('SELECT 1 FROM links WHERE user_id=?',(context['user_id'],)).fetchone():
+                    raise Rejected('当前账号的成分关联需要核对，请联系管理员',409)
+            if upstream.find_member_by_name(name):raise Rejected('此成分昵称已被使用，请换一个昵称；如是你的旧成分请先找回',409)
+        backup_pair(Path(upstream.DATA_FILE).parent,STORE)
+        mid=linked or STORE.create_profile(context,name)
+        STORE.recover_profiles(upstream.data)
+        admin_links.projection(upstream.data,STORE)
+        if value is not None:contacts.save(upstream.data,STORE,mid,value)
+        upstream.save()
+        return dict(ok=True,existing=bool(linked))
 
     def require_admin(self, body):
         return bool(self.context().get('admin_actor'))
@@ -141,15 +168,19 @@ class Handler(upstream.Handler):
                         return self.send_json(dict(backups=[dict(name=p.name,size=(p/'data.json').stat().st_size) for p in sorted(root.iterdir(),reverse=True) if re.fullmatch(r'[0-9]{8}-[0-9]{6}',p.name) and (p/'data.json').is_file()]) if root.exists() else dict(backups=[]))
                     if path in ('/api/export','/api/admin/backup'):
                         name=parse_qs(parsed.query).get('name',[''])[0] if path.endswith('/backup') else None
-                        return self.send_download('music-data-'+(name or time.strftime('%Y%m%d-%H%M%S'))+'.json',administration.snapshot(folder,name))
+                        return self.send_download('music-data-'+(name or time.strftime('%Y%m%d-%H%M%S'))+'.json',administration.snapshot(folder,name,STORE))
                     raise Rejected('操作不存在',404)
             qq = self.current_qq(context)
             if path == '/api/session':
                 session = STORE.session(self.token())
+                entry=STORE.entry(self.token())
+                draft=json.loads(entry['payload']) if entry else {}
                 return self.send_json({'authenticated': bool(qq), 'linked': bool(STORE.linked_qq(context)),
                                        'board_authenticated': bool(context.get('user_id')),
                                        'board_name': context.get('nickname',''),
                                        'qq_connected': bool(context.get('openid')),
+                                       'pending_entry':bool(entry),'entry_name':draft.get('name',''),
+                                       'entry_contactQQ':draft.get('contactQQ',''),
                                        'legacy': bool(session and qq), 'pending': bool(session and session['pending_until']>time.time()),
                                        'qq': qq, 'name': upstream.data['members'].get(qq, {}).get('name', '')})
             if path.startswith('/api/admin'):
@@ -162,6 +193,7 @@ class Handler(upstream.Handler):
                     query['qq'] = [qq]
                 if path in ('/api/member', '/api/compare'):
                     query['me'] = [qq]
+                    query['qq'] = [contacts.resolve(upstream.data,query.get('qq',[''])[0])]
                 self.path = path + '?' + urlencode(query, doseq=True)
             return super().do_GET()
         except Rejected as exc:
@@ -236,36 +268,50 @@ class Handler(upstream.Handler):
                                             'memberCount':len(upstream.data['members']), 'categories':upstream.CATEGORIES}, token=token)
             if path == '/api/logout':
                 STORE.logout(self.token())
+                STORE.entry_cancel(self.token())
                 return self.json_reply({'ok':True}, token='')
             if path == '/api/profile/create':
                 if not context.get('user_id'):raise Rejected('请先登录看板或使用 QQ 登录',401)
                 if body.get('consent') is not True or body.get('confirm_new') is not True:
                     raise Rejected('请确认建立空白成分；有旧资料请先找回旧账号',400)
-                name=upstream.clean_text(body.get('name',context.get('nickname','')),upstream.MAX_NAME_LEN)
-                if not name:raise Rejected('请输入成分昵称',400)
                 with upstream._lock:
-                    STORE.recover_profiles(upstream.data)
-                    linked=STORE.linked_qq(context)
-                    if linked:
-                        admin_links.projection(upstream.data,STORE)
-                        upstream.save()
-                        return self.send_json({'ok':True,'existing':True})
-                    if self.current_qq(context):raise Rejected('已登录旧成分，请先连接 QQ 登录，保留原资料',409)
-                    # Do not create around a mapping whose OAuth identity no longer matches.
-                    with STORE.connect() as db:
-                        if db.execute('SELECT 1 FROM links WHERE user_id=?',(context['user_id'],)).fetchone():
-                            raise Rejected('当前账号的成分关联需要核对，请联系管理员',409)
-                    if upstream.find_member_by_name(name):raise Rejected('此成分昵称已被使用，请换一个昵称；如是你的旧成分请先找回',409)
+                    return self.send_json(self.enter_profile(context,body))
+            if path == '/api/entry/start':
+                if body.get('consent') is not True:raise Rejected('请阅读并同意成分资料及账号关联说明',400)
+                value=contacts.normalize(body.get('contactQQ',''))
+                with upstream._lock:
+                    mid=STORE.linked_qq(context)
+                    if self.current_qq(context) and not mid:raise Rejected('请先连接已找回的旧成分，保留原资料',409)
+                    contacts.validate(upstream.data,STORE,mid or '',value)
+                    payload=dict(name=upstream.clean_text(body.get('name',''),upstream.MAX_NAME_LEN),contactQQ=value)
+                    if context.get('user_id') and context.get('openid'):
+                        self.enter_profile(context,payload)
+                        return self.send_json(dict(ok=True,complete=True))
+                    STORE.entry_cancel(self.token())
+                    token=STORE.entry_start(context,payload,mid or '')
+                    return self.json_reply(dict(ok=True,complete=False),token=token)
+            if path == '/api/entry/complete':
+                with upstream._lock:
+                    payload=STORE.entry_proof(self.token(),context)
+                    self.enter_profile(context,payload)
+                    STORE.entry_finish(self.token(),context)
+                return self.json_reply(dict(ok=True),token='')
+            if path == '/api/profile/contact':
+                with upstream._lock:
+                    mid=self.current_qq(context)
+                    if not mid:raise Rejected('请先登录成分站',401)
+                    if 'qq' in body and body['qq']!=mid:raise Rejected('不能修改其他人的成分',403)
+                    if 'contactQQ' not in body:raise Rejected('请填写 QQ 号或留空清除',400)
+                    contacts.validate(upstream.data,STORE,mid,body['contactQQ'])
                     backup_pair(Path(upstream.DATA_FILE).parent,STORE)
-                    STORE.create_profile(context,name)
-                    STORE.recover_profiles(upstream.data)
-                    admin_links.projection(upstream.data,STORE)
+                    contacts.save(upstream.data,STORE,mid,body['contactQQ'])
                     upstream.save()
-                    return self.send_json({'ok':True,'existing':False})
+                    return self.send_json(dict(ok=True,qq=mid))
             if path == '/api/link/start':
                 STORE.begin(self.token(), context)
                 return self.send_json({'ok':True})
             if path == '/api/link/cancel':
+                STORE.entry_cancel(self.token())
                 with STORE.connect() as db:
                     db.execute("UPDATE sessions SET source_session='',pending_until=0 WHERE token_hash=?",(STORE.digest(self.token()),))
                 return self.send_json({'ok':True})
@@ -310,6 +356,7 @@ def main():
     replay(folder, STORE)
     upstream.load()
     STORE.recover_profiles(upstream.data)
+    contacts.project(upstream.data,STORE)
     upstream.board_member_map = board_member_map
     admin_links.projection(upstream.data,STORE)
     last_backup = [0.0]

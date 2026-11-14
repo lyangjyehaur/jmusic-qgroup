@@ -193,7 +193,7 @@
   // ---------- api ----------
   async function apiGet(path) {
     const r = await fetch(path, { headers: { 'Accept': 'application/json' } });
-    const j = await r.json().catch(() => ({}));
+    const j = window.musicRememberContacts(await r.json().catch(() => ({})));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
   }
@@ -203,14 +203,14 @@
       if (r.status === 304) return null;
       const tag = r.headers.get('ETag');
       if (tag) stateEtag = tag;
-      const j = await r.json().catch(() => ({}));
+      const j = window.musicRememberContacts(await r.json().catch(() => ({})));
       if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
       return j;
     }
     const r = await fetch('/music/api/state', { headers: { 'Accept': 'application/json' } });
     const tag = r.headers.get('ETag');
     if (tag) stateEtag = tag;
-    const j = await r.json().catch(() => ({}));
+    const j = window.musicRememberContacts(await r.json().catch(() => ({})));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
   }
@@ -220,7 +220,7 @@
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
-    const j = await r.json().catch(() => ({}));
+    const j = window.musicRememberContacts(await r.json().catch(() => ({})));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
   }
@@ -1632,7 +1632,7 @@
       bQq.type = 'button';
       bQq.className = 'copy-btn';
       bQq.textContent = '复制' + memberKind(m.qq);
-      bQq.addEventListener('click', () => copyText(String(m.qq), memberKind(m.qq)));
+      bQq.addEventListener('click', () => copyText(window.musicMemberValue(m.qq), memberKind(m.qq)));
       const bView = document.createElement('button');
       bView.type = 'button';
       bView.className = 'copy-btn';
@@ -1946,7 +1946,7 @@
         bq.className = 'copy-btn';
         bq.type = 'button';
         bq.textContent = '复制' + memberKind(m.qq);
-        bq.onclick = () => copyText(String(m.qq), memberKind(m.qq));
+        bq.onclick = () => copyText(window.musicMemberValue(m.qq), memberKind(m.qq));
         row.append(name, qq, bn, bq);
         box.appendChild(row);
       });
@@ -2548,7 +2548,7 @@
     $('shoutModalFrom').textContent = `来自：${s.name} · ${memberLabel(s.qq)} · ${shoutTimeText(s.createdAt)}`;
     $('shoutModal').hidden = false;
     $('shoutCopyQQ').textContent = '复制' + memberKind(s.qq);
-    $('shoutCopyQQ').onclick = () => copyText(s.qq, memberKind(s.qq));
+    $('shoutCopyQQ').onclick = () => copyText(window.musicMemberValue(s.qq), memberKind(s.qq));
     $('shoutCopyText').onclick = () => copyText(s.text, '喊话内容');
   }
   function closeShoutModal() { $('shoutModal').hidden = true; }
@@ -3718,7 +3718,7 @@
     if (!rawList) {
       try {
         const res = await fetch('/music/api/members', { headers: { Accept: 'application/json' } });
-        const data = await res.json();
+        const data = window.musicRememberContacts(await res.json());
         rawList = (data.members || []).filter((m) => m.count > 0);
       } catch (e) {
         rawList = [];
@@ -3731,7 +3731,7 @@
     if (me) {
       try {
         const r = await fetch('/music/api/matches?qq=' + encodeURIComponent(me) + '&sort=rare', { headers: { Accept: 'application/json' } });
-        const d = await r.json();
+        const d = window.musicRememberContacts(await r.json());
         (d.matches || []).forEach((m) => scores.set(String(m.qq), m.matchPercent || 0));
       } catch (e) {}
     }
@@ -3764,7 +3764,7 @@
     const box = $('roomPool');
     if (!box) return;
     const q = ($('roomSearch').value || '').trim().toLowerCase();
-    const items = (pool || []).filter((m) => !q || m.name.toLowerCase().includes(q) || m.qq.includes(q));
+    const items = (pool || []).filter((m) => !q || m.name.toLowerCase().includes(q) || (m.qq.includes(q) || window.musicMemberValue(m.qq).includes(q)));
     box.innerHTML = '';
     items.slice(0, 80).forEach((m) => {
       const b = document.createElement('button');
@@ -4077,7 +4077,7 @@
       headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
       body: JSON.stringify(body),
     });
-    const data = await res.json().catch(() => ({}));
+    const data = window.musicRememberContacts(await res.json().catch(() => ({})));
     if (!res.ok) throw new Error(data.error || '请求失败');
     return data;
   }
@@ -4223,14 +4223,14 @@
 
   async function jget(url) {
     const res = await fetch(url, { headers: { Accept: 'application/json' } });
-    const data = await res.json().catch(() => ({}));
+    const data = window.musicRememberContacts(await res.json().catch(() => ({})));
     if (!res.ok) throw new Error(data.error || ('请求失败 ' + res.status));
     return data;
   }
 
   async function jpost(url, body) {
     const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const data = await res.json().catch(() => ({}));
+    const data = window.musicRememberContacts(await res.json().catch(() => ({})));
     if (!res.ok) throw new Error(data.error || ('请求失败 ' + res.status));
     return data;
   }
@@ -4536,13 +4536,13 @@
 
   async function gget(path) {
     const r = await fetch(path, { headers: { 'Accept': 'application/json' } });
-    const j = await r.json().catch(() => ({}));
+    const j = window.musicRememberContacts(await r.json().catch(() => ({})));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
   }
   async function gpost(path, body) {
     const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-    const j = await r.json().catch(() => ({}));
+    const j = window.musicRememberContacts(await r.json().catch(() => ({})));
     if (!r.ok) throw new Error(j.error || ('HTTP ' + r.status));
     return j;
   }
