@@ -71,7 +71,7 @@ for(const [locale,convert] of Object.entries(converters)) {
 const python=cp.execFileSync('python3',['-c',`
 import ast,json
 from pathlib import Path
-files=[Path('server.py'),*Path('qgroup_core').glob('*.py')]
+files=[Path('server.py'),*Path('qgroup_core').glob('*.py'),*Path('music_site').glob('*.py')]
 values={n.value for p in files for n in ast.walk(ast.parse(p.read_text())) if isinstance(n,ast.Constant) and isinstance(n.value,str) and any('\\u3400'<=c<='\\u9fff' for c in n.value)}
 print(json.dumps(sorted(values),ensure_ascii=False))
 `],{cwd:root,encoding:'utf8'});

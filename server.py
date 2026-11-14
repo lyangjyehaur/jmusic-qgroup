@@ -260,6 +260,9 @@ class Handler(BaseHTTPRequestHandler):
                 db.commit()
                 return self.reply(result,cookie=token)
             if path=='/api/admin/session':return self.reply(admin.view(db,self.headers))
+            if path=='/api/admin/music-links':
+                from qgroup_core import music_admin
+                return self.reply(music_admin.view(db,self.headers))
             if path=='/api/admin/users':
                 try:query=parse_qs(urlparse(self.path).query,keep_blank_values=True,max_num_fields=10)
                 except ValueError:raise APIError('用户查询条件不正确')

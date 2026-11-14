@@ -154,6 +154,9 @@ def command(db,headers,path,data):
         return dict(ok=True,logout_account=access['auth_method']=='account'),''
     if path=='/api/admin/users':return set_role(db,access,data),None
     if path=='/api/admin/users/metadata':return set_metadata(db,access,data),None
+    if path=='/api/admin/music-links':
+        from . import music_admin
+        return music_admin.change(db,access,data),None
     if path=='/api/admin/privacy-review':
         from . import privacy
         return privacy.review(db,data),None

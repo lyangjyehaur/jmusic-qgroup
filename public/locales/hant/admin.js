@@ -4,6 +4,7 @@
  let previewData=null,lastTemplateField='#bot-template-text';
  let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null,metadataUser=null,metadataBusy=false;
  let botGroups=[];
+ let musicInfo=null,musicMember=null,musicBusy=false,musicDialogBusy=false;
  async function request(path,data){
   let status=0,outcome='network_error';
   try{
@@ -18,6 +19,62 @@
   $('#privacy-requests').innerHTML=items.map(item=>`<section class="privacy-request"><p><strong>${item.status==='completed'?"個人帳號資料已刪除":"共用記錄待核對"}</strong> · ${esc(item.created_at)}</p><p class="receipt-id">${esc(item.id)}</p><p class="field-help">${esc(Object.entries(item.shared_records).map(([table,count])=>table+': '+count).join('；')||"無關聯共用記錄")}</p><form data-privacy-request="${esc(item.id)}"><label class="field">處理說明<textarea name="note" required maxlength="1000">${esc(item.note)}</textarea></label><button class="button secondary" type="submit">保存處理說明</button></form></section>`).join('')||"<p class=\"field-help\">暫無資料刪除申請</p>";
  }
  const error=problem=>{$('#admin-error').textContent=problem.message;};
+ const musicStatuses={unlinked:"未關聯",prelinked:"管理員預先對應",oauth:"已完成 QQ 授權"};
+ function renderMusic(){
+  if(!musicInfo)return;
+  const fields=$('#music-links-search').elements,search=fields.search.value.trim().toLowerCase(),status=fields.status.value;
+  const rows=musicInfo.members.filter(m=>(status==='all'||status===m.status)&&[m.qq,m.name,m.user_id,m.board_name].some(value=>String(value).toLowerCase().includes(search)));
+  $('#music-links-summary').textContent=`共 ${musicInfo.members.length} 位成分會員，${musicInfo.members.filter(m=>m.user_id).length} 位已關聯；顯示 ${rows.length} 位`;
+  $('#music-links-list').innerHTML=rows.map(m=>`<article class="admin-user"><div class="admin-user-heading"><strong translate="no">${esc(m.name||m.qq)}</strong><span class="admin-user-role">${esc(musicStatuses[m.status])}</span></div><p class="field-help">成分 QQ 號：<span translate="no">${esc(m.qq)}</span></p><p class="field-help">看板帳號：<span translate="no">${esc(m.user_id?(m.board_name||'—'):'—')}</span>${m.user_id&&!m.board_active?" · 帳號不存在或已註銷":''}</p>${m.user_id?`<p class="receipt-id" translate="no">${esc(m.user_id)}</p>`:''}${!m.has_pin&&!m.user_id?"<p class=\"field-help\">沒有舊口令，須由管理員核對後建立關聯。</p>":''}<button type="button" class="button secondary" data-music-qq="${esc(m.qq)}" ${musicBusy?'disabled':''}>${m.user_id?"修改或解除關聯":"建立關聯"}</button></article>`).join('')||"<p class=\"field-help\">沒有符合條件的成分會員</p>";
+  $('#music-links-history').innerHTML=musicInfo.history.map(item=>`<p class="field-help"><span translate="no">${esc(item.qq)}</span>：<span translate="no">${esc(item.before_user_id||'—')}</span> → <span translate="no">${esc(item.after_user_id||'—')}</span><br><span translate="no">${esc(item.actor_name)}</span> · ${esc(new Date(item.created*1000).toLocaleString())}</p>`).join('')||"<p class=\"field-help\">暫無關聯變更記錄</p>";
+ }
+ async function loadMusic(){musicInfo=await request('/api/admin/music-links');renderMusic();}
+ async function musicAction(work){
+  if(musicBusy)return;musicBusy=true;$('#music-links-error').textContent='';
+  for(const field of $('#music-links-search').elements)field.disabled=true;
+  renderMusic();
+  try{await work();}catch(problem){$('#music-links-error').textContent=problem.message;if(problem.status===401)await load();}
+  finally{musicBusy=false;for(const field of $('#music-links-search').elements)field.disabled=false;renderMusic();}
+ }
+ function fillMusic(member){
+  musicMember=member;$('#music-link-form').reset();
+  $('#music-link-member').textContent=`${member.name||'—'} · QQ ${member.qq}`;
+  $('#music-link-current').textContent=member.user_id?`${member.board_name||'—'} · ${member.user_id}`:'—';
+  $('#music-link-form').elements.user_id.innerHTML="<option value=\"\">請先查找並選擇帳號</option>";
+  $('#music-link-error').textContent='';$('#music-link-unlink').hidden=!member.user_id;
+ }
+ async function musicDialogAction(work){
+  if(musicDialogBusy)return;musicDialogBusy=true;$('#music-link-error').textContent='';
+  for(const field of $('#music-link-form').elements)field.disabled=true;
+  try{await work();}catch(problem){$('#music-link-error').textContent=problem.message;if(problem.status===401){$('#music-link-dialog').close();await load();}}
+  finally{musicDialogBusy=false;for(const field of $('#music-link-form').elements)field.disabled=false;}
+ }
+ async function saveMusic(userId){
+  await request('/api/admin/music-links',{qq:musicMember.qq,user_id:userId,base_revision:musicMember.revision});
+  $('#music-link-dialog').close();$('#music-links-saved').textContent=userId?"成分站關聯已保存":"成分站關聯已解除，原成分資料保留";
+  await musicAction(loadMusic);
+ }
+ $('#music-links-search').addEventListener('submit',e=>{e.preventDefault();renderMusic();});
+ $('#music-links-reload').addEventListener('click',()=>musicAction(loadMusic));
+ $('#music-links-list').addEventListener('click',e=>{
+  const button=e.target.closest('[data-music-qq]');if(!button||musicBusy)return;
+  const member=musicInfo.members.find(m=>m.qq===button.dataset.musicQq);if(!member)return;
+  fillMusic(member);$('#music-link-dialog').showModal();
+ });
+ $('#music-link-dialog').addEventListener('cancel',e=>{if(musicDialogBusy)e.preventDefault();});
+ $('#music-link-cancel').addEventListener('click',()=>{if(!musicDialogBusy)$('#music-link-dialog').close();});
+ $('#music-link-find').addEventListener('click',()=>{
+  const search=$('#music-link-form').elements.search.value.trim();
+  if(!search){$('#music-link-error').textContent="請輸入看板稱呼或帳號 ID";return;}
+  musicDialogAction(async()=>{
+   const result=await request('/api/admin/users?'+new URLSearchParams({search}));
+   $('#music-link-form').elements.user_id.innerHTML="<option value=\"\">請選擇核對後的帳號</option>"+result.users.map(u=>`<option value="${esc(u.id)}">${esc(u.nickname||'—')} · ${esc(u.id)}</option>`).join('');
+   if(!result.users.length)throw new Error("沒有符合條件的帳號");
+  });
+ });
+ $('#music-link-refresh').addEventListener('click',()=>musicDialogAction(async()=>{await loadMusic();const member=musicInfo.members.find(m=>m.qq===musicMember.qq);if(!member)throw new Error("成分會員不存在");fillMusic(member);}));
+ $('#music-link-form').addEventListener('submit',e=>{e.preventDefault();const uid=e.currentTarget.elements.user_id.value;if(uid)musicDialogAction(()=>saveMusic(uid));});
+ $('#music-link-unlink').addEventListener('click',()=>{const confirmed=$('#music-link-form').elements.confirmed;if(!confirmed.reportValidity())return;musicDialogAction(()=>saveMusic(''));});
  function renderUsers(){
   const info=usersInfo;
   $('#users-summary').textContent=`共 ${info.total} 個帳號`;
@@ -245,7 +302,8 @@ $('#bot-preview').addEventListener('click',()=>{if(!botForm.reportValidity())ret
  setInterval(async()=>{if(!csrf||!botInfo||botBusy||document.hidden)return;try{const info=await request('/api/admin/bot-settings');botStatus(info);if(!$('#bot-groups').contains(document.activeElement))refreshGroups(info);else groupDiagnostics(info.group_status);}catch(problem){if(problem.status===401){csrf='';$('#admin-settings').hidden=true;$('#admin-login').hidden=false;error(problem);}}},10000);
  async function load(){
   try{const info=await request('/api/admin/session');csrf=info.csrf;currentUserId=info.current_user_id;$('#admin-access').textContent=info.auth_method==='account'?"管理員帳號登錄":"管理憑證登錄 · 有效一小時";$('#admin-logout').textContent=info.auth_method==='account'?"退出管理後臺及當前帳號":"退出管理後臺";privacyRequests(info.privacy_requests||[]);revision=info.settings.revision;botSetup(info.bot);$('#allow-name-registration').checked=info.settings.allow_name_registration;$('#admin-login').hidden=true;$('#admin-settings').hidden=false;$('#provider-status').textContent=info.providers.some(p=>p.enabled)?"QQ 登錄已配置":"QQ 未配置，關閉稱呼註冊後將無法註冊。";try{await loadUsers();}catch(problem){$('#users-error').textContent=problem.message;}}
-  catch(problem){if(problem.status!==401)error(problem);csrf='';$('#admin-login').hidden=false;$('#admin-settings').hidden=true;}
+  catch(problem){if(problem.status!==401)error(problem);csrf='';$('#admin-login').hidden=false;$('#admin-settings').hidden=true;return;}
+  await musicAction(loadMusic);
  }
  $('#admin-login').addEventListener('submit',async e=>{e.preventDefault();$('#admin-error').textContent='';const button=e.currentTarget.querySelector('button');button.disabled=true;try{await request('/api/admin/login',{key:e.currentTarget.elements.key.value});e.target.reset();await load();}catch(problem){error(problem);}finally{button.disabled=false;}});
  $('#registration-settings').addEventListener('submit',async e=>{e.preventDefault();const button=e.currentTarget.querySelector('button');button.disabled=true;$('#admin-error').textContent='';$('#admin-saved').textContent='';try{const result=await request('/api/admin/settings',{allow_name_registration:$('#allow-name-registration').checked,base_revision:revision});revision=result.settings.revision;$('#admin-saved').textContent="註冊設置已保存";}catch(problem){error(problem);await load();}finally{button.disabled=false;}});

@@ -15,6 +15,7 @@ from unittest import mock
 
 import server
 from music_site import service
+from music_site import admin_links
 from music_site.identity_store import Store, Rejected
 from qgroup_core import accounts
 from test_roster import ModernClient
@@ -99,6 +100,125 @@ class MusicTests(unittest.TestCase):
 
     def complete(self, client=None):
         return self.request('/music/api/link/complete','POST',{},client)
+
+    def music_admin(self):
+        key='music-admin-test-'+'a'*40
+        env=mock.patch.dict(os.environ,{'KANBAN_ADMIN_KEY_HASH':hashlib.sha256(key.encode()).hexdigest()})
+        env.start();self.addCleanup(env.stop)
+        manager=ModernClient(self.base)
+        self.assertEqual(self.request('/api/admin/login','POST',{'key':key},manager)[0],200)
+        csrf=self.request('/api/admin/session',client=manager)[1]['csrf']
+        service.upstream.save()
+        return manager,csrf
+
+    def music_rows(self, manager):
+        status,result=self.request('/api/admin/music-links',client=manager)
+        self.assertEqual(status,200,result)
+        return {m['qq']:m for m in result['members']}
+
+    def music_change(self,manager,csrf,row,uid):
+        return self.request('/api/admin/music-links','POST',
+                            dict(qq=row['qq'],user_id=uid,base_revision=row['revision']),manager,
+                            {'X-Kanban-Admin':csrf})
+
+    def test_admin_links_require_current_authority_csrf_and_private_bridge(self):
+        manager,csrf=self.music_admin()
+        for path in ('/api/admin/music-links','/music/api/internal/admin-links'):
+            self.assertIn(self.request(path)[0],(401,404))
+        data=dict(qq='10001',user_id='',base_revision='x'*64)
+        for headers in ({},{'X-Kanban-Admin':'wrong'},{'X-Kanban-Admin':csrf,'Origin':'https://evil.test'}):
+            self.assertEqual(self.request('/api/admin/music-links','POST',data,manager,headers)[0],403)
+        forged={'X-Music-Proxy-Key':self.key,'X-Music-Identity':'eyJhZG1pbl9hY3RvciI6ImZvcmdlZCJ9'}
+        for client in (manager,self.client):
+            self.assertEqual(self.request('/music/api/internal/admin-links','POST',{'action':'list'},client,forged)[0],403)
+        with mock.patch.dict(os.environ,{'KANBAN_ADMIN_KEY_HASH':'rotated'}):
+            self.assertEqual(self.request('/api/admin/music-links',client=manager)[0],401)
+
+    def test_admin_list_excludes_private_credentials_and_member_notes(self):
+        manager,csrf=self.music_admin();self.authorize()
+        with server.connect() as db:uid=db.execute('SELECT id FROM users').fetchone()[0]
+        service.STORE.import_prelinks([dict(qq='10001',user_id=uid)])
+        self.assertEqual(self.request('/music/api/me')[0],200)
+        rows=self.music_rows(manager)
+        self.assertEqual(rows['10001']['status'],'oauth')
+        self.assertEqual(rows['10001']['board_name'],'official user')
+        for private in ('private-10001','pinHash','openid','app_id','A'*32,self.key):
+            self.assertNotIn(private,json.dumps(rows))
+
+    def test_admin_bind_and_unlink_remove_both_maps_and_revoke_old_access(self):
+        manager,csrf=self.music_admin();self.authorize()
+        with server.connect() as db:uid=db.execute('SELECT id FROM users').fetchone()[0]
+        row=self.music_rows(manager)['10001']
+        self.assertEqual(self.music_change(manager,csrf,row,uid)[0],200)
+        self.assertEqual(self.request('/music/api/me')[1]['member']['qq'],'10001')
+        self.assertEqual(self.music_rows(manager)['10001']['status'],'oauth')
+        service.STORE.new_session('10001')
+        row=self.music_rows(manager)['10001']
+        self.assertEqual(self.music_change(manager,csrf,row,'')[0],200)
+        self.assertIsNone(service.STORE.link_for_qq('10001'))
+        with service.STORE.connect() as db:
+            self.assertEqual(db.execute('SELECT count(*) FROM sessions WHERE qq=?',('10001',)).fetchone()[0],0)
+            self.assertEqual(db.execute('SELECT count(*) FROM link_audit').fetchone()[0],2)
+        self.assertEqual(self.request('/music/api/me')[0],401)
+        self.assertEqual(self.request('/music/api/selection','POST',{'selection':[]})[0],401)
+        self.assertEqual(service.upstream.data['members']['10001']['boardUserId'],'')
+        self.assertEqual(service.upstream.data['members']['10001']['note'],'private-10001')
+        # An old JSON projection cannot resurrect a deliberate unlink.
+        service.upstream.data['members']['10001']['boardUserId']=uid
+        with mock.patch.object(service,'LEGACY_BOARD_MAP',return_value={uid:'10001'}):
+            self.assertNotIn(uid,service.board_member_map())
+        admin_links.projection(service.upstream.data,service.STORE)
+        self.assertEqual(service.upstream.data['members']['10001']['boardUserId'],'')
+        self.assertEqual(self.legacy()[0],200)
+
+    def test_admin_edit_rejects_conflicting_closed_targets_and_stale_oauth_rows(self):
+        manager,csrf=self.music_admin();self.authorize()
+        with server.connect() as db:uid=db.execute('SELECT id FROM users').fetchone()[0]
+        rows=self.music_rows(manager)
+        self.assertEqual(self.music_change(manager,csrf,rows['10001'],'missing')[0],404)
+        self.assertEqual(self.music_change(manager,csrf,rows['10001'],uid)[0],200)
+        self.assertEqual(self.music_change(manager,csrf,rows['10002'],uid)[0],409)
+        prelinked=self.music_rows(manager)['10001']
+        self.request('/music/api/me')  # Promotes the prelink through QQ identity.
+        self.assertEqual(self.music_change(manager,csrf,prelinked,'')[0],409)
+        current=self.music_rows(manager)['10001']
+        self.assertEqual(self.music_change(manager,csrf,current,'')[0],200)
+        self.assertEqual(self.music_change(manager,csrf,rows['10002'],uid)[0],200)
+        self.assertEqual(self.music_rows(manager)['10002']['status'],'prelinked')
+        self.assertEqual(self.request('/api/auth/close','POST',dict(confirm_close=True))[0],200)
+        current=self.music_rows(manager)['10002']
+        self.assertFalse(current['board_active'])
+        self.assertEqual(self.music_change(manager,csrf,current,uid)[0],404)
+
+    def test_admin_audit_failure_rolls_back_and_projection_replays_after_restart(self):
+        manager,csrf=self.music_admin();self.authorize()
+        with server.connect() as db:uid=db.execute('SELECT id FROM users').fetchone()[0]
+        row=self.music_rows(manager)['10001']
+        import sqlite3
+        with service.STORE.connect() as db:
+            db.execute("CREATE TRIGGER fail_link_audit BEFORE INSERT ON link_audit BEGIN SELECT RAISE(ABORT,'test'); END")
+        with self.assertRaises(sqlite3.IntegrityError):
+            service.STORE.admin_change('10001',uid,row['revision'],'test')
+        self.assertIsNone(service.STORE.link_for_qq('10001'))
+        with service.STORE.connect() as db:db.execute('DROP TRIGGER fail_link_audit')
+        # A failed projection write does not undo the authoritative decision;
+        # startup replay repairs it from the committed store.
+        service.STORE.admin_change('10001',uid,row['revision'],'test')
+        service.STORE=Store(self.folder/'identity.sqlite3')
+        admin_links.projection(service.upstream.data,service.STORE)
+        self.assertEqual(service.upstream.data['members']['10001']['boardUserId'],uid)
+
+    def test_account_admin_can_manage_links_and_revocation_is_immediate(self):
+        manager,csrf=self.music_admin();self.authorize()
+        with server.connect() as db:
+            uid=db.execute('SELECT id FROM users').fetchone()[0]
+            db.execute("INSERT INTO user_admin_roles VALUES(?,1,1,'now')",(uid,))
+        account_csrf=self.request('/api/admin/session')[1]['csrf']
+        row=self.music_rows(self.client)['10001']
+        self.assertEqual(self.music_change(self.client,account_csrf,row,uid)[0],200)
+        with server.connect() as db:db.execute('UPDATE user_admin_roles SET is_admin=0 WHERE user_id=?',(uid,))
+        self.assertEqual(self.request('/api/admin/music-links')[0],401)
+        self.assertEqual(self.music_change(self.client,account_csrf,row,'')[0],401)
 
     def test_legacy_login_preserves_data_and_enforces_ownership(self):
         self.assertEqual(self.request('/music/api/me?qq=10001')[0],401)

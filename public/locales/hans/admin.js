@@ -4,6 +4,7 @@
  let previewData=null,lastTemplateField='#bot-template-text';
  let currentUserId=null,usersInfo=null,usersSearch='',usersFilter='all',usersOffset=0,usersBusy=false,pendingUser=null,metadataUser=null,metadataBusy=false;
  let botGroups=[];
+ let musicInfo=null,musicMember=null,musicBusy=false,musicDialogBusy=false;
  async function request(path,data){
   let status=0,outcome='network_error';
   try{
@@ -18,6 +19,62 @@
   $('#privacy-requests').innerHTML=items.map(item=>`<section class="privacy-request"><p><strong>${item.status==='completed'?"个人账号资料已删除":"共用记录待核对"}</strong> · ${esc(item.created_at)}</p><p class="receipt-id">${esc(item.id)}</p><p class="field-help">${esc(Object.entries(item.shared_records).map(([table,count])=>table+': '+count).join('；')||"无关联共用记录")}</p><form data-privacy-request="${esc(item.id)}"><label class="field">处理说明<textarea name="note" required maxlength="1000">${esc(item.note)}</textarea></label><button class="button secondary" type="submit">保存处理说明</button></form></section>`).join('')||"<p class=\"field-help\">暂无资料删除申请</p>";
  }
  const error=problem=>{$('#admin-error').textContent=problem.message;};
+ const musicStatuses={unlinked:"未关联",prelinked:"管理员预先对应",oauth:"已完成 QQ 授权"};
+ function renderMusic(){
+  if(!musicInfo)return;
+  const fields=$('#music-links-search').elements,search=fields.search.value.trim().toLowerCase(),status=fields.status.value;
+  const rows=musicInfo.members.filter(m=>(status==='all'||status===m.status)&&[m.qq,m.name,m.user_id,m.board_name].some(value=>String(value).toLowerCase().includes(search)));
+  $('#music-links-summary').textContent=`共 ${musicInfo.members.length} 位成分会员，${musicInfo.members.filter(m=>m.user_id).length} 位已关联；显示 ${rows.length} 位`;
+  $('#music-links-list').innerHTML=rows.map(m=>`<article class="admin-user"><div class="admin-user-heading"><strong translate="no">${esc(m.name||m.qq)}</strong><span class="admin-user-role">${esc(musicStatuses[m.status])}</span></div><p class="field-help">成分 QQ 号：<span translate="no">${esc(m.qq)}</span></p><p class="field-help">看板账号：<span translate="no">${esc(m.user_id?(m.board_name||'—'):'—')}</span>${m.user_id&&!m.board_active?" · 账号不存在或已注销":''}</p>${m.user_id?`<p class="receipt-id" translate="no">${esc(m.user_id)}</p>`:''}${!m.has_pin&&!m.user_id?"<p class=\"field-help\">没有旧口令，须由管理员核对后建立关联。</p>":''}<button type="button" class="button secondary" data-music-qq="${esc(m.qq)}" ${musicBusy?'disabled':''}>${m.user_id?"修改或解除关联":"建立关联"}</button></article>`).join('')||"<p class=\"field-help\">没有符合条件的成分会员</p>";
+  $('#music-links-history').innerHTML=musicInfo.history.map(item=>`<p class="field-help"><span translate="no">${esc(item.qq)}</span>：<span translate="no">${esc(item.before_user_id||'—')}</span> → <span translate="no">${esc(item.after_user_id||'—')}</span><br><span translate="no">${esc(item.actor_name)}</span> · ${esc(new Date(item.created*1000).toLocaleString())}</p>`).join('')||"<p class=\"field-help\">暂无关联变更记录</p>";
+ }
+ async function loadMusic(){musicInfo=await request('/api/admin/music-links');renderMusic();}
+ async function musicAction(work){
+  if(musicBusy)return;musicBusy=true;$('#music-links-error').textContent='';
+  for(const field of $('#music-links-search').elements)field.disabled=true;
+  renderMusic();
+  try{await work();}catch(problem){$('#music-links-error').textContent=problem.message;if(problem.status===401)await load();}
+  finally{musicBusy=false;for(const field of $('#music-links-search').elements)field.disabled=false;renderMusic();}
+ }
+ function fillMusic(member){
+  musicMember=member;$('#music-link-form').reset();
+  $('#music-link-member').textContent=`${member.name||'—'} · QQ ${member.qq}`;
+  $('#music-link-current').textContent=member.user_id?`${member.board_name||'—'} · ${member.user_id}`:'—';
+  $('#music-link-form').elements.user_id.innerHTML="<option value=\"\">请先查找并选择账号</option>";
+  $('#music-link-error').textContent='';$('#music-link-unlink').hidden=!member.user_id;
+ }
+ async function musicDialogAction(work){
+  if(musicDialogBusy)return;musicDialogBusy=true;$('#music-link-error').textContent='';
+  for(const field of $('#music-link-form').elements)field.disabled=true;
+  try{await work();}catch(problem){$('#music-link-error').textContent=problem.message;if(problem.status===401){$('#music-link-dialog').close();await load();}}
+  finally{musicDialogBusy=false;for(const field of $('#music-link-form').elements)field.disabled=false;}
+ }
+ async function saveMusic(userId){
+  await request('/api/admin/music-links',{qq:musicMember.qq,user_id:userId,base_revision:musicMember.revision});
+  $('#music-link-dialog').close();$('#music-links-saved').textContent=userId?"成分站关联已保存":"成分站关联已解除，原成分资料保留";
+  await musicAction(loadMusic);
+ }
+ $('#music-links-search').addEventListener('submit',e=>{e.preventDefault();renderMusic();});
+ $('#music-links-reload').addEventListener('click',()=>musicAction(loadMusic));
+ $('#music-links-list').addEventListener('click',e=>{
+  const button=e.target.closest('[data-music-qq]');if(!button||musicBusy)return;
+  const member=musicInfo.members.find(m=>m.qq===button.dataset.musicQq);if(!member)return;
+  fillMusic(member);$('#music-link-dialog').showModal();
+ });
+ $('#music-link-dialog').addEventListener('cancel',e=>{if(musicDialogBusy)e.preventDefault();});
+ $('#music-link-cancel').addEventListener('click',()=>{if(!musicDialogBusy)$('#music-link-dialog').close();});
+ $('#music-link-find').addEventListener('click',()=>{
+  const search=$('#music-link-form').elements.search.value.trim();
+  if(!search){$('#music-link-error').textContent="请输入看板称呼或账号 ID";return;}
+  musicDialogAction(async()=>{
+   const result=await request('/api/admin/users?'+new URLSearchParams({search}));
+   $('#music-link-form').elements.user_id.innerHTML="<option value=\"\">请选择核对后的账号</option>"+result.users.map(u=>`<option value="${esc(u.id)}">${esc(u.nickname||'—')} · ${esc(u.id)}</option>`).join('');
+   if(!result.users.length)throw new Error("没有符合条件的账号");
+  });
+ });
+ $('#music-link-refresh').addEventListener('click',()=>musicDialogAction(async()=>{await loadMusic();const member=musicInfo.members.find(m=>m.qq===musicMember.qq);if(!member)throw new Error("成分会员不存在");fillMusic(member);}));
+ $('#music-link-form').addEventListener('submit',e=>{e.preventDefault();const uid=e.currentTarget.elements.user_id.value;if(uid)musicDialogAction(()=>saveMusic(uid));});
+ $('#music-link-unlink').addEventListener('click',()=>{const confirmed=$('#music-link-form').elements.confirmed;if(!confirmed.reportValidity())return;musicDialogAction(()=>saveMusic(''));});
  function renderUsers(){
   const info=usersInfo;
   $('#users-summary').textContent=`共 ${info.total} 个账号`;
@@ -245,7 +302,8 @@ $('#bot-preview').addEventListener('click',()=>{if(!botForm.reportValidity())ret
  setInterval(async()=>{if(!csrf||!botInfo||botBusy||document.hidden)return;try{const info=await request('/api/admin/bot-settings');botStatus(info);if(!$('#bot-groups').contains(document.activeElement))refreshGroups(info);else groupDiagnostics(info.group_status);}catch(problem){if(problem.status===401){csrf='';$('#admin-settings').hidden=true;$('#admin-login').hidden=false;error(problem);}}},10000);
  async function load(){
   try{const info=await request('/api/admin/session');csrf=info.csrf;currentUserId=info.current_user_id;$('#admin-access').textContent=info.auth_method==='account'?"管理员账号登录":"管理凭证登录 · 有效一小时";$('#admin-logout').textContent=info.auth_method==='account'?"退出管理后台及当前账号":"退出管理后台";privacyRequests(info.privacy_requests||[]);revision=info.settings.revision;botSetup(info.bot);$('#allow-name-registration').checked=info.settings.allow_name_registration;$('#admin-login').hidden=true;$('#admin-settings').hidden=false;$('#provider-status').textContent=info.providers.some(p=>p.enabled)?"QQ 登录已配置":"QQ 未配置，关闭称呼注册后将无法注册。";try{await loadUsers();}catch(problem){$('#users-error').textContent=problem.message;}}
-  catch(problem){if(problem.status!==401)error(problem);csrf='';$('#admin-login').hidden=false;$('#admin-settings').hidden=true;}
+  catch(problem){if(problem.status!==401)error(problem);csrf='';$('#admin-login').hidden=false;$('#admin-settings').hidden=true;return;}
+  await musicAction(loadMusic);
  }
  $('#admin-login').addEventListener('submit',async e=>{e.preventDefault();$('#admin-error').textContent='';const button=e.currentTarget.querySelector('button');button.disabled=true;try{await request('/api/admin/login',{key:e.currentTarget.elements.key.value});e.target.reset();await load();}catch(problem){error(problem);}finally{button.disabled=false;}});
  $('#registration-settings').addEventListener('submit',async e=>{e.preventDefault();const button=e.currentTarget.querySelector('button');button.disabled=true;$('#admin-error').textContent='';$('#admin-saved').textContent='';try{const result=await request('/api/admin/settings',{allow_name_registration:$('#allow-name-registration').checked,base_revision:revision});revision=result.settings.revision;$('#admin-saved').textContent="注册设置已保存";}catch(problem){error(problem);await load();}finally{button.disabled=false;}});

@@ -1,5 +1,6 @@
 """Private legacy proofs and QQ identity mappings, separate from the board DB."""
 import hashlib
+import json
 import secrets
 import sqlite3
 import time
@@ -29,6 +30,11 @@ class Store:
                     qq TEXT PRIMARY KEY,user_id TEXT NOT NULL UNIQUE,created REAL NOT NULL);
                 CREATE TABLE IF NOT EXISTS login_attempts(bucket TEXT NOT NULL, created REAL NOT NULL);
                 CREATE INDEX IF NOT EXISTS attempt_bucket ON login_attempts(bucket,created);
+                CREATE TABLE IF NOT EXISTS link_overrides(
+                    qq TEXT PRIMARY KEY,user_id TEXT NOT NULL,revision INTEGER NOT NULL,updated REAL NOT NULL);
+                CREATE TABLE IF NOT EXISTS link_audit(
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,qq TEXT NOT NULL,actor TEXT NOT NULL,
+                    before_user_id TEXT NOT NULL,after_user_id TEXT NOT NULL,created REAL NOT NULL);
             ''')
 
     def connect(self):
@@ -103,6 +109,35 @@ class Store:
             db.execute('BEGIN IMMEDIATE')
             for record in records:
                 db.execute('INSERT INTO prelinks VALUES(?,?,?)', (record['qq'],record['user_id'],time.time()))
+
+    def admin_state(self, db, qq):
+        link=db.execute('SELECT * FROM links WHERE qq=?',(qq,)).fetchone()
+        prelink=db.execute('SELECT * FROM prelinks WHERE qq=?',(qq,)).fetchone()
+        override=db.execute('SELECT * FROM link_overrides WHERE qq=?',(qq,)).fetchone()
+        revision=self.digest(json.dumps([dict(row) if row else None for row in (link,prelink,override)],sort_keys=True))
+        return dict(user_id=(link or prelink)['user_id'] if link or prelink else '',
+                    status='oauth' if link else 'prelinked' if prelink else 'unlinked',revision=revision)
+
+    def admin_change(self, qq, user_id, revision, actor):
+        with self.connect() as db:
+            db.execute('BEGIN IMMEDIATE')
+            before=self.admin_state(db,qq)
+            if revision!=before['revision']:
+                raise Rejected('成分站关联已改变，请重新载入后核对',409)
+            for table in ('links','prelinks'):
+                if user_id and db.execute('SELECT 1 FROM '+table+' WHERE user_id=? AND qq!=?',(user_id,qq)).fetchone():
+                    raise Rejected('该看板账号已关联其他成分，请先核对并解除原关联',409)
+            if user_id and user_id==before['user_id']:
+                return before
+            for table in ('links','prelinks','sessions'):
+                db.execute('DELETE FROM '+table+' WHERE qq=?',(qq,))
+            stamp=time.time()
+            if user_id:db.execute('INSERT INTO prelinks VALUES(?,?,?)',(qq,user_id,stamp))
+            db.execute('''INSERT INTO link_overrides VALUES(?,?,1,?) ON CONFLICT(qq)
+                DO UPDATE SET user_id=excluded.user_id,revision=revision+1,updated=excluded.updated''',(qq,user_id,stamp))
+            db.execute('INSERT INTO link_audit(qq,actor,before_user_id,after_user_id,created) VALUES(?,?,?,?,?)',
+                       (qq,actor,before['user_id'],user_id,stamp))
+            return self.admin_state(db,qq)
 
     def begin(self, token, context):
         if not context.get('session'):

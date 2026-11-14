@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlencode, urlsplit
 from . import upstream
 from .identity_store import Store, Rejected
 from .maintenance import service_lock, replay, backup_pair
+from . import admin_links
 
 STORE = None
 ORIGIN = os.environ.get('KANBAN_ORIGIN', 'https://kanban.danndann.cn')
@@ -23,6 +24,8 @@ LEGACY_BOARD_MAP = upstream.board_member_map
 def board_member_map():
     result = LEGACY_BOARD_MAP()
     with STORE.connect() as db:
+        overridden={row['qq'] for row in db.execute('SELECT qq FROM link_overrides')}
+        result={uid:qq for uid,qq in result.items() if qq not in overridden}
         for table in ('prelinks', 'links'):
             for row in db.execute('SELECT qq,user_id FROM '+table):
                 if row['qq'] in upstream.data['members']:
@@ -136,6 +139,18 @@ class Handler(upstream.Handler):
             except (ValueError, UnicodeError):
                 raise Rejected('请求格式不正确', 400) from None
             path = urlsplit(self.path).path
+            if path == '/api/internal/admin-links':
+                actor=context.get('admin_actor')
+                if not isinstance(actor,str) or not actor:
+                    raise Rejected('此操作仅供看板管理员使用',403)
+                with upstream._lock:
+                    if body.get('action')=='list':
+                        return self.send_json(admin_links.view(upstream.data,STORE))
+                    if body.get('action')!='change':raise Rejected('操作不存在',404)
+                    backup_pair(Path(upstream.DATA_FILE).parent,STORE)
+                    result=admin_links.change(upstream.data,STORE,body,actor)
+                    upstream.save()
+                    return self.send_json(dict(ok=True,**result))
             if path == '/api/join':
                 qq, pin = str(body.get('qq', '')).strip(), str(body.get('pin', '')).strip()
                 if not re.fullmatch(r'\d{4,12}', qq) or not re.fullmatch(r'\d{4,6}', pin):
@@ -160,16 +175,13 @@ class Handler(upstream.Handler):
                 STORE.begin(self.token(), context)
                 return self.send_json({'ok':True})
             if path == '/api/link/complete':
-                qq = STORE.complete(self.token(), context)
                 # The authoritative mapping is already committed; the old board
                 # field is only a compatibility projection for activity matching.
                 with upstream._lock:
+                    qq = STORE.complete(self.token(), context)
                     upstream.data['members'][qq]['boardUserId'] = context['user_id']
                     upstream.save()
                 return self.json_reply({'ok':True}, token='')
-            qq = self.current_qq(context)
-            if not qq:
-                raise Rejected('请先登录成分站', 401)
             routes = {'/api/selection':self.api_selection, '/api/note':self.api_note, '/api/gender':self.api_gender,
                       '/api/entry':self.api_create_entry, '/api/entry/update':self.api_update_entry,
                       '/api/entry/delete':self.api_delete_entry, '/api/shout':self.api_shout,
@@ -177,12 +189,13 @@ class Handler(upstream.Handler):
                       '/api/room/recalc':self.api_room_recalc, '/api/qgroup/split':self.api_qgroup_split,
                       '/api/qgroup/rooms':self.api_qgroup_rooms}
             fn = routes.get(path)
-            if not fn:
-                raise Rejected('操作不存在', 404)
-            if 'qq' in body and str(body['qq']) != qq:
-                raise Rejected('不能修改其他人的成分', 403)
-            body['qq'] = qq
             with upstream._lock:
+                qq = self.current_qq(context)
+                if not qq:raise Rejected('请先登录成分站',401)
+                if not fn:raise Rejected('操作不存在',404)
+                if 'qq' in body and str(body['qq']) != qq:
+                    raise Rejected('不能修改其他人的成分',403)
+                body['qq'] = qq
                 return fn(body)
         except Rejected as exc:
             return self.send_json({'error':exc.message}, exc.status)
@@ -201,11 +214,7 @@ def main():
     replay(folder, STORE)
     upstream.load()
     upstream.board_member_map = board_member_map
-    # Repair the compatibility projection from the authoritative identity map.
-    with STORE.connect() as db:
-        for row in db.execute('SELECT qq,user_id FROM links'):
-            if row['qq'] in upstream.data['members']:
-                upstream.data['members'][row['qq']]['boardUserId'] = row['user_id']
+    admin_links.projection(upstream.data,STORE)
     last_backup = [0.0]
     def paired_backup(force=False):
         if force or time.time()-last_backup[0] >= 3600:
