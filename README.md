@@ -126,11 +126,16 @@ git archive --format=tar "$release_commit" > /tmp/qgroup-"$release_commit".tar
 ```sh
 ssh server2 'docker compose -f /opt/qgroup/compose.yaml ps; systemctl start qgroup-backup.service'
 python3 deploy/verify_migration.py source.sqlite3 isolated-copy.sqlite3
-# 映像内可跑同一套测试（不需在宿主装依赖，也不触碰正式 DB）。
-# 务必用 docker run 而非 compose run：compose 会注入生产用的 SECURE_COOKIE / 管理金钥。
-ssh server2 'docker run --rm --user 994:992 --read-only --tmpfs /tmp:rw,size=64m \
+# 完整映像测试移到本机／独立 CI；不要在正式主机并行跑完整测试。
+# 将已建置的明确 image ID 导出到本机，载入后核对 ID；不要重新建置候选映像。
+ssh server2 'docker image save sha256:FULL_IMAGE_ID' > /tmp/qgroup-candidate-image.tar
+docker image load -i /tmp/qgroup-candidate-image.tar
+# 以下在本机执行，限额按本机资源调整，多个设置组合依序测试。
+# 用 docker run 而非 compose run，避免注入正式凭证；正式 DB 不挂进测试容器。
+docker run --rm --network none --user 994:992 --read-only \
+  --memory 1g --memory-swap 1g --cpus 2 --pids-limit 256 --tmpfs /tmp:rw,size=128m \
   -e KANBAN_DB=/tmp/kanban.sqlite3 \
-  qgroup:local python3 -m unittest discover -s tests -q'
+  sha256:FULL_IMAGE_ID timeout 360 python3 -m unittest discover -s tests -q
 ```
 
 `qgroup-backup.timer` 每天 UTC 19:20 后延迟 0–5 分钟（台北次日 03:20–03:25）在线备份，root 专用目录 `/var/backups/qgroup` 保留 14 份。每份 `.sqlite3` 配对同名前缀的 `.images.tar.gz`，包含所有已提交的图片与历史。恢复需同时还原数据库和图片目录；旧版没有外部图片的备份可单独使用。升级验收比较源库每个用户表原有列及每个值，并校验完整性、外键和重复迁移。
