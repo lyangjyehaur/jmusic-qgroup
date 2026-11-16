@@ -324,24 +324,35 @@
         "apps/api/src/app.test.ts",
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "tools/migration/import-snapshot.ts",
+        "tools/migration/music-codec.ts",
+        "packages/database/src/schema-v3.ts",
+        "packages/database/src/legacy-erasure.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "docs/unified-rebuild/14-import-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "共用 QQ session → 新建／保存成分 → 返回活動已測；既有關聯匯入、找回／認領與防搶佔待完成。"
+      "remaining": "共用 session 成分建立／保存、已關聯舊成分匯入後直接存取與唯一 ownership／unlink／contact 投影已實作；舊 PIN／OAuth 認領、完整欄位／找回、管理關聯、待處理舊 session／intent adapter 及正式副本演練待驗收。"
     },
     {
       "capability_id": "I12",
@@ -363,13 +374,29 @@
       "new_entry": "我的成分／個人卡",
       "required_behavior": "舊數字鍵與新 m_ 鍵區別；自填號可清空、查詢／複製且非認證；重號拒絕",
       "legacy_evidence_group": "成分身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "舊數字鍵與新 m_ 鍵區別；自填號可清空、查詢／複製且非認證；重號拒絕"
+      "implementation": [
+        "tools/migration/import-snapshot.ts",
+        "tools/migration/music-codec.ts",
+        "packages/database/src/schema-v3.ts",
+        "packages/database/src/legacy-erasure.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/14-import-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "隔離匯入保留舊數字鍵／native key 並映射固定 profile ID；聯絡號清空／唯一性與不作 ownership 依據已驗；完整查詢／複製／編輯 UI、認領、匯入未知案例與舊網址 adapter 待完成。"
     },
     {
       "capability_id": "I14",
@@ -384,27 +411,38 @@
         "apps/web/src/my-privacy.tsx",
         "packages/database/src/index.ts",
         "apps/api/src/admin-privacy.ts",
-        "apps/web/src/admin-privacy.tsx"
+        "apps/web/src/admin-privacy.tsx",
+        "tools/migration/import-snapshot.ts",
+        "tools/migration/music-codec.ts",
+        "packages/database/src/schema-v3.ts",
+        "packages/database/src/legacy-erasure.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
         "packages/database/src/privacy-migration.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
-        "apps/web/tests/admin-privacy.spec.ts"
+        "apps/web/tests/admin-privacy.spec.ts",
+        "docs/unified-rebuild/14-import-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、工作阻擋、身份／session／角色撤銷、共享待審、收據、管理審核清單／說明與即時範圍檢查已實作；完整共享資料處理、匯入／恢復／媒體、備份濾除及正式 bot 版本組合待驗收。"
+      "remaining": "帳號關閉、權限撤銷、收據、審核及匯入後舊身份撤銷／關聯歷史待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。"
     },
     {
       "capability_id": "I15",
@@ -419,27 +457,38 @@
         "apps/web/src/my-privacy.tsx",
         "packages/database/src/index.ts",
         "apps/api/src/admin-privacy.ts",
-        "apps/web/src/admin-privacy.tsx"
+        "apps/web/src/admin-privacy.tsx",
+        "tools/migration/import-snapshot.ts",
+        "tools/migration/music-codec.ts",
+        "packages/database/src/schema-v3.ts",
+        "packages/database/src/legacy-erasure.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
         "packages/database/src/privacy-migration.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
-        "apps/web/tests/admin-privacy.spec.ts"
+        "apps/web/tests/admin-privacy.spec.ts",
+        "docs/unified-rebuild/14-import-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "獨立成分刪除、ID 墓碑、新 ID／epoch、舊保存回執 410、持久 journal／舊 DB 重播與恢復、相關審核範圍檢查已實作；舊 music erasure 匯入、管理刪除、歷史下載與備份濾除及完整恢復待驗收。"
+      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活及匯入 PIN／native／contact／喊話清理已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。"
     },
     {
       "capability_id": "I16",
@@ -2690,21 +2739,34 @@
       "implementation": [
         "packages/database/src/index.ts",
         "packages/database/src/database.test.ts",
-        "tools/migration/export-legacy-schema.py"
+        "tools/migration/export-legacy-schema.py",
+        "tools/migration/import-snapshot.ts",
+        "tools/migration/music-codec.ts",
+        "packages/database/src/schema-v3.ts",
+        "packages/database/src/legacy-erasure.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
         "packages/database/src/privacy-migration.test.ts",
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
       ],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "permission_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/14-import-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "59 張相容表與初始化、開發庫 v1→v2 保 ID／歷史／FK、失敗 DDL 回滾、最新 erasure 重播已測；正式來源匯入／完整備份／媒體配對與回退待完成。"
+      "remaining": "schema 1→2→3、成套副本隔離匯入、逐表 ID／BLOB／序號／trigger／FK 保全、媒體 digest／引用、原快照重跑不覆蓋已測；完整備份／歷史快照／還原／回退匯出、資源及正式副本演練仍待完成。"
     },
     {
       "capability_id": "O13",
@@ -2712,13 +2774,29 @@
       "new_entry": "遷移／新備份工具",
       "required_behavior": "JSON／身份／壁紙與 erasure 有一致快照；恢復不重啟舊管理入口",
       "legacy_evidence_group": "成分維運",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "JSON／身份／壁紙與 erasure 有一致快照；恢復不重啟舊管理入口"
+      "implementation": [
+        "tools/migration/import-snapshot.ts",
+        "tools/migration/music-codec.ts",
+        "packages/database/src/schema-v3.ts",
+        "packages/database/src/legacy-erasure.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/import-migration.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/14-import-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "離線成套 data／identity／walls／ledger 匯入、權威投影、私有暫存原子發布、來源變動與未知欄位拒絕已實作；舊 session／intent adapter、來源擷取與維護鎖整合、歷史配對備份、恢復／回退與正式資料驗收尚未完成。"
     },
     {
       "capability_id": "O14",

@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import type { DB } from '@qgroup/database';
+import { eraseLegacyProfile, detachLegacyAccount, type DB } from '@qgroup/database';
 import { EraseData, ErasureProof, type ErasureResult } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
@@ -20,10 +20,13 @@ const sharedChecks: Record<string, string[]> = {
   account_audit: ['user_id'], admin_role_history: ['user_id'], music_profile_audit: ['actor_id'], bot_outbox: ['recipient_user_id'],
 };
 export function sharedRecords(db: DB, userId: string) {
-  return Object.fromEntries(Object.entries(sharedChecks).flatMap(([table, columns]) => {
+  const retained = Object.fromEntries(Object.entries(sharedChecks).flatMap(([table, columns]) => {
     const count = (db.prepare(`SELECT count(*) n FROM ${table} WHERE ${columns.map(column => `${column}=?`).join(' OR ')}`).get(...columns.map(() => userId)) as { n: number }).n;
     return count ? [[table, count]] : [];
   }));
+  const legacyHistory = (db.prepare("SELECT count(*) n FROM music_legacy_identity WHERE table_name='link_audit' AND (json_extract(payload_json,'$.before_user_id')=? OR json_extract(payload_json,'$.after_user_id')=? OR json_extract(payload_json,'$.actor')=?)").get(userId, userId, 'account:' + userId) as { n: number }).n;
+  if (legacyHistory) retained.music_ownership_history = legacyHistory;
+  return retained;
 }
 function activeWork(db: DB, userId: string) {
   const activeEvents = (db.prepare("SELECT count(*) n FROM events WHERE owner_id=? AND lifecycle NOT IN ('ended','cancelled') AND status!='deleted' AND archived_at IS NULL").get(userId) as { n: number }).n;
@@ -35,6 +38,7 @@ function eraseMusic(db: DB, profileId: string, userId: string, createdAt: string
   // Keep an ID-only tombstone, including when replay precedes an older profile snapshot.
   db.prepare(`INSERT INTO music_profiles(id,user_id,revision,updated_at,erased_at) VALUES(?,NULL,0,?,?)
     ON CONFLICT(id) DO UPDATE SET user_id=NULL,erased_at=excluded.erased_at`).run(profileId, createdAt, createdAt);
+  eraseLegacyProfile(db, profileId, createdAt);
   db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_profile_audit WHERE profile_id=?').run(profileId);
   db.prepare(`UPDATE request_results SET response_status=410,response_json=? WHERE (user_id,request_key) IN
@@ -66,6 +70,7 @@ function closeAccount(db: DB, userId: string, requestId: string, createdAt: stri
   db.prepare('DELETE FROM event_access WHERE user_id=?').run(userId);
   db.prepare('UPDATE music_profiles SET user_id=NULL WHERE user_id=?').run(userId);
   db.prepare("UPDATE users SET nickname='已注销用户',token_hash=? WHERE id=?").run(randomBytes(32).toString('hex'), userId);
+  detachLegacyAccount(db, userId);
   const status = Object.keys(sharedRecords(db, userId)).length ? 'shared_review' : 'completed';
   db.prepare('INSERT INTO privacy_requests(id,user_id,status,created_at,updated_at) VALUES(?,?,?,?,?)').run(requestId, userId, status, createdAt, createdAt);
   return status;

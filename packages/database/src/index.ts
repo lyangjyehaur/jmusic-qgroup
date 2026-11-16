@@ -3,9 +3,10 @@ import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 import { legacySchema } from './legacy-schema';
 import { schemaV1 } from './schema-v1';
+import { schemaV3 } from './schema-v3';
 
 export type DB = Database.Database;
-export const REBUILD_SCHEMA_VERSION = 2;
+export const REBUILD_SCHEMA_VERSION = 3;
 function migratePrivacy(db: DB) {
   // Rebuild only our own table. Child foreign keys retain the stable table name.
   db.pragma('foreign_keys = OFF');
@@ -41,15 +42,18 @@ export function openDatabase(path: string): DB {
     if (tables.length && !tables.some(t => t.name === 'rebuild_schema')) throw new Error('Refusing legacy database: use an explicit isolated migration copy');
     if (tables.length) {
       const versions = db.prepare('SELECT version,baseline FROM rebuild_schema').all() as { version: number; baseline: string }[];
-      if (versions.length !== 1 || ![1, REBUILD_SCHEMA_VERSION].includes(versions[0]?.version ?? 0) || versions[0]?.baseline !== '8da877857f163853c449474e168534e2e493121b') throw new Error('Unsupported rebuild schema');
+      if (versions.length !== 1 || ![1, 2, REBUILD_SCHEMA_VERSION].includes(versions[0]?.version ?? 0) || versions[0]?.baseline !== '8da877857f163853c449474e168534e2e493121b') throw new Error('Unsupported rebuild schema');
     }
     db.pragma('foreign_keys = ON');
     db.pragma('busy_timeout = 5000');
     db.pragma('journal_mode = WAL');
     if (!tables.length) db.transaction(() => { db.exec(legacySchema); db.exec(schemaV1); }).immediate();
     if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 1) migratePrivacy(db);
+    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 2) db.transaction(() => { db.exec(schemaV3); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Import migration foreign key check failed'); }).immediate();
     // The frozen export contains structure only; supply the legacy secure default.
     db.prepare('INSERT OR IGNORE INTO site_settings(id) VALUES(1)').run();
     return db;
   } catch (error) { db.close(); throw error; }
 }
+
+export { eraseLegacyProfile, detachLegacyAccount } from './legacy-erasure';
