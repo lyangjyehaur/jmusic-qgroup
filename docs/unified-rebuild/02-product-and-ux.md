@@ -48,11 +48,12 @@
 | `/people/shouts`、`/people/shouts/history` | 找搭子、發布／冷卻狀態、過期喊話與分頁 |
 | `/tools/room-lab` | 自選會員的自由分房；有活動上下文時可帶至該活動核對 |
 | `/me`、`/me/music`、`/me/entries` | 個人摘要、唯一成分編輯器、本人自建詞條 |
-| `/me/accounts`、`/me/payment-codes`、`/me/privacy` | 帳號／裝置與 QQ、私人收款碼、刪除申請 |
+| `/me/accounts`、`/me/devices`、`/me/payment-codes`、`/me/privacy` | 帳號／裝置與 QQ、私人收款碼、刪除申請 |
 | `/inbox` | 未知結果操作、動態待辦、歷史通知；分區且各有狀態 |
 | `/login`、`/auth/qq/callback`、`/auth/confirm` | 同一登入流程，保留原任務；回調不直接建立帳號 |
-| `/access/:token`、`/invitations/:token`、`/claims/:token`、`/handoffs/:token`、`/devices/:token` | 各種限權預覽與明確接受；不因打開連結直接執行 |
+| `/access/:token`、`/invitations/:token`、`/claims/:token`、`/handoffs/:token` | 各種限權預覽與明確接受；不因打開連結直接執行 |
 | `/admin/*` | 單一後台；帳號、活動支援、音樂、找搭子、資產、bot、隱私與資料保全 |
+| `/me/devices/accept#token=…` | 十分鐘一次性裝置授權；fragment 暫存後移除，登入並明確接受，不自動切換 |
 | `/guide`、`/privacy`、`/contact` | 同一框架下的手冊、政策和問題回報；簡繁與公開連結保留 |
 
 活動詳情的次導覽是「概況、名單、分房、結算、紀錄」。帳本由結算區進入，管理工具依角色出現；不要把普通參加者先帶進所有財務表單。權限對應後端能力，不靠把按鈕藏起來保護資料。

@@ -11,6 +11,7 @@ import { catalog, getActivity, getProfile, listActivities, saveProfile } from '.
 
 import { createSecurity, hash } from './security';
 import { registerAuth } from './auth';
+import { registerAccountDevices } from './account-devices';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
 export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider }
@@ -35,6 +36,7 @@ export function createApp(options: AppOptions) {
   });
   app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: 1 }));
   registerAuth(app, db, security, now, options.qq);
+  registerAccountDevices(app, db, security, now);
   app.get('/api/v2/activities', async request => {
     const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
     return listActivities(db, query.page, query.period, now());

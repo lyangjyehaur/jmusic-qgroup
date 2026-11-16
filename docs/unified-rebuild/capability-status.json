@@ -177,23 +177,29 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/account-devices.ts",
+        "apps/web/src/devices.tsx",
+        "apps/web/src/account-session.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/account-devices.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/account-devices.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/devices.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "授權延續、明確切換、舊 scope 讀寫拒絕及成分隔離已測；跨裝置／多分頁與完整資料遷移驗收待完成。"
+      "remaining": "帳號 grant、切換、撤銷後替代帳號與跨分頁 scope／草稿隔離已測；完整離線／背景、多瀏覽器、真實遷移與舊入口驗收待完成。"
     },
     {
       "capability_id": "I08",
@@ -201,13 +207,25 @@
       "new_entry": "我的裝置",
       "required_behavior": "10 分鐘／一次使用、產生／接受均確認；接受不自動切帳號",
       "legacy_evidence_group": "身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "10 分鐘／一次使用、產生／接受均確認；接受不自動切帳號"
+      "implementation": [
+        "apps/api/src/account-devices.ts",
+        "apps/web/src/devices.tsx",
+        "apps/web/src/account-session.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/account-devices.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/account-devices.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/devices.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作十分鐘一次性連結、兩端確認、訪客登入返回、取消不消耗、並行一次成功與回執核對；舊入口 adapters、真 QQ WebView 與遷移版本組合驗收待完成。"
     },
     {
       "capability_id": "I09",
@@ -215,13 +233,25 @@
       "new_entry": "我的裝置",
       "required_behavior": "不能誤撤當前裝置；撤另一裝置不抹除其其他帳號",
       "legacy_evidence_group": "身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不能誤撤當前裝置；撤另一裝置不抹除其其他帳號"
+      "implementation": [
+        "apps/api/src/account-devices.ts",
+        "apps/web/src/devices.tsx",
+        "apps/web/src/account-session.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/account-devices.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/account-devices.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/devices.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作裝置列出、二次確認撤權、排除目前裝置、保留其他帳號／意圖、帳號歷史分頁與交易回滾；裝置舊入口、完整恢復／還原與實際版本組合驗收待完成。"
     },
     {
       "capability_id": "I10",
@@ -345,23 +375,29 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/account-devices.ts",
+        "apps/web/src/devices.tsx",
+        "apps/web/src/account-session.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/account-devices.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/account-devices.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/devices.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "當前裝置 session／全部授權／意圖撤銷及分頁草稿清理已測，其他裝置不登出；跨分頁即時清理、儲存失敗與完整私人快取驗收待完成。"
+      "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。"
     },
     {
       "capability_id": "E01",

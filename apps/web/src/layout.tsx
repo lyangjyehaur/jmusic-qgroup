@@ -3,6 +3,7 @@ import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { ThemeProvider } from 'yahha-ui';
 import { sessionQuery } from './shared';
+import { observeAccountChange } from './account-session';
 export function Layout() {
   const session = useQuery(sessionQuery);
   const location = useLocation();
@@ -10,6 +11,12 @@ export function Layout() {
   const queryClient = useQueryClient();
   const previousScope = useRef<string | undefined>(undefined);
   const scope = session.data?.scope;
+  useEffect(() => observeAccountChange(() => {
+    void queryClient.fetchQuery({ ...sessionQuery, staleTime: 0 }).then(next => {
+      queryClient.removeQueries({ queryKey: ['private'], predicate: query => query.queryKey[1] !== next.scope });
+      return queryClient.invalidateQueries({ queryKey: ['private', next.scope] });
+    }).catch(() => { /* The session query displays the read failure; no authorization is assumed. */ });
+  }), [queryClient]);
   useEffect(() => {
     if (!scope) return;
     if (previousScope.current && previousScope.current !== scope) queryClient.removeQueries({ queryKey: ['private', previousScope.current] });

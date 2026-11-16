@@ -6,6 +6,7 @@ import { z } from 'zod';
 import { AccountList, AuthResult, Ok, QQStartResult, QQStatus, type Viewer } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
+import { announceAccountChange, clearDeviceDrafts } from './account-session';
 
 export const authHeaders = (viewer: Viewer) => ({ 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf });
 export const loginLink = (returnTo: string) => '/login?returnTo=' + encodeURIComponent(returnTo);
@@ -13,7 +14,8 @@ function localReturn(value: string | null) { return value?.startsWith('/') && !v
 function useAccountChange() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  return async (returnTo: string) => {
+  return async (returnTo: string, logout = false) => {
+    announceAccountChange(logout);
     const next = await queryClient.fetchQuery({ ...sessionQuery, staleTime: 0 });
     queryClient.removeQueries({ queryKey: ['private'], predicate: query => query.queryKey[1] !== next.scope });
     navigate(localReturn(returnTo), { replace: true });
@@ -107,8 +109,8 @@ export function Accounts() {
     if (!viewer) return; setBusy(true); setError('');
     try {
       await api('/auth/logout', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true }) });
-      for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:music:')) sessionStorage.removeItem(key);
-      await changed('/me');
+      clearDeviceDrafts();
+      await changed('/me', true);
     } catch (failure) { setError(failure instanceof Error ? failure.message : '登出失敗'); } finally { setBusy(false); }
   }
   return <><PageIntro title="帳號" />{params.has('returnTo') && <Link className="back" to={localReturn(params.get('returnTo'))}>回到原任務</Link>}{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink(localReturn(params.get('returnTo')) === '/' ? '/me/accounts' : localReturn(params.get('returnTo')))}>登入</Link> : <>
@@ -117,6 +119,7 @@ export function Accounts() {
       {viewer.qq.needsReauth && <Text>尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</Text>}
     </Surface>
     <Surface className="detail auth-panel"><Heading level={2}>此裝置已授權的帳號</Heading><Text>切換帳號會保留各自資料。</Text>{accounts.isPending ? <Notice>正在讀取授權…</Notice> : accounts.error ? <Failure error={accounts.error} retry={() => void accounts.refetch()} /> : <ul className="account-list">{accounts.data.accounts.map(account => <li key={account.scope}><span>{account.nickname}{account.current ? '（目前帳號）' : ''}</span>{!account.current && <Button variant="secondary" disabled={busy} onClick={() => void switchTo(account.scope)}>切換至 {account.nickname}</Button>}</li>)}</ul>}</Surface>
+    <Link className="back" to="/me/devices">裝置與帳號紀錄</Link>
     <Surface className="detail auth-panel"><Text>登出會撤銷此裝置的所有帳號授權並清除成分分頁草稿；其他裝置不受影響。</Text><Button variant="secondary" disabled={busy} onClick={() => void logout()}>登出此裝置</Button></Surface>
     {error && <Text role="alert">{error}</Text>}
   </>}</>;

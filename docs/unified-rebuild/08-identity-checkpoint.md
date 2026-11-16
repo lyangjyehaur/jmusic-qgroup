@@ -2,6 +2,8 @@
 
 日期：2026-11-17（Asia/Taipei）。分支：`codex/unified-rebuild`。
 
+後續裝置授權／撤權及跨分頁行為已加入[第三批檢查點](09-device-checkpoint.md)；以下保留第二批範圍與當時驗證證據。
+
 發布範圍 **`none`**：只更新隔離的新網站、開發工具、測試及文件。既有 Python／public 運行產物、Docker／Compose、正式 web／bot、憑證與真實待送消息均未操作。最終切換仍按 `both` 評估；本檢查點不能直接部署，也不代表 P1 或全部身分功能已完成。
 
 ## 可以執行的流程

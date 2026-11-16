@@ -30,6 +30,14 @@ export const QQStatus = z.discriminatedUnion('status', [
 export const AccountList = z.object({ accounts: z.array(z.object({ scope: z.string(), nickname: z.string(), current: z.boolean() })) });
 export const Confirm = z.object({ confirm: z.literal(true) }).strict();
 export const SwitchAccount = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
+export const DeviceList = z.object({ devices: z.array(z.object({ id: z.string(), current: z.boolean(), createdAt: z.string() })) });
+export const IssueDeviceLink = z.object({ confirm: z.literal(true), authorizeOwnDevice: z.literal(true) }).strict();
+export const IssuedDeviceLink = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{32}$/), expiresAt: z.string() });
+export const ReadDeviceLink = z.object({ token: z.string().regex(/^[A-Za-z0-9_-]{32}$/) }).strict();
+export const AcceptDeviceLink = ReadDeviceLink.extend({ confirm: z.literal(true), acceptAccess: z.literal(true) });
+export const DeviceLinkView = z.object({ status: z.enum(['pending', 'accepted']), nickname: z.string(), expiresAt: z.string(), alreadyAuthorized: z.boolean() });
+export const RevokeDevice = z.object({ deviceId: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
+export const AccountHistory = z.object({ history: z.array(z.object({ id: z.number().int(), action: z.string(), createdAt: z.string() })), nextCursor: z.number().int().nullable() });
 export const Ok = z.object({ ok: z.literal(true) });
 export const Activity = z.object({
   id: z.string(), title: z.string(), category: z.string(), location: z.string(),
