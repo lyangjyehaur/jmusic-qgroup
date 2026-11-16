@@ -29,6 +29,8 @@ export function openDatabase(path: string): DB {
     db.pragma('busy_timeout = 5000');
     db.pragma('journal_mode = WAL');
     if (!tables.length) db.transaction(() => { db.exec(legacySchema); db.exec(schema); }).immediate();
+    // The frozen export contains structure only; supply the legacy secure default.
+    db.prepare('INSERT OR IGNORE INTO site_settings(id) VALUES(1)').run();
     return db;
   } catch (error) { db.close(); throw error; }
 }

@@ -14,9 +14,12 @@ describe('isolated replacement database', () => {
       expect(tables).toHaveLength(64); // 59 compatibility + marker + four music tables
       expect(first.pragma('integrity_check', { simple: true })).toBe('ok');
       expect(first.pragma('foreign_key_check')).toEqual([]);
+      expect(first.prepare('SELECT * FROM site_settings').get()).toEqual({ id: 1, allow_name_registration: 0, revision: 0 });
+      first.prepare('UPDATE site_settings SET allow_name_registration=1,revision=7').run();
       first.close();
       const second = openDatabase(path);
       expect(second.prepare('SELECT max(version) n FROM schema_migrations').get()).toEqual({ n: 20 });
+      expect(second.prepare('SELECT * FROM site_settings').get()).toEqual({ id: 1, allow_name_registration: 1, revision: 7 });
       expect(second.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all()).toEqual(tables);
       second.close();
     } finally { rmSync(dir, { recursive: true }); }

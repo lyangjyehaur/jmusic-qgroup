@@ -11,16 +11,27 @@
       "legacy_evidence_group": "身分",
       "implementation": [
         "apps/api/src/app.ts",
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "匿名公開查閱不建帳號已測；訪客 session 與登入引導待完成。"
+      "remaining": "訪客 session、不建會員與登入引導已測；完整舊入口與正式遷移後的匿名／權限驗收待完成。"
     },
     {
       "capability_id": "I02",
@@ -28,13 +39,26 @@
       "new_entry": "共用登入流程",
       "required_behavior": "bind／login 分流、原 session／state、一次性期限；本人確認才建帳號或切換",
       "legacy_evidence_group": "身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "bind／login 分流、原 session／state、一次性期限；本人確認才建帳號或切換"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作登入／綁定／回調確認、原裝置與時限、衝突與失效競態；真 QQ、正式資料及完整錯誤恢復驗收待完成。"
     },
     {
       "capability_id": "I03",
@@ -42,13 +66,26 @@
       "new_entry": "登入後返回",
       "required_behavior": "保留 event／poll／action／邀請上下文，取消不改身份",
       "legacy_evidence_group": "身分、前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "保留 event／poll／action／邀請上下文，取消不改身份"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "本地 query／hash 任務返回與取消不改身份已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。"
     },
     {
       "capability_id": "I04",
@@ -56,13 +93,26 @@
       "new_entry": "帳號",
       "required_behavior": "已綁另一人、當前綁另一 QQ 不覆蓋；稱呼不作識別",
       "legacy_evidence_group": "身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "已綁另一人、當前綁另一 QQ 不覆蓋；稱呼不作識別"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "兩種 QQ 綁定衝突、同名／UnionID 不合併及 client 隔離已測；正式匯入與完整身分操作聯測待完成。"
     },
     {
       "capability_id": "I05",
@@ -70,13 +120,26 @@
       "new_entry": "登入／管理",
       "required_behavior": "預設關閉，API 不繞過；版本化明確同意，不刪既有帳號",
       "legacy_evidence_group": "身分、管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "預設關閉，API 不繞過；版本化明確同意，不刪既有帳號"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已有版本化明確同意與安全預設，重開庫保留既有設定；名稱註冊／管理開關 API、更新政策與重同意待完成。"
     },
     {
       "capability_id": "I06",
@@ -84,13 +147,26 @@
       "new_entry": "我的／個人卡",
       "required_behavior": "改稱呼不換 ID；QQ 暱稱不覆蓋既有稱呼；頭像失敗有退路",
       "legacy_evidence_group": "身分、名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "改稱呼不換 ID；QQ 暱稱不覆蓋既有稱呼；頭像失敗有退路"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "QQ 綁定不改 ID／稱呼、頭像安全過濾已測；改稱呼 API／介面與頭像展示／失敗退路待完成。"
     },
     {
       "capability_id": "I07",
@@ -98,13 +174,26 @@
       "new_entry": "我的帳號",
       "required_behavior": "同裝置保留授權、scope 隔離；舊頁寫入拒絕；不自動搬資料",
       "legacy_evidence_group": "身分、恢復",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "同裝置保留授權、scope 隔離；舊頁寫入拒絕；不自動搬資料"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "授權延續、明確切換、舊 scope 讀寫拒絕及成分隔離已測；跨裝置／多分頁與完整資料遷移驗收待完成。"
     },
     {
       "capability_id": "I08",
@@ -140,13 +229,26 @@
       "new_entry": "帳號／提示",
       "required_behavior": "綁定原 QQ、不先登出；提醒節流；只回傳狀態，不宣稱 bot 已綁定",
       "legacy_evidence_group": "身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "綁定原 QQ、不先登出；提醒節流；只回傳狀態，不宣稱 bot 已綁定"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "取得狀態、原 QQ 重授權入口、可選 UnionID 與不宣稱 bot 綁定已實作；提醒節流、真 QQ 與 bot 身分聯測待完成。"
     },
     {
       "capability_id": "I11",
@@ -156,16 +258,27 @@
       "legacy_evidence_group": "成分身分",
       "implementation": [
         "apps/api/src/repositories.ts",
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "同一 session 新建並保存成分已測；QQ 登入、既有關聯匯入、認領與防搶佔待完成。"
+      "remaining": "共用 QQ session → 新建／保存成分 → 返回活動已測；既有關聯匯入、找回／認領與防搶佔待完成。"
     },
     {
       "capability_id": "I12",
@@ -229,13 +342,26 @@
       "new_entry": "共用帳號選單",
       "required_behavior": "清理該 session 與意圖，不登出其他裝置；私人快取不跨帳號",
       "legacy_evidence_group": "身分、隱私",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "清理該 session 與意圖，不登出其他裝置；私人快取不跨帳號"
+      "implementation": [
+        "apps/api/src/auth.ts",
+        "apps/api/src/security.ts",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/qq-provider.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/auth.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "當前裝置 session／全部授權／意圖撤銷及分頁草稿清理已測，其他裝置不登出；跨分頁即時清理、儲存失敗與完整私人快取驗收待完成。"
     },
     {
       "capability_id": "E01",
@@ -2296,13 +2422,20 @@
       "new_entry": "共用公開頁",
       "required_behavior": "原 URL、簡繁與 ICP 資訊、政策用途保留，重構後手冊更新",
       "legacy_evidence_group": "前端、隱私",
-      "implementation": [],
-      "behavior_evidence": [],
+      "implementation": [
+        "apps/web/src/privacy.tsx",
+        "apps/web/src/auth.tsx"
+      ],
+      "behavior_evidence": [
+        "docs/unified-rebuild/08-identity-checkpoint.md"
+      ],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "原 URL、簡繁與 ICP 資訊、政策用途保留，重構後手冊更新"
+      "ux_evidence": [
+        "apps/web/tests/auth.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "既有政策直接 TSX 鏡像、聯絡與 ICP、登入同意入口已實作；統一用途政策、手冊、簡繁及舊 URL 相容待完成。"
     },
     {
       "capability_id": "O10",

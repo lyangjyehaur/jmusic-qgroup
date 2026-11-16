@@ -15,5 +15,5 @@ export default defineConfig({
       defaultHandler(warning);
     },
   } },
-  server: { host: '127.0.0.1', port: 5080, strictPort: true, proxy: { '/api': 'http://127.0.0.1:5081' } },
+  server: { host: '127.0.0.1', port: 5080, strictPort: true, proxy: { '/api': 'http://127.0.0.1:5081', '/auth/qq/callback': 'http://127.0.0.1:5081' } },
 });

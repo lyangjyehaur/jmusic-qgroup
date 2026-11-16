@@ -2,6 +2,8 @@
 
 日期：2026-11-17（Asia/Taipei）。分支：`codex/unified-rebuild`。
 
+後續已加入[第二批共用帳號實作](08-identity-checkpoint.md)；以下保留第一批範圍與當時證據，最新登入、路由及測試結果見第二批文件。
+
 發布範圍 **`none`**：此批建立隔離開發程式與測試；沒有改動現有 Python／public 運行產物、Compose 或 Dockerfile，未操作正式服務。最終整合切換仍按 **`both`** 評估，不能從本分支直接發布。
 
 ## 已完成的前置工作
@@ -61,7 +63,7 @@ npm ci --no-audit --no-fund
 npm run dev:rebuild
 ```
 
-前端 `http://127.0.0.1:5080`，API `http://127.0.0.1:5081`。Vite 將 `/api` 代理到新 API，與原 web／music／bot 隔離。兩個程序由同一開發指令管理。
+前端 `http://127.0.0.1:5080`，API `http://127.0.0.1:5081`。Vite 將 `/api` 及 `/auth/qq/callback` 代理到新 API，與原 web／music／bot 隔離。兩個程序由同一開發指令管理。
 
 ```sh
 npm run check:capabilities
@@ -72,7 +74,7 @@ npm run test:e2e:rebuild
 npm run check:ui
 ```
 
-瀏覽器測試在記憶體資料庫建立純合成會員／活動／詞條，沒有 fixture 登入 API，也沒有真實 QQ 或網路投遞。本機 macOS 若已安裝 Chrome，預設使用它；其他環境先執行 `npx playwright install chromium`。可用 `REBUILD_BROWSER_CHANNEL` 指定已安裝瀏覽器。遠端 CI workflow 已加入，實際遠端結果另行核對。
+瀏覽器測試在記憶體資料庫建立純合成會員／活動／詞條，使用測試專用的合成 QQ adapter／重定向（見第二批文件），沒有真實 QQ 或網路投遞。本機 macOS 若已安裝 Chrome，預設使用它；其他環境先執行 `npx playwright install chromium`。可用 `REBUILD_BROWSER_CHANNEL` 指定已安裝瀏覽器。遠端 CI workflow 已加入，實際遠端結果另行核對。
 
 只看合成公開活動預覽，可在 build 後執行 `node_modules/.bin/tsx apps/api/testsupport/preview.ts`，開啟 `http://127.0.0.1:5082`。這是測試用記憶體庫，結束程序後清除；正常 `dev:rebuild` 不會載入 fixture。
 

@@ -20,7 +20,9 @@ describe('unified public and music API', () => {
   it('browses without creating accounts; hides private/draft/deleted details consistently', async () => {
     const { app, db } = await setup();
     const count = db.prepare('SELECT count(*) n FROM users').get();
-    const session = await app.inject('/api/v2/session'); expect(session.json()).toEqual({ authenticated: false });
+    const session = await app.inject('/api/v2/session'); expect(session.json()).toMatchObject({ authenticated: false, qqEnabled: false, privacyAccepted: false });
+    expect(session.headers['set-cookie']).toContain('HttpOnly');
+    expect(db.prepare('SELECT count(*) n FROM visitor_sessions').get()).toEqual({ n: 1 });
     expect(session.headers['cache-control']).toBe('no-store');
     const listing = (await app.inject('/api/v2/activities')).json();
     expect(listing.events.map((e: { id: string }) => e.id)).toEqual(['karaoke', 'listen']);

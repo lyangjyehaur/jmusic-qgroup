@@ -9,9 +9,10 @@ export function Layout() {
   const heading = useRef<HTMLElement>(null);
   const queryClient = useQueryClient();
   const previousScope = useRef<string | undefined>(undefined);
-  const scope = session.data?.authenticated ? session.data.scope : 'guest';
+  const scope = session.data?.scope;
   useEffect(() => {
-    if (previousScope.current && previousScope.current !== scope) queryClient.removeQueries({ queryKey: ['private'] });
+    if (!scope) return;
+    if (previousScope.current && previousScope.current !== scope) queryClient.removeQueries({ queryKey: ['private', previousScope.current] });
     previousScope.current = scope;
   }, [scope, queryClient]);
   useEffect(() => { heading.current?.focus(); }, [location.pathname]);

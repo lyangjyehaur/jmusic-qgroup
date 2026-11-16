@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已開始[第一批隔離實作](07-implementation-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)與[共用帳號檢查點](08-identity-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -23,6 +23,7 @@
 | [資料表與欄位索引](schema-index.md) | 指定提交在合成空庫建立的 59 張看板表與 10 張成分身分表；不含正式資料 |
 | [Git 基線與草稿保全](06-git-baseline.md) | 凍結舊版分支／標籤、未整合草稿與新重構分支的開發方式 |
 | [第一批實作與開發方式](07-implementation-checkpoint.md) | 已可執行的範圍、測試證據、啟動方式與下一批工作 |
+| [共用帳號實作檢查點](08-identity-checkpoint.md) | QQ 授權、帳號切換、bot 資料保全證據及剩餘身分工作 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論
