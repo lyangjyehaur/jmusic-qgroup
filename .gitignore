@@ -6,6 +6,10 @@ bot-events.jsonl*
 .venv/
 .venv-botprobe/
 node_modules/
+.rebuild-data/
+.rebuild-dist/
+/test-results/
+/playwright-report/
 
 # Local verification output and private administrator credentials.
 /artifacts/

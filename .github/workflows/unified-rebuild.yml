@@ -1,0 +1,28 @@
+name: Unified rebuild checkpoint
+on: [push, pull_request]
+jobs:
+  isolated-rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: npm ci --no-audit --no-fund
+      - run: npm run check:capabilities
+      - run: npm run check:ui
+      - run: npm run test:rebuild
+      - run: npm run build:rebuild
+      - run: npm run test:build:rebuild
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:rebuild
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-evidence
+          path: test-results/

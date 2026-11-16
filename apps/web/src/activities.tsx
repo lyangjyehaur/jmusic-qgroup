@@ -1,0 +1,38 @@
+import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { Button, EmptyState, Heading, Surface, Text } from 'yahha-ui';
+import { Activity, ActivityList, type ActivityView } from '@qgroup/contracts';
+import { api } from './api';
+import { Failure, Notice, PageIntro } from './shared';
+const dateLabel = (value: string) => new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Taipei' }).format(new Date(value));
+const phaseLabel: Record<string, string> = { scheduled: '即將開始', ongoing: '進行中', ended: '已結束', cancelled: '已取消' };
+function ActivityCard({ event }: { event: ActivityView }) {
+  return <Surface className="event-card"><div className="event-meta"><span className="pill">{event.category}</span><span>{event.archived ? '已歸檔' : phaseLabel[event.phase] ?? event.phase}</span></div>
+    <Heading level={2}><Link to={'/activities/' + encodeURIComponent(event.id)}>{event.title}</Link></Heading>
+    <Text>{dateLabel(event.startsAt)} <span className="muted">台北時間</span></Text><Text tone="muted">{event.location}</Text>
+    <div className="event-bottom"><span>{event.confirmed} / {event.capacity} 人{event.waiting > 0 ? ` · ${event.waiting} 人候補` : ''}</span><Link to={'/activities/' + encodeURIComponent(event.id)}>查看活動 <span aria-hidden="true">↗</span></Link></div>
+  </Surface>;
+}
+export function Activities() {
+  const [search, setSearch] = useSearchParams();
+  const period = search.get('period') === 'history' ? 'history' : 'upcoming';
+  const page = Math.max(1, Math.min(10000, Number(search.get('page')) || 1));
+  const query = useQuery({ queryKey: ['activities', period, page], queryFn: () => api(`/activities?period=${period}&page=${page}`, ActivityList) });
+  return <><PageIntro eyebrow="MEET & LISTEN" title="下一次，一起。">找到想參加的活動，從共同喜歡的音樂開始認識彼此。</PageIntro>
+    <div className="content-columns"><section aria-label="活動列表"><div className="tabs" aria-label="活動篩選">{[['upcoming', '近期活動'], ['history', '往期與歸檔']].map(([key, label]) => <Button key={key} variant={period === key ? 'primary' : 'ghost'} aria-pressed={period === key} onClick={() => setSearch({ period: key! })}>{label}</Button>)}</div>
+      {query.isPending ? <Notice>正在讀取活動…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : query.data.events.length ? <div className="event-grid">{query.data.events.map(event => <ActivityCard key={event.id} event={event} />)}</div> : <Surface><EmptyState motif="paper" title="這裡還沒有公開活動" description="邀請限定的活動不會出現在公開列表。" /></Surface>}
+      {query.data && <div className="pagination">{page > 1 && <Button variant="secondary" onClick={() => setSearch({ period, page: String(page - 1) })}>上一頁</Button>}{query.data.hasMore && <Button variant="secondary" onClick={() => setSearch({ period, page: String(page + 1) })}>下一頁</Button>}</div>}
+    </section><aside><Surface variant="note" className="aside-note"><div className="eyebrow">從喜歡開始</div><Heading level={2}>帶上你的音樂名片</Heading><Text>整理常聽的風格和歌手，下一次見面就有聊不完的話題。</Text><Link className="text-link" to="/me/music">整理我的成分 →</Link></Surface><Text size="sm" tone="muted">活動、音樂與帳號，現在都在同一個地方。</Text></aside></div></>;
+}
+export function ActivityDetail() {
+  const { id = '' } = useParams();
+  const query = useQuery({ queryKey: ['activity', id], queryFn: () => api('/activities/' + encodeURIComponent(id), Activity) });
+  if (query.isPending) return <Notice>正在讀取活動…</Notice>;
+  if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
+  const event = query.data;
+  return <><Link className="back" to="/activities">← 所有活動</Link><PageIntro eyebrow={event.category} title={event.title}>{phaseLabel[event.phase] ?? event.phase}{event.archived ? ' · 已歸檔' : ''}</PageIntro>
+    <div className="content-columns"><Surface className="detail"><Heading level={2}>活動安排</Heading><dl><dt>時間</dt><dd>{dateLabel(event.startsAt)}（台北時間）{event.durationHours !== null ? ` · 預計 ${event.durationHours} 小時` : ' · 時長未定'}</dd><dt>地點</dt><dd>{event.location}</dd><dt>人數</dt><dd>{event.confirmed} / {event.capacity} 人 · 最低 {event.minimumParticipants} 人</dd><dt>報名截止</dt><dd>{dateLabel(event.deadline)}（台北時間）</dd></dl>
+      {event.estimatedOver && <Notice>預定時間已過，實際結束狀態尚未確認。</Notice>}<Heading level={2}>關於這次相聚</Heading><Text className="description">{event.description || '還沒有活動說明。'}</Text>
+      <Notice>此預覽目前開放查閱；報名、名單、分房與結算將在後續開發批次接入。</Notice>
+    </Surface><aside><Surface variant="note" className="aside-note"><Heading level={2}>先認識彼此的喜歡</Heading><Text>你的音樂成分會沿用同一個群聚帳號。</Text><Link className="text-link" to={'/me/music?from=' + encodeURIComponent('/activities/' + id)}>整理成分，再回活動 →</Link></Surface></aside></div></>;
+}
