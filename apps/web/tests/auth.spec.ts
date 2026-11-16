@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 async function identity(page: Page, code: string) {
   await page.unroute('**/__test/qq?*');
@@ -10,6 +10,7 @@ async function identity(page: Page, code: string) {
 async function authorize(page: Page, code: string, destination = '/me/accounts') {
   await identity(page, code);
   await page.goto('/login?returnTo=' + encodeURIComponent(destination));
+  await expect(page.getByRole('button', { name: '前往 QQ 登入', exact: true })).toBeVisible();
   const consent = page.getByRole('checkbox');
   if (await consent.count()) await consent.check();
   await page.getByRole('button', { name: '前往 QQ 登入', exact: true }).click();

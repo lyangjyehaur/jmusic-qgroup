@@ -12,6 +12,7 @@ import { catalog, getActivity, getProfile, listActivities, saveProfile } from '.
 import { createSecurity, hash } from './security';
 import { registerAuth } from './auth';
 import { registerAccountDevices } from './account-devices';
+import { registerRegistrationSettings } from './registration-settings';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
 export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider }
@@ -24,54 +25,58 @@ export function createApp(options: AppOptions) {
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
-  app.addHook('onRequest', async (request, reply) => {
-    if (request.url.startsWith('/api/') || request.url.startsWith('/auth/')) reply.header('Cache-Control', 'no-store').header('Vary', 'Cookie');
-  });
-  app.setErrorHandler((error, request, reply) => {
-    if (error instanceof DomainError) return reply.code(error.status).send({ code: error.code, message: error.message });
-    if (error instanceof z.ZodError) return reply.code(400).send({ code: 'INVALID_INPUT', message: '輸入格式不符，請檢查欄位與確認項目' });
-    if (error instanceof Error && 'statusCode' in error && typeof error.statusCode === 'number' && error.statusCode < 500) return reply.code(error.statusCode).send({ code: 'INVALID_REQUEST', message: error.statusCode === 429 ? '操作太頻繁，請稍後再試' : '請求格式不符' });
-    request.log.error(error);
-    return reply.code(500).send({ code: 'INTERNAL_ERROR', message: '暫時無法完成操作，請保留選擇後重試' });
-  });
-  app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: 1 }));
-  registerAuth(app, db, security, now, options.qq);
-  registerAccountDevices(app, db, security, now);
-  app.get('/api/v2/activities', async request => {
-    const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
-    return listActivities(db, query.page, query.period, now());
-  });
-  app.get('/api/v2/activities/:id', async request => {
-    const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
-    return getActivity(db, id, now());
-  });
-  app.get('/api/v2/music/entries', async () => ({ entries: catalog(db) }));
-  app.get('/api/v2/me/music', async request => getProfile(db, security.scopedMember(request).id));
-  app.put('/api/v2/me/music', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => {
-    const viewer = security.memberWrite(request);
-    const input = SaveProfile.parse(request.body);
-    const requestKey = z.string().uuid().parse(request.headers['idempotency-key']);
-    const signature = hash('v2:PUT:/api/v2/me/music:' + JSON.stringify(input));
-    return db.transaction(() => {
-      // Revalidate inside the write transaction; revoked/switched sessions cannot replay results.
-      const current = security.memberWrite(request);
-      if (current.id !== viewer.id) throw new DomainError('ACCOUNT_CHANGED', '帳號已變更', 409);
-      const previous = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(viewer.id, requestKey) as { signature: string; response_json: string } | undefined;
-      if (previous) {
-        if (previous.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
-        return JSON.parse(previous.response_json) as ReturnType<typeof saveProfile>;
-      }
-      const result = saveProfile(db, viewer.id, input, now());
-      db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(viewer.id, requestKey, signature, JSON.stringify(result), 200, now().toISOString());
-      return result;
-    }).immediate();
-  });
-  if (options.staticRoot) {
-    app.register(staticFiles, { root: options.staticRoot, wildcard: false });
-    app.setNotFoundHandler((request, reply) => {
-      if (request.method !== 'GET' || request.url.startsWith('/api/') || request.url.split('?')[0]!.includes('.')) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
-      return reply.type('text/html').sendFile('index.html', { maxAge: 0 });
+  // Register routes after plugins so their onRoute hooks enforce per-route limits.
+  app.register(async function routes(app) {
+    app.addHook('onRequest', async (request, reply) => {
+      if (request.url.startsWith('/api/') || request.url.startsWith('/auth/')) reply.header('Cache-Control', 'no-store').header('Vary', 'Cookie');
     });
-  }
+    app.setErrorHandler((error, request, reply) => {
+      if (error instanceof DomainError) return reply.code(error.status).send({ code: error.code, message: error.message });
+      if (error instanceof z.ZodError) return reply.code(400).send({ code: 'INVALID_INPUT', message: '輸入格式不符，請檢查欄位與確認項目' });
+      if (error instanceof Error && 'statusCode' in error && typeof error.statusCode === 'number' && error.statusCode < 500) return reply.code(error.statusCode).send({ code: 'INVALID_REQUEST', message: error.statusCode === 429 ? '操作太頻繁，請稍後再試' : '請求格式不符' });
+      request.log.error(error);
+      return reply.code(500).send({ code: 'INTERNAL_ERROR', message: '暫時無法完成操作，請保留選擇後重試' });
+    });
+    app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: 1 }));
+    registerAuth(app, db, security, now, options.qq);
+    registerAccountDevices(app, db, security, now);
+    registerRegistrationSettings(app, db, security, now);
+    app.get('/api/v2/activities', async request => {
+      const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
+      return listActivities(db, query.page, query.period, now());
+    });
+    app.get('/api/v2/activities/:id', async request => {
+      const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
+      return getActivity(db, id, now());
+    });
+    app.get('/api/v2/music/entries', async () => ({ entries: catalog(db) }));
+    app.get('/api/v2/me/music', async request => getProfile(db, security.scopedMember(request).id));
+    app.put('/api/v2/me/music', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => {
+      const viewer = security.memberWrite(request);
+      const input = SaveProfile.parse(request.body);
+      const requestKey = z.string().uuid().parse(request.headers['idempotency-key']);
+      const signature = hash('v2:PUT:/api/v2/me/music:' + JSON.stringify(input));
+      return db.transaction(() => {
+        // Revalidate inside the write transaction; revoked/switched sessions cannot replay results.
+        const current = security.memberWrite(request);
+        if (current.id !== viewer.id) throw new DomainError('ACCOUNT_CHANGED', '帳號已變更', 409);
+        const previous = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(viewer.id, requestKey) as { signature: string; response_json: string } | undefined;
+        if (previous) {
+          if (previous.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+          return JSON.parse(previous.response_json) as ReturnType<typeof saveProfile>;
+        }
+        const result = saveProfile(db, viewer.id, input, now());
+        db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(viewer.id, requestKey, signature, JSON.stringify(result), 200, now().toISOString());
+        return result;
+      }).immediate();
+    });
+    if (options.staticRoot) {
+      app.register(staticFiles, { root: options.staticRoot, wildcard: false });
+      app.setNotFoundHandler((request, reply) => {
+        if (request.method !== 'GET' || request.url.startsWith('/api/') || request.url.split('?')[0]!.includes('.')) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
+        return reply.type('text/html').sendFile('index.html', { maxAge: 0 });
+      });
+    }
+  });
   return app;
 }

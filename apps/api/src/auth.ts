@@ -1,10 +1,11 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { AccountList, Confirm, PRIVACY_VERSION, QQFinish, QQStart, SwitchAccount, type Viewer } from '@qgroup/contracts';
+import { AccountList, Confirm, PRIVACY_VERSION, QQFinish, QQStart, RegisterName, SwitchAccount, type Viewer } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { accountScope, hash, type Device, type Security } from './security';
 import { QQIdentity, safeAvatar, safeUnionId, type QQProvider } from './qq-provider';
+import { administratorRevision, nameRegistration } from './registration-settings';
 
 interface Attempt { id: string; token_hash: string; user_id: string | null; app_id: string; mode: 'bind' | 'login'; status: string; expires_at: string; openid: string; nickname: string; return_path: string; privacy_version: string; avatar_url: string; union_id: string }
 interface External { user_id: string; subject: string; nickname: string }
@@ -47,11 +48,28 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
   }
   app.get('/api/v2/session', async (request, reply): Promise<Viewer> => {
     const device = security.ensure(request, reply);
-    const base = { scope: device.scope, csrf: security.csrf(device), qqEnabled: !!provider, privacyVersion: PRIVACY_VERSION, privacyAccepted: accepted(device) };
+    const base = { scope: device.scope, csrf: security.csrf(device), qqEnabled: !!provider, privacyVersion: PRIVACY_VERSION, privacyAccepted: accepted(device), nameRegistrationEnabled: nameRegistration(db).enabled };
     if (device.kind === 'visitor') return { authenticated: false, ...base };
     const bound = provider ? db.prepare(`SELECT e.display_name,EXISTS(SELECT 1 FROM external_unionids x WHERE x.provider=e.provider AND x.client_id=e.client_id AND x.subject=e.subject) AS unionid_bound
       FROM external_identities e WHERE e.provider='qq' AND e.client_id=? AND e.user_id=?`).get(provider.clientId, device.id) as { display_name: string; unionid_bound: number } | undefined : undefined;
-    return { authenticated: true, nickname: device.nickname, ...base, qq: { bound: !!bound, nickname: bound?.display_name ?? '', unionidBound: !!bound?.unionid_bound, needsReauth: !!bound && !bound.unionid_bound } };
+    return { authenticated: true, nickname: device.nickname, administrator: administratorRevision(db, device.id) !== undefined, ...base, qq: { bound: !!bound, nickname: bound?.display_name ?? '', unionidBound: !!bound?.unionid_bound, needsReauth: !!bound && !bound.unionid_bound } };
+  });
+  app.post('/api/v2/auth/register-name', { config: { rateLimit: { max: 6, timeWindow: '1 minute' } } }, async (request, reply) => {
+    const result = db.transaction(() => {
+      const device = security.write(request);
+      if (device.kind !== 'visitor') throw new DomainError('ALREADY_LOGGED_IN', '目前已登入；名稱註冊不會建立另一份帳號或合併資料', 409);
+      if (!nameRegistration(db).enabled) throw new DomainError('REGISTRATION_CLOSED', '名稱註冊尚未開放，請使用 QQ 登入', 403);
+      const data = RegisterName.parse(request.body);
+      const returnTo = safeReturnTo(data.returnTo);
+      const userId = randomBytes(16).toString('hex');
+      db.prepare('INSERT INTO users VALUES(?,?,?,?)').run(userId, randomBytes(32).toString('hex'), data.nickname, stamp());
+      db.prepare('INSERT INTO privacy_consents VALUES(?,?,?)').run(userId, PRIVACY_VERSION, stamp());
+      const token = rotate(device, userId);
+      audit(userId, 'name_registered', {});
+      return { token, response: { returnTo, switched: true, newAccount: true } };
+    }).immediate();
+    security.setCookie(reply, result.token);
+    return result.response;
   });
   app.post('/api/v2/auth/qq/start', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const device = security.write(request); const qq = requiredProvider(); const data = QQStart.parse(request.body);

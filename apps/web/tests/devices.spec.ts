@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 const baseURL = 'http://127.0.0.1:5082';
 async function login(page: Page, code: string, destination = '/me/accounts') {

@@ -69,23 +69,28 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/registration-settings.ts",
+        "apps/web/src/registration.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/registration.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/registration.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "本地 query／hash 任務返回與取消不改身份已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。"
+      "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。"
     },
     {
       "capability_id": "I04",
@@ -123,23 +128,28 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/registration-settings.ts",
+        "apps/web/src/registration.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/registration.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/registration.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "已有版本化明確同意與安全預設，重開庫保留既有設定；名稱註冊／管理開關 API、更新政策與重同意待完成。"
+      "remaining": "已實作預設關閉的名稱註冊、管理開關、版本化同意、並行與未知結果核對；更新政策／重同意、完整遷移及瀏覽器恢復驗收待完成。"
     },
     {
       "capability_id": "I06",
@@ -1914,13 +1924,24 @@
       "new_entry": "單一後台",
       "required_behavior": "逐請求重查角色，CSRF 綁 session／角色版本；憑證輪替立即撤銷",
       "legacy_evidence_group": "管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "逐請求重查角色，CSRF 綁 session／角色版本；憑證輪替立即撤銷"
+      "implementation": [
+        "apps/api/src/registration-settings.ts",
+        "apps/web/src/registration.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "註冊管理已逐請求重查帳號角色，CSRF 綁 session／角色版本；救援憑證登入／輪替撤銷、完整後台及角色流程待實作驗收。"
     },
     {
       "capability_id": "A02",
@@ -2012,13 +2033,24 @@
       "new_entry": "後台隱私",
       "required_behavior": "版本更新／說明紀錄；有共享紀錄不可勾成全部刪完",
       "legacy_evidence_group": "管理、隱私",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "版本更新／說明紀錄；有共享紀錄不可勾成全部刪完"
+      "implementation": [
+        "apps/api/src/registration-settings.ts",
+        "apps/web/src/registration.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/auth-bot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "名稱註冊開關、revision 與同交易稽核已實作；政策版本更新／重同意、刪除申請與共享紀錄待審仍待完成。"
     },
     {
       "capability_id": "A09",

@@ -19,5 +19,6 @@ with sqlite3.connect(path.as_uri() + '?mode=ro', uri=True) as db:
         roster=bot_views.roster_lines(db, event),
         scope=identity.scope('alice'),
         linked=accounts.linked(db, 'alice'),
+        name_registration=accounts.settings(db)['allow_name_registration'],
         outbox=[dict(row) for row in db.execute('SELECT id,status,attempts,target,payload_json,claim_token,simulated_at FROM bot_outbox ORDER BY id')],
     ), ensure_ascii=False))

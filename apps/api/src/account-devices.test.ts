@@ -6,7 +6,7 @@ import { fixture } from '../testsupport/fixture';
 
 const close: (() => Promise<void>)[] = [];
 afterEach(async () => { for (const cleanup of close.splice(0).reverse()) await cleanup(); });
-async function setup() {
+async function setup(separateValidationClients = false) {
   const db = openDatabase(':memory:'); fixture(db);
   let clock = new Date('2026-11-17T08:00:00.000Z'); const origin = 'https://rebuild.example';
   const app = createApp({ db, origin, now: () => clock }); await app.ready();
@@ -18,7 +18,9 @@ async function setup() {
   type Browser = Awaited<ReturnType<typeof browser>>;
   const headers = (b: Browser) => ({ cookie: b.cookie, origin, 'x-account-scope': b.viewer.scope, 'x-csrf-token': b.viewer.csrf });
   const get = (b: Browser, path: string, override = {}) => app.inject({ url: '/api/v2' + path, headers: { ...headers(b), ...override } });
-  const post = (b: Browser, path: string, payload: object, override = {}) => app.inject({ method: 'POST', url: '/api/v2' + path, payload, headers: { ...headers(b), ...override } });
+  let validationClient = 0;
+  // The permission matrix checks independent clients; rate-limit boundaries are tested separately.
+  const post = (b: Browser, path: string, payload: object, override = {}) => app.inject({ method: 'POST', url: '/api/v2' + path, payload, ...(separateValidationClients ? { remoteAddress: '192.0.2.' + ++validationClient } : {}), headers: { ...headers(b), ...override } });
   const issue = async (b: Browser) => { const response = await post(b, '/me/devices/link', { confirm: true, authorizeOwnDevice: true }); expect(response.statusCode).toBe(200); return response.json<{ token: string; expiresAt: string }>(); };
   const view = (b: Browser, token: string) => post(b, '/device-links/view', { token });
   const accept = (b: Browser, token: string) => post(b, '/device-links/accept', { token, confirm: true, acceptAccess: true });
@@ -49,7 +51,7 @@ describe('explicit device access grants and account history', () => {
     expect(s.db.pragma('foreign_key_check')).toEqual([]);
   });
   it('requires explicit consent, current member scope, Origin and CSRF for all mutations', async () => {
-    const s = await setup(); const guest = await s.browser(); const link = await s.issue(s.alice);
+    const s = await setup(true); const guest = await s.browser(); const link = await s.issue(s.alice);
     expect((await s.post(s.alice, '/me/devices/link', { confirm: false, authorizeOwnDevice: true })).statusCode).toBe(400);
     expect((await s.post(s.alice, '/me/devices/link', { confirm: true, authorizeOwnDevice: false })).statusCode).toBe(400);
     expect((await s.post(s.bob, '/device-links/accept', { token: link.token, confirm: true, acceptAccess: false })).statusCode).toBe(400);

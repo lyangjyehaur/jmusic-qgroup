@@ -10,6 +10,9 @@ const origin = `http://127.0.0.1:${port}`;
 db.prepare("INSERT INTO users VALUES('auth-owner',?,'舊帳號','synthetic')").run(hash('fixture-auth-owner'));
 db.prepare("INSERT INTO browser_sessions VALUES(?,'auth-owner','synthetic')").run(hash('fixture-auth-owner'));
 db.prepare("INSERT INTO external_identities VALUES('qq','synthetic-qq',?,'auth-owner','原 QQ','synthetic')").run(hash('auth-original').slice(0, 32).toUpperCase());
+db.prepare("INSERT INTO users VALUES('registration-admin',?,'註冊管理員','synthetic')").run(hash('fixture-registration-admin'));
+db.prepare("INSERT INTO browser_sessions VALUES(?,'registration-admin','synthetic')").run(hash('fixture-registration-admin'));
+db.prepare("INSERT INTO user_admin_roles VALUES('registration-admin',1,1,'synthetic')").run();
 const app = createApp({ db, origin, staticRoot: resolve('.rebuild-dist/web'), qq: {
   clientId: 'synthetic-qq',
   authorize: state => origin + '/__test/qq?state=' + state,
@@ -21,6 +24,7 @@ app.get('/__test/qq', async (request, reply) => {
   return reply.header('Cache-Control', 'no-store').redirect('/auth/qq/callback?' + new URLSearchParams({ state, code }), 303);
 });
 await app.listen({ host: '127.0.0.1', port });
+process.send?.('ready');
 async function stop() { await app.close(); db.close(); }
 process.once('SIGTERM', () => { void stop(); });
 process.once('SIGINT', () => { void stop(); });

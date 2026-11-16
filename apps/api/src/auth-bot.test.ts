@@ -25,6 +25,7 @@ it('preserves synthetic roster, money, bot policy and delivery states while lega
     for (const [index, status] of ['pending', 'sending', 'sent', 'failed', 'skipped'].entries()) db.prepare(`INSERT INTO bot_outbox(event_id,kind,dedupe_key,target,payload_json,status,attempts,claim_token,simulated_at,created_at)
       VALUES('listen','synthetic',?,'synthetic-group','{"template_version":1}',?,2,?,'simulation-only','before')`).run('key-' + index, status, 'claim-' + index);
     db.prepare("INSERT INTO external_identities VALUES('qq','12345',?,'bob','QQ bob','before')").run('B'.repeat(32));
+    db.prepare("INSERT INTO user_admin_roles VALUES('alice',1,1,'before')").run();
     const preserved = ['events', 'attendees', 'roster_parties', 'finance_entries', 'bot_settings', 'bot_outbox'];
     const snapshot = () => preserved.map(table => db.prepare('SELECT * FROM ' + table + ' ORDER BY rowid').all());
     const before = snapshot();
@@ -46,6 +47,17 @@ it('preserves synthetic roster, money, bot policy and delivery states while lega
       const done = await post('/auth/qq/finish', { confirm: true, attemptId: status.attemptId });
       expect(done.statusCode).toBe(200); cookie = String(done.headers['set-cookie']).split(';')[0]!;
     }
+    async function registrationSetting(enabled: boolean) {
+      const viewer = await session();
+      const settings = (await app.inject({ url: '/api/v2/admin/registration', headers: { cookie, 'x-account-scope': viewer.scope } })).json();
+      const result = await app.inject({ method: 'POST', url: '/api/v2/admin/registration', headers: { cookie, origin, 'x-account-scope': viewer.scope, 'x-csrf-token': viewer.csrf, 'x-admin-csrf': settings.adminCsrf }, payload: { enabled, revision: settings.revision, confirm: true } });
+      expect(result.statusCode).toBe(200);
+    }
+    await registrationSetting(true); expect(probe().name_registration).toBe(true);
+    const originalCookie = cookie;
+    const visitor = await app.inject('/api/v2/session'); cookie = String(visitor.headers['set-cookie']).split(';')[0]!;
+    expect((await post('/auth/register-name', { nickname: '隔離名稱帳號', confirm: true, acceptPrivacy: true, privacyVersion: PRIVACY_VERSION })).statusCode).toBe(200);
+    cookie = originalCookie; await registrationSetting(false);
     await oauth('bind', 'alice'); await oauth('login', 'bob');
     expect((await session()).scope).toBe(accountScope('bob'));
     expect((await post('/me/accounts/switch', { confirm: true, scope: accountScope('alice') })).statusCode).toBe(200);

@@ -7,5 +7,5 @@ export default defineConfig({
   outputDir: fileURLToPath(new URL('../../test-results/', import.meta.url)),
   use: { baseURL: 'http://127.0.0.1:5082', headless: true, trace: 'retain-on-failure',
     ...(channel ? { channel } : {}) },
-  webServer: { cwd: fileURLToPath(new URL('../../', import.meta.url)), command: 'node_modules/.bin/tsx apps/api/testsupport/preview.ts', url: 'http://127.0.0.1:5082/api/v2/health', reuseExistingServer: false },
+  // Each test's preview fixture owns its DB and real rate-limit counters.
 });
