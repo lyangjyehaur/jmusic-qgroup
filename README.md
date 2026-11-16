@@ -1,5 +1,7 @@
 # 群聚看板
 
+看板與成分的單一產品重構規劃（2026-11-17，尚未實作；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
+
 原始碼倉庫：[git.dan.tw/dan/jmusic-qgroup](https://git.dan.tw/dan/jmusic-qgroup)（公開）與 [GitHub lyangjyehaur/jmusic-qgroup](https://github.com/lyangjyehaur/jmusic-qgroup)（公開），主分支為 `main`。兩邊保存相同提交及完整 main 歷史，提交 SHA、作者和時間不變。推送原始碼不會自動部署，線上更新仍按下方 server2 部署與保全流程進行。資料庫、使用者上傳圖片、伺服器環境設定及本機管理憑證不納入 Git。
 
 本機 `origin` 保留 git.dan.tw 作為抓取及發布來源，設定兩個 push URL，使 `git push origin main` 同步推送兩邊；另有 `github` remote 供單獨核對與重試。Git 設定不隨 clone 傳遞，新 checkout 須確認／補上雙遠端設定。兩邊推送非原子操作，完成後須核對兩個遠端 main 的 SHA；其中一邊失敗時補推並再次核對，不把單邊成功當成同步完成。
