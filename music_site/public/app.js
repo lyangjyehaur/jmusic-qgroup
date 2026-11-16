@@ -1,3 +1,5 @@
+import {selectionStore, selectionCommands, entryKind, LEVEL_LABELS} from '@qgroup/music/selection-store.ts';
+
 (() => {
   'use strict';
   const $ = (id) => document.getElementById(id);
@@ -17,10 +19,9 @@
   let identity = null;          // {qq, name}
   let state = { entries: [], memberCount: 0, categories: CATS };
   let member = null;
-  let selection = new Set();
-  let selLevels = {};
-  const LEVEL_LABELS = { 4: '本命', 3: '常听', 2: '听过一些', 1: '只听过几首' };
-  function selLevel(id) { return selLevels[id] || 3; }
+  const selectedIds = () => selectionStore.getSnapshot().ids;
+  const selectionDirty = () => selectionStore.getSnapshot().dirty;
+  function selLevel(id) { return selectionStore.level(id); }
   function levelLabel(lv) { return LEVEL_LABELS[lv] || '常听'; }
   let wallTimer = null;
   let wallStarted = false;
@@ -148,20 +149,13 @@
     return levelRank(b) - levelRank(a) || ((b.count || 0) - (a.count || 0));
   }); }
   function setSelectionFromMember(m) {
-    selection = new Set();
-    selLevels = {};
-    ((m && m.selection) || []).forEach((it) => {
-      const id = typeof it === 'string' ? it : it.id;
-      if (!id) return;
-      selection.add(id);
-      selLevels[id] = typeof it === 'object' && it.level ? it.level : 3;
-    });
+    selectionStore.configure({entries:state.entries});
+    selectionStore.reset((m && m.selection) || []);
   }
   let matches = null;
   let matchSort = 'rare';
-  let dirty = false;
   window.addEventListener('beforeunload', (e) => {
-    if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    if (selectionDirty()) { e.preventDefault(); e.returnValue = ''; }
   });
   let searchQ = '';
   let catFilterRest = '';
@@ -172,13 +166,9 @@
   let rankJustExpanded = { main: false, sub: false };
   let selectionLimits = { main: 5, sub: 15 };
   let previewMode = false;
-  function entryKind(e) {
-    if (!e) return 'sub';
-    return e.kind || (e.category === '领域' ? 'main' : 'sub');
-  }
   function selectionCounts() {
     let main = 0, sub = 0;
-    selection.forEach((id) => {
+    selectedIds().forEach((id) => {
       const e = state.entries.find((x) => x.id === id);
       if (!e) return;
       if (entryKind(e) === 'main') main += 1; else sub += 1;
@@ -574,7 +564,7 @@
 
     const nodes = [];
     for (const it of items) {
-      const selected = selection.has(it.id);
+      const selected = selectedIds().has(it.id);
       const g = document.createElementNS(NS, 'g');
       g.setAttribute('class', 'bubble-g' + (selected ? ' selected' : ''));
       g.dataset.id = it.id;
@@ -819,7 +809,7 @@
         const r = await apiPost('/music/api/entry/update', { qq: identity.qq, entryId, text, category: sel.value });
         member = r.member;
         if (r.entries) state.entries = r.entries; else state = await apiGet('/music/api/state');
-        dirty = true;
+        selectionStore.markDirty();
         renderAll();
         toast('词条已修改');
       } catch (err) {
@@ -844,7 +834,7 @@
       const r = await apiPost('/music/api/entry/delete', { qq: identity.qq, entryId });
       member = r.member;
       state.entries = r.entries;
-      if (selection.has(entryId)) selection.delete(entryId);
+      if (selectedIds().has(entryId)) selectionStore.remove(entryId);
       renderAll();
       toast('已删除');
     } catch (err) {
@@ -852,146 +842,10 @@
     }
   }
 
-  let selPrev = null;
-  let selOrder = null; // 已选顺序缓存：只有「保存并匹配」后才重新排序
-  let selCat = '全部'; // 「你选的词条」细分的分类筛选
+  // React owns the selected-entry view. Remaining pages publish data only.
   function renderSelection() {
-    const box = $('selChips');
-    box.innerHTML = '';
-    const c = selectionCounts();
-    $('selCount').textContent = `领域 ${c.main}/${selectionLimits.main} · 细分 ${c.sub}/${selectionLimits.sub}`;
-    popEl($('selCount'));
-    const LEVEL_OPTS = [4, 3, 2, 1];
-    const rowOf = (e) => {
-      const kind = entryKind(e);
-      const row = document.createElement('div');
-      row.className = 'sel-row' + (kind === 'main' ? ' kind-main' : '') + (selPrev && !selPrev.has(e.id) ? ' row-new' : '');
-      row.dataset.id = e.id;
-      const nameEl = document.createElement('span');
-      nameEl.className = 'sel-row-name';
-      nameEl.textContent = e.text;
-      row.appendChild(nameEl);
-      if (kind !== 'main') {
-        const seg = document.createElement('div');
-        seg.className = 'sel-seg';
-        seg.setAttribute('role', 'group');
-        seg.setAttribute('aria-label', e.text + '的熟悉程度');
-        const cur = selLevel(e.id);
-        LEVEL_OPTS.forEach((lv) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'sel-seg-btn lv' + lv + (cur === lv ? ' on' : '');
-          b.textContent = levelLabel(lv);
-          b.title = '设为' + levelLabel(lv);
-          b.setAttribute('aria-pressed', String(cur === lv));
-          b.addEventListener('click', (ev) => { ev.stopPropagation(); applyLevel(e.id, lv); });
-          seg.appendChild(b);
-        });
-        row.appendChild(seg);
-      }
-      const cnt = document.createElement('span');
-      cnt.className = 'cnt';
-      cnt.textContent = (e.count || 0) + ' 人';
-      row.appendChild(cnt);
-      const x = document.createElement('button');
-      x.type = 'button';
-      x.className = 'chip-x';
-      x.textContent = '×';
-      x.title = '移除这个词条';
-      x.addEventListener('click', (ev) => {
-        ev.stopPropagation();
-        selection.delete(e.id);
-        if (selOrder) selOrder = selOrder.filter(x => x !== e.id);
-        dirty = true;
-        renderBoard(); renderSelection(); renderRank();
-      });
-      row.appendChild(x);
-      return row;
-    };
-    const group = (title, list, used, max) => {
-      const g = document.createElement('div');
-      g.className = 'sel-group';
-      const h = document.createElement('div');
-      h.className = 'sel-group-head';
-      const t = document.createElement('span');
-      t.textContent = title;
-      const n = document.createElement('span');
-      n.className = 'muted tiny';
-      n.textContent = used + ' / ' + max;
-      h.append(t, n);
-      g.appendChild(h);
-      if (!list.length) {
-        const s = document.createElement('span');
-        s.className = 'muted tiny sel-empty';
-        s.textContent = '还没选，去「发现」挑选喜欢的词条 →';
-        g.appendChild(s);
-      }
-      const grouped = title === '细分';
-      if (!grouped) {
-        list.forEach(e => g.appendChild(rowOf(e)));
-      } else {
-        const catOrder = (state.categories || CATS).slice();
-        list.forEach(e => { const cc = e.category || '其他'; if (catOrder.indexOf(cc) < 0) catOrder.push(cc); });
-        const present = catOrder.filter(cat => list.some(e => (e.category || '其他') === cat));
-        const bar = document.createElement('div');
-        bar.className = 'sel-cats';
-        const mkBtn = (label, value, n) => {
-          const b = document.createElement('button');
-          b.type = 'button';
-          b.className = 'sel-cat-btn' + (selCat === value ? ' on' : '');
-          b.textContent = label + ' ' + n;
-          b.addEventListener('click', (ev) => { ev.stopPropagation(); selCat = value; renderSelection(); });
-          return b;
-        };
-        bar.appendChild(mkBtn('全部', '全部', list.length));
-        present.forEach(cat => bar.appendChild(mkBtn(cat, cat, list.filter(e => (e.category || '其他') === cat).length)));
-        g.appendChild(bar);
-        if (selCat === '全部') {
-          catOrder.forEach((cat) => {
-            const items = list.filter(e => (e.category || '其他') === cat);
-            if (!items.length) return;
-            const ch = document.createElement('div');
-            ch.className = 'sel-cat';
-            ch.textContent = cat + ' · ' + items.length;
-            g.appendChild(ch);
-            items.forEach(e => g.appendChild(rowOf(e)));
-          });
-        } else {
-          const items = list.filter(e => (e.category || '其他') === selCat);
-          if (!items.length) {
-            const s2 = document.createElement('span');
-            s2.className = 'muted tiny sel-empty';
-            s2.textContent = '这个分类下还没选词条，去上方榜单里点一个 →';
-            g.appendChild(s2);
-          }
-          items.forEach(e => g.appendChild(rowOf(e)));
-        }
-      }
-      box.appendChild(g);
-    };
-    // 排序：熟悉程度优先（本命→只听过几首），其次按已选人数降序，最后按名称
-    const sortSel = (x, y) =>
-      (selLevel(y.id) - selLevel(x.id)) ||
-      ((y.count || 0) - (x.count || 0)) ||
-      x.text.localeCompare(y.text, 'zh');
-    const chosenAll = [...selection].map(id => state.entries.find(x => x.id === id)).filter(Boolean);
-    if (!selOrder) selOrder = chosenAll.slice().sort(sortSel).map(e => e.id);
-    selOrder = selOrder.filter(id => selection.has(id));
-    chosenAll.forEach(e => { if (selOrder.indexOf(e.id) < 0) selOrder.push(e.id); });
-    const byId = new Map(chosenAll.map(e => [e.id, e]));
-    const chosen = selOrder.map(id => byId.get(id)).filter(Boolean);
-    group('领域', chosen.filter(e => entryKind(e) === 'main'), c.main, selectionLimits.main);
-    const chosenSub = chosen.filter(e => entryKind(e) !== 'main');
-    if (selCat !== '全部' && !chosenSub.some(e => (e.category || '其他') === selCat)) selCat = '全部';
-    group('细分', chosenSub, c.sub, selectionLimits.sub);
-    selPrev = new Set(selection.keys());
-    $('saveBtn').disabled = selection.size === 0;
-    const mb = $('mobCount'), ms = $('mobSave');
-    if (mb) mb.textContent = `领域 ${c.main}/${selectionLimits.main} · 细分 ${c.sub}/${selectionLimits.sub}`;
-    if (ms) ms.disabled = selection.size === 0;
-    const se = $('selEmpty');
-    if (se) se.hidden = selection.size > 0;
-    updateSaveState();
+    selectionStore.configure({entries:state.entries,categories:state.categories || CATS,
+      limits:selectionLimits,available:!previewMode && !!identity});
     updateMobBar();
   }
 
@@ -1157,7 +1011,7 @@
       headName.textContent = c;
       const side = document.createElement('span');
       side.className = 'rest-cat-side';
-      const picked = groups[c].filter((e) => selection.has(e.id)).length;
+      const picked = groups[c].filter((e) => selectedIds().has(e.id)).length;
       if (picked) {
         const pk = document.createElement('span');
         pk.className = 'rest-cat-picked';
@@ -1295,10 +1149,10 @@
   }
 
   function rankRow(e, maxCount, rankOf, noRank) {
-    const row = document.createElement('div');
+    const row = document.createElement('button');
     const rk = (rankOf && !noRank) ? +(rankOf.get(e.id) || 0) : 0;
     row.dataset.rank = String(rk);
-    row.className = 'rank-row' + (selection.has(e.id) ? ' selected' : '') + (entryKind(e) === 'main' ? ' kind-main' : '') + (!noRank && rk > 0 && rk <= 3 ? ' top' + rk : '') + (noRank ? ' no-rank' : '');
+    row.className = 'rank-row' + (selectedIds().has(e.id) ? ' selected' : '') + (entryKind(e) === 'main' ? ' kind-main' : '') + (!noRank && rk > 0 && rk <= 3 ? ' top' + rk : '') + (noRank ? ' no-rank' : '');
     row.dataset.id = e.id;
     const no = document.createElement('span');
     no.className = 'rank-no';
@@ -1312,7 +1166,7 @@
       nb.textContent = '新';
       name.appendChild(nb);
     }
-    if (selection.has(e.id) && entryKind(e) !== 'main') {
+    if (selectedIds().has(e.id) && entryKind(e) !== 'main') {
       const lv = selLevel(e.id);
       const lvb = document.createElement('span');
       lvb.className = 'lv-mini lv' + lv + ' lv-rank';
@@ -1333,28 +1187,17 @@
     cnt.textContent = (e.count || 0) + ' 人';
     const check = document.createElement('span');
     check.className = 'rank-check';
-    check.textContent = selection.has(e.id) ? '✓' : '';
+    check.textContent = selectedIds().has(e.id) ? '✓' : '';
     row.append(no, name, cat, bar, cnt, check);
-    row.tabIndex = 0;
-    row.setAttribute('role', 'button');
-    row.setAttribute('aria-pressed', String(selection.has(e.id)));
-    row.setAttribute('aria-label', e.text + (selection.has(e.id) ? '，已选' : '，选择词条'));
+    row.type = 'button';
+    row.setAttribute('aria-pressed', String(selectedIds().has(e.id)));
+    row.setAttribute('aria-label', e.text + (selectedIds().has(e.id) ? '，已选' : '，选择词条'));
     row.addEventListener('click', () => toggleEntry(e.id));
-    row.addEventListener('keydown', ev => {
-      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleEntry(e.id); }
-    });
     return row;
   }
 
   let matchesLowOpen = false;
   let otherOnlyOpen = false;
-  function avatarStyle(name) {
-    const str = String(name || '?');
-    let h = 0;
-    for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 360;
-    return `background:linear-gradient(135deg,hsl(${h},72%,93%),hsl(${(h + 40) % 360},70%,86%));color:hsl(${h},45%,40%)`;
-  }
-
   function kindGrouped(wrap, list, makeChip, opts) {
     const caption = !!(opts && opts.caption);
     const main = list.filter(x => (x.kind || 'sub') === 'main');
@@ -1443,9 +1286,9 @@
       const li = document.createElement('li');
       if (idx < 3) li.classList.add('m-top' + (idx + 1));
       const av = document.createElement('div');
-      av.className = 'avatar';
+      av.className = 'ui-avatar';
+      av.dataset.uiAvatarName = m.name;
       av.textContent = String(m.name || '?').slice(0, 1);
-      if (idx >= 3) av.style.cssText = avatarStyle(m.name);
       li.appendChild(av);
       const rank = document.createElement('div');
       rank.className = 'rank';
@@ -1516,7 +1359,7 @@
           }
           if (t.id) {
             s.className = 'clickable';
-            s.title = selection.has(t.id) ? '点一下移出我的选择' : '点一下加进我的选择';
+            s.title = selectedIds().has(t.id) ? '点一下移出我的选择' : '点一下加进我的选择';
             s.addEventListener('click', () => toggleEntry(t.id));
           }
           return s;
@@ -1657,9 +1500,9 @@
       sparseList.forEach(m => {
         const li = document.createElement('li');
         const av = document.createElement('div');
-        av.className = 'avatar';
+        av.className = 'ui-avatar';
+        av.dataset.uiAvatarName = m.name;
         av.textContent = String(m.name || '?').slice(0, 1);
-        av.style.cssText = avatarStyle(m.name);
         const main = document.createElement('div');
         main.className = 'sparse-main';
         const nm = document.createElement('div');
@@ -1773,7 +1616,7 @@
       sortByLevel(r.picks).forEach(p => {
         const row = document.createElement('div');
         row.className = 'member-item';
-        if (selection.has(p.id)) row.classList.add('shared');
+        if (selectedIds().has(p.id)) row.classList.add('shared');
         const name = document.createElement('span');
         name.className = 'member-name';
         name.textContent = p.text;
@@ -1806,8 +1649,8 @@
   }
   function copySelection() {
     if (previewMode) { toast('只读预览中：登录后才能复制选择'); return; }
-    if (!selection.size) { toast('还没选词条'); return; }
-    const texts = [...selection]
+    if (!selectedIds().size) { toast('还没选词条'); return; }
+    const texts = [...selectedIds()]
       .map(id => (state.entries.find(e => e.id === id) || {}).text)
       .filter(Boolean);
     copyText(texts.join('、'), '我选的词条');
@@ -1916,7 +1759,7 @@
     if (previewMode) { btn.hidden = true; return; }
     btn.hidden = false;
     if (!modalEntryId) return;
-    const on = selection.has(modalEntryId);
+    const on = selectedIds().has(modalEntryId);
     btn.textContent = on ? '移出我的选择' : '选这个词条';
   }
   function closeEntryModal() {
@@ -1929,7 +1772,7 @@
     const canvas = $('shareCanvas');
     const DPR = 2;
     const W = 720;
-    const items0 = [...selection].map(id => state.entries.find(e => e.id === id)).filter(Boolean);
+    const items0 = [...selectedIds()].map(id => state.entries.find(e => e.id === id)).filter(Boolean);
     const hasMatch = !!(matches && matches.matches && matches.matches.length);
     const mains0 = items0.filter(e => entryKind(e) === 'main');
     const subs0 = items0.filter(e => entryKind(e) !== 'main');
@@ -1968,7 +1811,7 @@
     ctx.fillText(name || '匿名群友', 48, 236);
     ctx.fillStyle = muted;
     ctx.font = '500 24px -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif';
-    ctx.fillText(memberLabel((member && member.qq) || (identity && identity.qq) || '') + ' · 共选 ' + selection.size + ' 个词条', 48, 278);
+    ctx.fillText(memberLabel((member && member.qq) || (identity && identity.qq) || '') + ' · 共选 ' + selectedIds().size + ' 个词条', 48, 278);
 
     // 词条列表：领域单独一段（大字），细分一段（小字）
     let y = 356;
@@ -2469,7 +2312,7 @@
 
   function openShare() {
     if (previewMode) { toast('只读预览中：登录后才能分享'); return; }
-    if (!selection.size) { toast('先选几个词条再分享'); return; }
+    if (!selectedIds().size) { toast('先选几个词条再分享'); return; }
     drawShareCard();
     $('shareModal').hidden = false;
   }
@@ -2510,11 +2353,7 @@
   function closeShoutModal() { $('shoutModal').hidden = true; }
 
   function updateMobBar() {
-    const bar = $('mobBar');
-    if (!bar) return;
-    const visible = !previewMode && !!identity && dirty && !$('appView').hidden;
-    bar.hidden = !visible;
-    document.documentElement.classList.toggle('has-unsaved', visible);
+    selectionStore.configure({dockVisible:!previewMode && !!identity && selectionDirty() && !$('appView').hidden});
   }
 
   function stickyOffset() {
@@ -2767,11 +2606,9 @@
 
 
   function pruneSelection() {
-    if (!selection.size || !state || !state.entries) return;
+    if (!selectedIds().size || !state || !state.entries) return;
     const ids = new Set(state.entries.map((e) => e.id));
-    let changed = false;
-    for (const id of [...selection]) if (!ids.has(id)) { selection.delete(id); changed = true; }
-    if (changed) dirty = true;
+    for (const id of [...selectedIds()]) if (!ids.has(id)) selectionStore.remove(id);
   }
 
   function limitReason(kind) {
@@ -2799,12 +2636,12 @@
           <button type="button" data-lv="2"><b>听过一些</b><span>熟悉的歌有几首</span></button>
           <button type="button" data-lv="1"><b>只听过几首</b><span>听过名字或一两首</span></button>
         </div>
-        ${selection.has(id) ? '<button type="button" class="link small level-remove" data-act="remove">从已选中移除</button>' : ''}
+        ${selectedIds().has(id) ? '<button type="button" class="link small level-remove" data-act="remove">从已选中移除</button>' : ''}
       </div>`;
     wrap.addEventListener('click', (ev) => {
       if (ev.target === wrap || ev.target.closest('[data-act="close"]')) { closeLevelPicker(); return; }
       if (ev.target.closest('[data-act="remove"]')) {
-        selection.delete(id); dirty = true;
+        selectionStore.remove(id);
         closeLevelPicker(); renderBoard(); renderSelection(); renderRank();
         toast('已移除');
         return;
@@ -2818,33 +2655,22 @@
   }
 
   function applyLevel(id, lv) {
-    if (!selection.has(id)) {
+    if (!selectedIds().has(id)) {
       const e = state.entries.find((x) => x.id === id);
       const why = limitReason(entryKind(e));
       if (why) { toast(why); return; }
-      selection.add(id);
-      if (!selOrder) selOrder = [...selection];
-      if (selOrder.indexOf(id) < 0) selOrder.push(id);
     }
-    selLevels[id] = lv;
-    dirty = true;
-    // 只更新这一行的四档高亮，不重排、不重建列表
-    const row = document.querySelector('#selChips .sel-row[data-id="' + id + '"]');
-    if (row) {
-      row.querySelectorAll('.sel-seg-btn').forEach((b, i) => {
-        const on = [4, 3, 2, 1][i] === lv;
-        b.classList.toggle('on', on);
-        b.setAttribute('aria-pressed', String(on));
-      });
-    } else {
-      renderSelection();
-    }
+    selectionStore.select(id, lv);
+    renderSelection();
     renderBoard();
     renderRank();
     updateEntryToggle();
-    updateSaveState();
-    updateMobBar();
     toast('已记下：' + levelLabel(lv));
+  }
+
+  function removeSelection(id) {
+    selectionStore.remove(id);
+    renderBoard(); renderSelection(); renderRank(); updateEntryToggle();
   }
 
   function closeLevelPicker() {
@@ -2854,10 +2680,10 @@
 
   function toggleEntry(id) {
     if (previewMode) { toast('只读预览中：登录后才能选词条'); return; }
-    if (selection.has(id)) {
+    if (selectedIds().has(id)) {
       const cur = state.entries.find((x) => x.id === id);
       if (cur && entryKind(cur) !== 'main') { openLevelPicker(id); return; }
-      selection.delete(id);
+      selectionStore.remove(id);
     } else {
       const e = state.entries.find((x) => x.id === id);
       const kind = entryKind(e);
@@ -2865,71 +2691,51 @@
       const why = limitReason(kind);
       if (why) {
         toast(why);
-        const box = document.getElementById('selCount');
-        if (box) { box.classList.add('limit-flash'); setTimeout(() => box.classList.remove('limit-flash'), 600); }
         return;
       }
       if (entryKind(e) !== 'main') {
-        selection.add(id);
-        selLevels[id] = 3;
-        dirty = true;
+        selectionStore.select(id, 3);
         renderBoard(); renderSelection(); renderRank();
         openLevelPicker(id);
         return;
       }
-      selection.add(id);
-      selLevels[id] = 0;
+      selectionStore.select(id, 0);
     }
-    dirty = true;
     renderBoard();
     renderSelection();
     renderRank();
     updateEntryToggle();
   }
 
-  let savingSelection = false;
-  function updateSaveState() {
-    const defs = { saveBtn: '保存并匹配', mobSave: '保存并匹配' };
-    Object.keys(defs).forEach((id) => {
-      const b = $(id);
-      if (!b) return;
-      if (!b.dataset.label) b.dataset.label = defs[id];
-      const saved = !dirty;
-      b.classList.toggle('is-saved', saved && selection.size > 0);
-      b.disabled = savingSelection || selection.size === 0;
-      b.textContent = savingSelection ? '保存中…' : (saved && selection.size > 0) ? '查看同好 →' : b.dataset.label;
-    });
-  }
-
   async function saveSelection() {
     if (previewMode) { toast('只读预览中：登录后才能保存'); return; }
-    if (!identity || savingSelection) return;
-    if (!dirty && selection.size) { window.__showPage('matches', {top:true}); return; }
+    if (!identity || selectionStore.getSnapshot().saving) return;
+    if (!selectionDirty() && selectedIds().size) { window.__showPage('matches', {top:true}); return; }
     const c = selectionCounts();
     if (c.main > selectionLimits.main || c.sub > selectionLimits.sub) {
       toast(`选择超出上限（领域 ${c.main}/${selectionLimits.main} · 细分 ${c.sub}/${selectionLimits.sub}），先取消几个再保存`);
       renderSelection();
       return;
     }
-    savingSelection = true;
-    updateSaveState();
+    const savedRevision = selectionStore.startSaving();
     try {
-      const selPayload = [...selection].map((id) => ({ id, level: selLevel(id) }));
+      const selPayload = [...selectedIds()].map((id) => ({ id, level: selLevel(id) }));
       const r = await apiPost('/music/api/selection', { qq: identity.qq, selection: selPayload });
       member = r.member;
       state.entries = r.entries;
-      dirty = false;
-      selOrder = null; // 保存后按最新熟悉度重排
+      selectionStore.configure({entries:state.entries});
+      const acknowledged = selectionStore.acknowledgeSave(savedRevision);
       matchesBySort.rare = null; matchesBySort.familiar = null;
       await loadMatches({ force: true });
       renderAll();
       renderClusters();
-      toast('已保存，下面是匹配结果');
-      if (window.__showPage) window.__showPage('matches', { anim: true, top: true });
+      const savedCurrent = acknowledged && selectionStore.getSnapshot().revision === savedRevision;
+      toast(savedCurrent ? '已保存，下面是匹配结果' : '已保存上次提交，新的修改还未保存');
+      if (savedCurrent && window.__showPage) window.__showPage('matches', { anim: true, top: true });
     } catch (err) {
       toast(err.message || '保存失败');
     } finally {
-      savingSelection = false;
+      selectionStore.finishSaving();
       renderSelection();
       if (window.__updateMobBar) window.__updateMobBar();
     }
@@ -2964,8 +2770,8 @@
       const eid = r.entry.id;
       toast('词条创建成功');
       const why = limitReason(entryKind(r.entry));
-      if (!why && selection.size < MAX_SEL) {
-        selection.add(eid); selLevels[eid] = entryKind(r.entry) === 'main' ? 0 : 3; dirty = true;
+      if (!why && selectedIds().size < MAX_SEL) {
+        selectionStore.select(eid, entryKind(r.entry) === 'main' ? 0 : 3);
       } else if (why) {
         toast(why + '（新词条没自动选上）');
       }
@@ -3060,7 +2866,7 @@
     $('appView').hidden = true;
     const pv = $('previewBar'); if (pv) pv.hidden = true;
     document.querySelectorAll('.create-card').forEach((el) => { el.hidden = false; });
-    { const el = $('selectionCard'); if (el) el.hidden = false; }
+    selectionStore.configure({available:false});
     const sb = $('shareBtn'), sw = $('switchBtn'); if (sb) sb.hidden = false; if (sw) sw.hidden = false;
     if (window.__updateMobBar) window.__updateMobBar();
     $('qqInput').value = '';
@@ -3073,7 +2879,7 @@
     $('appView').hidden = false;
     const pv = $('previewBar'); if (pv) pv.hidden = !previewMode;
     document.querySelectorAll('.create-card').forEach((el) => { el.hidden = previewMode; });
-    ['selectionCard', 'noteCard', 'shoutTickerCard', 'shoutCard'].forEach((id) => { const el = $(id); if (el) el.hidden = previewMode; });
+    ['noteCard', 'shoutTickerCard', 'shoutCard'].forEach((id) => { const el = $(id); if (el) el.hidden = previewMode; });
     const cmpCard = $('compareCard'); if (cmpCard) cmpCard.hidden = previewMode;
     const sb = $('shareBtn'), sw = $('switchBtn'); if (sb) sb.hidden = previewMode; if (sw) sw.hidden = previewMode;
     $('myName').textContent = previewMode ? '游客预览' : member.name;
@@ -3301,10 +3107,6 @@
   }
 
   function wireUiExtras() {
-    const ms = $('mobSave');
-    if (ms) ms.addEventListener('click', () => saveSelection());
-    const goBoard = $('selGoBoard');
-    if (goBoard) goBoard.addEventListener('click', () => { if (window.__showPage) window.__showPage('board', { anim: true }); });
     document.querySelectorAll('.view-switch').forEach((sw) => {
       sw.addEventListener('click', (e) => {
         const b = e.target.closest('.vs-btn');
@@ -3401,16 +3203,11 @@
     });
     showPage(pageFromHash() || 'board', {anim:false, top:true, hash:false});
 
-    const tt = $('toTop');
-    if (tt) {
-      tt.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-      const onScroll = () => { tt.hidden = window.scrollY < 700; };
-      window.addEventListener('scroll', onScroll, { passive: true });
-      onScroll();
-    }
   }
 
   async function boot() {
+    Object.assign(selectionCommands,{level:applyLevel,remove:removeSelection,save:saveSelection,
+      copy:copySelection,discover:()=>window.__showPage?.('board',{anim:true})});
     wireUiExtras();
     wireNote();
     wireMatchSort();
@@ -3444,23 +3241,6 @@
       if (cat) cat.addEventListener('change', renderCreateHint);
       if (inp) inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') createEntry(root); });
     });
-    const selToggle = $('selToggle');
-    const applySelCollapsed = () => {
-      const collapsed = localStorage.getItem('jpm.selCollapsed') === '1';
-      const body = $('selBody');
-      if (body) body.hidden = collapsed;
-      if (selToggle) selToggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
-    };
-    if (selToggle) {
-      selToggle.addEventListener('click', () => {
-        const collapsed = localStorage.getItem('jpm.selCollapsed') === '1';
-        localStorage.setItem('jpm.selCollapsed', collapsed ? '0' : '1');
-        applySelCollapsed();
-      });
-    }
-    applySelCollapsed();
-    $('saveBtn').addEventListener('click', saveSelection);
-    $('copySelBtn').addEventListener('click', copySelection);
     $('shareBtn').addEventListener('click', openShare);
     if ($('cmpBtn')) $('cmpBtn').addEventListener('click', compareWithQQ);
     if ($('cmpQQ')) $('cmpQQ').addEventListener('keydown', (e) => { if (e.key === 'Enter') compareWithQQ(); });

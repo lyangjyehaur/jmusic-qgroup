@@ -740,3 +740,95 @@ class MusicTests(unittest.TestCase):
         self.assertEqual(accounts.return_path('/music/'),'/music/')
         for path in ('/music/?next=evil','/music//','//evil.test','https://evil.test/music/','/music/../'):
             with self.assertRaises(server.APIError): accounts.return_path(path)
+
+    def attendee_profile_fixture(self):
+        from datetime import datetime, timedelta, timezone
+        viewer = self.name_account()
+        self.assertEqual(self.create_profile()[0], 200)
+        target = ModernClient(self.base).identify('成分朋友')
+        with server.connect() as db:
+            uid = db.execute("SELECT id FROM users WHERE nickname='成分朋友'").fetchone()[0]
+        service.STORE.import_prelinks([dict(qq='10001', user_id=uid)])
+        service.upstream.data['members']['10001']['selection'] = [dict(id='e1', level=4), 'missing-entry']
+        native = next(m for m in service.upstream.data['members'].values() if m.get('boardUserId') == viewer)
+        native['selection'] = ['e1']
+        start = datetime.now(timezone.utc) + timedelta(days=2)
+        status, event = self.request('/api/events', 'POST', dict(title='成分串接', category='约K', location='测试店',
+            starts_at=start.isoformat(), deadline=(start-timedelta(hours=1)).isoformat(),
+            duration_hours=3, capacity=12, description='', join_owner=True))
+        self.assertEqual(status, 201, event)
+        path = '/api/events/'+event['id']
+        signup = dict(people=[dict(is_self=True), dict(name='未认领朋友')], queue_mode='individual', intent='registered')
+        status, preview = self.request(path+'/roster/preview', 'POST', signup, client=target)
+        self.assertEqual(status, 200, preview)
+        status, joined = self.request(path+'/roster/parties', 'POST', {**signup, **preview, 'accept_partial':True}, client=target)
+        self.assertEqual(status, 200, joined)
+        people = self.request(path)[1]['participants']
+        person = next(p for p in people if p['nickname'] == '成分朋友')
+        guest = next(p for p in people if p['nickname'] == '未认领朋友')
+        return path, person, guest, viewer, uid
+
+    def test_attendee_music_profile_is_minimal_current_and_read_only(self):
+        path, person, guest, viewer, uid = self.attendee_profile_fixture()
+        url = path+'/attendees/'+person['id']+'/music'
+        before = copy.deepcopy(service.upstream.data)
+        with service.STORE.connect() as db:
+            links_before = list(db.iterdump())
+        with server.connect() as db:
+            board_before = list(db.iterdump())
+        status, result = self.request(url)
+        self.assertEqual(status, 200, result)
+        self.assertEqual(result, dict(state='ready', is_self=False,
+            picks=[dict(id='e1', text='Artist', kind='sub', level=4, shared=True)]))
+        self.assertEqual(self.request(path+'/attendees/'+guest['id']+'/music')[1], dict(state='unlinked'))
+        self.assertEqual(service.upstream.data, before)
+        with service.STORE.connect() as db:
+            self.assertEqual(list(db.iterdump()), links_before)
+        with server.connect() as db:
+            self.assertEqual(list(db.iterdump()), board_before)
+        with server.connect() as db:
+            db.execute('INSERT INTO privacy_requests(id,user_id,status,created_at,updated_at) VALUES(?,?,?,?,?)',
+                       ('closed-test',uid,'shared_review',server.now(),server.now()))
+        self.assertEqual(self.request(url)[1], dict(state='unlinked'))
+        with server.connect() as db:
+            db.execute('DELETE FROM privacy_requests WHERE user_id=?',(uid,))
+        # Resolve OAuth links as well as prelinks without needing target OpenID in the request.
+        with service.STORE.connect() as db:
+            db.execute('DELETE FROM prelinks WHERE qq=?', ('10001',))
+            db.execute('INSERT INTO links(qq,app_id,openid,user_id,created) VALUES(?,?,?,?,?)',
+                       ('10001','12345','B'*32,uid,time.time()))
+        self.assertEqual(self.request(url)[1], result)
+        with service.STORE.connect() as db:
+            state = service.STORE.admin_state(db, '10001')
+        service.STORE.admin_change('10001','',state['revision'],'test')
+        self.assertEqual(self.request(url)[1], dict(state='unlinked'))
+
+    def test_attendee_music_profile_checks_event_identity_and_internal_scope(self):
+        path, person, guest, viewer, uid = self.attendee_profile_fixture()
+        url = path+'/attendees/'+person['id']+'/music'
+        anonymous = ModernClient(self.base)
+        self.assertEqual(self.request(url, client=anonymous)[0], 401)
+        outsider = ModernClient(self.base).identify('未连接成分')
+        self.assertEqual(self.request(url, client=outsider)[1], dict(state='viewer_unlinked'))
+        forged = {'X-Music-Identity': __import__('base64').urlsafe_b64encode(json.dumps(
+            {'attendee_profile': {'viewer':viewer,'target':uid}}).encode()).decode()}
+        self.assertEqual(self.request('/music/api/internal/attendee-profile?target='+uid, headers=forged)[0], 403)
+        self.assertEqual(self.request(path+'/attendees/'+'0'*16+'/music')[0], 404)
+        with server.connect() as db:
+            db.execute("UPDATE events SET visibility='private' WHERE id=?", (path.split('/')[-1],))
+        self.assertEqual(self.request(url, client=outsider)[0], 404)
+        with server.connect() as db:
+            db.execute("UPDATE attendees SET status='withdrawn' WHERE id=?", (person['id'],))
+        self.assertEqual(self.request(url)[0], 404)
+        with server.connect() as db:
+            db.execute("UPDATE events SET status='deleted' WHERE id=?", (path.split('/')[-1],))
+        self.assertEqual(self.request(url)[0], 404)
+
+    def test_attendee_music_profile_service_failures_are_retryable(self):
+        path, person, _, _, _ = self.attendee_profile_fixture()
+        url = path+'/attendees/'+person['id']+'/music'
+        with mock.patch.dict(os.environ, {'KANBAN_MUSIC_PROXY_KEY':''}):
+            self.assertEqual(self.request(url)[0], 404)
+        with mock.patch.dict(os.environ, {'KANBAN_MUSIC_PORT':'0'}):
+            self.assertEqual(self.request(url)[0], 503)
+        self.assertEqual(self.request(url)[1]['state'], 'ready')

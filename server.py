@@ -369,6 +369,10 @@ class Handler(BaseHTTPRequestHandler):
             event = self.get_event(db,uid,viewer)
             if not suffix:
                 return self.reply(serialize(db,event,viewer))
+            music_person=re.fullmatch(r'/attendees/([a-f0-9]{16})/music',suffix)
+            if music_person:
+                from qgroup_core import music_profiles
+                return self.reply(music_profiles.view(db,event,viewer,music_person[1]))
             if suffix=='/finance':
                 query=parse_qs(urlparse(self.path).query)
                 values=[query.get(key,[''])[0] for key in ('before','before_report')]

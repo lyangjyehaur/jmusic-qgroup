@@ -1,4 +1,4 @@
-const CACHE = 'qgroup-music-react-b3786d396709';
+const CACHE = 'qgroup-music-react-83c0d738410b';
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,7 +9,7 @@ const ASSETS = [
   "./icon.svg",
   "./ui/music-admin.mjs",
   "./ui/music.mjs",
-  "./ui/shared-F2LV4TTC.mjs",
+  "./ui/shared-UWQSU4OW.mjs",
   "./ui/static.mjs"
 ];
 

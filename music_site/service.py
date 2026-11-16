@@ -157,6 +157,11 @@ class Handler(upstream.Handler):
             context = self.context()
             parsed = urlsplit(self.path)
             path = parsed.path
+            if path == '/api/internal/attendee-profile':
+                from . import member_profiles
+                with upstream._lock:
+                    return self.send_json(member_profiles.view(upstream.data, STORE, context,
+                        upstream.norm_selection, upstream.entry_kind))
             if path.startswith('/api/admin/') or path=='/api/export':
                 if not context.get('admin_actor'):raise Rejected('请先登录看板管理后台',401)
                 folder=Path(upstream.DATA_FILE).parent

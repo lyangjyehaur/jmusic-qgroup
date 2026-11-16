@@ -108,7 +108,7 @@ window.BoardAnalytics=(()=>{
   document.addEventListener('invalid',event=>{if(event.target.type!=='password')track('ui_invalid',details(event.target));},true);
   // Details and dialogs may be created later or opened without a button click.
   document.addEventListener('toggle',event=>{
-    if(event.target.tagName==='DETAILS')track(event.target.open?'ui_expand':'ui_collapse',details(event.target));
+    if(event.target.matches?.('details, [data-ui-disclosure]'))track(event.target.open?'ui_expand':'ui_collapse',details(event.target));
   },true);
   document.addEventListener('cancel',event=>{
     if(event.target.tagName==='DIALOG')track('dialog_cancel',details(event.target));

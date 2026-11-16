@@ -5,7 +5,7 @@ import {parse} from '@babel/parser';
 // API payloads, business rules, escaping, drafts and delegated listeners stay in
 // their original modules and keep the existing regression coverage.
 export function reactControllers(source) {
-  const tree=parse(source,{sourceType:'script'});
+  const tree=parse(source,{sourceType:'module'});
   function render(node) {
     if(!node || typeof node!=='object' || typeof node.start!=='number')return '';
     const children=[];
@@ -28,6 +28,10 @@ export function reactControllers(source) {
       if(member?.object?.name==='document' && property==='createElement' && ['button','input','select','textarea'].includes(node.arguments[0]?.value))return `UI.create(${r(node.arguments[0])})`;
       if(member?.object?.name==='document' && property==='addEventListener' && node.arguments[0]?.value==='DOMContentLoaded')return `UI.ready(${r(node.arguments[1])})`;
       if(property==='insertAdjacentHTML')return `UI.insert(${r(member.object)},${node.arguments.map(r).join(',')})`;
+      if(['querySelector','querySelectorAll','closest','matches'].includes(property) && typeof node.arguments[0]?.value==='string' && /(^|[\s>+~,(])(?:details|summary)(?=[\s.#[:>+~),]|$)/.test(node.arguments[0].value)) {
+        const selector=node.arguments[0].value.replace(/(^|[\s>+~,(])(details|summary)(?=[\s.#[:>+~),]|$)/g,(_,prefix,tag)=>prefix+(tag==='details'?'[data-ui-disclosure]':'[data-ui-summary]'));
+        return `${r(member)}(${JSON.stringify(selector)})`;
+      }
       if(property==='closest' && node.arguments[0]?.value==='label')return `${r(member)}('.ui-label, label')`;
       if(property==='remove' && !node.arguments.length) {
         const object=r(member.object);

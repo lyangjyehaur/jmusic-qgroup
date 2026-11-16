@@ -27,6 +27,7 @@ Python 3.9+ 及系统 IANA 时区数据库，无第三方运行依赖。
 ```sh
 npm ci --ignore-scripts
 python3 deploy/build_guide.py
+npm run typecheck
 npm run build
 python3 server.py
 python3 -m unittest discover -s tests -q
@@ -54,9 +55,11 @@ node --check public/experience.js
 
 ## React 與 Yahha UI
 
-主站、成分站與兩邊管理頁使用 React 19.3.1 和 [Yahha UI 0.2.0](https://github.com/didilili/yahha-ui)。按鈕、輸入框、多行輸入、核取方塊、選單、卡片與標籤直接使用套件元件，版面與響應式設定放在 `ui/`。原生 dialog 保留既有的焦點、草稿與瀏覽紀錄行為。成分站支援淺色與深色主題。
+主站、成分站與兩邊管理頁使用 React 19.3.1 和 [Yahha UI 0.2.0](https://github.com/didilili/yahha-ui)。按鈕、欄位、核取方塊、開關、單選組、分段選項、頁籤、展開區塊、彈窗、提示、頭像、圖片、卡片與文字排版直接使用套件元件，版面與響應式設定放在 `ui/`。元件用途、相容接法與檢查範圍見 [UI 元件對應](docs/ui-components.md)。成分站支援淺色與深色主題。
 
-目前採漸進遷移：React 負責畫面與元件，原有活動、報名、結算、帳務及成分資料控制器透過 `ui/react-view.jsx` 的明確畫面邊界接入；尚未把所有業務狀態改寫為 React hooks。`deploy/react_controllers.mjs` 以 AST 在建置時轉接 DOM 畫面操作，不修改瀏覽器全域原型。修改互動時仍編輯原始控制器，不能手改壓縮產物。API、欄位值、使用者原文、bot 連結及資料格式沿用原契約。
+看板主站與管理後台已完整改為 `ui/board/` 的 React TSX：列表、活動表單、報名、分房、結算、帳務、時間投票、帳號與後台設定直接以 hooks 管理狀態，使用 Yahha 元件。`public/index.html` 與 `public/admin.html` 只保留掛載入口；建置不再載入舊畫面控制器、HTML parser 或 DOM 轉接層。`public/storage.js`、`client.js`、`i18n.js` 保留為非畫面服務，沿用 IndexedDB 草稿、冪等重試、API 與 bot 連結契約。舊畫面控制器暫留作行為比對，修改看板互動請編輯 TSX 原始碼。簡繁系統文案在建置時轉換，使用者資料與協議值不轉換。
+
+成分站採漸進遷移：「已選詞條／熟悉程度」、儲存列與回到頂部已改為 `ui/music/SelectionPanel.tsx` 的直接 TSX 元件。React 透過 `useSyncExternalStore` 訂閱唯一的選取資料來源，分類與收合使用 hooks；這些區域不經 HTML 轉換或隱藏 DOM 模型。其餘成分頁面、成分管理頁及靜態說明頁仍透過 `ui/react-view.tsx` 與 `deploy/react_controllers.mjs` 接入，後續逐區移除轉接。React 原始碼統一使用 TypeScript／TSX，`tsconfig.json` 啟用 `strict`；活動、報名、投票、結算、帳款、管理介面與成分選取狀態均有共用型別。API 請求的回傳型別在呼叫端明確指定，這是編譯期契約，不取代伺服器驗證或執行期資料檢查。`npm run typecheck` 檢查全部 `ui/` 的 TS／TSX（包括舊頁面轉接層），建置與 UI 回歸測試會先執行型別檢查。原生 JavaScript 控制器仍依上述範圍逐步遷移。不能手改壓縮產物。
 
 建置需要 Node.js 22.22.3+；線上 Python 服務不需要 Node。初次安裝執行 `npm ci --ignore-scripts`，再執行 `npm run build`，會產生簡繁控制器、兩站的 React 模組與 CSS，最後更新簡繁 HTML。更新手冊時先執行 `python3 deploy/build_guide.py`，再執行完整建置。產物 `public/ui/`、`public/ui.css`、`music_site/public/ui/`、`music_site/public/ui.css` 必須與原始碼一起提交，現有 Dockerfile 會直接打包。元件及執行期依賴已鎖版，MIT 授權與第三方聲明隨靜態資源提供。
 

@@ -2,6 +2,7 @@
 import fs from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
+import {localizeReact} from '../deploy/localize_react.mjs';
 // Exercise the exact bundles shipped to browsers, including canonical protocol
 // values and native validation when the device itself speaks another language.
 for(const [folder,lang,category,required] of [
@@ -19,12 +20,15 @@ for(const [folder,lang,category,required] of [
   listeners.input({target:field});assert.equal(field.message,'');
   field.setCustomValidity('业务原文');listeners.invalid({target:field});assert.equal(field.message,'业务原文');
   const html=fs.readFileSync(`public/locales/${folder}/index.html`,'utf8');
-  const basic=html.slice(html.indexOf('<form id="event-form"'),html.indexOf('class="advanced-switch"',html.indexOf('<form id="event-form"')));
-  for(const name of ['description','minimum_participants','bot_enabled'])assert.match(basic,new RegExp(`name="${name}"`));
-  assert.ok(!/<textarea[^>]+name="fee_policy"/.test(html));
-  assert.match(html,/<option value="运动">/); // Localized label retains submitted value.
+  assert.match(html,/<div id="board-root"><\/div>/);
   assert.match(html,new RegExp(`<html lang="${lang}"`));
-  for(const page of ['index','guide','privacy','contact']) {
+  const form=localizeReact(fs.readFileSync('ui/board/EventForm.tsx','utf8'),folder);
+  const basic=form.slice(0,form.indexOf('<Advanced>'));
+  for(const name of ['description','minimum_participants','bot_enabled'])assert.match(basic,new RegExp(`name="${name}"`));
+  assert.ok(form.includes('"运动"')||form.includes("'运动'")); // Canonical submitted category.
+  const board=localizeReact(fs.readFileSync('ui/board/BoardApp.tsx','utf8'),folder);
+  assert.match(board,/<Link href="https:\/\/danndann\.cn"[^>]*translate="no">\s*飯糰\s*<\/Link>/);
+  for(const page of ['guide','privacy','contact']) {
     const footer=fs.readFileSync(`public/locales/${folder}/${page}.html`,'utf8').split('<footer')[1];
     assert.match(footer,/<a href="https:\/\/danndann\.cn"[^>]*translate="no">飯糰<\/a>/);
     assert.ok(!footer.includes('饭团'));

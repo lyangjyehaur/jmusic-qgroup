@@ -4,13 +4,13 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 
 const source=fs.readFileSync('public/app.js','utf8');
-const html=fs.readFileSync('public/index.html','utf8');
-const formHtml=html.slice(html.indexOf('<form id="event-form"'),html.indexOf('<dialog id="invoice-dialog"'));
-const basic=formHtml.slice(0,formHtml.indexOf('class="advanced-switch"'));
+// The form is authored in JSX; the HTML document is now only a React mount.
+const form=fs.readFileSync('ui/board/EventForm.tsx','utf8');
+const basic=form.slice(0,form.indexOf('<Advanced>'));
 for(const name of ['description','minimum_participants','bot_enabled'])assert.match(basic,new RegExp(`name="${name}"`));
-assert.match(formHtml,/<input type="hidden" name="fee_policy">/);
-assert.ok(!/<textarea[^>]+name="fee_policy"/.test(formHtml));
-assert.ok(!source.includes("form.elements.fee_policy.value=e?e.fee_policy:"));
+assert.ok(!/<(?:Field|textarea)[^>]+name="fee_policy"/.test(form));
+assert.match(form,/data\.fee_policy\s*=\s*v\.fee_policy/);
+assert.match(fs.readFileSync('public/index.html','utf8'),/id="board-root"/);
 
 const f={
   fee_policy:{value:'舊費用：每人 100，后台後臺原文',disabled:false},

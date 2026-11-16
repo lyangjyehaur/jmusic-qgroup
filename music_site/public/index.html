@@ -22,7 +22,7 @@
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon.svg">
 
-<link rel="stylesheet" href="ui.css?v=2fb2d8a760ad">
+<link rel="stylesheet" href="ui.css?v=5cd554f5ea2b">
 </head>
 <body class="music-app">
   <div id="wallLayer" aria-hidden="true">
@@ -224,27 +224,7 @@
     <div class="page" id="page-mine" data-page="mine">
 
     <div class="profile-layout"><div class="profile-primary">
-    <section class="card selection" id="selectionCard">
-      <div class="board-head">
-        <h2>你选的词条</h2>
-        <span class="muted tiny" id="selCount">0 / 10</span>
-        <div class="head-actions">
-          <button id="selToggle" class="tri-toggle" type="button" aria-expanded="true"></button>
-        </div>
-      </div>
-      <div id="selBody">
-        <div id="selChips" class="chips"></div>
-        <div id="selEmpty" class="sel-empty" hidden>
-          <p class="muted">还没有选词条。先去「发现」挑选喜欢的领域、歌手或乐队。</p>
-          <button id="selGoBoard" class="primary sel-cta" type="button">去发现音乐 →</button>
-        </div>
-        <div class="sel-actions">
-          <button id="saveBtn" class="primary" disabled>保存并匹配</button>
-          <button id="copySelBtn" class="link small" type="button">复制我的选择</button>
-        </div>
-        <p class="tiny">领域最多选 5 个、细分最多选 15 个。细分可调整熟悉程度，× 可移除。修改后记得保存。</p>
-      </div>
-    </section>
+    <section data-react-feature="music-selection"></section>
 
     </div><aside class="profile-sidebar">
     <section class="card" id="noteCard">
@@ -486,15 +466,10 @@
       <button type="button" class="tab" data-page="mine"><span class="tab-ico" aria-hidden="true">☺</span><span class="tab-txt">我的</span></button>
     </nav>
   </section>
-  <div id="mobBar" class="mob-bar" hidden>
-    <div class="save-summary"><b role="status">有未保存的修改</b>
-    <span id="mobCount">领域 0/5 · 细分 0/15</span></div>
-    <button id="mobSave" class="primary" type="button" disabled>保存并匹配</button>
-  </div>
   <footer class="muted tiny">只在本站服务器保存 · 仅用于群内爱好匹配</footer>
 </main>
 <div id="toast" class="toast" hidden></div>
-<button id="toTop" class="to-top" type="button" aria-label="回到顶部" hidden>↑</button>
+<div data-react-feature="music-tools"></div>
 
 <!-- 词条详情：谁选了这个词条 -->
 <div id="entryModal" class="modal" hidden>

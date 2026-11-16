@@ -1,6 +1,6 @@
 .ui-root { display: flex; flex-direction: column; }
 .ui-root > .page { flex: 1; width: 100%; }
-.site-header { background: #fffdf9; border-bottom: 1px solid #e4ccd5; }
+.site-header { background: #fffdf9; border-bottom: 1px solid var(--yahha-paper-line); }
 .header-inner { min-height: 76px; max-width: 1080px; gap: 12px; }
 .header-inner h1 { font-weight: 750; font-size: 20px; letter-spacing: .03em; color: var(--yahha-ink); }
 .ui-root .header-inner h1 a { color: var(--yahha-ink); }
@@ -18,9 +18,7 @@
 .home-account-copy { flex: 1; }
 .home-account h2 { color: var(--yahha-ink); }
 .toolbar { border: 0; margin-bottom: 16px; }
-.tabs { background: var(--yahha-surface); border: 1px solid var(--yahha-paper-line); padding: 5px; border-radius: var(--yahha-radius-field); gap: 6px; flex-wrap: wrap; }
-.ui-root .tabs .tab { padding: 8px 16px; color: var(--yahha-muted); border: 1px solid transparent; border-radius: var(--yahha-radius-option); box-shadow: none; background: transparent; }
-.ui-root .tabs .tab.active { border-color: var(--yahha-contour); background: var(--yahha-accent); color: var(--yahha-ink); }
+.ui-root .tabs { margin: 0; }
 .ui-root .filters { gap: 12px; margin-bottom: 20px; }
 .filters > .ui-select { flex: 0 0 140px; }
 .ui-root .filters .search { margin: 0; }
@@ -36,15 +34,14 @@
 .event-state { color: var(--yahha-success-ink); }
 .event-state.waiting, .waiting-count { color: var(--yahha-warning-ink); }
 .event-state.closed { color: var(--yahha-muted); }
-.empty-state, .loading-state { padding: 56px 16px; border: 1px dashed var(--yahha-paper-line); border-radius: var(--yahha-radius-panel); background: var(--yahha-surface); }
+.empty-state, .loading-state { padding: 32px 0; grid-column: 1/-1; }
+.loading-state { display: flex; justify-content: center; }
 .empty-state h3 { color: var(--yahha-ink); }
 .ui-root :is(.detail-facts, .detail-description, .card-bottom, .detail-facts dt, .participant-position, .detail-secondary) { color: var(--yahha-muted); }
 .ui-root .participant { border-bottom-color: var(--yahha-paper-line); }
 .ui-root :is(.event-policy, .poll-calendar, .poll-option, .poll-vote-toolbar, .room-assignment-card, .room-unassigned, .bot-preview, .allocation-preview) { background: var(--yahha-accent-soft); border-color: var(--yahha-paper-line); border-radius: var(--yahha-radius-note); }
 .ui-root :is(.poll-option.selected, .room-assignment-mine) { background: var(--yahha-accent-soft); border-color: var(--yahha-focus); }
 .ui-root :is(.room-person, .room-person-me, .room-my-assignment) { color: var(--yahha-ink); background: var(--yahha-neutral-surface); border-color: var(--yahha-neutral-line); }
-.ui-root :is(.poll-choice-button span, .poll-batch-options button) { color: var(--yahha-ink); border-color: var(--yahha-paper-line); background: var(--yahha-surface); border-radius: var(--yahha-radius-field); }
-.ui-root .poll-choice-button:has(input:checked) span { color: var(--yahha-ink); border-color: var(--yahha-contour); background: var(--yahha-accent); box-shadow: none; }
 .ui-root .poll-calendar-day { padding: 4px; min-width: 0; box-shadow: none; border-radius: var(--yahha-radius-option); }
 .ui-root .poll-calendar-day[aria-pressed=true] { color: var(--yahha-ink); background: var(--yahha-accent); border-color: var(--yahha-contour); box-shadow: none; }
 .ui-root .poll-calendar-day:disabled { background: transparent; border-color: transparent; }
@@ -70,10 +67,158 @@
   .board-intro { padding-top: 22px; align-items: flex-start; flex-direction: column; gap: 12px; }
   .board-intro p { font-size: 12px; }
   .tabs { gap: 2px; }
-  .ui-root .tabs .tab { padding-inline: 9px; font-size: 13px; }
+  .ui-root .tabs .ui-segmented { width: 100%; }
   .filters > .ui-select { flex-basis: 136px; }
   .filters .ui-select-field button { font-size: 14px; padding-inline: 12px; white-space: nowrap; }
-  .ui-root :is(.event-form-dialog, .detail-dialog) { border-radius: 24px 24px 0 0; }
   .ui-root .event-card > .ui-paper { padding: 18px; }
   .guide-page, .policy-page { padding: 20px; }
 }
+
+.ui-root .admin-card > .ui-paper > h2 { margin-bottom: 20px; }
+.ui-root .admin-page .ui-label { margin-block: 16px; }
+.ui-root .admin-page .bot-actions { gap: 12px; }
+.ui-root .guide-section > .ui-disclosure { margin-block: 20px; }
+.ui-root .guide-copy :is(p, ul, ol, blockquote) { margin-block: 12px; }
+.ui-root .guide-copy :is(h2,h3,h4) { margin-block: 24px 12px; }
+.ui-root .policy-page p { margin-block: 16px; }
+.ui-root .event-form .field-label { line-height: 1.5; }
+.ui-root .participant-avatar { padding: 0; border: 0; background: transparent; }
+.ui-root .participant-avatar > img { width: 100%; height: 100%; }
+
+.ui-root .detail-main > :is(section, .detail-section-heading, .extra-settings) { margin-top: 24px; }
+.ui-root .detail-main > :first-child { margin-top: 0; }
+.ui-root .detail-main h3 { margin-bottom: 12px; }
+.ui-root .detail-section-heading h3 { margin: 0; }
+.ui-root .detail-tools { justify-content: flex-start; gap: 12px; }
+
+/* The board owns its JSX layout; no legacy form or DOM adapter is involved. */
+.react-board { min-height: 100dvh; }
+.react-board .header-inner { display:flex; align-items:center; }
+.react-board .header-inner h1 { display:flex; align-items:center; gap:8px; margin:0 auto 0 0; white-space:nowrap; }
+.react-board .header-inner h1 a { display:inline-flex; align-items:center; }
+.react-board .header-inner > button { flex-shrink:0; }
+.react-board .page { max-width:1080px; padding-inline:24px; }
+.react-board .board-site-links { display:flex; justify-content:flex-end; margin-block:16px; }
+.react-board .board-account { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:16px 20px; margin:0 0 24px; background:var(--yahha-accent-soft); }
+.react-board .board-account > button { flex-shrink:0; white-space:nowrap; }
+.react-board .board-account > div { flex:1; display:grid; gap:8px; min-width:0; }
+.react-board :is(h1,h2,h3,h4,p,fieldset) { margin:0; }
+.react-board :is(p,dd,label,button) { line-height:1.6; }
+.react-board .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.react-board .board-filters { min-width:0; }
+.react-board .filters { display:flex; align-items:center; flex-wrap:wrap; gap:12px; }
+.react-board .filters > :first-child { flex:1; min-width:160px; }
+.react-board .filters > :nth-child(2) { flex:0 0 150px; }
+.react-board .poll-invite { margin-bottom:16px; }
+.react-board .board { display:grid; gap:16px; }
+.react-board #time-poll-board:not(:empty) { margin-top:16px; }
+.react-board .board-event-paper { display:flex; flex-direction:column; gap:14px; padding:20px; height:100%; }
+.react-board .card-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.react-board .card-heading > :first-child { overflow-wrap:anywhere; min-width:0; }
+.react-board .card-facts { display:grid; gap:4px; }
+.react-board .card-bottom { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.react-board .card-bottom > :last-child { margin-left:auto; }
+.react-board .site-footer { display:flex; flex-wrap:wrap; justify-content:center; gap:20px; }
+.react-board .board-dialog { width:min(680px,calc(100vw - 32px)); max-height:calc(100dvh - 40px); overflow-y:auto; overscroll-behavior:contain; }
+.react-board .board-dialog :is(input,textarea,button) { max-width:100%; }
+.react-board .board-form { display:flex; flex-direction:column; gap:20px; min-width:0; }
+.react-board :is(.form-body,.board-detail,.detail-main,.board-finance,.board-poll,.board-account-view) { display:flex; flex-direction:column; gap:16px; min-width:0; }
+.react-board .form-footer { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:10px; padding-top:16px; border-top:1px dashed var(--yahha-paper-line); margin:0; }
+.react-board .form-error { flex-basis:100%; }
+.react-board .board-field-row { display:grid; gap:6px; min-width:0; }
+.react-board .board-field { width:100%; }
+.react-board .board-check { align-self:flex-start; }
+.react-board .form-row { display:grid; grid-template-columns:repeat(auto-fit,minmax(130px,1fr)); align-items:start; gap:12px; }
+.react-board .board-pre-wrap { white-space:pre-wrap; overflow-wrap:anywhere; }
+.react-board .board-fold { width:100%; }
+.react-board .board-fold [role=region] > div { display:flex; flex-direction:column; gap:12px; }
+.react-board [data-advanced-only]:not([hidden]) { display:flex; flex-direction:column; gap:16px; }
+.react-board .draft-status:not(:empty) { display:flex; flex-wrap:wrap; align-items:center; gap:8px; }
+.react-board :is(.detail-tools,.owner-tools,.detail-meta,.qq-profile,.account-row,.settlement-heading,.poll-option-heading,.poll-slot-heading,.board-payment-row) { display:flex; align-items:center; flex-wrap:wrap; gap:10px; }
+.react-board :is(.detail-facts,.arrangement-facts,.finance-totals) { display:grid; grid-template-columns:max-content minmax(0,1fr); gap:8px 16px; margin:0; }
+.react-board dd { margin:0; overflow-wrap:anywhere; }
+.react-board .settlement-section { display:flex; flex-direction:column; gap:12px; padding-top:16px; border-top:1px dashed var(--yahha-paper-line); }
+.react-board .detail-main > :is(section,.detail-section-heading,.extra-settings) { margin-top:0; }
+.react-board .detail-main h3 { margin-bottom:0; }
+.react-board :is(.invoice-item,.poll-option,.poll-slot) { display:flex; flex-direction:column; gap:12px; padding:16px; }
+.react-board :is(.board-room-editor,#invoice-items,#invoice-people,#poll-slots,.board-code-library,.room-assignment-grid) { display:grid; gap:12px; }
+.react-board .room-assignment-card { padding:14px; }
+.react-board .board-picture { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; max-width:100%; }
+.react-board .board-picture > a:first-child { display:block; flex-basis:100%; }
+.react-board .board-picture img { width:auto; max-width:100%; max-height:280px; object-fit:contain; margin:auto; }
+.react-board .board-payment-row > :is(label,div) { flex:1; min-width:100px; }
+.react-board .board-toast { position:fixed; z-index:10000; bottom:max(24px,env(safe-area-inset-bottom)); left:50%; transform:translateX(-50%); width:min(460px,calc(100vw - 32px)); }
+.react-board .notification-entry { display:flex; justify-content:space-between; width:100%; text-align:left; white-space:normal; }
+.react-board .poll-calendar-days,.react-board .poll-calendar-weekdays { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:4px; text-align:center; }
+.react-board .poll-calendar-toolbar { display:flex; align-items:center; gap:8px; margin-bottom:12px; }
+.react-board .poll-calendar-toolbar h3 { flex:1; text-align:center; }
+.react-board .poll-calendar { padding:12px; }
+.react-board .poll-slot-heading { justify-content:space-between; }
+.react-board .poll-management { display:grid; gap:16px; }
+@media(max-width:600px) {
+  .react-board .page { padding-inline:16px; }
+  .react-board .header-inner { padding-inline:12px; gap:4px; }
+  .react-board .header-inner h1 { font-size:16px; gap:4px; }
+  .react-board .header-inner h1 > :last-child { display:none; }
+  .react-board .header-inner > button { padding-inline:8px; min-width:32px; font-size:13px; }
+  .react-board #profile-button { max-width:90px; }
+  .react-board #my-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .react-board .board-account { padding:14px; align-items:flex-start; }
+  .react-board .toolbar { flex-wrap:wrap; gap:8px; }
+  .react-board .toolbar > :first-child { max-width:100%; }
+  .react-board .board-dialog { width:calc(100vw - 20px); max-height:calc(100dvh - 24px); padding:18px; }
+  .react-board :is(.board-form,.form-body) { gap:16px; }
+  .react-board :is(.detail-facts,.arrangement-facts,.finance-totals) { gap:8px 12px; }
+  .react-board .board-event-paper { padding:16px; }
+}
+
+.react-board .site-footer { flex-direction:row; }
+
+.react-admin .admin-page { display:flex; flex-direction:column; gap:20px; padding-block:24px; }
+.react-admin .admin-stack { display:flex; flex-direction:column; gap:20px; }
+.react-admin .admin-panel { display:flex; flex-direction:column; gap:16px; padding:24px; }
+.react-admin .admin-stack [class*="surface"] { min-width:0; }
+.react-admin .receipt-id { overflow-wrap:anywhere; }
+.react-admin .bot-preview { white-space:pre-wrap; overflow-wrap:anywhere; max-width:100%; }
+@media(max-width:600px) { .react-admin .admin-panel { padding:16px; } }
+.react-board .form-body { padding:0; overflow:visible; }
+.react-board .form-footer { padding:16px 0 0; overflow:visible; max-height:none; background:transparent; }
+.react-board #detail-content { max-height:none; }
+.react-board :is(.detail-top,.detail-main,.join-panel) { position:static; padding:0; overflow:visible; max-height:none; background:transparent; border:0; scrollbar-gutter:auto; }
+.react-board .detail-top { display:grid; gap:12px; }
+.react-board .join-panel { display:flex; flex-direction:column; gap:16px; border-top:1px dashed var(--yahha-paper-line); padding-top:16px; }
+.react-board .detail-tools { border:0; margin:0; padding:0; }
+.react-board .detail-tools button { padding:8px 12px; font-size:14px; }
+.react-board .board-check-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; }
+.react-admin .admin-stack > [class*="surface"] { display:flex; flex-direction:column; gap:8px; padding:20px; }
+
+.react-board .header-inner .site-switch { border:0; background:transparent; padding:6px; gap:4px; flex-shrink:0; }
+.react-board .board-account { margin-top:20px; }
+.react-board .participant-profile { display:inline-flex; align-items:center; justify-content:flex-start; gap:8px; min-width:0; max-width:100%; padding:2px 4px; margin-left:-4px; text-align:left; white-space:normal; }
+.react-board .participant-profile > span:last-child { overflow-wrap:anywhere; }
+.react-board .member-music { display:flex; flex-direction:column; gap:20px; min-width:0; }
+.react-board .member-music-section { display:flex; flex-direction:column; gap:12px; }
+.react-board .member-music-shared { display:flex; flex-wrap:wrap; gap:8px; }
+.react-board .member-music-shared > * { max-width:100%; white-space:normal; overflow-wrap:anywhere; }
+.react-board .member-music-picks { list-style:none; padding:0; margin:0; display:grid; gap:8px; }
+.react-board .member-music-picks li { display:flex; justify-content:space-between; align-items:baseline; gap:12px; padding-block:8px; border-bottom:1px dashed var(--yahha-paper-line); }
+.react-board .member-music-picks li > :first-child { min-width:0; overflow-wrap:anywhere; }
+.react-board .member-music-picks li > :last-child { flex-shrink:0; }
+@media(max-width:600px) {
+  .react-board .header-inner { flex-wrap:nowrap; padding-block:8px; }
+  .react-board .header-inner h1 { flex:1 1 auto; }
+  .react-board .header-inner h1 a::before { display:none; }
+  .react-board .header-inner .site-switch { font-size:12px; padding-inline:4px; }
+  .react-board #profile-button { max-width:64px; }
+  .react-board #profile-button > :first-child:not(#my-name) { display:none; }
+}
+@media(max-width:600px) {
+  .react-board .header-inner .site-switch > [aria-hidden] { display:none; }
+}
+
+.react-board .member-music-popover { width:min(340px,calc(100vw - 24px)); max-height:min(520px,var(--available-height),calc(100dvh - 24px)); padding:16px; }
+.react-board .member-music-popover .member-music { gap:16px; }
+.react-board .member-music-popover .member-music-section { gap:8px; }
+.react-board .member-music-popover .member-music-section h4 { font-size:14px; }
+.react-board .member-music-popover .member-music-picks { gap:4px; }
+.react-board .member-music-popover .member-music-picks li { gap:8px; padding-block:6px; font-size:14px; }

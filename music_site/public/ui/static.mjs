@@ -1,1 +1,1 @@
-import{a as o}from"./shared-F2LV4TTC.mjs";o.boot();
+import{n as o}from"./shared-UWQSU4OW.mjs";o.boot();

@@ -5,6 +5,7 @@ import crypto from 'node:crypto';
 import {build} from 'esbuild';
 import postcss from 'postcss';
 import {reactControllers} from './react_controllers.mjs';
+import {localizeReact} from './localize_react.mjs';
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=name=>fs.readFileSync(path.join(root,name),'utf8');
@@ -16,10 +17,10 @@ function output(name,value) {
   if(check){console.error('Stale UI asset:',name);stale=true;return;}
   fs.mkdirSync(path.dirname(path.join(root,name)),{recursive:true});fs.writeFileSync(path.join(root,name),data);
 }
-const board=['i18n','storage','experience','client','roster','activity','time-polls','payment-codes','rooms','settlements','finance','identity','app'];
+const board=['i18n','storage','client'];
 const music=['initials','member-id','link','app'];
 const groups=[
-  {dir:'public',locales:['hans','hant'],entries:{board,admin:['admin'],static:[]},styles:['style.css'],custom:'board'},
+  {dir:'public',locales:['hans','hant'],entries:{board,admin:[],static:[]},styles:['style.css'],custom:'board'},
   {dir:'music_site/public',locales:[''],entries:{music,'music-admin':['member-id','admin'],static:[]},styles:['style.css','extra.css','music.css'],custom:'music'},
 ];
 const upstream=read('node_modules/yahha-ui/dist/style.css');
@@ -35,13 +36,17 @@ for(const group of groups) {
   for(const locale of group.locales) {
     const outdir=path.join(root,group.dir,'ui',locale);
     const entryPoints=Object.entries(group.entries).map(([name,scripts])=>({in:`controllers:${name}`,out:name}));
-    const result=await build({absWorkingDir:root,entryPoints,outdir,bundle:true,splitting:true,format:'esm',target:['es2022'],minify:true,write:false,legalComments:'linked',entryNames:'[name]',chunkNames:'shared-[hash]',outExtension:{'.js':'.mjs'},define:{'process.env.NODE_ENV':'"production"'},plugins:[{
+    const result=await build({absWorkingDir:root,entryPoints,outdir,bundle:true,splitting:true,format:'esm',target:['es2022'],minify:true,write:false,legalComments:'linked',entryNames:'[name]',chunkNames:'shared-[hash]',outExtension:{'.js':'.mjs'},alias:{'@qgroup':path.join(root,'ui')},define:{'process.env.NODE_ENV':'"production"'},plugins:[{
       name:'existing-controllers',setup(builder){
+        builder.onLoad({filter:/[\\/]ui[\\/]board[\\/].*\.(?:tsx|ts)$/},args=>({contents:localizeReact(fs.readFileSync(args.path,'utf8'),locale),loader:args.path.endsWith('.tsx')?'tsx':'ts'}));
         builder.onResolve({filter:/^controllers:/},args=>({path:args.path,namespace:'controllers'}));
         builder.onLoad({filter:/.*/,namespace:'controllers'},args=>{
           const name=args.path.slice('controllers:'.length),scripts=group.entries[name];
-          const contents=scripts.map(script=>reactControllers(read(`${group.dir}/${locale?`locales/${locale}/`:''}${script}.js`))).join('\n;\n');
-          return {contents:`import {UI} from './ui/react-view.jsx';\nUI.boot();\n${contents}`,resolveDir:root,loader:'jsx'};
+          if(name==='admin'&&group.dir==='public')return {contents:`import {mountAdmin} from './ui/board/AdminApp.tsx'; mountAdmin();`,resolveDir:root,loader:'jsx'};
+          const contents=scripts.map(script=>{const source=read(`${group.dir}/${locale?`locales/${locale}/`:''}${script}.js`);return name==='board'?source:reactControllers(source);}).join('\n;\n');
+          if(name==='board')return {contents:`import {mountBoard} from './ui/board/BoardApp.tsx';\n${contents}\nmountBoard({client:BoardClient,storage:BoardStore,i18n:BoardI18n});`,resolveDir:root,loader:'jsx'};
+          const features=name==='music' ? `import {SelectionPanel,MusicTools} from './ui/music/SelectionPanel.tsx';\nUI.boot({features:{'music-selection':SelectionPanel,'music-tools':MusicTools}});` : 'UI.boot();';
+          return {contents:`import {UI} from './ui/react-view.tsx';\n${features}\n${contents}`,resolveDir:root,loader:'jsx'};
         });
       }
     }]});

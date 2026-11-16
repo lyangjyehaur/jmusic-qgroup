@@ -15,6 +15,9 @@ box.insertAdjacentHTML('beforeend', rowHtml(box.children.length));
 box.lastElementChild.querySelector('input').focus();
 document.addEventListener('DOMContentLoaded', boot);
 select.addEventListener('change', onChange);
+form.querySelectorAll('details').forEach(d=>d.open=false);
+fold.querySelector('summary').focus();
+box.querySelector('#event-summary .details').focus();
 const data = {category:'约K', enabled:false};
 `;
 // The original modules are classic scripts; their async calls live in functions.
@@ -31,4 +34,8 @@ assert.match(transformed,/UI\.children\(box\)\.at\(-1\)/);
 assert.match(transformed,/UI\.ready\(boot\)/);
 assert.match(transformed,/select\.addEventListener\('change', onChange\)/);
 assert.match(transformed,/category:'约K', enabled:false/);
+assert.match(transformed,/querySelectorAll\("\[data-ui-disclosure\]"\)/);
+assert.match(transformed,/querySelector\("\[data-ui-summary\]"\)/);
+assert.match(transformed,/querySelector\('#event-summary \.details'\)/);
+assert.match(reactControllers("import {selectionStore} from '@qgroup/music/selection-store.js';"),/import \{selectionStore\} from '@qgroup\/music\/selection-store.js'/);
 console.log('React view boundaries preserve storage, payloads, listeners and dynamic row semantics');

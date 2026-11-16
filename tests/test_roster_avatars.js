@@ -25,9 +25,10 @@ for(const filename of ['public/roster.js','public/locales/hans/roster.js','publi
   assert.ok(!malicious.includes(' onerror="'));
   assert.equal(handlers.error.capture,true);
   let removed=0;
-  handlers.error.handler({target:{matches:selector=>selector==='.participant-avatar img',remove:()=>removed++}});
+  handlers.error.handler({target:{matches:selector=>selector==='.participant-avatar:not([data-ui-avatar]) img',remove:()=>removed++}});
   assert.equal(removed,1);
-  handlers.error.handler({target:{matches:()=>false,remove:()=>removed++}});
+  // React Avatar owns its image fallback; the legacy listener must leave it alone.
+  handlers.error.handler({target:{matches:selector=>selector==='.participant-avatar img',remove:()=>removed++}});
   assert.equal(removed,1);
   handlers.error.handler({target:{}});
 }

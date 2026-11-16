@@ -4,18 +4,23 @@
   "type": "module",
   "scripts": {
     "build:locales": "node deploy/build_locales.cjs",
-    "build:ui": "node deploy/build_ui.mjs",
+    "build:ui": "npm run typecheck && node deploy/build_ui.mjs",
     "build": "npm run build:locales && npm run build:ui && npm run build:locales",
-    "check:ui": "node deploy/build_ui.mjs --check",
-    "test:ui": "node tests/test_react_controllers.mjs && node tests/test_react_ui.mjs"
+    "check:ui": "npm run typecheck && node deploy/build_ui.mjs --check",
+    "test:ui": "npm run typecheck && node tests/test_board_react.mjs && node tests/test_react_controllers.mjs && node tests/test_music_selection.mjs && node tests/test_yahha_patterns.mjs && node tests/test_react_ui.mjs",
+    "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
     "@babel/parser": "8.1.0",
     "@playwright/test": "1.65.1",
+    "@types/node": "22.20.5",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
     "esbuild": "0.27.0",
     "html-react-parser": "5.2.10",
     "opencc-js": "1.4.2",
     "postcss": "8.5.33",
+    "typescript": "5.9.3",
     "yahha-ui": "0.2.0"
   },
   "dependencies": {

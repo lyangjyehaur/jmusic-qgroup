@@ -30,7 +30,7 @@ function createRosterUI({inbox,api,$,state,esc,showDialog,toast,withProfile,rend
     return `<span class="participant-avatar" aria-hidden="true"><span>${esc(initial)}</span>${person.avatar_url?`<img src="${esc(person.avatar_url)}" alt="" width="24" height="24" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:''}</span>`;
   }
   document.addEventListener('error',event=>{
-    if(event.target.matches?.('.participant-avatar img'))event.target.remove();
+    if(event.target.matches?.('.participant-avatar:not([data-ui-avatar]) img'))event.target.remove();
   },true);
   function peopleSection(e) {
     let html=e.my_attendees?.some(p=>!p.is_me)?`<details class="extra-settings"><summary>我的報名／同行 · ${e.my_attendees.length} 人</summary>${e.my_attendees.map(p=>`<p class="history-person">${esc(p.nickname)} · ${labels[p.status]}${p.waiting_position?" · 候補 "+p.waiting_position:''}${p.payer_kind==='manager'?" · 由"+esc(p.payer_name||p.manager_name)+"統一付款":" · 本人付款"}${p.can_manage&&(p.can_change||p.can_withdraw||p.can_claim)?` <button class="text-button" data-roster-action="manage" data-person="${p.id}">管理</button>`:''}</p>`).join('')}</details>`:'';
