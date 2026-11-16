@@ -32,13 +32,20 @@ function createRoomEditor({container,getRooms,getPeople,getPayers,esc,onChange,f
   }
   container.addEventListener('input',event=>{
     const el=event.target,room=getRooms().find(r=>r.id===el.dataset.room);
-    if(room&&el.dataset.roomField){room[el.dataset.roomField]=el.value;onChange();}
+    if(room&&el.dataset.roomField){
+      room[el.dataset.roomField]=el.value;onChange();
+      if(el.dataset.roomField==='name'){
+        // Keep focus and the next click stable while the room name is edited.
+        el.closest('.invoice-item').querySelector('strong').textContent=el.value;
+        for(const select of container.querySelectorAll('select[data-room-person]'))
+          for(const option of select.options)if(option.value===room.id)option.textContent=el.value;
+      }
+    }
   });
   container.addEventListener('change',event=>{
     const el=event.target;
     if(el.dataset.roomPerson){for(const r of getRooms())r.person_ids=r.person_ids.filter(uid=>uid!==el.dataset.roomPerson);getRooms().find(r=>r.id===el.value)?.person_ids.push(el.dataset.roomPerson);onChange();render();}
     else if(['merchant_mode','payer_id'].includes(el.dataset.roomField)){onChange();render();}
-    else if(el.dataset.roomField==='name')render();
   });
   container.addEventListener('click',event=>{
     const el=event.target.closest('[data-room-add],[data-room-remove],[data-room-prune]');if(!el)return;

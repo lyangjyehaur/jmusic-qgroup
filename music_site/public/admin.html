@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-ui="yahha">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>管理员 · 日音成分匹配器</title>
-<meta name="theme-color" content="#fff8fb">
+<meta name="theme-color" content="#fffaf5">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="style.css">
-<link rel="stylesheet" href="extra.css">
+
+<link rel="stylesheet" href="ui.css?v=2fb2d8a760ad">
 </head>
-<body>
+<body class="music-admin">
 <div class="bg-blob b1"></div><div class="bg-blob b2"></div>
 <main class="wrap admin-wrap">
   <header class="hero">
@@ -24,6 +24,8 @@
 
   <section id="loginCard" class="card"><h2>使用看板管理员身份</h2><p id="loginError" class="error"></p><p class="muted">请先在看板管理后台登录，再返回本页。</p><a href="/admin" class="primary">前往看板管理后台</a></section>
   <section id="adminCard" class="card" hidden>
+    <nav class="admin-section-nav" aria-label="管理分类"><a href="#entry-management">词条</a><a href="#membersCard">群友账号</a><a href="#shout-management">喊话</a><a href="#wall-management">壁纸</a><a href="#backup-management">数据与备份</a></nav>
+    <div id="entry-management"></div>
     <div class="board-head">
       <h2>词条管理</h2>
       <span class="muted tiny" id="adminHint"></span>
@@ -50,8 +52,8 @@
     </table>
     </div>
 
-    <div class="admin-section">
-      <h3>词条合并</h3>
+    <details class="admin-section admin-fold">
+      <summary>词条合并</summary>
       <p class="admin-note">把「从」这个词条并进「到」：两边的选择会合并到一起，然后删掉「从」。用于ヨルシカ / Yorushika 这类同义条目。</p>
       <div class="row">
         <select id="mergeFrom" class="cat-select" title="准备删除的词条"></select>
@@ -59,19 +61,9 @@
         <select id="mergeTo" class="cat-select" title="保留的词条"></select>
         <button id="mergeBtn" type="button" class="primary small">合并</button>
       </div>
-    </div>
+    </details>
 
-    <div class="admin-section">
-      <h3>重置群友口令</h3>
-      <p class="admin-note">群友忘了口令或换人用时，在这里给他设一个新口令（4-6 位数字）。</p>
-      <div class="row">
-        <input id="pinQQ" placeholder="群友 QQ 号" maxlength="12" inputmode="numeric">
-        <input id="pinNew" placeholder="新口令 4-6 位数字" maxlength="6" inputmode="numeric">
-        <button id="pinBtn" type="button" class="primary small">重置口令</button>
-      </div>
-    </div>
-
-    <div class="admin-section">
+    <div class="admin-section" id="wall-management">
       <h3>壁纸管理</h3>
       <p class="admin-note">上传的图片会加入首页轮换队列（支持 png / jpg / webp，单张 ≤2MB）。勾选「参与轮换」才会出现在首页，顺序可上下调整。</p>
       <div class="row wall-bar">
@@ -91,7 +83,7 @@
       <div class="wall-grid" id="wallGrid"></div>
     </div>
 
-    <div class="admin-section">
+    <div class="admin-section" id="backup-management">
       <h3>数据与备份</h3>
       <p class="admin-note">可下载含私人资料的成分 JSON，请妥善保管。服务器另保存包含身份关联和壁纸的成套备份，最多保留 30 份及 14 天；仅有 JSON 不能完整恢复登录关联。</p>
       <div class="share-actions" style="justify-content:flex-start">
@@ -101,7 +93,7 @@
       <ul class="backup-list" id="backupList"></ul>
     </div>
 
-    <div class="admin-section">
+    <div class="admin-section" id="shout-management">
       <h3>喊话管理</h3>
       <p class="admin-note">当前喊话板上的消息和历史归档；删除后会从两边同时移除。</p>
       <div class="share-actions" style="justify-content:flex-start">
@@ -116,14 +108,14 @@
       </div>
     </div>
 
-    <div class="admin-section admin-danger">
-      <h3>危险操作</h3>
+    <details class="admin-section admin-danger admin-fold">
+      <summary>危险操作</summary>
       <p class="admin-note">清空所有词条和群友记录（会先自动备份一次）。输入 RESET 确认。</p>
       <div class="row">
         <input id="resetInput" placeholder="输入 RESET 确认" maxlength="8">
         <button id="resetBtn" type="button" class="primary small">清空数据</button>
       </div>
-    </div>
+    </details>
 
     <p class="admin-note" style="margin-top:16px">管理权限沿用看板登录，退出或撤销管理员权限后即失效。</p>
   </section>
@@ -133,7 +125,17 @@
     <h2>群友账号</h2>
     <span class="muted tiny" id="membersHint"></span>
   </div>
-  <p class="muted tiny" style="margin:6px 2px 10px">只读列表：QQ 号或成分 ID、名字、自建数量、已选词条（含熟悉度）。看板 ID 在主站「成分站关联」统一维护。口令是加盐哈希，后台只能看到是否已设置、看不到原文，忘记可用上面「重置群友口令」。</p>
+  <p class="muted tiny" style="margin:6px 2px 10px">只读列表：QQ 号或成分 ID、名字、自建数量、已选词条（含熟悉度）。看板 ID 在主站「成分站关联」统一维护。口令是加盐哈希，后台只能看到是否已设置、看不到原文，忘记可用下方「重置群友口令」。</p>
+    <div class="admin-section">
+      <h3>重置群友口令</h3>
+      <p class="admin-note">群友忘了口令或换人用时，在这里给他设一个新口令（4-6 位数字）。</p>
+      <div class="row">
+        <input id="pinQQ" placeholder="群友 QQ 号" maxlength="12" inputmode="numeric">
+        <input id="pinNew" placeholder="新口令 4-6 位数字" maxlength="6" inputmode="numeric">
+        <button id="pinBtn" type="button" class="primary small">重置口令</button>
+      </div>
+    </div>
+
   <div class="row admin-search">
     <input id="memberSearch" type="search" placeholder="按 QQ / 成分 ID / 名字搜索" autocomplete="off">
     <button id="memberSearchClear" class="link small" type="button">清空</button>
@@ -147,7 +149,7 @@
 </section>
 </main>
 <div id="toast" class="toast" hidden></div>
-<script src="member-id.js"></script>
-<script src="admin.js?v=20261115-onboarding1"></script>
+
+<script type="module" src="ui/music-admin.mjs"></script>
 </body>
 </html>

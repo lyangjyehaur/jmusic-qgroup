@@ -724,6 +724,18 @@ class MusicTests(unittest.TestCase):
                     self.assertNotIn('Service-Worker-Allowed',response.headers)
                 if path=='/app.js': self.assertNotIn('musicLinkStatus',body)
 
+    def test_react_static_modules_have_javascript_mime_and_gzip(self):
+        import gzip
+        for name in ['music.mjs','music-admin.mjs','static.mjs']:
+            request=urllib.request.Request(self.base+'/music/ui/'+name,
+                                           headers={'Accept-Encoding':'gzip'})
+            with self.client.opener.open(request) as response:
+                self.assertEqual(response.code,200)
+                self.assertIn(response.headers.get_content_type(),('application/javascript','text/javascript'))
+                body=response.read()
+                if response.headers.get('Content-Encoding')=='gzip':body=gzip.decompress(body)
+                self.assertEqual(body,(Path(__file__).resolve().parents[1]/'music_site/public/ui'/name).read_bytes())
+
     def test_return_destination_remains_strict(self):
         self.assertEqual(accounts.return_path('/music/'),'/music/')
         for path in ('/music/?next=evil','/music//','//evil.test','https://evil.test/music/','/music/../'):

@@ -1809,7 +1809,7 @@ html[data-theme="dark"] .tab.active{ color:#ffa9cd; background:rgba(120,60,95,.4
 @media (max-width:560px){
   body{ padding-bottom:0; }
   #appView{ padding-bottom:calc(128px + env(safe-area-inset-bottom, 0px)); }
-  .mob-bar{ bottom:calc(58px + env(safe-area-inset-bottom, 0px)) !important; z-index:59; }
+  .mob-bar{ bottom:calc(58px + env(safe-area-inset-bottom, 0px)); z-index:59; }
   .to-top{ bottom:calc(132px + env(safe-area-inset-bottom, 0px)); }
 }
 @media (min-width:561px){

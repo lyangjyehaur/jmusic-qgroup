@@ -113,6 +113,26 @@ class LanguageHTTPTests(unittest.TestCase):
             self.assertEqual(response.status,200);self.assertEqual(body,b'')
         with sqlite3.connect(server.DB) as db:self.assertEqual(db.execute('SELECT count(*) FROM users').fetchone()[0],0)
 
+    def test_react_modules_follow_locale_and_use_javascript_mime(self):
+        for language,folder in [('zh-CN','hans'),('zh-TW','hant')]:
+            for name in ['board.mjs','admin.mjs','static.mjs']:
+                response,body=self.get('/ui/'+name,language)
+                self.assertEqual(response.status,200)
+                self.assertEqual(response.headers.get_content_type(),'text/javascript')
+                self.assertEqual(response.headers['Vary'],'Accept-Language')
+                self.assertIsNone(response.headers.get('Set-Cookie'))
+                self.assertEqual(body,(server.ROOT/'public/ui'/folder/name).read_bytes())
+        response,body=self.get('/ui.css')
+        self.assertEqual(response.headers.get_content_type(),'text/css')
+        self.assertEqual(body,(server.ROOT/'public/ui.css').read_bytes())
+        response,body=self.get('/ui/YAHHA-LICENSE.txt')
+        self.assertEqual(response.status,200)
+        self.assertIn(b'MIT',body)
+        for route in ['/ui/../server.py','/ui/%2e%2e/server.py','/ui/hans/board.mjs',
+                      '/ui/board.mjs/extra','/ui/not-present.mjs']:
+            response,_=self.get(route)
+            self.assertEqual(response.status,404,route)
+
     def test_http_errors_translate_and_keep_status(self):
         for language,expected in [('zh-CN','页面不存在'),('en','頁面不存在'),('zh-Hant','頁面不存在')]:
             response,body=self.get('/does-not-exist',language)

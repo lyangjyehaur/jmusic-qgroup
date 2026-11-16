@@ -222,7 +222,7 @@ class Handler(BaseHTTPRequestHandler):
                 locale=i18n.language(self.headers.get('Accept-Language'))
                 message=i18n.text('这是 QQ 登录回调地址，请从看板发起 QQ 登录。',locale)
                 back=i18n.text('返回群聚看板',locale)
-                return self.reply(('<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QQ 登录</title>  <script defer src="/analytics.js?v=20261109-umami2"></script>  <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script><p>'+message+'</p><a href="/">'+back+'</a></html>').encode(),content_type='text/html; charset=utf-8')
+                return self.reply(('<!doctype html><html lang="zh"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>QQ 登录</title><link rel="stylesheet" href="/ui.css"><script type="module" src="/ui/static.mjs"></script>  <script defer src="/analytics.js?v=20261109-umami2"></script>  <script async src="https://u.danndann.cn/script.js" data-website-id="5244d326-3db9-4499-9c7a-6e3568b296cd" data-domains="kanban.danndann.cn" data-auto-track="false" data-exclude-search="true" data-exclude-hash="true"></script><body><main class="policy-page"><p>'+message+'</p><a href="/">'+back+'</a></main></body></html>').encode(),content_type='text/html; charset=utf-8')
             with connect() as db:
                 user,_=self.identity(db)
                 if not user and not accounts.visitor_exists(db,identity.session_hash(self.headers)):raise APIError('请在发起 QQ 登录的原浏览器重新操作',401)
@@ -234,6 +234,15 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header('Content-Length','0')
             self.end_headers()
             return
+        if path.startswith('/ui/'):
+            name=path.removeprefix('/ui/')
+            if not re.fullmatch(r'[A-Za-z0-9_-]+(?:\.mjs(?:\.LEGAL\.txt)?|\.txt|\.md)',name):raise APIError('资源不存在',404)
+            folder=ROOT/'public'/'ui'
+            if '.mjs' in name:
+                folder=folder/i18n.language(self.headers.get('Accept-Language'))
+            source=folder/name
+            if not source.is_file():raise APIError('资源不存在',404)
+            return self.reply(source.read_bytes(),content_type='text/javascript; charset=utf-8' if name.endswith('.mjs') else 'text/plain; charset=utf-8')
         if path=='/api/health':
             with connect() as db:
                 db.execute('SELECT 1').fetchone()
@@ -241,6 +250,7 @@ class Handler(BaseHTTPRequestHandler):
         assets = {'/privacy':('privacy.html','text/html; charset=utf-8'),'/contact':('contact.html','text/html; charset=utf-8'),'/admin':('admin.html','text/html; charset=utf-8'),'/admin.js':('admin.js','text/javascript; charset=utf-8'),'/analytics.js':('analytics.js','text/javascript; charset=utf-8'),'/qq-login.png':('qq-login.png','image/png'),'/payment-codes.js':('payment-codes.js','text/javascript; charset=utf-8'),'/i18n.js':('i18n.js','text/javascript; charset=utf-8'),'/':('index.html','text/html; charset=utf-8'),'/guide.html':('guide.html','text/html; charset=utf-8'),'/app.js':('app.js','text/javascript; charset=utf-8'),'/activity.js':('activity.js','text/javascript; charset=utf-8'),
             '/identity.js':('identity.js','text/javascript; charset=utf-8'),'/storage.js':('storage.js','text/javascript; charset=utf-8'),'/experience.js':('experience.js','text/javascript; charset=utf-8'),'/rooms.js':('rooms.js','text/javascript; charset=utf-8'),'/finance.js':('finance.js','text/javascript; charset=utf-8'),'/settlements.js':('settlements.js','text/javascript; charset=utf-8'),'/style.css':('style.css','text/css; charset=utf-8'),'/client.js':('client.js','text/javascript; charset=utf-8'),'/roster.js':('roster.js','text/javascript; charset=utf-8'),'/favicon.svg':('favicon.svg','image/svg+xml')}
         assets['/time-polls.js']=('time-polls.js','text/javascript; charset=utf-8')
+        assets['/ui.css']=('ui.css','text/css; charset=utf-8')
         if path in assets:
             filename, content_type = assets[path]
             locale=i18n.language(self.headers.get('Accept-Language'))

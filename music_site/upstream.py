@@ -63,6 +63,7 @@ CTYPES = {
     ".html": "text/html; charset=utf-8",
     ".css": "text/css; charset=utf-8",
     ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
     ".json": "application/json; charset=utf-8",
     ".webmanifest": "application/manifest+json",
     ".svg": "image/svg+xml",
@@ -2269,7 +2270,7 @@ class Handler(BaseHTTPRequestHandler):
             body = f.read()
         ext = os.path.splitext(full)[1].lower()
         enc = None
-        if ext in (".html", ".css", ".js", ".json", ".svg", ".webmanifest", ".txt") and len(body) > 1024:
+        if ext in (".html", ".css", ".js", ".mjs", ".json", ".svg", ".webmanifest", ".txt") and len(body) > 1024:
             if "gzip" in (self.headers.get("Accept-Encoding") or "").lower():
                 try:
                     st = os.stat(full)

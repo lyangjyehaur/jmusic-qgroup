@@ -474,7 +474,7 @@
     const counts = {};
     for (const e of list) counts[e.category || '其他'] = (counts[e.category || '其他'] || 0) + 1;
     const items = [['', '全部', list.length]].concat(
-      (state.categories || CATS).map(c => [c, c, counts[c] || 0])
+      [...new Set([...(state.categories || CATS), ...Object.keys(counts)])].filter(c => counts[c]).map(c => [c, c, counts[c]])
     );
     box.innerHTML = '';
     for (const [val, label, count] of items) {
@@ -871,19 +871,24 @@
       nameEl.className = 'sel-row-name';
       nameEl.textContent = e.text;
       row.appendChild(nameEl);
-      const seg = document.createElement('div');
-      seg.className = 'sel-seg';
-      const cur = selLevel(e.id);
-      LEVEL_OPTS.forEach((lv) => {
-        const b = document.createElement('button');
-        b.type = 'button';
-        b.className = 'sel-seg-btn lv' + lv + (cur === lv ? ' on' : '');
-        b.textContent = levelLabel(lv);
-        b.title = '设为' + levelLabel(lv);
-        b.addEventListener('click', (ev) => { ev.stopPropagation(); applyLevel(e.id, lv); });
-        seg.appendChild(b);
-      });
-      row.appendChild(seg);
+      if (kind !== 'main') {
+        const seg = document.createElement('div');
+        seg.className = 'sel-seg';
+        seg.setAttribute('role', 'group');
+        seg.setAttribute('aria-label', e.text + '的熟悉程度');
+        const cur = selLevel(e.id);
+        LEVEL_OPTS.forEach((lv) => {
+          const b = document.createElement('button');
+          b.type = 'button';
+          b.className = 'sel-seg-btn lv' + lv + (cur === lv ? ' on' : '');
+          b.textContent = levelLabel(lv);
+          b.title = '设为' + levelLabel(lv);
+          b.setAttribute('aria-pressed', String(cur === lv));
+          b.addEventListener('click', (ev) => { ev.stopPropagation(); applyLevel(e.id, lv); });
+          seg.appendChild(b);
+        });
+        row.appendChild(seg);
+      }
       const cnt = document.createElement('span');
       cnt.className = 'cnt';
       cnt.textContent = (e.count || 0) + ' 人';
@@ -918,7 +923,7 @@
       if (!list.length) {
         const s = document.createElement('span');
         s.className = 'muted tiny sel-empty';
-        s.textContent = '还没选，点上方榜单里的词条加入 →';
+        s.textContent = '还没选，去「发现」挑选喜欢的词条 →';
         g.appendChild(s);
       }
       const grouped = title === '细分';
@@ -927,7 +932,7 @@
       } else {
         const catOrder = (state.categories || CATS).slice();
         list.forEach(e => { const cc = e.category || '其他'; if (catOrder.indexOf(cc) < 0) catOrder.push(cc); });
-        const present = catOrder.filter(cat => state.entries.some(e => (e.category || '其他') === cat));
+        const present = catOrder.filter(cat => list.some(e => (e.category || '其他') === cat));
         const bar = document.createElement('div');
         bar.className = 'sel-cats';
         const mkBtn = (label, value, n) => {
@@ -977,7 +982,7 @@
     const chosen = selOrder.map(id => byId.get(id)).filter(Boolean);
     group('领域', chosen.filter(e => entryKind(e) === 'main'), c.main, selectionLimits.main);
     const chosenSub = chosen.filter(e => entryKind(e) !== 'main');
-    if (selCat !== '全部' && !state.entries.some(e => (e.category || '其他') === selCat)) selCat = '全部';
+    if (selCat !== '全部' && !chosenSub.some(e => (e.category || '其他') === selCat)) selCat = '全部';
     group('细分', chosenSub, c.sub, selectionLimits.sub);
     selPrev = new Set(selection.keys());
     $('saveBtn').disabled = selection.size === 0;
@@ -1108,6 +1113,7 @@
     if (!rest.length) {
       card.hidden = false;
       if (hint) hint.textContent = q ? `没有匹配「${q}」的词条` : '';
+      if ($('catFilterRest')) $('catFilterRest').innerHTML = '';
       const box0 = $('rankListRest');
       if (box0) box0.innerHTML = '<span class="muted tiny">没有匹配的词条</span>';
       return;
@@ -1117,6 +1123,7 @@
     if (hint) hint.textContent = q
       ? `共 ${rest.length} 条匹配「${q}」 · 按分类分组`
       : `共 ${rest.length} 条 · ${catsAll.length} 个分类`;
+    if (catFilterRest && !rest.some(e => (e.category || '其他') === catFilterRest)) catFilterRest = '';
     renderCatFilterInto($('catFilterRest'), catFilterRest, rest, (val) => { catFilterRest = val; renderRest(); });
     const box = $('rankListRest');
     if (!box) return;
@@ -1203,7 +1210,7 @@
   function renderRestMain() {
     const card = $('restMainCard');
     if (!card) return;
-    const all = state.entries.filter(e => entryKind(e) === 'main')
+    const all = state.entries.filter(e => entryKind(e) === 'main' && (!searchQ.trim() || matchSearch(e.text, searchQ.trim(), e.aliases)))
       .sort((a, b) => (b.count - a.count) || a.text.localeCompare(b.text, 'zh') || a.id.localeCompare(b.id));
     card.hidden = false;
     const hint = $('restMainHint');
@@ -1214,7 +1221,7 @@
     if (!all.length) {
       const s = document.createElement('span');
       s.className = 'muted tiny';
-      s.textContent = '还没有领域词条';
+      s.textContent = searchQ.trim() ? '没有匹配的领域' : '还没有领域词条';
       box.appendChild(s);
       return;
     }
@@ -1260,13 +1267,7 @@
     const expanded = !!rankExpanded[kind];
     const cap = kind === 'sub' ? subCap : list.length;
     const local = new Map(list.map((e, i) => [e.id, i + 1]));
-    const podiumOn = list.length >= 3;
-    if (podiumOn) {
-      const pod = podiumFor(list);
-      if (!podiumSeen[kind]) { pod.classList.add('enter'); podiumSeen[kind] = true; }
-      box.appendChild(pod);
-    }
-    const start = podiumOn ? 3 : 0;
+    const start = 0;
     const rows = expanded ? list.slice(start, cap) : list.slice(start, LIMIT);
     rows.forEach(e => box.appendChild(rankRow(e, maxCount, local)));
     if (expanded && rankJustExpanded[kind]) {
@@ -1281,7 +1282,7 @@
       const more = document.createElement('button');
       more.type = 'button';
       more.className = 'rank-more-link';
-      more.textContent = `还有 ${list.length - SUB_EXPAND_CAP} 条 · 去「更多细分」查看 →`;
+      more.textContent = `还有 ${list.length - SUB_EXPAND_CAP} 条 · 去「全部词条」查看 →`;
       more.addEventListener('click', () => window.__showPage('rest'));
       box.appendChild(more);
     }
@@ -1291,58 +1292,6 @@
       toggle.setAttribute('aria-expanded', expanded ? 'true' : 'false');
       toggle.setAttribute('aria-label', expanded ? '收起' : '展开');
     }
-  }
-
-  const podiumSeen = { main: false, sub: false };
-  function podiumFor(list) {
-    const wrap = document.createElement('div');
-    wrap.className = 'podium';
-    [1, 0, 2].forEach((idx) => {
-      const e = list[idx];
-      if (!e) return;
-      const pos = idx + 1;
-      const pod = document.createElement('div');
-      pod.className = 'pod p' + pos + (selection.has(e.id) ? ' selected' : '');
-      pod.dataset.id = e.id;
-      pod.tabIndex = 0;
-      pod.setAttribute('role', 'button');
-      pod.setAttribute('aria-label', `第 ${pos} 名 ${e.text}，${e.count || 0} 人`);
-      const medal = document.createElement('div');
-      medal.className = 'pod-medal';
-      medal.textContent = pos === 1 ? '🏆' : (pos === 2 ? '🥈' : '🥉');
-      const name = document.createElement('div');
-      name.className = 'pod-name';
-      const nameT = document.createElement('span');
-      nameT.className = 'pod-name-t';
-      nameT.textContent = e.text;
-      name.title = e.text;
-      name.appendChild(nameT);
-      if (isNew(e)) {
-        const nb = document.createElement('span');
-        nb.className = 'mini-tag';
-        nb.textContent = '新';
-        name.appendChild(nb);
-      }
-      if (selection.has(e.id)) {
-        const lvb = document.createElement('span');
-        lvb.className = 'lv-mini lv' + selLevel(e.id) + ' lv-rank';
-        lvb.textContent = LEVEL_LABELS[selLevel(e.id)] || '';
-        name.appendChild(lvb);
-      }
-      const cnt = document.createElement('div');
-      cnt.className = 'pod-count';
-      cnt.textContent = (e.count || 0) + ' 人';
-      const base = document.createElement('div');
-      base.className = 'pod-base';
-      base.textContent = pos;
-      pod.append(medal, name, cnt, base);
-      pod.addEventListener('click', () => toggleEntry(e.id));
-      pod.addEventListener('keydown', (ev) => {
-        if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleEntry(e.id); }
-      });
-      wrap.appendChild(pod);
-    });
-    return wrap;
   }
 
   function rankRow(e, maxCount, rankOf, noRank) {
@@ -1363,7 +1312,7 @@
       nb.textContent = '新';
       name.appendChild(nb);
     }
-    if (selection.has(e.id)) {
+    if (selection.has(e.id) && entryKind(e) !== 'main') {
       const lv = selLevel(e.id);
       const lvb = document.createElement('span');
       lvb.className = 'lv-mini lv' + lv + ' lv-rank';
@@ -1386,7 +1335,14 @@
     check.className = 'rank-check';
     check.textContent = selection.has(e.id) ? '✓' : '';
     row.append(no, name, cat, bar, cnt, check);
+    row.tabIndex = 0;
+    row.setAttribute('role', 'button');
+    row.setAttribute('aria-pressed', String(selection.has(e.id)));
+    row.setAttribute('aria-label', e.text + (selection.has(e.id) ? '，已选' : '，选择词条'));
     row.addEventListener('click', () => toggleEntry(e.id));
+    row.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); toggleEntry(e.id); }
+    });
     return row;
   }
 
@@ -2556,8 +2512,9 @@
   function updateMobBar() {
     const bar = $('mobBar');
     if (!bar) return;
-    const page = window.__currentPageName || 'board';
-    bar.hidden = previewMode || !(dirty || page === 'mine');
+    const visible = !previewMode && !!identity && dirty && !$('appView').hidden;
+    bar.hidden = !visible;
+    document.documentElement.classList.toggle('has-unsaved', visible);
   }
 
   function stickyOffset() {
@@ -2874,13 +2831,19 @@
     // 只更新这一行的四档高亮，不重排、不重建列表
     const row = document.querySelector('#selChips .sel-row[data-id="' + id + '"]');
     if (row) {
-      row.querySelectorAll('.sel-seg-btn').forEach((b, i) => b.classList.toggle('on', [4, 3, 2, 1][i] === lv));
+      row.querySelectorAll('.sel-seg-btn').forEach((b, i) => {
+        const on = [4, 3, 2, 1][i] === lv;
+        b.classList.toggle('on', on);
+        b.setAttribute('aria-pressed', String(on));
+      });
     } else {
       renderSelection();
     }
     renderBoard();
     renderRank();
     updateEntryToggle();
+    updateSaveState();
+    updateMobBar();
     toast('已记下：' + levelLabel(lv));
   }
 
@@ -2924,6 +2887,7 @@
     updateEntryToggle();
   }
 
+  let savingSelection = false;
   function updateSaveState() {
     const defs = { saveBtn: '保存并匹配', mobSave: '保存并匹配' };
     Object.keys(defs).forEach((id) => {
@@ -2932,20 +2896,23 @@
       if (!b.dataset.label) b.dataset.label = defs[id];
       const saved = !dirty;
       b.classList.toggle('is-saved', saved && selection.size > 0);
-      b.textContent = (saved && selection.size > 0) ? '已保存 ✓' : b.dataset.label;
+      b.disabled = savingSelection || selection.size === 0;
+      b.textContent = savingSelection ? '保存中…' : (saved && selection.size > 0) ? '查看同好 →' : b.dataset.label;
     });
   }
 
   async function saveSelection() {
     if (previewMode) { toast('只读预览中：登录后才能保存'); return; }
-    if (!identity) return;
+    if (!identity || savingSelection) return;
+    if (!dirty && selection.size) { window.__showPage('matches', {top:true}); return; }
     const c = selectionCounts();
     if (c.main > selectionLimits.main || c.sub > selectionLimits.sub) {
       toast(`选择超出上限（领域 ${c.main}/${selectionLimits.main} · 细分 ${c.sub}/${selectionLimits.sub}），先取消几个再保存`);
       renderSelection();
       return;
     }
-    $('saveBtn').disabled = true;
+    savingSelection = true;
+    updateSaveState();
     try {
       const selPayload = [...selection].map((id) => ({ id, level: selLevel(id) }));
       const r = await apiPost('/music/api/selection', { qq: identity.qq, selection: selPayload });
@@ -2962,6 +2929,7 @@
     } catch (err) {
       toast(err.message || '保存失败');
     } finally {
+      savingSelection = false;
       renderSelection();
       if (window.__updateMobBar) window.__updateMobBar();
     }
@@ -3111,7 +3079,7 @@
     $('myName').textContent = previewMode ? '游客预览' : member.name;
     $('myQq').textContent = previewMode ? '只读' : memberLabel(member.qq);
     renderAll();
-    if (window.__showPage) window.__showPage('board', { force: true, anim: false });
+    if (window.__showPage) window.__showPage(location.hash.slice(1) || 'board', { force: true, anim: false, hash: false });
     syncShoutHeight();
     renderNote();
     loadShouts();
@@ -3124,16 +3092,6 @@
       });
       setTimeout(() => cards.forEach((c) => c.classList.remove('enter')), 1100);
     } catch (e) {}
-  }
-  async function switchUser() {
-    await apiPost('/music/api/logout', {});
-    location.assign('/'); return;
-
-    const cmpRes = $('cmpResult'); if (cmpRes) { cmpRes.hidden = true; cmpRes.innerHTML = ''; }
-    const cmpInp = $('cmpQQ'); if (cmpInp) cmpInp.value = '';
-    localStorage.removeItem('jpm.identity');
-    identity = null; member = null; selection = new Set(); matches = null; dirty = false;
-    showJoin();
   }
   function confirmJoinPrompt(qq, name) {
     return new Promise((resolve) => {
@@ -3354,7 +3312,7 @@
         applyBoardView(sw.dataset.kind, b.dataset.view);
       });
     });
-    // 底部快捷栏 + 整页切换（A 方案：显示/隐藏 + 左右滑动）
+    // 五个主入口与组内分页面共用路由，保留原有 hash 链接。
     const tabs = [...document.querySelectorAll('#tabBar .tab')];
     const pages = [...document.querySelectorAll('#appView .page')];
     const pageOrder = pages.map((p) => p.dataset.page);
@@ -3364,7 +3322,8 @@
       const k = (location.hash || '').replace('#', '');
       return pageOrder.includes(k) ? k : null;
     }
-    const heroEl = document.querySelector('.hero');
+    const groupOf = {board:'board', rest:'board', matches:'matches', event:'event', room:'event', shout:'event', trend:'trend', mine:'mine'};
+    const pageNames = {board:'热门排行',rest:'全部词条',matches:'同好',event:'按活动分房',room:'分房试算',shout:'找搭子',trend:'动态',mine:'我的成分'};
     function showPage(key, opts) {
       opts = opts || {};
       if (!pageOrder.includes(key)) key = pageOrder[0];
@@ -3372,7 +3331,14 @@
         if (!opts.noScrollTop) window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
-      if (heroEl) heroEl.hidden = key !== 'board';
+      document.title = pageNames[key] + ' · 日音成分站';
+      $('discoverNav').hidden = groupOf[key] !== 'board';
+      $('gatherNav').hidden = groupOf[key] !== 'event';
+      document.querySelectorAll('.section-nav [data-go]').forEach(t => {
+        const on = t.dataset.go === key;
+        t.classList.toggle('active', on);
+        if (on) t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current');
+      });
       const oldKey = currentPage;
       if (currentPage) pageScroll[currentPage] = window.scrollY;
       currentPage = key;
@@ -3391,7 +3357,7 @@
         }
       });
       tabs.forEach((t) => {
-        const on = t.dataset.page === key;
+        const on = t.dataset.page === groupOf[key];
         t.classList.toggle('active', on);
         if (on) t.setAttribute('aria-current', 'page'); else t.removeAttribute('aria-current');
       });
@@ -3400,10 +3366,10 @@
         if (key === 'rest') { renderRest(); renderRestMain(); }
         else if (key === 'matches') { renderClusters(); loadMatches(); }
         else if (key === 'trend') { loadTrend(); }
-        else if (key === 'event') { if (window.__loadEventList) window.__loadEventList(); }
       }
       try { localStorage.setItem('jpm.page', key); } catch (e) {}
-      if (opts.hash !== false && history.replaceState) history.replaceState(null, '', '#' + key);
+      if (opts.hash !== false && location.hash !== '#' + key) history.pushState(null, '', '#' + key);
+      document.dispatchEvent(new CustomEvent('music:pagechange', {detail:{page:key}}));
       window.scrollTo({ top: opts.top ? 0 : (pageScroll[key] || 0), behavior: 'auto' });
       const activePage = pages.find((p) => p.dataset.page === key);
       if (activePage && opts.anim !== false) {
@@ -3421,21 +3387,19 @@
     window.__showPage = showPage;
     window.__updateMobBar = updateMobBar;
     tabs.forEach((t) => t.addEventListener('click', () => showPage(t.dataset.page, { anim: true })));
-    let tx = 0, ty = 0;
-    window.addEventListener('touchstart', (e) => {
-      if (!e.touches || e.touches.length !== 1) return;
-      tx = e.touches[0].clientX; ty = e.touches[0].clientY;
-    }, { passive: true });
-    window.addEventListener('touchend', (e) => {
-      if (!e.changedTouches || !e.changedTouches.length) return;
-      const dx = e.changedTouches[0].clientX - tx;
-      const dy = e.changedTouches[0].clientY - ty;
-      if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 1.6) return;
-      const i = pageOrder.indexOf(currentPage);
-      if (dx < 0 && i < pageOrder.length - 1) showPage(pageOrder[i + 1], { anim: true });
-      else if (dx > 0 && i > 0) showPage(pageOrder[i - 1], { anim: true });
-    }, { passive: true });
-    showPage('board', { anim: false, top: true, hash: false });
+    document.querySelectorAll('[data-go]').forEach(t => t.addEventListener('click', () => showPage(t.dataset.go, {anim:true, top:true})));
+    const syncRoute = () => showPage(pageFromHash() || 'board', {anim:false, hash:false, noScrollTop:true});
+    window.addEventListener('popstate', syncRoute);
+    window.addEventListener('hashchange', syncRoute);
+    $('discoverSearch').addEventListener('click', () => { showPage('rest', {top:true}); $('searchInput').focus(); });
+    $('discoverCreate').addEventListener('click', () => {
+      showPage('rest', {top:true});
+      const fold = $('createCard').querySelector('details');
+      fold.open = true;
+      fold.scrollIntoView({block:'center', behavior:'smooth'});
+      fold.querySelector('input').focus({preventScroll:true});
+    });
+    showPage(pageFromHash() || 'board', {anim:false, top:true, hash:false});
 
     const tt = $('toTop');
     if (tt) {
@@ -3463,7 +3427,7 @@
     $('joinForm').addEventListener('submit', onJoin);
     const pvb = $('previewBtn'); if (pvb) pvb.addEventListener('click', enterPreview);
     const pvl = $('previewLogin'); if (pvl) pvl.addEventListener('click', exitPreview);
-    $('switchBtn').addEventListener('click', switchUser);
+
     const restFoldEl = $('restFold');
     if (restFoldEl) {
       const sum = restFoldEl.querySelector('summary');
@@ -3544,19 +3508,19 @@
       searchEl.addEventListener('input', () => {
         searchQ = searchEl.value.trim();
         if (/^[A-Za-z]{2,}$/.test(searchQ) && !window.PY_FULL) {
-          ensurePinyin().then(() => renderRest());
+          ensurePinyin().then(() => { renderRest(); renderRestMain(); });
         }
         syncSearchClear();
-        renderRest();
+        renderRest(); renderRestMain();
       });
       searchEl.addEventListener('focus', () => { ensurePinyin(); });
       searchEl.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && searchEl.value) { searchEl.value = ''; searchQ = ''; syncSearchClear(); renderRest(); e.preventDefault(); }
+        if (e.key === 'Escape' && searchEl.value) { searchEl.value = ''; searchQ = ''; syncSearchClear(); renderRest(); renderRestMain(); e.preventDefault(); }
       });
     }
     if (searchClear && searchEl) {
       searchClear.addEventListener('click', () => {
-        searchEl.value = ''; searchQ = ''; syncSearchClear(); renderRest(); searchEl.focus();
+        searchEl.value = ''; searchQ = ''; syncSearchClear(); renderRest(); renderRestMain(); searchEl.focus();
       });
     }
     document.addEventListener('keydown', (e) => {
@@ -4163,14 +4127,13 @@
       if (b) setRoomMode(b.dataset.mode);
     });
   }
-  document.addEventListener('click', (ev) => {
-    const tab = ev.target.closest && ev.target.closest('#tabBar .tab[data-page="room"]');
-    if (tab) loadPool();
+  document.addEventListener('music:pagechange', (ev) => {
+    if (ev.detail.page === 'room') loadPool();
   });
   renderPicked();
 })();
 
-/* ===== 群聚活动（看板公开 API） ===== */
+/* ===== 按活动分房（活动与名单只读自看板） ===== */
 (() => {
   const $ = (id) => document.getElementById(id);
   let events = [];
@@ -4179,6 +4142,28 @@
   let eventRoomsState = [];
   let eventPick = null;
   let eventBusy = false;
+  let eventLoading = false;
+  let matchedCount = 0;
+  let loadRevision = 0;
+  let choicesRevision = 0;
+  let sourcesLoaded = false;
+  function syncEventActions() {
+    $('eventSplit').disabled = eventBusy || eventLoading || matchedCount < 2;
+    $('eventShare').disabled = eventBusy || eventLoading || !eventRoomsState.length;
+  }
+  function clearEventDetail() {
+    matchedCount = 0;
+    eventRoomsState = [];
+    eventPick = null;
+    $('eventDetailCard').hidden = true;
+    $('eventContext').hidden = true;
+    $('eventResults').hidden = true;
+    $('eventRooms').innerHTML = '';
+    $('eventShareHint').textContent = '';
+    $('eventBoardLink').href = '/';
+    syncEventActions();
+  }
+
   function eventParams() {
     const cap = $('eventValue') ? parseInt($('eventValue').value || '0', 10) : 0;
     let sizes = null;
@@ -4235,55 +4220,81 @@
     return data;
   }
 
-  async function loadEventList() {
-    const err = $('eventError');
-    if (err) err.hidden = true;
-    const lc = ($('eventLifecycle') && $('eventLifecycle').value) || '';
+  async function loadEventChoices() {
+    const revision = ++choicesRevision;
+    const preferred = currentId || new URLSearchParams(location.search).get('event') || '';
+    ++loadRevision;
+    eventLoading = true;
+    $('eventSelect').disabled = true;
+    $('eventRefresh').disabled = true;
+    $('eventError').hidden = true;
+    $('eventEmpty').hidden = true;
+    $('eventSourceHint').textContent = '正在读取看板活动与报名名单…';
+    clearEventDetail();
     try {
-      const data = await jget('/music/api/qgroup/events?limit=50' + (lc ? '&lifecycle=' + encodeURIComponent(lc) : ''));
+      const data = await jget('/music/api/qgroup/events?limit=100');
+      if (revision !== choicesRevision) return;
       events = data.events || [];
-      renderEventList();
+      const selected = events.find(ev => String(ev.id) === preferred)
+        || events.find(ev => ev.lifecycle === 'ongoing')
+        || events.find(ev => ev.lifecycle === 'scheduled' && ev.status !== 'cancelled')
+        || events[0];
+      $('eventSelect').innerHTML = events.length ? events.map(ev => '<option value="' + escapeHtml(ev.id) + '">'
+        + escapeHtml(ev.title || '未命名活动') + '</option>').join('')
+        : '<option value="">暂无看板活动</option>';
+      $('eventSelect').disabled = !events.length;
+      $('eventEmpty').hidden = !!events.length;
+      if (selected) {
+        $('eventSelect').value = selected.id;
+        await openEvent(String(selected.id));
+      } else {
+        currentId = '';
+        $('eventSourceHint').textContent = '活动与报名统一在群聚看板管理。';
+      }
     } catch (e) {
+      if (revision !== choicesRevision) return;
       events = [];
-      renderEventList();
-      if (err) { err.textContent = e.message || '活动加载失败'; err.hidden = false; }
+      currentId = '';
+      $('eventSelect').innerHTML = '<option value="">暂时无法读取活动</option>';
+      $('eventSourceHint').textContent = '请重试更新名单，或回看板查看活动。';
+      $('eventError').textContent = e.message || '看板活动加载失败';
+      $('eventError').hidden = false;
+    } finally {
+      if (revision === choicesRevision) {
+        eventLoading = false;
+        $('eventRefresh').disabled = false;
+        syncEventActions();
+      }
     }
-  }
-
-  function renderEventList() {
-    const box = $('eventList');
-    if (!box) return;
-    box.innerHTML = events.map((ev) => {
-      const b = badgeOf(ev);
-      const counts = ev.counts || {};
-      return '<button type="button" class="event-item" data-id="' + escapeHtml(ev.id) + '">'
-        + '<h3>' + escapeHtml(ev.title || '未命名活动') + '</h3>'
-        + '<div class="event-when">' + escapeHtml(fmtRange(ev)) + (ev.location ? ' · ' + escapeHtml(ev.location) : '') + '</div>'
-        + '<div class="event-badges" style="margin:8px 0 0">'
-        + '<span class="event-badge ' + b[1] + '">' + b[0] + '</span>'
-        + '<span class="event-badge off">正式 ' + (counts.confirmed || 0) + ' 人</span>'
-        + (counts.waiting ? '<span class="event-badge off">候补 ' + counts.waiting + '</span>' : '')
-        + '</div></button>';
-    }).join('');
-    const empty = $('eventEmpty');
-    if (empty) empty.hidden = events.length > 0;
-    box.querySelectorAll('.event-item').forEach((btn) => btn.addEventListener('click', () => openEvent(btn.dataset.id)));
   }
 
   async function openEvent(id) {
+    const revision = ++loadRevision;
     currentId = id;
-    let payload;
+    eventLoading = true;
+    $('eventError').hidden = true;
+    $('eventSourceHint').textContent = '正在读取看板报名名单…';
+    clearEventDetail();
     try {
-      payload = await jget('/music/api/qgroup/event?id=' + encodeURIComponent(id));
+      const payload = await jget('/music/api/qgroup/event?id=' + encodeURIComponent(id));
+      if (revision !== loadRevision) return;
+      restoreEventParams();
+      renderDetail(payload);
+      $('eventContext').hidden = false;
+      $('eventDetailCard').hidden = false;
+      $('eventBoardLink').href = '/?event=' + encodeURIComponent(id);
+      $('eventSourceHint').textContent = '已读取看板名单 · ' + new Date().toLocaleTimeString('zh-CN', {hour:'2-digit',minute:'2-digit'}) + ' · 报名有变化时可更新名单。';
     } catch (e) {
-      alert(e.message || '活动详情加载失败');
-      return;
+      if (revision !== loadRevision) return;
+      $('eventSourceHint').textContent = '名单未能更新，请重试。';
+      $('eventError').textContent = e.message || '看板报名名单加载失败';
+      $('eventError').hidden = false;
+    } finally {
+      if (revision === loadRevision) {
+        eventLoading = false;
+        syncEventActions();
+      }
     }
-    restoreEventParams();
-    renderDetail(payload);
-    if ($('eventListCard')) $('eventListCard').hidden = true;
-    if ($('eventDetailCard')) $('eventDetailCard').hidden = false;
-    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function renderDetail(p) {
@@ -4308,30 +4319,32 @@
         if (x.matched) {
           return '<li class="event-part"><span>' + escapeHtml(x.name || '') + '<span class="tag">' + escapeHtml(x.member_name) + ' · ' + x.count + ' 个词条</span></span><span>' + st + ' · ' + conf + '</span></li>';
         }
-        return '<li class="event-part unmatched"><span>' + escapeHtml(x.name || '') + '<span class="tag" style="background:rgba(150,130,160,.16);color:#6b6478">未绑定看板 ID</span></span><span>' + st + '</span></li>';
+        return '<li class="event-part unmatched"><span>' + escapeHtml(x.name || '') + '<span class="tag" style="background:rgba(150,130,160,.16);color:#6b6478">暂无可匹配成分</span></span><span>' + st + '</span></li>';
       }).join('') || '<li class="muted tiny">暂无报名</li>';
     }
 
     window.__eventNames = {};
     parts.forEach((x) => { if (x.matched && x.qq) window.__eventNames[x.qq] = x.member_name || x.name || x.qq; });
-    const matchedCount = (p.matched_qqs || []).length;
+    matchedCount = (p.matched_qqs || []).length;
     if ($('eventSplitHint')) {
       $('eventSplitHint').textContent = matchedCount > 1
-        ? '已匹配 ' + matchedCount + ' 位本站群友，可自动分房；未绑定的 ' + (parts.length - matchedCount) + ' 人不会参与。'
-        : '还没有可匹配的报名者：先在后台给群友填「看板 ID」。';
+        ? '已读取 ' + matchedCount + ' 位群友的成分，可生成分房建议。' + (parts.length > matchedCount ? '另有 ' + (parts.length - matchedCount) + ' 位暂无可匹配成分，不参与自动分房。' : '')
+        : '可匹配的群友不足 2 人。请确认报名者已建立成分，并关联同一个看板账号。';
     }
     if ((p.rooms || []).length) {
       eventRoomsState = p.rooms;
+      $('eventRoomsTitle').textContent = '看板现有分房';
       renderRooms(p.rooms);
     } else if ($('eventRooms')) $('eventRooms').innerHTML = '';
-    const auto = $('eventAutoSplit') && $('eventAutoSplit').checked;
-    if (auto && matchedCount > 1) setTimeout(() => { doSplit(true); }, 300);
+
   }
 
   function renderRooms(rooms) {
     const box = $('eventRooms');
     if (!box) return;
     eventRoomsState = rooms || [];
+    $('eventResults').hidden = !eventRoomsState.length;
+    syncEventActions();
     if (!rooms.length) { box.innerHTML = '<p class="muted tiny">还没有分房结果。</p>'; return; }
     box.innerHTML = rooms.map((r, i) => {
       const members = (r.members || []).map((m) => {
@@ -4342,7 +4355,7 @@
           + '</button>';
       }).join('');
       const common = (r.common || []).map((c) => escapeHtml(c.text)).join('、');
-      return '<div class="event-room" data-room="' + i + '"><h4>包房 ' + (i + 1) + ' <span class="muted tiny">' + (r.members || []).length + ' 人</span></h4>'
+      return '<div class="event-room' + (eventPick ? ' picking' : '') + '" data-room="' + i + '"><h4>' + escapeHtml(r.name || ('包房 ' + (i + 1))) + ' <span class="muted tiny">' + (r.members || []).length + ' 人</span></h4>'
         + '<div class="event-badges" style="margin:0 0 6px">' + members + '</div>'
         + '<div class="room-scoreline event-room-meta">平均 ' + (r.avg == null ? '—' : r.avg)
         + ' · 最高 ' + (r.memberMax == null ? '—' : r.memberMax)
@@ -4357,13 +4370,21 @@
   }
 
   async function eventRecalc() {
-    if (!eventRoomsState.length) return;
+    if (!eventRoomsState.length || eventBusy || eventLoading) return;
+    const revision = loadRevision;
+    eventBusy = true;
+    syncEventActions();
     try {
       const res = await jpost('/music/api/qgroup/rooms', { rooms: eventRoomsPayload() });
+      if (revision !== loadRevision) return;
       eventRoomsState = res.rooms || [];
+      $('eventRoomsTitle').textContent = '调整后的分房建议';
       renderRooms(eventRoomsState);
     } catch (e) {
-      if ($('eventSplitHint')) $('eventSplitHint').textContent = e.message || '重算失败';
+      if (revision === loadRevision) $('eventSplitHint').textContent = e.message || '重算失败';
+    } finally {
+      eventBusy = false;
+      syncEventActions();
     }
   }
 
@@ -4439,7 +4460,7 @@
   }
 
   async function eventMove(qq, target) {
-    if (!qq) return;
+    if (!qq || eventBusy || eventLoading) return;
     const rooms = eventRoomsPayload();
     let from = -1, to = -1;
     rooms.forEach((arr, i) => { if (arr.includes(qq)) from = i; });
@@ -4458,34 +4479,40 @@
     await eventRecalc();
   }
 
-  async function doSplit(auto) {
-    if (!currentId || eventBusy) return;
+  async function doSplit() {
+    if (!currentId || eventBusy || eventLoading || matchedCount < 2) return;
     const hint = $('eventSplitHint');
     const p = eventParams();
     if (p.mode === 'sizes') {
-      if (!p.sizes || p.sizes.length < 2) { if (hint && !auto) hint.textContent = '先填每间人数，用逗号分隔（例如 8,8,6）'; return; }
+      if (!p.sizes || p.sizes.length < 2) { if (hint) hint.textContent = '先填每间人数，用逗号分隔（例如 8,8,6）'; return; }
     } else if (!p.value || p.value < 1) {
-      if (hint && !auto) hint.textContent = p.mode === 'capacity' ? '先填每房几个人' : '先填要分几间房';
+      if (hint) hint.textContent = p.mode === 'capacity' ? '先填每房几个人' : '先填要分几间房';
       return;
     }
+    const selectedId = currentId, revision = loadRevision;
     try {
       eventBusy = true;
+      syncEventActions();
       if (hint) hint.textContent = '分房中…';
       const body = { event_id: currentId, same_gender: p.same };
       if (p.mode === 'sizes') body.sizes = p.sizes;
       else { body.mode = p.mode; body.value = p.value; }
       const res = await jpost('/music/api/qgroup/split', body);
+      if (selectedId !== currentId || revision !== loadRevision) return;
       eventRoomsState = res.rooms || [];
+      $('eventRoomsTitle').textContent = '按成分生成的分房建议';
+      eventPick = null;
       renderRooms(eventRoomsState);
       saveEventParams();
       if (hint) {
         const how = p.mode === 'sizes' ? '自定义人数 ' + p.sizes.join('/') : (p.mode === 'capacity' ? '每房 ' + p.value + ' 人' : p.value + ' 间房');
-        hint.textContent = '已按' + how + '分好' + (auto ? '（报名变化时自动重分）' : '') + '。';
+        hint.textContent = '已按' + how + '生成分房建议。';
       }
     } catch (e) {
-      if (hint) hint.textContent = e.message || '分房失败';
+      if (selectedId === currentId && revision === loadRevision && hint) hint.textContent = e.message || '分房失败';
     } finally {
       eventBusy = false;
+      syncEventActions();
     }
   }
 
@@ -4498,22 +4525,25 @@
     });
     if ($('eventValue')) {
       $('eventValue').hidden = eventMode === 'sizes';
+      $('eventValue').closest('.event-size-field').hidden = eventMode === 'sizes';
+      $('eventValueLabel').textContent = eventMode === 'capacity' ? '每房几人' : '分几间房';
+      $('eventValue').setAttribute('aria-label', $('eventValueLabel').textContent);
+      $('eventSizesField').hidden = eventMode !== 'sizes';
       if (!silent) $('eventValue').value = eventMode === 'capacity' ? '4' : '2';
     }
     if ($('eventSizes')) $('eventSizes').hidden = eventMode !== 'sizes';
   }
 
-  if ($('eventRefresh')) $('eventRefresh').addEventListener('click', loadEventList);
-  if ($('eventLifecycle')) $('eventLifecycle').addEventListener('change', loadEventList);
-  if ($('eventBack')) $('eventBack').addEventListener('click', () => {
-    if ($('eventListCard')) $('eventListCard').hidden = false;
-    if ($('eventDetailCard')) $('eventDetailCard').hidden = true;
-    window.scrollTo({ top: 0 });
+  $('eventRefresh').addEventListener('click', loadEventChoices);
+  $('eventSelect').addEventListener('change', () => openEvent($('eventSelect').value));
+  document.addEventListener('music:pagechange', e => {
+    if (e.detail.page === 'event' && !sourcesLoaded) { sourcesLoaded = true; loadEventChoices(); }
   });
-  if ($('eventSplit')) $('eventSplit').addEventListener('click', () => doSplit(false));
+  if ($('eventSplit')) $('eventSplit').addEventListener('click', () => doSplit());
   if ($('eventMode')) $('eventMode').addEventListener('click', (e) => { const btn = e.target.closest('.room-mode-btn'); if (btn) setEventMode(btn.dataset.mode); });
   if ($('eventRooms')) {
     $('eventRooms').addEventListener('click', (e) => {
+      if (eventBusy || eventLoading) return;
       const mem = e.target.closest('.event-mem');
       if (mem) {
         eventPick = (eventPick && String(eventPick) === String(mem.dataset.qq)) ? null : mem.dataset.qq;
@@ -4527,7 +4557,7 @@
     });
   }
   if ($('eventShare')) $('eventShare').addEventListener('click', eventShareImage);
-  window.__loadEventList = loadEventList;
+
 })();
 
 /* 性别设置（可选，注册时不填；仅本人可改） */
@@ -4625,10 +4655,9 @@
       if (e.target.checked) toast('记得点「保存性别设置」', 'ok');
     });
   }
-  document.addEventListener('click', (e) => {
-    const tab = e.target && e.target.closest ? e.target.closest('#tabBar .tab[data-page="mine"]') : null;
-    if (tab) setTimeout(loadGender, 350);
-  }, true);
+  document.addEventListener('music:pagechange', (e) => {
+    if (e.detail.page === 'mine') loadGender();
+  });
   setTimeout(loadGender, 2600);
   window.__loadGender = loadGender;
 })();

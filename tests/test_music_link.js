@@ -75,7 +75,9 @@ for (const number of ['34567890','']) {
   el('musicContactQQ').value=number;
   await el('musicContactForm').submit({preventDefault(){}});
   assert.deepEqual(requests.find(r=>r.path==='/music/api/profile/contact').body,{contactQQ:number});
-  assert.deepEqual(navigations,['/music/']);
+  assert.deepEqual(navigations,[]);
+  assert.equal(el('musicContactError').textContent,'已保存');
+  assert.equal(el('musicLinkCard').hidden,true);
 }
 {
   const {el}=await screen({authenticated:true,linked:true,qq_connected:true,qq:'10001',contactQQ:'10001'},true);

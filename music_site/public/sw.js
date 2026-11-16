@@ -1,14 +1,16 @@
-const CACHE = 'qgroup-music-v4';
+const CACHE = 'qgroup-music-react-b3786d396709';
 const ASSETS = [
-  './',
-  './index.html',
-  './style.css',
-  './extra.css',
-  './app.js',
-  './initials.js',
-  './og.png',
-  './manifest.json',
-  './icon.svg'
+  "./",
+  "./index.html",
+  "./ui.css",
+  "./initials.js",
+  "./member-id.js",
+  "./manifest.json",
+  "./icon.svg",
+  "./ui/music-admin.mjs",
+  "./ui/music.mjs",
+  "./ui/shared-F2LV4TTC.mjs",
+  "./ui/static.mjs"
 ];
 
 self.addEventListener('install', (e) => {

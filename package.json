@@ -2,6 +2,24 @@
   "name": "qgroup-build-tools",
   "private": true,
   "type": "module",
-  "scripts": {"build:locales": "node deploy/build_locales.cjs"},
-  "devDependencies": {"@babel/parser": "8.1.0", "opencc-js": "1.4.2"}
+  "scripts": {
+    "build:locales": "node deploy/build_locales.cjs",
+    "build:ui": "node deploy/build_ui.mjs",
+    "build": "npm run build:locales && npm run build:ui && npm run build:locales",
+    "check:ui": "node deploy/build_ui.mjs --check",
+    "test:ui": "node tests/test_react_controllers.mjs && node tests/test_react_ui.mjs"
+  },
+  "devDependencies": {
+    "@babel/parser": "8.1.0",
+    "@playwright/test": "1.65.1",
+    "esbuild": "0.27.0",
+    "html-react-parser": "5.2.10",
+    "opencc-js": "1.4.2",
+    "postcss": "8.5.33",
+    "yahha-ui": "0.2.0"
+  },
+  "dependencies": {
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
 }

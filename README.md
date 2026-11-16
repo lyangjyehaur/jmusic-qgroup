@@ -27,7 +27,7 @@ Python 3.9+ 及系统 IANA 时区数据库，无第三方运行依赖。
 ```sh
 npm ci --ignore-scripts
 python3 deploy/build_guide.py
-npm run build:locales
+npm run build
 python3 server.py
 python3 -m unittest discover -s tests -q
 node --check public/app.js
@@ -51,6 +51,24 @@ node --check public/experience.js
 ```
 
 打开 http://127.0.0.1:8791，默认数据库 `data/kanban.sqlite3`，首次启动无测试活动。当前 218 项后端测试，另有时区、结算表单、持久化重试及角色待办的 Node 测试；测试使用隔离临时数据库。
+
+## React 與 Yahha UI
+
+主站、成分站與兩邊管理頁使用 React 19.3.1 和 [Yahha UI 0.2.0](https://github.com/didilili/yahha-ui)。按鈕、輸入框、多行輸入、核取方塊、選單、卡片與標籤直接使用套件元件，版面與響應式設定放在 `ui/`。原生 dialog 保留既有的焦點、草稿與瀏覽紀錄行為。成分站支援淺色與深色主題。
+
+目前採漸進遷移：React 負責畫面與元件，原有活動、報名、結算、帳務及成分資料控制器透過 `ui/react-view.jsx` 的明確畫面邊界接入；尚未把所有業務狀態改寫為 React hooks。`deploy/react_controllers.mjs` 以 AST 在建置時轉接 DOM 畫面操作，不修改瀏覽器全域原型。修改互動時仍編輯原始控制器，不能手改壓縮產物。API、欄位值、使用者原文、bot 連結及資料格式沿用原契約。
+
+建置需要 Node.js 22.22.3+；線上 Python 服務不需要 Node。初次安裝執行 `npm ci --ignore-scripts`，再執行 `npm run build`，會產生簡繁控制器、兩站的 React 模組與 CSS，最後更新簡繁 HTML。更新手冊時先執行 `python3 deploy/build_guide.py`，再執行完整建置。產物 `public/ui/`、`public/ui.css`、`music_site/public/ui/`、`music_site/public/ui.css` 必須與原始碼一起提交，現有 Dockerfile 會直接打包。元件及執行期依賴已鎖版，MIT 授權與第三方聲明隨靜態資源提供。
+
+```sh
+npm run build
+npm run check:ui
+npm run test:ui
+```
+
+瀏覽器回歸測試使用隔離 SQLite／JSON、模擬 QQ 與本機 HTTP 服務，涵蓋實際報名提交、同行增刪與重新開啟、包間、結算發布、款項登記、時間投票、彈窗選單、成分保存、管理操作、深色模式及手機版。可用 `CHROME_BIN` 指定 Chromium；macOS 預設尋找 Google Chrome，否則使用 `npx playwright install chromium` 安裝的瀏覽器。畫面輸出在忽略版控的 `artifacts/yahha-ui/`。需支援 ES2022、CSS layers 與原生 dialog 的現代瀏覽器。
+
+此次 UI 變更的發布範圍為 `web`，並包含獨立 music 服務的靜態檔案與 `.mjs` MIME 支援；沒有 schema、outbox 或 bot 契約變更。主站模組依既有 Accept-Language 選擇簡繁版本；使用者輸入不做文字轉換。正式發布須依發布規則驗證實際的新舊服務組合，實際版本與結果記錄於 `docs/releases/`。
 
 ## 使用规则
 

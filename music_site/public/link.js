@@ -14,6 +14,8 @@
   async function refresh() {
     current = await request('/music/api/session');
     const pending = current.pending || current.pending_entry;
+    $('musicLinkCard').hidden = !!(current.linked && current.qq_connected && !pending);
+    $('accountLinkSummary').textContent = current.linked && current.qq_connected ? '已连接 QQ 登录，成分资料会保存在这个账号下。' : '尚未连接 QQ 登录，请在页面上方完成关联。';
     $('musicLinkStatus').textContent = current.linked
       ? '已进入原有成分表。'
       : current.authenticated ? '旧成分已找回，点击下方按钮连接登录并保留原资料。'
@@ -29,7 +31,8 @@
     $('musicEntryQQ').value = current.pending_entry ? current.entry_contactQQ : current.contactQQ || '';
     $('musicContactDetails').hidden = !current.linked || /^\d{4,12}$/.test(current.qq);
     $('musicContactQQ').value = current.contactQQ || '';
-    $('musicContactDetails').open = !current.contactQQ;
+    window.musicRememberContacts?.({qq:current.qq, contactQQ:current.contactQQ || ''});
+    if (current.authenticated && window.musicMemberLabel) $('myQq').textContent = window.musicMemberLabel(current.qq);
     if (pending) {
       try {
         await request(current.pending_entry ? '/music/api/entry/complete' : '/music/api/link/complete', {});
@@ -80,11 +83,14 @@
     $('musicContactForm').addEventListener('submit', async (event) => {
       event.preventDefault();
       $('musicContactSave').disabled = true;
-      $('musicLinkError').textContent = '';
+      $('musicContactError').className = 'error';
+      $('musicContactError').textContent = '';
       try {
         await request('/music/api/profile/contact', {contactQQ:$('musicContactQQ').value.trim()});
-        location.replace('/music/');
-      } catch (error) { $('musicLinkError').textContent = error.message; }
+        $('musicContactError').className = 'muted tiny';
+        $('musicContactError').textContent = '已保存';
+        await refresh();
+      } catch (error) { $('musicContactError').textContent = error.message; }
       finally { $('musicContactSave').disabled = false; }
     });
     $('musicCancelLink').addEventListener('click', async () => {
