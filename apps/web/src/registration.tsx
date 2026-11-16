@@ -6,6 +6,7 @@ import { AuthResult, RegisterName, RegistrationSettings, type Viewer } from '@qg
 import { z } from 'zod';
 import { api, ApiError } from './api';
 import { authHeaders, localReturn, loginLink, useAccountChange } from './auth';
+import { AdminGate, type Access } from './admin';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 
 export function Registration() {
@@ -49,12 +50,10 @@ function NameForm({ viewer, returnTo }: { viewer: Viewer; returnTo: string }) {
 }
 
 export function RegistrationAdmin() {
-  const session = useQuery(sessionQuery);
-  const viewer = session.data;
-  return <><PageIntro title="註冊設定" />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink('/admin/registration')}>登入</Link> : !viewer.administrator ? <Notice>需要管理員權限。</Notice> : <SettingsLoader key={viewer.scope} viewer={viewer} />}</>;
+  return <><PageIntro title="註冊設定" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <SettingsLoader key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
 }
-function SettingsLoader({ viewer }: { viewer: Viewer }) {
-  const settings = useQuery({ queryKey: ['private', viewer.scope, 'registration-settings'], queryFn: () => api('/admin/registration', RegistrationSettings, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: false });
+function SettingsLoader({ viewer, access }: { viewer: Viewer; access: Access }) {
+  const settings = useQuery({ queryKey: ['private', viewer.scope, 'admin-registration-settings', access.scope], queryFn: () => api('/admin/registration', RegistrationSettings, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: false });
   const [readVersion, setReadVersion] = useState(0);
   const reload = async () => { const result = await settings.refetch(); if (result.isSuccess) setReadVersion(value => value + 1); };
   return settings.isPending ? <Notice>正在讀取設定…</Notice> : settings.error ? <Failure error={settings.error} retry={() => void reload()} /> : <SettingsForm key={settings.data.revision + ':' + settings.data.adminCsrf + ':' + readVersion} viewer={viewer} initial={settings.data} reload={reload} />;

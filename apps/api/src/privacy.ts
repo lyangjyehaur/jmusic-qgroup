@@ -17,7 +17,7 @@ const sharedChecks: Record<string, string[]> = {
   settlement_history: ['actor_id'], finance_reports: ['reporter_id'], finance_report_actions: ['actor_id'], finance_entries: ['actor_id'],
   attendee_claims: ['issuer_id', 'requester_id'], attendee_payment_origins: ['payer_user_id'], time_polls: ['owner_id'], time_poll_history: ['actor_id'],
   // New account/music audit may also contain historical names and ownership. Do not claim these were erased.
-  account_audit: ['user_id'], admin_role_history: ['user_id'], music_profile_audit: ['actor_id'],
+  account_audit: ['user_id'], admin_role_history: ['user_id'], music_profile_audit: ['actor_id'], bot_outbox: ['recipient_user_id'],
 };
 export function sharedRecords(db: DB, userId: string) {
   return Object.fromEntries(Object.entries(sharedChecks).flatMap(([table, columns]) => {

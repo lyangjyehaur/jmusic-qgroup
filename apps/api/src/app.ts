@@ -16,14 +16,18 @@ import { registerRegistrationSettings } from './registration-settings';
 import { registerAccountProfile } from './account-profile';
 import { createPrivacy, registerPrivacy } from './privacy';
 import type { ErasureJournal } from './erasure-journal';
+import { createAdminSecurity } from './admin-security';
+import { registerAdminUsers } from './admin-users';
+import { registerAdminPrivacy } from './admin-privacy';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; erasureJournal?: ErasureJournal }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
 export function createApp(options: AppOptions) {
   const { db } = options;
   const now = options.now ?? (() => new Date());
   const origin = new URL(options.origin).origin;
   const security = createSecurity(db, origin, now, options.csrfSecret);
+  const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash);
   const privacy = createPrivacy(db, options.erasureJournal);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: request.url?.split('?')[0], remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
@@ -45,7 +49,9 @@ export function createApp(options: AppOptions) {
     app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: REBUILD_SCHEMA_VERSION }));
     registerAuth(app, db, security, now, options.qq);
     registerAccountDevices(app, db, security, now);
-    registerRegistrationSettings(app, db, security, now);
+    registerRegistrationSettings(app, db, admin, now);
+    registerAdminUsers(app, db, admin, now);
+    registerAdminPrivacy(app, db, admin, now);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
     app.get('/api/v2/activities', async request => {

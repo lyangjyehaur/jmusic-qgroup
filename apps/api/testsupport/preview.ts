@@ -13,7 +13,7 @@ db.prepare("INSERT INTO external_identities VALUES('qq','synthetic-qq',?,'auth-o
 db.prepare("INSERT INTO users VALUES('registration-admin',?,'註冊管理員','synthetic')").run(hash('fixture-registration-admin'));
 db.prepare("INSERT INTO browser_sessions VALUES(?,'registration-admin','synthetic')").run(hash('fixture-registration-admin'));
 db.prepare("INSERT INTO user_admin_roles VALUES('registration-admin',1,1,'synthetic')").run();
-const app = createApp({ db, origin, staticRoot: resolve('.rebuild-dist/web'), qq: {
+const app = createApp({ db, origin, adminCredentialHash: () => hash('synthetic-admin-rescue-' + 'x'.repeat(32)), staticRoot: resolve('.rebuild-dist/web'), qq: {
   clientId: 'synthetic-qq',
   authorize: state => origin + '/__test/qq?state=' + state,
   exchange: async code => ({ subject: hash(code === 'auth-original-no-union' ? 'auth-original' : code).slice(0, 32).toUpperCase(), nickname: '測試帳號 ' + code, avatarUrl: code === 'avatar-source' ? 'https://q1.qlogo.cn/synthetic-avatar.png' : '', unionId: code === 'auth-original-no-union' ? '' : 'synthetic-' + code }),

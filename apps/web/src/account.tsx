@@ -8,7 +8,7 @@ import { ProfileEditor } from './music-editor';
 import { loginLink } from './auth';
 export function MyPage() {
   const session = useQuery(sessionQuery);
-  return <><PageIntro title="我的" />{session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : session.isPending ? <Notice>正在確認帳號…</Notice> : <Surface className="detail"><Heading level={2}>{session.data.authenticated ? session.data.nickname : '尚未登入'}</Heading>{!session.data.authenticated && !session.data.qqEnabled && !session.data.nameRegistrationEnabled && <Text>目前沒有可用的登入方式。</Text>}<div className="page-actions"><Link to="/me/music">我的成分</Link>{session.data.authenticated ? <Link to="/me/accounts">帳號</Link> : <Link to={loginLink('/me')}>登入</Link>}</div></Surface>}</>;
+  return <><PageIntro title="我的" />{session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : session.isPending ? <Notice>正在確認帳號…</Notice> : <Surface className="detail"><Heading level={2}>{session.data.authenticated ? session.data.nickname : '尚未登入'}</Heading>{!session.data.authenticated && !session.data.qqEnabled && !session.data.nameRegistrationEnabled && <Text>目前沒有可用的登入方式。</Text>}<div className="page-actions"><Link to="/me/music">我的成分</Link><Link to="/admin">管理後台</Link>{session.data.authenticated ? <Link to="/me/accounts">帳號</Link> : <Link to={loginLink('/me')}>登入</Link>}</div></Surface>}</>;
 }
 export function MyMusic() {
   const location = useLocation();

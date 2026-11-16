@@ -23,7 +23,7 @@ test('default closure, administrator confirmation and independent registration r
     await page.goto('/login'); await expect(page.getByRole('link', { name: '使用名稱註冊' })).toHaveCount(0);
     await page.goto('/register'); await expect(page.getByText('名稱註冊尚未開放。', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '建立帳號', exact: true })).toHaveCount(0);
-    await page.goto('/admin/registration'); await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible();
+    await page.goto('/admin/registration'); await expect(page.getByRole('link', { name: '會員登入', exact: true })).toBeVisible();
     const control = await admin.newPage(); await control.goto('/admin/registration');
     await expect(control.getByRole('button', { name: '開放名稱註冊', exact: true })).toBeDisabled();
     await control.getByRole('checkbox').check(); await control.getByRole('button', { name: '開放名稱註冊', exact: true }).click();
@@ -42,7 +42,7 @@ test('default closure, administrator confirmation and independent registration r
     await setting(admin, false);
     await page.goto('/me/accounts'); await expect(page.getByRole('heading', { name: '名稱註冊測試', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: '註冊設定', exact: true })).toHaveCount(0);
-    await page.goto('/admin/registration'); await expect(page.getByText('需要管理員權限。', { exact: true })).toBeVisible();
+    await page.goto('/admin/registration'); await expect(page.getByLabel('管理救援憑證', { exact: true })).toBeVisible();
     await page.goto('/me/music'); await page.getByRole('button', { name: 'Aimer', exact: true }).click();
     await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   } finally { await setting(admin, false); await admin.close(); }

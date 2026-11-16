@@ -2,7 +2,7 @@
 * { box-sizing: border-box; }
 body { margin: 0; }
 a { color: #285b70; text-underline-offset: .23em; }
-button, input, select { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid #386f8b; outline-offset: 4px; }
 .header { max-width: 1280px; margin: auto; display: flex; align-items: center; gap: 40px; padding: 28px 40px; border-bottom: 1px solid #dddcd4; }
@@ -17,8 +17,8 @@ nav a.active { background: #e0e9e6; color: #234d5b; font-weight: 700; }
 .intro { padding: 24px 0 20px; max-width: 760px; }
 .intro h1 { font-size: clamp(26px, 3vw, 32px); line-height: 1.35; letter-spacing: .035em; margin: 0; }
 .intro p { margin: 8px 0 0; line-height: 1.9; }
-.page-actions { display: flex; gap: 16px; margin-bottom: 24px; }
-.auth-panel { max-width: 720px; margin-bottom: 24px; }
+.page-actions { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; }
+.auth-panel { max-width: 720px; margin-bottom: 24px; overflow-wrap: anywhere; }
 .auth-panel > button, .auth-panel > a { margin-right: 16px; margin-top: 16px; }
 .consent { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin: 24px 0; line-height: 1.8; }
 .consent > span { flex: 1; min-width: 0; }
@@ -73,7 +73,7 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .save-message { color: #244d46; }
 .leave-prompt { padding: 24px; margin-bottom: 24px; }
 .leave-prompt button { margin-right: 12px; }
-.skip { position: fixed; top: -80px; left: 12px; z-index: 10; background: white; padding: 12px; }.skip:focus { top: 12px; }
+.skip { position: fixed; top: -80px; left: 12px; z-index: 10; background: white; padding: 12px; }.skip:focus { top: 12px; }.skip:not(:focus) { clip-path: inset(50%); width: 1px; height: 1px; overflow: hidden; white-space: nowrap; padding: 0; }
 @media (max-width: 1000px) { .content-columns { grid-template-columns: minmax(0, 1fr) 260px; gap: 24px; }.event-grid { grid-template-columns: 1fr; }.header { gap: 16px; padding: 24px; }.main { padding-left: 24px; padding-right: 24px; } }
 @media (max-width: 700px) { .header { flex-wrap: wrap; padding: 20px 20px 0; gap: 18px; }.brand { font-size: 21px; }.viewer { margin-left: auto; }nav { order: 3; width: 100%; margin: 0; justify-content: space-between; }nav a { flex: 1; text-align: center; padding: 12px 8px; border-radius: 12px 12px 0 0; }.main { padding: 16px 20px 48px; }.preview { font-size: 10px; }.intro { padding: 20px 0; }.content-columns { grid-template-columns: 1fr; gap: 24px; }.event-grid { grid-template-columns: 1fr; }.event-card { padding: 24px; }.detail { padding: 24px; }dl { grid-template-columns: 60px minmax(0, 1fr); gap: 14px; }aside { margin-top: 8px; }.aside-note { padding: 24px; } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
@@ -88,7 +88,10 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 
 .device-link-field { display: block; margin-top: 24px; line-height: 1.8; }
 .account-field { display: block; line-height: 1.8; }
-.account-field input { display: block; width: 100%; min-width: 0; padding: 10px 12px; margin-top: 8px; border: 1px solid #bfcfc8; border-radius: 8px; background: #fffefb; color: inherit; }
+.account-field input, .account-field select, .account-field textarea { display: block; width: 100%; min-width: 0; padding: 10px 12px; margin-top: 8px; border: 1px solid #bfcfc8; border-radius: 8px; background: #fffefb; color: inherit; }
+.account-field textarea { resize: vertical; }
+.directory-search { display: grid; gap: 16px; }
+.preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
 .qq-avatar { display: inline-flex; flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-top: 16px; }
 .avatar-fallback { align-items: center; justify-content: center; background: #e0e9e6; color: #234d5b; }
 .reauth-reminder { max-width: 720px; }

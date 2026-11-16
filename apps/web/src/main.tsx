@@ -12,6 +12,9 @@ import { Devices, AcceptDevice } from './devices';
 import { Privacy } from './privacy';
 import { Registration, RegistrationAdmin } from './registration';
 import { AccountProfilePage } from './account-profile';
+import { AdminHome } from './admin';
+import { AdminPrivacy, AdminPrivacyReview } from './admin-privacy';
+import { AdminDirectory, AdminUserPage } from './admin-users';
 import { MyPrivacy } from './my-privacy';
 import { PageIntro } from './shared';
 import 'yahha-ui/style.css';
@@ -26,5 +29,6 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'register', element: <Registration /> }, { path: 'admin/registration', element: <RegistrationAdmin /> },
   { path: 'me/profile', element: <AccountProfilePage /> },
   { path: 'me/privacy', element: <MyPrivacy /> },
+  { path: 'admin', element: <AdminHome /> }, { path: 'admin/privacy', element: <AdminPrivacy /> }, { path: 'admin/privacy/:id', element: <AdminPrivacyReview /> }, { path: 'admin/users', element: <AdminDirectory /> }, { path: 'admin/users/:id', element: <AdminUserPage /> },
 ] }]);
 createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider></React.StrictMode>);

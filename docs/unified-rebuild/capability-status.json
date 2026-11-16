@@ -382,23 +382,29 @@
         "apps/api/src/erasure-journal.ts",
         "apps/api/src/privacy-assets.ts",
         "apps/web/src/my-privacy.tsx",
-        "packages/database/src/index.ts"
+        "packages/database/src/index.ts",
+        "apps/api/src/admin-privacy.ts",
+        "apps/web/src/admin-privacy.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
-        "packages/database/src/privacy-migration.test.ts"
+        "packages/database/src/privacy-migration.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/privacy.spec.ts"
+        "apps/web/tests/privacy.spec.ts",
+        "apps/web/tests/admin-privacy.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、工作阻擋、身份／session／角色撤銷、共享待審、最小收據與舊 Python 差分已測；後台審核、完整匯入／恢復／媒體及正式 bot 版本組合待驗收。"
+      "remaining": "帳號關閉、工作阻擋、身份／session／角色撤銷、共享待審、收據、管理審核清單／說明與即時範圍檢查已實作；完整共享資料處理、匯入／恢復／媒體、備份濾除及正式 bot 版本組合待驗收。"
     },
     {
       "capability_id": "I15",
@@ -411,23 +417,29 @@
         "apps/api/src/erasure-journal.ts",
         "apps/api/src/privacy-assets.ts",
         "apps/web/src/my-privacy.tsx",
-        "packages/database/src/index.ts"
+        "packages/database/src/index.ts",
+        "apps/api/src/admin-privacy.ts",
+        "apps/web/src/admin-privacy.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
-        "packages/database/src/privacy-migration.test.ts"
+        "packages/database/src/privacy-migration.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/privacy.spec.ts"
+        "apps/web/tests/privacy.spec.ts",
+        "apps/web/tests/admin-privacy.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "獨立成分刪除、ID 墓碑、新 ID／epoch、舊保存回執 410、持久 journal／舊 DB 重播與恢復已測；舊 music erasure 匯入、管理刪除、歷史下載濾除及完整恢復待驗收。"
+      "remaining": "獨立成分刪除、ID 墓碑、新 ID／epoch、舊保存回執 410、持久 journal／舊 DB 重播與恢復、相關審核範圍檢查已實作；舊 music erasure 匯入、管理刪除、歷史下載與備份濾除及完整恢復待驗收。"
     },
     {
       "capability_id": "I16",
@@ -1986,22 +1998,30 @@
       "legacy_evidence_group": "管理",
       "implementation": [
         "apps/api/src/registration-settings.ts",
-        "apps/web/src/registration.tsx"
+        "apps/web/src/registration.tsx",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-users.ts",
+        "apps/web/src/admin.tsx",
+        "apps/web/src/admin-users.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/registration.spec.ts"
+        "apps/web/tests/registration.spec.ts",
+        "apps/web/tests/admin.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "註冊管理已逐請求重查帳號角色，CSRF 綁 session／角色版本；救援憑證登入／輪替撤銷、完整後台及角色流程待實作驗收。"
+      "remaining": "逐請求角色／救援憑證、輪替／到期、管理 CSRF、限流、兩種登出與未知結果查回已實作；完整後台、跨裝置／真 QQ WebView 與正式版本組合待驗收。"
     },
     {
       "capability_id": "A02",
@@ -2009,13 +2029,26 @@
       "new_entry": "後台帳號",
       "required_behavior": "每頁 20，稱呼／ID／第三方暱稱／時間辨識；不出 OpenID／UnionID",
       "legacy_evidence_group": "管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "每頁 20，稱呼／ID／第三方暱稱／時間辨識；不出 OpenID／UnionID"
+      "implementation": [
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-users.ts",
+        "apps/web/src/admin.tsx",
+        "apps/web/src/admin-users.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "每頁 20、搜尋與精確身份關係的 UnionID 篩選、不輸出身份秘密已實作；大量匯入資料、完整語言／讀屏／WebView 及正式資料遷移待驗收。"
     },
     {
       "capability_id": "A03",
@@ -2023,13 +2056,26 @@
       "new_entry": "後台帳號",
       "required_behavior": "不自撤帳號管理權、註銷不可再授權，稽核同交易",
       "legacy_evidence_group": "管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不自撤帳號管理權、註銷不可再授權，稽核同交易"
+      "implementation": [
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-users.ts",
+        "apps/web/src/admin.tsx",
+        "apps/web/src/admin-users.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "角色獨立版本、不可自撤／對註銷授權、同交易不可變歷史及歷史分頁已實作；關閉帳號歷史入口、完整後台與匯入角色對照待驗收。"
     },
     {
       "capability_id": "A04",
@@ -2037,13 +2083,26 @@
       "new_entry": "後台帳號",
       "required_behavior": "各自版本／唯一檢查，僅後台，不能拿來登入或對照成分 ownership",
       "legacy_evidence_group": "管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "各自版本／唯一檢查，僅後台，不能拿來登入或對照成分 ownership"
+      "implementation": [
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-users.ts",
+        "apps/web/src/admin.tsx",
+        "apps/web/src/admin-users.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-users.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "私人備註／人工 QQ 版本、唯一檢查、恢復與會員隔離已實作；未用於認領，完整 ownership／匯入資料與舊站所有管理流程待驗收。"
     },
     {
       "capability_id": "A05",
@@ -2095,22 +2154,28 @@
       "legacy_evidence_group": "管理、隱私",
       "implementation": [
         "apps/api/src/registration-settings.ts",
-        "apps/web/src/registration.tsx"
+        "apps/web/src/registration.tsx",
+        "apps/api/src/admin-privacy.ts",
+        "apps/web/src/admin-privacy.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/admin-users.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/registration.spec.ts"
+        "apps/web/tests/registration.spec.ts",
+        "apps/web/tests/admin-privacy.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "名稱註冊開關、revision 與同交易稽核已實作；政策版本更新／重同意、刪除申請與共享紀錄待審仍待完成。"
+      "remaining": "註冊開關／revision／稽核及刪除申請分頁、即時共享紀錄／bot 收件人檢查與明確說明、衝突及未知結果恢復已實作；政策版本更新／重同意、完整審核歷史與共享資料處理、備份／還原濾除仍待完成。"
     },
     {
       "capability_id": "A09",

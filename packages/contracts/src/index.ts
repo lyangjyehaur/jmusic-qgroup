@@ -54,6 +54,13 @@ export const ErasureProof = z.object({ requestId: z.string().uuid(), secret: z.s
 export const EraseData = ErasureProof.extend({ target: z.enum(['music', 'account', 'both']), confirm: z.literal(true), profileId: z.string().max(80).nullable(), profileRevision: z.number().int().min(0) }).strict();
 export const ErasureResult = z.object({ requestId: z.string(), target: z.enum(['music', 'account', 'both']), status: z.enum(['completed', 'shared_review']) });
 export const PrivacySummary = z.object({ profile: Profile, activeEvents: z.number().int(), activePolls: z.number().int() });
+export const AdminLogin = z.object({ key: z.string().refine(value => Array.from(value).length >= 32 && Array.from(value).length <= 256), confirm: z.literal(true) }).strict();
+export const AdminSession = z.object({ authenticated: z.literal(true), authMethod: z.enum(['account', 'credential']), scope: z.string(), adminCsrf: z.string(), currentUserId: z.string().nullable(), rescueEnabled: z.boolean() });
+export const AdminUser = z.object({ id: z.string(), nickname: z.string(), createdAt: z.string(), isAdmin: z.boolean(), revision: z.number().int(), note: z.string(), manualQQ: z.string(), metadataRevision: z.number().int(), metadataUpdatedAt: z.string().nullable(), identities: z.array(z.object({ provider: z.string(), displayName: z.string(), unionidBound: z.boolean() })) });
+export const AdminUsers = z.object({ users: z.array(AdminUser), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });
+export const SaveAdminRole = z.object({ isAdmin: z.boolean(), revision: z.number().int().min(0), confirm: z.literal(true) }).strict();
+export const SaveAdminMetadata = z.object({ note: z.string().trim().refine(value => Array.from(value).length <= 1000), manualQQ: z.string().trim().refine(value => !value || /^[1-9][0-9]{4,11}$/.test(value)), revision: z.number().int().min(0), confirm: z.literal(true) }).strict();
+export const AdminRoleHistory = z.object({ history: z.array(z.object({ id: z.number().int(), before: z.boolean(), after: z.boolean(), revision: z.number().int(), createdAt: z.string(), actor: z.string() })), nextCursor: z.number().int().nullable() });
 export const Activity = z.object({
   id: z.string(), title: z.string(), category: z.string(), location: z.string(),
   startsAt: z.string(), deadline: z.string(), durationHours: z.number().nullable(), timezone: z.string().nullable(),
@@ -64,3 +71,7 @@ export const Activity = z.object({
 export type ActivityView = z.infer<typeof Activity>;
 export const ActivityList = z.object({ events: z.array(Activity), page: z.number().int(), hasMore: z.boolean() });
 export const ApiFailure = z.object({ code: z.string(), message: z.string() });
+
+export const AdminPrivacyRequest = z.object({ id: z.string(), userId: z.string(), status: z.enum(['completed', 'shared_review']), createdAt: z.string(), updatedAt: z.string(), note: z.string(), revision: z.string().regex(/^[a-f0-9]{64}$/), sharedRecords: z.record(z.string(), z.number().int().positive()) });
+export const AdminPrivacyQueue = z.object({ requests: z.array(AdminPrivacyRequest), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });
+export const SavePrivacyReview = z.object({ note: z.string().trim().refine(value => Array.from(value).length >= 1 && Array.from(value).length <= 1000), revision: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
