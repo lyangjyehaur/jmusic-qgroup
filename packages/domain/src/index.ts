@@ -1,4 +1,7 @@
 import legacyCasefold from './legacy-casefold.json';
+export * from './bot-markdown';
+export * from './bot-templates';
+export * from './bot-clock';
 // Python's str.split()/re \s includes C0 separators and U+0085, but not BOM.
 export const musicWhitespace = /[\u0009-\u000d\u001c-\u0020\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+/g;
 export const musicText = (value: string) => value.replace(musicWhitespace, ' ').replace(/^ +| +$/g, '');

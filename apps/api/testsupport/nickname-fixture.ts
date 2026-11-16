@@ -1,7 +1,7 @@
 import type { DB } from '@qgroup/database';
 /** Synthetic only. Includes records that must never be renamed or re-queued. */
 export function nicknameFixture(db: DB) {
-  db.prepare("INSERT INTO bot_settings VALUES(1,2,'{\"enabled\":true,\"dry_run\":true}','before')").run();
+  db.prepare("INSERT OR REPLACE INTO bot_settings VALUES(1,2,'{\"enabled\":true,\"dry_run\":true}','before')").run();
   for (const event of ['listen', 'invite', 'draft', 'deleted', 'past']) {
     db.prepare('UPDATE events SET bot_enabled=1 WHERE id=?').run(event);
     db.prepare("INSERT INTO roster_parties(id,event_id,manager_id,queue_mode,created_at) VALUES(?,?,'alice','together','before')").run('party-' + event, event);

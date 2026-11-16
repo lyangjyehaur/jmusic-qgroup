@@ -625,19 +625,25 @@
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/activity-drafts.ts",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/web/src/activity-drafts.tsx"
+        "apps/web/src/activity-drafts.tsx",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-drafts.spec.ts"
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/activity-publish.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "已實作草稿安排建立／續編、六類協議值、時長預設、UTC 秒時間與有界驗證、成團／容量及發起者設定限制；已發布安排、完整時區輸入、日期防誤與全部操作仍待完成。"
@@ -652,22 +658,28 @@
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/activity-drafts.ts",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/web/src/activity-drafts.tsx"
+        "apps/web/src/activity-drafts.tsx",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-drafts.spec.ts"
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/activity-publish.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "已實作伺服器草稿、owner／明確活動 scopes、私人分頁與原子建立；原 Python 建立／編輯差分及草稿不報名、不發布條件、不排群通知已測。發布、自動本人報名、發布後退出及舊 API join_owner=false 相容仍待完成。"
+      "remaining": "已實作既有草稿發布、明確本人同意、初始條件、本人自動報名、嚴格 FIFO／整組阻塞、原子稽核／收據與最終名單 bot 卡片；原 Python 全紀錄差分與現有 worker 無網路消費已測。發起者發布後退出、舊 API 直接建立 scheduled 的明確 join_owner=false、全部恢復與完整入口仍待完成。"
     },
     {
       "capability_id": "E04",
@@ -2624,13 +2636,26 @@
       "new_entry": "QQ 卡片",
       "required_behavior": "名稱按隊序各至 10；不附私有備註／身分，超長有退路",
       "legacy_evidence_group": "bot 視圖",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "packages/domain/src/bot-markdown.ts",
+        "packages/domain/src/bot-templates.ts",
+        "packages/domain/src/bot-clock.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "名稱按隊序各至 10；不附私有備註／身分，超長有退路"
+      "state": "in_progress",
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B04",
@@ -2638,13 +2663,26 @@
       "new_entry": "outbox／QQ",
       "required_behavior": "逐場同步與全局通知類型分開；草稿／私有／撤權發送前再驗",
       "legacy_evidence_group": "機器人",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "packages/domain/src/bot-markdown.ts",
+        "packages/domain/src/bot-templates.ts",
+        "packages/domain/src/bot-clock.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "逐場同步與全局通知類型分開；草稿／私有／撤權發送前再驗"
+      "state": "in_progress",
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B05",
@@ -2652,13 +2690,26 @@
       "new_entry": "outbox／QQ",
       "required_behavior": "實際變動才通知，待確認／待審不發；同次退出與遞補一則，去重",
       "legacy_evidence_group": "機器人",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "packages/domain/src/bot-markdown.ts",
+        "packages/domain/src/bot-templates.ts",
+        "packages/domain/src/bot-clock.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "實際變動才通知，待確認／待審不發；同次退出與遞補一則，去重"
+      "state": "in_progress",
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B06",
@@ -2680,13 +2731,26 @@
       "new_entry": "後台 bot",
       "required_behavior": "保存追加版本、最新設定套用；已投遞內容不改，未來排程重算",
       "legacy_evidence_group": "bot 設定",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "packages/domain/src/bot-markdown.ts",
+        "packages/domain/src/bot-templates.ts",
+        "packages/domain/src/bot-clock.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "保存追加版本、最新設定套用；已投遞內容不改，未來排程重算"
+      "state": "in_progress",
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B08",
@@ -2708,13 +2772,26 @@
       "new_entry": "worker／後台",
       "required_behavior": "延後不耗失敗次數、跨重啟保持；公開回覆即時；重排只影響未來",
       "legacy_evidence_group": "bot 設定、機器人",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "packages/domain/src/bot-markdown.ts",
+        "packages/domain/src/bot-templates.ts",
+        "packages/domain/src/bot-clock.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "延後不耗失敗次數、跨重啟保持；公開回覆即時；重排只影響未來"
+      "state": "in_progress",
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B10",
@@ -2736,13 +2813,26 @@
       "new_entry": "QQ／後台",
       "required_behavior": "容量與平台限制、事件去重、回呼每次驗群／權限、普通文字退路",
       "legacy_evidence_group": "bot Markdown",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "packages/domain/src/bot-markdown.ts",
+        "packages/domain/src/bot-templates.ts",
+        "packages/domain/src/bot-clock.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "packages/domain/src/bot-rendering.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "容量與平台限制、事件去重、回呼每次驗群／權限、普通文字退路"
+      "state": "in_progress",
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B12",
@@ -2834,13 +2924,17 @@
       "new_entry": "舊網址 adapter",
       "required_behavior": "每種 query／hash／action 精確轉換、返回正常，不默認執行",
       "legacy_evidence_group": "前端、bot 指令",
-      "implementation": [],
+      "implementation": [
+        "apps/web/src/activity-entry.tsx"
+      ],
       "behavior_evidence": [],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "每種 query／hash／action 精確轉換、返回正常，不默認執行"
+      "ux_evidence": [
+        "apps/web/tests/activity-publish.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "根網址 event 與六種既有活動 action 已轉成活動／task，唯讀開啟不自動提交，邀請內容仍驗權；各 action 完整業務、投票／邀請／認領／hash／舊成分入口及返回上下文仍待完成。"
     },
     {
       "capability_id": "O04",
@@ -2884,27 +2978,33 @@
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/activity-drafts.ts",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/web/src/activity-drafts.tsx"
+        "apps/web/src/activity-drafts.tsx",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
-        "apps/web/tests/activity-drafts.spec.ts"
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/activity-publish.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂／隱私及活動草稿先持久化、原 key／payload 重試；草稿建立不重複、刪除後最小結果查詢、較新狀態重新讀取及撤權重驗已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。"
+      "remaining": "音樂／隱私與活動草稿／發布先持久化、原 key／payload 重試；發布損壞回應重新整理後只查結果，建立／保存被另一端發布後保留原稿並提供活動入口，撤權逐次重驗已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。"
     },
     {
       "capability_id": "O06",
@@ -2921,27 +3021,33 @@
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/activity-drafts.ts",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/web/src/activity-drafts.tsx"
+        "apps/web/src/activity-drafts.tsx",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
-        "apps/web/tests/activity-drafts.spec.ts"
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/activity-publish.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂、稱呼及活動草稿去重、單調版本、追加稽核、業務／權限／結果完整回滾及 optional bot savepoint 已測；已發布安排、條件、報名與其他通知交易仍待完成。"
+      "remaining": "音樂、稱呼及活動草稿／發布的去重、單調版本、追加稽核、條件／本人報名／通知／結果完整回滾及 optional bot savepoint 已測；已發布安排變更、條件回覆、手動報名與其他通知交易仍待完成。"
     },
     {
       "capability_id": "O07",

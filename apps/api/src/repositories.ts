@@ -9,6 +9,7 @@ interface EventRow {
   duration_hours: number | null; timezone: string | null; description: string; capacity: number;
   minimum_participants: number; lifecycle: string; archived_at: string | null; status: string;
   registration_open: number; confirmed: number; waiting: number; tentative: number;
+  fee_policy:string;withdrawal_deadline:string|null;conditions_version:number;change_summary:string;visibility:string;
 }
 const eventProjection = `SELECT e.*,
  (SELECT COUNT(*) FROM attendees a WHERE a.event_id=e.id AND a.status='confirmed') AS confirmed,
@@ -21,7 +22,8 @@ function serializeEvent(row: EventRow, now: Date): ActivityView {
     deadline: row.deadline, durationHours: row.duration_hours, timezone: row.timezone,
     description: row.description, capacity: row.capacity, minimumParticipants: row.minimum_participants,
     lifecycle: row.lifecycle, ...activityState(row, now), archived: !!row.archived_at,
-    confirmed: row.confirmed, waiting: row.waiting, tentative: row.tentative };
+    confirmed: row.confirmed, waiting: row.waiting, tentative: row.tentative,
+    feePolicy:row.fee_policy,withdrawalDeadline:row.withdrawal_deadline,conditionsVersion:row.conditions_version,changeSummary:row.change_summary,visibility:row.visibility };
 }
 export function listActivities(db: DB, page: number, period: 'upcoming' | 'history', now: Date) {
   // Estimated end never changes a scheduled event into historical actual completion.

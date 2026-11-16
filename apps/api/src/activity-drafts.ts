@@ -1,20 +1,22 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft } from '@qgroup/contracts';
+import { CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
 import { requireActivityAccess } from './activity-access';
 import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventScopes, eventSnapshot, legacyStamp, removalBlocker, requireEventRevision, type EventRow } from './activity-arrangements';
+import { publishActivityDraft } from './activity-publish';
+import { activityBotPolicy, type ActivityBotDefaults } from './activity-bot';
 
 const params=z.object({id:z.string().min(1).max(80)});
-function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allowDeleted=false){
+function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allowDeleted=false,allowPublished=false){
   const event=eventRow(db,id);
   if(!event||(!allowDeleted&&event.status==='deleted'))throw new DomainError('NOT_FOUND','找不到活動草稿',404);
   const scopes=eventScopes(db,event,userId);
   if(!scopes.size)throw new DomainError('NOT_FOUND','找不到活動草稿',404);
-  if(event.lifecycle!=='draft')throw new DomainError('NOT_A_DRAFT','活動已發布；草稿輸入仍保留，請回到活動核對',409);
+  if(!allowPublished&&event.lifecycle!=='draft')throw new DomainError('NOT_A_DRAFT','活動已發布；草稿輸入仍保留，請回到活動核對',409);
   if(scope&&!scopes.has(scope))throw new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403);
   return event;
 }
@@ -31,14 +33,12 @@ export function activityDraft(db:DB,id:string,userId:string){
   const blocker=removalBlocker(db,event);
   return {id,revision:event.revision,ownerName:owner.nickname,isOwner:scopes.has('owner'),canEdit:scopes.has('schedule'),canRemove:scopes.has('owner')&&!blocker,removalBlocker:blocker,values:values(event)};
 }
-export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Security,now:()=>Date,botEnabledDefault=false){
+export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Security,now:()=>Date,botDefaults:ActivityBotDefaults={}){
   function reconcileDraftBot(request:FastifyRequest,id:string){
     // The original event hook cancels obsolete work even for a draft. It never
     // queues broadcasts / reminders or alters immutable payloads in this state.
     try{db.transaction(()=>{
-      const row=db.prepare('SELECT config_json FROM bot_settings WHERE id=1').get() as {config_json:string}|undefined;
-      if(!row)return;
-      const policy=z.object({enabled:z.boolean().optional()}).parse(JSON.parse(row.config_json));if(!(policy.enabled??botEnabledDefault))return;
+      if(!activityBotPolicy(db,botDefaults).config.enabled)return;
       db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
       db.prepare("UPDATE bot_outbox SET status='skipped',last_error='安排或群同步设置已变更，旧提醒作废' WHERE event_id=? AND kind IN ('deadline_reminder','estimated_over_reminder') AND status IN ('pending','sending')").run(id);
     })();}catch{request.log.error({eventId:id},'Draft bot reconciliation failed; business write preserved');}
@@ -70,12 +70,12 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
       const user=security.memberWrite(request);const key=z.string().uuid().parse(request.headers['idempotency-key']);
       const signature='activity-draft:'+hash('v2:'+request.method+':'+path+':'+JSON.stringify(input));
       // Re-authorize before a receipt, including a completed removal. No stale role replay.
-      if(existing)authorize(db,existing.id,user.id,existing.scope,true);
+      if(existing)authorize(db,existing.id,user.id,existing.scope,true,true);
       const previous=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
       if(previous){
         if(previous.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409);
         const result=JSON.parse(previous.response_json) as T;
-        if(!existing&&typeof result==='object'&&result&&'id' in result&&typeof result.id==='string')authorize(db,result.id,user.id,undefined,true);
+        if(!existing&&typeof result==='object'&&result&&'id' in result&&typeof result.id==='string')authorize(db,result.id,user.id,undefined,true,true);
         return result;
       }
       const stamp=legacyStamp(now());const result=run(user,stamp);
@@ -123,6 +123,14 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
       db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已删除' WHERE event_id=? AND status IN ('pending','sending')").run(id);
       appendEventAudit(db,event,user,'event_remove',{event:eventSnapshot(event),participants:[]},{event:eventSnapshot(eventRow(db,id)!),participants:[]},'',stamp);
       return {id,revision:eventRow(db,id)!.revision,removed:true};
+    },{id,scope:'owner'});
+  });
+  app.post('/api/v2/activities/:id/draft/publish',routeOptions,async request=>{
+    const {id}=params.parse(request.params);const input=PublishActivityDraft.parse(request.body);
+    return write(request,'/api/v2/activities/'+id+'/draft/publish',input,user=>{
+      const event=authorize(db,id,user.id,'owner');requireEventRevision(event,input.revision);
+      const arrangement=arrangementValues(values(event) as z.infer<typeof CreateActivityDraft>['values'],now(),true,event);
+      return publishActivityDraft(db,event,user,now,arrangement,botDefaults,eventId=>request.log.error({eventId},'Publication bot hook failed; business write preserved'));
     },{id,scope:'owner'});
   });
 }

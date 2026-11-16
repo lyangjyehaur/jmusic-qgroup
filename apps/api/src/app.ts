@@ -25,10 +25,11 @@ import { registerMusicContact } from './music-contact';
 import { registerMusicFields } from './music-fields';
 import { activityViewer, registerActivityRoster } from './activity-roster';
 import { registerActivityDrafts } from './activity-drafts';
+import type { ActivityBotDefaults } from './activity-bot';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
 export function createApp(options: AppOptions) {
   const { db } = options;
   const now = options.now ?? (() => new Date());
@@ -68,7 +69,7 @@ export function createApp(options: AppOptions) {
     registerMusicContact(app, db, security, now);
     registerMusicFields(app, db, security, now);
     registerActivityRoster(app, db, security, options.qq?.clientId);
-    registerActivityDrafts(app, db, security, now, options.botEnabledDefault);
+    registerActivityDrafts(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

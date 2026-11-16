@@ -14,7 +14,7 @@ const input=()=>({title:'  草稿活動  ',category:'约K',location:'  台北  '
 const cleanups:(()=>Promise<unknown>)[]=[];
 afterEach(async()=>{for(const close of cleanups.splice(0).reverse())await close();});
 async function setup(){
-  const db=openDatabase(':memory:');fixture(db);db.exec("UPDATE events SET category='约K' WHERE id='draft'; INSERT INTO bot_settings VALUES(1,1,'{\"enabled\":true,\"schedule_enabled\":true}','before');");
+  const db=openDatabase(':memory:');fixture(db);db.exec("UPDATE events SET category='约K' WHERE id='draft'; INSERT OR REPLACE INTO bot_settings VALUES(1,1,'{\"enabled\":true,\"schedule_enabled\":true}','before');");
   const app=createApp({db,origin,now:()=>new Date(stamp),botEnabledDefault:true});await app.ready();cleanups.push(async()=>{await app.close();db.close();});
   async function account(user:string){const cookie='kanban_session=fixture-'+user;const viewer=(await app.inject({url:'/api/v2/session',headers:{cookie}})).json();return {cookie,origin,'x-account-scope':viewer.scope,'x-csrf-token':viewer.csrf};}
   const alice=await account('alice'),bob=await account('bob');

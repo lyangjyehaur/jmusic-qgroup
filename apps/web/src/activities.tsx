@@ -11,7 +11,7 @@ function ActivityCard({ event }: { event: ActivityView }) {
   return <Surface className="event-card"><div className="event-meta"><span className="pill">{event.category}</span><span>{event.archived ? '已歸檔' : phaseLabel[event.phase] ?? event.phase}</span></div>
     <Heading level={2}><Link to={'/activities/' + encodeURIComponent(event.id)}>{event.title}</Link></Heading>
     <Text>{dateLabel(event.startsAt)} <span className="muted">台北時間</span></Text><Text tone="muted">{event.location}</Text>
-    <div className="event-bottom"><span>{event.confirmed} / {event.capacity} 人{event.waiting > 0 ? ` · ${event.waiting} 人候補` : ''}</span><Link to={'/activities/' + encodeURIComponent(event.id)}>查看活動 <span aria-hidden="true">↗</span></Link></div>
+    <div className="event-bottom"><span>{event.confirmed} / {event.capacity||'不限'} 人{event.waiting > 0 ? ` · ${event.waiting} 人候補` : ''}</span><Link to={'/activities/' + encodeURIComponent(event.id)}>查看活動 <span aria-hidden="true">↗</span></Link></div>
   </Surface>;
 }
 export function Activities() {
@@ -27,6 +27,7 @@ export function Activities() {
 }
 export function ActivityDetail() {
   const { id = '' } = useParams();
+  const [search]=useSearchParams();const task=search.get('task');
   const session = useSession(); const viewer = session.data;
   const query = useQuery({ queryKey: ['private', viewer?.scope, 'activity', id], queryFn: () => api('/activities/' + encodeURIComponent(id), Activity, {headers:{'X-Account-Scope':viewer!.scope}}), enabled:!!viewer });
   if (session.error) return <Failure error={session.error} retry={()=>void session.refetch()}/>;
@@ -34,8 +35,9 @@ export function ActivityDetail() {
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   const event = query.data;
   return <><Link className="back" to="/activities">← 所有活動</Link><PageIntro title={event.title}>{event.category} · {phaseLabel[event.phase] ?? event.phase}{event.archived ? ' · 已歸檔' : ''}</PageIntro>
-    <Surface className="detail"><Heading level={2}>活動安排</Heading><dl><dt>時間</dt><dd>{dateLabel(event.startsAt)}（台北時間）{event.durationHours !== null ? ` · 預計 ${event.durationHours} 小時` : ' · 時長未定'}</dd><dt>地點</dt><dd>{event.location}</dd><dt>人數</dt><dd>{event.confirmed} / {event.capacity} 人 · 最低 {event.minimumParticipants} 人</dd><dt>報名截止</dt><dd>{dateLabel(event.deadline)}（台北時間）</dd></dl>
-      {event.estimatedOver && <Notice>預定時間已過，實際結束狀態尚未確認。</Notice>}<Heading level={2}>活動說明</Heading><Text className="description">{event.description || '還沒有活動說明。'}</Text>
+    <Surface className="detail"><Heading level={2}>活動安排</Heading><dl><dt>時間</dt><dd>{dateLabel(event.startsAt)}（台北時間）{event.durationHours !== null ? ` · 預計 ${event.durationHours} 小時` : ' · 時長未定'}</dd><dt>地點</dt><dd>{event.location}</dd><dt>人數</dt><dd>{event.confirmed} / {event.capacity||'不限'} 人 · 最低 {event.minimumParticipants} 人</dd><dt>報名截止</dt><dd>{dateLabel(event.deadline)}（台北時間）</dd><dt>退出期限</dt><dd>{dateLabel(event.withdrawalDeadline||event.deadline)}（台北時間）</dd><dt>可見性</dt><dd>{event.visibility==='public'?'公開':'邀請可見'}</dd><dt>安排版本</dt><dd>{event.conditionsVersion}{event.changeSummary?' · '+event.changeSummary:''}</dd></dl>
+      {event.feePolicy&&<><Heading level={2}>費用規則</Heading><Text className="description">{event.feePolicy}</Text></>}{event.estimatedOver && <Notice>預定時間已過，實際結束狀態尚未確認。</Notice>}{event.description&&<><Heading level={2}>活動說明</Heading><Text className="description">{event.description}</Text></>}
+      {task&&<Notice>已開啟對應活動；此入口不會自動提交報名、確認或款項操作。</Notice>}
       <Notice>目前僅開放查閱，尚未提供報名、分房與結算。</Notice>
     <Link className="text-link" to={'/me/music?from=' + encodeURIComponent('/activities/' + id)}>編輯我的成分</Link></Surface>
     {viewer&&<ActivityParticipants key={viewer.scope} eventId={id} viewer={viewer}/>}</>;

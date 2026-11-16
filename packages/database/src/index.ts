@@ -9,10 +9,11 @@ import { schemaV5 } from './schema-v5';
 import { schemaV6 } from './schema-v6';
 import { schemaV7 } from './schema-v7';
 import { schemaV8 } from './schema-v8';
+import { schemaV9 } from './schema-v9';
 import { seedMusicFields } from './music-fields';
 
 export type DB = Database.Database;
-export const REBUILD_SCHEMA_VERSION = 8;
+export const REBUILD_SCHEMA_VERSION = 9;
 function migratePrivacy(db: DB) {
   // Rebuild only our own table. Child foreign keys retain the stable table name.
   db.pragma('foreign_keys = OFF');
@@ -48,7 +49,7 @@ export function openDatabase(path: string): DB {
     if (tables.length && !tables.some(t => t.name === 'rebuild_schema')) throw new Error('Refusing legacy database: use an explicit isolated migration copy');
     if (tables.length) {
       const versions = db.prepare('SELECT version,baseline FROM rebuild_schema').all() as { version: number; baseline: string }[];
-      if (versions.length !== 1 || ![1, 2, 3, 4, 5, 6, 7, REBUILD_SCHEMA_VERSION].includes(versions[0]?.version ?? 0) || versions[0]?.baseline !== '8da877857f163853c449474e168534e2e493121b') throw new Error('Unsupported rebuild schema');
+      if (versions.length !== 1 || ![1, 2, 3, 4, 5, 6, 7, 8, REBUILD_SCHEMA_VERSION].includes(versions[0]?.version ?? 0) || versions[0]?.baseline !== '8da877857f163853c449474e168534e2e493121b') throw new Error('Unsupported rebuild schema');
     }
     db.pragma('foreign_keys = ON');
     db.pragma('busy_timeout = 5000');
@@ -61,6 +62,7 @@ export function openDatabase(path: string): DB {
     if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 5) db.transaction(() => { db.exec(schemaV6); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Ownership migration foreign key check failed'); }).immediate();
     if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 6) db.transaction(() => { db.exec(schemaV7); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('PIN migration foreign key check failed'); }).immediate();
     if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 7) db.transaction(() => { db.exec(schemaV8); seedMusicFields(db); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Music field migration foreign key check failed'); }).immediate();
+    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 8) db.transaction(() => { db.exec(schemaV9); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Bot baseline migration foreign key check failed'); }).immediate();
     // The frozen export contains structure only; supply the legacy secure default.
     db.prepare('INSERT OR IGNORE INTO site_settings(id) VALUES(1)').run();
     return db;

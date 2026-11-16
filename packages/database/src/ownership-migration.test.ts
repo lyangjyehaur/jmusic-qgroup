@@ -12,7 +12,7 @@ describe('schema 5 → ownership audit', () => {
       const tables=old.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name!='rebuild_schema'").all() as {name:string}[];
       const before=tables.map(({name})=>old.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all());const schema=old.prepare("SELECT name,sql FROM sqlite_master WHERE name!='rebuild_schema' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as {name:string;sql:string}[];old.close();
       const next=openDatabase(path);expect(tables.map(({name})=>next.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all())).toEqual(before);for(const row of schema)expect(next.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);expect(next.pragma('foreign_key_check')).toEqual([]);next.close();
-      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:8});expect(reopened.prepare('SELECT * FROM music_ownership_history').all()).toEqual([]);reopened.close();
+      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:9});expect(reopened.prepare('SELECT * FROM music_ownership_history').all()).toEqual([]);reopened.close();
     } finally {rmSync(folder,{recursive:true,force:true});}
   });
   it('rolls the version and DDL back on collision, leaving the existing private table intact',()=>{

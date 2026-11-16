@@ -20,6 +20,7 @@ export const ActivityDraft = z.object({
 export const CreateActivityDraft = z.object({ values: ActivityArrangementInput }).strict();
 export const SaveActivityDraft = z.object({ revision: z.number().int().min(0), values: ActivityArrangementInput, reason: text(200).default('') }).strict();
 export const RemoveActivityDraft = z.object({ revision: z.number().int().min(0), confirm: z.literal(true) }).strict();
+export const PublishActivityDraft = z.object({ revision: z.number().int().min(0), confirm: z.literal(true), acceptConditions: z.literal(true) }).strict();
 export const ActivityDraftResult = z.object({ id: z.string(), revision: z.number().int().min(0), removed: z.boolean() });
 export const ActivityDraftOperationResult = z.discriminatedUnion('state', [z.object({state:z.literal('not_found')}),z.object({state:z.literal('completed'),result:ActivityDraftResult})]);
 export const ActivityDraftList = z.object({ drafts: z.array(z.object({ id: z.string(), title: z.string(), startsAt: z.string(), ownerName: z.string(), isOwner: z.boolean(), canEdit: z.boolean(), revision: z.number().int() })), page: z.number().int(), hasMore: z.boolean() });

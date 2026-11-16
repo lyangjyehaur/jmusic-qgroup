@@ -21,7 +21,7 @@ it('preserves synthetic roster, money, bot policy and delivery states while lega
       VALUES(?,'listen','alice',?,'party','synthetic name','self',?,'before','before')`).run(id, user, status);
     db.prepare(`INSERT INTO finance_entries(id,event_id,kind,payload_json,occurred_at,actor_id,actor_name,created_at)
       VALUES('ledger','listen','expense','{"amount_cents":12345}','before','alice','小青','before')`).run();
-    db.prepare("INSERT INTO bot_settings VALUES(1,4,'{\"enabled\":false,\"dry_run\":true}','before')").run();
+    db.prepare("INSERT OR REPLACE INTO bot_settings VALUES(1,4,'{\"enabled\":false,\"dry_run\":true}','before')").run();
     for (const [index, status] of ['pending', 'sending', 'sent', 'failed', 'skipped'].entries()) db.prepare(`INSERT INTO bot_outbox(event_id,kind,dedupe_key,target,payload_json,status,attempts,claim_token,simulated_at,created_at)
       VALUES('listen','synthetic',?,'synthetic-group','{"template_version":1}',?,2,?,'simulation-only','before')`).run('key-' + index, status, 'claim-' + index);
     db.prepare("INSERT INTO external_identities VALUES('qq','12345',?,'bob','QQ bob','before')").run('B'.repeat(32));

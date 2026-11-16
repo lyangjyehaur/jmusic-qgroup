@@ -92,6 +92,7 @@ export const Activity = z.object({
   description: z.string(), capacity: z.number().int(), minimumParticipants: z.number().int(),
   lifecycle: z.string(), phase: z.string(), registrationOpen: z.boolean(), estimatedOver: z.boolean(),
   archived: z.boolean(), confirmed: z.number().int(), waiting: z.number().int(), tentative: z.number().int(),
+  feePolicy:z.string(),withdrawalDeadline:z.string().nullable(),conditionsVersion:z.number().int(),changeSummary:z.string(),visibility:z.string(),
 });
 export type ActivityView = z.infer<typeof Activity>;
 export const ActivityList = z.object({ events: z.array(Activity), page: z.number().int(), hasMore: z.boolean() });

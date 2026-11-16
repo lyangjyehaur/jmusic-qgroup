@@ -23,6 +23,7 @@ function setup() {
   const write = (path: string, value: unknown) => writeFileSync(join(source, path), typeof value === 'string' ? value : JSON.stringify(value), { mode: 0o600 });
   const board = new Database(join(source, 'board.sqlite3')); board.pragma('foreign_keys = ON'); board.exec(legacySchema);
   board.prepare('INSERT INTO site_settings(id) VALUES(1)').run();
+  board.exec("INSERT INTO bot_settings_history VALUES(0,'{}','source-baseline','','baseline'); INSERT INTO bot_runtime(id) VALUES(1);");
   board.exec('CREATE TEMP TABLE music_entries(id TEXT,name TEXT,kind TEXT)'); fixture(board); nicknameFixture(board);
   board.prepare("INSERT INTO user_admin_roles VALUES('alice',1,7,'before')").run(); board.prepare("UPDATE sqlite_sequence SET seq=9000 WHERE name='attendees'").run();
   board.prepare("INSERT INTO external_identities VALUES('qq','synthetic-app','synthetic-subject','alice','QQ 原名','before')").run();
@@ -189,7 +190,7 @@ describe('offline paired snapshot import', () => {
     await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Referenced board image is missing'); expect(existsSync(s.destination)).toBe(false);
     mkdirSync(join(s.source, 'images', image.slice(0, 2))); writeFileSync(join(s.source, path), bytes);
     const output = execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' }); const result = JSON.parse(output);
-    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 8, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
+    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 9, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
     expect(readFileSync(join(s.destination, path))).toEqual(bytes);
     const second = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' })); expect(second.status).toBe('already_imported');
   });
