@@ -50,9 +50,10 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     const device = security.ensure(request, reply);
     const base = { scope: device.scope, csrf: security.csrf(device), qqEnabled: !!provider, privacyVersion: PRIVACY_VERSION, privacyAccepted: accepted(device), nameRegistrationEnabled: nameRegistration(db).enabled };
     if (device.kind === 'visitor') return { authenticated: false, ...base };
-    const bound = provider ? db.prepare(`SELECT e.display_name,EXISTS(SELECT 1 FROM external_unionids x WHERE x.provider=e.provider AND x.client_id=e.client_id AND x.subject=e.subject) AS unionid_bound
-      FROM external_identities e WHERE e.provider='qq' AND e.client_id=? AND e.user_id=?`).get(provider.clientId, device.id) as { display_name: string; unionid_bound: number } | undefined : undefined;
-    return { authenticated: true, nickname: device.nickname, administrator: administratorRevision(db, device.id) !== undefined, ...base, qq: { bound: !!bound, nickname: bound?.display_name ?? '', unionidBound: !!bound?.unionid_bound, needsReauth: !!bound && !bound.unionid_bound } };
+    const bound = provider ? db.prepare(`SELECT e.display_name,p.avatar_url,EXISTS(SELECT 1 FROM external_unionids x WHERE x.provider=e.provider AND x.client_id=e.client_id AND x.subject=e.subject) AS unionid_bound
+      FROM external_identities e LEFT JOIN external_profiles p ON p.provider=e.provider AND p.client_id=e.client_id AND p.user_id=e.user_id
+      WHERE e.provider='qq' AND e.client_id=? AND e.user_id=?`).get(provider.clientId, device.id) as { display_name: string; avatar_url: string | null; unionid_bound: number } | undefined : undefined;
+    return { authenticated: true, nickname: device.nickname, administrator: administratorRevision(db, device.id) !== undefined, ...base, qq: { bound: !!bound, nickname: bound?.display_name ?? '', avatarUrl: safeAvatar(bound?.avatar_url ?? ''), unionidBound: !!bound?.unionid_bound, needsReauth: !!bound && !bound.unionid_bound } };
   });
   app.post('/api/v2/auth/register-name', { config: { rateLimit: { max: 6, timeWindow: '1 minute' } } }, async (request, reply) => {
     const result = db.transaction(() => {
@@ -144,7 +145,8 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
       const token = rotate(device, userId);
       db.prepare("UPDATE login_attempts SET status='used',union_id='' WHERE id=?").run(row.id);
       audit(userId, row.mode === 'bind' ? 'qq_bound' : 'qq_login', { previous_scope: device.kind === 'member' ? device.scope : null });
-      return { token, response: { switched: userId !== uid(device), newAccount: !linked && row.mode === 'login', returnTo: row.return_path } };
+      const unionidBound = !!db.prepare("SELECT 1 FROM external_unionids WHERE provider='qq' AND client_id=? AND subject=?").get(row.app_id, row.openid);
+      return { token, response: { switched: userId !== uid(device), newAccount: !linked && row.mode === 'login', returnTo: row.return_path, qqUnionidBound: unionidBound } };
     }).immediate();
     security.setCookie(reply, result.token);
     return result.response;

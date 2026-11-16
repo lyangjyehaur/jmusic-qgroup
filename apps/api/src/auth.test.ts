@@ -190,3 +190,19 @@ describe('task return paths', () => {
     for (const value of ['https://evil.example/', '//evil.example', '/\\evil.example', '/%2fevil.example', '/%5cevil.example', '/%0aevil', '/auth/confirm', '/api/v2/session', '/login?again=1', '/%61uth/confirm', '/safe/../login', '/%2561uth/confirm', '/bad%ZZ']) expect(() => safeReturnTo(value)).toThrow();
   });
 });
+
+// Read-side sanitization is required even for imported or manually repaired profile rows.
+it('returns only safe QQ avatars and boolean UnionID state without changing the site nickname', async () => {
+  const s = await setup();
+  s.db.prepare("INSERT INTO external_identities VALUES('qq','12345',?,'alice','外部暱稱','before')").run(subject);
+  s.db.prepare("INSERT INTO external_profiles VALUES('qq','12345','alice','http://q1.qlogo.cn/avatar')").run();
+  const first = await s.read('kanban_session=fixture-alice');
+  expect(first.viewer).toMatchObject({ nickname: '小青', qq: { nickname: '外部暱稱', avatarUrl: 'https://q1.qlogo.cn/avatar', needsReauth: true, unionidBound: false } });
+  const csp = (await s.app.inject('/api/v2/session')).headers['content-security-policy'];
+  expect(csp).toContain('https://*.qlogo.cn');
+  s.db.prepare("UPDATE external_profiles SET avatar_url='https://evil.example/private'").run();
+  s.db.prepare("INSERT INTO external_unionids VALUES('qq','12345',?,'synthetic-private-union','before')").run(subject);
+  const second = await s.read('kanban_session=fixture-alice');
+  expect(second.viewer).toMatchObject({ nickname: '小青', qq: { avatarUrl: '', needsReauth: false, unionidBound: true } });
+  expect(JSON.stringify(second.viewer)).not.toContain(subject); expect(JSON.stringify(second.viewer)).not.toContain('synthetic-private-union');
+});

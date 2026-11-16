@@ -7,6 +7,7 @@ import { AccountList, AuthResult, Ok, QQStartResult, QQStatus, type Viewer } fro
 import { api, ApiError } from './api';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 import { announceAccountChange, clearDeviceDrafts } from './account-session';
+import { QQAvatar, stampQQReminder } from './qq-profile';
 
 export const authHeaders = (viewer: Viewer) => ({ 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf });
 export const loginLink = (returnTo: string) => '/login?returnTo=' + encodeURIComponent(returnTo);
@@ -14,11 +15,11 @@ export function localReturn(value: string | null) { return value?.startsWith('/'
 export function useAccountChange() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
-  return async (returnTo: string, logout = false) => {
+  return async (returnTo: string, logout = false, message?: string) => {
     announceAccountChange(logout);
     const next = await queryClient.fetchQuery({ ...sessionQuery, staleTime: 0 });
     queryClient.removeQueries({ queryKey: ['private'], predicate: query => query.queryKey[1] !== next.scope });
-    navigate(localReturn(returnTo), { replace: true });
+    navigate(localReturn(returnTo), { replace: true, state: message ? { accountMessage: message } : null });
   };
 }
 export function Login() {
@@ -33,6 +34,7 @@ export function Login() {
     if (!session.data) return;
     setBusy(true); setError('');
     try {
+      if (session.data.authenticated && session.data.qq.needsReauth) stampQQReminder(session.data.scope);
       const result = await api('/auth/qq/start', QQStartResult, { method: 'POST', headers: authHeaders(session.data), body: JSON.stringify({ mode, confirm: true, returnTo, acceptPrivacy: accepted, privacyVersion: session.data.privacyVersion }) });
       window.location.assign(result.authorizeUrl);
     } catch (failure) { setError(failure instanceof Error ? failure.message : '無法開始授權'); setBusy(false); }
@@ -63,7 +65,8 @@ export function AuthConfirm() {
     setBusy(true); setError('');
     try {
       const done = await api('/auth/qq/finish', AuthResult, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true, attemptId: result.attemptId }) });
-      await changed(done.returnTo);
+      const message = result.mode === 'bind' && viewer.authenticated && viewer.qq.needsReauth ? done.qqUnionidBound ? 'QQ 資料已更新；bot 個人功能仍依實際開放狀態。' : '尚未取得 UnionID；原帳號已保留，可在帳號頁重新授權。' : undefined;
+      await changed(done.returnTo, false, message);
     } catch (failure) {
       const unknown = !(failure instanceof ApiError) || failure.status >= 500;
       setUncertain(unknown);
@@ -115,7 +118,7 @@ export function Accounts() {
     } catch (failure) { setError(failure instanceof Error ? failure.message : '登出失敗'); } finally { setBusy(false); }
   }
   return <><PageIntro title="帳號" />{params.has('returnTo') && <Link className="back" to={localReturn(params.get('returnTo'))}>回到原任務</Link>}{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink(localReturn(params.get('returnTo')) === '/' ? '/me/accounts' : localReturn(params.get('returnTo')))}>登入</Link> : <>
-    <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><Text>{viewer.qq.bound ? `已綁定 QQ：${viewer.qq.nickname}` : '尚未綁定 QQ'}</Text>
+    <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><Link to="/me/profile">修改站內稱呼</Link>{viewer.qq.bound && <QQAvatar url={viewer.qq.avatarUrl} nickname={viewer.qq.nickname} />}<Text>{viewer.qq.bound ? `已綁定 QQ：${viewer.qq.nickname}` : '尚未綁定 QQ'}</Text>
       {viewer.qqEnabled && <Link to="/login?mode=bind&returnTo=%2Fme%2Faccounts">{viewer.qq.needsReauth ? '重新授權原 QQ' : viewer.qq.bound ? '核對 QQ 綁定' : '綁定 QQ'}</Link>}
       {viewer.qq.needsReauth && <Text>尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</Text>}
     </Surface>

@@ -13,9 +13,10 @@ import { createSecurity, hash } from './security';
 import { registerAuth } from './auth';
 import { registerAccountDevices } from './account-devices';
 import { registerRegistrationSettings } from './registration-settings';
+import { registerAccountProfile } from './account-profile';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean }
 export function createApp(options: AppOptions) {
   const { db } = options;
   const now = options.now ?? (() => new Date());
@@ -23,7 +24,7 @@ export function createApp(options: AppOptions) {
   const security = createSecurity(db, origin, now, options.csrfSecret);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: request.url?.split('?')[0], remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
-  app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
+  app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
   // Register routes after plugins so their onRoute hooks enforce per-route limits.
   app.register(async function routes(app) {
@@ -41,6 +42,7 @@ export function createApp(options: AppOptions) {
     registerAuth(app, db, security, now, options.qq);
     registerAccountDevices(app, db, security, now);
     registerRegistrationSettings(app, db, security, now);
+    registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

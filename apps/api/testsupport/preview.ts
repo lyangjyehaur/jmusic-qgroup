@@ -16,7 +16,7 @@ db.prepare("INSERT INTO user_admin_roles VALUES('registration-admin',1,1,'synthe
 const app = createApp({ db, origin, staticRoot: resolve('.rebuild-dist/web'), qq: {
   clientId: 'synthetic-qq',
   authorize: state => origin + '/__test/qq?state=' + state,
-  exchange: async code => ({ subject: hash(code).slice(0, 32).toUpperCase(), nickname: '測試帳號 ' + code, avatarUrl: '', unionId: 'synthetic-' + code }),
+  exchange: async code => ({ subject: hash(code === 'auth-original-no-union' ? 'auth-original' : code).slice(0, 32).toUpperCase(), nickname: '測試帳號 ' + code, avatarUrl: code === 'avatar-source' ? 'https://q1.qlogo.cn/synthetic-avatar.png' : '', unionId: code === 'auth-original-no-union' ? '' : 'synthetic-' + code }),
 } });
 app.get('/__test/qq', async (request, reply) => {
   const { state, code = 'browser-default' } = request.query as Record<string, string>;

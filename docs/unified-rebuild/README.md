@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)及[名稱註冊檢查點](10-registration-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)及[稱呼／QQ 檢查點](11-profile-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -26,6 +26,7 @@
 | [共用帳號實作檢查點](08-identity-checkpoint.md) | QQ 授權、帳號切換、bot 資料保全證據及剩餘身分工作 |
 | [裝置授權實作檢查點](09-device-checkpoint.md) | 一次性授權、裝置撤權、帳號紀錄、跨分頁與相容性證據 |
 | [名稱註冊實作檢查點](10-registration-checkpoint.md) | 註冊開關、角色與設定競態、限流修正及隔離驗證 |
+| [稱呼與 QQ 實作檢查點](11-profile-checkpoint.md) | 稱呼與名冊／bot 差分、外部頭像、UnionID 提醒與恢復 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

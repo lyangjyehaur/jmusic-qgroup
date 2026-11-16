@@ -160,23 +160,31 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/account-profile.ts",
+        "apps/web/src/account-profile.tsx",
+        "apps/web/src/qq-profile.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/account-profile.test.ts",
+        "tools/rebuild/compare-nickname.py"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/account-profile.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "QQ 綁定不改 ID／稱呼、頭像安全過濾已測；改稱呼 API／介面與頭像展示／失敗退路待完成。"
+      "remaining": "稱呼、名冊版本／快照、去重恢復、QQ 暱稱分離與官方頭像備援已實作；正式遷移後資料、真實平台／完整可及性及語言驗收待完成。"
     },
     {
       "capability_id": "I07",
@@ -190,26 +198,33 @@
         "apps/web/src/auth.tsx",
         "apps/api/src/account-devices.ts",
         "apps/web/src/devices.tsx",
-        "apps/web/src/account-session.ts"
+        "apps/web/src/account-session.ts",
+        "apps/api/src/account-profile.ts",
+        "apps/web/src/account-profile.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
-        "apps/api/src/account-devices.test.ts"
+        "apps/api/src/account-devices.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/account-profile.test.ts",
+        "tools/rebuild/compare-nickname.py"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/account-devices.test.ts"
+        "apps/api/src/account-devices.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "apps/web/tests/devices.spec.ts"
+        "apps/web/tests/devices.spec.ts",
+        "apps/web/tests/account-profile.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "帳號 grant、切換、撤銷後替代帳號與跨分頁 scope／草稿隔離已測；完整離線／背景、多瀏覽器、真實遷移與舊入口驗收待完成。"
+      "remaining": "帳號 grant、切換、撤銷後替代帳號與跨分頁 scope／草稿隔離已測；完整離線／背景、多瀏覽器、真實遷移與舊入口驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。"
     },
     {
       "capability_id": "I08",
@@ -272,23 +287,31 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/account-profile.ts",
+        "apps/web/src/account-profile.tsx",
+        "apps/web/src/qq-profile.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/account-profile.test.ts",
+        "tools/rebuild/compare-nickname.py"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/account-profile.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "取得狀態、原 QQ 重授權入口、可選 UnionID 與不宣稱 bot 綁定已實作；提醒節流、真 QQ 與 bot 身分聯測待完成。"
+      "remaining": "UnionID 狀態、原 QQ bind 重授權、24 小時提醒節流及缺值／成功結果已測；真 QQ、全裝置／儲存限制與實際 bot 身份對應驗收待完成。"
     },
     {
       "capability_id": "I11",
@@ -388,26 +411,33 @@
         "apps/web/src/auth.tsx",
         "apps/api/src/account-devices.ts",
         "apps/web/src/devices.tsx",
-        "apps/web/src/account-session.ts"
+        "apps/web/src/account-session.ts",
+        "apps/api/src/account-profile.ts",
+        "apps/web/src/account-profile.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
-        "apps/api/src/account-devices.test.ts"
+        "apps/api/src/account-devices.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/account-profile.test.ts",
+        "tools/rebuild/compare-nickname.py"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/account-devices.test.ts"
+        "apps/api/src/account-devices.test.ts",
+        "apps/api/src/account-profile.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "apps/web/tests/devices.spec.ts"
+        "apps/web/tests/devices.spec.ts",
+        "apps/web/tests/account-profile.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。"
+      "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。"
     },
     {
       "capability_id": "E01",
