@@ -24,6 +24,7 @@ import { registerAdminMusicPins } from './admin-music-pins';
 import { registerMusicContact } from './music-contact';
 import { registerMusicFields } from './music-fields';
 import { activityViewer, registerActivityRoster } from './activity-roster';
+import { registerActivityDrafts } from './activity-drafts';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
@@ -67,6 +68,7 @@ export function createApp(options: AppOptions) {
     registerMusicContact(app, db, security, now);
     registerMusicFields(app, db, security, now);
     registerActivityRoster(app, db, security, options.qq?.clientId);
+    registerActivityDrafts(app, db, security, now, options.botEnabledDefault);
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

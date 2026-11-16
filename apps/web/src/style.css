@@ -114,3 +114,13 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .device-confirm { padding: 16px; margin-top: 16px; background: #e9efed; border-radius: 8px; }
 .device-confirm button { margin-right: 12px; margin-top: 8px; }
 .auth-panel button { max-width: 100%; height: auto; min-height: 44px; white-space: normal; overflow-wrap: anywhere; }
+/* Activity authoring keeps fields and recovery controls in one task. */
+.activity-editor { max-width: 58rem; }
+.activity-editor fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
+.activity-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr)); gap: 1rem; }
+.activity-editor input, .activity-editor textarea, .activity-editor select { min-width: 0; max-width: 100%; box-sizing: border-box; }
+.activity-editor textarea { width: 100%; }
+.activity-editor .account-field { margin-bottom: 1rem; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.draft-comparison dd { white-space: pre-wrap; overflow-wrap: anywhere; }
+.draft-remove { border-top: 1px solid var(--line, #dbe3ec); margin-top: 1.5rem; padding-top: 1rem; }

@@ -19,7 +19,7 @@ export function Activities() {
   const period = search.get('period') === 'history' ? 'history' : 'upcoming';
   const page = Math.max(1, Math.min(10000, Number(search.get('page')) || 1));
   const query = useQuery({ queryKey: ['activities', period, page], queryFn: () => api(`/activities?period=${period}&page=${page}`, ActivityList) });
-  return <><PageIntro title="活動" /><div className="page-actions"><Link to="/me/music">我的成分</Link></div>
+  return <><PageIntro title="活動" /><div className="page-actions"><Link to="/activities/new">新增活動草稿</Link><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link></div>
     <section aria-label="活動列表"><div className="tabs" aria-label="活動篩選">{[['upcoming', '近期活動'], ['history', '往期與歸檔']].map(([key, label]) => <Button key={key} variant={period === key ? 'primary' : 'ghost'} aria-pressed={period === key} onClick={() => setSearch({ period: key! })}>{label}</Button>)}</div>
       {query.isPending ? <Notice>正在讀取活動…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : query.data.events.length ? <div className="event-grid">{query.data.events.map(event => <ActivityCard key={event.id} event={event} />)}</div> : <Surface><EmptyState motif="paper" title="這裡還沒有公開活動" description="邀請限定的活動不會出現在公開列表。" /></Surface>}
       {query.data && <div className="pagination">{page > 1 && <Button variant="secondary" onClick={() => setSearch({ period, page: String(page - 1) })}>上一頁</Button>}{query.data.hasMore && <Button variant="secondary" onClick={() => setSearch({ period, page: String(page + 1) })}>下一頁</Button>}</div>}

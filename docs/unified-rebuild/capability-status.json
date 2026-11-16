@@ -621,13 +621,26 @@
       "new_entry": "活動表單",
       "required_behavior": "類別、地點、說明、開始、時長、時區、截止、容量、最低人數、費用完整",
       "legacy_evidence_group": "活動",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "類別、地點、說明、開始、時長、時區、截止、容量、最低人數、費用完整"
+      "implementation": [
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-drafts.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/web/src/activity-drafts.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-drafts.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作草稿安排建立／續編、六類協議值、時長預設、UTC 秒時間與有界驗證、成團／容量及發起者設定限制；已發布安排、完整時區輸入、日期防誤與全部操作仍待完成。"
     },
     {
       "capability_id": "E03",
@@ -635,13 +648,26 @@
       "new_entry": "我的發起",
       "required_behavior": "草稿限有權者；發布驗證安排並自動報發起者，發起者可按規則退出；舊 API 的明確 join_owner=false 兼容語意有對應測試",
       "legacy_evidence_group": "活動、名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "草稿限有權者；發布驗證安排並自動報發起者，發起者可按規則退出；舊 API 的明確 join_owner=false 兼容語意有對應測試"
+      "implementation": [
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-drafts.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/web/src/activity-drafts.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-drafts.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作伺服器草稿、owner／明確活動 scopes、私人分頁與原子建立；原 Python 建立／編輯差分及草稿不報名、不發布條件、不排群通知已測。發布、自動本人報名、發布後退出及舊 API join_owner=false 相容仍待完成。"
     },
     {
       "capability_id": "E04",
@@ -729,13 +755,26 @@
       "new_entry": "活動管理",
       "required_behavior": "取消須原因、可處理取消損失；歸檔不刪帳；remove 保留原資料／款項阻擋條件，已刪不出現在列表",
       "legacy_evidence_group": "活動",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "取消須原因、可處理取消損失；歸檔不刪帳；remove 保留原資料／款項阻擋條件，已刪不出現在列表"
+      "implementation": [
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-drafts.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/web/src/activity-drafts.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-drafts.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "草稿明確確認刪除、原 revision、帳務／他人全部報名／協辦阻擋、只標 deleted 與取消未送工作、刪除後結果查回已實作；取消、歸檔／取消歸檔與非草稿刪除流程仍待完成。"
     },
     {
       "capability_id": "E10",
@@ -2809,13 +2848,26 @@
       "new_entry": "全站表單",
       "required_behavior": "活動／結算／款項及投票恢復保原版本；明確恢復，不沿用舊預覽 token",
       "legacy_evidence_group": "恢復、投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "活動／結算／款項及投票恢復保原版本；明確恢復，不沿用舊預覽 token"
+      "implementation": [
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-drafts.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/web/src/activity-drafts.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-drafts.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-drafts.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "活動草稿已有按帳號／活動隔離的 sessionStorage 原稿、原因、原 revision 與原 pending payload，離站保稿、損壞先保全及登出清理已測；尚未完成 IndexedDB、明確選擇恢復、跨瀏覽器／舊草稿及結算／款項／投票／圖片恢復。"
     },
     {
       "capability_id": "O05",
@@ -2828,23 +2880,31 @@
         "apps/web/tests/unified.spec.ts",
         "apps/web/src/music-editor.tsx",
         "apps/api/src/privacy.ts",
-        "apps/web/src/my-privacy.tsx"
+        "apps/web/src/my-privacy.tsx",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-drafts.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/web/src/activity-drafts.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/activity-drafts.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/activity-drafts.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/activity-drafts.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/privacy.spec.ts"
+        "apps/web/tests/privacy.spec.ts",
+        "apps/web/tests/activity-drafts.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂保存與隱私刪除先持久化、原 key／payload、刪除後無登入最小收據已測；其餘 mutations／結果查詢／create intent 待完成。"
+      "remaining": "音樂／隱私及活動草稿先持久化、原 key／payload 重試；草稿建立不重複、刪除後最小結果查詢、較新狀態重新讀取及撤權重驗已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。"
     },
     {
       "capability_id": "O06",
@@ -2857,23 +2917,31 @@
         "apps/api/src/repositories.ts",
         "apps/api/src/app.test.ts",
         "apps/api/src/privacy.ts",
-        "apps/web/src/my-privacy.tsx"
+        "apps/web/src/my-privacy.tsx",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-drafts.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/web/src/activity-drafts.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/activity-drafts.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/activity-drafts.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/privacy.test.ts"
+        "apps/api/src/privacy.test.ts",
+        "apps/api/src/activity-drafts.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/privacy.spec.ts"
+        "apps/web/tests/privacy.spec.ts",
+        "apps/web/tests/activity-drafts.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂保存／刪除、稱呼的去重、版本與交易回滾已測；其他業務／通知完整交易與稽核待完成。"
+      "remaining": "音樂、稱呼及活動草稿去重、單調版本、追加稽核、業務／權限／結果完整回滾及 optional bot savepoint 已測；已發布安排、條件、報名與其他通知交易仍待完成。"
     },
     {
       "capability_id": "O07",

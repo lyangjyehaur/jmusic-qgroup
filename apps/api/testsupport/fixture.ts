@@ -8,12 +8,12 @@ export function fixture(db: DB) {
     db.prepare('INSERT INTO browser_sessions VALUES(?,?,?)').run(hash(token!), id, created);
   }
   const events = [
-    ['listen', '週末一起聽日系音樂', '音樂聚會', '台北 · 河岸小屋', 'public', 'scheduled', 'open'],
-    ['karaoke', '冬日的第一場合唱', '卡拉 OK', '台中 · 日光包廂', 'public', 'scheduled', 'open'],
-    ['past', '上次的相聚', '音樂聚會', '台北', 'public', 'ended', 'open'],
-    ['invite', '私人活動', '音樂聚會', '私人地點', 'invite', 'scheduled', 'open'],
-    ['draft', '未發布活動', '音樂聚會', '私人地點', 'public', 'draft', 'open'],
-    ['deleted', '已刪除活動', '音樂聚會', '私人地點', 'public', 'cancelled', 'deleted'],
+    ['listen', '週末一起聽日系音樂', '其他', '台北 · 河岸小屋', 'public', 'scheduled', 'open'],
+    ['karaoke', '冬日的第一場合唱', '约K', '台中 · 日光包廂', 'public', 'scheduled', 'open'],
+    ['past', '上次的相聚', '其他', '台北', 'public', 'ended', 'open'],
+    ['invite', '私人活動', '其他', '私人地點', 'invitation', 'scheduled', 'open'],
+    ['draft', '未發布活動', '其他', '私人地點', 'public', 'draft', 'closed'],
+    ['deleted', '已刪除活動', '其他', '私人地點', 'public', 'cancelled', 'deleted'],
   ];
   for (const [id, title, category, location, visibility, lifecycle, status] of events) {
     db.prepare(`INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,status,created_at,visibility,lifecycle,duration_hours,timezone)
