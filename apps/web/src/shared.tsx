@@ -9,6 +9,6 @@ export function Notice({ children }: { children: ReactNode }) { return <div clas
 export function Failure({ error, retry }: { error: Error; retry: () => void }) {
   return <Surface className="failure"><Text role="alert">{error.message}</Text><Button variant="secondary" onClick={retry}>重新讀取</Button></Surface>;
 }
-export function PageIntro({ eyebrow, title, children }: { eyebrow: string; title: string; children: ReactNode }) {
-  return <div className="intro"><div className="eyebrow">{eyebrow}</div><Heading level={1}>{title}</Heading><Text tone="muted">{children}</Text></div>;
+export function PageIntro({ title, children }: { title: string; children?: ReactNode }) {
+  return <div className="intro"><Heading level={1}>{title}</Heading>{children && <Text tone="muted">{children}</Text>}</div>;
 }

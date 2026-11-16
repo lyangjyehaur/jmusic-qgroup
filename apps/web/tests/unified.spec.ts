@@ -6,12 +6,12 @@ async function login(context: BrowserContext, user = 'alice') {
 test('guest browses activity and music in one responsive shell', async ({ page }) => {
   const errors: string[] = []; page.on('pageerror', e => errors.push(e.message));
   await page.goto('/activities');
-  await expect(page.getByRole('heading', { name: '下一次，一起。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '活動', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '私人活動' })).toHaveCount(0);
   await page.getByRole('heading', { name: '週末一起聽日系音樂' }).getByRole('link').click();
   await expect(page.getByRole('heading', { name: '活動安排' })).toBeVisible();
-  await page.getByRole('link', { name: '整理成分，再回活動' }).click();
-  await expect(page.getByRole('heading', { name: '先登入，再保存你的喜歡' })).toBeVisible();
+  await page.getByRole('link', { name: '編輯我的成分' }).click();
+  await expect(page.getByRole('heading', { name: '登入後才能保存成分' })).toBeVisible();
   await page.getByRole('navigation', { name: '主要導覽' }).getByRole('link', { name: '音樂', exact: true }).click();
   await page.getByRole('searchbox').fill('YOASOBI');
   await expect(page.locator('.entry')).toHaveCount(1);
@@ -29,7 +29,7 @@ test('guest browses activity and music in one responsive shell', async ({ page }
 test('scoped draft survives refresh, preserves activity return, and safely retries a lost response', async ({ context, page }) => {
   await login(context);
   await page.goto('/me/music?from=%2Factivities%2Flisten');
-  await expect(page.getByRole('heading', { name: '把喜歡，留在這裡。' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '我的成分', exact: true })).toBeVisible();
   await page.getByRole('button', { name: 'J-POP', exact: true }).click();
   await page.getByRole('button', { name: 'YOASOBI', exact: true }).click();
   await page.getByLabel('YOASOBI喜歡程度').selectOption('4');
@@ -45,7 +45,7 @@ test('scoped draft survives refresh, preserves activity return, and safely retri
   await expect(page.getByText('尚未確認保存結果。', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '確認保存結果', exact: true }).click();
-  await expect(page.getByText('已保存，活動和音樂頁會沿用同一份成分。')).toBeVisible();
+  await expect(page.getByText('已保存。')).toBeVisible();
   await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
   await page.screenshot({ path: 'test-results/unified-music-desktop.png', fullPage: true });
   await page.getByRole('link', { name: '回到剛才的活動' }).click();
@@ -71,7 +71,7 @@ test('unsaved navigation is explicit and mobile selection stays usable', async (
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-music-mobile.png', fullPage: true });
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
-  await expect(page.getByText('已保存，活動和音樂頁會沿用同一份成分。')).toBeVisible();
+  await expect(page.getByText('已保存。')).toBeVisible();
 });
 test('storage failure blocks sending and damaged drafts are preserved for recovery', async ({ context, page }) => {
   await login(context, 'bob');
@@ -85,7 +85,7 @@ test('storage failure blocks sending and damaged drafts are preserved for recove
   expect(writes).toBe(0);
   const clean = await context.newPage();
   await clean.goto('/me/music');
-  await expect(clean.getByRole('heading', { name: '把喜歡，留在這裡。' })).toBeVisible();
+  await expect(clean.getByRole('heading', { name: '我的成分', exact: true })).toBeVisible();
   const viewer = await (await context.request.get('/api/v2/session')).json();
   await clean.evaluate(scope => sessionStorage.setItem('qgroup:rebuild:music:v1:' + scope, 'damaged synthetic draft'), viewer.scope);
   await clean.reload();
@@ -106,5 +106,5 @@ test('a concurrent profile update returns conflict without replacing the local s
   await expect(page.getByRole('button', { name: 'Eve', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '核對最新版本，保留我的選擇' }).click();
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
-  await expect(page.getByText('已保存，活動和音樂頁會沿用同一份成分。')).toBeVisible();
+  await expect(page.getByText('已保存。')).toBeVisible();
 });
