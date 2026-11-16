@@ -162,9 +162,13 @@ TypeScript 使用整數分及 BigInt 有理數做比例和最大餘數分攤。J
 
 ## 7. bot 與外部依賴
 
+現有 bot 全功能可用是新系統的硬性條件。相容性工作從 P1 的 schema／契約設計開始，P3／P4 的網站業務同步驗證通知與連結，P5 完成 worker 實作，P6／P7 以實際候選版本組合驗收及確認。B01–B15 與跨領域 bot 依賴都須覆蓋；網站改寫或 TypeScript 化不能造成指令、按鈕、設定、投遞或連線功能退化。
+
 最終 TypeScript worker 重建官方 WebSocket session／Resume、心跳 ACK、access token、受控重連、被動回覆、Markdown 模板／按鈕、事件去重與 outbox claim。保留實際發送、模擬、失敗、作廢和已送本文，不承諾恰好一次投遞。
 
 過渡期舊 Python bot 與新版網站只在 schema／outbox／設定與網址已驗證相容時混跑；不可驗證則安排 `both` 成套切換。新舊 worker 不同時領同一批工作，不為了對照測試連到真實群。縮寫查詢的輸入分段、引用消息、完整結果與敏感詞邊界處理也在保留範圍。
+
+新 worker 未完成完整驗收前保留現有 bot；任一現有 bot 功能缺失或未驗證就延後正式切換。舊 bot 的相容性也須有實際證據，不能因原表仍在或健康檢查成功就放行。保留 Python bot 的過渡安排不代表最終 TypeScript worker 已完成。
 
 合作方 v1 保留 Bearer 驗證、停用行為、GET／HEAD、分頁／篩選、公開範圍、CORS／快取行為、`user_id`／`attendee_id` 與版本。內部成分讀取不再經「本站 → 本站公開 API → 成分服務」繞行，直接用 repository 和原存取規則；外部 v1 仍可使用。
 
