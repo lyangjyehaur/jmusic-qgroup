@@ -5,12 +5,13 @@ import { fileURLToPath } from 'node:url';
 
 // A fresh process per test prevents one scenario consuming another's real IP quotas
 // or leaving mutable synthetic accounts/settings behind. Runtime limits stay enabled.
-export const test = base.extend<{ preview: void; musicHistory: boolean }>({
+export const test = base.extend<{ preview: void; musicHistory: boolean; rosterExamples: boolean }>({
   musicHistory: [false, { option: true }],
-  preview: [async ({ musicHistory }, use) => {
+  rosterExamples: [false, { option: true }],
+  preview: [async ({ musicHistory, rosterExamples }, use) => {
     const preview = spawn(process.execPath, ['--import', 'tsx', 'apps/api/testsupport/preview.ts'], {
       cwd: fileURLToPath(new URL('../../../', import.meta.url)), stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-      env: { ...process.env, REBUILD_TEST_MUSIC_HISTORY: musicHistory ? '1' : '0' },
+      env: { ...process.env, REBUILD_TEST_MUSIC_HISTORY: musicHistory ? '1' : '0', REBUILD_TEST_ROSTER: rosterExamples ? '1' : '0' },
     });
     let output = '';
     preview.stdout?.on('data', chunk => { output = (output + String(chunk)).slice(-4000); });

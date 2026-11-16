@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text, TextField } from 'yahha-ui';
 import { MemberMusicProfile } from '@qgroup/contracts';
@@ -26,7 +26,8 @@ function Lookup({ viewer }: { viewer: Member }) {
 }
 export function PersonMusic() {
   const { id = '' } = useParams();
-  return <><PageIntro title="同好成分" /><Link className="back" to="/people">回到同好查詢</Link><MusicMemberAccess>{viewer => <Person key={viewer.scope + ':' + id} viewer={viewer} id={id} />}</MusicMemberAccess></>;
+  const [search]=useSearchParams();const from=search.get('from');const activityReturn=from&&/^\/activities\/[^/?#]+#participants$/.test(from)?from:null;
+  return <><PageIntro title="同好成分" /><div className="page-actions">{activityReturn&&<Link to={activityReturn}>回到活動名單</Link>}<Link to="/people">回到同好查詢</Link></div><MusicMemberAccess>{viewer => <Person key={viewer.scope + ':' + id} viewer={viewer} id={id} />}</MusicMemberAccess></>;
 }
 function Person({ viewer, id }: { viewer: Member; id: string }) {
   const profile = useQuery({ queryKey: ['private', viewer.scope, 'member-music', id], queryFn: () => api('/music/profiles/' + encodeURIComponent(id), MemberMusicProfile, { headers: { 'X-Account-Scope': viewer.scope } }) });

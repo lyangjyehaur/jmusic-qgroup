@@ -3,6 +3,15 @@
 body { margin: 0; }
 a { color: #285b70; text-underline-offset: .23em; }
 button, input, select, textarea { font: inherit; }
+.roster-title { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; }
+.activity-roster { list-style: none; margin: 0; padding: 0; }
+.activity-roster > li { display: flex; align-items: start; gap: 12px; padding: 18px 0; border-top: 1px solid #dce5df; }
+.roster-person { min-width: 0; overflow-wrap: anywhere; flex: 1; }
+.roster-person p { margin: 0 0 6px; }
+.attendee-music-dialog { width: min(560px, calc(100% - 32px)); max-height: 85dvh; margin: auto; padding: 24px; border: 1px solid #bfcfc8; border-radius: 16px; background: #fffefb; color: #293b43; overflow-wrap: anywhere; }
+.attendee-music-dialog::backdrop { background: rgb(20 35 40 / 45%); }
+.attendee-music-dialog h2 { margin: 0; font-size: 22px; }
+.attendee-music-picks { padding-left: 22px; }
 button, a, input, select { -webkit-tap-highlight-color: transparent; }
 :focus-visible { outline: 3px solid #386f8b; outline-offset: 4px; }
 .header { max-width: 1280px; margin: auto; display: flex; align-items: center; gap: 40px; padding: 28px 40px; border-bottom: 1px solid #dddcd4; }

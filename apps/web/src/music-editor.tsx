@@ -29,7 +29,7 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
   const [saved, setSaved] = useState(initial);
   const [params] = useSearchParams();
   const from = params.get('from');
-  const returnTo = from && /^\/activities\/[^/?#]+$/.test(from) ? from : null;
+  const returnTo = from && /^\/activities\/[^/?#]+(?:#participants)?$/.test(from) ? from : null;
   const queryClient = useQueryClient();
   const dirty = !!draft.requestKey || draft.revision !== (saved?.revision ?? 0) || JSON.stringify(draft.selections) !== JSON.stringify(saved?.selections ?? []);
   const blocker = useBlocker(dirty);

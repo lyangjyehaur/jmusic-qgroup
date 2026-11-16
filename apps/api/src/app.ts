@@ -23,6 +23,7 @@ import { registerAdminMusic } from './admin-music';
 import { registerAdminMusicPins } from './admin-music-pins';
 import { registerMusicContact } from './music-contact';
 import { registerMusicFields } from './music-fields';
+import { activityViewer, registerActivityRoster } from './activity-roster';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
@@ -65,13 +66,14 @@ export function createApp(options: AppOptions) {
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);
     registerMusicFields(app, db, security, now);
+    registerActivityRoster(app, db, security, options.qq?.clientId);
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());
     });
     app.get('/api/v2/activities/:id', async request => {
       const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
-      return getActivity(db, id, now());
+      return db.transaction(()=>getActivity(db, id, now(), activityViewer(security, request)))();
     });
     app.get('/api/v2/music/entries', async () => ({ entries: catalog(db) }));
     app.get('/api/v2/me/music', async request => getProfile(db, security.scopedMember(request).id));

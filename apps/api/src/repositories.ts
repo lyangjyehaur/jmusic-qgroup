@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import type { ActivityView, MusicEntry, MusicProfile, SaveProfileInput } from '@qgroup/contracts';
 import { activityState, DomainError, validateSelections } from '@qgroup/domain';
+import { requireActivityAccess } from './activity-access';
 
 interface EventRow {
   id: string; title: string; category: string; location: string; starts_at: string; deadline: string;
@@ -9,11 +10,12 @@ interface EventRow {
   minimum_participants: number; lifecycle: string; archived_at: string | null; status: string;
   registration_open: number; confirmed: number; waiting: number; tentative: number;
 }
-const publicEvents = `SELECT e.*,
+const eventProjection = `SELECT e.*,
  (SELECT COUNT(*) FROM attendees a WHERE a.event_id=e.id AND a.status='confirmed') AS confirmed,
  (SELECT COUNT(*) FROM attendees a WHERE a.event_id=e.id AND a.status='waiting') AS waiting,
  (SELECT COUNT(*) FROM attendees a WHERE a.event_id=e.id AND a.status='tentative') AS tentative
- FROM events e WHERE e.visibility='public' AND e.lifecycle!='draft' AND e.status!='deleted'`;
+ FROM events e`;
+const publicEvents = eventProjection + " WHERE e.visibility='public' AND e.lifecycle!='draft' AND e.status!='deleted'";
 function serializeEvent(row: EventRow, now: Date): ActivityView {
   return { id: row.id, title: row.title, category: row.category, location: row.location, startsAt: row.starts_at,
     deadline: row.deadline, durationHours: row.duration_hours, timezone: row.timezone,
@@ -27,8 +29,9 @@ export function listActivities(db: DB, page: number, period: 'upcoming' | 'histo
   const rows = db.prepare(publicEvents + ' AND ' + condition + ` ORDER BY e.starts_at ${period === 'history' ? 'DESC' : 'ASC'},e.id LIMIT 21 OFFSET ?`).all((page - 1) * 20) as EventRow[];
   return { events: rows.slice(0, 20).map(r => serializeEvent(r, now)), page, hasMore: rows.length > 20 };
 }
-export function getActivity(db: DB, id: string, now: Date) {
-  const row = db.prepare(publicEvents + ' AND e.id=?').get(id) as EventRow | undefined;
+export function getActivity(db: DB, id: string, now: Date, viewerId: string | null = null) {
+  requireActivityAccess(db,id,viewerId);
+  const row = db.prepare(eventProjection + ' WHERE e.id=?').get(id) as EventRow | undefined;
   if (!row) throw new DomainError('NOT_FOUND', '找不到活動或尚未公開', 404);
   return serializeEvent(row, now);
 }

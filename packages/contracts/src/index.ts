@@ -22,6 +22,15 @@ export const MusicFields = z.object({ profileId: z.string(), name: z.string(), n
 export const SaveMusicFields = z.object({ profileId: z.string().min(1).max(80), musicEpoch: z.number().int().min(0), revision: z.number().int().min(0), name: z.string().max(16384), note: z.string().max(16384), gender: z.string().max(16384), genderPublic: z.boolean() }).strict();
 export const LookupMusicProfile = z.object({ query: z.string().trim().min(1).max(80) }).strict();
 export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), gender: z.string(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
+export const ActivityRoster = z.object({eventId:z.string(),revision:z.number().int(),participants:z.array(z.object({
+  id:z.string(),name:z.string(),note:z.string(),status:z.enum(['confirmed','waiting','tentative']),position:z.number().int(),waitingPosition:z.number().int().nullable(),
+  isMe:z.boolean(),isGuest:z.boolean(),managedByMe:z.boolean(),managerName:z.string(),payerName:z.string(),withdrawalRequested:z.boolean(),confirmationState:z.string(),attendance:z.string(),avatarUrl:z.string(),
+}))});
+export const AttendeeMusic = z.discriminatedUnion('state',[
+  z.object({state:z.literal('unlinked')}),
+  z.object({state:z.literal('viewer_unlinked')}),
+  z.object({state:z.literal('ready'),profileId:z.string(),name:z.string(),isSelf:z.boolean(),picks:z.array(Selection.extend({name:z.string(),kind:z.enum(['main','sub']),shared:z.boolean()}))}),
+]);
 export const PRIVACY_VERSION = '2026-11-10';
 const sessionSecurity = { scope: z.string(), csrf: z.string(), qqEnabled: z.boolean(), privacyVersion: z.string(), privacyAccepted: z.boolean(), nameRegistrationEnabled: z.boolean() };
 export const QQSummary = z.object({ bound: z.boolean(), nickname: z.string(), avatarUrl: z.string(), unionidBound: z.boolean(), needsReauth: z.boolean() });

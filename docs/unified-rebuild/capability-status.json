@@ -71,26 +71,31 @@
         "apps/api/src/security.ts",
         "apps/web/src/auth.tsx",
         "apps/api/src/registration-settings.ts",
-        "apps/web/src/registration.tsx"
+        "apps/web/src/registration.tsx",
+        "apps/web/src/activity-roster.tsx",
+        "apps/web/src/people.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/activity-roster.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/activity-roster.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "apps/web/tests/registration.spec.ts"
+        "apps/web/tests/registration.spec.ts",
+        "apps/web/tests/activity-roster.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。"
+      "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。 已補名單浮層、完整卡與新成分保存的活動錨點返回；完整邀請／報名／分房上下文仍待完成。"
     },
     {
       "capability_id": "I04",
@@ -1018,13 +1023,30 @@
       "new_entry": "活動名單",
       "required_behavior": "同名各一筆；浮層只屬該人，同行不借代報者偏好，關閉不加歷史",
       "legacy_evidence_group": "名冊、成分卡",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "同名各一筆；浮層只屬該人，同行不借代報者偏好，關閉不加歷史"
+      "implementation": [
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-roster.ts",
+        "apps/api/src/repositories.ts",
+        "apps/web/src/activities.tsx",
+        "apps/web/src/activity-roster.tsx",
+        "apps/web/src/people.tsx",
+        "packages/contracts/src/index.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-roster.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-roster.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-roster.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-roster.spec.ts",
+        "docs/unified-rebuild/20-roster-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作同名獨立列、目前官方頭像備援、單一成分浮層／共同喜好、同行隔離、關閉不加歷史、完整卡返回與跨頁登出；名冊全部寫操作、舊入口、正式資料／真實平台與完整無障礙驗收仍待完成。"
     },
     {
       "capability_id": "R13",
@@ -1270,13 +1292,30 @@
       "new_entry": "活動分房",
       "required_behavior": "對應穩定 user／attendee；找不到成分仍保留原報名者",
       "legacy_evidence_group": "分房演算、成分身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "對應穩定 user／attendee；找不到成分仍保留原報名者"
+      "implementation": [
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-roster.ts",
+        "apps/api/src/repositories.ts",
+        "apps/web/src/activities.tsx",
+        "apps/web/src/activity-roster.tsx",
+        "apps/web/src/people.tsx",
+        "packages/contracts/src/index.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-roster.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-roster.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-roster.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-roster.spec.ts",
+        "docs/unified-rebuild/20-roster-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "已按穩定 attendee／user 讀活動名單與共同成分、未認領／無成分保留、權限／來源故障與返回動線已有合成差分；分房整批輸入、成分更新版本核對、試算／正式採用、正式副本與實際平台待完成。"
     },
     {
       "capability_id": "P09",
