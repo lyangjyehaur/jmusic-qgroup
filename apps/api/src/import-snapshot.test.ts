@@ -87,6 +87,9 @@ describe('offline paired snapshot import', () => {
     const s = setup(); await importSnapshot(s.source, s.destination, stamp); const db = openDatabase(join(s.destination, 'unified.sqlite3')); const app = createApp({ db, origin: 'https://rebuild.example' }); await app.ready();
     try {
       const cookie = 'kanban_session=fixture-alice'; const session = (await app.inject({ url: '/api/v2/session', headers: { cookie } })).json();
+      const history = await app.inject({ url: '/api/v2/admin/music/' + profileId('10003') + '/history', headers: { cookie, 'x-account-scope': session.scope } });
+      expect(history.statusCode, history.body).toBe(200); expect(history.json().history).toMatchObject([{ source: 'legacy', legacyId: 1, revision: null, beforeUserId: 'alice', afterUserId: null, actor: '舊版管理員', createdSeconds: 123, createdAt: '1970-01-01T00:02:03.000Z' }]);
+      expect(history.body).not.toContain('synthetic-admin');
       const before = (await app.inject({ url: '/api/v2/me/music', headers: { cookie, 'x-account-scope': session.scope } })).json(); expect(before.id).toBe(profileId('10001'));
       const response = await app.inject({ method: 'PUT', url: '/api/v2/me/music', payload: { profileId: before.id, musicEpoch: 0, revision: 0, selections: [{ entryId: 'e-one', level: 2 }] }, headers: { cookie, origin: 'https://rebuild.example', 'x-account-scope': session.scope, 'x-csrf-token': session.csrf, 'idempotency-key': randomUUID() } }); expect(response.statusCode).toBe(200);
       const result = await importSnapshot(s.source, s.destination, stamp); expect(result.status).toBe('already_imported'); expect(db.prepare('SELECT revision FROM music_profiles WHERE id=?').get(before.id)).toEqual({ revision: 1 }); expect(db.prepare('SELECT level FROM music_selections WHERE profile_id=?').get(before.id)).toEqual({ level: 2 });
@@ -182,7 +185,7 @@ describe('offline paired snapshot import', () => {
     await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Referenced board image is missing'); expect(existsSync(s.destination)).toBe(false);
     mkdirSync(join(s.source, 'images', image.slice(0, 2))); writeFileSync(join(s.source, path), bytes);
     const output = execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' }); const result = JSON.parse(output);
-    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 6, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
+    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 7, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
     expect(readFileSync(join(s.destination, path))).toEqual(bytes);
     const second = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' })); expect(second.status).toBe('already_imported');
   });

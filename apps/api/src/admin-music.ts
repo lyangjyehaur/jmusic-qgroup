@@ -7,9 +7,10 @@ import type { AdminSecurity } from './admin-security';
 import { hash } from './security';
 import { invalidateMusicOwnership } from './music-ownership';
 import { getProfile } from './repositories';
+import { musicOwnershipHistory } from './music-admin-history';
 
 type Profile = z.infer<typeof AdminMusicProfile>;
-const profileId = (params: unknown) => z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(params).id;
+export const musicAdminProfileId = (params: unknown) => z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(params).id;
 const projection = `SELECT p.id,COALESCE(NULLIF(l.name,''),u.nickname,'未命名成分') AS name,COALESCE(l.legacy_key,'') AS legacyKey,
   CASE WHEN l.pin_hash!='' THEN 1 ELSE 0 END AS hasPin,p.user_id AS userId,u.nickname,p.revision,
   CASE WHEN p.user_id IS NULL THEN 'unlinked' WHEN l.ownership_source='oauth' THEN 'oauth'
@@ -20,13 +21,13 @@ function serialize(db: DB, row: { id: string; name: string; legacyKey: string; h
   return { id: row.id, name: row.name, legacyKey: row.legacyKey, hasPin: !!row.hasPin, owner: row.userId ? { id: row.userId, nickname: row.nickname ?? '未設定稱呼' } : null, revision: row.revision, status: row.status,
     selections: db.prepare(`SELECT s.entry_id AS entryId,e.name,e.kind,s.level FROM music_selections s JOIN music_entries e ON e.id=s.entry_id WHERE s.profile_id=? ORDER BY s.position`).all(row.id) as Profile['selections'] };
 }
-function profile(db: DB, id: string) {
+export function adminMusicProfile(db: DB, id: string) {
   const row = db.prepare(projection + ' WHERE p.id=? AND p.erased_at IS NULL').get(id) as Parameters<typeof serialize>[1] | undefined;
   if (!row) throw new DomainError('PROFILE_NOT_FOUND', '成分不存在或已刪除', 404);
   return serialize(db, row);
 }
 function preview(db: DB, id: string, targetUserId: string | null) {
-  const music = profile(db, id);
+  const music = adminMusicProfile(db, id);
   const target = targetUserId === null ? null : db.prepare('SELECT id,nickname FROM users WHERE id=? AND NOT EXISTS(SELECT 1 FROM privacy_requests WHERE user_id=users.id)').get(targetUserId) as { id: string; nickname: string } | undefined;
   if (target === undefined) throw new DomainError('USER_NOT_FOUND', '目標帳號不存在或已關閉', 404);
   if (target) {
@@ -49,12 +50,12 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
     const rows = db.prepare(sql + ' ORDER BY id LIMIT 20 OFFSET ?').all(...bindings, input.offset) as Parameters<typeof serialize>[1][];
     return { profiles: rows.map(row => serialize(db, row)), total, offset: input.offset, limit: 20 };
   });
-  app.get('/api/v2/admin/music/:id', async request => { admin.authority(request); return profile(db, profileId(request.params)); });
+  app.get('/api/v2/admin/music/:id', async request => { admin.authority(request); return adminMusicProfile(db, musicAdminProfileId(request.params)); });
   app.post('/api/v2/admin/music/:id/link-preview', async request => db.transaction(() => {
-    admin.authority(request, true); return preview(db, profileId(request.params), PreviewMusicLink.parse(request.body).targetUserId);
+    admin.authority(request, true); return preview(db, musicAdminProfileId(request.params), PreviewMusicLink.parse(request.body).targetUserId);
   }).deferred());
   app.post('/api/v2/admin/music/:id/link', async request => db.transaction(() => {
-    const access = admin.authority(request, true); const id = profileId(request.params); const input = SaveMusicLink.parse(request.body);
+    const access = admin.authority(request, true); const id = musicAdminProfileId(request.params); const input = SaveMusicLink.parse(request.body);
     const key = z.string().uuid().parse(request.headers['idempotency-key']); const signature = hash('v2:admin:music-link:' + id + ':' + JSON.stringify(input));
     const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
     if (prior) { if (prior.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409); return { ok: true }; }
@@ -80,11 +81,8 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
     return { ok: true };
   }).immediate());
   app.get('/api/v2/admin/music/:id/history', async request => {
-    admin.authority(request); const id = profileId(request.params); profile(db, id);
-    const { before } = z.object({ before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).default(Number.MAX_SAFE_INTEGER) }).strict().parse(request.query);
-    const rows = db.prepare(`SELECT h.id,h.revision,h.before_user_id AS beforeUserId,h.after_user_id AS afterUserId,h.reason,h.created_at AS createdAt,
-      CASE WHEN h.actor_ref LIKE 'account:%' THEN COALESCE(u.nickname,'帳號管理員') ELSE '救援憑證' END AS actor
-      FROM music_ownership_history h LEFT JOIN users u ON h.actor_ref='account:'||u.id WHERE h.profile_id=? AND h.id<? ORDER BY h.id DESC LIMIT 51`).all(id, before) as (z.infer<typeof import('@qgroup/contracts').AdminMusicHistory>['history'][number])[];
-    return { history: rows.slice(0,50), nextCursor: rows.length > 50 ? rows[49]!.id : null };
+    admin.authority(request); const id = musicAdminProfileId(request.params); adminMusicProfile(db, id);
+    const { before } = z.object({ before: z.coerce.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER).default(Number.MAX_SAFE_INTEGER) }).strict().parse(request.query);
+    return musicOwnershipHistory(db, id, before);
   });
 }

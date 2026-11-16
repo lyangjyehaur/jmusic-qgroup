@@ -2279,24 +2279,28 @@
         "apps/api/src/admin-music.ts",
         "apps/api/src/music-ownership.ts",
         "apps/web/src/admin-music.tsx",
-        "packages/database/src/schema-v6.ts"
+        "packages/database/src/schema-v6.ts",
+        "apps/api/src/music-admin-history.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-music.test.ts"
+        "apps/api/src/admin-music.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/admin-music.test.ts",
         "packages/database/src/ownership-migration.test.ts",
-        "docs/unified-rebuild/17-ownership-checkpoint.md"
+        "docs/unified-rebuild/17-ownership-checkpoint.md",
+        "docs/unified-rebuild/18-pin-history-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-music.spec.ts"
+        "apps/web/tests/admin-music.spec.ts",
+        "apps/web/tests/admin-music-pin.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史與 Python 差分已驗證；原 link_audit 合流、重建／回退投影、舊 adapter 及正式副本待完成。"
+      "remaining": "預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史、原 link_audit 分頁合流與 Python 差分已驗證；重建／回退投影、舊 adapter 及正式副本待完成。"
     },
     {
       "capability_id": "A07",
@@ -2367,24 +2371,32 @@
         "apps/api/src/admin-music.ts",
         "apps/api/src/music-ownership.ts",
         "apps/web/src/admin-music.tsx",
-        "packages/database/src/schema-v6.ts"
+        "packages/database/src/schema-v6.ts",
+        "apps/api/src/music-admin-history.ts",
+        "apps/api/src/admin-music-pins.ts",
+        "apps/web/src/admin-music-pin.tsx",
+        "packages/database/src/schema-v7.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-music.test.ts"
+        "apps/api/src/admin-music.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/admin-music.test.ts",
         "packages/database/src/ownership-migration.test.ts",
-        "docs/unified-rebuild/17-ownership-checkpoint.md"
+        "docs/unified-rebuild/17-ownership-checkpoint.md",
+        "docs/unified-rebuild/18-pin-history-checkpoint.md",
+        "packages/database/src/pin-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-music.spec.ts"
+        "apps/web/tests/admin-music.spec.ts",
+        "apps/web/tests/admin-music-pin.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "無成分管理員可查看原成分、詞條與程度及 PIN 設定狀態；PIN 重設、完整會員欄位及原關聯歷史 UI 尚未完成。"
+      "remaining": "無成分管理員可查看原成分、詞條與程度；數字 QQ PIN 重設、目前管理授權／版本／確認、未知結果只查回執、找回證據撤銷、原關聯歷史及隱私保全已合成驗證；完整會員欄位、舊 adapter／回退投影與正式版本組合仍待驗收。"
     },
     {
       "capability_id": "A11",

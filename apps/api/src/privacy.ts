@@ -29,6 +29,8 @@ export function sharedRecords(db: DB, userId: string) {
   if (legacyHistory) retained.music_ownership_history = legacyHistory;
   const ownershipHistory = (db.prepare("SELECT count(*) n FROM music_ownership_history WHERE before_user_id=? OR after_user_id=? OR actor_ref=?").get(userId, userId, 'account:' + userId) as { n: number }).n;
   if (ownershipHistory) retained.music_ownership_history = (retained.music_ownership_history ?? 0) + ownershipHistory;
+  const pinHistory = (db.prepare('SELECT count(*) n FROM music_pin_history WHERE user_id=? OR actor_ref=?').get(userId, 'account:' + userId) as { n: number }).n;
+  if (pinHistory) retained.music_pin_history = pinHistory;
   return retained;
 }
 function activeWork(db: DB, userId: string) {
@@ -46,6 +48,7 @@ function eraseMusic(db: DB, profileId: string, userId: string, createdAt: string
   db.prepare('DELETE FROM music_profile_contacts WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_contact_history WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_ownership_history WHERE profile_id=?').run(profileId);
+  db.prepare('DELETE FROM music_pin_history WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_profile_audit WHERE profile_id=?').run(profileId);
   db.prepare(`UPDATE request_results SET response_status=410,response_json=? WHERE (user_id,request_key) IN

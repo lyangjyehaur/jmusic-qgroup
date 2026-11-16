@@ -20,6 +20,7 @@ import { createAdminSecurity } from './admin-security';
 import { registerAdminUsers } from './admin-users';
 import { registerAdminPrivacy } from './admin-privacy';
 import { registerAdminMusic } from './admin-music';
+import { registerAdminMusicPins } from './admin-music-pins';
 import { registerMusicContact } from './music-contact';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
@@ -58,6 +59,7 @@ export function createApp(options: AppOptions) {
     registerAdminUsers(app, db, admin, now);
     registerAdminPrivacy(app, db, admin, now);
     registerAdminMusic(app, db, admin, now);
+    registerAdminMusicPins(app, db, admin, now);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);

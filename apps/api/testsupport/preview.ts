@@ -7,6 +7,8 @@ import { musicClaimFixture } from './music-claim-fixture';
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const db = openDatabase(':memory:'); fixture(db);
 musicClaimFixture(db);
+// Imported-history pagination uses a separate synthetic profile from ownership tests.
+if (process.env.REBUILD_TEST_MUSIC_HISTORY === '1') for (let i = 0; i < 52; i++) db.prepare("INSERT INTO music_legacy_identity VALUES('link_audit',?,?)").run(i, JSON.stringify({ id: i + 100, qq: '10002', actor: 'credential:synthetic-private', before_user_id: i % 2 ? 'bob' : '', after_user_id: i % 2 ? '' : 'bob', created: 1794902400 + i }));
 const port = Number(process.env.REBUILD_TEST_PORT ?? 5082);
 const origin = `http://127.0.0.1:${port}`;
 db.prepare("INSERT INTO users VALUES('auth-owner',?,'舊帳號','synthetic')").run(hash('fixture-auth-owner'));
