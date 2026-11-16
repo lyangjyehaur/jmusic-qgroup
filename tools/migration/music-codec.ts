@@ -129,6 +129,7 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
     const created = list(member.created, 'created entries'); if (created.some(item => typeof item !== 'string' || !Object.hasOwn(entries, item))) throw new Error('Unresolved created entry');
     if (member.consent !== undefined && typeof member.consent !== 'boolean') throw new Error('Invalid music consent');
     db.prepare('INSERT INTO music_legacy_profiles VALUES(?,?,?,?,?,?,?,?,?)').run(id, key, text(member.name, 'member name'), Number(member.consent ?? false), text(member.pinHash, 'PIN hash'), contact, JSON.stringify(fields), JSON.stringify(created), ownership);
+    db.prepare('INSERT INTO music_profile_contacts VALUES(?,?,?,0,?)').run(id, contact, /^[0-9]{4,12}$/.test(key) ? 'legacy' : 'self_reported', stamp);
     const seen = new Set<string>(); let position = 0;
     for (const item of list(member.selection, 'selections')) {
       let entryId: string; let level = 3;

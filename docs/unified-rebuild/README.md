@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)及[隔離匯入檢查點](14-import-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)及[聯絡／同好入口檢查點](15-contact-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -30,6 +30,7 @@
 | [隱私與持久刪除檢查點](12-privacy-checkpoint.md) | 帳號／成分分別刪除、收據查回、恢復重播、schema 升級與 bot 資料差分 |
 | [管理與隱私審核檢查點](13-admin-checkpoint.md) | 救援登入、使用者／角色／私人備註、刪除申請審核與隔離差分 |
 | [成套快照匯入檢查點](14-import-checkpoint.md) | 離線輸入契約、原表／bot 工作保全、舊成分權威投影、刪除與重跑保障 |
+| [聯絡與同好入口檢查點](15-contact-checkpoint.md) | 聯絡號編輯／清空、會員查詢／複製、草稿／競態、刪除及權威聯絡表 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

@@ -19,6 +19,7 @@ import type { ErasureJournal } from './erasure-journal';
 import { createAdminSecurity } from './admin-security';
 import { registerAdminUsers } from './admin-users';
 import { registerAdminPrivacy } from './admin-privacy';
+import { registerMusicContact } from './music-contact';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
 export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
@@ -54,6 +55,7 @@ export function createApp(options: AppOptions) {
     registerAdminPrivacy(app, db, admin, now);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
+    registerMusicContact(app, db, security, now);
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

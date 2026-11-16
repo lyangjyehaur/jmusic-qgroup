@@ -378,25 +378,37 @@
         "tools/migration/import-snapshot.ts",
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
-        "packages/database/src/legacy-erasure.ts"
+        "packages/database/src/legacy-erasure.ts",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/member-access.tsx",
+        "packages/contracts/src/index.ts",
+        "packages/database/src/schema-v4.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts",
+        "packages/database/src/contact-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/14-import-checkpoint.md"
+        "docs/unified-rebuild/14-import-checkpoint.md",
+        "apps/web/tests/music-contact.spec.ts",
+        "docs/unified-rebuild/15-contact-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "隔離匯入保留舊數字鍵／native key 並映射固定 profile ID；聯絡號清空／唯一性與不作 ownership 依據已驗；完整查詢／複製／編輯 UI、認領、匯入未知案例與舊網址 adapter 待完成。"
+      "remaining": "權威聯絡表、舊數字鍵保護、native 自填修改／清空、會員查詢／複製、重號／原子競態、身份隔離與刪除已實作並與 Python 差分；管理更正、舊網址／協議 adapter、完整匯入未知案例、合併隱私政策與實際平台驗收待完成。"
     },
     {
       "capability_id": "I14",
@@ -415,34 +427,42 @@
         "tools/migration/import-snapshot.ts",
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
-        "packages/database/src/legacy-erasure.ts"
+        "packages/database/src/legacy-erasure.ts",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/member-access.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
         "packages/database/src/privacy-migration.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
         "apps/web/tests/admin-privacy.spec.ts",
-        "docs/unified-rebuild/14-import-checkpoint.md"
+        "docs/unified-rebuild/14-import-checkpoint.md",
+        "apps/web/tests/music-contact.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、權限撤銷、收據、審核及匯入後舊身份撤銷／關聯歷史待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。"
+      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、合併隱私政策、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。"
     },
     {
       "capability_id": "I15",
@@ -461,34 +481,42 @@
         "tools/migration/import-snapshot.ts",
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
-        "packages/database/src/legacy-erasure.ts"
+        "packages/database/src/legacy-erasure.ts",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/member-access.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
         "packages/database/src/privacy-migration.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
         "apps/web/tests/admin-privacy.spec.ts",
-        "docs/unified-rebuild/14-import-checkpoint.md"
+        "docs/unified-rebuild/14-import-checkpoint.md",
+        "apps/web/tests/music-contact.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活及匯入 PIN／native／contact／喊話清理已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。"
+      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。"
     },
     {
       "capability_id": "I16",
@@ -504,28 +532,36 @@
         "apps/web/src/devices.tsx",
         "apps/web/src/account-session.ts",
         "apps/api/src/account-profile.ts",
-        "apps/web/src/account-profile.tsx"
+        "apps/web/src/account-profile.tsx",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/member-access.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/account-devices.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/account-profile.test.ts",
-        "tools/rebuild/compare-nickname.py"
+        "tools/rebuild/compare-nickname.py",
+        "apps/api/src/music-contact.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/account-devices.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/devices.spec.ts",
-        "apps/web/tests/account-profile.spec.ts"
+        "apps/web/tests/account-profile.spec.ts",
+        "apps/web/tests/music-contact.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。"
@@ -1706,16 +1742,27 @@
       "legacy_evidence_group": "成分選取、音樂前端",
       "implementation": [
         "apps/web/tests/unified.spec.ts",
-        "apps/web/src/music-editor.tsx"
+        "apps/web/src/music-editor.tsx",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/member-access.tsx"
       ],
       "behavior_evidence": [
-        "apps/web/tests/unified.spec.ts"
+        "apps/web/tests/unified.spec.ts",
+        "apps/api/src/music-contact.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/music-contact.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-contact.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-contact.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "分頁草稿、刷新、未知結果重試、離站提示已實作；跨入口／背景及聯絡號編輯全流程待驗收。"
+      "remaining": "分頁草稿、刷新、未知結果重試、離站提示、改聯絡號保留未保存選擇、相同已存選擇基準更新及衝突明確核對已測；排行／完整跨入口、browser 舊草稿遷移及實際平台驗收待完成。"
     },
     {
       "capability_id": "M07",
@@ -1863,13 +1910,30 @@
       "new_entry": "同好個人頁",
       "required_behavior": "未公開性別不出現、QQ 明確為自填；不回傳身份憑證",
       "legacy_evidence_group": "音樂、成分身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "未公開性別不出現、QQ 明確為自填；不回傳身份憑證"
+      "implementation": [
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/member-access.tsx",
+        "packages/contracts/src/index.ts",
+        "packages/database/src/schema-v4.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-contact.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-contact.test.ts",
+        "packages/database/src/contact-migration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-contact.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-contact.spec.ts",
+        "docs/unified-rebuild/15-contact-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "同好基礎成分卡、固定 ID／別名查詢、名稱／原順序選擇、聯絡來源與複製退路已實作；保留成分會員讀取範圍，不回傳身份憑證／私人欄位。完整公開性別、私人留言規則、舊入口與正式版本組合待驗收。"
     },
     {
       "capability_id": "M18",
@@ -2743,30 +2807,34 @@
         "tools/migration/import-snapshot.ts",
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
-        "packages/database/src/legacy-erasure.ts"
+        "packages/database/src/legacy-erasure.ts",
+        "packages/database/src/schema-v4.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
         "packages/database/src/privacy-migration.test.ts",
         "apps/api/src/privacy.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "packages/database/src/contact-migration.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
         "apps/api/src/privacy.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "packages/database/src/contact-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/14-import-checkpoint.md"
+        "docs/unified-rebuild/14-import-checkpoint.md",
+        "docs/unified-rebuild/15-contact-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "schema 1→2→3、成套副本隔離匯入、逐表 ID／BLOB／序號／trigger／FK 保全、媒體 digest／引用、原快照重跑不覆蓋已測；完整備份／歷史快照／還原／回退匯出、資源及正式副本演練仍待完成。"
+      "remaining": "schema 1→2→3→4、成套副本隔離匯入、逐表 ID／BLOB／序號／trigger／FK 保全、權威聯絡投影、媒體 digest／引用、原快照重跑不覆蓋已測；完整備份／歷史快照／還原／回退匯出、資源及正式副本演練仍待完成。"
     },
     {
       "capability_id": "O13",

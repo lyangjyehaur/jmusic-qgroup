@@ -58,7 +58,7 @@ test('account change never loads another account into an old profile scope', asy
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('目前帳號已變更；請重新整理並確認帳號')).toBeVisible();
   await page.reload();
-  await expect(page.getByText('小白 的音樂成分', { exact: false })).toBeVisible();
+  await expect(page.locator('.viewer')).toHaveText('小白');
   await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'false');
 });
 test('unsaved navigation is explicit and mobile selection stays usable', async ({ context, page }) => {

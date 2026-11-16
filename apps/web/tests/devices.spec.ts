@@ -134,10 +134,10 @@ test('switching accounts updates another tab while preserving its original accou
   const editor = await context.newPage(); await editor.goto('/me/music');
   await editor.getByRole('button', { name: 'ヨルシカ', exact: true }).click();
   await login(page, 'device-tab-switch');
-  await expect(editor.getByText('測試帳號 device-tab-switch 的音樂成分', { exact: false })).toBeVisible();
+  await expect(editor.locator('.viewer')).toHaveText('測試帳號 device-tab-switch');
   await expect(editor.getByRole('button', { name: 'ヨルシカ', exact: true })).toHaveAttribute('aria-pressed', 'false');
   await page.getByRole('button', { name: '切換至 測試帳號 device-tab-original', exact: true }).click();
-  await expect(editor.getByText('測試帳號 device-tab-original 的音樂成分', { exact: false })).toBeVisible();
+  await expect(editor.locator('.viewer')).toHaveText('測試帳號 device-tab-original');
   await expect(editor.getByRole('button', { name: 'ヨルシカ', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await editor.close();
 });
