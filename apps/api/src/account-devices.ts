@@ -5,6 +5,7 @@ import type { DB } from '@qgroup/database';
 import { AcceptDeviceLink, IssueDeviceLink, ReadDeviceLink, RevokeDevice } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { hash, type Security } from './security';
+import { clearMusicClaims } from './music-claim-state';
 
 interface Access { token_hash: string; created_at: string }
 interface DeviceLink { id: string; user_id: string; nickname: string; status: string; used_by: string | null; expires_at: string }
@@ -81,6 +82,7 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
     const target = access(viewer.id).find(row => deviceId(viewer.id, row.token_hash) === selected);
     if (!target) throw new DomainError('DEVICE_NOT_FOUND', '裝置授權不存在或已撤銷，請重新讀取', 404);
     if (target.token_hash === viewer.tokenHash) throw new DomainError('CURRENT_DEVICE', '不能在這裡撤銷目前裝置，請使用登出', 400);
+    clearMusicClaims(db, target.token_hash);
     db.prepare('DELETE FROM browser_accounts WHERE token_hash=? AND user_id=?').run(target.token_hash, viewer.id);
     const current = db.prepare('SELECT user_id FROM browser_sessions WHERE token_hash=?').get(target.token_hash) as { user_id: string } | undefined;
     if (current?.user_id === viewer.id) {

@@ -26,7 +26,7 @@ export const Session = z.discriminatedUnion('authenticated', [
   z.object({ authenticated: z.literal(true), nickname: z.string(), administrator: z.boolean(), musicEpoch: z.number().int().min(0), ...sessionSecurity, qq: QQSummary }),
 ]);
 export type Viewer = z.infer<typeof Session>;
-export const QQStart = z.object({ mode: z.enum(['bind', 'login']), confirm: z.literal(true), returnTo: z.string().max(4096).default('/'), acceptPrivacy: z.boolean().default(false), privacyVersion: z.string() }).strict();
+export const QQStart = z.object({ mode: z.enum(['bind', 'login']), confirm: z.literal(true), returnTo: z.string().max(4096).default('/'), acceptPrivacy: z.boolean().default(false), privacyVersion: z.string(), musicClaimId: z.string().uuid().optional() }).strict();
 export const QQStartResult = z.object({ authorizeUrl: z.string().url() });
 export const QQFinish = z.object({ attemptId: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
 export const AuthResult = z.object({ returnTo: z.string(), switched: z.boolean(), newAccount: z.boolean(), qqUnionidBound: z.boolean().optional() });
@@ -55,6 +55,12 @@ export const DeviceLinkView = z.object({ status: z.enum(['pending', 'accepted'])
 export const RevokeDevice = z.object({ deviceId: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
 export const AccountHistory = z.object({ history: z.array(z.object({ id: z.number().int(), action: z.string(), createdAt: z.string() })), nextCursor: z.number().int().nullable() });
 export const Ok = z.object({ ok: z.literal(true) });
+export const StartMusicClaim = z.object({ requestId: z.string().uuid(), legacyQQ: z.string().trim().regex(/^[0-9]{4,12}$/), pin: z.string().trim().regex(/^[0-9]{4,6}$/), consent: z.literal(true) }).strict();
+export const ConfirmMusicClaim = z.object({ claimId: z.string().uuid(), confirm: z.literal(true) }).strict();
+export const MusicClaimStatus = z.discriminatedUnion('status', [
+  z.object({ status: z.literal('none') }),
+  z.object({ status: z.enum(['pending','authorized','completed','unavailable']), claimId: z.string().uuid(), expiresAt: z.string(), profileId: z.string(), name: z.string(), legacyQQ: z.string(), targetNickname: z.string() }),
+]);
 export const ErasureProof = z.object({ requestId: z.string().uuid(), secret: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 export const EraseData = ErasureProof.extend({ target: z.enum(['music', 'account', 'both']), confirm: z.literal(true), profileId: z.string().max(80).nullable(), profileRevision: z.number().int().min(0) }).strict();
 export const ErasureResult = z.object({ requestId: z.string(), target: z.enum(['music', 'account', 'both']), status: z.enum(['completed', 'shared_review']) });
@@ -80,3 +86,11 @@ export const ApiFailure = z.object({ code: z.string(), message: z.string() });
 export const AdminPrivacyRequest = z.object({ id: z.string(), userId: z.string(), status: z.enum(['completed', 'shared_review']), createdAt: z.string(), updatedAt: z.string(), note: z.string(), revision: z.string().regex(/^[a-f0-9]{64}$/), sharedRecords: z.record(z.string(), z.number().int().positive()) });
 export const AdminPrivacyQueue = z.object({ requests: z.array(AdminPrivacyRequest), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });
 export const SavePrivacyReview = z.object({ note: z.string().trim().refine(value => Array.from(value).length >= 1 && Array.from(value).length <= 1000), revision: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
+export const AdminMusicOwner = z.object({ id: z.string(), nickname: z.string() });
+export const AdminMusicProfile = z.object({ id: z.string(), name: z.string(), legacyKey: z.string(), hasPin: z.boolean(), owner: AdminMusicOwner.nullable(), status: z.enum(['oauth','prelinked','unlinked','account']), revision: z.number().int(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
+export const AdminMusicSearch = z.object({ search: z.string().trim().max(100).default(''), status: z.enum(['all','oauth','prelinked','unlinked','account']).default('all'), offset: z.number().int().min(0).max(1000000).default(0) }).strict();
+export const AdminMusicProfiles = z.object({ profiles: z.array(AdminMusicProfile), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });
+export const PreviewMusicLink = z.object({ targetUserId: z.string().min(1).max(128).nullable() }).strict();
+export const AdminMusicLinkPreview = z.object({ profile: AdminMusicProfile, target: AdminMusicOwner.nullable(), revision: z.string().regex(/^[a-f0-9]{64}$/) });
+export const SaveMusicLink = PreviewMusicLink.extend({ revision: z.string().regex(/^[a-f0-9]{64}$/), reason: z.string().trim().min(1).max(500), confirm: z.literal(true) }).strict();
+export const AdminMusicHistory = z.object({ history: z.array(z.object({ id: z.number().int(), revision: z.number().int(), beforeUserId: z.string().nullable(), afterUserId: z.string().nullable(), actor: z.string(), reason: z.string(), createdAt: z.string() })), nextCursor: z.number().int().nullable() });

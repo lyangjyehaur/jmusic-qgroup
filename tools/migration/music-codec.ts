@@ -148,6 +148,10 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
     // Preserved as private migration evidence; never accepted as new authentication.
     const removed = erased.has(String(row.qq ?? ''));
     if (!removed) db.prepare('INSERT INTO music_legacy_identity VALUES(?,?,?)').run(table, index, JSON.stringify(row));
+    if (!removed && table === 'login_attempts') {
+      if (typeof row.bucket !== 'string' || !/^(?:qq|ip):[a-f0-9]{64}$/.test(row.bucket) || typeof row.created !== 'number' || !Number.isFinite(row.created) || row.created < 0 || row.created > Number.MAX_SAFE_INTEGER) throw new Error('Invalid legacy PIN rate bucket');
+      db.prepare('INSERT INTO music_claim_attempts VALUES(?,?)').run(row.bucket, row.created);
+    }
     const orphan = row.qq !== undefined && !Object.hasOwn(members, String(row.qq));
     map.run('music-identity', table, String(index), table + ':' + index, '', digest(JSON.stringify(row)), removed ? 'erased' : orphan ? 'requires_legacy_review' : ['sessions', 'entry_intents'].includes(table) ? 'requires_legacy_adapter' : 'preserved');
   });

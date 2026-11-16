@@ -15,7 +15,7 @@ export function MyMusic() {
   const session = useQuery(sessionQuery);
   if (session.isPending) return <Notice>正在確認帳號…</Notice>;
   if (session.error) return <Failure error={session.error} retry={() => void session.refetch()} />;
-  if (!session.data.authenticated) return <><PageIntro title="我的成分" /><Surface><EmptyState title="登入後才能保存成分" description={session.data.qqEnabled || session.data.nameRegistrationEnabled ? undefined : '目前沒有可用的登入方式。'} action={<Link to={loginLink(location.pathname + location.search + location.hash)}>登入</Link>} /></Surface></>;
+  if (!session.data.authenticated) return <><PageIntro title="我的成分" /><Surface><EmptyState title="登入後才能保存成分" description={session.data.qqEnabled || session.data.nameRegistrationEnabled ? undefined : '目前沒有可用的登入方式。'} action={<Link to={loginLink(location.pathname + location.search + location.hash)}>登入</Link>} /><Link to="/me/music/recover">找回舊成分</Link></Surface></>;
   return <ProfileLoader key={session.data.scope + ":" + session.data.musicEpoch} viewer={session.data} />;
 }
 function ProfileLoader({ viewer }: { viewer: Extract<Viewer, { authenticated: true }> }) {

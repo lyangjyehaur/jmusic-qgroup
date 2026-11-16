@@ -2,9 +2,11 @@ import { resolve } from 'node:path';
 import { openDatabase } from '@qgroup/database';
 import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
+import { musicClaimFixture } from './music-claim-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const db = openDatabase(':memory:'); fixture(db);
+musicClaimFixture(db);
 const port = Number(process.env.REBUILD_TEST_PORT ?? 5082);
 const origin = `http://127.0.0.1:${port}`;
 db.prepare("INSERT INTO users VALUES('auth-owner',?,'舊帳號','synthetic')").run(hash('fixture-auth-owner'));

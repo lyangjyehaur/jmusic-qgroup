@@ -9,6 +9,10 @@ function deleteIdentity(db: DB, predicate: string, values: string[]) {
   markIdentity(db, 'erased', predicate, values);
   db.prepare(`DELETE FROM music_legacy_identity WHERE ${predicate}`).run(...values);
 }
+export function retireLegacyProfileProofs(db: DB, profileId: string) {
+  const row = db.prepare('SELECT legacy_key FROM music_legacy_profiles WHERE profile_id=?').get(profileId) as { legacy_key: string } | undefined;
+  if (row) deleteIdentity(db, "table_name IN ('sessions','entry_intents') AND json_extract(payload_json,'$.qq')=?", [row.legacy_key]);
+}
 
 /** Remove imported private fields and recovery proofs together with the live profile. */
 export function eraseLegacyProfile(db: DB, profileId: string, stamp: string) {

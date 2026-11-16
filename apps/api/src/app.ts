@@ -19,7 +19,9 @@ import type { ErasureJournal } from './erasure-journal';
 import { createAdminSecurity } from './admin-security';
 import { registerAdminUsers } from './admin-users';
 import { registerAdminPrivacy } from './admin-privacy';
+import { registerAdminMusic } from './admin-music';
 import { registerMusicContact } from './music-contact';
+import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
 export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
@@ -30,6 +32,7 @@ export function createApp(options: AppOptions) {
   const security = createSecurity(db, origin, now, options.csrfSecret);
   const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash);
   const privacy = createPrivacy(db, options.erasureJournal);
+  const musicClaims = createMusicClaims(db, now);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: request.url?.split('?')[0], remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
@@ -48,11 +51,13 @@ export function createApp(options: AppOptions) {
       return reply.code(500).send({ code: 'INTERNAL_ERROR', message: '暫時無法完成操作，請保留選擇後重試' });
     });
     app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: REBUILD_SCHEMA_VERSION }));
-    registerAuth(app, db, security, now, options.qq);
+    registerAuth(app, db, security, now, options.qq, musicClaims);
+    registerMusicClaims(app, db, security, musicClaims);
     registerAccountDevices(app, db, security, now);
     registerRegistrationSettings(app, db, admin, now);
     registerAdminUsers(app, db, admin, now);
     registerAdminPrivacy(app, db, admin, now);
+    registerAdminMusic(app, db, admin, now);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);

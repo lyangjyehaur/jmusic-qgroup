@@ -9,6 +9,7 @@ import type { Security } from './security';
 import { hash } from './security';
 import { erasureJournal, type ErasureJournal, type ErasureIntent, type StoredIntent } from './erasure-journal';
 import { prunePrivateImages } from './privacy-assets';
+import { clearMusicClaims } from './music-claim-state';
 
 type Result = z.infer<typeof ErasureResult>;
 const sharedChecks: Record<string, string[]> = {
@@ -26,6 +27,8 @@ export function sharedRecords(db: DB, userId: string) {
   }));
   const legacyHistory = (db.prepare("SELECT count(*) n FROM music_legacy_identity WHERE table_name='link_audit' AND (json_extract(payload_json,'$.before_user_id')=? OR json_extract(payload_json,'$.after_user_id')=? OR json_extract(payload_json,'$.actor')=?)").get(userId, userId, 'account:' + userId) as { n: number }).n;
   if (legacyHistory) retained.music_ownership_history = legacyHistory;
+  const ownershipHistory = (db.prepare("SELECT count(*) n FROM music_ownership_history WHERE before_user_id=? OR after_user_id=? OR actor_ref=?").get(userId, userId, 'account:' + userId) as { n: number }).n;
+  if (ownershipHistory) retained.music_ownership_history = (retained.music_ownership_history ?? 0) + ownershipHistory;
   return retained;
 }
 function activeWork(db: DB, userId: string) {
@@ -39,8 +42,10 @@ function eraseMusic(db: DB, profileId: string, userId: string, createdAt: string
   db.prepare(`INSERT INTO music_profiles(id,user_id,revision,updated_at,erased_at) VALUES(?,NULL,0,?,?)
     ON CONFLICT(id) DO UPDATE SET user_id=NULL,erased_at=excluded.erased_at`).run(profileId, createdAt, createdAt);
   eraseLegacyProfile(db, profileId, createdAt);
+  db.prepare('DELETE FROM music_claim_intents WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_profile_contacts WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_contact_history WHERE profile_id=?').run(profileId);
+  db.prepare('DELETE FROM music_ownership_history WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(profileId);
   db.prepare('DELETE FROM music_profile_audit WHERE profile_id=?').run(profileId);
   db.prepare(`UPDATE request_results SET response_status=410,response_json=? WHERE (user_id,request_key) IN
@@ -62,6 +67,7 @@ function closeAccount(db: DB, userId: string, requestId: string, createdAt: stri
     AND x.client_id=login_attempts.app_id AND x.subject=login_attempts.openid)`).run(userId);
   const sessions = db.prepare('SELECT token_hash FROM browser_sessions WHERE user_id=?').all(userId) as { token_hash: string }[];
   for (const { token_hash: token } of sessions) {
+    clearMusicClaims(db, token);
     for (const table of ['login_attempts', 'auth_requests', 'browser_accounts', 'browser_sessions', 'visitor_sessions']) db.prepare(`DELETE FROM ${table} WHERE token_hash=?`).run(token);
   }
   db.prepare('DELETE FROM browser_accounts WHERE user_id=?').run(userId);
@@ -70,6 +76,8 @@ function closeAccount(db: DB, userId: string, requestId: string, createdAt: stri
     AND NOT EXISTS(SELECT 1 FROM settlement_code_images WHERE digest=image_assets.digest)
     AND NOT EXISTS(SELECT 1 FROM settlement_receipt_images WHERE digest=image_assets.digest)`);
   db.prepare('DELETE FROM event_access WHERE user_id=?').run(userId);
+  db.prepare('DELETE FROM music_claim_intents WHERE target_user_id=?').run(userId);
+  db.prepare("UPDATE music_legacy_profiles SET ownership_source='closed_account' WHERE profile_id IN (SELECT id FROM music_profiles WHERE user_id=?)").run(userId);
   db.prepare('UPDATE music_profiles SET user_id=NULL WHERE user_id=?').run(userId);
   db.prepare("UPDATE users SET nickname='已注销用户',token_hash=? WHERE id=?").run(randomBytes(32).toString('hex'), userId);
   detachLegacyAccount(db, userId);

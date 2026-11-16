@@ -22,7 +22,7 @@ function Directory({ viewer, access }: { viewer: Viewer; access: Access }) {
 }
 export function AdminUserPage() {
   const { id = '' } = useParams();
-  return <><PageIntro title="帳號管理" /><Link className="back" to="/admin/users">回到使用者管理</Link><AdminGate>{(viewer, access) => <UserLoader key={access.scope + ':' + id} id={id} viewer={viewer} access={access} />}</AdminGate></>;
+  return <><PageIntro title="帳號管理" /><Link to="/admin/music">核對成分關聯</Link><Link className="back" to="/admin/users">回到使用者管理</Link><AdminGate>{(viewer, access) => <UserLoader key={access.scope + ':' + id} id={id} viewer={viewer} access={access} />}</AdminGate></>;
 }
 function UserLoader({ id, viewer, access }: { id: string; viewer: Viewer; access: Access }) {
   const user = useQuery({ queryKey: ['private', viewer.scope, 'admin-user', access.scope, id], queryFn: () => api('/admin/users/' + encodeURIComponent(id), AdminUser, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: false });

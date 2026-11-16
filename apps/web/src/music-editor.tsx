@@ -16,7 +16,8 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
     try {
       const raw = sessionStorage.getItem(storageKey); const saved: DraftValue = raw ? Draft.parse(JSON.parse(raw)) : fallback;
       const sameSavedChoices = !saved.requestKey && saved.profileId === fallback.profileId && saved.musicEpoch === fallback.musicEpoch && JSON.stringify(saved.selections) === JSON.stringify(fallback.selections);
-      return { draft: sameSavedChoices ? fallback : saved, error: '' };
+      const untouchedBlank = !saved.requestKey && saved.profileId === null && saved.revision === 0 && saved.selections.length === 0;
+      return { draft: sameSavedChoices || untouchedBlank ? fallback : saved, error: '' };
     }
     catch { return { draft: fallback, error: '此分頁的原草稿無法讀取，已保留原始內容。請先保全原稿再繼續。' }; }
   });
@@ -82,7 +83,7 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
       setMessage('已取得最新版本；你的選擇仍保留，請核對後再保存。');
     } catch (error) { setMessage(error instanceof Error ? error.message : '讀取失敗'); }
   }
-  return <><PageIntro title="我的成分" />{saved && <div className="page-actions"><Link to="/me/music/contact">聯絡 QQ</Link><Link to={'/people/' + saved.id}>查看我的成分卡</Link></div>}{returnTo && <Link className="back" to={returnTo}>← 回到剛才的活動</Link>}
+  return <><PageIntro title="我的成分" /><div className="page-actions">{saved ? <><Link to="/me/music/contact">聯絡 QQ</Link><Link to={'/people/' + saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回舊成分</Link>}</div>{returnTo && <Link className="back" to={returnTo}>← 回到剛才的活動</Link>}
     {blocker.state === 'blocked' && <Surface className="leave-prompt" role="alert"><Heading level={2}>還有未保存的選擇</Heading><Text>這個分頁已保留草稿，回來後可繼續編輯。</Text><Button onClick={() => blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={() => blocker.proceed()}>保留草稿並離開</Button></Surface>}
     {storageError && <p role="alert" className="notice">{storageError}</p>}
     {readError && <div role="alert" className="notice"><Text>{readError}</Text><Button variant="secondary" onClick={() => {

@@ -88,12 +88,12 @@ export function AuthConfirm() {
       <dl><dt>QQ 暱稱</dt><dd>{result.qqNickname}</dd><dt>操作</dt><dd>{result.mode === 'bind' ? `綁定目前帳號「${result.currentNickname}」` : result.existingAccount ? `登入既有帳號「${result.targetNickname}」` : '建立帳號並登入'}</dd></dl>
       {result.mode === 'login' && result.currentNickname && <Text>目前帳號「{result.currentNickname}」的授權會保留，報名與款項分開。</Text>}
       {result.conflict ? <Notice>目前帳號已綁定另一個 QQ，或此 QQ 已綁定其他帳號；不能直接替換或合併。</Notice> : <Button loading={busy} disabled={uncertain} onClick={() => void finish()}>{result.mode === 'bind' ? '確認綁定' : '確認登入'}</Button>}
-      {result.conflict && <Link to={loginLink(result.returnTo)}>改用 QQ 登入</Link>}
+      {result.conflict && (result.returnTo === '/me/music/recover' ? <Link to={result.returnTo}>返回找回流程</Link> : <Link to={loginLink(result.returnTo)}>改用 QQ 登入</Link>)}
     </> : <Notice>{statusText[result.status]}</Notice>}
     <Button variant="secondary" disabled={busy || uncertain} onClick={() => void cancel()}>取消並返回</Button>
-    {result.status !== 'verified' && <Link to={loginLink(result.returnTo)}>重新登入</Link>}
+    {result.status !== 'verified' && (result.returnTo === '/me/music/recover' ? <Link to={result.returnTo}>返回找回流程</Link> : <Link to={loginLink(result.returnTo)}>重新登入</Link>)}
     {error && <Text role="alert">{error}</Text>}
-    {uncertain && <a href={'/me/accounts?returnTo=' + encodeURIComponent(result.returnTo)}>核對目前帳號</a>}
+    {uncertain && <a href={result.returnTo === '/me/music/recover' ? result.returnTo : '/me/accounts?returnTo=' + encodeURIComponent(result.returnTo)}>{result.returnTo === '/me/music/recover' ? '核對找回狀態' : '核對目前帳號'}</a>}
   </Surface>}{params.has('status') && <Link to="/login">重新登入</Link>}</>;
 }
 export function Accounts() {

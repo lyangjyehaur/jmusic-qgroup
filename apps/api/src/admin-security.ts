@@ -4,6 +4,7 @@ import type { DB } from '@qgroup/database';
 import { DomainError } from '@qgroup/domain';
 import type { Security } from './security';
 import { hash } from './security';
+import { clearMusicClaims } from './music-claim-state';
 
 export function administratorRevision(db: DB, userId: string): number | undefined {
   return (db.prepare('SELECT revision FROM user_admin_roles WHERE user_id=? AND is_admin=1').get(userId) as { revision: number } | undefined)?.revision;
@@ -46,6 +47,7 @@ export function createAdminSecurity(db: DB, security: Security, origin: string, 
     db.prepare('DELETE FROM admin_sessions WHERE token_hash=?').run(cookieHash(request));
     db.prepare('DELETE FROM auth_requests WHERE token_hash=?').run(access.receiptScope);
     if (access.method === 'account') {
+      clearMusicClaims(db, access.device.tokenHash);
       for (const table of ['login_attempts', 'auth_requests', 'browser_accounts', 'browser_sessions', 'visitor_sessions']) db.prepare(`DELETE FROM ${table} WHERE token_hash=?`).run(access.device.tokenHash);
       // Issue one visitor session in the logout response so other tabs do not race
       // to create different anonymous cookies while refreshing the same device.

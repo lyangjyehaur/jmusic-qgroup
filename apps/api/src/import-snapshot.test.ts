@@ -182,7 +182,7 @@ describe('offline paired snapshot import', () => {
     await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Referenced board image is missing'); expect(existsSync(s.destination)).toBe(false);
     mkdirSync(join(s.source, 'images', image.slice(0, 2))); writeFileSync(join(s.source, path), bytes);
     const output = execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' }); const result = JSON.parse(output);
-    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 4, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
+    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 6, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
     expect(readFileSync(join(s.destination, path))).toEqual(bytes);
     const second = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' })); expect(second.status).toBe('already_imported');
   });
@@ -201,5 +201,15 @@ print(json.dumps({k:dict(name=m['name'],owner=m.get('boardUserId',''),contact=co
       const row = db.prepare('SELECT m.name,m.contact_qq,p.user_id FROM music_legacy_profiles m JOIN music_profiles p ON p.id=m.profile_id WHERE m.legacy_key=?').get(key) as { name: string; contact_qq: string; user_id: string | null };
       expect({ name: row.name, owner: row.user_id ?? '', contact: row.contact_qq, selection: db.prepare('SELECT entry_id AS id,level FROM music_selections WHERE profile_id=? ORDER BY position').all(profileId(key)) }).toEqual(value);
     } } finally { db.close(); }
+  });
+  it('carries source PIN rate counters into active persistent limits without changing private source evidence',async()=>{
+    const s=setup();const identity=new Database(join(s.source,'music/identity.sqlite3'));const bucket='qq:'+hash('10003');
+    for(let i=0;i<8;i++)identity.prepare('INSERT INTO login_attempts VALUES(?,?)').run(bucket,stamp.getTime()/1000);identity.close();const before=allFiles(s.source);
+    await importSnapshot(s.source,s.destination,stamp);const db=openDatabase(join(s.destination,'unified.sqlite3'));const app=createApp({db,origin:'https://rebuild.example',now:()=>stamp});await app.ready();
+    try{
+      expect(db.prepare('SELECT * FROM music_claim_attempts WHERE bucket=?').all(bucket)).toHaveLength(8);expect(db.prepare("SELECT * FROM music_legacy_identity WHERE table_name='login_attempts'").all()).toHaveLength(8);
+      const response=await app.inject('/api/v2/session');const viewer=response.json();const cookie=String(response.headers['set-cookie']).split(';')[0]!;
+      const limited=await app.inject({method:'POST',url:'/api/v2/music/claim/start',headers:{cookie,origin:'https://rebuild.example','x-account-scope':viewer.scope,'x-csrf-token':viewer.csrf},payload:{requestId:randomUUID(),legacyQQ:'10003',pin:'000000',consent:true}});expect(limited.statusCode).toBe(429);expect(limited.json().code).toBe('PIN_RATE_LIMIT');expect(allFiles(s.source)).toEqual(before);
+    }finally{await app.close();db.close();}
   });
 });

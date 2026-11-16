@@ -18,6 +18,8 @@ import { AdminDirectory, AdminUserPage } from './admin-users';
 import { MyPrivacy } from './my-privacy';
 import { MusicContactPage } from './music-contact';
 import { People, PersonMusic } from './people';
+import { MusicRecovery } from './music-recovery';
+import { AdminMusicDirectory, AdminMusicPage } from './admin-music';
 import 'yahha-ui/style.css';
 import './style.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
@@ -26,6 +28,8 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { index: true, element: <Activities /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'music', element: <Music /> }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> }, { path: 'me/music', element: <MyMusic /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> },
+  { path: 'me/music/recover', element: <MusicRecovery /> },
+  { path: 'admin/music', element: <AdminMusicDirectory /> }, { path: 'admin/music/:id', element: <AdminMusicPage /> },
   { path: 'login', element: <Login /> }, { path: 'auth/confirm', element: <AuthConfirm /> }, { path: 'me/accounts', element: <Accounts /> }, { path: 'privacy', element: <Privacy /> }, { path: 'me/devices', element: <Devices /> }, { path: 'me/devices/accept', element: <AcceptDevice /> },
   { path: 'register', element: <Registration /> }, { path: 'admin/registration', element: <RegistrationAdmin /> },
   { path: 'me/profile', element: <AccountProfilePage /> },

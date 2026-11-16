@@ -328,14 +328,18 @@
         "tools/migration/import-snapshot.ts",
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
-        "packages/database/src/legacy-erasure.ts"
+        "packages/database/src/legacy-erasure.ts",
+        "apps/api/src/music-claim.ts",
+        "apps/api/src/admin-music.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-claim.test.ts",
+        "apps/api/src/admin-music.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
@@ -349,10 +353,12 @@
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "docs/unified-rebuild/14-import-checkpoint.md"
+        "docs/unified-rebuild/14-import-checkpoint.md",
+        "apps/web/tests/music-recovery.spec.ts",
+        "apps/web/tests/admin-music.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "共用 session 成分建立／保存、已關聯舊成分匯入後直接存取與唯一 ownership／unlink／contact 投影已實作；舊 PIN／OAuth 認領、完整欄位／找回、管理關聯、待處理舊 session／intent adapter 及正式副本演練待驗收。"
+      "remaining": "共用 session、已關聯匯入、PIN／本次 OAuth 找回及管理關聯已實作並以合成資料驗證；完整欄位、原 session／intent adapter、正式版本組合及副本演練待驗收。"
     },
     {
       "capability_id": "I12",
@@ -360,13 +366,30 @@
       "new_entry": "找回成分",
       "required_behavior": "PIN 4–6 位、QQ／IP 持久限流；十分鐘意圖綁原 session，取消可重試",
       "legacy_evidence_group": "成分身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "PIN 4–6 位、QQ／IP 持久限流；十分鐘意圖綁原 session，取消可重試"
+      "implementation": [
+        "apps/api/src/music-claim.ts",
+        "apps/api/src/music-claim-state.ts",
+        "apps/api/src/auth.ts",
+        "apps/web/src/music-recovery.tsx",
+        "packages/database/src/schema-v5.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-claim.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-claim.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "packages/database/src/claim-migration.test.ts",
+        "docs/unified-rebuild/16-recovery-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-claim.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-recovery.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "PIN 4–6 位、持久 QQ／IP 限流、原 session 十分鐘 intent、本次 QQ 授權與明確關聯、取消／未知結果恢復均有合成驗證；真 QQ、舊 session／intent 協議與正式版本組合待驗收。"
     },
     {
       "capability_id": "I13",
@@ -2223,13 +2246,28 @@
       "new_entry": "後台帳號／成分",
       "required_behavior": "未關聯、prelink、OAuth 分開；不出 PIN hash／私人備註",
       "legacy_evidence_group": "成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "未關聯、prelink、OAuth 分開；不出 PIN hash／私人備註"
+      "implementation": [
+        "apps/api/src/admin-music.ts",
+        "apps/api/src/music-ownership.ts",
+        "apps/web/src/admin-music.tsx",
+        "packages/database/src/schema-v6.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-music.test.ts",
+        "packages/database/src/ownership-migration.test.ts",
+        "docs/unified-rebuild/17-ownership-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-music.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "查詢／分頁與未關聯／預先關聯／OAuth／直接帳號成分分流已實作，不回傳 PIN 摘要或私人欄位；完整匯入資料及正式後台流程待驗收。"
     },
     {
       "capability_id": "A06",
@@ -2237,13 +2275,28 @@
       "new_entry": "後台成分",
       "required_behavior": "原連結與舊會話撤銷、資料保留；override 重啟不復活舊 JSON",
       "legacy_evidence_group": "成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "原連結與舊會話撤銷、資料保留；override 重啟不復活舊 JSON"
+      "implementation": [
+        "apps/api/src/admin-music.ts",
+        "apps/api/src/music-ownership.ts",
+        "apps/web/src/admin-music.tsx",
+        "packages/database/src/schema-v6.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-music.test.ts",
+        "packages/database/src/ownership-migration.test.ts",
+        "docs/unified-rebuild/17-ownership-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-music.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史與 Python 差分已驗證；原 link_audit 合流、重建／回退投影、舊 adapter 及正式副本待完成。"
     },
     {
       "capability_id": "A07",
@@ -2310,13 +2363,28 @@
       "new_entry": "後台成分",
       "required_behavior": "管理員不需先有成分；PIN 不作站內登入，已綁會員不放開舊 PIN",
       "legacy_evidence_group": "成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "管理員不需先有成分；PIN 不作站內登入，已綁會員不放開舊 PIN"
+      "implementation": [
+        "apps/api/src/admin-music.ts",
+        "apps/api/src/music-ownership.ts",
+        "apps/web/src/admin-music.tsx",
+        "packages/database/src/schema-v6.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-music.test.ts",
+        "packages/database/src/ownership-migration.test.ts",
+        "docs/unified-rebuild/17-ownership-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-music.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "無成分管理員可查看原成分、詞條與程度及 PIN 設定狀態；PIN 重設、完整會員欄位及原關聯歷史 UI 尚未完成。"
     },
     {
       "capability_id": "A11",

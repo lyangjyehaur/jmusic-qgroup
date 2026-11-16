@@ -15,7 +15,7 @@ function displayTime(value: string) {
   return Number.isFinite(date.getTime()) ? date.toLocaleString('zh-TW', { hour12: false }) : '時間未記錄';
 }
 const actionLabels: Record<string, string> = {
-  qq_login: 'QQ 登入', qq_bound: '綁定 QQ', name_registered: '建立帳號', nickname_changed: '修改站內稱呼', account_switched: '切換帳號',
+  qq_login: 'QQ 登入', qq_bound: '綁定 QQ', name_registered: '建立帳號', nickname_changed: '修改站內稱呼', account_switched: '切換帳號', music_claimed: '找回原成分',
   device_link_issued: '產生裝置連結', device_link_accepted: '接受裝置授權', device_revoked: '撤銷裝置授權', device_links_revoked: '撤銷未使用連結',
 };
 export function Devices() {

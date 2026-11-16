@@ -6,6 +6,8 @@ import { DomainError } from '@qgroup/domain';
 import { accountScope, hash, type Device, type Security } from './security';
 import { QQIdentity, safeAvatar, safeUnionId, type QQProvider } from './qq-provider';
 import { administratorRevision, nameRegistration } from './registration-settings';
+import { clearMusicClaimAuthorization, clearMusicClaims } from './music-claim-state';
+import type { MusicClaims } from './music-claim';
 
 interface Attempt { id: string; token_hash: string; user_id: string | null; app_id: string; mode: 'bind' | 'login'; status: string; expires_at: string; openid: string; nickname: string; return_path: string; privacy_version: string; avatar_url: string; union_id: string }
 interface External { user_id: string; subject: string; nickname: string }
@@ -20,7 +22,7 @@ export function safeReturnTo(value: string): string {
   if (url.origin !== 'https://local.invalid' || decodedUrl.origin !== url.origin || /%[a-f0-9]{2}/i.test(decodedUrl.pathname) || /^\/(?:api|auth|login)(?:\/|$)/i.test(decodedUrl.pathname)) throw new DomainError('INVALID_RETURN', '返回地址不正確');
   return url.pathname + url.search + url.hash;
 }
-export function registerAuth(app: FastifyInstance, db: DB, security: Security, now: () => Date, provider?: QQProvider) {
+export function registerAuth(app: FastifyInstance, db: DB, security: Security, now: () => Date, provider: QQProvider | undefined, musicClaims: MusicClaims) {
   const stamp = () => now().toISOString();
   const uid = (device: Device) => device.kind === 'member' ? device.id : null;
   function requiredProvider() { if (!provider) throw new DomainError('QQ_NOT_CONFIGURED', 'QQ 登入尚未配置', 503); return provider; }
@@ -35,13 +37,14 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     return db.prepare("SELECT e.user_id,e.subject,u.nickname FROM external_identities e JOIN users u ON u.id=e.user_id WHERE e.provider='qq' AND e.client_id=? AND e.subject=?").get(attempt.app_id, attempt.openid) as External | undefined;
   }
   function invalidate(tokenHash: string) { db.prepare("UPDATE login_attempts SET status='failed',union_id='' WHERE token_hash=? AND status IN ('pending','exchanging','verified')").run(tokenHash); }
-  function rotate(device: Device, userId: string) {
+  function rotate(device: Device, userId: string, claimId = '') {
     const token = randomBytes(32).toString('base64url'); const newHash = hash(token);
     db.prepare('INSERT INTO browser_sessions VALUES(?,?,?)').run(newHash, userId, stamp());
     db.prepare(`INSERT INTO browser_accounts SELECT ?,b.user_id,b.created_at FROM browser_accounts b
       WHERE b.token_hash=? AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=b.user_id)`).run(newHash, device.tokenHash);
     for (const granted of new Set([userId, ...(device.kind === 'member' ? [device.id] : [])])) db.prepare('INSERT OR IGNORE INTO browser_accounts VALUES(?,?,?)').run(newHash, granted, stamp());
     invalidate(device.tokenHash);
+    clearMusicClaims(db, device.tokenHash, claimId);
     db.prepare('DELETE FROM browser_sessions WHERE token_hash=?').run(device.tokenHash);
     db.prepare('DELETE FROM visitor_sessions WHERE token_hash=?').run(device.tokenHash);
     return token;
@@ -76,9 +79,11 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     const device = security.write(request); const qq = requiredProvider(); const data = QQStart.parse(request.body);
     if (data.mode === 'bind' && device.kind !== 'member') throw new DomainError('LOGIN_REQUIRED', '請先登入後再綁定 QQ', 401);
     if (!accepted(device) && (!data.acceptPrivacy || data.privacyVersion !== PRIVACY_VERSION)) throw new DomainError('PRIVACY_REQUIRED', '請閱讀並同意隱私政策');
-    const returnTo = safeReturnTo(data.returnTo); const state = randomBytes(32).toString('base64url');
+    const returnTo = data.musicClaimId ? '/me/music/recover' : safeReturnTo(data.returnTo); const state = randomBytes(32).toString('base64url');
     db.prepare('DELETE FROM login_attempts WHERE expires_at<=?').run(stamp());
     invalidate(device.tokenHash);
+    clearMusicClaimAuthorization(db, device.tokenHash);
+    if (data.musicClaimId) musicClaims.attach(device, data.musicClaimId, hash(state), data.mode);
     db.prepare(`INSERT INTO login_attempts(id,token_hash,user_id,provider,app_id,mode,status,expires_at,created_at,return_path,privacy_version)
       VALUES(?,?,?,'qq',?,?,'pending',?,?,?,?)`).run(hash(state), device.tokenHash, uid(device), qq.clientId, data.mode, new Date(now().getTime() + 600000).toISOString(), stamp(), returnTo, PRIVACY_VERSION);
     return { authorizeUrl: qq.authorize(state) };
@@ -136,13 +141,15 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
         db.prepare('INSERT INTO users VALUES(?,?,?,?)').run(userId, randomBytes(32).toString('hex'), Array.from(row.nickname).slice(0, 24).join(''), stamp());
       }
       if (!userId) throw new Error('Missing authenticated user');
+      const claim = musicClaims.forAttempt(device, row.id, userId);
       if (!linked) db.prepare("INSERT INTO external_identities VALUES('qq',?,?,?,?,?)").run(row.app_id, row.openid, userId, row.nickname, stamp());
       else db.prepare("UPDATE external_identities SET display_name=? WHERE provider='qq' AND client_id=? AND subject=?").run(row.nickname, row.app_id, row.openid);
       db.prepare("INSERT OR REPLACE INTO external_profiles VALUES('qq',?,?,?)").run(row.app_id, userId, safeAvatar(row.avatar_url));
       const unionId = safeUnionId(row.union_id);
       if (unionId) db.prepare("INSERT OR IGNORE INTO external_unionids VALUES('qq',?,?,?,?)").run(row.app_id, row.openid, unionId, stamp());
       db.prepare('INSERT OR REPLACE INTO privacy_consents VALUES(?,?,?)').run(userId, PRIVACY_VERSION, stamp());
-      const token = rotate(device, userId);
+      const token = rotate(device, userId, claim?.id);
+      if (claim) musicClaims.authorize(claim, hash(token), userId, row.app_id, row.openid);
       db.prepare("UPDATE login_attempts SET status='used',union_id='' WHERE id=?").run(row.id);
       audit(userId, row.mode === 'bind' ? 'qq_bound' : 'qq_login', { previous_scope: device.kind === 'member' ? device.scope : null });
       const unionidBound = !!db.prepare("SELECT 1 FROM external_unionids WHERE provider='qq' AND client_id=? AND subject=?").get(row.app_id, row.openid);
@@ -154,6 +161,7 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
   app.post('/api/v2/auth/qq/cancel', async request => db.transaction(() => {
     const device = security.write(request); Confirm.parse(request.body); const row = latest(device);
     invalidate(device.tokenHash);
+    clearMusicClaimAuthorization(db, device.tokenHash);
     return { returnTo: row?.return_path ?? '/' };
   }).immediate());
   app.get('/api/v2/me/accounts', async request => {
@@ -170,12 +178,13 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     if (!selected) throw new DomainError('ACCESS_DENIED', '此裝置沒有該帳號的授權', 403);
     db.prepare('INSERT OR IGNORE INTO browser_accounts VALUES(?,?,?)').run(device.tokenHash, device.id, stamp());
     db.prepare('UPDATE browser_sessions SET user_id=? WHERE token_hash=?').run(selected.id, device.tokenHash);
-    invalidate(device.tokenHash); audit(device.id, 'account_switched', { target_scope: data.scope });
+    invalidate(device.tokenHash); clearMusicClaims(db, device.tokenHash); audit(device.id, 'account_switched', { target_scope: data.scope });
     return { ok: true };
   }).immediate());
   app.post('/api/v2/auth/logout', async (request, reply) => {
     db.transaction(() => {
       const device = security.write(request); Confirm.parse(request.body);
+      clearMusicClaims(db, device.tokenHash);
       for (const table of ['login_attempts', 'auth_requests', 'browser_accounts', 'browser_sessions', 'visitor_sessions']) db.prepare('DELETE FROM ' + table + ' WHERE token_hash=?').run(device.tokenHash);
     }).immediate();
     reply.clearCookie('kanban_session', { path: '/', httpOnly: true, sameSite: 'lax' });
