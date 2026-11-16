@@ -20,6 +20,17 @@ export function allocateActivity(existing:readonly {id:string;party_id:string|nu
   for(const group of groups){if(group.mode==='together'&&group.ids.length>remaining)blocked=true;for(const id of group.ids){const status=blocked||remaining<=0?'waiting':'confirmed';result.set(id,status);if(status==='confirmed')remaining--;}}
   return result;
 }
+export function rebalanceActivity(db:DB,event:EventRow,now:()=>Date,defaults:ActivityBotDefaults,hookError:(eventId:string)=>void){
+  if(!activityState(event,now()).registrationOpen)return [];
+  const people=activityPeople(db,event.id),assignments=allocateActivity(people,event.capacity),promoted:string[]=[];
+  for(const person of people)if(person.status==='waiting'&&assignments.get(person.id)==='confirmed'){
+    db.prepare("UPDATE attendees SET status='confirmed',updated_at=? WHERE id=?").run(legacyStamp(now()),person.id);
+    db.prepare("INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,'promoted',?,?)").run(person.manager_id,event.id,person.nickname+' 已递补为正式报名',legacyStamp(now()));
+    try{db.transaction(()=>createActivityBot(db,now,defaults).promoted(event.id,person.manager_id))();}catch{hookError(event.id);}
+    promoted.push(person.id);
+  }
+  return promoted;
+}
 export function publishActivityDraft(db:DB,event:EventRow,user:{id:string;nickname:string},now:()=>Date,values:z.infer<typeof ActivityArrangementInput>,defaults:ActivityBotDefaults,hookError:(eventId:string)=>void){
   if(event.lifecycle!=='draft')throw new DomainError('NOT_A_DRAFT','只有草稿可以發布',409);
   // Validate the stored arrangement as well as the revision supplied by the caller.
@@ -40,14 +51,7 @@ export function publishActivityDraft(db:DB,event:EventRow,user:{id:string;nickna
   db.prepare("INSERT INTO attendee_consents(attendee_id,event_id,version,decision,actor_id,actor_name,reason,created_at) VALUES(?,?,?,'accepted',?,?,'报名时接受当前安排',?)").run(personId,event.id,published.conditions_version,user.id,user.nickname,stamp);
   db.prepare('INSERT OR IGNORE INTO event_access(event_id,user_id,created_at) VALUES(?,?,?)').run(event.id,user.id,stamp);
   const bot=createActivityBot(db,now,defaults);
-  if(activityState(published,now()).registrationOpen){
-    const people=activityPeople(db,event.id),assignments=allocateActivity(people,event.capacity);
-    for(const person of people)if(person.status==='waiting'&&assignments.get(person.id)==='confirmed'){
-      db.prepare("UPDATE attendees SET status='confirmed',updated_at=? WHERE id=?").run(stamp,person.id);
-      db.prepare("INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,'promoted',?,?)").run(person.manager_id,event.id,person.nickname+' 已递补为正式报名',stamp);
-      try{db.transaction(()=>bot.promoted(event.id,person.manager_id))();}catch{hookError(event.id);}
-    }
-  }
+  rebalanceActivity(db,published,now,defaults,hookError);
   const after=activityPeopleSnapshot(db,event.id),delta=rosterDelta(rosterBefore,after);
   appendEventAudit(db,published,user,'signup',{participants:delta.prior},{participants:delta.current},'',stamp);
   appendEventAudit(db,event,user,'event_publish',{event:before,participants:delta.prior},{event:eventSnapshot(eventRow(db,event.id)!),participants:delta.current},'',stamp);

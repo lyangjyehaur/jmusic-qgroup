@@ -6,7 +6,7 @@ import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
 import { requireActivityAccess } from './activity-access';
-import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventScopes, eventSnapshot, legacyStamp, removalBlocker, requireEventRevision, type EventRow } from './activity-arrangements';
+import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventScopes, eventSnapshot, legacyStamp, removalBlocker, requireEventRevision, storedArrangement } from './activity-arrangements';
 import { publishActivityDraft } from './activity-publish';
 import { activityBotPolicy, type ActivityBotDefaults } from './activity-bot';
 
@@ -20,18 +20,12 @@ function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allow
   if(scope&&!scopes.has(scope))throw new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403);
   return event;
 }
-function values(event:EventRow){return {
-  title:event.title,category:event.category,location:event.location,startsAt:event.starts_at,deadline:event.deadline,
-  capacity:event.capacity,description:event.description,durationHours:event.duration_hours??3,
-  withdrawalDeadline:event.withdrawal_deadline,visibility:event.visibility,timezone:event.timezone,
-  minimumParticipants:event.minimum_participants,feePolicy:event.fee_policy,botEnabled:!!event.bot_enabled,joinOwner:!!event.draft_join_owner,
-};}
 export function activityDraft(db:DB,id:string,userId:string){
   requireActivityAccess(db,id,userId);
   const event=authorize(db,id,userId);const scopes=eventScopes(db,event,userId);
   const owner=db.prepare('SELECT nickname FROM users WHERE id=?').get(event.owner_id) as {nickname:string};
   const blocker=removalBlocker(db,event);
-  return {id,revision:event.revision,ownerName:owner.nickname,isOwner:scopes.has('owner'),canEdit:scopes.has('schedule'),canRemove:scopes.has('owner')&&!blocker,removalBlocker:blocker,values:values(event)};
+  return {id,revision:event.revision,ownerName:owner.nickname,isOwner:scopes.has('owner'),canEdit:scopes.has('schedule'),canRemove:scopes.has('owner')&&!blocker,removalBlocker:blocker,values:storedArrangement(event)};
 }
 export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Security,now:()=>Date,botDefaults:ActivityBotDefaults={}){
   function reconcileDraftBot(request:FastifyRequest,id:string){
@@ -129,7 +123,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     const {id}=params.parse(request.params);const input=PublishActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/'+id+'/draft/publish',input,user=>{
       const event=authorize(db,id,user.id,'owner');requireEventRevision(event,input.revision);
-      const arrangement=arrangementValues(values(event) as z.infer<typeof CreateActivityDraft>['values'],now(),true,event);
+      const arrangement=arrangementValues(storedArrangement(event) as z.infer<typeof CreateActivityDraft>['values'],now(),true,event);
       return publishActivityDraft(db,event,user,now,arrangement,botDefaults,eventId=>request.log.error({eventId},'Publication bot hook failed; business write preserved'));
     },{id,scope:'owner'});
   });

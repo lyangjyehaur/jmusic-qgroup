@@ -17,6 +17,7 @@ export function ActivityParticipants({ eventId, viewer }: {eventId:string;viewer
     {query.isPending?<Notice>正在讀取活動名單…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:query.data.participants.length?<ul className="activity-roster">{query.data.participants.map(person=><li key={person.id}>
       <QQAvatar url={person.avatarUrl} nickname={person.name}/><div className="roster-person"><Text><strong>{person.name}</strong>{person.isMe?' · 我':person.isGuest?' · 未認領同行':''}</Text><Text>{statusLabels[person.status]}{person.waitingPosition!==null?' '+person.waitingPosition:''}{person.withdrawalRequested?' · 退出申請中':''}{person.confirmationState==='pending'?' · 安排待確認':''}</Text>
       {person.note&&<Text className="description">{person.note}</Text>}<Text tone="muted">付款：{person.payerName}</Text>
+      {person.managedByMe&&<Link to={'/activities/'+encodeURIComponent(eventId)+'/conditions?'+new URLSearchParams({person:person.id})}>核對此人的安排</Link>}
       {viewer.authenticated?<Button variant="ghost" onClick={()=>setSelected({id:person.id,name:person.name})}>查看 {person.name} 的成分</Button>:<Link to={loginLink(returnTo)}>登入查看成分</Link>}</div>
     </li>)}</ul>:<Text>目前沒有正式、候補或待確認的報名。</Text>}
     {selected&&viewer.authenticated&&<AttendeeMusicDialog key={viewer.scope+':'+viewer.musicEpoch+':'+selected.id} eventId={eventId} person={selected} viewer={viewer} close={()=>setSelected(null)}/>}

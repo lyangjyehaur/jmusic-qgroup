@@ -6,7 +6,7 @@ import legacyTimezones from '../../../packages/domain/src/legacy-timezones.json'
 const allowedTimezones=new Set(legacyTimezones);
 
 export type EventRow = {
-  id:string; owner_id:string; title:string; category:string; location:string; starts_at:string; deadline:string;
+  id:string; owner_id:string; title:string; category:string; location:string; starts_at:string; deadline:string; created_at:string;
   capacity:number; description:string; duration_hours:number|null; status:string; revision:number; withdrawal_deadline:string|null;
   visibility:string; lifecycle:string; registration_open:number; actual_started_at:string|null; actual_ended_at:string|null;
   archived_at:string|null; timezone:string|null; minimum_participants:number; formation_state:string; fee_policy:string;
@@ -53,6 +53,12 @@ export function arrangementValues(raw:z.infer<typeof ActivityArrangementInput>,n
 const snapshotKeys=['title','category','location','starts_at','deadline','capacity','description','duration_hours','status','withdrawal_deadline','visibility','lifecycle','registration_open','actual_started_at','actual_ended_at','archived_at','timezone','minimum_participants','formation_state','fee_policy','conditions_version','cancellation_reason','bot_enabled'] as const;
 export function eventSnapshot(event:EventRow){return Object.fromEntries(snapshotKeys.map(key=>[key,event[key]]));}
 export function arrangementSnapshot(event:EventRow){return {category:event.category,starts_at:event.starts_at,duration_hours:event.duration_hours,location:event.location,description:event.description,withdrawal_deadline:event.withdrawal_deadline||event.deadline,timezone:event.timezone,fee_policy:event.fee_policy};}
+export function storedArrangement(event:EventRow){return {
+  title:event.title,category:event.category,location:event.location,startsAt:event.starts_at,deadline:event.deadline,
+  capacity:event.capacity,description:event.description,durationHours:event.duration_hours??3,
+  withdrawalDeadline:event.withdrawal_deadline,visibility:event.visibility,timezone:event.timezone,
+  minimumParticipants:event.minimum_participants,feePolicy:event.fee_policy,botEnabled:!!event.bot_enabled,joinOwner:!!event.draft_join_owner,
+};}
 export function removalBlocker(db:DB,event:EventRow):string {
   for(const table of ['settlements','settlement_history','finance_entries','finance_reports'])if(db.prepare('SELECT 1 FROM '+table+' WHERE event_id=? LIMIT 1').get(event.id))return '已有結算或款項記錄，請保留活動並使用歸檔';
   if(db.prepare('SELECT 1 FROM attendees WHERE event_id=? AND (user_id IS NULL OR user_id!=? OR manager_id!=?) LIMIT 1').get(event.id,event.owner_id,event.owner_id))return '已有其他人的報名記錄（含退出或代報名），請保留活動';

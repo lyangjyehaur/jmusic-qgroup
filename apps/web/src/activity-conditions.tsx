@@ -1,0 +1,94 @@
+import { useEffect, useRef, useState } from 'react';
+import { Link, useBlocker, useParams, useSearchParams } from 'react-router-dom';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { z } from 'zod';
+import { ActivityArrangements, ActivityConditions, ActivityDraftResult, RespondActivityConditions, type ConditionVersion, type Viewer } from '@qgroup/contracts';
+import { api, ApiError } from './api';
+import { type Member } from './member-access';
+import { Failure, Notice, PageIntro, useSession } from './shared';
+type Conditions=z.infer<typeof ActivityConditions>;
+const choices={accepted:'接受',declined:'暫不同意',pending:'待確認'};
+const Pending=z.object({key:z.string().uuid(),personId:z.string().min(1),input:RespondActivityConditions}).strict();
+const Draft=z.object({revision:z.number().int().min(0),conditionsVersion:z.number().int().min(1),personId:z.string(),decision:z.enum(['accepted','declined']),reason:z.string(),pending:Pending.optional()}).strict();
+type DraftValue=z.infer<typeof Draft>;
+const original=(data:Conditions):DraftValue=>({revision:data.revision,conditionsVersion:data.current.version,personId:'',decision:'accepted',reason:''});
+function dateLabel(value:string,zone:string|null){
+  if(!/(?:Z|[+-]\d{2}:\d{2})$/.test(value)||!zone)return value.replace('T',' ');
+  try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(value));}catch{return value;}
+}
+function Version({value,heading}:{value:z.infer<typeof ConditionVersion>;heading:string}){
+  const a=value.arrangement;
+  return <Surface role="region" aria-label={heading} className="detail"><Heading level={2}>{heading} · 第 {value.version} 版</Heading><Text>{value.summary}</Text>{value.actorName&&<Text tone="muted">{value.actorName} · {dateLabel(value.createdAt,'Asia/Taipei')}（台北）</Text>}<dl><dt>類型</dt><dd>{a.category}</dd><dt>時間</dt><dd>{dateLabel(a.starts_at,a.timezone)}（{a.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{a.location}</dd><dt>退出期限</dt><dd>{dateLabel(a.withdrawal_deadline,a.timezone)}</dd>{a.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{a.fee_policy}</dd></>}{a.description&&<><dt>注意事項</dt><dd className="preserve-lines">{a.description}</dd></>}</dl></Surface>;
+}
+export function ActivityManagementLink({eventId,viewer}:{eventId:string;viewer:Member}){
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-arrangements',eventId],queryFn:()=>api('/activities/'+encodeURIComponent(eventId)+'/arrangements',ActivityArrangements,{headers:{'X-Account-Scope':viewer.scope}})});
+  return query.error?<Button variant="ghost" onClick={()=>void query.refetch()}>重試讀取活動管理權限</Button>:query.data?.canEdit?<Link to={'/activities/'+encodeURIComponent(eventId)+'/arrangements'}>編輯活動安排</Link>:null;
+}
+export function ActivityConditionsPage(){
+  const {id=''}=useParams(),session=useSession();
+  return <><PageIntro title="安排版本與確認"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link></div>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:!session.data?<Notice>正在確認帳號…</Notice>:<ConditionsContent key={session.data.scope+':'+id} viewer={session.data} id={id}/>}</>;
+}
+function ConditionsContent({viewer,id}:{viewer:Viewer;id:string}){
+  const client=useQueryClient();
+  const [search,setSearch]=useSearchParams(),page=Math.max(1,Math.min(10000,Number(search.get('page'))||1));
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-conditions',id,page],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/conditions?page='+page,ActivityConditions,{headers:{'X-Account-Scope':viewer.scope}}),refetchOnWindowFocus:false});
+  if(query.isPending)return <Notice>正在讀取活動安排…</Notice>;
+  if(query.error)return <Failure error={query.error} retry={()=>void query.refetch()}/>;
+  const data=query.data;
+  const preferred=search.get('person')??'';
+  return <><Version value={data.current} heading="目前安排"/>{viewer.authenticated&&<ConsentEditor key={viewer.scope+':'+id} viewer={viewer} initial={data} preferred={preferred} update={fresh=>{client.setQueryData<Conditions>(['private',viewer.scope,'activity-conditions',id,page],prior=>prior?{...prior,...(page===fresh.page?fresh:{}),current:fresh.current,revision:fresh.revision,people:fresh.people,canRespond:fresh.canRespond}:prior);}}/>}
+    <section aria-label="安排歷史"><Heading level={2}>安排歷史</Heading>{data.history.map(value=><details key={value.version}><summary>第 {value.version} 版 · {value.summary}</summary><Version value={value} heading="保存的安排"/></details>)}{!data.history.length&&<Notice>尚未發布安排版本。</Notice>}<div className="pagination">{page>1&&<Button variant="secondary" onClick={()=>setSearch({page:String(page-1)})}>上一頁</Button>}{data.hasMore&&<Button variant="secondary" onClick={()=>setSearch({page:String(page+1)})}>下一頁</Button>}</div></section></>;
+}
+function ConsentEditor({viewer,initial,preferred,update}:{viewer:Member;initial:Conditions;preferred:string;update:(data:Conditions)=>void}){
+  const active=useRef(true);useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
+  const client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:consent:v1:'+viewer.scope+':'+initial.id;
+  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(storageKey),value=raw?Draft.parse(JSON.parse(raw)):original(initial);const clean=!value.personId&&!value.reason&&!value.pending&&value.decision==='accepted';return {draft:clean?{...original(initial),personId:initial.people.some(person=>person.id===preferred)?preferred:''}:value,error:''};}catch{return {draft:original(initial),error:'無法讀取安排確認原稿，請先保全原稿。'};}});
+  const [data,setData]=useState(initial),[draft,setDraft]=useState(loaded.draft),[readError,setReadError]=useState(loaded.error),[storageError,setStorageError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false);
+  const dirty=!!draft.personId||!!draft.reason||!!draft.pending||draft.decision!=='accepted',blocker=useBlocker(dirty);
+  const locked=busy||!!readError||!!draft.pending;
+  const stale=draft.revision!==data.revision||draft.conditionsVersion!==data.current.version;
+  useEffect(()=>{if(readError)return;try{sessionStorage.setItem(storageKey,JSON.stringify(draft));setStorageError('');}catch{setStorageError('無法保存安排確認原稿，尚未送出操作。');}},[draft,readError,storageKey]);
+  useEffect(()=>{if(!dirty)return;const leave=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',leave);return()=>window.removeEventListener('beforeunload',leave);},[dirty]);
+  function persist(value:DraftValue){try{sessionStorage.setItem(storageKey,JSON.stringify(value));setStorageError('');return true;}catch{setStorageError('無法保存操作編號，尚未送出確認。');return false;}}
+  function edit(patch:Partial<DraftValue>){setDraft({...draft,...patch});setConfirm(false);setMessage('');}
+  async function latest(){return api('/activities/'+encodeURIComponent(data.id)+'/conditions',ActivityConditions,{headers:{'X-Account-Scope':viewer.scope}});}
+  async function rebase(){
+    if(locked)return;setBusy(true);
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision,conditionsVersion:fresh.current.version};if(!persist(next))return;setData(fresh);setDraft(next);setConfirm(false);update(fresh);setMessage('已取得最新安排；選擇與原因仍保留，請重新核對後確認。');}
+    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+  }
+  async function submit(){
+    if(busy||readError)return;let operation=draft.pending;
+    if(!operation){
+      if(!confirm||!data.canRespond||!data.people.some(person=>person.id===draft.personId))return;
+      const parsed=RespondActivityConditions.safeParse({revision:draft.revision,conditionsVersion:draft.conditionsVersion,decision:draft.decision,reason:draft.reason});
+      if(!parsed.success){setMessage('暫不同意新安排時請填寫原因（最多 200 字）。');return;}
+      operation={key:crypto.randomUUID(),personId:draft.personId,input:parsed.data};
+    }
+    const pending={...draft,pending:operation};if(!persist(pending))return;setDraft(pending);setBusy(true);setMessage('');let accepted=false;
+    try{
+      await api('/activities/'+encodeURIComponent(data.id)+'/attendees/'+encodeURIComponent(operation.personId)+'/conditions',ActivityDraftResult,{method:'POST',headers:{'Content-Type':'application/json','X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
+      const fresh=await latest();if(!active.current)return;const next=original(fresh);if(!persist(next))throw Error('storage');setDraft(next);setData(fresh);setConfirm(false);update(fresh);setMessage('安排確認已保存。');
+      void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-roster',data.id]});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});
+    }catch(error){
+      if(!active.current)return;
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){setDraft({...pending,pending:undefined});setConfirm(false);setMessage(error.message);}
+      else setMessage('尚未確認操作結果。原操作已保留，請按「確認安排回覆結果」安全重試。');
+    }finally{if(active.current)setBusy(false);}
+  }
+  return <Surface className="detail activity-editor"><Heading level={2}>我的安排確認</Heading>{blocker.state==='blocked'&&<Notice>仍有安排確認原稿。<Button onClick={()=>blocker.reset()}>繼續核對</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留原稿並離開</Button></Notice>}
+    {data.people.length?<ul>{data.people.map(person=><li key={person.id}>{person.name} · {choices[person.confirmationState as keyof typeof choices]??person.confirmationState} · 已接受版本 {person.acceptedVersion??'無'}</li>)}</ul>:<Notice>目前沒有由此帳號管理的有效報名。</Notice>}
+    {!data.canRespond&&<Notice>活動已結束、取消或歸檔，不能回覆新安排。</Notice>}
+    {stale&&!draft.pending&&<Notice>原稿對應的安排或名單已有更新，請先核對最新安排。</Notice>}
+    <form noValidate onSubmit={event=>{event.preventDefault();void submit();}}><fieldset disabled={locked||!data.canRespond}><legend className="sr-only">逐人確認安排</legend>
+      <div className="account-field"><label htmlFor="condition-person">報名者</label><select id="condition-person" value={draft.personId} onChange={event=>edit({personId:event.target.value})}><option value="">請選擇</option>{data.people.map((person,index)=><option key={person.id} value={person.id}>{index+1}. {person.name}</option>)}{draft.personId&&!data.people.some(person=>person.id===draft.personId)&&<option value={draft.personId}>原報名目前不可操作</option>}</select></div>
+      <div className="account-field"><label htmlFor="condition-decision">決定</label><select id="condition-decision" value={draft.decision} onChange={event=>edit({decision:event.target.value as DraftValue['decision']})}><option value="accepted">接受新安排</option><option value="declined">暫不同意新安排</option></select></div>
+      <div className="account-field"><label htmlFor="condition-reason">原因（暫不同意時必填）</label><textarea id="condition-reason" rows={3} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></div>
+      <Text>暫不同意會保留原報名與原接受版本，通知發起者協調；不自動退出或增加費用責任。</Text>
+      <label className="consent"><input type="checkbox" disabled={stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>已核對第 {draft.conditionsVersion} 版安排，確認提交此人的決定</span></label>
+    </fieldset><Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!data.canRespond||!draft.personId))}>{draft.pending?'確認安排回覆結果':'提交安排確認'}</Button></form>
+    {!draft.pending&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新安排，保留輸入</Button>}
+    {message&&<Text role="status">{message}</Text>}{storageError&&<Text role="alert">{storageError}</Text>}{readError&&<Notice>{readError}<Button onClick={()=>{try{const raw=sessionStorage.getItem(storageKey);if(raw!==null)sessionStorage.setItem(storageKey+':recovery:'+Date.now(),raw);setReadError('');}catch{setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。');}}}>保全原稿後繼續</Button></Notice>}
+  </Surface>;
+}

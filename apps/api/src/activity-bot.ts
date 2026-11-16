@@ -111,10 +111,20 @@ export function createActivityBot(db:DB,now:()=>Date,defaults:ActivityBotDefault
     if(!botShareable(event))db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
     schedule(event);if(event.lifecycle!=='draft')broadcast(event,'activity_published');
   }
-  function promoted(eventId:string,userId:string){
+  function personal(eventId:string,userId:string,kind:'promoted'|'conditions_declined'){
     if(!defaults.personalQueue||!activityBotPolicy(db,defaults).config.enabled)return;
-    const text='你的报名已递补为正式名额\n'+botActivityURL(eventId,undefined,defaults);const dedupe=hash('promoted\nprivate\n\n'+userId+'\n'+text).slice(0,32);
-    db.prepare("INSERT OR IGNORE INTO bot_outbox(event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id,poll_id) VALUES(?,'promoted',?,'private','',?,NULL,'pending',?,?,NULL)").run(eventId,dedupe,JSON.stringify({text,msg_type:0}),legacyStamp(now()),userId);
+    const label=kind==='promoted'?'你的报名已递补为正式名额':'有人暂不同意新安排，请协调处理';
+    const text=label+'\n'+botActivityURL(eventId,undefined,defaults);const dedupe=hash(kind+'\nprivate\n\n'+userId+'\n'+text).slice(0,32);
+    db.prepare("INSERT OR IGNORE INTO bot_outbox(event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id,poll_id) VALUES(?,?,?,'private','',?,NULL,'pending',?,?,NULL)").run(eventId,kind,dedupe,JSON.stringify({text,msg_type:0,...(defaults.keyboard?{keyboard:{content:{rows:[]}}}:{})}),legacyStamp(now()),userId);
   }
-  return {schedule,broadcast,publication,reminderPlan,promoted};
+  function arrangementsUpdated(before:EventRow,promotedIds:string[]){
+    if(!activityBotPolicy(db,defaults).config.enabled)return;
+    const event=eventRow(db,before.id)!;
+    if(!botShareable(event))db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(event.id);
+    schedule(event);
+    if(promotedIds.length)broadcast(event,'registration_changed',promotedIds);
+    if(event.conditions_version!==before.conditions_version)broadcast(event,'conditions_changed');
+    if(!before.bot_enabled&&event.bot_enabled)broadcast(event,'activity_published');
+  }
+  return {schedule,broadcast,publication,reminderPlan,personal,promoted:(eventId:string,userId:string)=>personal(eventId,userId,'promoted'),arrangementsUpdated};
 }

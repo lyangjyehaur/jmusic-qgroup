@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)及[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)及[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -38,6 +38,7 @@
 | [活動名單與同好銜接檢查點](20-roster-checkpoint.md) | 穩定報名者對應、名單／成分浮層、存取權限、活動返回與 Python 差分 |
 | [活動草稿檢查點](21-activity-drafts-checkpoint.md) | 原生安排草稿、操作去重、刪除保護、權限與 Python／bot 差分 |
 | [活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md) | 原子發布、自動本人報名、活動卡片／提醒、舊 worker 消費、schema 9 與未知結果恢復 |
+| [已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md) | 條件版本、逐人決定、有限管理員協助、恢復與 Python／bot 差分 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論
