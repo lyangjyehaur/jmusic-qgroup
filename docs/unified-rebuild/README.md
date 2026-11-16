@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)及[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)及[獨立成分資料檢查點](19-fields-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -34,6 +34,7 @@
 | [舊成分找回檢查點](16-recovery-checkpoint.md) | 舊 PIN、持久限流、十分鐘 intent、本次 QQ 授權與原成分保全 |
 | [管理成分關聯檢查點](17-ownership-checkpoint.md) | 查詢／預覽／修正／解除、舊操作失效、追加歷史與 bot 資料保全 |
 | [管理口令與原關聯歷史檢查點](18-pin-history-checkpoint.md) | PIN 重設、只查回執的斷線恢復、授權撤銷、原紀錄合流與隱私保全 |
+| [獨立成分資料檢查點](19-fields-checkpoint.md) | 成分稱呼、性別可見性、私人留言本人編輯、欄位遷移及草稿恢復 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

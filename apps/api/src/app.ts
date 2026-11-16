@@ -22,6 +22,7 @@ import { registerAdminPrivacy } from './admin-privacy';
 import { registerAdminMusic } from './admin-music';
 import { registerAdminMusicPins } from './admin-music-pins';
 import { registerMusicContact } from './music-contact';
+import { registerMusicFields } from './music-fields';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
@@ -63,6 +64,7 @@ export function createApp(options: AppOptions) {
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);
+    registerMusicFields(app, db, security, now);
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

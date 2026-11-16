@@ -67,6 +67,8 @@ describe('offline paired snapshot import', () => {
       expect(db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId(native))).toEqual({ user_id: 'bob' });
       expect(db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId('10003'))).toEqual({ user_id: null });
       expect(db.prepare('SELECT contact_qq,ownership_source FROM music_legacy_profiles WHERE legacy_key=?').get(native)).toEqual({ contact_qq: '', ownership_source: 'prelinked' });
+      expect(db.prepare('SELECT name,note,note_at,gender,gender_public FROM music_profile_fields WHERE profile_id=?').get(profileId('10001'))).toEqual({name:'舊成分名稱',note:'private member note',note_at:125,gender:'female',gender_public:0});
+      expect(db.prepare('SELECT name,note FROM music_profile_fields WHERE profile_id=?').get(profileId(native))).toEqual({name:'未寫入 JSON 的成分',note:'native private note'});
       expect(db.prepare('SELECT entry_id,level,position FROM music_selections WHERE profile_id=? ORDER BY position').all(profileId('10001'))).toEqual([{ entry_id: 'e-main', level: 3, position: 0 }, { entry_id: 'e-one', level: 4, position: 1 }]);
       expect(db.prepare('SELECT level FROM music_selections WHERE profile_id=?').get(profileId('10003'))).toEqual({ level: 4 });
       expect(db.prepare('SELECT kind FROM music_entries WHERE id=?').get('e-main')).toEqual({ kind: 'main' });
@@ -92,7 +94,9 @@ describe('offline paired snapshot import', () => {
       expect(history.body).not.toContain('synthetic-admin');
       const before = (await app.inject({ url: '/api/v2/me/music', headers: { cookie, 'x-account-scope': session.scope } })).json(); expect(before.id).toBe(profileId('10001'));
       const response = await app.inject({ method: 'PUT', url: '/api/v2/me/music', payload: { profileId: before.id, musicEpoch: 0, revision: 0, selections: [{ entryId: 'e-one', level: 2 }] }, headers: { cookie, origin: 'https://rebuild.example', 'x-account-scope': session.scope, 'x-csrf-token': session.csrf, 'idempotency-key': randomUUID() } }); expect(response.statusCode).toBe(200);
-      const result = await importSnapshot(s.source, s.destination, stamp); expect(result.status).toBe('already_imported'); expect(db.prepare('SELECT revision FROM music_profiles WHERE id=?').get(before.id)).toEqual({ revision: 1 }); expect(db.prepare('SELECT level FROM music_selections WHERE profile_id=?').get(before.id)).toEqual({ level: 2 });
+      const fields = await app.inject({method:'PUT',url:'/api/v2/me/music/fields',payload:{profileId:before.id,musicEpoch:0,revision:0,name:'匯入後獨立稱呼',note:'編輯後私人留言',gender:'',genderPublic:false},headers:{cookie,origin:'https://rebuild.example','x-account-scope':session.scope,'x-csrf-token':session.csrf,'idempotency-key':randomUUID()}}); expect(fields.statusCode).toBe(200);
+      const result = await importSnapshot(s.source, s.destination, stamp); expect(result.status).toBe('already_imported'); expect(db.prepare('SELECT revision FROM music_profiles WHERE id=?').get(before.id)).toEqual({ revision: 2 }); expect(db.prepare('SELECT level FROM music_selections WHERE profile_id=?').get(before.id)).toEqual({ level: 2 });
+      expect(db.prepare('SELECT name,note FROM music_profile_fields WHERE profile_id=?').get(before.id)).toEqual({name:'匯入後獨立稱呼',note:'編輯後私人留言'});
     } finally { await app.close(); db.close(); }
     s.music.members['10001'].name = '新的來源'; s.write('music/data.json', s.music); await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Refusing to replace');
   });
@@ -185,7 +189,7 @@ describe('offline paired snapshot import', () => {
     await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Referenced board image is missing'); expect(existsSync(s.destination)).toBe(false);
     mkdirSync(join(s.source, 'images', image.slice(0, 2))); writeFileSync(join(s.source, path), bytes);
     const output = execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' }); const result = JSON.parse(output);
-    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 7, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
+    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 8, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
     expect(readFileSync(join(s.destination, path))).toEqual(bytes);
     const second = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' })); expect(second.status).toBe('already_imported');
   });

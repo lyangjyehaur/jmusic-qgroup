@@ -13,13 +13,13 @@ export function MemberAccess({ children }: { children: (viewer: Member) => React
   if (!session.data.authenticated) return <Notice>請先<Link to={loginLink(location.pathname + location.search)}>登入</Link>。</Notice>;
   return children(session.data);
 }
-export function MusicMemberAccess({ children }: { children: (viewer: Member) => ReactNode }) {
-  return <MemberAccess>{viewer => <MusicGate key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer}>{children}</MusicGate>}</MemberAccess>;
+export function MusicMemberAccess({ children, purpose = '查看同好成分' }: { children: (viewer: Member) => ReactNode; purpose?: string }) {
+  return <MemberAccess>{viewer => <MusicGate key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} purpose={purpose}>{children}</MusicGate>}</MemberAccess>;
 }
-function MusicGate({ viewer, children }: { viewer: Member; children: (viewer: Member) => ReactNode }) {
+function MusicGate({ viewer, children, purpose }: { viewer: Member; children: (viewer: Member) => ReactNode; purpose: string }) {
   const profile = useQuery({ queryKey: ['private', viewer.scope, 'music', viewer.musicEpoch], queryFn: () => api('/me/music', Profile, { headers: { 'X-Account-Scope': viewer.scope } }) });
   if (profile.isPending) return <Notice>正在確認成分…</Notice>;
   if (profile.error) return <Failure error={profile.error} retry={() => void profile.refetch()} />;
-  if (!profile.data) return <Notice>請先<Link to="/me/music">保存成分</Link>，再查看同好成分。</Notice>;
+  if (!profile.data) return <Notice>請先<Link to="/me/music">保存成分</Link>，再{purpose}。</Notice>;
   return children(viewer);
 }

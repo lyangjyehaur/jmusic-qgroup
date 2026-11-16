@@ -32,7 +32,7 @@ describe('music contacts and member lookup', () => {
     const tables = ['events','attendees','finance_entries','settlements','bot_outbox','bot_settings','browser_sessions','external_identities','qq_accounts','account_audit'];
     const before = tables.map(table => db.prepare('SELECT * FROM ' + table).all());
     const first = await save({ ...alice.input, contactQQ: ' 123456 ' }); expect(first.statusCode).toBe(200); expect(first.json()).toEqual({ profileId: alice.profile.id, revision: 1, contactQQ: '123456', source: 'self_reported' });
-    expect((await lookup('123456')).json()).toEqual({ id: alice.profile.id, name: '小青', contactQQ: '123456', contactSource: 'self_reported', selections: [{ entryId: 'sub-2', level: 4, name: 'Aimer', kind: 'sub' }] });
+    expect((await lookup('123456')).json()).toEqual({ id: alice.profile.id, name: '小青', gender: '', contactQQ: '123456', contactSource: 'self_reported', selections: [{ entryId: 'sub-2', level: 4, name: 'Aimer', kind: 'sub' }] });
     expect((await save({ ...alice.input, revision: 1, contactQQ: '' })).json()).toMatchObject({ contactQQ: '', revision: 2 });
     expect((await lookup('123456')).statusCode).toBe(404); expect((await lookup(alice.profile.id)).json().id).toBe(alice.profile.id);
     const profile = (await app.inject({ url: '/api/v2/me/music', headers: alice.headers })).json(); expect(profile).toMatchObject({ id: alice.profile.id, revision: 3, selections: alice.profile.selections });
@@ -71,11 +71,13 @@ describe('music contacts and member lookup', () => {
   });
   it('keeps legacy numeric aliases read-only, uses current native contacts and never exposes migrated private fields', async () => {
     const { db, app, alice, bob, save, lookup } = await setup();
+    // Model imported profiles, rather than attaching source data over authoritative native fields.
+    db.prepare('DELETE FROM music_profile_fields WHERE profile_id IN (?,?)').run(alice.profile.id, bob.profile.id);
     db.prepare('INSERT INTO music_legacy_profiles VALUES(?,?,?,?,?,?,?,?,?)').run(alice.profile.id, '10001', '舊成分稱呼', 1, 'private-pin-hash', '10001', '{"note":"private","gender":"female","genderPublic":false}', '[]', 'oauth');
     db.prepare("INSERT INTO music_profile_contacts VALUES(?,'10001','legacy',0,'before')").run(alice.profile.id);
     expect((await save({ ...alice.input, contactQQ: '' })).json().code).toBe('LEGACY_CONTACT_FIXED');
     expect((await save({ ...bob.input, contactQQ: '10001' }, bob.headers)).json().code).toBe('CONTACT_IN_USE');
-    const response = await lookup('10001'); expect(response.json()).toMatchObject({ id: alice.profile.id, name: '舊成分稱呼', contactSource: 'legacy' }); expect(response.body).not.toMatch(/pin|hash|private|gender|boardUserId|alice|consent|ownership/);
+    const response = await lookup('10001'); expect(response.json()).toMatchObject({ id: alice.profile.id, name: '舊成分稱呼', gender: '', contactSource: 'legacy' }); expect(response.body).not.toMatch(/pin|hash|private|female|boardUserId|alice|consent|ownership/);
     expect((await app.inject({ url: '/api/v2/music/profiles/' + alice.profile.id, headers: bob.headers })).json()).toEqual(response.json());
     expect((await app.inject({ url: '/api/v2/me/music/contact', headers: alice.headers })).json()).toMatchObject({ source: 'legacy', revision: 0 });
     const native = 'm_' + 'a'.repeat(24); db.prepare('INSERT INTO music_legacy_profiles VALUES(?,?,?,?,?,?,?,?,?)').run(bob.profile.id, native, '獨立名稱', 1, 'never-public', '', '{}', '[]', 'prelinked');

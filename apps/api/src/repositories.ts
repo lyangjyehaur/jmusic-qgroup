@@ -53,7 +53,11 @@ export function saveProfile(db: DB, userId: string, input: SaveProfileInput, now
   const updatedAt = now.toISOString();
   const revision = input.revision + 1;
   if (before) db.prepare('UPDATE music_profiles SET revision=?,updated_at=? WHERE id=?').run(revision, updatedAt, id);
-  else db.prepare('INSERT INTO music_profiles(id,user_id,revision,updated_at) VALUES(?,?,?,?)').run(id, userId, revision, updatedAt);
+  else {
+    db.prepare('INSERT INTO music_profiles(id,user_id,revision,updated_at) VALUES(?,?,?,?)').run(id, userId, revision, updatedAt);
+    const account = db.prepare('SELECT nickname FROM users WHERE id=?').get(userId) as { nickname: string };
+    db.prepare("INSERT INTO music_profile_fields VALUES(?,?,'',0,'',0,0,?)").run(id, account.nickname, updatedAt);
+  }
   db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(id);
   const insert = db.prepare('INSERT INTO music_selections VALUES(?,?,?,?)');
   input.selections.forEach((s, position) => insert.run(id, s.entryId, s.level, position));

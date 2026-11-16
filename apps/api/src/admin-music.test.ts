@@ -94,11 +94,16 @@ describe('unified administrator music ownership', () => {
     const save = {profileId:s.id,revision:profile.revision,musicEpoch:member.musicEpoch,selections:[{entryId:'sub-0',level:3}]}; const saveKey = randomUUID();
     const put = () => s.app.inject({method:'PUT',url:'/api/v2/me/music',headers:{cookie:s.bob.cookie,origin,'x-account-scope':member.scope,'x-csrf-token':member.csrf,'idempotency-key':saveKey},payload:save});
     expect((await put()).statusCode).toBe(200);
+    const fieldInput = { profileId:s.id,musicEpoch:member.musicEpoch,revision:0,name:'移交前的成分稱呼',note:'移交前私人留言',gender:'',genderPublic:false }; const fieldKey=randomUUID();
+    const fields = (key=fieldKey) => s.app.inject({method:'PUT',url:'/api/v2/me/music/fields',headers:{cookie:s.bob.cookie,origin,'x-account-scope':member.scope,'x-csrf-token':member.csrf,'idempotency-key':key},payload:fieldInput});
+    expect((await fields()).statusCode).toBe(200);
     const contact = (await s.get(s.bob,'/me/music/contact')).json();
     s.db.prepare("INSERT INTO request_results VALUES('bob','contact-receipt','old',?,200,'before')").run(JSON.stringify(contact)); s.db.prepare("INSERT INTO music_profile_receipts VALUES('bob','contact-receipt',?)").run(s.id);
     const p = await s.preview('alice'); const input = {targetUserId:'alice',revision:p.revision,reason:'核對移交',confirm:true}; const requestKey = randomUUID();
     expect((await s.command(s.alice,s.path+'/link',input,requestKey)).statusCode).toBe(200); await s.change('bob');
     expect((await put()).statusCode).toBe(410); expect((await put()).json().code).toBe('PROFILE_REASSIGNED');
+    expect((await fields()).statusCode).toBe(410); expect((await fields(randomUUID())).json().code).toBe('PROFILE_ERASED');
+    expect(s.db.prepare('SELECT name,note FROM music_profile_fields WHERE profile_id=?').get(s.id)).toEqual({name:'移交前的成分稱呼',note:'移交前私人留言'});
     expect(s.db.prepare("SELECT response_status FROM request_results WHERE request_key='contact-receipt'").get()).toEqual({response_status:410});
     expect((await s.command(s.alice,s.path+'/link',input,requestKey)).statusCode).toBe(200); expect((await s.get(s.alice,s.path)).json().owner.id).toBe('bob');
     expect((await s.command(s.alice,s.path+'/link',{...input,reason:'另一個修改'},requestKey)).statusCode).toBe(409);

@@ -16,8 +16,12 @@ export type MusicProfile = z.infer<typeof Profile>;
 export const ContactQQ = z.string().trim().refine(value => !value || /^[1-9][0-9]{3,11}$/.test(value), 'QQ 號須為 4–12 位數字，或留空');
 export const MusicContact = z.object({ profileId: z.string(), contactQQ: z.string(), source: z.enum(['legacy', 'self_reported']), revision: z.number().int().min(0) });
 export const SaveMusicContact = z.object({ profileId: z.string().min(1).max(80), musicEpoch: z.number().int().min(0), revision: z.number().int().min(0), contactQQ: ContactQQ }).strict();
+export const MusicFields = z.object({ profileId: z.string(), name: z.string(), note: z.string(), noteAt: z.number(), gender: z.string(), genderPublic: z.boolean(), revision: z.number().int().min(0) });
+// Existing source text can exceed current editing limits. Validate changed fields
+// against the actual prior value on the server, without silently truncating imports.
+export const SaveMusicFields = z.object({ profileId: z.string().min(1).max(80), musicEpoch: z.number().int().min(0), revision: z.number().int().min(0), name: z.string().max(16384), note: z.string().max(16384), gender: z.string().max(16384), genderPublic: z.boolean() }).strict();
 export const LookupMusicProfile = z.object({ query: z.string().trim().min(1).max(80) }).strict();
-export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
+export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), gender: z.string(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
 export const PRIVACY_VERSION = '2026-11-10';
 const sessionSecurity = { scope: z.string(), csrf: z.string(), qqEnabled: z.boolean(), privacyVersion: z.string(), privacyAccepted: z.boolean(), nameRegistrationEnabled: z.boolean() };
 export const QQSummary = z.object({ bound: z.boolean(), nickname: z.string(), avatarUrl: z.string(), unionidBound: z.boolean(), needsReauth: z.boolean() });

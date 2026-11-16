@@ -8,14 +8,15 @@ import { hash } from './security';
 import { invalidateMusicOwnership } from './music-ownership';
 import { getProfile } from './repositories';
 import { musicOwnershipHistory } from './music-admin-history';
+import { musicNameJoins, musicNameSQL } from './music-fields';
 
 type Profile = z.infer<typeof AdminMusicProfile>;
 export const musicAdminProfileId = (params: unknown) => z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(params).id;
-const projection = `SELECT p.id,COALESCE(NULLIF(l.name,''),u.nickname,'未命名成分') AS name,COALESCE(l.legacy_key,'') AS legacyKey,
+const projection = `SELECT p.id,${musicNameSQL} AS name,COALESCE(l.legacy_key,'') AS legacyKey,
   CASE WHEN l.pin_hash!='' THEN 1 ELSE 0 END AS hasPin,p.user_id AS userId,u.nickname,p.revision,
   CASE WHEN p.user_id IS NULL THEN 'unlinked' WHEN l.ownership_source='oauth' THEN 'oauth'
     WHEN l.ownership_source IN ('prelink','prelinked','admin_prelinked') THEN 'prelinked' ELSE 'account' END AS status
-  FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id LEFT JOIN users u ON u.id=p.user_id
+  FROM music_profiles p ${musicNameJoins}
   LEFT JOIN music_profile_contacts c ON c.profile_id=p.id`;
 function serialize(db: DB, row: { id: string; name: string; legacyKey: string; hasPin: number; userId: string | null; nickname: string | null; revision: number; status: Profile['status'] }): Profile {
   return { id: row.id, name: row.name, legacyKey: row.legacyKey, hasPin: !!row.hasPin, owner: row.userId ? { id: row.userId, nickname: row.nickname ?? '未設定稱呼' } : null, revision: row.revision, status: row.status,
@@ -41,7 +42,7 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
   // Search keys may contain contact QQs; never put them into URLs or browser history.
   app.post('/api/v2/admin/music/search', async request => {
     admin.authority(request, true); const input = AdminMusicSearch.parse(request.body);
-    const where = `p.erased_at IS NULL AND (?='' OR instr(lower(p.id),lower(?))>0 OR instr(lower(COALESCE(l.name,u.nickname,'')),lower(?))>0
+    const where = `p.erased_at IS NULL AND (?='' OR instr(lower(p.id),lower(?))>0 OR instr(lower(${musicNameSQL}),lower(?))>0
       OR instr(COALESCE(l.legacy_key,''),?)>0 OR instr(COALESCE(c.contact_qq,''),?)>0 OR instr(COALESCE(p.user_id,''),?)>0)`;
     const params = Array(6).fill(input.search) as string[];
     const sql = 'SELECT * FROM (' + projection + ' WHERE ' + where + ") WHERE (?='all' OR status=?)";

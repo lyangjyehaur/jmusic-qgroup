@@ -163,12 +163,15 @@
         "apps/web/src/auth.tsx",
         "apps/api/src/account-profile.ts",
         "apps/web/src/account-profile.tsx",
-        "apps/web/src/qq-profile.tsx"
+        "apps/web/src/qq-profile.tsx",
+        "apps/api/src/music-fields.ts",
+        "apps/web/src/music-fields.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "apps/api/src/music-fields.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
@@ -181,10 +184,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "apps/web/tests/account-profile.spec.ts"
+        "apps/web/tests/account-profile.spec.ts",
+        "apps/web/tests/music-fields.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "稱呼、名冊版本／快照、去重恢復、QQ 暱稱分離與官方頭像備援已實作；正式遷移後資料、真實平台／完整可及性及語言驗收待完成。"
+      "remaining": "稱呼、名冊版本／快照、去重恢復、QQ 暱稱分離與官方頭像備援已實作；正式遷移後資料、真實平台／完整可及性及語言驗收待完成。 已補成分稱呼與帳號稱呼獨立、預設固定及 Unicode 重名保護；完整名冊成分卡與舊協議投影仍待驗收。"
     },
     {
       "capability_id": "I07",
@@ -1964,13 +1968,33 @@
       "new_entry": "我的成分／同好",
       "required_behavior": "最多 140 字、可清空；按實際 viewer 規則限制，不當公開自介",
       "legacy_evidence_group": "匹配",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "最多 140 字、可清空；按實際 viewer 規則限制，不當公開自介"
+      "implementation": [
+        "apps/api/src/music-fields.ts",
+        "apps/web/src/music-fields.tsx",
+        "packages/database/src/music-fields.ts",
+        "packages/database/src/schema-v8.ts",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/people.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-fields.test.ts",
+        "packages/domain/src/music-name.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/fields-migration.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/src/music-fields.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-fields.test.ts",
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-fields.spec.ts",
+        "docs/unified-rebuild/19-fields-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "本人留言編輯、140 字／清空、原 noteAt 保全、私有歷史／回執與刪除已實作；目前不向其他會員提供留言，仍須完成匹配演算法與舊 viewer／推薦排序差異的差分授權、真實匯入及平台驗收。"
     },
     {
       "capability_id": "M19",
@@ -1978,13 +2002,33 @@
       "new_entry": "我的成分",
       "required_behavior": "可空、自訂至 12 字、公開開關；分房可用不等於到處顯示",
       "legacy_evidence_group": "音樂",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "可空、自訂至 12 字、公開開關；分房可用不等於到處顯示"
+      "implementation": [
+        "apps/api/src/music-fields.ts",
+        "apps/web/src/music-fields.tsx",
+        "packages/database/src/music-fields.ts",
+        "packages/database/src/schema-v8.ts",
+        "apps/api/src/music-contact.ts",
+        "apps/web/src/people.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-fields.test.ts",
+        "packages/domain/src/music-name.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/fields-migration.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/src/music-fields.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-fields.test.ts",
+        "apps/api/src/admin-music.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-fields.spec.ts",
+        "docs/unified-rebuild/19-fields-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "本人空值／內建／自訂至 12 字／公開開關、成分卡本人與他人可見性已實作；原超限值在未編輯時保留。分房使用的授權與性別分組、正式副本與實際平台驗收仍待完成。"
     },
     {
       "capability_id": "M20",
@@ -2888,7 +2932,8 @@
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
         "packages/database/src/legacy-erasure.ts",
-        "packages/database/src/schema-v4.ts"
+        "packages/database/src/schema-v4.ts",
+        "packages/database/src/schema-v8.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -2896,14 +2941,16 @@
         "apps/api/src/privacy.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "packages/database/src/contact-migration.test.ts"
+        "packages/database/src/contact-migration.test.ts",
+        "packages/database/src/fields-migration.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
         "apps/api/src/privacy.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "packages/database/src/contact-migration.test.ts"
+        "packages/database/src/contact-migration.test.ts",
+        "packages/database/src/fields-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -2914,7 +2961,7 @@
         "docs/unified-rebuild/15-contact-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "schema 1→2→3→4、成套副本隔離匯入、逐表 ID／BLOB／序號／trigger／FK 保全、權威聯絡投影、媒體 digest／引用、原快照重跑不覆蓋已測；完整備份／歷史快照／還原／回退匯出、資源及正式副本演練仍待完成。"
+      "remaining": "schema 1→2→3→4、成套副本隔離匯入、逐表 ID／BLOB／序號／trigger／FK 保全、權威聯絡投影、媒體 digest／引用、原快照重跑不覆蓋已測；完整備份／歷史快照／還原／回退匯出、資源及正式副本演練仍待完成。 schema 7→8 已驗證完整回滾、原欄位／小數時間及 native 稱呼固定。"
     },
     {
       "capability_id": "O13",

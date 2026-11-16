@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { openDatabase } from './index';
 function versionThree(path: string) {
   const db = openDatabase(path);
-  db.exec(`DROP TABLE music_pin_history; DROP TABLE music_ownership_history; DROP TABLE music_claim_intents; DROP TABLE music_claim_attempts; DROP TABLE music_contact_history; DROP TABLE music_profile_contacts; UPDATE rebuild_schema SET version=3;
+  db.exec(`DROP TABLE music_field_history; DROP TABLE music_profile_fields; DROP TABLE music_pin_history; DROP TABLE music_ownership_history; DROP TABLE music_claim_intents; DROP TABLE music_claim_attempts; DROP TABLE music_contact_history; DROP TABLE music_profile_contacts; UPDATE rebuild_schema SET version=3;
     INSERT INTO users VALUES('member','unusable','會員稱呼','before');
     INSERT INTO music_entries VALUES('e','原詞條','sub');
     INSERT INTO music_profiles VALUES('p1','member',7,'before',NULL),('p2',NULL,0,'before',NULL),('p3',NULL,0,'before','erased');
@@ -29,7 +29,7 @@ describe('schema 3 → canonical music contacts', () => {
       ]);
       expect(() => next.prepare("INSERT INTO music_profile_contacts VALUES('p3','10001','self_reported',0,'now')").run()).toThrow('UNIQUE');
       expect(next.pragma('foreign_key_check')).toEqual([]); next.close();
-      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 7 }); expect(reopened.prepare('SELECT * FROM music_profile_contacts').all()).toHaveLength(2); reopened.close();
+      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 8 }); expect(reopened.prepare('SELECT * FROM music_profile_contacts').all()).toHaveLength(2); reopened.close();
     } finally { rmSync(folder, { recursive: true, force: true }); }
   });
   it('rolls back the complete migration on an existing-table collision', () => {
