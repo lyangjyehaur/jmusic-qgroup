@@ -53,7 +53,7 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     const bound = provider ? db.prepare(`SELECT e.display_name,p.avatar_url,EXISTS(SELECT 1 FROM external_unionids x WHERE x.provider=e.provider AND x.client_id=e.client_id AND x.subject=e.subject) AS unionid_bound
       FROM external_identities e LEFT JOIN external_profiles p ON p.provider=e.provider AND p.client_id=e.client_id AND p.user_id=e.user_id
       WHERE e.provider='qq' AND e.client_id=? AND e.user_id=?`).get(provider.clientId, device.id) as { display_name: string; avatar_url: string | null; unionid_bound: number } | undefined : undefined;
-    return { authenticated: true, nickname: device.nickname, administrator: administratorRevision(db, device.id) !== undefined, ...base, qq: { bound: !!bound, nickname: bound?.display_name ?? '', avatarUrl: safeAvatar(bound?.avatar_url ?? ''), unionidBound: !!bound?.unionid_bound, needsReauth: !!bound && !bound.unionid_bound } };
+    return { authenticated: true, musicEpoch: (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(device.id) as { epoch: number } | undefined)?.epoch ?? 0, nickname: device.nickname, administrator: administratorRevision(db, device.id) !== undefined, ...base, qq: { bound: !!bound, nickname: bound?.display_name ?? '', avatarUrl: safeAvatar(bound?.avatar_url ?? ''), unionidBound: !!bound?.unionid_bound, needsReauth: !!bound && !bound.unionid_bound } };
   });
   app.post('/api/v2/auth/register-name', { config: { rateLimit: { max: 6, timeWindow: '1 minute' } } }, async (request, reply) => {
     const result = db.transaction(() => {

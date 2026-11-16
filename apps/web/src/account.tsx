@@ -16,10 +16,10 @@ export function MyMusic() {
   if (session.isPending) return <Notice>正在確認帳號…</Notice>;
   if (session.error) return <Failure error={session.error} retry={() => void session.refetch()} />;
   if (!session.data.authenticated) return <><PageIntro title="我的成分" /><Surface><EmptyState title="登入後才能保存成分" description={session.data.qqEnabled || session.data.nameRegistrationEnabled ? undefined : '目前沒有可用的登入方式。'} action={<Link to={loginLink(location.pathname + location.search + location.hash)}>登入</Link>} /></Surface></>;
-  return <ProfileLoader key={session.data.scope} viewer={session.data} />;
+  return <ProfileLoader key={session.data.scope + ":" + session.data.musicEpoch} viewer={session.data} />;
 }
 function ProfileLoader({ viewer }: { viewer: Extract<Viewer, { authenticated: true }> }) {
-  const profile = useQuery({ queryKey: ['private', viewer.scope, 'music'], queryFn: () => api('/me/music', Profile, { headers: { 'X-Account-Scope': viewer.scope } }) });
+  const profile = useQuery({ queryKey: ['private', viewer.scope, 'music', viewer.musicEpoch], queryFn: () => api('/me/music', Profile, { headers: { 'X-Account-Scope': viewer.scope } }) });
   const catalog = useQuery({ queryKey: ['catalog'], queryFn: () => api('/music/entries', Catalog) });
   if (profile.isPending || catalog.isPending) return <Notice>正在讀取你的成分…</Notice>;
   if (profile.error || catalog.error) return <Failure error={(profile.error ?? catalog.error)!} retry={() => { void profile.refetch(); void catalog.refetch(); }} />;

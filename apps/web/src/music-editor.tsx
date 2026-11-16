@@ -3,16 +3,16 @@ import { Link, useBlocker, useSearchParams } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text, TextField } from 'yahha-ui';
 import { z } from 'zod';
-import { Profile, SaveProfile, Selection, type MusicEntry, type MusicProfile, type Viewer } from '@qgroup/contracts';
+import { Profile, SaveProfile, Selection, Session, type MusicEntry, type MusicProfile, type Viewer } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { PageIntro } from './shared';
-const Draft = z.object({ revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
+const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
 type DraftValue = z.infer<typeof Draft>;
 export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Viewer, { authenticated: true }>; initial: MusicProfile; entries: MusicEntry[] }) {
   const storageKey = 'qgroup:rebuild:music:v1:' + viewer.scope;
   const [storageError, setStorageError] = useState('');
   const [loaded] = useState((): { draft: DraftValue; error: string } => {
-    const fallback = { revision: initial?.revision ?? 0, selections: initial?.selections ?? [] };
+    const fallback = { profileId: initial?.id ?? null, musicEpoch: viewer.musicEpoch, revision: initial?.revision ?? 0, selections: initial?.selections ?? [] };
     try { const saved = sessionStorage.getItem(storageKey); return { draft: saved ? Draft.parse(JSON.parse(saved)) : fallback, error: '' }; }
     catch { return { draft: fallback, error: '此分頁的原草稿無法讀取，已保留原始內容。請先保全原稿再繼續。' }; }
   });
@@ -51,7 +51,7 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
   }
   async function save() {
     if (readError || storageError || sending) return;
-    const parsed = SaveProfile.safeParse({ revision: draft.revision, selections: draft.selections });
+    const parsed = SaveProfile.safeParse({ profileId: draft.profileId, musicEpoch: draft.musicEpoch, revision: draft.revision, selections: draft.selections });
     if (!parsed.success) { setMessage('請至少選擇一個詞條，再保存。'); return; }
     const pending = { ...draft, requestKey: draft.requestKey ?? crypto.randomUUID() };
     // Persist intent and key before sending. Lost responses retry the exact original operation.
@@ -59,12 +59,12 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
     setDraft(pending); setSending(true); setMessage('');
     try {
       const result = await api('/me/music', Profile.unwrap(), { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': viewer.csrf, 'X-Account-Scope': viewer.scope, 'Idempotency-Key': pending.requestKey }, body: JSON.stringify(parsed.data) });
-      setSaved(result); setDraft({ revision: result.revision, selections: result.selections });
-      queryClient.setQueryData(['private', viewer.scope, 'music'], result);
+      setSaved(result); setDraft({ profileId: result.id, musicEpoch: draft.musicEpoch, revision: result.revision, selections: result.selections });
+      queryClient.setQueryData(['private', viewer.scope, 'music', draft.musicEpoch], result);
       setMessage('已保存。');
     } catch (error) {
       if (error instanceof ApiError && error.status < 500 && error.status !== 429) {
-        setDraft({ revision: draft.revision, selections: draft.selections });
+        setDraft({ ...draft, requestKey: undefined });
         setMessage(error.message);
       } else setMessage('尚未確認保存結果。選擇與操作編號已保留，請按「確認保存結果」安全重試。');
     } finally { setSending(false); }
@@ -72,7 +72,9 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
   async function rebase() {
     try {
       const latest = await api('/me/music', Profile, { headers: { 'X-Account-Scope': viewer.scope } });
-      setSaved(latest); setDraft({ revision: latest?.revision ?? 0, selections: draft.selections });
+      const session = await api('/session', Session);
+      if (!session.authenticated || session.scope !== viewer.scope) throw new Error('目前帳號已變更，請重新整理');
+      setSaved(latest); setDraft({ profileId: latest?.id ?? null, musicEpoch: session.musicEpoch, revision: latest?.revision ?? 0, selections: draft.selections });
       setMessage('已取得最新版本；你的選擇仍保留，請核對後再保存。');
     } catch (error) { setMessage(error instanceof Error ? error.message : '讀取失敗'); }
   }

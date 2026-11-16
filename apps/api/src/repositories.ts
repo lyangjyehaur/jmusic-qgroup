@@ -36,7 +36,7 @@ export function catalog(db: DB): MusicEntry[] {
   return db.prepare('SELECT id,name,kind FROM music_entries ORDER BY kind,name,id').all() as MusicEntry[];
 }
 export function getProfile(db: DB, userId: string): MusicProfile {
-  const row = db.prepare('SELECT id,revision,updated_at FROM music_profiles WHERE user_id=?').get(userId) as { id: string; revision: number; updated_at: string } | undefined;
+  const row = db.prepare('SELECT id,revision,updated_at FROM music_profiles WHERE user_id=? AND erased_at IS NULL').get(userId) as { id: string; revision: number; updated_at: string } | undefined;
   if (!row) return null;
   const selections = db.prepare('SELECT entry_id AS entryId,level FROM music_selections WHERE profile_id=? ORDER BY position').all(row.id) as NonNullable<MusicProfile>['selections'];
   return { id: row.id, revision: row.revision, updatedAt: row.updated_at, selections };
@@ -44,13 +44,15 @@ export function getProfile(db: DB, userId: string): MusicProfile {
 /** Called inside the same IMMEDIATE transaction as the request result. */
 export function saveProfile(db: DB, userId: string, input: SaveProfileInput, now: Date): NonNullable<MusicProfile> {
   const before = getProfile(db, userId);
-  if ((before?.revision ?? 0) !== input.revision) throw new DomainError('REVISION_CONFLICT', '成分已有更新；你的選擇仍保留，請核對最新版本', 409);
+  if ((before?.id ?? null) !== input.profileId || (before?.revision ?? 0) !== input.revision) throw new DomainError('REVISION_CONFLICT', '成分已有更新；你的選擇仍保留，請核對最新版本', 409);
+  const epoch = (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(userId) as { epoch: number } | undefined)?.epoch ?? 0;
+  if (input.musicEpoch !== epoch) throw new DomainError('PROFILE_ERASED', '成分已刪除或重建，請核對目前狀態後再明確保存', 409);
   validateSelections(input.selections, catalog(db));
   const id = before?.id ?? 'm_' + randomUUID().replaceAll('-', '');
   const updatedAt = now.toISOString();
   const revision = input.revision + 1;
   if (before) db.prepare('UPDATE music_profiles SET revision=?,updated_at=? WHERE id=?').run(revision, updatedAt, id);
-  else db.prepare('INSERT INTO music_profiles VALUES(?,?,?,?)').run(id, userId, revision, updatedAt);
+  else db.prepare('INSERT INTO music_profiles(id,user_id,revision,updated_at) VALUES(?,?,?,?)').run(id, userId, revision, updatedAt);
   db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(id);
   const insert = db.prepare('INSERT INTO music_selections VALUES(?,?,?,?)');
   input.selections.forEach((s, position) => insert.run(id, s.entryId, s.level, position));

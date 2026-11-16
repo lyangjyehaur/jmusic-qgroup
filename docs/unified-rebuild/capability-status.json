@@ -377,13 +377,28 @@
       "new_entry": "我的隱私",
       "required_behavior": "未交接活動／投票先拒絕；撤 session／身份／管理權、保留共享帳務並真實標待審",
       "legacy_evidence_group": "隱私",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "未交接活動／投票先拒絕；撤 session／身份／管理權、保留共享帳務並真實標待審"
+      "implementation": [
+        "apps/api/src/privacy.ts",
+        "apps/api/src/erasure-journal.ts",
+        "apps/api/src/privacy-assets.ts",
+        "apps/web/src/my-privacy.tsx",
+        "packages/database/src/index.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/privacy.test.ts",
+        "packages/database/src/privacy-migration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/privacy.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "帳號關閉、工作阻擋、身份／session／角色撤銷、共享待審、最小收據與舊 Python 差分已測；後台審核、完整匯入／恢復／媒體及正式 bot 版本組合待驗收。"
     },
     {
       "capability_id": "I15",
@@ -391,13 +406,28 @@
       "new_entry": "我的隱私／管理／維運",
       "required_behavior": "與帳號註銷分開；新建全新 ID；最新刪除 ledger 在恢復／匯出優先",
       "legacy_evidence_group": "隱私、成分維運",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "與帳號註銷分開；新建全新 ID；最新刪除 ledger 在恢復／匯出優先"
+      "implementation": [
+        "apps/api/src/privacy.ts",
+        "apps/api/src/erasure-journal.ts",
+        "apps/api/src/privacy-assets.ts",
+        "apps/web/src/my-privacy.tsx",
+        "packages/database/src/index.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/privacy.test.ts",
+        "packages/database/src/privacy-migration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/privacy.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "獨立成分刪除、ID 墓碑、新 ID／epoch、舊保存回執 410、持久 journal／舊 DB 重播與恢復已測；舊 music erasure 匯入、管理刪除、歷史下載濾除及完整恢復待驗收。"
     },
     {
       "capability_id": "I16",
@@ -2455,16 +2485,25 @@
       "implementation": [
         "apps/api/src/app.ts",
         "apps/web/tests/unified.spec.ts",
-        "apps/web/src/music-editor.tsx"
+        "apps/web/src/music-editor.tsx",
+        "apps/api/src/privacy.ts",
+        "apps/web/src/my-privacy.tsx"
       ],
       "behavior_evidence": [
-        "apps/web/tests/unified.spec.ts"
+        "apps/web/tests/unified.spec.ts",
+        "apps/api/src/privacy.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/privacy.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "音樂保存先持久化後送出、原 key 原 payload 重試已實作；其餘 mutations／結果查詢／create intent 待完成。"
+      "remaining": "音樂保存與隱私刪除先持久化、原 key／payload、刪除後無登入最小收據已測；其餘 mutations／結果查詢／create intent 待完成。"
     },
     {
       "capability_id": "O06",
@@ -2475,16 +2514,25 @@
       "implementation": [
         "apps/api/src/app.ts",
         "apps/api/src/repositories.ts",
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/privacy.ts",
+        "apps/web/src/my-privacy.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/privacy.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/privacy.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/privacy.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "音樂保存的 revision／去重／追加稽核及失敗回滾已測；其他領域與通知待完成。"
+      "remaining": "音樂保存／刪除、稱呼的去重、版本與交易回滾已測；其他業務／通知完整交易與稽核待完成。"
     },
     {
       "capability_id": "O07",
@@ -2580,13 +2628,18 @@
         "tools/migration/export-legacy-schema.py"
       ],
       "behavior_evidence": [
-        "packages/database/src/database.test.ts"
+        "packages/database/src/database.test.ts",
+        "packages/database/src/privacy-migration.test.ts",
+        "apps/api/src/privacy.test.ts"
       ],
-      "data_evidence": [],
+      "data_evidence": [
+        "packages/database/src/privacy-migration.test.ts",
+        "apps/api/src/privacy.test.ts"
+      ],
       "permission_evidence": [],
       "ux_evidence": [],
       "state": "in_progress",
-      "remaining": "59 張空庫相容表與重複初始化已測、舊庫拒絕直接改寫；隔離匯入／備份／媒體配對待完成。"
+      "remaining": "59 張相容表與初始化、開發庫 v1→v2 保 ID／歷史／FK、失敗 DDL 回滾、最新 erasure 重播已測；正式來源匯入／完整備份／媒體配對與回退待完成。"
     },
     {
       "capability_id": "O13",

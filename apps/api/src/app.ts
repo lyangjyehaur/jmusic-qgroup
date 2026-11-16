@@ -4,7 +4,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
 import { z } from 'zod';
-import type { DB } from '@qgroup/database';
+import { REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
 import { SaveProfile } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { catalog, getActivity, getProfile, listActivities, saveProfile } from './repositories';
@@ -14,14 +14,17 @@ import { registerAuth } from './auth';
 import { registerAccountDevices } from './account-devices';
 import { registerRegistrationSettings } from './registration-settings';
 import { registerAccountProfile } from './account-profile';
+import { createPrivacy, registerPrivacy } from './privacy';
+import type { ErasureJournal } from './erasure-journal';
 import type { QQProvider } from './qq-provider';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; erasureJournal?: ErasureJournal }
 export function createApp(options: AppOptions) {
   const { db } = options;
   const now = options.now ?? (() => new Date());
   const origin = new URL(options.origin).origin;
   const security = createSecurity(db, origin, now, options.csrfSecret);
+  const privacy = createPrivacy(db, options.erasureJournal);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: request.url?.split('?')[0], remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
@@ -30,6 +33,7 @@ export function createApp(options: AppOptions) {
   app.register(async function routes(app) {
     app.addHook('onRequest', async (request, reply) => {
       if (request.url.startsWith('/api/') || request.url.startsWith('/auth/')) reply.header('Cache-Control', 'no-store').header('Vary', 'Cookie');
+      privacy.guard();
     });
     app.setErrorHandler((error, request, reply) => {
       if (error instanceof DomainError) return reply.code(error.status).send({ code: error.code, message: error.message });
@@ -38,11 +42,12 @@ export function createApp(options: AppOptions) {
       request.log.error(error);
       return reply.code(500).send({ code: 'INTERNAL_ERROR', message: '暫時無法完成操作，請保留選擇後重試' });
     });
-    app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: 1 }));
+    app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: REBUILD_SCHEMA_VERSION }));
     registerAuth(app, db, security, now, options.qq);
     registerAccountDevices(app, db, security, now);
     registerRegistrationSettings(app, db, security, now);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
+    registerPrivacy(app, db, security, now, privacy);
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());
@@ -53,7 +58,7 @@ export function createApp(options: AppOptions) {
     });
     app.get('/api/v2/music/entries', async () => ({ entries: catalog(db) }));
     app.get('/api/v2/me/music', async request => getProfile(db, security.scopedMember(request).id));
-    app.put('/api/v2/me/music', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => {
+    app.put('/api/v2/me/music', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async (request, reply) => {
       const viewer = security.memberWrite(request);
       const input = SaveProfile.parse(request.body);
       const requestKey = z.string().uuid().parse(request.headers['idempotency-key']);
@@ -62,13 +67,15 @@ export function createApp(options: AppOptions) {
         // Revalidate inside the write transaction; revoked/switched sessions cannot replay results.
         const current = security.memberWrite(request);
         if (current.id !== viewer.id) throw new DomainError('ACCOUNT_CHANGED', '帳號已變更', 409);
-        const previous = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(viewer.id, requestKey) as { signature: string; response_json: string } | undefined;
+        const previous = db.prepare('SELECT signature,response_json,response_status FROM request_results WHERE user_id=? AND request_key=?').get(viewer.id, requestKey) as { signature: string; response_json: string; response_status: number } | undefined;
         if (previous) {
           if (previous.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+          reply.code(previous.response_status);
           return JSON.parse(previous.response_json) as ReturnType<typeof saveProfile>;
         }
         const result = saveProfile(db, viewer.id, input, now());
         db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(viewer.id, requestKey, signature, JSON.stringify(result), 200, now().toISOString());
+        db.prepare('INSERT INTO music_profile_receipts VALUES(?,?,?)').run(viewer.id, requestKey, result.id);
         return result;
       }).immediate();
     });

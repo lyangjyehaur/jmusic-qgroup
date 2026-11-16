@@ -12,7 +12,7 @@ async function setup() {
   await app.ready(); resources.push(async () => { await app.close(); db.close(); });
   const session = (await app.inject({ url: '/api/v2/session', headers: { cookie: 'kanban_session=fixture-alice' } })).json();
   const headers = { cookie: 'kanban_session=fixture-alice', origin: 'http://localhost:5080', 'x-account-scope': session.scope, 'x-csrf-token': session.csrf, 'idempotency-key': randomUUID() };
-  const payload = { revision: 0, selections: [{ entryId: 'main-0', level: 3 }] };
+  const payload = { profileId: null, musicEpoch: 0, revision: 0, selections: [{ entryId: 'main-0', level: 3 }] };
   const save = (body: unknown = payload, override: Record<string, string> = {}) => app.inject({ method: 'PUT', url: '/api/v2/me/music', payload: body as object, headers: { ...headers, ...override } });
   return { app, db, headers, payload, save };
 }
@@ -48,7 +48,7 @@ describe('unified public and music API', () => {
     expect((await app.inject({ url: '/api/v2/me/music', headers: { ...headers, cookie: 'kanban_session=fixture-bob' } })).statusCode).toBe(409);
     expect((await save({ ...payload, selections: [{ entryId: 'main-1', level: 4 }] })).statusCode).toBe(409);
     expect((await save(payload, { 'idempotency-key': randomUUID() })).statusCode).toBe(409);
-    expect((await save({ revision: 1, selections: [{ entryId: 'sub-1', level: 4 }] }, { 'idempotency-key': randomUUID() })).json().revision).toBe(2);
+    expect((await save({ profileId: first.json().id, musicEpoch: 0, revision: 1, selections: [{ entryId: 'sub-1', level: 4 }] }, { 'idempotency-key': randomUUID() })).json().revision).toBe(2);
     expect(() => db.prepare('DELETE FROM music_profile_audit').run()).toThrow('append-only');
   });
   it('rejects anonymous, forged cross-site, stale account, expired CSRF and revoked replay', async () => {
@@ -74,11 +74,11 @@ describe('unified public and music API', () => {
   it('validates exact limits, duplicate/unknown entries and levels before writing', async () => {
     const { save, db } = await setup();
     for (const selections of [[], [{ entryId: 'unknown', level: 3 }], [{ entryId: 'main-0', level: 0 }], [{ entryId: 'main-0', level: 3 }, { entryId: 'main-0', level: 4 }], Array.from({ length: 6 }, (_, i) => ({ entryId: 'main-' + i, level: 3 })), Array.from({ length: 16 }, (_, i) => ({ entryId: 'sub-' + i, level: 3 }))]) {
-      expect((await save({ revision: 0, selections })).statusCode).toBe(400);
+      expect((await save({ profileId: null, musicEpoch: 0, revision: 0, selections })).statusCode).toBe(400);
     }
     expect(db.prepare('SELECT count(*) n FROM music_profiles').get()).toEqual({ n: 0 });
     const selections = [...Array.from({ length: 5 }, (_, i) => ({ entryId: 'main-' + i, level: 4 })), ...Array.from({ length: 15 }, (_, i) => ({ entryId: 'sub-' + i, level: 1 }))];
-    expect((await save({ revision: 0, selections })).statusCode).toBe(200);
+    expect((await save({ profileId: null, musicEpoch: 0, revision: 0, selections })).statusCode).toBe(200);
   });
   it('rolls back the mutation if audit fails; two competing revisions yield one winner', async () => {
     const { save, db } = await setup();

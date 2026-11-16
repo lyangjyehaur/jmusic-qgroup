@@ -99,7 +99,7 @@ test('a concurrent profile update returns conflict without replacing the local s
   await page.getByRole('button', { name: 'Eve', exact: true }).click();
   const viewer = await (await context.request.get('/api/v2/session')).json();
   const previous = await (await context.request.get('/api/v2/me/music', { headers: { 'X-Account-Scope': viewer.scope } })).json();
-  const update = await context.request.put('/api/v2/me/music', { headers: { Origin: 'http://127.0.0.1:5082', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() }, data: { revision: previous?.revision ?? 0, selections: [{ entryId: 'main-4', level: 3 }] } });
+  const update = await context.request.put('/api/v2/me/music', { headers: { Origin: 'http://127.0.0.1:5082', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() }, data: { profileId: previous?.id ?? null, musicEpoch: viewer.musicEpoch, revision: previous?.revision ?? 0, selections: [{ entryId: 'main-4', level: 3 }] } });
   expect(update.status()).toBe(200);
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('成分已有更新；你的選擇仍保留，請核對最新版本')).toBeVisible();

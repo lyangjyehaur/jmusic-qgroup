@@ -2,6 +2,8 @@ import { z } from 'zod';
 
 export const Selection = z.object({ entryId: z.string().min(1).max(80), level: z.number().int().min(1).max(4) }).strict();
 export const SaveProfile = z.object({
+  profileId: z.string().min(1).max(80).nullable(),
+  musicEpoch: z.number().int().min(0),
   revision: z.number().int().min(0),
   selections: z.array(Selection).min(1).max(20),
 }).strict().refine(value => new Set(value.selections.map(s => s.entryId)).size === value.selections.length, '詞條不能重複');
@@ -16,7 +18,7 @@ const sessionSecurity = { scope: z.string(), csrf: z.string(), qqEnabled: z.bool
 export const QQSummary = z.object({ bound: z.boolean(), nickname: z.string(), avatarUrl: z.string(), unionidBound: z.boolean(), needsReauth: z.boolean() });
 export const Session = z.discriminatedUnion('authenticated', [
   z.object({ authenticated: z.literal(false), ...sessionSecurity }),
-  z.object({ authenticated: z.literal(true), nickname: z.string(), administrator: z.boolean(), ...sessionSecurity, qq: QQSummary }),
+  z.object({ authenticated: z.literal(true), nickname: z.string(), administrator: z.boolean(), musicEpoch: z.number().int().min(0), ...sessionSecurity, qq: QQSummary }),
 ]);
 export type Viewer = z.infer<typeof Session>;
 export const QQStart = z.object({ mode: z.enum(['bind', 'login']), confirm: z.literal(true), returnTo: z.string().max(4096).default('/'), acceptPrivacy: z.boolean().default(false), privacyVersion: z.string() }).strict();
@@ -48,6 +50,10 @@ export const DeviceLinkView = z.object({ status: z.enum(['pending', 'accepted'])
 export const RevokeDevice = z.object({ deviceId: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
 export const AccountHistory = z.object({ history: z.array(z.object({ id: z.number().int(), action: z.string(), createdAt: z.string() })), nextCursor: z.number().int().nullable() });
 export const Ok = z.object({ ok: z.literal(true) });
+export const ErasureProof = z.object({ requestId: z.string().uuid(), secret: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
+export const EraseData = ErasureProof.extend({ target: z.enum(['music', 'account', 'both']), confirm: z.literal(true), profileId: z.string().max(80).nullable(), profileRevision: z.number().int().min(0) }).strict();
+export const ErasureResult = z.object({ requestId: z.string(), target: z.enum(['music', 'account', 'both']), status: z.enum(['completed', 'shared_review']) });
+export const PrivacySummary = z.object({ profile: Profile, activeEvents: z.number().int(), activePolls: z.number().int() });
 export const Activity = z.object({
   id: z.string(), title: z.string(), category: z.string(), location: z.string(),
   startsAt: z.string(), deadline: z.string(), durationHours: z.number().nullable(), timezone: z.string().nullable(),
