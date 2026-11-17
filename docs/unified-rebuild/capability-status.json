@@ -4323,13 +4323,26 @@
       "new_entry": "QQ／後台 bot",
       "required_behavior": "全部現有指令表保留，裸 @ 活動、未知幫助；連結不執行寫操作",
       "legacy_evidence_group": "bot 指令",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "全部現有指令表保留，裸 @ 活動、未知幫助；連結不執行寫操作"
+      "implementation": [
+        "apps/bot/src/commands.ts",
+        "apps/bot/src/public-queries.ts",
+        "apps/bot/src/replies.ts"
+      ],
+      "behavior_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "data_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生 TS 六主指令、全部簡繁／英文別名與 25 種公開指令普通／Markdown 回覆已與 Python 差分；縮寫只保留解析並由獨立非同步服務承接，未宣稱完成。訊息／引用／回呼 dispatch、群政策再驗、完整 runtime、實際 web-bot 版本組合與 QQ 驗收仍待完成，見 54 號檢查點。"
     },
     {
       "capability_id": "B02",
@@ -4337,13 +4350,26 @@
       "new_entry": "QQ",
       "required_behavior": "不歧義猜場；相同候選排序、錯碼提示；公開查詢不要求群同步",
       "legacy_evidence_group": "bot 指令",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不歧義猜場；相同候選排序、錯碼提示；公開查詢不要求群同步"
+      "implementation": [
+        "apps/bot/src/commands.ts",
+        "apps/bot/src/public-queries.ts",
+        "apps/bot/src/replies.ts"
+      ],
+      "behavior_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "data_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生 TS 清單排序、限額前排除逾時、1–8 序號、8–16 位短碼、錯碼／歧義／私密排除、往期／歸檔與公開查詢不要求群同步已完成 Python 差分與 built readonly smoke。完整 dispatch、舊網站入口 adapters、runtime、正式資料及實際版本組合／QQ 仍待驗收，見 54 號檢查點。"
     },
     {
       "capability_id": "B03",
@@ -4355,22 +4381,32 @@
         "apps/api/src/activity-bot.ts",
         "packages/domain/src/bot-markdown.ts",
         "packages/domain/src/bot-templates.ts",
-        "packages/domain/src/bot-clock.ts"
+        "packages/domain/src/bot-clock.ts",
+        "apps/bot/src/commands.ts",
+        "apps/bot/src/public-queries.ts",
+        "apps/bot/src/replies.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "packages/domain/src/bot-rendering.test.ts"
+        "packages/domain/src/bot-rendering.test.ts",
+        "apps/bot/src/replies.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "packages/domain/src/bot-rendering.test.ts"
+        "packages/domain/src/bot-rendering.test.ts",
+        "apps/bot/src/replies.test.ts"
       ],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "permission_evidence": [
+        "apps/bot/src/replies.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
+      ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "活動 producer／consumer 與公開指令的當前正式／候補名單、人數、倒數、限長／名稱清理、凍結通知與最新提醒已完成 Python 差分；原生公開指令只讀同一交易快照，不推斷群內身份。完整 dispatch／runtime、跨重啟／回呼與實際 web-bot 組合／QQ 仍待完成，見 22／53／54 號檢查點。"
     },
     {
       "capability_id": "B04",
@@ -4750,7 +4786,10 @@
         "apps/bot/src/outbox.ts",
         "apps/bot/src/outbox-store.ts",
         "apps/bot/src/outbox-planning.ts",
-        "apps/bot/src/group-state.ts"
+        "apps/bot/src/group-state.ts",
+        "apps/bot/src/commands.ts",
+        "apps/bot/src/public-queries.ts",
+        "apps/bot/src/replies.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4760,7 +4799,8 @@
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "apps/bot/src/replies.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4770,23 +4810,27 @@
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
-        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
+        "apps/bot/src/replies.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
-        "apps/bot/src/outbox.test.ts"
+        "apps/bot/src/outbox.test.ts",
+        "apps/bot/src/replies.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
+        "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生 consumer 已驗 Markdown／普通文字互斥、Unicode／域名／按鈕限制、平台拒絕不自動降級與凍結結算必要明細；全部指令回覆、按鈕事件去重及每次驗群／身份、完整 runtime／QQ／版本組合仍待完成，見 53 號檢查點。"
+      "remaining": "原生 consumer 的 Markdown／文字互斥、域名／按鈕限制、拒絕不降級及結算必要明細已有證據；新增 25 種公開指令的原生共用 Markdown renderer，與 Python 比對並保持普通文字相同事實。按鈕事件去重、每次驗群／身份、縮寫／引用、完整 runtime／QQ／版本組合仍待完成，見 53／54 號檢查點。"
     },
     {
       "capability_id": "B12",
@@ -4905,33 +4949,41 @@
         "apps/bot/src/outbox.ts",
         "apps/bot/src/outbox-store.ts",
         "apps/bot/src/outbox-planning.ts",
-        "apps/bot/src/group-state.ts"
+        "apps/bot/src/group-state.ts",
+        "apps/bot/src/commands.ts",
+        "apps/bot/src/public-queries.ts",
+        "apps/bot/src/replies.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "apps/bot/src/replies.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
-        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
+        "apps/bot/src/replies.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
-        "apps/bot/src/outbox.test.ts"
+        "apps/bot/src/outbox.test.ts",
+        "apps/bot/src/replies.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
+        "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生 TS 結算文字／逐張凍結碼 consumer 與新網站 producer 已比對保留 Python 的 7 個合成請求；當前發布者權限、group_notice、版本、上傳後換群／撤權與獨立重試已測。正式資料、QQ／web-bot 實際組合、切換及回退驗收仍待完成，見 33／53 號檢查點。"
+      "remaining": "原生 TS 結算文字／逐張凍結碼 consumer 與新網站 producer 已比對保留 Python 的 7 個合成請求；當前發布者權限、group_notice、版本、上傳後換群／撤權與獨立重試已測。正式資料、QQ／web-bot 實際組合、切換及回退驗收仍待完成，見 33／53 號檢查點。 公開結算查詢只回版本／總額／人數／當前結清狀態，未綁定的我的與款項操作只回網站入口；普通／Markdown／唯讀資料保全已完成 Python 差分，見 54 號檢查點。"
     },
     {
       "capability_id": "O01",

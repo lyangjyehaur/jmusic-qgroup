@@ -35,7 +35,7 @@ export function botRosterLines(db:DB,event:EventRow,options:{ids?:Set<string>;pr
   const people=db.prepare(`SELECT a.id,COALESCE(u.nickname,a.name) AS nickname,a.status FROM attendees a LEFT JOIN users u ON u.id=a.user_id LEFT JOIN roster_parties p ON p.id=a.party_id WHERE a.event_id=? AND a.status IN (${groups.map(()=>'?').join(',')}) ORDER BY p.seq,a.seq`).all(event.id,...groups.map(([status])=>status)) as {id:string;nickname:string;status:string}[];
   return groups.map(([status,label])=>{const names=people.filter(p=>p.status===status&&(!options.ids||options.ids.has(p.id))).map(p=>botRosterName(p.nickname));return (options.prefix??'')+label+'（'+names.length+' 人）：'+(names.slice(0,10).join('、')||'暂无')+(names.length>10?'；其余 '+(names.length-10)+' 人请到活动页查看':'');});
 }
-function registrationLabel(event:EventRow,now:Date){
+export function botRegistrationLabel(event:EventRow,now:Date){
   if(['ended','cancelled'].includes(event.lifecycle)||event.archived_at)return '已结束报名';
   if(event.lifecycle==='ongoing'||botMoment(event.starts_at,event.timezone)<=now.getTime())return '已开始，补报名请联系发起者';
   if(botMoment(event.deadline,event.timezone)<=now.getTime())return '已截止，补报名请联系发起者';return event.registration_open?'开放报名':'已暂停报名';
@@ -78,7 +78,7 @@ export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Po
   }else if(kind==='event_cancelled'){lines=[head,'原因：'+cut(event.cancellation_reason||'未填写',120),'名单与账务保留，费用以公布的结算为准。','',url];buttons=[['活动页','',url]];
   }else if(kind==='deadline_reminder'){lines=[head,'报名截止：'+deadline,'当前正式报名 '+confirmed+' 人',...(waiting?['候补 '+waiting+' 人']:[]),url];buttons=[['我要报名','',url],['看名额','/名额','']];
   }else if(kind==='estimated_over_reminder'){lines=[head,'已超过预计结束时间，请发起者确认实际结束或延长。','',url];buttons=[['活动页','',url],['待办','/待办','']];
-  }else if(kind==='registration_paused'||kind==='registration_resumed'){lines=[head,registrationLabel(event,now),'原名单与候补保留，名额按当前队列分配。','',botActivityURL(event.id,'join',defaults)];buttons=[['看名额','/名额','']];
+  }else if(kind==='registration_paused'||kind==='registration_resumed'){lines=[head,botRegistrationLabel(event,now),'原名单与候补保留，名额按当前队列分配。','',botActivityURL(event.id,'join',defaults)];buttons=[['看名额','/名额','']];
   }else if(kind==='finance_closed'||kind==='finance_reopened'){lines=[head,kind==='finance_closed'?'发起者已确认本版账务结清；原账单与账本记录保留。':'账务重新待核对，请以站内最新补退款及结清状态为准。','',url];buttons=[['查看账本','',url]];
   }else if(kind==='ownership_changed'){lines=[head,'发起者交接已完成，当前管理者请到活动页查看。','管理交接不代表实际代收资金已移交。','',url];buttons=[['活动页','',url]];
   }else{

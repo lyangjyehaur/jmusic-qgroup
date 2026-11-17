@@ -22,3 +22,9 @@ const outbox = await build({ entryPoints: ['apps/bot/src/worker.ts'], outfile: '
 for (const path of Object.keys(outbox.metafile.inputs)) {
   if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts')) throw new Error(`Invalid dependency in bot outbox bundle: ${path}`);
 }
+
+const replies = await build({ entryPoints: ['apps/bot/src/public.ts'], outfile: '.rebuild-dist/bot/public.mjs',
+  bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
+for (const path of Object.keys(replies.metafile.inputs)) {
+  if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts')) throw new Error(`Invalid dependency in bot public reply bundle: ${path}`);
+}

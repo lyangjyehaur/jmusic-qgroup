@@ -60,3 +60,43 @@ export function botRosterName(raw:string){
   const name=botStrip(text.replace(pyRegex('https?://\\S+','gi'),'').replace(/@(?:everyone|all)(?![\p{L}\p{N}_])/giu,'').replace(/[@＠]/g,''));
   return Array.from(name).slice(0,24).join('')||'未填写称呼';
 }
+
+const botCommandFootnote = '> 指令只提供查询或操作入口；报名、确认及款项仍须在网站核对提交。';
+export function renderBotHelp(commands: readonly {name:string;desc:string}[], site:string, shortcuts:string, prefix='') {
+  const lines=['## 群聚看板 · 常用指令'];
+  if(prefix)lines.push('> '+botPlainText(prefix));
+  lines.push(BOT_BLANK,'指令简繁均可，在群里 @ 机器人后发送：',BOT_BLANK);
+  for(const item of commands)lines.push('- **'+botPlainText(item.name)+'**　'+botPlainText(item.desc));
+  lines.push(BOT_BLANK,'***',BOT_BLANK);
+  for(const line of shortcuts.split('\n'))if(botStrip(line))lines.push('- '+botPlainText(line));
+  lines.push(BOT_BLANK,'多场活动点对应链接，或发送 **/名额 2** 选择清单里的第 2 场。',BOT_BLANK,'***',BOT_BLANK,
+    '[隐私政策]('+site+'/privacy) · [联络与问题反馈]('+site+'/contact)',BOT_BLANK,
+    '> 群内消息只提供入口；不会替你报名、确认安排或登记付款。报名、确认及款项仍须在网站核对提交。');
+  return lines.join('\n');
+}
+export function renderBotCommand(command:string,head:string,body:readonly string[],url:string) {
+  const lines=['## /'+botPlainText(command)];if(head)lines.push('查询结果：'+botPlainText(head));
+  lines.push(BOT_BLANK,...(body.length?body.map(line=>'- '+botPlainText(line)):['- 暂无其他说明']));
+  if(url)lines.push(BOT_BLANK,'[打开活动]('+url+')');
+  return [...lines,BOT_BLANK,botCommandFootnote].join('\n');
+}
+export function renderBotEvent(title:string,when:string,facts:readonly (readonly [string,string])[],url:string,countdown='') {
+  const lines=['## 活动详情','活动名称：'+botPlainText(title),'**'+when+'**'];if(countdown)lines.push('**'+countdown+'**');
+  lines.push(BOT_BLANK,...facts.map(([label,value])=>'- **'+label+'**　'+botPlainText(value)),BOT_BLANK,'[打开活动]('+url+')',BOT_BLANK,botCommandFootnote);
+  return lines.join('\n');
+}
+export function renderBotTasks(title:string,when:string,tasks:readonly string[],url:string,countdown='') {
+  const lines=['## 待办','活动名称：'+botPlainText(title),'**'+when+'** · 活动状态摘要（不是你的个人待办）'];if(countdown)lines.push('**'+countdown+'**');
+  lines.push(BOT_BLANK,...(tasks.length?tasks.map(task=>'- '+botPlainText(task)):['- 暂无公开状态提醒']),BOT_BLANK,
+    '认领、退出审批、款项申报及个人补退款，请登录网站按权限查看。',BOT_BLANK,'[查看待办]('+url+')');
+  return lines.join('\n');
+}
+export function renderBotSelection(items:readonly (readonly [string,string,string])[],command:string,site:string,more=false) {
+  const cmd=botPlainText(command),lines=['## 选择活动','点对应链接继续，或发送 **/'+cmd+' 序号**（例如 **/'+cmd+' 1**）。',BOT_BLANK];
+  items.forEach(([title,when,url],index)=>lines.push((index+1)+'. '+botPlainText(title)+' · '+when+' · [打开活动]('+url+')'));
+  lines.push(BOT_BLANK,'> 序号以最近一次 **/'+cmd+'** 清单为准；活动增减后会变，可重新 /'+cmd+' 查看。仍可输入 8 位活动短码。');
+  if(more)lines.push(BOT_BLANK,'[更多活动请到网站查看]('+site+'/)');return lines.join('\n');
+}
+export function renderBotNoEvents(site:string) {
+  return ['## 暂无可查询的活动','目前没有进行中的公开活动，或该分类暂无已发布的公开活动。',BOT_BLANK,'[到网站查看]('+site+'/)'].join('\n');
+}

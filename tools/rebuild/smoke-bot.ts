@@ -11,6 +11,7 @@ const cwd = process.cwd(),
   nativeSocket = globalThis.WebSocket;
 let bot: typeof import('../../apps/bot/src/index');
 let outbox: typeof import('../../apps/bot/src/worker');
+let replies: typeof import('../../apps/bot/src/public');
 try {
   process.chdir(directory);
   globalThis.fetch = async () => {
@@ -24,6 +25,7 @@ try {
   const environment = JSON.stringify(process.env);
   bot = await import(new URL('../../.rebuild-dist/bot/transport.mjs', import.meta.url).href);
   outbox = await import(new URL('../../.rebuild-dist/bot/outbox.mjs', import.meta.url).href);
+  replies = await import(new URL('../../.rebuild-dist/bot/public.mjs', import.meta.url).href);
   assert.deepEqual(readdirSync(directory), []);
   assert.equal(JSON.stringify(process.env), environment);
 } finally {
@@ -32,6 +34,20 @@ try {
   globalThis.WebSocket = nativeSocket;
   rmSync(directory, { recursive: true, force: true });
 }
+const replyDirectory=mkdtempSync(join(tmpdir(),'qgroup-built-replies-'));
+try {
+  const path=join(replyDirectory,'space ? state.sqlite3'),db=openDatabase(path);
+  try {
+    db.exec("INSERT INTO users(id,token_hash,nickname,created_at) VALUES('synthetic-user','synthetic-hash','synthetic','before'); INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,status,created_at,visibility,lifecycle,timezone,bot_enabled) VALUES('abcdef1234567890','synthetic-user','built public reply','其他','synthetic location','2099-11-19T10:00:00Z','2099-11-18T10:00:00Z',10,'','open','before','public','scheduled','Asia/Taipei',0)");
+    assert.deepEqual(replies!.parseBotCommand('<@synthetic> /名額 abcdef12'),['名额','abcdef12']);
+    const reply=replies!.readPublicBotReply(path,'名额','abcdef12',{baseURL:'https://example.test'});
+    assert.match(reply.text,/built public reply/);assert.match(reply.text,/上限 10/);
+    assert.match(reply.markdown!,/## \/名额/);assert.equal(reply.keyboard,null);
+    assert.deepEqual(db.prepare('SELECT COUNT(*) AS n FROM bot_outbox').get(),{n:0});
+    db.exec('UPDATE rebuild_storage SET recovery_required=1');
+    assert.throws(()=>replies!.readPublicBotReply(path,'帮助'),/Recovery candidate/);
+  } finally {db.close();}
+} finally {rmSync(replyDirectory,{recursive:true,force:true});}
 let posts = 0;
 let outboxPosts = 0;
 const platform = await localPlatform((request, response) => {
@@ -160,7 +176,7 @@ try {
     rmSync(outboxDirectory, { recursive: true, force: true });
   }
   console.log(
-    'Built TS bot transport/outbox: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + recovery block passed; no production worker or QQ delivery started',
+    'Built TS bot transport/outbox/public replies: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + recovery block passed; no production worker or QQ delivery started',
   );
 } finally {
   stop.abort();

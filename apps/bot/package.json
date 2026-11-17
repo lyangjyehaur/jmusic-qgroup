@@ -1,1 +1,1 @@
-{"name":"@qgroup/bot","private":true,"type":"module","exports":{".":"./src/index.ts","./worker":"./src/worker.ts"}}
+{"name":"@qgroup/bot","private":true,"type":"module","exports":{".":"./src/index.ts","./worker":"./src/worker.ts","./public":"./src/public.ts"}}
