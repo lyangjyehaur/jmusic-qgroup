@@ -11,6 +11,7 @@ import { Failure, Notice, PageIntro } from './shared';
 import { AdminMusicPin } from './admin-music-pin';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { readAdminMusicProfile } from './admin-music-profile';
 type Profile = z.infer<typeof AdminMusicProfile>;
 function useAdminFailure(error: unknown, viewer: Viewer) {
   const client=useQueryClient();useEffect(()=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[error,client,viewer.scope]);
@@ -38,25 +39,26 @@ export function AdminMusicPage() {
   return <><PageIntro title="核對成分關聯" /><Link className="back" to="/admin/music">回到成分關聯</Link><AdminGate>{(viewer, access) => <Loader key={access.scope + ':' + id} id={id} viewer={viewer} access={access} />}</AdminGate></>;
 }
 function Loader({ id, viewer, access }: { id: string; viewer: Viewer; access: Access }) {
-  const query = useQuery({ queryKey: ['private', viewer.scope, 'admin-music-profile', access.scope, id], queryFn: ({signal}) => api('/admin/music/' + encodeURIComponent(id), AdminMusicProfile, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: false });
+  const query = useQuery({ queryKey: ['private', viewer.scope, 'admin-music-profile', access.scope, id], queryFn: ({signal}) => readAdminMusicProfile('/admin/music/' + encodeURIComponent(id), viewer, signal), refetchOnWindowFocus: false });
   useAdminFailure(query.error,viewer);
-  return query.isPending ? <Notice>正在讀取成分…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <Editor initial={query.data} viewer={viewer} access={access} />;
+  return query.isPending ? <Notice>正在讀取成分…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <Editor id={id} initial={query.data} viewer={viewer} access={access} />;
 }
 const Draft = z.object({ target: z.string(), reason: z.string(), pending: z.object({ key: z.string().uuid(), input: SaveMusicLink }).strict().optional() }).strict().refine(value=>!value.pending||(value.target.trim()||null)===value.pending.input.targetUserId&&value.reason.trim()===value.pending.input.reason);
-function Editor({ initial, viewer, access }: { initial: Profile; viewer: Viewer; access: Access }) {
-  const client = useQueryClient(); const path = '/admin/music/' + initial.id;
-  const storageKey = 'qgroup:rebuild:admin-music:v1:' + viewer.scope + ':' + access.scope + ':' + initial.id;
+function Editor({ id, initial, viewer, access }: { id: string; initial: Profile | null; viewer: Viewer; access: Access }) {
+  const client = useQueryClient(); const path = '/admin/music/' + id;
+  const storageKey = 'qgroup:rebuild:admin-music:v1:' + viewer.scope + ':' + access.scope + ':' + id;
   const [current, setCurrent] = useState(initial), [preview, setPreview] = useState<z.infer<typeof AdminMusicLinkPreview> | null>(null);
   const [confirmed, setConfirmed] = useState(false), [message, setMessage] = useState('');
-  const [pinDirty, setPinDirty] = useState(/^[0-9]{4,12}$/.test(initial.legacyKey)), [pinBusy,setPinBusy] = useState(pinDirty);
-  const fallback = () => ({ target: current.owner?.id ?? '', reason: '' });
-  const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:fallback,parse:raw=>Draft.parse(JSON.parse(raw)),dirty:value=>value.target!==(current.owner?.id??'')||!!value.reason,pending:value=>!!value.pending,extraDirty:pinDirty});
+  const [pinDirty, setPinDirty] = useState(!initial || /^[0-9]{4,12}$/.test(initial.legacyKey)), [pinBusy,setPinBusy] = useState(pinDirty);
+  const fallback = () => ({ target: current?.owner?.id ?? '', reason: '' });
+  const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:fallback,parse:raw=>Draft.parse(JSON.parse(raw)),dirty:value=>value.target!==(current?.owner?.id??'')||!!value.reason,pending:value=>!!value.pending,extraDirty:pinDirty});
   const {value:draft,replace:setDraft,busy,setBusy,active,locked,unavailable,begin,persist,blocker}=record;
   const ownershipDirty=record.dirty;
   useEffect(()=>{setPreview(null);setConfirmed(false);},[record.epoch]);
+  useEffect(()=>{if(initial===null){setCurrent(null);setPreview(null);setConfirmed(false);}},[initial]);
   function failed(error:unknown){if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
   async function loadPreview() {
-    if (locked || pinDirty || !begin()) return;
+    if (!current || locked || pinDirty || !begin()) return;
     setPreview(null); setConfirmed(false); setMessage('');
     try {
       if(!await persist(draft)||!active.current)return;
@@ -67,38 +69,38 @@ function Editor({ initial, viewer, access }: { initial: Profile; viewer: Viewer;
   async function save() {
     if (busy || pinDirty || unavailable) return;
     const parsed = SaveMusicLink.safeParse({ targetUserId: preview?.target?.id ?? null, revision: preview?.revision, reason: draft.reason, confirm: confirmed });
-    if (!draft.pending && (!preview || !parsed.success)) return;
+    if (!draft.pending && (!current || !preview || !parsed.success)) return;
     const operation = draft.pending ?? { key: crypto.randomUUID(), input: parsed.data! }, pending = { ...draft, pending: operation };
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try {
       await api(path + '/link', Ok, { method: 'POST', headers: { ...adminHeaders(viewer, access), 'Idempotency-Key': operation.key }, body: JSON.stringify(operation.input) });accepted=true;
       if(!active.current)return;
-      const latest = await api(path, AdminMusicProfile, { headers: { 'X-Account-Scope': viewer.scope } });if(!active.current)return;
-      const next = { target: latest.owner?.id ?? '', reason: '' };if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;
+      const latest = await readAdminMusicProfile(path, viewer);if(!active.current)return;
+      const next = { target: latest?.owner?.id ?? '', reason: '' };if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;
       setDraft(next);setCurrent(latest);setPreview(null);setConfirmed(false);
-      client.setQueryData(['private', viewer.scope, 'admin-music-profile', access.scope, initial.id], latest);
+      client.setQueryData(['private', viewer.scope, 'admin-music-profile', access.scope, id], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'admin-music'] });void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'admin-music-history'] });
-      void client.invalidateQueries({ queryKey: ['session'] });void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });announceAccountChange();setMessage('關聯操作已完成，請核對目前成分與帳號。');
+      void client.invalidateQueries({ queryKey: ['session'] });void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });announceAccountChange();setMessage(latest ? '關聯操作已完成，請核對目前成分與帳號。' : '原關聯操作已完成；成分目前不存在或已刪除。');
     }catch(error){if(!active.current)return;
       if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setPreview(null);setConfirmed(false);setMessage(error.message);}
       else setMessage('尚未確認關聯結果。原操作已保留，請按「確認關聯結果」安全重試。');failed(error);
     }finally{if(active.current)setBusy(false);}
   }
-  function edit(patch: Partial<z.infer<typeof Draft>>) { if(locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }
+  function edit(patch: Partial<z.infer<typeof Draft>>) { if(!current||locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }
   return <><DraftFeedback form={record} navigation={false}/>{blocker.state === 'blocked' && <Surface role="alert"><Text>{pinDirty ? '仍有未送出的口令或待確認操作；離開後口令不會保存。' : '仍有未保存的關聯草稿或待確認操作。'}</Text><Button onClick={() => blocker.reset()}>繼續編輯</Button><Button variant="secondary" disabled={busy||record.loading||pinBusy} onClick={() => void record.leave()}>{pinDirty ? '保留操作編號並離開' : '保留草稿並離開'}</Button></Surface>}
-    <Surface className="detail auth-panel"><Heading level={2}>{current.name}</Heading><Text>成分 ID：{current.id}</Text>{current.legacyKey && <Text>舊成分查詢標識：{current.legacyKey}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
+    <Surface className="detail auth-panel">{current ? <><Heading level={2}>{current.name}</Heading><Text>成分 ID：{current.id}</Text>{current.legacyKey && <Text>舊成分查詢標識：{current.legacyKey}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
       <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? ` · 程度 ${selection.level}` : ''}</li>)}</ul>
-      <Link to={path+'/erase'}>刪除此成分</Link>
-      <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>
-      <label className="account-field">目標帳號 ID<input value={draft.target} maxLength={128} disabled={locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></label><Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>
-      <div className="account-field"><label htmlFor="music-link-reason">核對原因</label><textarea id="music-link-reason" rows={3} value={draft.reason} maxLength={500} disabled={locked || pinDirty} onChange={event => edit({ reason: event.target.value })} /></div>
-      <Button variant="secondary" loading={busy} disabled={pinDirty || locked} onClick={() => void loadPreview()}>預覽關聯變更</Button>
-      {preview && <><Text>原帳號：{ownerLabel(preview.profile.owner)}</Text><Text>目標帳號：{ownerLabel(preview.target)}</Text><Text>原選擇、稱呼與聯絡資料保留。舊帳號的保存重試與找回授權將失效。</Text><label className="consent"><input type="checkbox" checked={confirmed} disabled={locked || pinDirty} onChange={event => setConfirmed(event.target.checked)} /><span>確認已核對成分與目標帳號，執行此關聯變更</span></label><Button loading={busy} disabled={pinDirty || unavailable || busy || !confirmed || !draft.reason.trim()} onClick={() => void save()}>保存關聯變更</Button></>}
+      <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice><Text>成分 ID：{id}</Text></>}
+      {current && <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>}
+      {(current || ownershipDirty) && <><label className="account-field">目標帳號 ID<input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></label>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
+      <div className="account-field"><label htmlFor="music-link-reason">核對原因</label><textarea id="music-link-reason" rows={3} value={draft.reason} maxLength={500} disabled={!current || locked || pinDirty} onChange={event => edit({ reason: event.target.value })} /></div>
+      </>}{current && <Button variant="secondary" loading={busy} disabled={pinDirty || locked} onClick={() => void loadPreview()}>預覽關聯變更</Button>}
+      {current && preview && <><Text>原帳號：{ownerLabel(preview.profile.owner)}</Text><Text>目標帳號：{ownerLabel(preview.target)}</Text><Text>原選擇、稱呼與聯絡資料保留。舊帳號的保存重試與找回授權將失效。</Text><label className="consent"><input type="checkbox" checked={confirmed} disabled={!current || locked || pinDirty} onChange={event => setConfirmed(event.target.checked)} /><span>確認已核對成分與目標帳號，執行此關聯變更</span></label><Button loading={busy} disabled={pinDirty || unavailable || busy || !confirmed || !draft.reason.trim()} onClick={() => void save()}>保存關聯變更</Button></>}
       {draft.pending && <Button loading={busy} disabled={pinDirty || unavailable || busy} onClick={() => void save()}>確認關聯結果</Button>}
       {ownershipDirty&&<Button variant="secondary" disabled={locked||pinDirty} onClick={()=>{record.change(fallback());setPreview(null);setConfirmed(false);}}>放棄關聯原稿</Button>}
       {message && <Text role="status">{message}</Text>}
-    </Surface>{/^[0-9]{4,12}$/.test(current.legacyKey) && <AdminMusicPin profile={current} viewer={viewer} access={access} disabled={ownershipDirty || busy || unavailable} onDirty={setPinDirty} onBusy={setPinBusy} onCurrent={profile => { setCurrent(profile); setPreview(null); setConfirmed(false); }} />}<History id={initial.id} viewer={viewer} access={access} />
+    </Surface>{(!current || /^[0-9]{4,12}$/.test(current.legacyKey)) && <AdminMusicPin id={id} profile={current} viewer={viewer} access={access} disabled={ownershipDirty || busy || unavailable} onDirty={setPinDirty} onBusy={setPinBusy} onCurrent={profile => { setCurrent(profile); setPreview(null); setConfirmed(false); }} />}{current && <History id={id} viewer={viewer} access={access} />}
   </>;
 }
 function History({ id, viewer, access }: { id: string; viewer: Viewer; access: Access }) {

@@ -287,3 +287,27 @@ describe('administrator PIN reset and imported ownership history', () => {
     }
   });
 });
+
+describe('management acknowledgement compatibility after music erasure', () => {
+  it('keeps original accepted link and PIN acknowledgements without recreating erased profiles or accepting new commands', async () => {
+    const s = await setup();
+    const review = await s.preview('bob'), linkKey = randomUUID(), pinKey = randomUUID();
+    const link = { targetUserId:'bob', revision:review.revision, reason:'刪除前已確認的關聯', confirm:true };
+    expect((await s.command(s.alice,s.path+'/link',link,linkKey)).statusCode).toBe(200);
+    const pin = { pin:'4321', revision:8, reason:'刪除前已確認的口令', confirm:true };
+    expect((await s.command(s.alice,s.path+'/pin',pin,pinKey)).statusCode).toBe(200);
+    const deletion = (await s.get(s.alice,s.path+'/erase')).json();
+    expect((await s.command(s.alice,s.path+'/erase',{revision:deletion.revision,requestId:randomUUID(),secret:'a'.repeat(64),confirm:'DELETE'})).statusCode).toBe(200);
+    const tables = ['music_profiles','music_legacy_profiles','music_ownership_history','music_pin_history','music_account_epochs','bot_outbox','bot_settings'];
+    const before = tables.map(table=>s.db.prepare('SELECT * FROM '+table).all());
+    expect((await s.get(s.alice,s.path)).json().code).toBe('PROFILE_NOT_FOUND');
+    expect((await s.command(s.alice,s.path+'/link',link,linkKey)).json()).toEqual({ok:true});
+    expect((await s.command(s.alice,s.path+'/pin-result',{requestId:pinKey})).json()).toEqual({status:'completed'});
+    expect((await s.command(s.alice,s.path+'/pin-result',{requestId:randomUUID()})).json()).toEqual({status:'not_found'});
+    expect((await s.command(s.alice,s.path+'/link',link)).json().code).toBe('PROFILE_NOT_FOUND');
+    expect((await s.command(s.alice,s.path+'/pin',pin)).json().code).toBe('PROFILE_NOT_FOUND');
+    expect((await s.command(s.alice,s.path+'/link',{...link,reason:'另一份內容'},linkKey)).json().code).toBe('REQUEST_CONFLICT');
+    expect((await s.command(s.bob,s.path+'/pin-result',{requestId:pinKey})).statusCode).toBe(403);
+    expect(tables.map(table=>s.db.prepare('SELECT * FROM '+table).all())).toEqual(before);
+  });
+});

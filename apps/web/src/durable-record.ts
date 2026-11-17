@@ -106,7 +106,7 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
   }
   return { value, change, replace, persist, retire, begin, unavailable, locked, busy, setBusy, active, dirty,
     loading, saving:!!saving, readError, damagedRaw, storageError, message, setMessage, needsRestore, restore:() => {setNeedsRestore(false); setEpoch(n => n + 1);},
-    conflict, expired, versions, recover, restoreVersion, canLeave, epoch };
+    conflict, expired, versions, recover, restoreVersion, refreshVersions:loadVersions, canLeave, epoch };
 }
 
 /** A page owns one router blocker, including any nested memory-only operation. */
