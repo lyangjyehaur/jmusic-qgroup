@@ -1,0 +1,85 @@
+[
+  {
+    "repo": "houbb/sensitive-word-data",
+    "commit": "fe6fc2921836217b8c90619db81b24af8b22d80f",
+    "path": "LICENSE.txt",
+    "url": "https://raw.githubusercontent.com/houbb/sensitive-word-data/fe6fc2921836217b8c90619db81b24af8b22d80f/LICENSE.txt",
+    "sha256": "68f716036e0a24f3b23f6fc0c6342db0ef936fb397ad077cc1b6e9e9ba31da26",
+    "bytes": 20966,
+    "license": "Apache-2.0",
+    "kind": "license",
+    "target": "houbb-LICENSE.txt"
+  },
+  {
+    "repo": "houbb/sensitive-word-data",
+    "commit": "fe6fc2921836217b8c90619db81b24af8b22d80f",
+    "path": "src/main/resources/sensitive_word_dict.txt",
+    "url": "https://raw.githubusercontent.com/houbb/sensitive-word-data/fe6fc2921836217b8c90619db81b24af8b22d80f/src/main/resources/sensitive_word_dict.txt",
+    "sha256": "78ae99be25f542d0bd1e950a32ca1dec620b2ac91046c9c785f46244d29db85f",
+    "bytes": 1174879,
+    "license": "Apache-2.0",
+    "kind": "deny"
+  },
+  {
+    "repo": "houbb/sensitive-word-data",
+    "commit": "fe6fc2921836217b8c90619db81b24af8b22d80f",
+    "path": "src/main/resources/sensitive_word_allow.txt",
+    "url": "https://raw.githubusercontent.com/houbb/sensitive-word-data/fe6fc2921836217b8c90619db81b24af8b22d80f/src/main/resources/sensitive_word_allow.txt",
+    "sha256": "0703014a854939cae98008baaea8aeb0bc0b3eaecc835863b01968d1ec401682",
+    "bytes": 98,
+    "license": "Apache-2.0",
+    "kind": "allow"
+  },
+  {
+    "repo": "konsheng/Sensitive-lexicon",
+    "commit": "68a595fb24d31bd9f882c081b4252443a69ac57b",
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/konsheng/Sensitive-lexicon/68a595fb24d31bd9f882c081b4252443a69ac57b/LICENSE",
+    "sha256": "0ba4738a228fe09c4fa60a5c8cfb0ccacb436e72602ea43786d3f5ee4838c458",
+    "bytes": 1070,
+    "license": "MIT",
+    "kind": "license",
+    "target": "konsheng-LICENSE.txt"
+  },
+  {
+    "repo": "konsheng/Sensitive-lexicon",
+    "commit": "68a595fb24d31bd9f882c081b4252443a69ac57b",
+    "path": "Vocabulary/政治类型.txt",
+    "url": "https://raw.githubusercontent.com/konsheng/Sensitive-lexicon/68a595fb24d31bd9f882c081b4252443a69ac57b/Vocabulary/%E6%94%BF%E6%B2%BB%E7%B1%BB%E5%9E%8B.txt",
+    "sha256": "0aa2ea38cb8164705068cab8f0ef060bc65b2bb8053bc07ff2b5bd96f928743e",
+    "bytes": 3006,
+    "license": "MIT",
+    "kind": "deny"
+  },
+  {
+    "repo": "konsheng/Sensitive-lexicon",
+    "commit": "68a595fb24d31bd9f882c081b4252443a69ac57b",
+    "path": "Vocabulary/反动词库.txt",
+    "url": "https://raw.githubusercontent.com/konsheng/Sensitive-lexicon/68a595fb24d31bd9f882c081b4252443a69ac57b/Vocabulary/%E5%8F%8D%E5%8A%A8%E8%AF%8D%E5%BA%93.txt",
+    "sha256": "b1f24a2b856445f0d4f106a487f9fd1c114c17dac64853108539874ffc3c6714",
+    "bytes": 5887,
+    "license": "MIT",
+    "kind": "deny"
+  },
+  {
+    "repo": "BYVoid/OpenCC",
+    "commit": "556ed22496d650bd0b13b6c163be9814637970ae",
+    "path": "data/dictionary/TSCharacters.txt",
+    "url": "https://raw.githubusercontent.com/BYVoid/OpenCC/556ed22496d650bd0b13b6c163be9814637970ae/data/dictionary/TSCharacters.txt",
+    "sha256": "6b5a0a799bea2bb22c001f635eaa3fc2904310f0c08addbff275477a80ecf09a",
+    "bytes": 34627,
+    "license": "Apache-2.0",
+    "kind": "conversion"
+  },
+  {
+    "repo": "BYVoid/OpenCC",
+    "commit": "556ed22496d650bd0b13b6c163be9814637970ae",
+    "path": "LICENSE",
+    "url": "https://raw.githubusercontent.com/BYVoid/OpenCC/556ed22496d650bd0b13b6c163be9814637970ae/LICENSE",
+    "sha256": "b534e465949558eec2597b04f5092b5e161236a68dfbfd04d547592ac3964308",
+    "bytes": 9165,
+    "license": "Apache-2.0",
+    "kind": "license",
+    "target": "opencc-LICENSE.txt"
+  }
+]

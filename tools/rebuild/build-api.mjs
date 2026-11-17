@@ -28,3 +28,9 @@ const replies = await build({ entryPoints: ['apps/bot/src/public.ts'], outfile: 
 for (const path of Object.keys(replies.metafile.inputs)) {
   if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts')) throw new Error(`Invalid dependency in bot public reply bundle: ${path}`);
 }
+
+const abbreviations = await build({ entryPoints: ['apps/bot/src/abbreviation-service.ts'], outfile: '.rebuild-dist/bot/abbreviations.mjs',
+  bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
+for (const path of Object.keys(abbreviations.metafile.inputs)) {
+  if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts') || path.startsWith('qgroup_bot/')) throw new Error(`Invalid dependency in bot abbreviation bundle: ${path}`);
+}

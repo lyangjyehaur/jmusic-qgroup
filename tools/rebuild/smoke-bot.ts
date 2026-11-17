@@ -12,6 +12,7 @@ const cwd = process.cwd(),
 let bot: typeof import('../../apps/bot/src/index');
 let outbox: typeof import('../../apps/bot/src/worker');
 let replies: typeof import('../../apps/bot/src/public');
+let abbreviations: typeof import('../../apps/bot/src/abbreviation-service');
 try {
   process.chdir(directory);
   globalThis.fetch = async () => {
@@ -26,6 +27,7 @@ try {
   bot = await import(new URL('../../.rebuild-dist/bot/transport.mjs', import.meta.url).href);
   outbox = await import(new URL('../../.rebuild-dist/bot/outbox.mjs', import.meta.url).href);
   replies = await import(new URL('../../.rebuild-dist/bot/public.mjs', import.meta.url).href);
+  abbreviations = await import(new URL('../../.rebuild-dist/bot/abbreviations.mjs', import.meta.url).href);
   assert.deepEqual(readdirSync(directory), []);
   assert.equal(JSON.stringify(process.env), environment);
 } finally {
@@ -48,6 +50,31 @@ try {
     assert.throws(()=>replies!.readPublicBotReply(path,'帮助'),/Recovery candidate/);
   } finally {db.close();}
 } finally {rmSync(replyDirectory,{recursive:true,force:true});}
+const abbreviationDirectory=mkdtempSync(join(tmpdir(),'qgroup-built-abbreviations-'));
+try {
+  assert.deepEqual(abbreviations!.groupBotCommand({content:'<@synthetic>',message_type:103,msg_elements:[{content:'這也太YYDS了 https://private.test/awsl'}]}),['缩写','yyds']);
+  let upstream=0;
+  const lookup=new abbreviations!.AbbreviationLookup({request:async terms=>{
+    upstream++;assert.equal(terms,'yyds');return Buffer.from(JSON.stringify([{name:'yyds',trans:['正常释义','傻逼']} ]));
+  }});
+  try {
+    const answer=await lookup.answer('YYDS');assert.match(String(answer),/正常释义、\[已遮蔽\]/);await lookup.answer('yyds');assert.equal(upstream,1);
+  } finally {lookup.close();}
+  const root=join(abbreviationDirectory,'results'),empty=new abbreviations!.BotWordMask([]),accepted:string[]=[],notices:string[]=[];
+  const delivery=new abbreviations!.AbbreviationDelivery(root,{pageBytes:200,loadMask:()=>empty});
+  const synthetic={replyGroup:async(_group:string,text:string)=>{
+    const ok=Buffer.byteLength(text)<=220;
+    if(ok)(text.includes('/缩写 继续 ')?notices:accepted).push(text);
+    return {ok,code:ok?0:40054007,data:{},status:200,kind:ok?'ok' as const:'permanent' as const,platformTrace:null};
+  }};
+  const full='完整释义、'.repeat(150)+'🙂末尾';await delivery.send(synthetic,'synthetic',{text:full},{msgId:'first'});
+  const token=/[0-9a-f]{24}$/.exec(notices.at(-1)!)![0];
+  for(let round=0;round<20&&readdirSync(root).length;round++){
+    const restarted=new abbreviations!.AbbreviationDelivery(root,{pageBytes:200,loadMask:()=>empty});
+    const page=await restarted.continuation('synthetic','继续 '+token);assert.equal(page?.token,token);await restarted.send(synthetic,'synthetic',page!,{msgId:'next-'+round});
+  }
+  assert.equal(accepted.join(''),full);assert.deepEqual(readdirSync(root),[]);assert.equal(upstream,1);
+} finally {rmSync(abbreviationDirectory,{recursive:true,force:true});}
 let posts = 0;
 let outboxPosts = 0;
 const platform = await localPlatform((request, response) => {
@@ -176,7 +203,7 @@ try {
     rmSync(outboxDirectory, { recursive: true, force: true });
   }
   console.log(
-    'Built TS bot transport/outbox/public replies: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + recovery block passed; no production worker or QQ delivery started',
+    'Built TS bot transport/outbox/public replies/abbreviations: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + complete masked lookup/continuation + recovery block passed; no production worker or QQ delivery started',
   );
 } finally {
   stop.abort();

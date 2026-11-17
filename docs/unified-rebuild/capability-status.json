@@ -4838,13 +4838,32 @@
       "new_entry": "QQ",
       "required_behavior": "/缩写／/縮寫／nbnhhsh、分段／大小寫／引用訊息、敏感詞遮罩及交付退路",
       "legacy_evidence_group": "縮寫",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "/缩写／/縮寫／nbnhhsh、分段／大小寫／引用訊息、敏感詞遮罩及交付退路"
+      "implementation": [
+        "apps/bot/src/abbreviation-input.ts",
+        "apps/bot/src/abbreviation-text.ts",
+        "apps/bot/src/word-mask.ts",
+        "apps/bot/src/abbreviations.ts",
+        "apps/bot/src/abbreviation-delivery.ts",
+        "apps/bot/assets/sensitive_words.json"
+      ],
+      "behavior_evidence": [
+        "apps/bot/src/abbreviations.test.ts",
+        "apps/bot/src/abbreviation-delivery.test.ts"
+      ],
+      "data_evidence": [
+        "apps/bot/src/abbreviations.test.ts",
+        "apps/bot/src/abbreviation-delivery.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/bot/src/abbreviations.test.ts",
+        "apps/bot/src/abbreviation-delivery.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/55-bot-abbreviations-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生 TS 引用選取／英文擷取、查詢快取／限流／期限、全部本機遮罩規則與例外、完整結果／分段／續讀／不確定保全已實作，並完成 Python 差分、新舊續讀檔雙向互讀與 built smoke。仍須接入每次驗群／身份／政策的完整 dispatch、KANBAN_BOT_SENSITIVE_WORDS_FILE 設定、CPU／SQLite 工作隔離與停止流程，以及實際 web-bot 組合／QQ／正式規模驗收；不等於完整 bot 可切換，見 55 號檢查點。"
     },
     {
       "capability_id": "B13",
