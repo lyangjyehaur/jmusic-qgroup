@@ -17,6 +17,7 @@ import { nicknameFixture } from './nickname-fixture';
 import { settlementFixture } from './settlement-fixture';
 import { timePollFixture } from './time-poll-fixture';
 import { paymentFixture } from './payment-fixture';
+import { botDeliveryFixture } from './bot-delivery-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const paymentRoot = (process.env.REBUILD_TEST_BACKUPS === '1'||process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
@@ -30,6 +31,7 @@ if (process.env.REBUILD_TEST_BACKUPS === '1') {
 if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
+if (process.env.REBUILD_TEST_BOT_DELIVERIES === '1') botDeliveryFixture(db);
 if (process.env.REBUILD_TEST_ADMIN_CATALOG !== '1') musicClaimFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_SHOUTS === '1') musicShoutFixture(db);
 if (process.env.REBUILD_TEST_ADMIN_CATALOG === '1') adminCatalogFixture(db);

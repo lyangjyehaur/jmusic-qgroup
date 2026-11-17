@@ -1,4 +1,5 @@
 import { AdminBotPage } from './admin-bot';
+import { AdminBotDeliveriesPage,BotDeliveriesPage } from './bot-deliveries';
 import { MusicRoomsPage } from './music-rooms';
 import { AdminAppearancePage } from './admin-appearance';
 import { AdminBackupsPage } from './admin-backups';
@@ -63,6 +64,9 @@ function Missing() { return <EmptyState title="這個入口不存在" action={<L
 const router = createBrowserRouter([{ element: <Layout />, errorElement: <main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main>, children: [
   { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <NewTimePollPage /> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
   { path: 'admin/bot', element: <AdminBotPage /> },
+  { path: 'admin/bot/deliveries', element: <AdminBotDeliveriesPage /> },
+  { path: 'activities/:id/bot-deliveries', element: <BotDeliveriesPage entity="activity" /> },
+  { path: 'time-polls/:id/bot-deliveries', element: <BotDeliveriesPage entity="poll" /> },
   { path: 'admin/appearance', element: <AdminAppearancePage /> },
   { path: 'admin/backups', element: <AdminBackupsPage /> },
   { path: 'me/appearance', element: <AppearancePage /> },

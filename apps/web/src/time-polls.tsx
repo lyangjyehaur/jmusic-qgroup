@@ -338,6 +338,7 @@ export function TimePollPage({ manage = false }: { manage?: boolean }) {
   return (
     <>
       <Link to="/time-polls">← 時間投票</Link>
+      {manage&&<Link to={'/time-polls/'+encodeURIComponent(id)+'/bot-deliveries'}>群通知紀錄</Link>}
       {session.error ? (
         <Failure error={session.error} retry={() => void session.refetch()} />
       ) : query.isPending ? (
@@ -666,7 +667,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
         onSubmit={(e) => {
           e.preventDefault();
           if (form.draft.pending) void form.submit();
-          else if (confirmed && !stale)
+          else if (confirmed && !stale && v.action!=='bot_retry')
             try {
               void form.submit(managerInput(v, p));
             } catch {
@@ -687,7 +688,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
                 ['cancel', '取消投票'],
                 ['finalize', '定案並建立活動'],
                 ['bot_sync', '設定群同步'],
-                ['bot_retry', '重送失敗／模擬通知'],
+                ...(v.action==='bot_retry'?[['bot_retry','核對舊重送草稿']]:[]),
                 ['remove', '移除投票'],
               ]
                 .filter(([action]) => p.can_manage || action === 'remove')
@@ -755,18 +756,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             </label>
           )}
           {v.action === 'bot_retry' && (
-            <Field label="重送通知">
-              <select value={v.outbox_id} onChange={(e) => edit({ outbox_id: Number(e.target.value) })}>
-                <option value={0}>請選擇</option>
-                {p.bot_delivery
-                  ?.filter((r) => r.status === 'failed' || r.state === 'simulated')
-                  .map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.id} · {r.state} · {r.created_at}
-                    </option>
-                  ))}
-              </select>
-            </Field>
+            <Notice>請從<Link to={'/time-polls/'+encodeURIComponent(p.id)+'/bot-deliveries'}>群通知紀錄</Link>核對重送；已有待確認操作請先查回原結果。</Notice>
           )}
           <Field label="操作原因">
             <textarea value={v.reason} maxLength={200} onChange={(e) => edit({ reason: e.target.value })} />
@@ -788,7 +778,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           disabled={
             !!form.readError ||
             (!form.draft.pending &&
-              (!confirmed || stale || (!p.can_manage && !(v.action === 'remove' && p.can_remove))))
+              (!confirmed || stale || v.action==='bot_retry' || (!p.can_manage && !(v.action === 'remove' && p.can_remove))))
           }
           loading={form.busy}
         >

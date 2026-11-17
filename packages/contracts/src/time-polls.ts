@@ -72,6 +72,8 @@ export const PollOption = PollCounts.extend({
   can_vote: z.boolean(),
 });
 export const PollHistoryDetails = z.object({
+  original_id: z.string().optional(),
+  outbox_id: z.string().optional(),
   reason: z.string().optional(),
   options: z.array(z.string()).optional(),
   deadline: z.string().optional(),

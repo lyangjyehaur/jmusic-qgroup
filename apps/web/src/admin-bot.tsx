@@ -363,6 +363,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
           </Button>
         </Surface>
       )}
+      <Link to="/admin/bot/deliveries">投遞紀錄</Link>
       {message && <Notice>{message}</Notice>}
       {storageError && (
         <div role="alert">

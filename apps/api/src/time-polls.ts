@@ -24,6 +24,7 @@ import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
 import { allocateActivity } from './activity-publish';
 import { hash, type Security } from './security';
 import { announcePoll, pollShareable } from './time-poll-bot';
+import { deliveryRetryBlocker } from './bot-delivery-rules';
 import {
   pollAvailable,
   pollDate,
@@ -395,10 +396,10 @@ export function registerTimePolls(
       } else if (action === 'bot_retry') {
         if (!pollShareable(poll, now())) throw new DomainError('POLL_BOT_RETRY', '目前投票未開放群同步，無法重送', 409);
         const row = db
-          .prepare("SELECT status,simulated_at,last_error FROM bot_outbox WHERE id=? AND poll_id=? AND channel='group'")
-          .get(input.outbox_id, id) as { status: string; simulated_at: string | null; last_error: string } | undefined;
-        if (!row || !(row.status === 'failed' || row.simulated_at || row.last_error === 'dry-run'))
-          throw new DomainError('POLL_BOT_RETRY', '只能重送失敗或模擬的通知', 409);
+          .prepare("SELECT status,sent_at,simulated_at,last_error FROM bot_outbox WHERE id=? AND poll_id=? AND channel='group'")
+          .get(input.outbox_id, id) as { status: string; sent_at:string|null; simulated_at: string | null; last_error: string } | undefined;
+        const blocked=row?deliveryRetryBlocker(row):'找不到群通知紀錄';
+        if (blocked)throw new DomainError('POLL_BOT_RETRY', blocked, 409);
         if (db.prepare("SELECT 1 FROM bot_outbox WHERE poll_id=? AND status IN ('pending','sending')").get(id))
           throw new DomainError('POLL_BOT_PENDING', '已有通知等待發送', 409);
         if (!announcePoll(db, poll, now(), defaults, 'retry:' + randomUUID().replaceAll('-', '')))

@@ -4582,7 +4582,12 @@
         "apps/bot/src/runtime.ts",
         "apps/bot/src/maintenance.ts",
         "apps/bot/src/maintenance-task.ts",
-        "apps/bot/src/bot-start.ts"
+        "apps/bot/src/bot-start.ts",
+        "packages/contracts/src/bot-deliveries.ts",
+        "apps/api/src/bot-deliveries.ts",
+        "apps/api/src/bot-delivery-rules.ts",
+        "apps/api/src/bot-delivery-plan.ts",
+        "apps/web/src/bot-deliveries.tsx"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
@@ -4592,7 +4597,10 @@
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "tools/rebuild/smoke-bot.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "tools/rebuild/smoke-build.mjs"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -4600,21 +4608,27 @@
         "docs/unified-rebuild/52-bot-policy-checkpoint.md",
         "apps/bot/src/outbox.test.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
         "apps/web/tests/admin-bot.spec.ts",
         "apps/bot/src/outbox.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "apps/web/tests/bot-deliveries.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "三種模式、原收據查回與 TS consumer/runtime 模擬／實送、快速設定切換及模擬不重播已有隔離證據。通用手動重送、QQ 與實際版本組合仍待驗收，見 52／53／57 號檢查點。"
+      "remaining": "三種模式、通用群通知核對／明確新工作重送、原 UUID 回執查回、模擬不重播及 Python／TS consumer 差分已有隔離證據。相容投票 API 保留既有重新生成語意，未改成新核對 token 協議；正式待送對帳、QQ 與實際版本組合仍待驗收，見 52／53／57／58 號檢查點。"
     },
     {
       "capability_id": "B07",
@@ -4823,7 +4837,12 @@
         "apps/bot/src/bot-start.ts",
         "apps/bot/src/ownership.ts",
         "qgroup_bot/ownership.py",
-        "qgroup_bot/main.py"
+        "qgroup_bot/main.py",
+        "packages/contracts/src/bot-deliveries.ts",
+        "apps/api/src/bot-deliveries.ts",
+        "apps/api/src/bot-delivery-rules.ts",
+        "apps/api/src/bot-delivery-plan.ts",
+        "apps/web/src/bot-deliveries.tsx"
       ],
       "behavior_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -4831,25 +4850,34 @@
         "apps/api/src/time-polls.test.ts",
         "tools/rebuild/smoke-bot.ts",
         "apps/bot/src/runtime.test.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "tools/rebuild/smoke-build.mjs"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/bot/src/runtime.test.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/outbox.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "apps/web/tests/bot-deliveries.spec.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。"
+      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。"
     },
     {
       "capability_id": "B11",
@@ -5017,7 +5045,12 @@
         "apps/bot/src/runtime.ts",
         "apps/bot/src/maintenance.ts",
         "apps/bot/src/maintenance-task.ts",
-        "apps/bot/src/bot-start.ts"
+        "apps/bot/src/bot-start.ts",
+        "packages/contracts/src/bot-deliveries.ts",
+        "apps/api/src/bot-deliveries.ts",
+        "apps/api/src/bot-delivery-rules.ts",
+        "apps/api/src/bot-delivery-plan.ts",
+        "apps/web/src/bot-deliveries.tsx"
       ],
       "behavior_evidence": [
         "apps/bot/src/config-protocol.test.ts",
@@ -5029,7 +5062,10 @@
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "tools/rebuild/smoke-bot.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "tools/rebuild/smoke-build.mjs"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5038,7 +5074,9 @@
         "docs/unified-rebuild/52-bot-policy-checkpoint.md",
         "apps/bot/src/outbox.test.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5046,16 +5084,20 @@
         "apps/api/src/admin-bot.test.ts",
         "apps/web/tests/admin-bot.spec.ts",
         "apps/bot/src/outbox.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "apps/api/src/bot-deliveries.test.ts",
+        "apps/web/tests/bot-deliveries.spec.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
         "apps/web/tests/admin-bot.spec.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "私有 trace／health、設定後台與 consumer 投遞狀態已實作；runtime 更新部署預設／applied revision、實際 poll／ACK 及停止／失敗健康，子 worker 預覽再遮罩實際 secret。UnionID 存在／布林匹配診斷、完整投遞列表／重送、實際版本組合與 QQ 尚待完成，見 51–53／57 號檢查點。"
+      "remaining": "私有 trace／health、設定後台、runtime applied revision 與群通知列表／篩選／正文白名單核對已實作，權限與晚回應隔離有證據。UnionID 存在／布林匹配診斷、正式資料與不確定工作對帳、實際版本組合及 QQ 仍待驗收，見 51–53／57／58 號檢查點。"
     },
     {
       "capability_id": "B14",

@@ -72,6 +72,9 @@ try {
   const botPage=await fetch(base+'/admin/bot');assert.equal(botPage.status,200);await botPage.arrayBuffer();
   const policyResponse=await fetch(base+'/api/v2/admin/bot',{headers:readHeaders});assert.equal(policyResponse.status,200);assert.equal(policyResponse.headers.get('cache-control'),'no-store');
   const policy=await policyResponse.json();assert.equal(policy.revision,0);assert.equal(policy.config.enabled,false);assert.equal(policy.runtime.applied_revision,null);
+  const deliveriesPage=await fetch(base+'/admin/bot/deliveries');assert.equal(deliveriesPage.status,200);await deliveriesPage.arrayBuffer();
+  const deliveries=await fetch(base+'/api/v2/admin/bot/deliveries',{headers:readHeaders});assert.equal(deliveries.status,200);assert.equal(deliveries.headers.get('cache-control'),'no-store');assert.deepEqual(await deliveries.json(),{entries:[],nextBefore:null,mode:'inherit'});
+  const forbiddenDeliveries=await fetch(base+'/api/v2/admin/bot/deliveries');assert.equal(forbiddenDeliveries.status,401);await forbiddenDeliveries.arrayBuffer();
   const syntheticPreview=await fetch(base+'/api/v2/admin/bot/preview',{method:'POST',headers:{...headers,Cookie:cookie,'X-Admin-CSRF':access.adminCsrf},body:JSON.stringify({config:policy.config,kind:'activity_published'})});
   assert.equal(syntheticPreview.status,200);assert((await syntheticPreview.json()).text.includes('周末聚餐'));
   const unchangedPolicy=await(await fetch(base+'/api/v2/admin/bot',{headers:readHeaders})).json();assert.deepEqual(unchangedPolicy,policy);
