@@ -25,7 +25,7 @@ const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 function actions(person:Person|undefined):Action[]{return person?[...(person.canChange?['edit' as const,...(person.status==='tentative'?['confirm' as const]:[]),...(person.status==='waiting'&&person.queueMode==='together'?['split' as const]:[])]:[]),...(person.canWithdraw?['withdraw' as const]:[]),...(person.canDecide?['approve' as const,'reject' as const]:[])]:[];}
 export function ActivityRegistrationPage({manage=false}:{manage?:boolean}){
   const {id=''}=useParams();
-  return <><PageIntro title={manage?'管理報名':'新增報名'}/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+(manage?'/signup':'/registration')}>{manage?'新增本人／同行報名':'管理現有報名'}</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id+':'+manage} viewer={viewer} id={id} manage={manage}/>}</MemberAccess></>;
+  return <><PageIntro title={manage?'管理報名':'新增報名'}/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+(manage?'/signup':'/registration')}>{manage?'新增本人／同行報名':'管理現有報名'}</Link><Link to={'/activities/'+encodeURIComponent(id)+'/invitations'}>補報名邀請</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id+':'+manage} viewer={viewer} id={id} manage={manage}/>}</MemberAccess></>;
 }
 function Loader({viewer,id,manage}:{viewer:Member;id:string;manage:boolean}){
   const query=useQuery({queryKey:['private',viewer.scope,'activity-registration',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/registration',RegistrationContext,{headers:scope(viewer)}),refetchOnWindowFocus:false});

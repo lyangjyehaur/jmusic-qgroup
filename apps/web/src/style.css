@@ -126,3 +126,7 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .draft-comparison dd { white-space: pre-wrap; overflow-wrap: anywhere; }
 .draft-remove { border-top: 1px solid var(--line, #dbe3ec); margin-top: 1.5rem; padding-top: 1rem; }
+
+.invitation-list { padding-left: 1.25rem; }
+.invitation-list li + li { margin-top: 1.25rem; }
+.invitation-url { overflow-wrap: anywhere; user-select: all; }

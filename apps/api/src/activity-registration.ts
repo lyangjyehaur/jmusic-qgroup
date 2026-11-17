@@ -11,11 +11,11 @@ import { activityPeople, activityPeopleSnapshot, allocateActivity, rebalanceActi
 import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
 type User={id:string;nickname:string};
 type Person=ReturnType<typeof activityPeople>[number];
-function mutableBlocker(db:DB,event:EventRow){
+export function mutableBlocker(db:DB,event:EventRow){
   if(db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(event.id))return '活動已有結算，不能改動報名名單';
   return ['draft','ended','cancelled'].includes(event.lifecycle)||event.archived_at||event.status==='deleted'?'這個活動已結束、取消、歸檔或尚未發布':'';
 }
-function ensureMutable(db:DB,event:EventRow){const message=mutableBlocker(db,event);if(message)throw new DomainError('ROSTER_LOCKED',message,409);}
+export function ensureMutable(db:DB,event:EventRow){const message=mutableBlocker(db,event);if(message)throw new DomainError('ROSTER_LOCKED',message,409);}
 function lookup(db:DB,event:EventRow,id:string){const person=activityPeople(db,event.id).find(row=>row.id===id);if(!person)throw new DomainError('ATTENDEE_NOT_FOUND','這條報名不存在或已退出',404);return person;}
 function canManage(db:DB,event:EventRow,person:Person,userId:string){return person.manager_id===userId||eventScopes(db,event,userId).has('roster');}
 function authorize(db:DB,id:string,userId:string,personId?:string){

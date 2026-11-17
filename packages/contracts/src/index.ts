@@ -1,6 +1,7 @@
 import { z } from 'zod';
 export * from './activity-arrangements';
 export * from './activity-registration';
+export * from './activity-invitations';
 
 export const Selection = z.object({ entryId: z.string().min(1).max(80), level: z.number().int().min(1).max(4) }).strict();
 export const SaveProfile = z.object({

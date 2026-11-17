@@ -1212,13 +1212,28 @@
       "new_entry": "活動管理／邀請",
       "required_behavior": "邀請不占位；單次接受、額滿明確接受候補，不重複本人報名",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "邀請不占位；單次接受、額滿明確接受候補，不重複本人報名"
+      "implementation": [
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-registration.ts",
+        "packages/contracts/src/activity-invitations.ts",
+        "apps/web/src/activity-invitations.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-invitations.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-invitations.test.ts",
+        "docs/unified-rebuild/26-activity-invitations-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-invitations.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-invitations.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生批量邀請、不占位、有限預覽、單次接受、候補確認、私人存取與舊 attendee_invite 網址已測；原 key 恢復、Python 差分及舊 worker 消費已測。全部舊 API 轉接、正式副本與實際平台驗收待完成。"
     },
     {
       "capability_id": "R10",
