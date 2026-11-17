@@ -31,7 +31,7 @@ describe('schema 7 → independent music fields', () => {
       next.prepare("UPDATE users SET nickname='新帳號稱呼'").run(); next.prepare("UPDATE music_profile_fields SET note='後來編輯' WHERE profile_id='legacy'").run();
       next.transaction(() => seedMusicFields(next))(); expect(next.prepare("SELECT note FROM music_profile_fields WHERE profile_id='legacy'").get()).toEqual({note:'後來編輯'});
       expect(next.pragma('foreign_key_check')).toEqual([]); next.close();
-      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:12}); expect(reopened.prepare("SELECT name FROM music_profile_fields WHERE profile_id='native'").get()).toEqual({name:'帳號稱呼'}); reopened.close();
+      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:13}); expect(reopened.prepare("SELECT name FROM music_profile_fields WHERE profile_id='native'").get()).toEqual({name:'帳號稱呼'}); reopened.close();
     } finally { rmSync(folder, {recursive:true,force:true}); }
   });
   it('rolls back DDL and version on a table collision or invalid private source instead of losing or coercing evidence', () => {

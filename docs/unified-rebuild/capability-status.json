@@ -3642,13 +3642,28 @@
       "new_entry": "我的外觀",
       "required_behavior": "跨領域一致；不因切頁重設主題或草稿",
       "legacy_evidence_group": "音樂前端、前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "跨領域一致；不因切頁重設主題或草稿"
+      "implementation": [
+        "apps/web/src/appearance-preferences.tsx",
+        "apps/web/src/appearance.tsx",
+        "apps/web/src/layout.tsx",
+        "apps/web/src/style.css",
+        "apps/web/src/music-trend.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/web/tests/appearance.spec.ts"
+      ],
+      "data_evidence": [
+        "apps/web/tests/appearance.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/web/tests/appearance.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/appearance.spec.ts",
+        "docs/unified-rebuild/47-appearance-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "全站深淺／跟隨系統、舊偏好、跨分頁與儲存失敗已隔離驗證；所有正式裝置與舊瀏覽器草稿／PWA 切換的成套驗收待完成。"
     },
     {
       "capability_id": "C05",
@@ -3656,13 +3671,29 @@
       "new_entry": "我的外觀",
       "required_behavior": "管理配置與個人停用分開；移植後可用，不強制舊色彩或佈局",
       "legacy_evidence_group": "音樂前端、成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "管理配置與個人停用分開；移植後可用，不強制舊色彩或佈局"
+      "implementation": [
+        "apps/web/src/appearance.tsx",
+        "apps/api/src/appearance.ts",
+        "packages/database/src/wallpapers.ts",
+        "packages/database/src/schema-v13.ts"
+      ],
+      "behavior_evidence": [
+        "apps/web/tests/appearance.spec.ts",
+        "apps/api/src/appearance.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/wallpapers.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/appearance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/appearance.spec.ts",
+        "docs/unified-rebuild/47-appearance-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "個人開關、解碼後切換、隨機不連續重複、雙層畫面、減少動態／背景暫停及壞圖恢復已驗證；正式素材完整對帳、備份與切換後實際版本組合待驗收。"
     },
     {
       "capability_id": "C06",
@@ -4080,13 +4111,32 @@
       "new_entry": "後台外觀",
       "required_behavior": "PNG／JPG／WebP 單張 2 MiB，路徑／格式保護，持久資料卷與備份",
       "legacy_evidence_group": "成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "PNG／JPG／WebP 單張 2 MiB，路徑／格式保護，持久資料卷與備份"
+      "implementation": [
+        "apps/web/src/admin-appearance.tsx",
+        "apps/api/src/appearance.ts",
+        "packages/contracts/src/appearance.ts",
+        "packages/database/src/schema-v13.ts",
+        "packages/database/src/wallpapers.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/appearance.test.ts",
+        "apps/web/tests/appearance.spec.ts",
+        "tools/rebuild/smoke-build.mjs"
+      ],
+      "data_evidence": [
+        "packages/database/src/wallpapers.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/appearance.test.ts",
+        "apps/web/tests/appearance.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/appearance.spec.ts",
+        "docs/unified-rebuild/47-appearance-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "管理 CRUD、排序／間隔、PNG／JPEG／WebP 完整解碼、2 MiB 邊界、交易回滾、未知結果與 schema 13 已隔離驗證；成套備份／配對恢復、正式資料卷與舊 adapters／實際版本組合待完成。"
     },
     {
       "capability_id": "A14",

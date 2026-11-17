@@ -17,7 +17,7 @@ describe('schema 8 → bot singleton migration',()=>{
     const folder=mkdtempSync(join(tmpdir(),'qgroup-bot-baseline-')),path=join(folder,'isolated.sqlite3');
     try{
       version8(path).close();const db=openDatabase(path);
-      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:12});
+      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:13});
       expect(db.prepare('SELECT id,revision,config_json FROM bot_settings').get()).toEqual({id:1,revision:0,config_json:'{}'});
       expect(db.prepare('SELECT revision,config_json,actor_ref,action FROM bot_settings_history').all()).toEqual([{revision:0,config_json:'{}',actor_ref:'',action:'baseline'}]);
       expect(db.prepare('SELECT * FROM bot_runtime').get()).toEqual({id:1,applied_revision:null,checked_at:null,last_attempt_at:null,deployment_group:''});

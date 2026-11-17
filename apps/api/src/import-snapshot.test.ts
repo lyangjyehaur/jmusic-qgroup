@@ -4,6 +4,7 @@ import { chmodSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync,
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
+import sharp from 'sharp';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from '@qgroup/database';
 import { legacySchema } from '../../../packages/database/src/legacy-schema';
@@ -85,7 +86,7 @@ describe('offline paired snapshot import', () => {
       const tables = old.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
       for (const { name } of tables) expect(db.prepare('SELECT * FROM "' + name + '" ORDER BY rowid').all(), name).toEqual(old.prepare('SELECT * FROM "' + name + '" ORDER BY rowid').all());
       expect(db.prepare("SELECT seq FROM sqlite_sequence WHERE name='attendees'").get()).toEqual({ seq: 9000 });
-      expect(db.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' AND name NOT LIKE 'music_%' ORDER BY name").all()).toEqual(old.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' ORDER BY name").all());
+      expect(db.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' AND name NOT LIKE 'music_%' AND name NOT LIKE 'appearance_%' ORDER BY name").all()).toEqual(old.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' ORDER BY name").all());
       expect(db.prepare('SELECT count(*) n FROM migration_map WHERE source=?').get('board')).toMatchObject({ n: expect.any(Number) });
       expect(db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId('10001'))).toEqual({ user_id: 'alice' });
       expect(db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId(native))).toEqual({ user_id: 'bob' });
@@ -194,8 +195,9 @@ describe('offline paired snapshot import', () => {
   });
   it('validates image bytes/references and wallpaper paths, skips erased/orphan private images, and preserves valid asset bytes', async () => {
     const s = setup(); const image = Buffer.from('synthetic-private-png'); const imageHash = digest(image); const path = 'images/' + imageHash.slice(0, 2) + '/' + imageHash + '.png'; mkdirSync(join(s.source, 'images', imageHash.slice(0, 2))); writeFileSync(join(s.source, path), image);
-    s.write('music/walls/wall-one.webp', 'synthetic-wallpaper-bytes'); s.write('music/walls/manifest.json', { items: [{ name: '壁紙', src: '/walls/wall-one.webp', enabled: false }], rotateSeconds: 24 });
-    await importSnapshot(s.source, s.destination, stamp); expect(existsSync(join(s.destination, path))).toBe(false); expect(readFileSync(join(s.destination, 'walls/wall-one.webp'), 'utf8')).toBe('synthetic-wallpaper-bytes');
+    const wallBytes=await sharp({create:{width:4,height:3,channels:3,background:'#286f83'}}).webp().toBuffer();writeFileSync(join(s.source,'music/walls/wall-one.webp'),wallBytes); s.write('music/walls/manifest.json', { items: [{ name: '壁紙', src: '/walls/wall-one.webp', enabled: false }], rotateSeconds: 24 });
+    await importSnapshot(s.source, s.destination, stamp); expect(existsSync(join(s.destination, path))).toBe(false); expect(readFileSync(join(s.destination, 'walls/wall-one.webp'))).toEqual(wallBytes);
+    const imported=openDatabase(join(s.destination,'unified.sqlite3'));try{expect(imported.prepare('SELECT data FROM wallpaper_assets').get()).toEqual({data:wallBytes});expect(imported.prepare('SELECT name,enabled,position FROM wallpaper_items').all()).toEqual([{name:'壁紙',enabled:0,position:0}]);}finally{imported.close();}
     const bad = setup(); bad.write('music/walls/manifest.json', { items: [{ src: '/walls/../data.json' }] }); await expect(importSnapshot(bad.source, bad.destination, stamp)).rejects.toThrow('wallpaper'); expect(existsSync(bad.destination)).toBe(false);
   });
   it('rejects malformed UTF-8 in each text source and never traverses unrelated parent directories during publication', async () => {
@@ -213,7 +215,7 @@ describe('offline paired snapshot import', () => {
     await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Referenced board image is missing'); expect(existsSync(s.destination)).toBe(false);
     mkdirSync(join(s.source, 'images', image.slice(0, 2))); writeFileSync(join(s.source, path), bytes);
     const output = execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' }); const result = JSON.parse(output);
-    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 12, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
+    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 13, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
     expect(readFileSync(join(s.destination, path))).toEqual(bytes);
     const second = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' })); expect(second.status).toBe('already_imported');
   });

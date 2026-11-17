@@ -1,3 +1,4 @@
+import { registerAppearance } from './appearance';
 import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
@@ -88,6 +89,7 @@ export function createApp(options: AppOptions) {
     registerAccountDevices(app, db, security, now);
     registerRegistrationSettings(app, db, admin, now);
     registerAdminUsers(app, db, admin, now);
+    registerAppearance(app, db, admin, now);
     registerAdminPrivacy(app, db, admin, now);
     registerAdminMusic(app, db, admin, now);
     registerAdminMusicPins(app, db, admin, now);

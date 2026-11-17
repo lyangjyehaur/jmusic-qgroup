@@ -13,7 +13,7 @@ import { SelectionPanel } from './music-editor';
 import { musicEntryPath } from './music-entry';
 import { categoryLabel } from './music-entries';
 type Trend = z.infer<typeof MusicTrend>;
-const colors = ['#ad345d', '#4256c7', '#187c79', '#a05c0d', '#8353b6'];
+const colors = [1,2,3,4,5].map(index=>'var(--app-chart-'+index+')');
 const validDate = (t: number) => Number.isFinite(new Date(t * 1000).getTime());
 const date = (t: number) => validDate(t) ? new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(t * 1000) : '時間無法顯示';
 function Created({ time }: { time: number | null }) {

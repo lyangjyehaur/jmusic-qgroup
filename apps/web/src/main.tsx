@@ -1,9 +1,12 @@
+import { AdminAppearancePage } from './admin-appearance';
+import { AppearanceProvider,bootstrapAppearance } from './appearance-preferences';
+import { AppearancePage } from './appearance';
 import { AdminMusicErasurePage } from './admin-music-erasure';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, Link, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { EmptyState, ThemeProvider } from 'yahha-ui';
+import { EmptyState } from 'yahha-ui';
 import { InboxPage } from './inbox';
 import { Layout } from './layout';
 import { Activities, ActivityDetail } from './activities';
@@ -54,8 +57,10 @@ import 'yahha-ui/style.css';
 import './style.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 function Missing() { return <EmptyState title="這個入口不存在" action={<Link to="/activities">回到活動</Link>} />; }
-const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeProvider theme="blue"><main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main></ThemeProvider>, children: [
+const router = createBrowserRouter([{ element: <Layout />, errorElement: <main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main>, children: [
   { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <NewTimePollPage /> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
+  { path: 'admin/appearance', element: <AdminAppearancePage /> },
+  { path: 'me/appearance', element: <AppearancePage /> },
   { path: 'inbox', element: <InboxPage /> },
   { index: true, element: <ActivityEntry /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
@@ -88,4 +93,5 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'me/privacy', element: <MyPrivacy /> },
   { path: 'admin', element: <AdminHome /> }, { path: 'admin/privacy', element: <AdminPrivacy /> }, { path: 'admin/privacy/:id', element: <AdminPrivacyReview /> }, { path: 'admin/users', element: <AdminDirectory /> }, { path: 'admin/users/:id', element: <AdminUserPage /> },
 ] }]);
-createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><RouterProvider router={router} /></QueryClientProvider></React.StrictMode>);
+bootstrapAppearance();
+createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><AppearanceProvider><RouterProvider router={router} /></AppearanceProvider></QueryClientProvider></React.StrictMode>);

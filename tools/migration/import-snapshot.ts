@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { chmodSync, closeSync, constants, existsSync, fsyncSync, lstatSync, mkdirSync, mkdtempSync, openSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { openDatabase, detachLegacyAccount, REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
+import { seedWallpapers, openDatabase, detachLegacyAccount, REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
 import { legacySchema } from '../../packages/database/src/legacy-schema';
 import { schemaV1 } from '../../packages/database/src/schema-v1';
 import { createPrivacy, sharedRecords } from '../../apps/api/src/privacy';
@@ -155,6 +155,7 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     writePrivate(join(stage, 'legacy-music.erasures.jsonl'), ledger);
     const report = db.transaction(() => {
       const imported = importMusic(db!, music, identity, erased, now.toISOString());
+      seedWallpapers(db!,join(source,'music/walls'));
       // Administrative intents apply only after importing their legacy music scopes.
       // Captured reset entry IDs cannot return, and each action gets one audit record.
       createPrivacy(db!,boardJournal);

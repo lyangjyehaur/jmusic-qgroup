@@ -14,6 +14,7 @@ import { invalidateMusicOwnership } from './music-ownership';
 
 type Result = z.infer<typeof ErasureResult>;
 const sharedChecks: Record<string, string[]> = {
+  appearance_actions: ['actor_id'],
   music_catalog_actions: ['actor_id'],
   events: ['owner_id'], registrations: ['user_id'], roster_parties: ['manager_id'], attendees: ['user_id', 'manager_id'],
   event_audit: ['actor_id'], attendee_consents: ['actor_id'], event_roles: ['user_id'], management_invitations: ['recipient_id', 'initiator_id', 'accepted_by'],

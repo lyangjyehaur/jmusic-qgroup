@@ -36,7 +36,7 @@ describe('version 1 → privacy migration', () => {
       expect(() => upgraded.prepare('DELETE FROM music_profile_audit').run()).toThrow('append-only');
       upgraded.prepare('UPDATE music_profiles SET user_id=NULL').run();
       expect(upgraded.pragma('foreign_key_check')).toEqual([]); upgraded.close();
-      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 12 });
+      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 13 });
       expect(reopened.prepare('SELECT user_id FROM music_profiles').get()).toEqual({ user_id: null });
       expect(reopened.prepare('SELECT * FROM music_profile_receipts').all()).toHaveLength(1); reopened.close();
     } finally { rmSync(dir, { recursive: true, force: true }); }
