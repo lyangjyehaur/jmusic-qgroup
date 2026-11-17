@@ -10,10 +10,16 @@ export async function localPlatform(
   const peers: { send: (frame: unknown) => void; close: (code: number) => void; frames: Record<string, unknown>[] }[] =
     [];
   const sockets = new Set<Socket>();
+  const socketErrors:Error[]=[];
   const server = createServer(handler);
   server.on('connection', (socket) => {
     sockets.add(socket);
     socket.on('close', () => sockets.delete(socket));
+    socket.on('error',(error:NodeJS.ErrnoException)=>{
+      // Runtime cancellation can reset an HTTP/upgrade socket before the
+      // fixture has replied. Keep unexpected transport failures observable.
+      if(error.code!=='ECONNRESET'&&error.code!=='EPIPE')socketErrors.push(error);
+    });
   });
   server.on('upgrade', (request, socket, head) => {
     const key = request.headers['sec-websocket-key'];
@@ -91,6 +97,7 @@ export async function localPlatform(
     close: async () => {
       for (const socket of sockets) socket.destroy();
       await new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve())));
+      if(socketErrors.length)throw new AggregateError(socketErrors,'Synthetic platform socket failure');
     },
   };
 }

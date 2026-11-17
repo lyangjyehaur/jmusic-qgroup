@@ -13,7 +13,7 @@ type Pending={signal:AbortSignal;work:DispatchWork;resolve:()=>void;reject:(erro
 export class BotDispatchWorkers implements BotDispatchBusiness {
   readonly #workers:Worker[];readonly #pending=new Map<number,Pending>();readonly #counts=[0,0,0];
   readonly #observer:BotObserver;readonly #stop=new AbortController();#next=0;#closed=false;#failed=false;
-  constructor(readonly config:DispatchConfig,readonly options:{api:Pick<QQBotAPI,'replyGroup'>;defaults?:BotPolicyDefaults;workerURL?:URL;observer?:BotObserver;maxPerLane?:number}){
+  constructor(readonly config:DispatchConfig,readonly options:{api:Pick<QQBotAPI,'replyGroup'>;defaults?:BotPolicyDefaults;workerURL?:URL;observer?:BotObserver;maxPerLane?:number;onFailure?:(error:Error)=>void}){
     this.#observer=options.observer??createBotObserver();
     if(!Number.isSafeInteger(options.maxPerLane??32)||(options.maxPerLane??32)<1)throw Error('Invalid worker queue limit');
     this.#workers=[];
@@ -33,6 +33,7 @@ export class BotDispatchWorkers implements BotDispatchBusiness {
     if(this.#failed||this.#closed)return;this.#failed=true;this.#observer.event('business_worker_unavailable',safeError(error));
     this.#stop.abort();
     for(const [id,pending] of this.#pending){pending.reject(Error('Business worker unavailable'));this.#release(id);}
+    try{this.options.onFailure?.(Error('Business worker unavailable'));}catch{/* Runtime diagnostics cannot throw into a Worker event. */}
     for(const worker of this.#workers)void worker.terminate();
   }
   async #message(worker:Worker,message:DispatchFromWorker) {

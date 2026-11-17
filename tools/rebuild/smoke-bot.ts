@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { once } from 'node:events';
+import { mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { openDatabase } from '../../packages/database/src/index';
@@ -14,6 +16,7 @@ let outbox: typeof import('../../apps/bot/src/worker');
 let replies: typeof import('../../apps/bot/src/public');
 let abbreviations: typeof import('../../apps/bot/src/abbreviation-service');
 let dispatch: typeof import('../../apps/bot/src/dispatch-service');
+let runtime: typeof import('../../apps/bot/src/runtime-service');
 try {
   process.chdir(directory);
   globalThis.fetch = async () => {
@@ -31,6 +34,8 @@ try {
   abbreviations = await import(new URL('../../.rebuild-dist/bot/abbreviations.mjs', import.meta.url).href);
   dispatch = await import(new URL('../../.rebuild-dist/bot/dispatch.mjs', import.meta.url).href);
   await import(new URL('../../.rebuild-dist/bot/dispatch-task.mjs', import.meta.url).href);
+  runtime = await import(new URL('../../.rebuild-dist/bot/runtime.mjs', import.meta.url).href);
+  await import(new URL('../../.rebuild-dist/bot/maintenance-task.mjs', import.meta.url).href);
   assert.deepEqual(readdirSync(directory), []);
   assert.equal(JSON.stringify(process.env), environment);
 } finally {
@@ -98,6 +103,43 @@ try {
   }
   assert.equal(accepted.join(''),full);assert.deepEqual(readdirSync(root),[]);assert.equal(upstream,1);
 } finally {rmSync(abbreviationDirectory,{recursive:true,force:true});}
+const runtimeDirectory=mkdtempSync(join(tmpdir(),'qgroup-built-runtime-'));
+const runtimePath=join(runtimeDirectory,'state.sqlite3'),runtimeDB=openDatabase(runtimePath);
+let nativePosts=0;
+const nativePlatform=await localPlatform((request,response)=>{
+  let raw='';request.on('data',chunk=>{raw+=chunk;});request.on('end',()=>{
+    response.setHeader('Content-Type','application/json');
+    if(request.url==='/app/getAppAccessToken')response.end('{"access_token":"synthetic","expires_in":7200}');
+    else if(request.url==='/gateway')response.end(JSON.stringify({url:nativePlatform.ws}));
+    else if(request.url==='/v2/groups/native-group/messages'){nativePosts++;assert.equal(JSON.parse(raw).content,'built native runtime');response.end('{"id":"synthetic-sent"}');}
+    else {response.statusCode=404;response.end('{}');}
+  });
+});
+const guardPath=join(runtimeDirectory,'network-guard.mjs');
+writeFileSync(guardPath,`const original=globalThis.fetch;globalThis.fetch=(url,options)=>{
+  const target=new URL(url);
+  if(['https://api.bot.qq.com','https://bots.qq.com'].includes(target.origin)&&target.pathname==='/app/getAppAccessToken')url=${JSON.stringify(nativePlatform.base)}+target.pathname;
+  else if(target.hostname!=='127.0.0.1')throw Error('External network forbidden');
+  return original(url,options);
+};`);
+let nativeChild:ReturnType<typeof spawn>|undefined,nativeExit:Promise<unknown>|undefined,childErrors='';
+try {
+  runtimeDB.exec("INSERT INTO users(id,token_hash,nickname,created_at) VALUES('synthetic','hash','name','before'); INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,status,created_at,bot_enabled) VALUES('event','synthetic','title','其他','place','2099-01-01','2098-12-31',1,'','open','before',1)");
+  runtimeDB.prepare('UPDATE bot_settings SET config_json=?').run(JSON.stringify({enabled:true,dry_run:false,groups:[{id:'native-group',name:'',replies:true,broadcast:true}]}));
+  runtimeDB.prepare("INSERT INTO bot_outbox(event_id,kind,dedupe_key,target,payload_json,status,created_at) VALUES('event','activity_published','native','native-group',?,'pending','before')").run(JSON.stringify({text:'built native runtime'}));
+  nativeChild=spawn(process.execPath,['--import',guardPath,new URL('../../.rebuild-dist/bot/start.mjs',import.meta.url).pathname],{
+    env:{PATH:process.env.PATH,QQBOT_APP_ID:'synthetic',QQBOT_APP_SECRET:'synthetic',KANBAN_DB:runtimePath,KANBAN_BOT_GROUP:'native-group',KANBAN_BOT_API_BASE:nativePlatform.base,KANBAN_BOT_DRY_RUN:'0'},stdio:['ignore','ignore','pipe']});
+  nativeChild.stderr!.on('data',chunk=>{childErrors+=chunk;});nativeExit=once(nativeChild,'exit');
+  await until(()=>{if(nativeChild!.exitCode!==null)throw Error(childErrors);return (runtimeDB.prepare('SELECT status FROM bot_outbox').get() as {status:string}).status==='sent';},5000);
+  assert.equal(nativePosts,1);assert.throws(()=>new runtime!.BotOwnership(runtimePath));
+  nativeChild.kill('SIGTERM');const [code]=await nativeExit as [number];assert.equal(code,0,childErrors);
+  const finalHealth=JSON.parse((await import('node:fs')).readFileSync(join(runtimeDirectory,'bot-logs','bot-health.json'),'utf8'));
+  assert.equal(finalHealth.runtime_state,'stopped');assert(finalHealth.last_poll);assert.equal(finalHealth.gateway_connected,false);
+  const owner=new runtime!.BotOwnership(runtimePath);owner.close();
+} finally {
+  if(nativeChild&&nativeChild.exitCode===null&&nativeChild.signalCode===null){nativeChild.kill('SIGKILL');await nativeExit;}
+  await nativePlatform.close();runtimeDB.close();rmSync(runtimeDirectory,{recursive:true,force:true});
+}
 let posts = 0;
 let outboxPosts = 0;
 const platform = await localPlatform((request, response) => {
@@ -226,7 +268,7 @@ try {
     rmSync(outboxDirectory, { recursive: true, force: true });
   }
   console.log(
-    'Built TS bot transport/outbox/public replies/abbreviations/isolated dispatch: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + complete masked lookup/continuation + recovery block passed; no production worker or QQ delivery started',
+    'Built TS bot transport/outbox/public replies/abbreviations/isolated dispatch/native runtime: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + complete masked lookup/continuation + recovery block passed; native CLI ownership/outbox/SIGTERM passed; no production worker or QQ delivery started',
   );
 } finally {
   stop.abort();

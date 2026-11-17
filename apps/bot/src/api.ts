@@ -351,7 +351,8 @@ export class QQBotAPI {
     if (options.keyboard) body.keyboard = options.keyboard;
     return this.sendGroup(id, body, options.signal, options.beforeSend);
   }
-  async setupPanels(commands: { name: string; desc: string }[], group = '', signal?: AbortSignal) {
+  async setupPanels(commands: { name: string; desc: string }[], group = '', signal?: AbortSignal, beforeSend?: () => void | Promise<void>) {
+    await beforeSend?.();
     try {
       const response = await this.#http(
         'GET',
@@ -379,7 +380,7 @@ export class QQBotAPI {
       body.target_type = 'specific';
       body.group_openids = [group];
     }
-    const result = await this.post('/v2/panels', body, signal);
+    const result = await this.post('/v2/panels', body, signal, beforeSend);
     this.#observer.event('panels_result', {
       ok: result.ok,
       api_code: result.code,

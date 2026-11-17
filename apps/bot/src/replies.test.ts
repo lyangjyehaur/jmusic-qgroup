@@ -109,10 +109,9 @@ describe('native public bot commands',()=>{
   it('never falls back for invalid, missing or ambiguous event prefixes',()=>{
     const s=setup(),base=eventRow(s.db,ids.listen)!,row={...base,id:'aaaaaaaa22222222'};
     s.db.prepare('INSERT INTO events('+Object.keys(row).join(',')+') VALUES('+Object.keys(row).map(()=>'?').join(',')+')').run(...Object.values(row));
-    for(const argument of ['aaaaaaaa','deadbeef','0','02','-1','1.0','1x','1 OR 1=1',ids.listen+'0']){
-      const expected=python(s.path,"print(json.dumps(dict(text=replies.answer(db,'名额',values)[0],markdown=replies.answer_markdown(db,'名额',values),keyboard=None)))",argument);
-      expect(s.answer('名额',argument),argument).toEqual(expected);
-    }
+    const argumentsToCheck=['aaaaaaaa','deadbeef','0','02','-1','1.0','1x','1 OR 1=1',ids.listen+'0'];
+    const expected=python(s.path,"print(json.dumps([dict(text=replies.answer(db,'名额',argument)[0],markdown=replies.answer_markdown(db,'名额',argument),keyboard=None) for argument in values]))",argumentsToCheck);
+    for(const [index,argument] of argumentsToCheck.entries())expect(s.answer('名额',argument),argument).toEqual(expected[index]);
     expect(s.answer('名额','AAAAAAAA11111111').text).toContain('上限 12');
   });
   it('reports only settlement totals, version and current closure state, including pending reports and stale closure',()=>{

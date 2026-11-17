@@ -23,6 +23,7 @@ from qgroup_core import bot_settings, bot_groups, storage
 
 from .api import QQBotAPI
 from .config import Config
+from .ownership import BotOwnership
 from .replies import COMMANDS, answer, answer_markdown, parse, read_db
 from .worker import OutboxWorker
 from .abbreviation_delivery import AbbreviationDelivery, Page
@@ -680,28 +681,61 @@ def main():
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         return 2
+    try:
+        owner = BotOwnership(config.db)
+        try:
+            owner.check_pending()
+        except Exception:
+            owner.close()
+            raise
+    except Exception as exc:
+        obs.event('bot_startup_refused', **obs.error_fields(exc))
+        return 2
+    try:
+        return _run_owned(config, owner)
+    finally:
+        owner.close()
+
+
+def _run_owned(config, owner):
     bot = Bot(config)
+    raw_http = bot.api.http_json
+
+    def owned_http(*args, **kwargs):
+        owner.check()
+        if bot.stopping:
+            raise RuntimeError('Bot stopping')
+        return raw_http(*args, **kwargs)
+
+    bot.api.http_json = owned_http
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
+    run_task = loop.create_task(bot.run())
+
+    def shutdown():
+        bot.stopping = True
+        run_task.cancel()
+
     for signum in (signal.SIGINT, signal.SIGTERM):
         try:
-            loop.add_signal_handler(signum, setattr, bot, 'stopping', True)
+            loop.add_signal_handler(signum, shutdown)
         except NotImplementedError:
             pass
     try:
-        loop.run_until_complete(bot.run())
-    except KeyboardInterrupt:
+        loop.run_until_complete(run_task)
+    except (KeyboardInterrupt, asyncio.CancelledError):
         pass
     finally:
         bot.stopping = True
         if bot.heartbeat_task:
             bot.heartbeat_task.cancel()
-        pending = list(bot.abbreviation_tasks)
+        pending = list(asyncio.all_tasks(loop))
         for task in pending:
             task.cancel()
         if pending:
             loop.run_until_complete(asyncio.gather(*pending, return_exceptions=True))
         obs.event('bot_stopping')
+        loop.run_until_complete(loop.shutdown_default_executor())
         loop.close()
     return 0
 

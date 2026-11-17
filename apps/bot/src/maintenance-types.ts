@@ -1,0 +1,15 @@
+import type { BotPolicyDefaults } from '@qgroup/domain';
+import type { ActivityBotDefaults } from '../../api/src/activity-bot';
+import type { BotConfig } from './config';
+import type { BotAPIResult } from './api';
+import type { BotHealth, LogFields } from './observability';
+import type { GatewayState } from './gateway';
+import type { DeliveryResult } from './outbox';
+export type MaintenanceConfig=Pick<BotConfig,'database'|'group'|'dryRun'|'markdownReplies'|'allowedLinkHosts'|'baseURL'|'pollInterval'|'maxAttempts'|'batch'|'claimTimeout'|'logDirectory'|'logContent'|'logContentLimit'>;
+export type StartupRefusalReason='unreviewed_sending'|'unsupported_schema'|'recovery_review';
+export type RuntimePolicy={revision:number;dryRun:boolean;group:string};
+export type RuntimeState=NonNullable<BotHealth['runtime_state']>;
+export type MaintenanceWork={kind:'init'|'policy'|'poll'|'panels-guard'}|{kind:'guard';call:number}|{kind:'health';gateway:GatewayState;state:RuntimeState};
+export type MaintenanceInput={qgroupMaintenance:true;config:MaintenanceConfig;defaults:BotPolicyDefaults;composition:ActivityBotDefaults};
+export type MaintenanceToWorker={type:'work';id:number;work:MaintenanceWork}|{type:'cancel';id:number}|{type:'send-result';call:number;result?:BotAPIResult;failed?:true;suppressed?:DeliveryResult}|{type:'close'};
+export type MaintenanceFromWorker={type:'done';id:number;value?:unknown;failed?:true;busy?:boolean;reason?:StartupRefusalReason;suppressed?:DeliveryResult}|{type:'send';id:number;call:number;path:string;body:Record<string,unknown>}|{type:'log';row:LogFields}|{type:'closed'};

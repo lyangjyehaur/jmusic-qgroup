@@ -156,6 +156,9 @@ export function persistentBotObserver(
   return observer;
 }
 export interface BotHealth {
+  runtime_state?: 'starting' | 'running' | 'stopping' | 'stopped' | 'failed';
+  gateway_connected?: boolean;
+  policy_revision?: number;
   dry_run: boolean;
   deployment_dry_run: boolean;
   policy_resolved: boolean;

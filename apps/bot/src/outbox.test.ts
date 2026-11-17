@@ -558,3 +558,13 @@ describe('native settlement attachments and persisted group refusals', () => {
     expect(readBotPolicy(s.db).config.groups).toEqual(s.policy.groups);
   });
 });
+
+it('defers a prepared request when token acquisition crosses into quiet hours',async()=>{
+  const s=setup({quiet_enabled:true,quiet_start:'23:00',quiet_end:'08:00',timezone:'UTC'});s.queue();
+  let now=new Date('2026-11-17T22:59:59Z'),sent=0;
+  const worker=new BotOutboxWorker(s.db,s.config,{post:async(_path,_body,_signal,beforeSend)=>{
+    now=new Date('2026-11-17T23:00:01Z');beforeSend?.();sent++;return result();
+  }},{...s.options,now:()=>now});
+  expect((await worker.pollOnce()).deferred).toBe(1);expect(sent).toBe(0);
+  expect(s.rows()[0]).toMatchObject({status:'pending',retry_at:'2026-11-18T08:00:00+00:00',attempts:0});
+});

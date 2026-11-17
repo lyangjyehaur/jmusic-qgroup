@@ -6,7 +6,7 @@ import {
   reserveBotSend,
   type DB,
 } from '@qgroup/database';
-import { botBroadcastTarget, botDryRun, type BotPolicyDefaults } from '@qgroup/domain';
+import { botBroadcastTarget, botDryRun, botQuietUntil, type BotPolicyDefaults } from '@qgroup/domain';
 import type { ActivityBotDefaults } from '../../api/src/activity-bot';
 import { readPaymentImage } from '../../api/src/payment-media';
 import {
@@ -34,7 +34,10 @@ import { checkAbort, within } from './lifecycle';
 
 export type DeliveryResult = 'sent' | 'simulated' | 'skipped' | 'failed' | 'deferred' | 'pending';
 export interface OutboxAPI {
-  post(path: string, payload: APIObject, signal?: AbortSignal): Promise<BotAPIResult>;
+  post(path: string, payload: APIObject, signal?: AbortSignal, beforeSend?: () => void): Promise<BotAPIResult>;
+}
+export class OutboxSendSuppressed extends Error {
+  constructor(readonly result: DeliveryResult) {super('Outbox policy changed before request');}
 }
 export interface OutboxOptions {
   now?: () => Date;
@@ -115,7 +118,7 @@ export class BotOutboxWorker {
     this.#observer.event('outbox_skipped', { reason: 'claim_lost' });
     return true;
   }
-  #refresh(row: OutboxRow, revision: number): DeliveryResult | null {
+  #refresh(row: OutboxRow, revision: number, enforceQuiet = false): DeliveryResult | null {
     if (this.#lost(row)) return 'skipped';
     const settings = this.#policy();
     if (settings.revision !== revision) {
@@ -123,9 +126,12 @@ export class BotOutboxWorker {
       return 'deferred';
     }
     const reason = outboxSkipReason(this.db, row, settings.config, this.config.group, this.#now());
-    return reason ? this.#skip(row, reason) : null;
+    if(reason)return this.#skip(row,reason);
+    const quiet=enforceQuiet?botQuietUntil(settings.config,this.#now()):null;
+    if(quiet){this.#mark(row,'pending','等待允许发送的时间',{retryAt:outboxStamp(quiet)});return 'deferred';}
+    return null;
   }
-  async #request(row: OutboxRow, path: string, body: APIObject, signal?: AbortSignal) {
+  async #request(row: OutboxRow, path: string, body: APIObject, signal?: AbortSignal, beforeSend?: () => void) {
     checkAbort(signal);
     if (!renewOutbox(this.db, row, this.#now())) throw new DOMException('Claim lost', 'AbortError');
     const lease = new AbortController();
@@ -144,7 +150,7 @@ export class BotOutboxWorker {
       return await within(
         this.options.requestTimeoutMs ?? 120000,
         AbortSignal.any([lease.signal, ...(signal ? [signal] : [])]),
-        (combined) => this.api.post(path, body, combined),
+        (combined) => this.api.post(path, body, combined, () => {checkAbort(combined);beforeSend?.();}),
       );
     } finally {
       clearInterval(timer);
@@ -184,6 +190,7 @@ export class BotOutboxWorker {
           this.#observer.event('outbox_result', { result, elapsed_ms: Date.now() - started });
           return result;
         } catch (error) {
+          if (error instanceof OutboxSendSuppressed) return error.result;
           this.#observer.event('outbox_exception', safeError(error));
           if (confirmedPayload) {
             this.#observer.event('outbox_confirmation_not_recorded');
@@ -261,6 +268,7 @@ export class BotOutboxWorker {
       this.#mark(row, 'pending', '等待允许发送的时间', { retryAt: reserved });
       return 'deferred';
     }
+    const beforeSend = () => {const changed=this.#refresh(row,settings.revision,true);if(changed)throw new OutboxSendSuppressed(changed);};
     let result: BotAPIResult;
     if (object(payload._settlement_image)) {
       const image = payload._settlement_image;
@@ -298,6 +306,7 @@ export class BotOutboxWorker {
           srv_send_msg: false,
         },
         signal,
+        beforeSend,
       );
       if (result.ok) {
         if (typeof result.data.file_info !== 'string' || !result.data.file_info)
@@ -306,14 +315,14 @@ export class BotOutboxWorker {
         const refreshed = this.#refresh(row, settings.revision);
         if (refreshed) return refreshed;
         checkAbort(signal);
-        result = await this.#request(row, '/v2/groups/' + group + '/messages', body, signal);
+        result = await this.#request(row, '/v2/groups/' + group + '/messages', body, signal, beforeSend);
       }
     } else {
       const refreshed = this.#refresh(row, settings.revision);
       if (refreshed) return refreshed;
       checkAbort(signal);
       starting();
-      result = await this.#request(row, '/v2/groups/' + group + '/messages', body, signal);
+      result = await this.#request(row, '/v2/groups/' + group + '/messages', body, signal, beforeSend);
     }
     if (result.ok) confirmed(recorded);
     this.#observer.event('outbox_sending');

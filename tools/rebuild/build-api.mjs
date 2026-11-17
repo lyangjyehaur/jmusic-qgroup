@@ -42,3 +42,11 @@ for (const [entry, output] of [['dispatch-service', 'dispatch'], ['dispatch-task
     if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts') || path.startsWith('qgroup_bot/')) throw new Error(`Invalid dependency in bot dispatch bundle: ${path}`);
   }
 }
+
+for (const [entry, output] of [['runtime-service', 'runtime'], ['maintenance-task', 'maintenance-task'], ['bot-start', 'start']]) {
+  const result = await build({ entryPoints: [`apps/bot/src/${entry}.ts`], outfile: `.rebuild-dist/bot/${output}.mjs`,
+    bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
+  for (const path of Object.keys(result.metafile.inputs)) {
+    if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.startsWith('qgroup_bot/') || path === 'apps/api/src/start.ts') throw new Error(`Invalid dependency in native bot runtime: ${path}`);
+  }
+}
