@@ -119,6 +119,9 @@ export class BotOutboxWorker {
     return true;
   }
   #refresh(row: OutboxRow, revision: number, enforceQuiet = false): DeliveryResult | null {
+    return this.db.transaction(() => this.#refreshLocked(row, revision, enforceQuiet)).immediate();
+  }
+  #refreshLocked(row: OutboxRow, revision: number, enforceQuiet: boolean): DeliveryResult | null {
     if (this.#lost(row)) return 'skipped';
     const settings = this.#policy();
     if (settings.revision !== revision) {
@@ -220,7 +223,7 @@ export class BotOutboxWorker {
   ): Promise<DeliveryResult> {
     checkAbort(signal);
     if (this.#lost(row)) return 'skipped';
-    const settings = this.db.transaction(() => this.#policy())(),
+    const settings = this.db.transaction(() => this.#policy()).immediate(),
       policy = settings.config;
     const group = botBroadcastTarget(policy, this.config.group);
     this.#observer.event('outbox_destination', { group_ref: reference(group) });

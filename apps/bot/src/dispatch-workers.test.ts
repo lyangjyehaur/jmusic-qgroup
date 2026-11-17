@@ -31,6 +31,21 @@ function setup(){
   const config=loadBotConfig({KANBAN_DB:path,KANBAN_BOT_DRY_RUN:'0'});cleanup.push(()=>{db.close();rmSync(folder,{recursive:true,force:true});});return {config,db,policy};
 }
 describe('isolated bot dispatch workers',()=>{
+  it('waits for an existing WAL writer before observing a group, without upgrading a stale read snapshot',async()=>{
+    const s=setup(),signal=new AbortController().signal,rows:LogFields[]=[];
+    const workers=new BotDispatchWorkers(s.config,{workerURL,observer:createBotObserver(row=>rows.push(row)),api:{replyGroup:async()=>ok}});cleanup.push(()=>workers.close());
+    await workers.observe('group','GROUP_AT_MESSAGE_CREATE',undefined,signal);
+    s.db.exec('BEGIN IMMEDIATE');
+    s.db.prepare('UPDATE bot_settings SET revision=revision+1').run();
+    let completed=false;
+    const observed=workers.observe('group','GROUP_ADD_ROBOT',undefined,signal).then(()=>({ok:true}),()=>({ok:false})).finally(()=>{completed=true;});
+    let completedWhileLocked:boolean;
+    try{await new Promise(resolve=>setTimeout(resolve,150));completedWhileLocked=completed;}
+    finally{s.db.exec('COMMIT');}
+    expect(await observed).toEqual({ok:true});expect(completedWhileLocked).toBe(false);
+    expect(s.db.prepare("SELECT last_event,membership FROM bot_groups WHERE group_id='group'").get()).toEqual({last_event:'GROUP_ADD_ROBOT',membership:'joined'});
+    expect(rows.some(row=>row.event==='business_task_failed')).toBe(false);
+  });
   it('keeps diagnostic queue capacity separate from replies and reports missing identity tables without losing commands',async()=>{
     const s=setup(),rows:LogFields[]=[],signal=new AbortController().signal;let sends=0;
     const workers=new BotDispatchWorkers(s.config,{workerURL,maxPerLane:1,observer:createBotObserver(row=>rows.push(row)),api:{replyGroup:async()=>{sends++;return ok;}}});cleanup.push(()=>workers.close());

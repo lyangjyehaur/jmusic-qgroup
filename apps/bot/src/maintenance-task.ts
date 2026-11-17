@@ -22,9 +22,10 @@ if(parentPort&&(workerData as Partial<MaintenanceInput>|undefined)?.qgroupMainte
   const database=()=>{if(!db)throw Error('Maintenance not initialized');assertDatabaseUsable(db);return db;};
   const refresh=()=>{
     const connection=database();return connection.transaction(()=>{
+      assertDatabaseUsable(connection);
       const settings=readBotPolicy(connection,input.defaults);markBotPolicyApplied(connection,settings.revision,new Date().toISOString());
       return policy={revision:settings.revision,dryRun:botDryRun(settings.config,config.dryRun),group:config.group};
-    })();
+    }).immediate();
   };
   port.on('message',(message:MaintenanceToWorker)=>{
     if(message.type==='cancel'){controllers.get(message.id)?.abort();return;}

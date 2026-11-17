@@ -1,4 +1,6 @@
 import { execFileSync } from 'node:child_process';
+import { Worker } from 'node:worker_threads';
+import { once } from 'node:events';
 import { mkdtempSync, readFileSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -106,6 +108,25 @@ function state(s: ReturnType<typeof setup>): Record<string, unknown>[] {
   );
 }
 describe('native outbox delivery', () => {
+  it('waits for an existing WAL writer before preparing policy and sends once without a spurious failed attempt', async () => {
+    const s=setup();s.queue();const row=s.worker.claim()[0]!;
+    const writer=new Worker(`
+      const {parentPort,workerData}=require('node:worker_threads');
+      const Database=require('better-sqlite3');
+      const db=new Database(workerData);db.exec('BEGIN IMMEDIATE');
+      db.prepare('UPDATE bot_settings SET revision=revision+1').run();
+      parentPort.once('message',()=>setTimeout(()=>{db.exec('COMMIT');db.close();parentPort.close();},150));
+      parentPort.postMessage('locked');
+    `,{eval:true,workerData:s.path});
+    try{
+      expect((await once(writer,'message'))[0]).toBe('locked');
+      writer.postMessage('deliver');
+      expect(await s.worker.deliver(row)).toBe('sent');
+      expect(s.post).toHaveBeenCalledTimes(1);
+      expect(s.db.prepare('SELECT status,attempts FROM bot_outbox').get()).toEqual({status:'sent',attempts:0});
+      expect(s.db.prepare('SELECT applied_revision FROM bot_runtime').get()).toEqual({applied_revision:1});
+    }finally{await writer.terminate();}
+  });
   it('matches retained Python delivery states, bodies and runtime across success, simulation, errors and policy deferrals', async () => {
     const scenarios = [
       { name: 'sent', code: 0 },

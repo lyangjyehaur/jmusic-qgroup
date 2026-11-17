@@ -11,6 +11,7 @@ import { localPlatform, until } from '../testsupport/platform';
 import { runBot } from './runtime';
 import { BotOwnership } from './ownership';
 import { loadBotConfig } from './config';
+import { BotMaintenance } from './maintenance';
 import { createBotObserver, type LogFields } from './observability';
 let root:string,dispatchWorkerURL:URL,maintenanceWorkerURL:URL;
 const cleanup:(()=>void|Promise<void>)[]=[];
@@ -60,6 +61,20 @@ async function setup(options:{dryRun?:boolean;panels?:boolean;holdToken?:boolean
   return {path,folder,db,config,policy,setPolicy,rows,posts,timeline,queue,health,platform,start,stop,ready,held,get tokenRequested(){return tokenRequested;},get panels(){return panels;},get requests(){return requests;}};
 }
 describe('native bot runtime lifecycle',()=>{
+  it('refreshes and records the latest policy after an existing WAL writer commits, without a stale upgrade',async()=>{
+    const s=await setup(),rows:LogFields[]=[],signal=new AbortController().signal;
+    const maintenance=new BotMaintenance(s.config,{workerURL:maintenanceWorkerURL,observer:createBotObserver(row=>rows.push(row)),api:{post:async()=>{throw Error('No network expected');}}});cleanup.push(async()=>{await maintenance.close();});
+    await maintenance.init(signal);
+    s.db.exec('BEGIN IMMEDIATE');s.setPolicy({dry_run:true});
+    let completed=false;
+    const checked=maintenance.policy(signal).then(value=>({ok:true,value}),()=>({ok:false,value:null})).finally(()=>{completed=true;});
+    let completedWhileLocked:boolean;
+    try{await new Promise(resolve=>setTimeout(resolve,150));completedWhileLocked=completed;}
+    finally{s.db.exec('COMMIT');}
+    expect(await checked).toEqual({ok:true,value:{revision:2,dryRun:true,group:'group'}});expect(completedWhileLocked).toBe(false);
+    expect(s.db.prepare('SELECT applied_revision FROM bot_runtime').get()).toEqual({applied_revision:2});
+    expect(rows.some(row=>row.event==='maintenance_failed')).toBe(false);expect(s.requests).toBe(0);
+  });
   it('consumes outbox while gateway is offline, handles messages/buttons, records applied policy and stops cleanly',async()=>{
     const s=await setup({panels:true});s.queue('first');const work=s.start();
     s.db.exec("INSERT INTO external_identities VALUES('qq','synthetic-app','synthetic-openid','alice','合成名','before'); INSERT INTO external_unionids VALUES('qq','synthetic-app','synthetic-openid','SITE-UNION-SECRET','before')");
@@ -97,7 +112,9 @@ describe('native bot runtime lifecycle',()=>{
     const s=await setup({holdToken:true});s.queue('before-token');const work=s.start();
     await until(()=>s.tokenRequested&&(s.db.prepare("SELECT status FROM bot_outbox").get() as {status:string}).status==='sending',5000);
     s.setPolicy({dry_run:true});for(const response of s.held.splice(0))response.end('{"access_token":"synthetic","expires_in":7200}');
-    await until(()=>s.rows.some(row=>row.event==='outbox_simulated'),5000);expect(s.posts).toEqual([]);expect(s.db.prepare('SELECT status,attempts FROM bot_outbox').get()).toEqual({status:'skipped',attempts:0});s.stop.abort();await work;
+    try{await until(()=>s.rows.some(row=>row.event==='outbox_simulated'),5000);}
+    catch{throw Error(JSON.stringify({held:s.held.length,posts:s.posts.length,outbox:s.db.prepare('SELECT status,attempts,last_error FROM bot_outbox').all(),events:s.rows.filter(row=>row.event!=='poll_completed').slice(-20)}));}
+    expect(s.posts).toEqual([]);expect(s.db.prepare('SELECT status,attempts FROM bot_outbox').get()).toEqual({status:'skipped',attempts:0});s.stop.abort();await work;
   },10000);
   it('preserves in-flight uncertainty, releases untouched claims and does not start another send during shutdown',async()=>{
     const s=await setup({holdMessage:true});s.queue('inflight');s.queue('untouched');const work=s.start();await until(()=>s.posts.length===1,5000);s.stop.abort();await work;

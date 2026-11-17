@@ -29,7 +29,13 @@ export class BotDispatchService {
   }
   #database<T>(readonly:boolean,work:(db:DB)=>T):T {
     const db=new Database(this.config.database,{readonly,fileMustExist:true});
-    try{db.pragma('busy_timeout = 5000');if(readonly)db.pragma('query_only = ON');return db.transaction(()=>{assertDatabaseUsable(db);return work(db);})();}
+    try{
+      db.pragma('busy_timeout = 5000');if(readonly)db.pragma('query_only = ON');
+      const transaction=db.transaction(()=>{assertDatabaseUsable(db);return work(db);});
+      // Acquire the writer before taking a read snapshot. A deferred upgrade
+      // can fail with SQLITE_BUSY_SNAPSHOT despite the configured busy timeout.
+      return readonly?transaction():transaction.immediate();
+    }
     finally{db.close();}
   }
   observe(group:string,event:string,reason:string|undefined,signal:AbortSignal) {
