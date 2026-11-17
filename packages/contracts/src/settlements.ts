@@ -227,7 +227,13 @@ export const SettlementPreview = z.object({
 export const SettlementResult = z.object({ id: z.string(), revision, version: revision, changed: z.boolean() });
 export const SettlementHistory = z.object({ revisions: z.array(SettlementBill), next_before: revision.nullable() });
 export const SaveRoomPlan = z
-  .object({ revision, rooms: z.array(RoomPlanInput).max(50), reason: text(300).default(''), confirm: z.literal(true) })
+  .object({
+    revision,
+    rooms: z.array(RoomPlanInput).max(50),
+    reason: text(300).default(''),
+    music_source_version: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+    confirm: z.literal(true),
+  })
   .strict();
 export const RoomPlanView = z.object({
   id: z.string(),

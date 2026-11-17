@@ -4,6 +4,7 @@ import { tmpdir } from 'node:os';
 import { openDatabase } from '@qgroup/database';
 import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
+import { musicRoomFixture } from './music-room-fixture';
 import { musicMatchingFixture } from './music-matching-fixture';
 import { musicShoutFixture } from './music-shout-fixture';
 import { adminCatalogFixture } from './admin-catalog-fixture';
@@ -34,6 +35,7 @@ if (process.env.REBUILD_TEST_MUSIC_SHOUTS === '1') musicShoutFixture(db);
 if (process.env.REBUILD_TEST_ADMIN_CATALOG === '1') adminCatalogFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_CIRCLES === '1') musicCircleFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_TREND === '1') musicTrendFixture(db);
+if (process.env.REBUILD_TEST_MUSIC_ROOMS === '1') musicRoomFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_MATCHES === '1') musicMatchingFixture(db);
 if (process.env.REBUILD_TEST_FINANCE === '1') { financeFixture(db); financeHistoryFixture(db); }
 if (process.env.REBUILD_TEST_INBOX === '1') inboxFixture(db);

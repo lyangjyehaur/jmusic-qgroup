@@ -1,3 +1,4 @@
+import { Worker } from 'node:worker_threads';
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -29,6 +30,22 @@ try {
   // Drain the large response before shutting down; an unread streamed bundle
   // can keep Fastify.close() waiting on an active socket indefinitely.
   assert((await bundle.arrayBuffer()).byteLength > 0);
+  const worker = new Worker(new URL('../../.rebuild-dist/api/music-room-worker.mjs', import.meta.url), {
+    workerData: {
+      input: { command: 'split', sourceVersion: 'a'.repeat(64), selected: ['one', 'two', 'three'], config: { mode: 'sizes', sizes: [1, 2] }, sameGender: false },
+      members: ['one', 'two', 'three'].map(id => ({ id, name: id, selections: [] })), entries: [],
+    },
+  });
+  try {
+    const result = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(Error('Built room worker timed out')), 5000);
+      worker.once('message', message => { clearTimeout(timer); resolve(message); });
+      worker.once('error', error => { clearTimeout(timer); reject(error); });
+    });
+    assert.equal(result.ok, true);
+    assert.deepEqual(result.result.rooms.flatMap(room => room.members).sort(), ['one', 'three', 'two']);
+    assert(result.result.rooms.every(room => room.members.length <= room.capacity));
+  } finally { await worker.terminate(); }
   const unknown = await fetch(base + '/api/v2/missing'); assert.equal(unknown.status, 404);
   const activities = await fetch(base + '/api/v2/activities'); assert.equal(activities.headers.get('cache-control'), 'no-store');
   assert.deepEqual((await activities.json()).events, []);
@@ -62,7 +79,7 @@ try {
   assert.equal(recovered.status,0,recovered.stderr);assert.equal(JSON.parse(recovered.stdout).recoveryRequired,true);
   const blocked=spawnSync(process.execPath,['.rebuild-dist/api/start.mjs'],{env:{...process.env,REBUILD_DB:join(candidate,'unified.sqlite3'),REBUILD_PORT:String(port)},encoding:'utf8',timeout:10000});
   assert.equal(blocked.status,1);assert.match(blocked.stderr,/Recovery candidate requires offline review/);
-  console.log('Built API + blocked recovery startup + native SQLite/sharp wallpaper + paired backup/current and historical export + TS workspace bundle + SPA assets: passed on an empty isolated DB');
+  console.log('Built API + bounded room worker + blocked recovery startup + native SQLite/sharp wallpaper + paired backup/current and historical export + TS workspace bundle + SPA assets: passed on an empty isolated DB');
 } finally {
   child.kill('SIGTERM'); await closed; rmSync(directory, { recursive: true, force: true });
 }

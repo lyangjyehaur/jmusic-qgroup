@@ -1,3 +1,4 @@
+import { MusicRoomsPage } from './music-rooms';
 import { AdminAppearancePage } from './admin-appearance';
 import { AdminBackupsPage } from './admin-backups';
 import { AppearanceProvider,bootstrapAppearance } from './appearance-preferences';
@@ -84,6 +85,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <main c
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },
   { path: 'people/shouts', element: <MusicShoutsPage /> }, { path: 'people/shouts/history', element: <MusicShoutsPage history /> }, { path: 'people/shouts/:id', element: <MusicShoutPage /> }, { path: 'admin/shouts', element: <AdminShoutsPage /> }, { path: 'admin/music-entries', element: <AdminMusicCatalogPage /> },
+  { path: 'tools/room-lab', element: <MusicRoomsPage /> },
   { path: 'people/circles', element: <MusicCirclesPage /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },
   { path: 'me/music/details', element: <MusicFieldsPage /> },

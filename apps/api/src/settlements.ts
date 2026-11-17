@@ -39,6 +39,7 @@ import {
   settlementVersion,
 } from './settlement-context';
 import { settlementNotice } from './settlement-notice';
+import { musicRoomSource } from './music-room-source';
 import { attachPaymentCodes } from './payment-codes';
 import { putPaymentImage } from './payment-media';
 export function registerSettlements(
@@ -320,6 +321,11 @@ export function registerSettlements(
         }
         requireEventRevision(event, input.revision);
         if (planBlocker(event)) fail(planBlocker(event), 409);
+        if (
+          input.music_source_version &&
+          musicRoomSource(db, user.id, event.id).source.sourceVersion !== input.music_source_version
+        )
+          fail('分房試算來源已變更；請重新試算，或明確轉為手動安排後核對保存', 409);
         const ctx = settlementRoster(db, event, user),
           before = roomPlan(db, event.id),
           rooms = normalizeRooms(

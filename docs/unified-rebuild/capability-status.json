@@ -1729,7 +1729,8 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
@@ -1743,10 +1744,12 @@
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/activity-room-overview.spec.ts",
-        "docs/unified-rebuild/35-room-overview-checkpoint.md"
+        "docs/unified-rebuild/35-room-overview-checkpoint.md",
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P02",
@@ -1765,7 +1768,8 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
@@ -1779,10 +1783,12 @@
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/activity-room-overview.spec.ts",
-        "docs/unified-rebuild/35-room-overview-checkpoint.md"
+        "docs/unified-rebuild/35-room-overview-checkpoint.md",
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P03",
@@ -1796,7 +1802,8 @@
         "apps/web/src/activity-room-overview.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-room-overview.test.ts"
@@ -1806,10 +1813,12 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-room-overview.spec.ts",
-        "docs/unified-rebuild/35-room-overview-checkpoint.md"
+        "docs/unified-rebuild/35-room-overview-checkpoint.md",
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P04",
@@ -1828,7 +1837,8 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
@@ -1842,10 +1852,12 @@
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/activity-room-overview.spec.ts",
-        "docs/unified-rebuild/35-room-overview-checkpoint.md"
+        "docs/unified-rebuild/35-room-overview-checkpoint.md",
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P05",
@@ -1853,13 +1865,34 @@
       "new_entry": "同好→自由分房",
       "required_behavior": "至少兩人、既有選取上限、共同項／平均／最差／孤立提示",
       "legacy_evidence_group": "分房演算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "至少兩人、既有選取上限、共同項／平均／最差／孤立提示"
+      "implementation": [
+        "packages/domain/src/music-rooms.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "apps/api/src/music-room-source.ts",
+        "apps/api/src/music-rooms.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/api/src/settlements.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-rooms.test.ts",
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
     },
     {
       "capability_id": "P06",
@@ -1867,13 +1900,34 @@
       "new_entry": "自由試算／活動分房",
       "required_behavior": "容量守恆、同人不重複、保留性別選項與無性別資料情況",
       "legacy_evidence_group": "分房演算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "容量守恆、同人不重複、保留性別選項與無性別資料情況"
+      "implementation": [
+        "packages/domain/src/music-rooms.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "apps/api/src/music-room-source.ts",
+        "apps/api/src/music-rooms.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/api/src/settlements.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-rooms.test.ts",
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
     },
     {
       "capability_id": "P07",
@@ -1881,13 +1935,34 @@
       "new_entry": "分房工作區",
       "required_behavior": "會員移房後重算極值、共同項與孤立提示，不能僅改畫面",
       "legacy_evidence_group": "分房演算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "會員移房後重算極值、共同項與孤立提示，不能僅改畫面"
+      "implementation": [
+        "packages/domain/src/music-rooms.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "apps/api/src/music-room-source.ts",
+        "apps/api/src/music-rooms.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/api/src/settlements.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-rooms.test.ts",
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
     },
     {
       "capability_id": "P08",
@@ -1902,23 +1977,39 @@
         "apps/web/src/activities.tsx",
         "apps/web/src/activity-roster.tsx",
         "apps/web/src/people.tsx",
-        "packages/contracts/src/index.ts"
+        "packages/contracts/src/index.ts",
+        "packages/domain/src/music-rooms.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "apps/api/src/music-room-source.ts",
+        "apps/api/src/music-rooms.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/api/src/settlements.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "packages/domain/src/music-rooms.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "apps/api/src/music-rooms.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-roster.spec.ts",
-        "docs/unified-rebuild/20-roster-checkpoint.md"
+        "docs/unified-rebuild/20-roster-checkpoint.md",
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "已按穩定 attendee／user 讀活動名單與共同成分、未認領／無成分保留、權限／來源故障與返回動線已有合成差分；分房整批輸入、成分更新版本核對、試算／正式採用、正式副本與實際平台待完成。"
+      "remaining": "自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
     },
     {
       "capability_id": "P09",
@@ -1926,13 +2017,34 @@
       "new_entry": "分房工作區",
       "required_behavior": "不拿舊結果套新場；讀取失敗不可當空名單",
       "legacy_evidence_group": "分房前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不拿舊結果套新場；讀取失敗不可當空名單"
+      "implementation": [
+        "packages/domain/src/music-rooms.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "apps/api/src/music-room-source.ts",
+        "apps/api/src/music-rooms.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/api/src/settlements.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-rooms.test.ts",
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
     },
     {
       "capability_id": "P10",
@@ -1940,13 +2052,34 @@
       "new_entry": "分房分享",
       "required_behavior": "保留匯出、長名稱及手機閱讀；不曝私人性別／留言",
       "legacy_evidence_group": "分房前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "保留匯出、長名稱及手機閱讀；不曝私人性別／留言"
+      "implementation": [
+        "packages/domain/src/music-rooms.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "apps/api/src/music-room-source.ts",
+        "apps/api/src/music-rooms.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/api/src/settlements.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-rooms.test.ts",
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-rooms.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
     },
     {
       "capability_id": "S01",

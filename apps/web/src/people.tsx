@@ -11,7 +11,7 @@ import { CopyMusicValue } from './music-copy';
 import { MusicRecommendations } from './music-matches';
 import { peopleReturn, musicTrendReturn, musicCircleReturn, musicShoutReturn } from './music-return';
 import { musicEntryPath, musicEntryReturn } from './music-entry';
-export function People() { return <><PageIntro title="同好" /><div className="page-actions"><Link to="/people/circles">同好圈子</Link><Link to="/people/shouts">找搭子</Link></div><MusicMemberAccess>{viewer => <><Lookup key={viewer.scope} viewer={viewer} /><MusicRecommendations key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} /></>}</MusicMemberAccess></>; }
+export function People() { return <><PageIntro title="同好" /><div className="page-actions"><Link to="/tools/room-lab">自由分房</Link><Link to="/people/circles">同好圈子</Link><Link to="/people/shouts">找搭子</Link></div><MusicMemberAccess>{viewer => <><Lookup key={viewer.scope} viewer={viewer} /><MusicRecommendations key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} /></>}</MusicMemberAccess></>; }
 function Lookup({ viewer }: { viewer: Member }) {
   const [query, setQuery] = useState(''); const [busy, setBusy] = useState(false); const [error, setError] = useState(''); const navigate = useNavigate();
   async function find(compare = false) {

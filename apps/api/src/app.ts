@@ -1,3 +1,4 @@
+import { registerMusicRooms } from './music-rooms';
 import { registerAppearance } from './appearance';
 import { registerAdminBackups } from './admin-backups';
 import { createPairedBackups } from './paired-backups';
@@ -116,6 +117,7 @@ export function createApp(options: AppOptions) {
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);
     registerMusicMatches(app, db, security);
+    registerMusicRooms(app, db, security);
     registerMusicCircles(app, db, security);
     registerMusicShouts(app, db, security, admin, now);
     registerMusicTrend(app, db, security, now);

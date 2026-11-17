@@ -272,3 +272,9 @@ select { max-width: 100%; border: 1px solid var(--app-line); border-radius: 6px;
 .shout-body { white-space: pre-wrap; }
 .shout-card .page-actions { margin-block: 1rem 0; }
 .shout-compose textarea { width: 100%; box-sizing: border-box; }
+.room-lab-options{display:grid;gap:1rem}.room-lab-options fieldset{min-width:0;border:1px solid var(--border,#c8d0dc);border-radius:12px;padding:1rem}.room-lab-pool{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr));gap:.4rem;max-height:28rem;overflow:auto}.room-lab-results{display:grid;gap:1rem}.room-lab-room ul{display:grid;gap:.6rem;padding-left:1.2rem}.room-lab-room li,.room-lab-results>div li{overflow-wrap:anywhere}.room-lab-room select{max-width:100%}.room-lab-analysis{overflow-wrap:anywhere}.room-lab-analysis ul{padding-left:1.2rem}.music-room-share{display:grid;gap:1rem;min-width:0}.music-room-share img{width:min(100%,480px);height:auto;border-radius:12px}.room-lab-results label,.room-lab-options label{overflow-wrap:anywhere;min-width:0}.room-lab-results input,.room-lab-results select{max-width:100%}
+
+.room-lab-pool .consent { align-items: flex-start; }
+.room-lab-members > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
+.room-lab-members > li > span { flex: 1 1 10rem; min-width: 0; }
+.room-lab-members > li > label { display: inline-flex; align-items: center; gap: .5rem; }

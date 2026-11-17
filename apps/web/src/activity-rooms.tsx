@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface } from 'yahha-ui';
 import { z } from 'zod';
-import { RoomPlanInput, RoomPlanView, SaveRoomPlan, SettlementResult } from '@qgroup/contracts';
+import {
+  RoomPlanInput,
+  RoomPlanView,
+  SaveRoomPlan,
+  SettlementResult,
+  RoomSuggestionTransfer,
+  RoomLabSource,
+} from '@qgroup/contracts';
 import { api } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -15,6 +22,10 @@ const Editable = z
     revision: z.number().int().nonnegative(),
     rooms: z.array(RoomPlanInput.extend({ name: z.string(), payer_id: z.string() })).max(50),
     reason: z.string(),
+    music_source_version: z
+      .string()
+      .regex(/^[a-f0-9]{64}$/)
+      .optional(),
   })
   .strict();
 const base = (id: string) => '/activities/' + encodeURIComponent(id);
@@ -24,7 +35,9 @@ export function ActivityRoomsPage() {
     <>
       <PageIntro title="預分包間" />
       <div className="page-actions">
-        <Link to={base(id)+'#rooms'}>回到活動包間</Link><Link to={base(id)+'/rooms/history'}>預分安排歷史</Link>
+        <Link to={base(id) + '#rooms'}>回到活動包間</Link>
+        <Link to={'/tools/room-lab?' + new URLSearchParams({ eventId: id })}>按成分試算分房</Link>
+        <Link to={base(id) + '/rooms/history'}>預分安排歷史</Link>
         <Link to={base(id) + '/settlement'}>逐人結算</Link>
         <Link to={base(id) + '/finance'}>收付款帳本</Link>
       </div>
@@ -35,7 +48,10 @@ export function ActivityRoomsPage() {
 function Loader({ viewer, id }: { viewer: Member; id: string }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'room-plan', id],
-    queryFn: () => api(base(id) + '/rooms', RoomPlanView, { headers: { 'X-Account-Scope': viewer.scope } }),
+    queryFn: () =>
+      api(base(id) + '/rooms', RoomPlanView, {
+        headers: { 'X-Account-Scope': viewer.scope },
+      }),
     refetchOnWindowFocus: false,
   });
   return query.isPending ? (
@@ -47,23 +63,51 @@ function Loader({ viewer, id }: { viewer: Member; id: string }) {
   );
 }
 function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof RoomPlanView> }) {
-  const endpoint = base(initial.id) + '/rooms',
+  const location = useLocation(),
+    candidate = RoomSuggestionTransfer.safeParse(location.state?.roomSuggestion),
+    suggestion =
+      candidate.success && candidate.data.scope === viewer.scope && candidate.data.eventId === initial.id
+        ? candidate.data
+        : null,
+    [imported, setImported] = useState(false),
+    [replaceConfirmed, setReplaceConfirmed] = useState(false),
+    source = useQuery({
+      queryKey: ['private', viewer.scope, 'room-lab-adoption', initial.id, suggestion?.sourceVersion],
+      enabled: !!suggestion && !imported,
+      queryFn: ({ signal }) =>
+        api('/music/rooms/source?' + new URLSearchParams({ eventId: initial.id }), RoomLabSource, {
+          signal,
+          headers: { 'X-Account-Scope': viewer.scope },
+        }),
+      staleTime: 0,
+      refetchOnMount: 'always',
+      refetchOnWindowFocus: 'always',
+    }),
+    endpoint = base(initial.id) + '/rooms',
     client = useQueryClient(),
     [confirmed, setConfirmed] = useState(false),
     form = useReviewedDraft({
       key: 'qgroup:rebuild:activity-draft:rooms:v1:' + viewer.scope + ':' + initial.id,
       viewer,
       initial,
-      blank: (fresh) => ({
+      blank: (fresh): z.infer<typeof Editable> => ({
         revision: fresh.revision,
-        rooms: fresh.rooms.map(({ id, name, payer_id, person_ids }) => ({ id, name, payer_id, person_ids })),
+        rooms: fresh.rooms.map(({ id, name, payer_id, person_ids }) => ({
+          id,
+          name,
+          payer_id,
+          person_ids,
+        })),
         reason: '',
       }),
       valueSchema: Editable,
       saveSchema: SaveRoomPlan,
       resultSchema: SettlementResult,
       endpoint,
-      latest: () => api(endpoint, RoomPlanView, { headers: { 'X-Account-Scope': viewer.scope } }),
+      latest: () =>
+        api(endpoint, RoomPlanView, {
+          headers: { 'X-Account-Scope': viewer.scope },
+        }),
       fromPending: ({ confirm, ...value }) => {
         void confirm;
         return value;
@@ -75,8 +119,17 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       },
       after: (fresh) => {
         client.setQueryData(['private', viewer.scope, 'room-plan', initial.id], fresh);
-        for (const name of ['room-plan', 'room-overview', 'room-plan-history', 'settlement-context', 'activity-history', 'finance'])
-          void client.invalidateQueries({ queryKey: ['private', viewer.scope, name] });
+        for (const name of [
+          'room-plan',
+          'room-overview',
+          'room-plan-history',
+          'settlement-context',
+          'activity-history',
+          'finance',
+        ])
+          void client.invalidateQueries({
+            queryKey: ['private', viewer.scope, name],
+          });
       },
     }),
     value = form.draft.value,
@@ -92,6 +145,86 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       </Heading>
       <Notice>預分包間不會登記付款；實際包間與費用在逐人結算時再次核對。每位人員最多分配一個包間。</Notice>
       {form.data.blocked_reason && <Notice>{form.data.blocked_reason}</Notice>}
+      {suggestion && !imported && (
+        <section aria-label="採用分房建議">
+          <Heading level={3}>核對分房建議</Heading>
+          <Notice>載入會替換目前包間人員；保留原包間名稱、付款人及有款項的包間編號。仍須核對後保存。</Notice>
+          <ul>
+            {suggestion.rooms.map((members, index) => (
+              <li key={index}>
+                包間 {index + 1}：
+                {members
+                  .map((id) => form.data.people.find((person) => person.id === id)?.name ?? '來源已移除')
+                  .join('、') || '空包間'}
+              </li>
+            ))}
+          </ul>
+          <Notice>
+            待人工安排：
+            {form.data.people
+              .filter((person) => !suggestion.rooms.flat().includes(person.id))
+              .map((person) => person.name)
+              .join('、') || '無'}
+          </Notice>
+          {(source.error ||
+            (source.data && (source.data.sourceVersion !== suggestion.sourceVersion || !source.data.canAdopt)) ||
+            suggestion.revision !== form.data.revision) && (
+            <Notice>建議來源或名冊已變更，請回到分房試算重新核對。</Notice>
+          )}
+          {source.error && <Failure error={source.error} retry={() => void source.refetch()} />}
+          {form.dirty && (
+            <label className="consent">
+              <input
+                type="checkbox"
+                checked={replaceConfirmed}
+                onChange={(e) => setReplaceConfirmed(e.target.checked)}
+              />
+              <span>確認以建議替換目前草稿的人員安排</span>
+            </label>
+          )}
+          <Button
+            disabled={
+              form.locked ||
+              !form.data.can_manage ||
+              !source.isFetchedAfterMount ||
+              source.isFetching ||
+              !!source.error ||
+              source.data?.sourceVersion !== suggestion.sourceVersion ||
+              !source.data?.canAdopt ||
+              suggestion.revision !== form.data.revision ||
+              (form.dirty && !replaceConfirmed)
+            }
+            onClick={() => {
+              const rooms = Array.from(
+                {
+                  length: Math.max(value.rooms.length, suggestion.rooms.length),
+                },
+                (_, index) => ({
+                  ...(value.rooms[index] ?? {
+                    id: newSettlementId(),
+                    name: '包間 ' + (index + 1),
+                    payer_id: '',
+                    person_ids: [],
+                  }),
+                  person_ids: suggestion.rooms[index] ?? [],
+                }),
+              );
+              edit({ rooms, music_source_version: suggestion.sourceVersion });
+              setImported(true);
+            }}
+          >
+            載入建議到草稿
+          </Button>
+        </section>
+      )}
+      {value.music_source_version && (
+        <Notice>保存時會再次核對成分與活動來源；如需保留目前人員並自行負責核對，可轉為手動安排。</Notice>
+      )}
+      {value.music_source_version && (
+        <Button variant="secondary" disabled={form.locked} onClick={() => edit({ music_source_version: undefined })}>
+          轉為手動安排
+        </Button>
+      )}
       <form
         noValidate
         onSubmit={(e) => {
@@ -111,7 +244,12 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
             people={form.data.people}
             payers={form.data.payers}
             change={(rooms) => edit({ rooms })}
-            create={() => ({ id: newSettlementId(), name: '', payer_id: '', person_ids: [] })}
+            create={() => ({
+              id: newSettlementId(),
+              name: '',
+              payer_id: '',
+              person_ids: [],
+            })}
           />
           <Field label="調整原因（最多 300 字）">
             <textarea rows={2} value={value.reason} onChange={(e) => edit({ reason: e.target.value })} />
@@ -135,7 +273,10 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
         disabled={form.locked}
         onClick={() => {
           setConfirmed(false);
-          void form.refresh((old, fresh) => ({ ...old, revision: fresh.revision }));
+          void form.refresh((old, fresh) => ({
+            ...old,
+            revision: fresh.revision,
+          }));
         }}
       >
         核對最新名冊，保留輸入
