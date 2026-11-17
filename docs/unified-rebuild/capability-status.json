@@ -1715,23 +1715,31 @@
         "packages/contracts/src/settlements.ts",
         "apps/api/src/settlement-context.ts",
         "apps/api/src/settlements.ts",
-        "apps/web/src/activity-rooms.tsx"
+        "apps/web/src/activity-rooms.tsx",
+        "packages/contracts/src/activity-rooms.ts",
+        "apps/api/src/activity-room-overview.ts",
+        "apps/web/src/activity-room-overview.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/activity-room-overview.spec.ts",
+        "docs/unified-rebuild/35-room-overview-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分包間、穩定 ID／Unicode 名稱、最多 50 房、逐人最多一房、房付款人與追加快照已實作；只有發起者可改，既有有效款項房 ID 保留，不記實付。完整活動概況／本人房標示、所有預分歷史入口、分房演算法採用及正式副本驗收仍待完成。"
+      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P02",
@@ -1743,23 +1751,31 @@
         "packages/contracts/src/settlements.ts",
         "apps/api/src/settlement-context.ts",
         "apps/api/src/settlements.ts",
-        "apps/web/src/activity-rooms.tsx"
+        "apps/web/src/activity-rooms.tsx",
+        "packages/contracts/src/activity-rooms.ts",
+        "apps/api/src/activity-room-overview.ts",
+        "apps/web/src/activity-room-overview.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/activity-room-overview.spec.ts",
+        "docs/unified-rebuild/35-room-overview-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分包間、穩定 ID／Unicode 名稱、最多 50 房、逐人最多一房、房付款人與追加快照已實作；只有發起者可改，既有有效款項房 ID 保留，不記實付。完整活動概況／本人房標示、所有預分歷史入口、分房演算法採用及正式副本驗收仍待完成。"
+      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P03",
@@ -1767,13 +1783,26 @@
       "new_entry": "活動概況",
       "required_behavior": "本人依 attendee 的 is_me；歷史帳單保留舊姓名",
       "legacy_evidence_group": "包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "本人依 attendee 的 is_me；歷史帳單保留舊姓名"
+      "implementation": [
+        "packages/contracts/src/activity-rooms.ts",
+        "apps/api/src/activity-room-overview.ts",
+        "apps/web/src/activity-room-overview.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-room-overview.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-room-overview.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-room-overview.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-room-overview.spec.ts",
+        "docs/unified-rebuild/35-room-overview-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P04",
@@ -1785,23 +1814,31 @@
         "packages/contracts/src/settlements.ts",
         "apps/api/src/settlement-context.ts",
         "apps/api/src/settlements.ts",
-        "apps/web/src/activity-rooms.tsx"
+        "apps/web/src/activity-rooms.tsx",
+        "packages/contracts/src/activity-rooms.ts",
+        "apps/api/src/activity-room-overview.ts",
+        "apps/web/src/activity-room-overview.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/activity-room-overview.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/activity-room-overview.spec.ts",
+        "docs/unified-rebuild/35-room-overview-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生預分包間、穩定 ID／Unicode 名稱、最多 50 房、逐人最多一房、房付款人與追加快照已實作；只有發起者可改，既有有效款項房 ID 保留，不記實付。完整活動概況／本人房標示、所有預分歷史入口、分房演算法採用及正式副本驗收仍待完成。"
+      "remaining": "原生預分管理、活動概況、本人／同行、實際凍結姓名及所有預分歷史入口已具隔離測試；音樂分房建議正式採用、全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
     },
     {
       "capability_id": "P05",

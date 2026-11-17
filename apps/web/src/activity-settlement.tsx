@@ -505,6 +505,8 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
           'settlement',
           'settlement-history',
           'settlement-asset-versions',
+          'room-overview',
+          'room-plan',
           'finance',
           'activity-history',
           'inbox-todos',

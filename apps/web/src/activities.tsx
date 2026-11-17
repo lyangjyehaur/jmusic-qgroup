@@ -4,6 +4,7 @@ import { Button, EmptyState, Heading, Surface, Text } from 'yahha-ui';
 import { Activity, ActivityList, type ActivityView } from '@qgroup/contracts';
 import { api } from './api';
 import { Failure, Notice, PageIntro, useSession } from './shared';
+import { ActivityRoomOverviewSection } from './activity-room-overview';
 import { ActivityParticipants } from './activity-roster';
 import { ActivityManagementLink } from './activity-conditions';
 import { ActivityLifecycleLink } from './activity-lifecycle';
@@ -43,7 +44,6 @@ export function ActivityDetail() {
     <Surface className="detail"><Heading level={2}>活動安排</Heading><dl><dt>時間</dt><dd>{dateLabel(event.startsAt)}（台北時間）{event.durationHours !== null ? ` · 預計 ${event.durationHours} 小時` : ' · 時長未定'}</dd><dt>地點</dt><dd>{event.location}</dd><dt>人數</dt><dd>{event.confirmed} / {event.capacity||'不限'} 人 · 最低 {event.minimumParticipants} 人</dd><dt>報名截止</dt><dd>{dateLabel(event.deadline)}（台北時間）</dd><dt>退出期限</dt><dd>{dateLabel(event.withdrawalDeadline||event.deadline)}（台北時間）</dd><dt>可見性</dt><dd>{event.visibility==='public'?'公開':'邀請可見'}</dd><dt>安排版本</dt><dd>{event.conditionsVersion}{event.changeSummary?' · '+event.changeSummary:''}</dd></dl>
       {event.feePolicy&&<><Heading level={2}>費用規則</Heading><Text className="description">{event.feePolicy}</Text></>}{event.estimatedOver && <Notice>預定時間已過，實際結束狀態尚未確認。</Notice>}{event.description&&<><Heading level={2}>活動說明</Heading><Text className="description">{event.description}</Text></>}
       {task&&<Notice>已開啟對應活動；此入口不會自動提交報名、確認或款項操作。</Notice>}
-      <Link to={'/activities/'+encodeURIComponent(id)+'/rooms'}>預分包間</Link>
     <Link className="text-link" to={'/me/music?from=' + encodeURIComponent('/activities/' + id)}>編輯我的成分</Link></Surface>
-    {viewer&&<ActivityParticipants key={viewer.scope} eventId={id} viewer={viewer}/>}</>;
+    {viewer&&<><ActivityRoomOverviewSection key={'rooms:'+viewer.scope} eventId={id} viewer={viewer}/><ActivityParticipants key={viewer.scope} eventId={id} viewer={viewer}/></>}</>;
 }

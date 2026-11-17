@@ -14,6 +14,7 @@ import { ActivityInvitationsPage, AcceptActivityInvitationPage } from './activit
 import { ActivityClaimsPage, RequestAttendeeClaimPage } from './activity-claims';
 import { ActivityFinancePage } from './activity-finance';
 import { ActivitySettlementPage, ActivitySettlementEditor } from './activity-settlement';
+import { RoomPlanHistoryPage } from './activity-room-overview';
 import { ActivityRoomsPage } from './activity-rooms';
 import { ActivityHistoryPage } from './activity-history';
 import { ActivityAttendancePage } from './activity-attendance';
@@ -50,7 +51,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
   { path: 'activities/:id/settlement', element: <ActivitySettlementPage /> },
   { path: 'activities/:id/settlement/edit', element: <ActivitySettlementEditor /> },
-  { path: 'activities/:id/rooms', element: <ActivityRoomsPage /> },
+  { path: 'activities/:id/rooms', element: <ActivityRoomsPage /> }, { path: 'activities/:id/rooms/history', element: <RoomPlanHistoryPage /> },
   { path: 'activities/:id/finance', element: <ActivityFinancePage /> },
   { path: 'activities/:id/settlement/images', element: <SettlementImagesPage /> },
   { path: 'activities/:id/history', element: <ActivityHistoryPage /> },

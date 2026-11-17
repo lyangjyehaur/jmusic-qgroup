@@ -31,6 +31,7 @@ import { registerActivityRegistration } from './activity-registration';
 import { registerActivityInvitations } from './activity-invitations';
 import { registerActivityClaims } from './activity-claims';
 import { registerFinance } from './finance';
+import { registerActivityRooms } from './activity-room-overview';
 import { registerTimePolls } from './time-polls';
 import { registerSettlements } from './settlements';
 import { registerPaymentAssets } from './payment-codes';
@@ -94,6 +95,7 @@ export function createApp(options: AppOptions) {
     registerPaymentAssets(app, db, security, now);
     registerSettlements(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerTimePolls(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
+    registerActivityRooms(app, db, security);
     registerInbox(app, db, security, now);
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});

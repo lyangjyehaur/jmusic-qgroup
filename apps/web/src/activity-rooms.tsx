@@ -24,7 +24,7 @@ export function ActivityRoomsPage() {
     <>
       <PageIntro title="預分包間" />
       <div className="page-actions">
-        <Link to={base(id)}>回到活動</Link>
+        <Link to={base(id)+'#rooms'}>回到活動包間</Link><Link to={base(id)+'/rooms/history'}>預分安排歷史</Link>
         <Link to={base(id) + '/settlement'}>逐人結算</Link>
         <Link to={base(id) + '/finance'}>收付款帳本</Link>
       </div>
@@ -75,7 +75,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       },
       after: (fresh) => {
         client.setQueryData(['private', viewer.scope, 'room-plan', initial.id], fresh);
-        for (const name of ['room-plan', 'settlement-context', 'activity-history', 'finance'])
+        for (const name of ['room-plan', 'room-overview', 'room-plan-history', 'settlement-context', 'activity-history', 'finance'])
           void client.invalidateQueries({ queryKey: ['private', viewer.scope, name] });
       },
     }),
