@@ -30,6 +30,8 @@ import { registerActivityLifecycle } from './activity-lifecycle';
 import { registerActivityRegistration } from './activity-registration';
 import { registerActivityInvitations } from './activity-invitations';
 import { registerActivityClaims } from './activity-claims';
+import { registerInbox } from './inbox';
+import { registerActivityHistory } from './activity-history';
 import { registerActivityAttendance } from './activity-attendance';
 import { registerActivityDelegation } from './activity-delegation';
 import type { ActivityBotDefaults } from './activity-bot';
@@ -84,6 +86,8 @@ export function createApp(options: AppOptions) {
     registerActivityInvitations(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityClaims(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityDelegation(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
+    registerInbox(app, db, security, now);
+    registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);

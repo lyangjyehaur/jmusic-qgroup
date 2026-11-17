@@ -3,11 +3,13 @@ import { openDatabase } from '@qgroup/database';
 import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
 import { musicClaimFixture } from './music-claim-fixture';
+import { inboxFixture } from './inbox-fixture';
 import { nicknameFixture } from './nickname-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const db = openDatabase(':memory:'); fixture(db);
 musicClaimFixture(db);
+if (process.env.REBUILD_TEST_INBOX === '1') inboxFixture(db);
 if (process.env.REBUILD_TEST_ROSTER === '1') {
   nicknameFixture(db);
   db.exec("INSERT INTO attendees(id,event_id,manager_id,name,note,payer_kind,status,created_at,updated_at) VALUES('guest-active','listen','alice','未認領同行','同行原文','manager','tentative','before','before'); INSERT INTO attendees(id,event_id,manager_id,name,payer_kind,status,invitation_token,created_at,updated_at) VALUES('hidden-invited','listen','alice','私人邀請','manager','invited','private-invitation-token','before','before');");

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, Link, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EmptyState, ThemeProvider } from 'yahha-ui';
+import { InboxPage } from './inbox';
 import { Layout } from './layout';
 import { Activities, ActivityDetail } from './activities';
 import { ActivityDraftPage, ActivityDraftsPage, ActivityArrangementPage } from './activity-drafts';
@@ -11,6 +12,7 @@ import { ActivityLifecyclePage } from './activity-lifecycle';
 import { ActivityRegistrationPage } from './activity-registration';
 import { ActivityInvitationsPage, AcceptActivityInvitationPage } from './activity-invitations';
 import { ActivityClaimsPage, RequestAttendeeClaimPage } from './activity-claims';
+import { ActivityHistoryPage } from './activity-history';
 import { ActivityAttendancePage } from './activity-attendance';
 import { ActivityDelegationPage, AcceptActivityDelegationPage } from './activity-delegation';
 import { ActivityEntry } from './activity-entry';
@@ -35,9 +37,11 @@ import './style.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 function Missing() { return <EmptyState title="這個入口不存在" action={<Link to="/activities">回到活動</Link>} />; }
 const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeProvider theme="blue"><main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main></ThemeProvider>, children: [
+  { path: 'inbox', element: <InboxPage /> },
   { index: true, element: <ActivityEntry /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
   { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
+  { path: 'activities/:id/history', element: <ActivityHistoryPage /> },
   { path: 'activities/:id/attendance', element: <ActivityAttendancePage /> },
   { path: 'activities/:id/delegation', element: <ActivityDelegationPage /> }, { path: 'activities/:id/delegation/:token', element: <AcceptActivityDelegationPage /> },
   { path: 'activities/:id/claims', element: <ActivityClaimsPage /> }, { path: 'activities/:id/claims/:token', element: <RequestAttendeeClaimPage /> },

@@ -1041,13 +1041,26 @@
       "new_entry": "活動紀錄",
       "required_behavior": "前後快照、時間、操作者、原因；不洩漏邀請 token／私人申報",
       "legacy_evidence_group": "活動、稽核",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "前後快照、時間、操作者、原因；不洩漏邀請 token／私人申報"
+      "implementation": [
+        "packages/contracts/src/activity-history.ts",
+        "apps/api/src/activity-history.ts",
+        "apps/web/src/activity-history.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-history.test.ts",
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-history.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-history.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/inbox-history.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "公開／私人歷史、前後快照、數字游標／分頁、未確認申報與 token 防洩漏、錯誤恢復已測；完整帳本／結算／包間歷史及全部舊 API 與隔離正式資料成套驗收待完成。"
     },
     {
       "capability_id": "E18",
@@ -3317,16 +3330,23 @@
       "required_behavior": "每種 query／hash／action 精確轉換、返回正常，不默認執行",
       "legacy_evidence_group": "前端、bot 指令",
       "implementation": [
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "apps/api/src/inbox.ts",
+        "apps/web/src/inbox.tsx",
+        "apps/web/src/pending-operations.ts"
       ],
-      "behavior_evidence": [],
+      "behavior_evidence": [
+        "apps/api/src/inbox.test.ts",
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+      ],
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [
-        "apps/web/tests/activity-publish.spec.ts"
+        "apps/web/tests/activity-publish.spec.ts",
+        "apps/web/tests/inbox-history.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "根網址 event 與六種既有活動 action 已轉成活動／task，唯讀開啟不自動提交，邀請內容仍驗權；各 action 完整業務、投票／邀請／認領／hash／舊成分入口及返回上下文仍待完成。"
+      "remaining": "根網址 event 與六種既有活動 action 已轉成活動／task，唯讀開啟不自動提交，邀請內容仍驗權；各 action 完整業務、投票／邀請／認領／hash／舊成分入口及返回上下文仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
     },
     {
       "capability_id": "O04",
@@ -3340,11 +3360,16 @@
         "packages/contracts/src/activity-arrangements.ts",
         "apps/web/src/activity-drafts.tsx",
         "apps/api/src/activity-management.ts",
-        "apps/web/src/activity-conditions.tsx"
+        "apps/web/src/activity-conditions.tsx",
+        "apps/api/src/inbox.ts",
+        "apps/web/src/inbox.tsx",
+        "apps/web/src/pending-operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/inbox.test.ts",
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -3356,10 +3381,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/inbox-history.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "活動草稿、已發布安排及逐人確認已有按帳號／活動隔離的 sessionStorage 原稿、版本、完整 pending payload，離站保留、損壞保全及登出清除已測；IndexedDB、明確恢復、跨裝置／舊草稿及其他表單／圖片恢復仍待完成。"
+      "remaining": "活動草稿、已發布安排及逐人確認已有按帳號／活動隔離的 sessionStorage 原稿、版本、完整 pending payload，離站保留、損壞保全及登出清除已測；IndexedDB、明確恢復、跨裝置／舊草稿及其他表單／圖片恢復仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
     },
     {
       "capability_id": "O05",
@@ -3380,14 +3406,19 @@
         "apps/api/src/activity-publish.ts",
         "apps/api/src/activity-bot.ts",
         "apps/api/src/activity-management.ts",
-        "apps/web/src/activity-conditions.tsx"
+        "apps/web/src/activity-conditions.tsx",
+        "apps/api/src/inbox.ts",
+        "apps/web/src/inbox.tsx",
+        "apps/web/src/pending-operations.ts"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
         "apps/api/src/privacy.test.ts",
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/inbox.test.ts",
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -3405,10 +3436,11 @@
         "apps/web/tests/privacy.spec.ts",
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/inbox-history.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂／隱私、活動草稿／發布／已發布安排與逐人確認先持久化、同 key／payload 重試、收據逐次重驗目前權限；較新狀態重新讀取及跨裝置發布競態已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。"
+      "remaining": "音樂／隱私、活動草稿／發布／已發布安排與逐人確認先持久化、同 key／payload 重試、收據逐次重驗目前權限；較新狀態重新讀取及跨裝置發布競態已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
     },
     {
       "capability_id": "O06",
@@ -3429,14 +3461,19 @@
         "apps/api/src/activity-publish.ts",
         "apps/api/src/activity-bot.ts",
         "apps/api/src/activity-management.ts",
-        "apps/web/src/activity-conditions.tsx"
+        "apps/web/src/activity-conditions.tsx",
+        "apps/api/src/inbox.ts",
+        "apps/web/src/inbox.tsx",
+        "apps/web/src/pending-operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
         "apps/api/src/privacy.test.ts",
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/inbox.test.ts",
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -3454,10 +3491,11 @@
         "apps/web/tests/privacy.spec.ts",
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/inbox-history.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。"
+      "remaining": "音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
     },
     {
       "capability_id": "O07",
@@ -3465,13 +3503,31 @@
       "new_entry": "收件匣",
       "required_behavior": "已讀不代表完成；按最新安排／認領／退出／申報／款項推導",
       "legacy_evidence_group": "恢復、稽核",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "已讀不代表完成；按最新安排／認領／退出／申報／款項推導"
+      "implementation": [
+        "packages/contracts/src/inbox.ts",
+        "apps/api/src/inbox.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/inbox.tsx",
+        "apps/web/src/pending-operations.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/inbox.test.ts",
+        "apps/api/src/finance-projection.test.ts",
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+      ],
+      "data_evidence": [
+        "apps/api/src/inbox.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/inbox.test.ts",
+        "apps/api/testsupport/pending-operations.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/inbox-history.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "十類動態待辦、分頁通知／總未讀、本人首次已讀、精確恢復、包間不可抵銷／原付款鍵、Python 差分與保留 worker 已測；完整財務／結算處理頁與寫入、全部舊入口及隔離正式副本驗收待完成。"
     },
     {
       "capability_id": "O08",

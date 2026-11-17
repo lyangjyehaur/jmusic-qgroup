@@ -119,3 +119,6 @@ export const MusicPinResult = z.object({ status: z.enum(['not_found','completed'
 export const AdminMusicPinHistory = z.object({ history: z.array(z.object({ id: z.number().int(), revision: z.number().int(), actor: z.string(), reason: z.string(), createdAt: z.string() })), nextCursor: z.number().int().nullable() });
 
 export * from './activity-attendance';
+
+export * from './activity-history';
+export * from './inbox';
