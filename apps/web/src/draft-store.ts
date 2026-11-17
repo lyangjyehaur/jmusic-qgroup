@@ -1,4 +1,4 @@
-// Only reviewed, non-credential form payloads belong in this database.
+// Only reviewed form payloads and scoped operation routes belong in this database; never login credentials.
 const databaseName = 'qgroup-reviewed-drafts-v1';
 const stores = ['drafts', 'versions', 'epochs'] as const;
 type Row = { key: string; scope: string; revision: number; raw: string | null; at: number };
@@ -45,10 +45,15 @@ const isMusic = (key: string) => key.startsWith('qgroup:rebuild:music:');
 function validate(key: string, scope: string) {
   // Explicit allowlist: never import PIN, OAuth, device or privacy receipt secrets.
   const prefix = 'qgroup:rebuild:';
+  // Scoped invitation links restore only their original form; authority remains server-checked.
+  const route = /^qgroup:rebuild:activity-draft:(invitations|claims|delegation):v1:([^:]+):[^:]{1,80}:(.+)$/.exec(key);
+  const routeModes = { invitations: /^(?:issue|accept:[A-Za-z0-9_-]{32})$/, claims: /^(?:manage|request:[A-Za-z0-9_-]{32})$/, delegation: /^(?:manage|accept:[A-Za-z0-9_-]{32})$/ };
+  const scopedRoute = !!route && route[2] === scope && routeModes[route[1] as keyof typeof routeModes].test(route[3]!);
   if (!/^[a-f0-9]{64}$/.test(scope) || !(
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
     key === prefix + 'payment-codes:v1:' + scope ||
     key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
+    scopedRoute ||
     ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms', 'arrangements', 'finance', 'lifecycle', 'consent', 'attendance', 'registration'].some(kind =>
       key.startsWith(prefix + 'activity-draft:' + kind + ':v1:' + scope + ':'))
   )) throw Error('不支援的原稿範圍');
