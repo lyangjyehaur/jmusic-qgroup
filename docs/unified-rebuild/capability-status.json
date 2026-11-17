@@ -2898,20 +2898,23 @@
         "packages/domain/src/music-search.ts",
         "apps/web/src/music-selection.tsx",
         "apps/web/src/music-search.tsx",
-        "apps/web/src/music.tsx"
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entry.tsx"
       ],
       "behavior_evidence": [
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "apps/web/tests/music-entry.spec.ts"
       ],
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "docs/unified-rebuild/38-music-entry-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "詞庫詳情／排行入口與成分編輯共用一份 React selection／分頁草稿、四級程度、移除及分類收合；氣泡、誰選了及其他入口成套驗收待完成。"
+      "remaining": "詞庫／排行詳情／獨立詞條頁與成分編輯共用選擇、程度、移除及分類收合，名單與成分卡可往返並保留原稿；氣泡及全部入口成套驗收待完成。"
     },
     {
       "capability_id": "M06",
@@ -2929,13 +2932,15 @@
         "packages/domain/src/music-search.ts",
         "apps/web/src/music-selection.tsx",
         "apps/web/src/music-search.tsx",
-        "apps/web/src/music.tsx"
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entry.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
         "apps/api/src/music-contact.test.ts",
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "apps/web/tests/music-entry.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-contact.test.ts"
@@ -2946,10 +2951,11 @@
       "ux_evidence": [
         "apps/web/tests/music-contact.spec.ts",
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "docs/unified-rebuild/38-music-entry-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "兩頁共用草稿／原 UUID／保存中鎖定、變更才出現保存列、未知結果重試、背景更新及聯絡號保全已測；browser 舊草稿遷移、完整跨入口與實際平台驗收待完成。"
+      "remaining": "詞庫／獨立詞條／成分共用草稿、原 UUID、保存中鎖定及變更保存列，名單只反映已保存資料，跨成分卡恢復已測；browser 舊草稿遷移、完整跨入口與實際平台驗收待完成。"
     },
     {
       "capability_id": "M07",
@@ -3088,20 +3094,35 @@
         "apps/web/src/music-selection.tsx",
         "apps/web/src/music-search.tsx",
         "apps/web/src/music-editor.tsx",
-        "apps/web/src/music.tsx"
+        "apps/web/src/music.tsx",
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music-entry.tsx",
+        "apps/web/src/music-copy.tsx",
+        "apps/web/src/people.tsx",
+        "apps/web/src/main.tsx"
       ],
       "behavior_evidence": [
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "apps/api/src/music-entry-members.test.ts",
+        "apps/web/tests/music-entry.spec.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/src/music-entry-members.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-entry-members.test.ts",
+        "apps/web/tests/music-entry.spec.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "apps/web/tests/music-entry.spec.ts",
+        "docs/unified-rebuild/38-music-entry-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "詞條詳情已可選／取消並連到共用草稿；誰選了名單、可見範圍、其他詳細入口及正式副本驗收待完成。"
+      "remaining": "原生獨立／內嵌詳情、完整已保存選取者、成分身份門檻、複製／同好返回、共用草稿、權限快取及 Python 差分已測；正式副本、舊 adapter、外部入口及切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M13",
@@ -3171,24 +3192,29 @@
         "apps/web/src/people.tsx",
         "apps/web/src/member-access.tsx",
         "packages/contracts/src/index.ts",
-        "packages/database/src/schema-v4.ts"
+        "packages/database/src/schema-v4.ts",
+        "apps/web/src/music-copy.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "apps/web/tests/music-entry.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-contact.test.ts",
         "packages/database/src/contact-migration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "apps/web/tests/music-entry.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-contact.spec.ts",
-        "docs/unified-rebuild/15-contact-checkpoint.md"
+        "docs/unified-rebuild/15-contact-checkpoint.md",
+        "apps/web/tests/music-entry.spec.ts",
+        "docs/unified-rebuild/38-music-entry-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "同好基礎成分卡、固定 ID／別名查詢、名稱／原順序選擇、聯絡來源與複製退路已實作；保留成分會員讀取範圍，不回傳身份憑證／私人欄位。完整公開性別、私人留言規則、舊入口與正式版本組合待驗收。"
+      "remaining": "同好基礎成分卡、固定 ID／別名查詢、原順序選擇、聯絡來源、名稱／QQ／ID 複製與退路、詞條往返及快取刪除已測；保持成分身份門檻，不回傳身份憑證／私人欄位。公開性別與私人留言完整規則、舊入口及正式版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M18",
@@ -3405,7 +3431,9 @@
       "permission_evidence": [],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "apps/web/tests/music-entry.spec.ts",
+        "docs/unified-rebuild/38-music-entry-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "詞庫／成分修改後手機固定保存列、長名稱換行及減少動效已實作；底部導覽、鍵盤避讓、回頂部與全站成套驗收待完成。"

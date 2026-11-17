@@ -53,7 +53,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
       sessionStorage.setItem(storageKey, JSON.stringify(nextDraft)); setDraft(nextDraft); setSaved(latest);
       client.setQueryData(['private', viewer.scope, 'music-contact', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
-      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] }); announceAccountChange();
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] }); announceAccountChange();
       setMessage(latest.revision === result.revision ? '已保存聯絡 QQ。' : '原操作已保存，聯絡 QQ 已再次變更；請核對目前資料。');
     } catch (error) {
       if (error instanceof ApiError && error.status < 500 && error.status !== 429) { setDraft({ ...pending, requestKey: undefined }); setMessage(error.message); }

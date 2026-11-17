@@ -13,6 +13,15 @@ export const MusicCatalog = z.object({
   entries: z.array(MusicCatalogEntry),
   categories: z.array(z.string()),
 });
+export const MusicEntryMembers = z.object({
+  entryId: z.string(),
+  members: z.array(z.object({
+    id: z.string(),
+    name: z.string(),
+    contactQQ: z.string(),
+    contactSource: z.enum(['legacy', 'self_reported', '']),
+  })),
+});
 export const MyMusicEntries = z.object({
   profileId: z.string().nullable(),
   musicEpoch: z.number().int().nonnegative(),

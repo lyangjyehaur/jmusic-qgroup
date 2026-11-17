@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
 import { MusicCatalog } from '@qgroup/contracts';
 import { api } from './api';
 import { Failure, Notice, PageIntro } from './shared';
@@ -8,6 +8,7 @@ import { categoryLabel } from './music-entries';
 import { MusicSearch, useMusicSearch } from './music-search';
 import { useMusicWorkspace } from './music-selection';
 import { SelectionPanel } from './music-editor';
+import { MusicEntryDetails } from './music-entry';
 export function Music() {
   const query = useQuery({ queryKey: ['music-catalog'], queryFn: () => api('/music/catalog', MusicCatalog) });
   const filters = useMusicSearch(query.data?.entries ?? []);
@@ -33,23 +34,7 @@ export function Music() {
         <Failure error={query.error} retry={() => void query.refetch()} />
       ) : (
         <>
-          {selected && (
-            <Surface className="detail" role="region" aria-label="詞條資料">
-              <Heading level={2}>{selected.name}</Heading>
-              <Text>
-                {selected.kind === 'main' ? '領域' : '細分'} · {categoryLabel(selected.category)} ·{' '}
-                {selected.count} 人選用
-              </Text>
-              {selected.aliases.length > 0 && <Text>別名：{selected.aliases.join('、')}</Text>}
-              {selected.creatorName && <Text>建立者：{selected.creatorName}</Text>}
-              {selection ? <Button aria-pressed={selection.selected.has(selected.id)} disabled={selection.locked}
-                onClick={() => selection.toggle(selected)}>{selection.selected.has(selected.id) ? '取消選取' : '選取此詞條'}</Button>
-                : <Link to="/me/music">編輯我的選擇</Link>}
-              <Button variant="ghost" onClick={() => update('entry', '')}>
-                關閉詞條資料
-              </Button>
-            </Surface>
-          )}
+          {selected && <MusicEntryDetails key={selected.id} entry={selected} close={() => update('entry', '')} />}
           {params.get('entry') && !selected && <Notice>這個詞條不存在或已刪除。</Notice>}
           <Surface className="library">
             <Heading level={2}>音樂詞庫</Heading>

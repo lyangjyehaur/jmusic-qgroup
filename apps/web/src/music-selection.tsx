@@ -5,10 +5,10 @@ import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { MusicCatalog, Profile, SaveProfile, Selection, Session, type MusicProfile } from '@qgroup/contracts';
 import { api, ApiError } from './api';
-import { useSession } from './shared';
+import { Failure, Notice, useSession } from './shared';
 import type { Member } from './member-access';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
-const isWorkspace = (pathname: string) => pathname === '/music' || pathname === '/me/music';
+const isWorkspace = (pathname: string) => pathname === '/music' || pathname === '/me/music' || /^\/music\/entries\/[^/]+$/.test(pathname);
 const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
 type DraftValue = z.infer<typeof Draft>;
 function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initial: MusicProfile; entries: CatalogEntry[] }) {
@@ -84,6 +84,8 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
       queryClient.setQueryData(['private', viewer.scope, 'music', draft.musicEpoch], result);
       void queryClient.invalidateQueries({ queryKey: ['music-catalog'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entries'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
       setMessage('已保存。');
     } catch (error) {
       if (!mounted.current) return;
@@ -140,10 +142,13 @@ export function MusicWorkspace() {
   const error = session.error ?? profile.error ?? catalog.error;
   if (viewer && profile.isFetchedAfterMount && profile.data !== undefined && catalog.data && !error) return <ReadyWorkspace
     key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} initial={profile.data} entries={catalog.data.entries} />;
-  const value: Workspace = error ? { state: 'error', error, retry: () => {
+  // The ready controller adds selection hooks and a blocker. Mount the interactive
+  // outlet only after initialization so it cannot be replaced during the first input.
+  if (error) return <Failure error={error} retry={() => {
     void session.refetch(); if (viewer) void profile.refetch(); void catalog.refetch();
-  } } : session.isPending || viewer ? { state: 'pending' } : { state: 'guest' };
-  return <Context.Provider value={value}><Outlet /></Context.Provider>;
+  }} />;
+  if (session.isPending || viewer) return <Notice>正在確認成分…</Notice>;
+  return <Context.Provider value={{ state: 'guest' }}><Outlet /></Context.Provider>;
 }
 function ReadyWorkspace(props: { viewer: Member; initial: MusicProfile; entries: CatalogEntry[] }) {
   const selection = useMusicSelection(props);

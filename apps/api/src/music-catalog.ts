@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { MusicCatalog, MyMusicEntries, MusicEntryCommand, MusicEntryResult } from '@qgroup/contracts';
+import { MusicCatalog, MyMusicEntries, MusicEntryCommand, MusicEntryResult, MusicEntryMembers } from '@qgroup/contracts';
 import { DomainError, musicEntryKey, musicText } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
@@ -156,6 +156,24 @@ function blankProfile(db: DB, user: { id: string; nickname: string }, stamp: str
 }
 export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
   app.get('/api/v2/music/catalog', async () => db.transaction(() => musicCatalog(db))());
+  app.get('/api/v2/music/entries/:id/members', async request => db.transaction(() => {
+    const viewer = security.scopedMember(request);
+    if (!getProfile(db, viewer.id))
+      throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看選取者', 403);
+    const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
+    if (!db.prepare('SELECT 1 FROM music_entries WHERE id=?').get(id))
+      throw new DomainError('ENTRY_NOT_FOUND', '詞條不存在或已刪除', 404);
+    const members = db.prepare(`SELECT p.id,${musicNameSQL} AS name,
+      COALESCE(c.contact_qq,'') AS contactQQ,
+      CASE WHEN c.contact_qq!='' THEN c.source ELSE '' END AS contactSource
+      FROM music_profiles p ${musicNameJoins}
+      JOIN music_selections s ON s.profile_id=p.id
+      LEFT JOIN music_profile_contacts c ON c.profile_id=p.id
+      WHERE p.erased_at IS NULL AND s.entry_id=? ORDER BY p.rowid`).all(id) as z.infer<typeof MusicEntryMembers>['members'];
+    // Stable sort retains profile insertion order for equal names, as in the source list.
+    members.sort((a, b) => textOrder(a.name, b.name));
+    return MusicEntryMembers.parse({ entryId: id, members });
+  })());
   app.get('/api/v2/me/music/entries', async (request) =>
     db.transaction(() => myMusicEntries(db, security.scopedMember(request).id))(),
   );

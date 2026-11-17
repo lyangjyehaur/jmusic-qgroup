@@ -48,7 +48,9 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       const next = draftFor(latest, viewer.musicEpoch); sessionStorage.setItem(storageKey, JSON.stringify(next)); setDraft(next); setSaved(latest); setComparison(false);
       client.setQueryData(['private', viewer.scope, 'music-fields', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
-      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] }); announceAccountChange();
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
+      void client.invalidateQueries({ queryKey: ['music-catalog'] }); announceAccountChange();
       setMessage(result.revision === latest.revision ? '成分資料已保存。' : '原操作已保存，資料已再次變更；請核對目前內容。');
     } catch (error) {
       if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) { setDraft({ ...pending, pending: undefined }); setMessage(error.message); }
