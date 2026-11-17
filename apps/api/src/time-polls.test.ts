@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { BotOutboxWorker } from '../../bot/src/outbox';
+import { loadBotConfig } from '../../bot/src/config';
+import type { APIObject } from '../../bot/src/protocol';
 import { execFileSync } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -546,7 +549,7 @@ print(json.dumps(result))`,
       }
     }
   });
-  it('lets the retained Python worker deliver native poll notices once through a mock transport and refresh delayed expired-candidate summaries', async () => {
+  it('matches native and retained Python workers on delayed poll delivery and expired-candidate summaries', async () => {
     const s = await setup(),
       id = await s.create({ deadline: '2026-11-21T00:00:00Z' }),
       folder = mkdtempSync(join(tmpdir(), 'qgroup-poll-worker-')),
@@ -590,6 +593,11 @@ print(json.dumps(dict(first=a,second=b,calls=api.post.call_count,body=api.post.c
           },
         ),
       );
+      const nativeCalls: APIObject[] = [];
+      const consumer = new BotOutboxWorker(s.db,loadBotConfig({KANBAN_BOT_GROUP:'synthetic-group',KANBAN_BOT_DRY_RUN:'0',KANBAN_BOT_ALLOWED_HOSTS:'rebuild.example',KANBAN_BOT_LOG_DIR:join(folder,'native-logs')}),{
+        post:async(_path,body)=>{nativeCalls.push(body);return {ok:true,code:0,status:200,kind:'ok',platformTrace:null,data:{id:'SYNTHETIC_ONLY'}};},
+      },{now:()=>new Date('2026-11-20T12:00:00+00:00'),composition:{baseURL:origin,keyboard:false}});
+      expect(await consumer.pollOnce()).toEqual(result.first);expect(await consumer.pollOnce()).toEqual(result.second);expect(nativeCalls).toEqual([result.body]);
       expect(result.first).toMatchObject({ claimed: 1, sent: 1, failed: 0 });
       expect(result.second.claimed).toBe(0);
       expect(result.calls).toBe(1);

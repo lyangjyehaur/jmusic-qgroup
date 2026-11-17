@@ -1,4 +1,7 @@
 import { randomUUID } from 'node:crypto';
+import { BotOutboxWorker } from '../../bot/src/outbox';
+import { loadBotConfig } from '../../bot/src/config';
+import type { APIObject } from '../../bot/src/protocol';
 import { execFileSync } from 'node:child_process';
 import { cpSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -511,7 +514,7 @@ describe('native settlement and rooms', () => {
     expect(over.body).toContain('6 MiB');
     expect(s.db.prepare('SELECT * FROM settlement_details').all()).toHaveLength(2);
   });
-  it('lets the retained Python worker deliver native frozen settlement text and each code once through a simulated QQ API', async () => {
+  it('matches native and retained Python workers on frozen settlement text and each code through a simulated QQ API', async () => {
     const s = await setup(),
       image = testPNG().toString('base64');
     await s.save(
@@ -537,6 +540,17 @@ api=Mock();api.post.side_effect=lambda path,body:(True,0,dict(file_info='SYNTHET
 consumer=worker.OutboxWorker(config,api);first=consumer.poll_once();second=consumer.poll_once()
 print(json.dumps(dict(first=first,second=second,calls=[dict(path=c.args[0],body=c.args[1]) for c in api.post.call_args_list],statuses=[r[0] for r in db.execute('SELECT status FROM bot_outbox ORDER BY id')])) )`,
     );
+    const nativeCalls: { path: string; body: APIObject }[] = [];
+    const native = new BotOutboxWorker(s.db, loadBotConfig({
+      KANBAN_DB: s.db.name, KANBAN_BOT_GROUP: 'synthetic-group', KANBAN_BOT_DRY_RUN: '0',
+      KANBAN_BOT_MARKDOWN: '1', KANBAN_BOT_ALLOWED_HOSTS: 'rebuild.example',
+      KANBAN_BOT_LOG_DIR: join(s.root, 'native-logs'),
+    }), { post: async (path, body) => {
+      nativeCalls.push({path,body});return {ok:true,code:0,status:200,kind:'ok',platformTrace:null,data:path.endsWith('/files')?{file_info:'SYNTHETIC_FILE'}:{id:'SYNTHETIC_ONLY'}};
+    } }, { now: () => new Date(stamp) });
+    expect(await native.pollOnce()).toEqual(result.first);
+    expect(await native.pollOnce()).toEqual(result.second);
+    expect(nativeCalls).toEqual(result.calls);
     expect(result.first).toMatchObject({ sent: 4, failed: 0 });
     expect(result.second.claimed).toBe(0);
     expect(result.statuses).toEqual(['sent', 'sent', 'sent', 'sent']);

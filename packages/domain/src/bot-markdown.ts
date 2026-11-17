@@ -22,14 +22,17 @@ export function botContentProblem(text:unknown,allowedHosts:readonly string[]=[]
   if(typeof text!=='string'||!botStrip(text))return 'markdown 内容为空';
   if(control.test(text))return 'markdown 含控制字符';
   if(botLength(text)>BOT_MAX_CHARS)return 'markdown 超过 4000 字';
+  return botHasUnapprovedLink(text,allowedHosts)?'markdown 含未报备域名':null;
+}
+export function botHasUnapprovedLink(text:string,allowedHosts:readonly string[]=[]):boolean {
   if(allowedHosts.length){
     const hosts=new Set(allowedHosts.filter(Boolean).map(host=>botStrip(host).toLowerCase()));
     for(const match of text.matchAll(pyRegex('https?://([^\\s<>"\\[\\]{}]+)','gi'))){
-      try{const host=new URL('https://'+match[1]!.replace(/\)+$/,'')).hostname.toLowerCase();if(!hosts.has(host))return 'markdown 含未报备域名';}
-      catch{return 'markdown 含未报备域名';}
+      try{const host=new URL('https://'+match[1]!.replace(/\)+$/,'')).hostname.toLowerCase();if(!hosts.has(host))return true;}
+      catch{return true;}
     }
   }
-  return null;
+  return false;
 }
 export function renderBotBroadcast(label:string,title:string,details:readonly string[],url:string,options:{linkLabel?:string;notice?:readonly string[];systemFacts?:readonly string[];footnote?:string}={}){
   const facts=[...(options.systemFacts??[]).filter(line=>botStrip(line)),...details.filter(line=>botStrip(line)).map(line=>'- '+botPlainText(line))];

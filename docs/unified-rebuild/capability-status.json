@@ -4498,27 +4498,39 @@
         "packages/domain/src/bot-policy.ts",
         "packages/database/src/bot-policy.ts",
         "apps/api/src/admin-bot.ts",
-        "apps/web/src/admin-bot.tsx"
+        "apps/web/src/admin-bot.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
         "packages/database/src/bot-policy.test.ts",
-        "apps/api/src/admin-bot.test.ts"
+        "apps/api/src/admin-bot.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "已提供沿部署／模擬／實際設定與原操作查回，保存差分保全模擬／已送／不確定紀錄；完整 TS consumer、通用手動重送、實際 QQ 與版本組合仍待驗收，見 52-bot-policy-checkpoint.md。"
+      "remaining": "已實作三種模式、原收據查回與原生 TS consumer 模擬／實際投遞隔離；模擬不重播已測。通用手動重送、完整 runtime、QQ 與實際版本組合仍待驗收，見 52／53 號檢查點。"
     },
     {
       "capability_id": "B07",
@@ -4535,7 +4547,11 @@
         "packages/domain/src/bot-policy.ts",
         "packages/database/src/bot-policy.ts",
         "apps/api/src/admin-bot.ts",
-        "apps/web/src/admin-bot.tsx"
+        "apps/web/src/admin-bot.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4543,7 +4559,11 @@
         "packages/domain/src/bot-rendering.test.ts",
         "packages/domain/src/bot-policy.test.ts",
         "packages/database/src/bot-policy.test.ts",
-        "apps/api/src/admin-bot.test.ts"
+        "apps/api/src/admin-bot.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4551,17 +4571,21 @@
         "packages/domain/src/bot-rendering.test.ts",
         "packages/database/src/bot-policy.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "完整模板驗證、17 類隔離預覽、保存／恢復追加版本、未來提醒重算及後台原稿／收據保全已測；最新設定於完整 TS worker 的投遞套用、所有回覆與實際版本組合／QQ 驗收仍待完成，見 52-bot-policy-checkpoint.md。"
+      "remaining": "模板設定／預覽／版本恢復與 TS consumer 最新模板重組、凍結事實、未來提醒重算已完成隔離驗證；完整指令回覆、runtime 與實際版本組合／QQ 尚待完成，見 52／53 號檢查點。"
     },
     {
       "capability_id": "B08",
@@ -4574,27 +4598,39 @@
         "packages/domain/src/bot-policy.ts",
         "packages/database/src/bot-policy.ts",
         "apps/api/src/admin-bot.ts",
-        "apps/web/src/admin-bot.tsx"
+        "apps/web/src/admin-bot.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
         "packages/database/src/bot-policy.test.ts",
-        "apps/api/src/admin-bot.test.ts"
+        "apps/api/src/admin-bot.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "群發現／忽略有界紀錄、允許清單、唯一通知群、部署 fallback、空清單全停與換群作廢舊工作及後台已實作並完成 Python 差分；Gateway runtime 尚待接入，每次指令／回呼驗群及實際版本組合／QQ 驗收仍待完成，見 52-bot-policy-checkpoint.md。"
+      "remaining": "群政策、空清單停用、換群作廢與 consumer 再驗目的群、私有拒絕檔已測；Gateway 發現／授權事件、每次指令／回呼驗群及實際 QQ／版本組合仍待完成，見 52／53 號檢查點。"
     },
     {
       "capability_id": "B09",
@@ -4615,7 +4651,11 @@
         "packages/domain/src/bot-policy.ts",
         "packages/database/src/bot-policy.ts",
         "apps/api/src/admin-bot.ts",
-        "apps/web/src/admin-bot.tsx"
+        "apps/web/src/admin-bot.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4624,7 +4664,11 @@
         "apps/api/src/activity-management.test.ts",
         "packages/domain/src/bot-policy.test.ts",
         "packages/database/src/bot-policy.test.ts",
-        "apps/api/src/admin-bot.test.ts"
+        "apps/api/src/admin-bot.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4633,19 +4677,23 @@
         "apps/api/src/activity-management.test.ts",
         "packages/database/src/bot-policy.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "共用提醒設定／跨日與 DST 勿擾差分、兩連線與重啟 pacing、未來提醒重排及後台已完成；完整 outbox 尚待接入，延後不耗失敗次數、公開回覆即時及實際版本組合／QQ 驗收仍待完成，見 52-bot-policy-checkpoint.md。"
+      "remaining": "TS consumer 已接持久勿擾／間隔、頻控不耗失敗次數、當前名單提醒與舊 key 過期檢查；跨重啟與 Python 差分已測。公開指令即時回覆、完整 runtime、QQ／版本組合／長期負載仍待完成，見 53 號檢查點。"
     },
     {
       "capability_id": "B10",
@@ -4653,13 +4701,30 @@
       "new_entry": "worker",
       "required_behavior": "claim 過期不能回寫、逐條失敗不阻整批；不承諾恰好一次",
       "legacy_evidence_group": "機器人",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "claim 過期不能回寫、逐條失敗不阻整批；不承諾恰好一次"
+      "implementation": [
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
+      ],
+      "behavior_evidence": [
+        "apps/bot/src/outbox.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts",
+        "tools/rebuild/smoke-bot.ts"
+      ],
+      "data_evidence": [
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/bot/src/outbox.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生 TS claim／token fencing／續租、逐條有界重試、取消／202／確認回寫失敗保全已實作並完成 Python 差分與 built smoke；不承諾恰好一次。完整 runtime、正式待送對帳、程序崩潰／實際版本組合及 QQ／回退驗收仍待完成，見 53 號檢查點。"
     },
     {
       "capability_id": "B11",
@@ -4681,7 +4746,11 @@
         "apps/api/src/time-polls.ts",
         "apps/api/src/time-poll-context.ts",
         "apps/api/src/time-poll-bot.ts",
-        "apps/web/src/time-polls.tsx"
+        "apps/web/src/time-polls.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4689,7 +4758,9 @@
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4697,21 +4768,25 @@
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
+      "remaining": "原生 consumer 已驗 Markdown／普通文字互斥、Unicode／域名／按鈕限制、平台拒絕不自動降級與凍結結算必要明細；全部指令回覆、按鈕事件去重及每次驗群／身份、完整 runtime／QQ／版本組合仍待完成，見 53 號檢查點。"
     },
     {
       "capability_id": "B12",
@@ -4741,33 +4816,45 @@
         "packages/domain/src/bot-policy.ts",
         "packages/database/src/bot-policy.ts",
         "apps/api/src/admin-bot.ts",
-        "apps/web/src/admin-bot.tsx"
+        "apps/web/src/admin-bot.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/config-protocol.test.ts",
         "apps/bot/src/observability.test.ts",
         "packages/domain/src/bot-policy.test.ts",
         "packages/database/src/bot-policy.test.ts",
-        "apps/api/src/admin-bot.test.ts"
+        "apps/api/src/admin-bot.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
         "packages/database/src/bot-policy.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
         "apps/bot/src/api.test.ts",
         "apps/api/src/admin-bot.test.ts",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
-        "apps/web/tests/admin-bot.spec.ts"
+        "apps/web/tests/admin-bot.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "TS 私有診斷／trace／health 與共用政策／設定版本／後台已實作；已讀版本不代表連線或投遞健康。完整 runtime、投遞紀錄查詢、實際版本組合及 QQ 驗收仍待完成，見 51／52 號檢查點。"
+      "remaining": "TS 私有診斷／trace／health、設定後台與 consumer claim／發送／延後／拒絕／不確定事件已實作；設定 revision 不代表連線健康。完整投遞列表／重送、runtime、實際版本組合與 QQ 驗收仍待完成，見 51–53 號檢查點。"
     },
     {
       "capability_id": "B14",
@@ -4814,27 +4901,37 @@
         "apps/api/src/time-polls.ts",
         "apps/api/src/time-poll-context.ts",
         "apps/api/src/time-poll-bot.ts",
-        "apps/web/src/time-polls.tsx"
+        "apps/web/src/time-polls.tsx",
+        "apps/bot/src/outbox.ts",
+        "apps/bot/src/outbox-store.ts",
+        "apps/bot/src/outbox-planning.ts",
+        "apps/bot/src/group-state.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/bot/src/outbox.test.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "既有群額明細設定需告知；未完成身份綁定不發個人款項或私聊 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
+      "remaining": "原生 TS 結算文字／逐張凍結碼 consumer 與新網站 producer 已比對保留 Python 的 7 個合成請求；當前發布者權限、group_notice、版本、上傳後換群／撤權與獨立重試已測。正式資料、QQ／web-bot 實際組合、切換及回退驗收仍待完成，見 33／53 號檢查點。"
     },
     {
       "capability_id": "O01",

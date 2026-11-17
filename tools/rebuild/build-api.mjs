@@ -16,3 +16,9 @@ const bot = await build({ entryPoints: ['apps/bot/src/index.ts'], outfile: '.reb
 for (const path of Object.keys(bot.metafile.inputs)) {
   if (path.includes('/testsupport/') || path.endsWith('.test.ts')) throw new Error(`Test-only code in bot bundle: ${path}`);
 }
+
+const outbox = await build({ entryPoints: ['apps/bot/src/worker.ts'], outfile: '.rebuild-dist/bot/outbox.mjs',
+  bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
+for (const path of Object.keys(outbox.metafile.inputs)) {
+  if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts')) throw new Error(`Invalid dependency in bot outbox bundle: ${path}`);
+}
