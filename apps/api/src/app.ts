@@ -30,9 +30,11 @@ import { registerActivityLifecycle } from './activity-lifecycle';
 import { registerActivityRegistration } from './activity-registration';
 import { registerActivityInvitations } from './activity-invitations';
 import { registerActivityClaims } from './activity-claims';
+import { registerActivityDelegation } from './activity-delegation';
 import type { ActivityBotDefaults } from './activity-bot';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
+import { redactRequestURL } from './request-log';
 export { hash, accountScope } from './security';
 export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
 export function createApp(options: AppOptions) {
@@ -43,7 +45,7 @@ export function createApp(options: AppOptions) {
   const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash);
   const privacy = createPrivacy(db, options.erasureJournal);
   const musicClaims = createMusicClaims(db, now);
-  const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: request.url?.split('?')[0]?.replace(/\/(invitations|claims)\/[A-Za-z0-9_-]+/g,'/$1/[redacted]'), remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
+  const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
@@ -80,6 +82,7 @@ export function createApp(options: AppOptions) {
     registerActivityRegistration(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityInvitations(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityClaims(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
+    registerActivityDelegation(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

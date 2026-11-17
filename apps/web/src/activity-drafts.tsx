@@ -139,6 +139,7 @@ function Editor({viewer,initial,published=false}:{viewer:Member;initial:Saved|nu
   }
   const f=draft.form;const owner=saved?.isOwner??true;
   return <>{blocker.state==='blocked'&&<Surface role="alert"><Text>仍有活動草稿或待確認操作。</Text><Button onClick={()=>blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留草稿並離開</Button></Surface>}
+    {saved&&<div className="page-actions"><Link to={'/activities/'+encodeURIComponent(saved.id)+'/delegation'}>管理分工</Link></div>}
     {comparison&&saved&&<Comparison saved={saved}/>}
     {published&&saved?.assisted&&<Notice>以管理員身分協助修改，必須填寫原因；不授予名單或帳務權限。原退出期限若連動報名截止，會一併連動。</Notice>}
     {published&&saved?.canEdit===false&&<Notice>目前不能修改活動安排；請核對活動狀態與管理權限。</Notice>}

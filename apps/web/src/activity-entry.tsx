@@ -5,6 +5,8 @@ const actions=new Set(['join','conditions','settlement','finance','manage','onsi
 export function ActivityEntry(){
   const [search]=useSearchParams();const id=search.get('event');
   if(!id)return <Activities/>;
+  const management=search.get('management_invite');
+  if(management&&/^[A-Za-z0-9_-]{32}$/.test(management))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/delegation/'+encodeURIComponent(management)}/>;
   const claim=search.get('claim');
   if(claim&&/^[A-Za-z0-9_-]{32}$/.test(claim))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/claims/'+encodeURIComponent(claim)}/>;
   const invitation=search.get('attendee_invite');

@@ -11,6 +11,7 @@ import { ActivityLifecyclePage } from './activity-lifecycle';
 import { ActivityRegistrationPage } from './activity-registration';
 import { ActivityInvitationsPage, AcceptActivityInvitationPage } from './activity-invitations';
 import { ActivityClaimsPage, RequestAttendeeClaimPage } from './activity-claims';
+import { ActivityDelegationPage, AcceptActivityDelegationPage } from './activity-delegation';
 import { ActivityEntry } from './activity-entry';
 import { Music } from './music';
 import { MyMusic, MyPage } from './account';
@@ -36,6 +37,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { index: true, element: <ActivityEntry /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
   { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
+  { path: 'activities/:id/delegation', element: <ActivityDelegationPage /> }, { path: 'activities/:id/delegation/:token', element: <AcceptActivityDelegationPage /> },
   { path: 'activities/:id/claims', element: <ActivityClaimsPage /> }, { path: 'activities/:id/claims/:token', element: <RequestAttendeeClaimPage /> },
   { path: 'activities/:id/invitations', element: <ActivityInvitationsPage /> }, { path: 'activities/:id/invitations/:token', element: <AcceptActivityInvitationPage /> },
   { path: 'activities/:id/lifecycle', element: <ActivityLifecyclePage /> },

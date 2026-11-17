@@ -898,13 +898,28 @@
       "new_entry": "活動管理",
       "required_behavior": "schedule／roster／attendance／settlement 分開，本人接受才授權",
       "legacy_evidence_group": "管理交接",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "schedule／roster／attendance／settlement 分開，本人接受才授權"
+      "implementation": [
+        "packages/contracts/src/activity-delegation.ts",
+        "apps/api/src/activity-delegation.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/request-log.ts",
+        "apps/web/src/activity-delegation.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-delegation.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "四 scopes、七日邀請、本人接受、替換與撤銷、綁定真實帳號、精確未知結果恢復與 Python 差分已測；需結合完整出席／結算、收件匣、全部舊 API 及隔離正式資料驗收，尚未完整通過。"
     },
     {
       "capability_id": "E13",
@@ -912,13 +927,28 @@
       "new_entry": "活動管理／結算",
       "required_behavior": "可接受／替換／撤銷；每場一位指定者，其他協辦 scope 保留",
       "legacy_evidence_group": "管理交接、結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "可接受／替換／撤銷；每場一位指定者，其他協辦 scope 保留"
+      "implementation": [
+        "packages/contracts/src/activity-delegation.ts",
+        "apps/api/src/activity-delegation.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/request-log.ts",
+        "apps/web/src/activity-delegation.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-delegation.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "唯一指定結算人、替換／撤銷、雙方其他 scopes 保留及舊 worker 作廢撤權發布者通知已測；完整結算／收款與通知介面、全部舊 API 及資料遷移後成套驗收待完成。"
     },
     {
       "capability_id": "E14",
@@ -926,13 +956,28 @@
       "new_entry": "活動管理",
       "required_behavior": "受邀者接受、舊邀請失效、原人保留自己的報名／資金責任",
       "legacy_evidence_group": "管理交接",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "受邀者接受、舊邀請失效、原人保留自己的報名／資金責任"
+      "implementation": [
+        "packages/contracts/src/activity-delegation.ts",
+        "apps/api/src/activity-delegation.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/request-log.ts",
+        "apps/web/src/activity-delegation.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-delegation.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-delegation.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "本人接受、舊邀請失效、原人報名／付款與結算歷史保全、同名帳號 audit、未知接受恢復與 Python worker 群卡已測；完整資金／出席／收件匣及舊入口、遷移後成套驗收待完成。"
     },
     {
       "capability_id": "E15",
