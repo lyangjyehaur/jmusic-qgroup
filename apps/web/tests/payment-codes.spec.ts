@@ -1,3 +1,4 @@
+import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import { readFileSync } from 'node:fs';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -15,7 +16,7 @@ async function upload(page: Page, name = '本次收款碼', kind = 'wechat', typ
 async function save(page: Page) { await page.getByRole('button', { name: '保存收款碼', exact: true }).click(); await expect(page.getByText('收款碼已保存。', { exact: true })).toBeVisible(); }
 test('uploads every method, converts photos locally, restores drafts, displays and downloads exact originals at 360px', async ({ page, context }) => {
   await login(context); await page.goto('/me/payment-codes'); await upload(page, '照片收款碼', 'wechat', 'image/jpeg');
-  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue('照片收款碼'); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible(); await save(page);
+  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue('照片收款碼');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible(); await save(page);
   for (const [kind, name] of [['alipay', '支付寶原圖'], ['other', '其他原圖']]) { await upload(page, name, kind); await save(page); }
   await expect(page.getByRole('heading', { name: '已保存（3／30）', exact: true })).toBeVisible();
   const first = page.locator('.payment-library > li').filter({ has: page.getByRole('heading', { name: '微信 · 照片收款碼', exact: true }) });
@@ -33,7 +34,7 @@ test('unknown create results preserve exact input and UUID across reload, appear
   });
   await upload(page, '斷線原圖'); await page.getByRole('button', { name: '保存收款碼', exact: true }).click(); await expect(page.getByText('尚未確認操作結果。原圖與操作編號已保留，請按「確認操作結果」安全重試。', { exact: true })).toBeVisible();
   await expect(page.getByLabel('名稱（選填）', { exact: true })).toBeDisabled();
-  const serialized = await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:payment-codes:')).map(key => JSON.parse(sessionStorage.getItem(key)!)));
+  const serialized = (await durableRows(page)).filter(row=>row.key.includes('payment-codes:')).map(row=>JSON.parse(row.raw));
   expect(serialized[0].form.image).toBe(''); expect(serialized[0].pending.input.data.image.length).toBeGreaterThan(0);
   page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); expect(keys).toHaveLength(1);
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.goto('/inbox');
@@ -72,13 +73,10 @@ test('image and metadata failures expose retry, retain history and never show a 
   await page.getByRole('button', { name: '第 1 版 · ¥1.00 · 小青', exact: true }).click(); await expect(page.getByRole('img', { name: '微信收款碼', exact: true })).toBeVisible();
 });
 test('blocked storage prevents upload writes and damaged originals require preservation before editing', async ({ page, context }) => {
-  await login(context); await page.addInitScript(() => { const original = Storage.prototype.setItem; Storage.prototype.setItem = function(key, value) { if (key.startsWith('qgroup:rebuild:payment-codes:')) throw Error('synthetic storage denied'); return original.call(this, key, value); }; });
-  let writes = 0; page.on('request', request => { if (request.method() === 'POST' && request.url().endsWith('/me/payment-codes')) writes++; });
-  await page.goto('/me/payment-codes'); await upload(page); await page.getByRole('button', { name: '保存收款碼', exact: true }).click(); await expect(page.getByText('無法保存操作編號與圖片，尚未送出操作。', { exact: true })).toBeVisible(); expect(writes).toBe(0);
-  const clean = await context.newPage(); await clean.goto('/activities'); const viewer = await (await context.request.get('/api/v2/session')).json(), key = 'qgroup:rebuild:payment-codes:v1:' + viewer.scope;
-  await clean.evaluate(key => sessionStorage.setItem(key, 'damaged payment image'), key); await clean.goto('/me/payment-codes'); await expect(clean.getByText('此分頁的收款碼草稿無法讀取，原始內容已保留。請先保全原稿。', { exact: true })).toBeVisible();
-  await expect(clean.getByLabel('收款碼圖片', { exact: true })).toBeDisabled(); await clean.getByRole('button', { name: '保全原稿，重新開始', exact: true }).click(); await expect(clean.getByLabel('收款碼圖片', { exact: true })).toBeEnabled();
-  expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes('payment-codes:') && key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged payment image'); await clean.close();
+  await login(context);let writes=0;page.on('request',request=>{if(request.method()==='POST'&&request.url().endsWith('/me/payment-codes'))writes++;});
+  await page.goto('/me/payment-codes');await upload(page);await denyDraftWrites(page,'payment-codes:');await page.getByRole('button',{name:'保存收款碼',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/me/payment-codes');await expect(clean.getByRole('img',{name:'待保存收款碼',exact:true})).toBeVisible();await damageDraft(clean,'payment-codes:','damaged payment image');await clean.reload();await expect(clean.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();
+  await expect(clean.getByLabel('收款碼圖片',{exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();await expect(clean.getByLabel('收款碼圖片',{exact:true})).toBeEnabled();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged payment image');await clean.close();
 });
 test('account refresh removes private images, keeps each account draft separate and clears all image drafts on device logout', async ({ page, context }) => {
   await login(context); await page.goto('/me/payment-codes'); await upload(page, '原帳號草稿');

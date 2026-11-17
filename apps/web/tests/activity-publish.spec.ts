@@ -1,3 +1,4 @@
+import { durableRows } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin='http://127.0.0.1:5082';
@@ -40,11 +41,11 @@ for(const kind of ['create','save'] as const)test('a completed '+kind+' raced by
   }else await page.getByLabel('地點',{exact:true}).fill('原始地點');
   await page.getByRole('button',{name:kind==='create'?'建立活動草稿':'保存活動草稿',exact:true}).click();
   await expect(page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true})).toBeVisible();await expect(page.getByLabel('地點',{exact:true})).toHaveValue('原始地點');await expect(page.getByLabel('地點',{exact:true})).toBeDisabled();
-  const local=await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith('qgroup:rebuild:activity-draft:')));expect(JSON.stringify(local)).toContain('原始地點');
+  const local=await durableRows(page);expect(JSON.stringify(local)).toContain('原始地點');
   page.on('dialog',dialog=>void dialog.accept());await page.reload();
   if(kind==='create')await page.unroute('**/api/v2/activities/drafts');
   await page.getByRole('button',{name:'確認草稿操作結果',exact:true}).click();await expect(page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true})).toBeVisible();
   await page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true}).click();if(kind==='create')await page.getByRole('button',{name:'保留草稿並離開',exact:true}).click();
   await expect(page).toHaveURL('/activities/'+id);await expect(page.getByText('原始地點',{exact:true})).toBeVisible();expect(writes).toBe(1);
-  expect(await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.startsWith('qgroup:rebuild:activity-draft:')))).toEqual(local);
+  expect(await durableRows(page)).toEqual(local);
 });

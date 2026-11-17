@@ -30,7 +30,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
         }
         if(!id||id.length>80)continue;const path='/activities/'+segment(id);
         if(kind.startsWith('poll-')){label=kind==='poll-create'?'建立時間投票':kind==='poll-vote'?'投票填答':'投票管理';to=kind==='poll-create'?'/time-polls/new':'/time-polls/'+segment(id)+(kind==='poll-manage'?'/manage':'');}
-        else if(kind==='draft'){label='活動草稿';to=id==='new'?'/activities/new':path+'/edit';}
+        else if(kind==='draft'){label='活動草稿';to=id==='new'?'/activities/new':id.startsWith('copy:')?'/activities/new?copyFrom='+segment(id.slice(5)):path+'/edit';}
         else{
           const suffix={arrangements:'arrangements',registration:mode==='manage'?'registration':'signup',consent:'conditions',lifecycle:'lifecycle',invitations:'invitations',claims:'claims',delegation:'delegation',attendance:'attendance',finance:'finance',settlement:'settlement/edit',rooms:'rooms'}[kind];
           if(!suffix)continue;label={arrangements:'活動安排',registration:'活動報名',consent:'安排回覆',lifecycle:'活動狀態',invitations:'補報名邀請',claims:'代報認領',delegation:'管理分工',attendance:'現場出席',finance:'收付款帳本',settlement:'逐人結算',rooms:'預分包間'}[kind]!;to=path+'/'+suffix;

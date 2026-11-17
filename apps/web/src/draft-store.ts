@@ -1,7 +1,7 @@
 // Only reviewed, non-credential form payloads belong in this database.
 const databaseName = 'qgroup-reviewed-drafts-v1';
 const stores = ['drafts', 'versions', 'epochs'] as const;
-type Row = { key: string; scope: string; revision: number; raw: string; at: number };
+type Row = { key: string; scope: string; revision: number; raw: string | null; at: number };
 export type DraftVersion = { id: string; key: string; scope: string; raw: string; at: number; reason: string };
 export type DraftHandle = { key: string; scope: string; revision: number; deviceEpoch: number; musicEpoch: number };
 export class DraftConflict extends Error {}
@@ -47,7 +47,9 @@ function validate(key: string, scope: string) {
   const prefix = 'qgroup:rebuild:';
   if (!/^[a-f0-9]{64}$/.test(scope) || !(
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
-    ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms'].some(kind =>
+    key === prefix + 'payment-codes:v1:' + scope ||
+    key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
+    ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms', 'arrangements', 'finance'].some(kind =>
       key.startsWith(prefix + 'activity-draft:' + kind + ':v1:' + scope + ':'))
   )) throw Error('不支援的原稿範圍');
 }
@@ -92,7 +94,7 @@ export async function saveDraft(handle: DraftHandle, raw: string, preserve = fal
       archive(tx, handle.key, handle.scope, raw, '分頁衝突');
       return { conflict: true } as const;
     }
-    if (preserve && row) archive(tx, handle.key, handle.scope, row.raw, '替換前原稿');
+    if (preserve && row?.raw !== null && row) archive(tx, handle.key, handle.scope, row.raw, '替換前原稿');
     const next = { key: handle.key, scope: handle.scope, revision: handle.revision + 1, raw, at: Date.now() };
     store.put(next);
     return { handle: { ...handle, revision: next.revision } };
@@ -107,7 +109,7 @@ export function draftVersions(key: string, scope: string) {
     .filter(row => row.scope === scope).sort((a, b) => b.at - a.at));
 }
 export function listDurableDrafts(scope: string) {
-  return transaction('readonly', async tx => (await request(tx.objectStore('drafts').getAll()) as Row[]).filter(row => row.scope === scope));
+  return transaction('readonly', async tx => (await request(tx.objectStore('drafts').getAll()) as Row[]).filter((row): row is Row & { raw: string } => row.scope === scope && row.raw !== null));
 }
 export function listDurableVersions(scope: string) {
   return transaction('readonly', async tx => (await request(tx.objectStore('versions').getAll()) as DraftVersion[]).filter(row => row.scope === scope));
@@ -125,4 +127,29 @@ export function clearDurableDrafts(scope?: string) {
         if (row.scope === scope && isMusic(row.key)) entries.delete(name === 'drafts' ? row.key : row.id);
     }
   });
+}
+
+/** Retire a resolved source and optionally seed its server-assigned target in the same commit. */
+export async function retireDraft(handle: DraftHandle, sourceRaw: string, target?: {key: string; raw: string}) {
+  validate(handle.key, handle.scope); if (target) { validate(target.key, handle.scope); if(target.key===handle.key)throw Error('來源與目標原稿不能相同'); }
+  const result = await transaction('readwrite', async tx => {
+    const now = await epochs(tx, handle.scope);
+    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch) return {expired:true} as const;
+    const store = tx.objectStore('drafts'), row = await request(store.get(handle.key)) as Row | undefined;
+    if (row?.scope !== handle.scope || row.revision !== handle.revision) {
+      archive(tx, handle.key, handle.scope, sourceRaw, '完成操作時的分頁衝突'); return {conflict:true} as const;
+    }
+    if (target) {
+      const prior = await request(store.get(target.key)) as Row | undefined;
+      if (prior && prior.scope !== handle.scope) throw Error('原稿帳號不符');
+      // A target may already contain edits made after an uncertain creation. Keep those edits.
+      if (!prior || prior.raw === null) store.put({key:target.key,scope:handle.scope,revision:(prior?.revision??0)+1,raw:target.raw,at:Date.now()} satisfies Row);
+    }
+    const revision = handle.revision + 1;
+    store.put({...row,revision,raw:null,at:Date.now()});
+    return {handle:{...handle,revision}};
+  });
+  if ('expired' in result) throw new DraftExpired('此原稿已因登出或資料刪除失效，請重新載入頁面。');
+  if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
+  return result.handle;
 }
