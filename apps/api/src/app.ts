@@ -22,6 +22,7 @@ import { registerAdminPrivacy } from './admin-privacy';
 import { registerAdminMusic } from './admin-music';
 import { registerAdminMusicPins } from './admin-music-pins';
 import { registerMusicMatches } from './music-matches';
+import { registerMusicTrend, startMusicTrendSampler } from './music-trend';
 import { registerMusicContact } from './music-contact';
 import { registerMusicFields } from './music-fields';
 import { activityViewer, registerActivityRoster } from './activity-roster';
@@ -46,7 +47,7 @@ import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; musicTrendSampling?: boolean }
 export function createApp(options: AppOptions) {
   const { db } = options;
   const now = options.now ?? (() => new Date());
@@ -59,6 +60,11 @@ export function createApp(options: AppOptions) {
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
+  if (options.musicTrendSampling) {
+    let stop: (() => void) | undefined;
+    app.addHook('onReady', async () => { stop = startMusicTrendSampler(db, now, error => app.log.error(error, 'Music trend sampling failed')); });
+    app.addHook('onClose', async () => { stop?.(); });
+  }
   // Register routes after plugins so their onRoute hooks enforce per-route limits.
   app.register(async function routes(app) {
     app.addHook('onRequest', async (request, reply) => {
@@ -85,6 +91,7 @@ export function createApp(options: AppOptions) {
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);
     registerMusicMatches(app, db, security);
+    registerMusicTrend(app, db, security, now);
     registerMusicFields(app, db, security, now);
     registerActivityRoster(app, db, security, options.qq?.clientId);
     registerActivityDrafts(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});

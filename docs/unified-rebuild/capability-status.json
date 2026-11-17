@@ -3470,13 +3470,31 @@
       "new_entry": "音樂趨勢",
       "required_behavior": "取樣、圖例、時間、新詞條／新會員／近期統計完整，不混為通知",
       "legacy_evidence_group": "趨勢",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "取樣、圖例、時間、新詞條／新會員／近期統計完整，不混為通知"
+      "implementation": [
+        "packages/contracts/src/music-trend.ts",
+        "packages/domain/src/music-trend.ts",
+        "apps/api/src/music-trend.ts",
+        "apps/api/src/start.ts",
+        "apps/web/src/music-trend.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-trend.test.ts",
+        "apps/api/src/music-trend.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-trend.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-trend.test.ts",
+        "apps/web/tests/music-trend.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-trend.spec.ts",
+        "docs/unified-rebuild/42-music-trend-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生趨勢／漲幅／最近新增、半小時定時持久取樣與原 Handler／圖表差分已隔離實作；舊備份補種、正式副本完整對帳、大量資料效能、舊入口 adapter、切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M22",

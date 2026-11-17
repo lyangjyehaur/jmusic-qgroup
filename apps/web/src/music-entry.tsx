@@ -9,7 +9,7 @@ import { MusicMemberAccess, type Member } from './member-access';
 import { categoryLabel } from './music-entries';
 import { useMusicWorkspace } from './music-selection';
 import { SelectionPanel } from './music-editor';
-import { musicPeopleReturn } from './music-return';
+import { musicPeopleReturn, musicTrendReturn } from './music-return';
 import { CopyMusicValue } from './music-copy';
 
 export function musicEntryPath(id: string, search = '') {
@@ -75,7 +75,8 @@ export function MusicEntryPage() {
   const back = new URLSearchParams(params); back.delete('entry');
   const selection = workspace.state === 'ready' ? workspace.selection : null;
   const peopleBack = musicPeopleReturn(params.get('from'));
-  return <><PageIntro title="詞條資料" /><div className="page-actions">{peopleBack && <Link to={peopleBack}>回到同好成分</Link>}<Link to={'/music' + (back.size ? '?' + back : '')}>回到音樂詞庫</Link></div>
+  const trendBack = musicTrendReturn(params.get('from'));
+  return <><PageIntro title="詞條資料" /><div className="page-actions">{trendBack && <Link to={trendBack}>回到音樂趨勢</Link>}{peopleBack && <Link to={peopleBack}>回到同好成分</Link>}<Link to={'/music' + (back.size ? '?' + back : '')}>回到音樂詞庫</Link></div>
     {workspace.state === 'error' && !query.error && <Failure error={workspace.error} retry={workspace.retry} />}
     <div className={selection ? 'content-columns music-editor' : undefined}><section>
       {query.isPending ? <Notice>正在讀取詞條…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} />

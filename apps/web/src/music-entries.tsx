@@ -204,6 +204,8 @@ function EntryEditor({
         client.setQueryData(['private', viewer.scope, 'music-entries', viewer.musicEpoch], fresh);
         void client.invalidateQueries({ queryKey: ['catalog'] });
         void client.invalidateQueries({ queryKey: ['music-catalog'] });
+        void client.invalidateQueries({ queryKey: ['music-trend'] });
+        void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });
         void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       },
     }),

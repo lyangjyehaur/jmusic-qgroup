@@ -15,6 +15,7 @@ export function Layout() {
   const scope = session.data?.scope;
   useEffect(() => observeAccountChange(() => {
     void queryClient.invalidateQueries({ queryKey: ['music-catalog'] });
+    void queryClient.invalidateQueries({ queryKey: ['music-trend'] });
     void queryClient.fetchQuery({ ...sessionQuery, staleTime: 0 }).then(next => {
       queryClient.removeQueries({ queryKey: ['private'], predicate: query => query.queryKey[1] !== next.scope });
       return queryClient.invalidateQueries({ queryKey: ['private', next.scope] });

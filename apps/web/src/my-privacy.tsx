@@ -36,6 +36,7 @@ export function MyPrivacy() {
     else { clearDeviceDrafts(); announceAccountChange(true); }
     client.removeQueries({ queryKey: ['private'] });
     await client.invalidateQueries({ queryKey: ['music-catalog'] });
+    await client.invalidateQueries({ queryKey: ['music-trend'] });
     await client.invalidateQueries({ queryKey: ['session'] });
   }
   async function submit(operation: PendingValue, recovering = false) {

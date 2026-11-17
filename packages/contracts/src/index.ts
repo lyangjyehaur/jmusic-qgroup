@@ -130,3 +130,4 @@ export * from './inbox';
 export * from './finance';
 export * from './music-matching';
 export * from './music-share';
+export * from './music-trend';

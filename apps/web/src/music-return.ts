@@ -6,3 +6,8 @@ export function musicPeopleReturn(value: string | null) {
   const url = new URL(value, 'https://local.invalid');
   return url.pathname + url.search === value ? value : null;
 }
+export function musicTrendReturn(value: string | null) {
+  if (!value || !/^\/music\/trends(?:\?[^#]*)?$/.test(value)) return null;
+  const url = new URL(value, 'https://local.invalid');
+  return url.pathname + url.search === value ? value : null;
+}

@@ -6,11 +6,11 @@ import { z } from 'zod';
 import { MusicCatalog, Profile, SaveProfile, Selection, Session, type MusicProfile } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { Failure, Notice, useSession } from './shared';
-import { musicPeopleReturn } from './music-return';
+import { musicPeopleReturn, musicTrendReturn } from './music-return';
 import { announceAccountChange } from './account-session';
 import type { Member } from './member-access';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
-const isWorkspace = (pathname: string) => pathname === '/music' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname);
+const isWorkspace = (pathname: string) => pathname === '/music' || pathname === '/music/trends' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname);
 const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
 type DraftValue = z.infer<typeof Draft>;
 function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initial: MusicProfile; entries: CatalogEntry[] }) {
@@ -35,7 +35,7 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   const [saved, setSaved] = useState(initial);
   const [params] = useSearchParams();
   const from = params.get('from');
-  const validReturn = from && /^\/activities\/[^/?#]+(?:#participants)?$/.test(from) ? from : musicPeopleReturn(from);
+  const validReturn = from && /^\/activities\/[^/?#]+(?:#participants)?$/.test(from) ? from : musicPeopleReturn(from) ?? musicTrendReturn(from);
   const [returnTo, setReturnTo] = useState(validReturn);
   useEffect(() => { if (validReturn) setReturnTo(validReturn); }, [validReturn]);
   const queryClient = useQueryClient();
@@ -85,6 +85,8 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
       setSaved(result); setDraft({ profileId: result.id, musicEpoch: draft.musicEpoch, revision: result.revision, selections: result.selections });
       queryClient.setQueryData(['private', viewer.scope, 'music', draft.musicEpoch], result);
       void queryClient.invalidateQueries({ queryKey: ['music-catalog'] });
+      void queryClient.invalidateQueries({ queryKey: ['music-trend'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entries'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });

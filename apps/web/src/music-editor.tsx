@@ -32,9 +32,9 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
     {!form.draft.requestKey && form.dirty && <Button variant="ghost" disabled={form.sending}
       onClick={() => void form.rebase()}>核對最新版本，保留我的選擇</Button>}
     {(!form.message || form.dirty) && <Text size="sm" tone="muted">{form.dirty ? '尚有未保存的修改；草稿只留在此分頁。' : form.saved ? '所有選擇已保存。' : '選擇後即可建立成分。'}</Text>}
-    <Link to={(location.pathname !== '/me/music' ? '/me/music' : '/music') + location.search}>
+    <div className="page-actions"><Link to={(location.pathname !== '/me/music' ? '/me/music' : '/music') + location.search}>
       {location.pathname !== '/me/music' ? '編輯我的成分' : '音樂詞庫'}</Link>
-    <Link to={'/me/music/share' + location.search}>分享成分</Link>
+    <Link to={'/me/music/share' + location.search}>分享成分</Link></div>
   </Surface></aside>;
 }
 export function ProfileEditor({ selection: form }: { selection: MusicSelection }) {
@@ -45,7 +45,7 @@ export function ProfileEditor({ selection: form }: { selection: MusicSelection }
     <Link to="/me/music/entries">我的詞條</Link>{form.saved ? <>
       <Link to="/me/music/details">成分資料</Link><Link to="/me/music/contact">聯絡 QQ</Link>
       <Link to={'/people/' + form.saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回舊成分</Link>}
-    </div>{form.returnTo && <Link className="back" to={form.returnTo}>{form.returnTo.startsWith('/people') ? '回到同好成分' : '← 回到剛才的活動'}</Link>}
+    </div>{form.returnTo && <Link className="back" to={form.returnTo}>{form.returnTo.startsWith('/people') ? '回到同好成分' : form.returnTo.startsWith('/music/trends') ? '回到音樂趨勢' : '← 回到剛才的活動'}</Link>}
     <div className="content-columns music-editor"><section>
       <MusicSearch filters={filters} categories={categories} label="尋找喜歡的音樂" />
       {(['main', 'sub'] as const).map(kind => {

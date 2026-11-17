@@ -206,3 +206,14 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .music-share-preview { margin-block: 1.5rem; max-width: 44rem; }
 .music-share-preview img { display: block; width: 100%; height: auto; border: 1px solid #c6d6e8; border-radius: .5rem; }
 .music-share-preview .page-actions { margin-block: 1rem; }
+
+.music-trend-chart, .music-trend-recent { margin-block: 1.5rem; }
+.music-trend-svg { display: block; width: 100%; height: auto; margin-block: 1rem; }
+.music-trend-legend { padding: 0; list-style: none; }
+.music-trend-legend li { margin-block: .5rem; overflow-wrap: anywhere; }
+.music-trend-legend li > span { display: inline-block; width: .8rem; height: .8rem; margin-inline-end: .5rem; border: 1px solid currentColor; border-radius: 50%; }
+.music-trend-recent li { margin-block: 1rem; overflow-wrap: anywhere; }
+.music-trend-table { max-width: 100%; overflow-x: auto; }
+.music-trend-table table { border-collapse: collapse; min-width: 100%; }
+.music-trend-table th, .music-trend-table td { padding: .5rem; border: 1px solid #bfcfc8; text-align: start; }
+.music-trend-table th { min-width: 7rem; max-width: 16rem; overflow-wrap: anywhere; }

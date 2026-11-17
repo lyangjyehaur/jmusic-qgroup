@@ -5,6 +5,7 @@ import { openDatabase } from '@qgroup/database';
 import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
 import { musicMatchingFixture } from './music-matching-fixture';
+import { musicTrendFixture } from './music-trend-fixture';
 import { musicClaimFixture } from './music-claim-fixture';
 import { financeFixture, financeHistoryFixture } from './finance-fixture';
 import { inboxFixture } from './inbox-fixture';
@@ -20,6 +21,7 @@ if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
 musicClaimFixture(db);
+if (process.env.REBUILD_TEST_MUSIC_TREND === '1') musicTrendFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_MATCHES === '1') musicMatchingFixture(db);
 if (process.env.REBUILD_TEST_FINANCE === '1') { financeFixture(db); financeHistoryFixture(db); }
 if (process.env.REBUILD_TEST_INBOX === '1') inboxFixture(db);

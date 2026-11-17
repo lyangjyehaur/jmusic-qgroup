@@ -9,7 +9,7 @@ import { Failure, Notice, PageIntro } from './shared';
 import { ContactValue } from './music-contact-value';
 import { CopyMusicValue } from './music-copy';
 import { MusicRecommendations } from './music-matches';
-import { peopleReturn } from './music-return';
+import { peopleReturn, musicTrendReturn } from './music-return';
 import { musicEntryPath, musicEntryReturn } from './music-entry';
 export function People() { return <><PageIntro title="同好" /><MusicMemberAccess>{viewer => <><Lookup key={viewer.scope} viewer={viewer} /><MusicRecommendations key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} /></>}</MusicMemberAccess></>; }
 function Lookup({ viewer }: { viewer: Member }) {
@@ -31,10 +31,11 @@ export function PersonMusic() {
   const [search]=useSearchParams();const from=search.get('from');const activityReturn=from&&/^\/activities\/[^/?#]+#participants$/.test(from)?from:null;
   const entryReturn = musicEntryReturn(from);
   const recommendationReturn = peopleReturn(from);
-  return <><PageIntro title="同好成分" /><div className="page-actions">{recommendationReturn && <Link to={recommendationReturn}>回到同好推薦</Link>}{activityReturn&&<Link to={activityReturn}>回到活動名單</Link>}{entryReturn && <Link to={entryReturn}>回到詞條資料</Link>}<Link to="/people">回到同好查詢</Link></div><MusicMemberAccess>{viewer => <Person key={viewer.scope + ':' + viewer.musicEpoch + ':' + id} viewer={viewer} id={id} />}</MusicMemberAccess></>;
+  const trendReturn = musicTrendReturn(from);
+  return <><PageIntro title="同好成分" /><div className="page-actions">{trendReturn && <Link to={trendReturn}>回到音樂趨勢</Link>}{recommendationReturn && <Link to={recommendationReturn}>回到同好推薦</Link>}{activityReturn&&<Link to={activityReturn}>回到活動名單</Link>}{entryReturn && <Link to={entryReturn}>回到詞條資料</Link>}<Link to="/people">回到同好查詢</Link></div><MusicMemberAccess>{viewer => <Person key={viewer.scope + ':' + viewer.musicEpoch + ':' + id} viewer={viewer} id={id} />}</MusicMemberAccess></>;
 }
 function Person({ viewer, id }: { viewer: Member; id: string }) {
-  const location = useLocation(), [params] = useSearchParams(), back = peopleReturn(params.get('from'));
+  const location = useLocation(), [params] = useSearchParams(), back = peopleReturn(params.get('from')) ?? musicTrendReturn(params.get('from'));
   const profile = useQuery({ queryKey: ['private', viewer.scope, 'member-music', viewer.musicEpoch, id],
     queryFn: ({ signal }) => api('/music/profiles/' + encodeURIComponent(id), MemberMusicProfile, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always' });
   if (profile.isPending || !profile.isFetchedAfterMount) return <Notice>正在讀取成分…</Notice>;

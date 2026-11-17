@@ -63,6 +63,7 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       queryClient.setQueryData(['private', viewer.scope, 'account-profile'], latest);
       announceAccountChange();
       void queryClient.invalidateQueries({ queryKey: ['session'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'accounts'] });
       setMessage(latest.revision === result.revision ? '已保存稱呼。' : '原操作已保存，目前稱呼已再次變更；請核對目前資料。');
     } catch (failure) {

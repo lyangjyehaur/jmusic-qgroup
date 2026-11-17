@@ -9,7 +9,7 @@ const port = Number(process.env.REBUILD_PORT ?? '5081');
 const db = openDatabase(resolve(process.env.REBUILD_DB ?? '.rebuild-data/unified.sqlite3'));
 const staticRoot = resolve('.rebuild-dist/web');
 const origin = process.env.REBUILD_ORIGIN ?? 'http://127.0.0.1:5080';
-const app = createApp({ db, origin, qq: qqProvider(origin), logger: true, adminCredentialHash: () => process.env.REBUILD_ADMIN_KEY_HASH ?? '', botEnabledDefault: process.env.REBUILD_BOT_ENABLED === '1',
+const app = createApp({ db, origin, qq: qqProvider(origin), logger: true, musicTrendSampling: true, adminCredentialHash: () => process.env.REBUILD_ADMIN_KEY_HASH ?? '', botEnabledDefault: process.env.REBUILD_BOT_ENABLED === '1',
   activityBot:{enabled:process.env.REBUILD_BOT_ENABLED==='1',scheduleEnabled:process.env.REBUILD_BOT_SCHEDULE!=='0',keyboard:process.env.REBUILD_BOT_KEYBOARD==='1',personalQueue:process.env.REBUILD_BOT_PERSONAL_QUEUE==='1',baseURL:process.env.REBUILD_BOT_BASE_URL??origin,...(process.env.REBUILD_BOT_BROADCAST_KINDS?.trim()?{broadcastKinds:process.env.REBUILD_BOT_BROADCAST_KINDS.split(',').map(kind=>kind.trim()).filter(Boolean)}:{})},
   ...(existsSync(staticRoot) ? { staticRoot } : {}) });
 async function stop() { await app.close(); db.close(); }

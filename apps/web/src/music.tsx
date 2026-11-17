@@ -26,6 +26,7 @@ export function Music() {
         {!selection && <Link to="/me/music">編輯我的成分</Link>}
         <Link to="/me/music/entries">我的詞條</Link>
         <Link to="/me/music/entries/new">建立詞條</Link>
+        <Link to={'/music/trends' + (params.size ? '?' + params : '')}>音樂趨勢</Link>
       </div>
       {workspace.state === 'error' && !query.error && <Failure error={workspace.error} retry={workspace.retry} />}
       {query.data && <dl className="music-stats" aria-label="音樂統計">
