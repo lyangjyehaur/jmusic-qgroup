@@ -308,28 +308,41 @@
         "apps/web/src/auth.tsx",
         "apps/api/src/account-profile.ts",
         "apps/web/src/account-profile.tsx",
-        "apps/web/src/qq-profile.tsx"
+        "apps/web/src/qq-profile.tsx",
+        "apps/bot/src/identity-diagnostics.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "apps/bot/src/identity-diagnostics.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts",
+        "apps/bot/src/runtime.test.ts",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/account-profile.test.ts",
-        "tools/rebuild/compare-nickname.py"
+        "tools/rebuild/compare-nickname.py",
+        "apps/bot/src/identity-diagnostics.test.ts",
+        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "apps/bot/src/identity-diagnostics.test.ts",
+        "apps/bot/src/runtime.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "apps/web/tests/account-profile.spec.ts"
+        "apps/web/tests/account-profile.spec.ts",
+        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "UnionID 狀態、原 QQ bind 重授權、24 小時提醒節流及缺值／成功結果已測；真 QQ、全裝置／儲存限制與實際 bot 身份對應驗收待完成。"
+      "remaining": "UnionID 狀態、原 QQ bind 重授權、24 小時提醒節流及缺值／成功結果已測；原生 worker 存在／布林匹配診斷與 Python 差分已接通，不輸出原值或推定 bot 已綁定。真 QQ 跨應用授權、全裝置／儲存限制與實際版本組合驗收待完成，見 59 號檢查點。"
     },
     {
       "capability_id": "I11",
@@ -5050,7 +5063,11 @@
         "apps/api/src/bot-deliveries.ts",
         "apps/api/src/bot-delivery-rules.ts",
         "apps/api/src/bot-delivery-plan.ts",
-        "apps/web/src/bot-deliveries.tsx"
+        "apps/web/src/bot-deliveries.tsx",
+        "apps/bot/src/identity-diagnostics.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/config-protocol.test.ts",
@@ -5065,7 +5082,9 @@
         "apps/bot/src/runtime.test.ts",
         "apps/api/src/bot-deliveries.test.ts",
         "apps/web/tests/bot-deliveries.spec.ts",
-        "tools/rebuild/smoke-build.mjs"
+        "tools/rebuild/smoke-build.mjs",
+        "apps/bot/src/identity-diagnostics.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5076,7 +5095,9 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/bot/src/runtime.test.ts",
         "apps/api/src/bot-deliveries.test.ts",
-        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
+        "apps/bot/src/identity-diagnostics.test.ts",
+        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5086,7 +5107,8 @@
         "apps/bot/src/outbox.test.ts",
         "apps/bot/src/runtime.test.ts",
         "apps/api/src/bot-deliveries.test.ts",
-        "apps/web/tests/bot-deliveries.spec.ts"
+        "apps/web/tests/bot-deliveries.spec.ts",
+        "apps/bot/src/identity-diagnostics.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
@@ -5094,10 +5116,11 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "apps/web/tests/bot-deliveries.spec.ts",
-        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
+        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "私有 trace／health、設定後台、runtime applied revision 與群通知列表／篩選／正文白名單核對已實作，權限與晚回應隔離有證據。UnionID 存在／布林匹配診斷、正式資料與不確定工作對帳、實際版本組合及 QQ 仍待驗收，見 51–53／57／58 號檢查點。"
+      "remaining": "私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。"
     },
     {
       "capability_id": "B14",

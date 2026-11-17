@@ -6,12 +6,13 @@ import type { DispatchConfig, DispatchFromWorker, DispatchToWorker, DispatchWork
 import { checkAbort } from './lifecycle';
 import { AbbreviationSendBlocked } from './send-policy';
 import { createBotObserver, safeError, type BotObserver } from './observability';
+import type { MessageObservation } from './identity-diagnostics';
 type Pending={signal:AbortSignal;work:DispatchWork;resolve:()=>void;reject:(error:Error)=>void;abort:()=>void;observer:BotObserver};
 /** Two independent isolates: slow masks/network cannot occupy the public-query lane.
  * This library does not start a gateway, outbox consumer or production runtime.
  */
 export class BotDispatchWorkers implements BotDispatchBusiness {
-  readonly #workers:Worker[];readonly #pending=new Map<number,Pending>();readonly #counts=[0,0,0];
+  readonly #workers:Worker[];readonly #pending=new Map<number,Pending>();readonly #counts=[0,0,0,0];
   readonly #observer:BotObserver;readonly #stop=new AbortController();#next=0;#closed=false;#failed=false;
   constructor(readonly config:DispatchConfig,readonly options:{api:Pick<QQBotAPI,'replyGroup'>;defaults?:BotPolicyDefaults;workerURL?:URL;observer?:BotObserver;maxPerLane?:number;onFailure?:(error:Error)=>void}){
     this.#observer=options.observer??createBotObserver();
@@ -61,12 +62,15 @@ export class BotDispatchWorkers implements BotDispatchBusiness {
     pending.signal.removeEventListener('abort',pending.abort);this.#pending.delete(id);
     const lane=this.#lane(pending.work);this.#counts[lane]!--;
   }
-  #lane(work:DispatchWork){return work.kind==='authorize'?2:work.kind==='reply'&&work.request.command==='缩写'?1:0;}
+  #lane(work:DispatchWork){return work.kind==='diagnose'?3:work.kind==='authorize'?2:work.kind==='reply'&&work.request.command==='缩写'?1:0;}
   async #work(work:DispatchWork,parent:AbortSignal):Promise<void> {
     const signal=AbortSignal.any([parent,this.#stop.signal]);checkAbort(signal);if(this.#closed||this.#failed)return Promise.reject(Error('Business workers unavailable'));
     const lane=this.#lane(work);
-    if(this.#counts[lane]!>=(this.options.maxPerLane??32)*(lane===2?2:1))return Promise.reject(Error('Business worker queue full'));
-    const id=++this.#next,worker=this.#workers[lane===2?0:lane]!;this.#counts[lane]!++;
+    // Best-effort identity observations must never reserve business or send-
+    // authorization capacity. Their readonly SQLite wait is capped at 100 ms.
+    const capacity=lane===3?Math.min(8,this.options.maxPerLane??32):(this.options.maxPerLane??32)*(lane===2?2:1);
+    if(this.#counts[lane]!>=capacity)return Promise.reject(Error('Business worker queue full'));
+    const id=++this.#next,worker=this.#workers[lane>=2?0:lane]!;this.#counts[lane]!++;
     // Capture caller trace before crossing the thread boundary.
     const trace=this.#observer.traceId(),observer:BotObserver={...this.#observer,event:(name,fields)=>this.#observer.scope({trace_id:trace},()=>this.#observer.event(name,fields))};
     return new Promise<void>((resolve,reject)=>{
@@ -76,6 +80,7 @@ export class BotDispatchWorkers implements BotDispatchBusiness {
     });
   }
   observe(group:string,event:string,reason:string|undefined,signal:AbortSignal){return this.#work({kind:'observe',group,event,reason},signal);}
+  diagnose(observation:MessageObservation,signal:AbortSignal){return this.#work({kind:'diagnose',observation},signal);}
   reply(request:BotDispatchReply,signal:AbortSignal){return this.#work({kind:'reply',request},signal);}
   async close(){
     if(this.#closed)return;this.#closed=true;this.#stop.abort();

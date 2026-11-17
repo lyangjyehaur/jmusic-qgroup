@@ -12,6 +12,7 @@ import { QQBotAPI, type BotAPIResult } from './api';
 import { QQGateway } from './gateway';
 import { createBotObserver, type LogFields } from './observability';
 import { localPlatform, until } from '../testsupport/platform';
+import { messageObservation } from './identity-diagnostics';
 const cleanup:(()=>void|Promise<void>)[]=[];
 let root:string,workerURL:URL;
 beforeAll(async()=>{
@@ -30,6 +31,17 @@ function setup(){
   const config=loadBotConfig({KANBAN_DB:path,KANBAN_BOT_DRY_RUN:'0'});cleanup.push(()=>{db.close();rmSync(folder,{recursive:true,force:true});});return {config,db,policy};
 }
 describe('isolated bot dispatch workers',()=>{
+  it('keeps diagnostic queue capacity separate from replies and reports missing identity tables without losing commands',async()=>{
+    const s=setup(),rows:LogFields[]=[],signal=new AbortController().signal;let sends=0;
+    const workers=new BotDispatchWorkers(s.config,{workerURL,maxPerLane:1,observer:createBotObserver(row=>rows.push(row)),api:{replyGroup:async()=>{sends++;return ok;}}});cleanup.push(()=>workers.close());
+    const input=messageObservation({author:{union_openid:'PRIVATE-UNION',union_user_account:'PRIVATE-ACCOUNT'}},'GROUP_MESSAGE_CREATE',true,false);
+    s.db.exec('BEGIN EXCLUSIVE');const first=workers.diagnose(input,signal);
+    await expect(workers.diagnose(input,signal)).rejects.toThrow('queue full');
+    const reply=workers.reply({group:'group',command:'帮助',argument:'',msgId:'one'},signal);s.db.exec('ROLLBACK');await first;await reply;expect(sends).toBe(1);
+    expect(rows.find(row=>row.event==='message_received')).toMatchObject({union_openid_present:true,unionid_matches_site:false});
+    s.db.exec('DROP TABLE external_unionids');await workers.diagnose(input,signal);await workers.reply({group:'group',command:'帮助',argument:'',msgId:'two'},signal);expect(sends).toBe(2);
+    expect(rows.filter(row=>row.event==='message_received').at(-1)).toMatchObject({unionid_lookup:'unavailable'});expect(JSON.stringify(rows)).not.toMatch(/PRIVATE-UNION|PRIVATE-ACCOUNT/);
+  });
   it('keeps gateway heartbeat, button ACK and public replies running while the abbreviation worker occupies CPU',async()=>{
     const s=setup(),rows:LogFields[]=[],observer=createBotObserver(row=>rows.push(row));
     const timeline:string[]=[],posts:Record<string,unknown>[]=[],lookups:unknown[]=[];

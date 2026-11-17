@@ -10,6 +10,7 @@ import type { DispatchConfig, DispatchWork } from './dispatch-types';
 import { checkAbort } from './lifecycle';
 import { createBotObserver, type BotObserver } from './observability';
 import { reference, validPlatformId } from './protocol';
+import { identityDiagnosticFields,type MessageObservation } from './identity-diagnostics';
 import { readPublicBotReply } from './replies';
 import { BotMaskLoader } from './word-mask';
 /** Worker-thread business service. Never migrate/create a database or infer site identity. */
@@ -22,6 +23,10 @@ export class BotDispatchService {
     this.#delivery=new AbbreviationDelivery(join(dirname(config.database),'bot-abbreviation-results'),{loadMask,pageBytes:config.abbreviationPageBytes,observer:this.#observer});
   }
   close(){this.#lookup.close();}
+  diagnose(observation:MessageObservation,signal:AbortSignal){
+    checkAbort(signal);const fields=identityDiagnosticFields(this.config.database,observation);checkAbort(signal);
+    this.#observer.event('message_received',fields);
+  }
   #database<T>(readonly:boolean,work:(db:DB)=>T):T {
     const db=new Database(this.config.database,{readonly,fileMustExist:true});
     try{db.pragma('busy_timeout = 5000');if(readonly)db.pragma('query_only = ON');return db.transaction(()=>{assertDatabaseUsable(db);return work(db);})();}
@@ -63,7 +68,8 @@ export class BotDispatchService {
     }catch(error){if(error instanceof AbbreviationSendBlocked)return;throw error;}
   }
   async execute(work:DispatchWork,api:Pick<QQBotAPI,'replyGroup'>,signal:AbortSignal) {
-    if(work.kind==='observe')this.observe(work.group,work.event,work.reason,signal);
+    if(work.kind==='diagnose')this.diagnose(work.observation,signal);
+    else if(work.kind==='observe')this.observe(work.group,work.event,work.reason,signal);
     else if(work.kind==='authorize'){if(!this.#allowed(work.group,signal,true))throw new AbbreviationSendBlocked();}
     else await this.reply(work.request,api,signal);
   }

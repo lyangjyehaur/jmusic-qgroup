@@ -62,20 +62,22 @@ async function setup(options:{dryRun?:boolean;panels?:boolean;holdToken?:boolean
 describe('native bot runtime lifecycle',()=>{
   it('consumes outbox while gateway is offline, handles messages/buttons, records applied policy and stops cleanly',async()=>{
     const s=await setup({panels:true});s.queue('first');const work=s.start();
+    s.db.exec("INSERT INTO external_identities VALUES('qq','synthetic-app','synthetic-openid','alice','合成名','before'); INSERT INTO external_unionids VALUES('qq','synthetic-app','synthetic-openid','SITE-UNION-SECRET','before')");
     await until(()=>s.posts.some(body=>!body.msg_id&&!body.event_id)&&(s.db.prepare('SELECT status FROM bot_outbox').get() as {status:string}).status==='sent',5000);
     expect(s.rows.some(row=>row.event==='websocket_ready')).toBe(false);
     expect(s.db.prepare('SELECT status FROM bot_outbox').get()).toEqual({status:'sent'});
     const peer=await s.ready();
-    const message={op:0,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:'message',group_openid:'group',content:'<@BOT> /帮助',author:{id:'person'}}};peer.send(message);peer.send({...message,t:'GROUP_MESSAGE_CREATE',s:3});
+    const message={op:0,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:'message',group_openid:'group',content:'<@BOT> /帮助',author:{id:'person',union_openid:'SITE-UNION-SECRET',union_user_account:'PRIVATE-QQ-ACCOUNT'}}};peer.send(message);peer.send({...message,t:'GROUP_MESSAGE_CREATE',s:3});
     peer.send({op:0,t:'INTERACTION_CREATE',s:4,id:'outer-event',d:{id:'interaction',type:11,group_openid:'group',data:{resolved:{button_data:'/我的'}}}});
     try{await until(()=>s.posts.length===3&&s.panels===1&&s.health().last_ack!==null,5000);}
     catch{throw Error(JSON.stringify({n:s.posts.length,panels:s.panels,health:s.health(),acks:s.rows.filter(r=>r.event==='heartbeat_ack'),events:s.rows.filter(r=>r.event!=='poll_completed').slice(-10)}));}
     expect(s.posts.filter(body=>body.msg_id==='message')).toHaveLength(1);expect(s.posts.some(body=>body.event_id==='outer-event')).toBe(true);expect(s.timeline).toContain('ack');
+    await until(()=>s.rows.filter(row=>row.event==='message_received').length===2);expect(s.rows.filter(row=>row.event==='message_received').every(row=>row.unionid_matches_site===true&&row.union_user_account_present===true)).toBe(true);
     const settings=s.db.prepare('SELECT revision FROM bot_settings').get() as {revision:number},runtime=s.db.prepare('SELECT applied_revision,deployment_group FROM bot_runtime').get();expect(runtime).toEqual({applied_revision:settings.revision,deployment_group:'group'});
     expect(s.health()).toMatchObject({runtime_state:'running',dry_run:false,deployment_dry_run:false,policy_resolved:true,gateway_connected:true});
     s.stop.abort();await work;expect(s.health()).toMatchObject({runtime_state:'stopped',gateway_connected:false});expect(s.health().last_poll).not.toBeNull();
     expect(statSync(join(s.config.logDirectory,'bot-health.json')).mode&0o777).toBe(0o600);
-    const owner=new BotOwnership(s.path);owner.close();expect(JSON.stringify(s.rows)).not.toContain('SYNTHETIC-SECRET');
+    const owner=new BotOwnership(s.path);owner.close();expect(JSON.stringify(s.rows)).not.toMatch(/SYNTHETIC-SECRET|SITE-UNION-SECRET|PRIVATE-QQ-ACCOUNT/);
   },15000);
   it('uses current dry-run for panels and broadcasts, rearms panels on real mode, and never replays simulated work',async()=>{
     const s=await setup({dryRun:true,panels:true});s.queue('simulated');const work=s.start();await s.ready();

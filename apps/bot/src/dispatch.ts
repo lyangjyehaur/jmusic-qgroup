@@ -6,11 +6,13 @@ import type { GatewayDispatch } from './gateway';
 import { checkAbort, within } from './lifecycle';
 import { createBotObserver, safeError, type BotObserver } from './observability';
 import { object, reference, validPlatformId, type APIObject } from './protocol';
+import { messageObservation,type MessageObservation } from './identity-diagnostics';
 export interface BotDispatchReply {
   group: string; command: BotCommand | null; argument: string; msgId?: string; eventId?: string;
 }
 /** Implementations must isolate synchronous database/mask work from the gateway. */
 export interface BotDispatchBusiness {
+  diagnose?(observation:MessageObservation,signal:AbortSignal):Promise<void>;
   observe(group: string, event: string, reason: string | undefined, signal: AbortSignal): Promise<void>;
   reply(request: BotDispatchReply, signal: AbortSignal): Promise<void>;
   close(): Promise<void>;
@@ -65,7 +67,7 @@ export class BotDispatchDedup {
  * Acceptance advances gateway sequence; this is not a durable replay queue.
  */
 export class BotDispatcher {
-  readonly #observer:BotObserver;readonly #dedup:BotDispatchDedup;readonly #jobs=new Set<Promise<void>>();
+  readonly #observer:BotObserver;readonly #dedup:BotDispatchDedup;readonly #jobs=new Set<Promise<void>>();readonly #diagnostics=new Set<Promise<void>>();
   readonly #seen=new Map<string,number>();readonly #stop=new AbortController();#botId='';
   constructor(readonly options:{api:Pick<QQBotAPI,'ackInteraction'>;business:BotDispatchBusiness;observer?:BotObserver;verboseEvents?:boolean;now?:()=>number;maxJobs?:number;jobTimeoutMs?:number;dedup?:BotDispatchDedup}){
     this.#observer=options.observer??createBotObserver();this.#dedup=options.dedup??new BotDispatchDedup(options.now);
@@ -80,7 +82,15 @@ export class BotDispatcher {
     }).finally(()=>this.#jobs.delete(job));
     this.#jobs.add(job);
   }
-  async drain(){while(this.#jobs.size)await Promise.all([...this.#jobs]);}
+  #diagnose(input:MessageObservation,parent:AbortSignal){
+    if(!this.options.business.diagnose)return;
+    if(this.#diagnostics.size>=8){this.#observer.event('message_diagnostic_unavailable',{reason:'queue_full'});return;}
+    // Ordinary ignored traffic must not consume the command/ACK job budget.
+    const job=within(this.options.jobTimeoutMs??30000,AbortSignal.any([parent,this.#stop.signal]),signal=>Promise.resolve().then(()=>this.options.business.diagnose!(input,signal)))
+      .catch(error=>this.#observer.event('message_diagnostic_unavailable',safeError(error))).finally(()=>this.#diagnostics.delete(job));
+    this.#diagnostics.add(job);
+  }
+  async drain(){while(this.#jobs.size||this.#diagnostics.size)await Promise.all([...this.#jobs,...this.#diagnostics]);}
   async close(){this.#stop.abort();await this.drain();await this.options.business.close();}
   async onDispatch(event:GatewayDispatch,signal:AbortSignal) {
     checkAbort(signal);checkAbort(this.#stop.signal);const payload=object(event.d)?event.d:{},type=event.t;
@@ -113,6 +123,7 @@ export class BotDispatcher {
     const observe=important||now-(this.#seen.get(group)??-Infinity)>=60000;
     // A membership event always reaches observation; ordinary traffic is throttled.
     const message=type==='GROUP_AT_MESSAGE_CREATE'||type==='GROUP_MESSAGE_CREATE';
+    const diagnostic=message?messageObservation(payload,type,addressed,!!mentionsEveryone(payload)):undefined;
     let request:BotDispatchReply|undefined,reason:string|undefined;
     if(message){
       const author=object(payload.author)?payload.author:{};
@@ -128,6 +139,7 @@ export class BotDispatcher {
       }}
       if(reason)this.#observer.event('message_ignored',{reason,group_ref:reference(group)});
     }
+    if(diagnostic)this.#diagnose(diagnostic,signal);
     if(!observe&&!request&&reason!=='duplicate')return;
     if(this.#jobs.size>=(this.options.maxJobs??64)){this.#observer.event('business_queue_full');return;}
     if(observe){this.#seen.delete(group);this.#seen.set(group,now);if(this.#seen.size>500)this.#seen.delete(this.#seen.keys().next().value!);}
