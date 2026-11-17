@@ -121,6 +121,8 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .activity-editor input, .activity-editor textarea, .activity-editor select { min-width: 0; max-width: 100%; box-sizing: border-box; }
 .activity-editor textarea { width: 100%; }
 .activity-editor .account-field { margin-bottom: 1rem; }
+.activity-editor fieldset.registration-person { border-top: 1px solid #dce5df; margin: 1rem 0; padding-top: 1rem; }
+.registration-person legend { font-weight: 700; padding-right: .75rem; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .draft-comparison dd { white-space: pre-wrap; overflow-wrap: anywhere; }
 .draft-remove { border-top: 1px solid var(--line, #dbe3ec); margin-top: 1.5rem; padding-top: 1rem; }

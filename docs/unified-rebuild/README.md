@@ -40,6 +40,7 @@
 | [活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md) | 原子發布、自動本人報名、活動卡片／提醒、舊 worker 消費、schema 9 與未知結果恢復 |
 | [已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md) | 條件版本、逐人決定、有限管理員協助、恢復與 Python／bot 差分 |
 | [活動狀態管理檢查點](24-activity-lifecycle-checkpoint.md) | 暫停／恢復、成團、實際開始／結束、取消／歸檔／移除、恢復及 Python worker 相容性 |
+| [逐人報名與退出審核檢查點](25-activity-registration-checkpoint.md) | 本人／同行預覽、候補／整組／待確認、逐人修改、退出審核、恢復及 bot 差分 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

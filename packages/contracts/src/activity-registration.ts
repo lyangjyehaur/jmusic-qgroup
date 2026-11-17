@@ -1,0 +1,12 @@
+import { z } from 'zod';
+import { ConditionArrangement } from './activity-arrangements';
+const text=(max:number)=>z.string().trim().refine(value=>Array.from(value).length<=max);
+export const RegistrationPerson=z.object({isSelf:z.boolean(),name:text(24).default(''),note:text(100).default(''),payerKind:z.enum(['self','manager'])}).strict();
+export const RegistrationValues=z.object({people:z.array(RegistrationPerson).min(1).max(20),queueMode:z.enum(['individual','together']),intent:z.enum(['registered','tentative'])}).strict().refine(value=>value.people.filter(person=>person.isSelf).length<=1);
+export const PreviewRegistration=RegistrationValues.safeExtend({revision:z.number().int().min(0)});
+export const RegistrationPreview=z.object({revision:z.number().int(),conditionsVersion:z.number().int(),token:z.string().regex(/^[a-f0-9]{64}$/),allocation:z.array(z.object({name:z.string(),status:z.enum(['confirmed','waiting','tentative'])}))});
+export const SubmitRegistration=PreviewRegistration.safeExtend({previewToken:z.string().regex(/^[a-f0-9]{64}$/),conditionsVersion:z.number().int().min(1),acceptConditions:z.literal(true),acceptPartial:z.boolean(),confirm:z.literal(true)}).strict();
+export const RegistrationAction=z.enum(['edit','confirm','split','withdraw','approve','reject']);
+export const ChangeRegistration=z.object({revision:z.number().int().min(0),action:RegistrationAction,name:text(24).default(''),note:text(100).default(''),payerKind:z.enum(['self','manager']),reason:text(200).default(''),confirm:z.literal(true)}).strict();
+export const ManagedRegistration=z.object({id:z.string(),name:z.string(),isGuest:z.boolean(),isMe:z.boolean(),managedByMe:z.boolean(),note:z.string(),payerKind:z.enum(['self','manager']),payerName:z.string(),paymentLocked:z.boolean(),status:z.string(),queueMode:z.string().nullable(),withdrawalRequested:z.boolean(),withdrawalReason:z.string(),needsWithdrawalRequest:z.boolean(),canChange:z.boolean(),canWithdraw:z.boolean(),canDecide:z.boolean(),requiresReason:z.boolean()});
+export const RegistrationContext=z.object({id:z.string(),title:z.string(),revision:z.number().int(),nickname:z.string(),conditionsVersion:z.number().int(),arrangement:ConditionArrangement,signupBlocker:z.string(),selfRegistered:z.boolean(),people:z.array(ManagedRegistration)});

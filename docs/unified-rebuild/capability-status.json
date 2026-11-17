@@ -996,13 +996,26 @@
       "new_entry": "活動主動作",
       "required_behavior": "預覽綁當時規則／revision，提交不可默認接受新規則",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "預覽綁當時規則／revision，提交不可默認接受新規則"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生報名預覽、當時安排／revision 綁定及逐次明確接受費用安排已實作，原 Python token／資料／outbox 差分通過；全部舊入口及正式副本驗收待完成。"
     },
     {
       "capability_id": "R02",
@@ -1010,13 +1023,26 @@
       "new_entry": "報名表單",
       "required_behavior": "不創假帳號；每人獨立 attendee；manager 不等於 payer",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不創假帳號；每人獨立 attendee；manager 不等於 payer"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "每批本人／同行／純代報、逐人公開備註與付款標記已實作，不建假帳號；原 manager 與 payer 分離。認領／代管交接及正式副本綜合驗收待完成。"
     },
     {
       "capability_id": "R03",
@@ -1024,13 +1050,26 @@
       "new_entry": "報名預覽",
       "required_behavior": "整組不足全候補且阻後方；混合正式候補須 accept_partial",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "整組不足全候補且阻後方；混合正式候補須 accept_partial"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "逐人／整組、整組不足全候補與阻塞後方、混合分配明確 acceptPartial 已實作並與原 Python 差分；更多正式匯入／邊界隊列及全部舊入口驗收待完成。"
     },
     {
       "capability_id": "R04",
@@ -1038,13 +1077,26 @@
       "new_entry": "我的報名",
       "required_behavior": "待確認不占位；確認取新組序，不繼承先前優先",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "待確認不占位；確認取新組序，不繼承先前優先"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "待確認不占位、整組或逐人確認取得新 party ticket、最終名單通知已實作並差分；全部舊入口／待辦、正式副本驗收待完成。"
     },
     {
       "capability_id": "R05",
@@ -1052,13 +1104,26 @@
       "new_entry": "我的報名",
       "required_behavior": "取新組序；不影響已正式者、不繼承原報名隊位",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "取新組序；不影響已正式者、不繼承原報名隊位"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已報本人可新增同行，退出後可重新報名且取得新隊序，未知結果不重複新增；全部舊入口及正式副本驗收待完成。"
     },
     {
       "capability_id": "R06",
@@ -1066,13 +1131,26 @@
       "new_entry": "名單管理",
       "required_behavior": "依本人／管理人／角色判斷，管理他人需理由；拆組遵循隊列",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "依本人／管理人／角色判斷，管理他人需理由；拆組遵循隊列"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原管理人／roster scope 修改公開備註、訪客稱呼與付款標記，協助他人須原因，拆組保留本組隊序；凍結付款來源不可改。認領全流程及正式副本驗收待完成。"
     },
     {
       "capability_id": "R07",
@@ -1080,13 +1158,26 @@
       "new_entry": "我的報名",
       "required_behavior": "原正式保留、按原隊序補；不在關閉／截止後自動補",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "原正式保留、按原隊序補；不在關閉／截止後自動補"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "逐人退出、只在實際開放時原嚴格 FIFO 遞補、合併退出與遞補群通知已實作；全部舊入口、待辦與正式副本驗收待完成。"
     },
     {
       "capability_id": "R08",
@@ -1094,13 +1185,26 @@
       "new_entry": "我的報名／待辦",
       "required_behavior": "必填原因，批准前留位；候補／待確認可直接退出",
       "legacy_evidence_group": "名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "必填原因，批准前留位；候補／待確認可直接退出"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "逾期正式報名退出須原因且保留位至審核，roster scope 同意／拒絕須原因，候補／待確認直接退出，泛化私人提醒不含原因；通知收件匣／待辦、全部舊入口及正式副本驗收待完成。"
     },
     {
       "capability_id": "R09",
@@ -1181,13 +1285,26 @@
       "new_entry": "報名與管理 API",
       "required_behavior": "每批 1–20 人、有限容量至 500；並行不超賣，409 保稿重預覽",
       "legacy_evidence_group": "名冊、恢復",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "每批 1–20 人、有限容量至 500；並行不超賣，409 保稿重預覽"
+      "implementation": [
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-registration.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-registration.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "每批 1–20、重複本人、精確預覽版本、SQLite immediate 並行不超賣、409 保稿重預覽及原 key 恢復已實作；多程序負載、全部舊入口與正式副本驗收待完成。"
     },
     {
       "capability_id": "T01",
@@ -2762,32 +2879,39 @@
         "apps/web/src/activity-drafts.tsx",
         "packages/contracts/src/activity-arrangements.ts",
         "apps/api/src/activity-lifecycle.ts",
-        "apps/web/src/activity-lifecycle.tsx"
+        "apps/web/src/activity-lifecycle.tsx",
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
-        "apps/web/tests/activity-lifecycle.spec.ts"
+        "apps/web/tests/activity-lifecycle.spec.ts",
+        "apps/web/tests/activity-registration.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "新增原生手動報名／退出／審核 producer、待確認及拆組 hook；完整原 Python 群卡片與泛化私人提醒差分通過。已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B05",
@@ -2805,32 +2929,39 @@
         "apps/web/src/activity-drafts.tsx",
         "packages/contracts/src/activity-arrangements.ts",
         "apps/api/src/activity-lifecycle.ts",
-        "apps/web/src/activity-lifecycle.tsx"
+        "apps/web/src/activity-lifecycle.tsx",
+        "apps/api/src/activity-registration.ts",
+        "apps/web/src/activity-registration.tsx",
+        "packages/contracts/src/activity-registration.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
-        "apps/web/tests/activity-lifecycle.spec.ts"
+        "apps/web/tests/activity-lifecycle.spec.ts",
+        "apps/web/tests/activity-registration.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "新增原生手動報名／退出／審核 producer、待確認及拆組 hook；完整原 Python 群卡片與泛化私人提醒差分通過。已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B06",
