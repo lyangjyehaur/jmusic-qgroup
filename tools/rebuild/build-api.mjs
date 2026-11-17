@@ -10,3 +10,9 @@ for (const path of Object.keys(result.metafile.inputs)) {
 
 await build({ entryPoints: ['apps/api/src/music-room-task.ts'], outfile: '.rebuild-dist/api/music-room-worker.mjs',
   bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), logLevel: 'info' });
+
+const bot = await build({ entryPoints: ['apps/bot/src/index.ts'], outfile: '.rebuild-dist/bot/transport.mjs',
+  bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
+for (const path of Object.keys(bot.metafile.inputs)) {
+  if (path.includes('/testsupport/') || path.endsWith('.test.ts')) throw new Error(`Test-only code in bot bundle: ${path}`);
+}

@@ -6,6 +6,10 @@ import { join } from 'node:path';
 import assert from 'node:assert/strict';
 import { createHash,randomUUID } from 'node:crypto';
 import sharp from 'sharp';
+const botSmoke = spawnSync(process.execPath, ['--import', 'tsx', 'tools/rebuild/smoke-bot.ts'], {
+  encoding: 'utf8', timeout: 15000, env: { PATH: process.env.PATH, TMPDIR: process.env.TMPDIR },
+});
+assert.equal(botSmoke.status, 0, botSmoke.stderr || botSmoke.stdout);process.stdout.write(botSmoke.stdout);
 const rescueKey='synthetic-built-wallpaper-rescue-'+randomUUID();
 const directory = realpathSync(mkdtempSync(join(tmpdir(), 'qgroup-built-')));
 const port = 5084;

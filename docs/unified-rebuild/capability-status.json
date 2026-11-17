@@ -4665,13 +4665,27 @@
       "new_entry": "後台 bot／活動",
       "required_behavior": "版本不等連線健康、最近紀錄與失敗原因、敏感資料遮罩",
       "legacy_evidence_group": "bot 設定、bot 維運",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "版本不等連線健康、最近紀錄與失敗原因、敏感資料遮罩"
+      "implementation": [
+        "apps/bot/src/config.ts",
+        "apps/bot/src/observability.ts",
+        "apps/bot/src/protocol.ts"
+      ],
+      "behavior_evidence": [
+        "apps/bot/src/config-protocol.test.ts",
+        "apps/bot/src/observability.test.ts"
+      ],
+      "data_evidence": [
+        "apps/bot/src/observability.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/bot/src/observability.test.ts",
+        "apps/bot/src/api.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/51-bot-transport-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作 TS 設定／私有 JSONL／trace／遮罩／health 基礎並完成 Python 差分及本機隔離測試；完整設定載入版本、runtime、投遞紀錄與後台查詢、實際版本組合及 QQ 驗收仍待完成，見 51-bot-transport-checkpoint.md。"
     },
     {
       "capability_id": "B14",
@@ -4679,13 +4693,31 @@
       "new_entry": "worker",
       "required_behavior": "ACK 超時重連、恢復會話、HTTP 失敗／重試、健康檔位置一致",
       "legacy_evidence_group": "bot 維運",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "ACK 超時重連、恢復會話、HTTP 失敗／重試、健康檔位置一致"
+      "implementation": [
+        "apps/bot/src/api.ts",
+        "apps/bot/src/gateway.ts",
+        "apps/bot/src/lifecycle.ts",
+        "apps/bot/src/protocol.ts"
+      ],
+      "behavior_evidence": [
+        "apps/bot/src/api.test.ts",
+        "apps/bot/src/gateway.test.ts",
+        "apps/bot/src/config-protocol.test.ts",
+        "tools/rebuild/smoke-bot.ts"
+      ],
+      "data_evidence": [
+        "apps/bot/src/gateway.test.ts",
+        "apps/bot/src/observability.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/bot/src/api.test.ts",
+        "apps/bot/src/gateway.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/unified-rebuild/51-bot-transport-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "已實作原生 TS token／OpenAPI／Identify／Resume／心跳／有界 callback 及停止清理，以本機原生 HTTP／WebSocket 與 bundle smoke 驗證；尚未整合完整指令及 outbox worker、實際運行版本組合／QQ／長期連線，B01–B15 未完整驗收，見 51-bot-transport-checkpoint.md。"
     },
     {
       "capability_id": "B15",
