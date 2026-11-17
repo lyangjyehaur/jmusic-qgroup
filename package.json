@@ -11,6 +11,7 @@
     "check:ui": "npm run typecheck && node deploy/build_ui.mjs --check",
     "test:ui": "npm run typecheck && node tests/test_board_react.mjs && node tests/test_react_controllers.mjs && node tests/test_music_selection.mjs && node tests/test_yahha_patterns.mjs && node tests/test_react_ui.mjs",
     "typecheck": "tsc --noEmit",
+    "restore:rebuild": "tsx tools/rebuild/restore-backup.ts",
     "import:rebuild": "tsx tools/migration/import-snapshot.ts",
     "dev:rebuild": "node tools/rebuild/dev.mjs",
     "start:rebuild": "tsx apps/api/src/start.ts",

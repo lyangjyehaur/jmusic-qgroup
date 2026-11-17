@@ -8,7 +8,7 @@ import { openDatabase } from './index';
 function version8(path:string) {
   const db=openDatabase(path);
   const triggers=db.prepare("SELECT sql FROM sqlite_master WHERE type='trigger' AND tbl_name='bot_settings_history'").all() as {sql:string}[];
-  db.exec('DROP TRIGGER bot_settings_history_no_delete; DELETE FROM bot_settings; DELETE FROM bot_settings_history; DELETE FROM bot_runtime; UPDATE rebuild_schema SET version=8;');
+  db.exec('DROP TRIGGER bot_settings_history_no_delete; DELETE FROM bot_settings; DELETE FROM bot_settings_history; DELETE FROM bot_runtime; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=8;');
   db.exec(triggers.find(row=>row.sql.includes('bot_settings_history_no_delete'))!.sql);
   return db;
 }
@@ -17,7 +17,7 @@ describe('schema 8 → bot singleton migration',()=>{
     const folder=mkdtempSync(join(tmpdir(),'qgroup-bot-baseline-')),path=join(folder,'isolated.sqlite3');
     try{
       version8(path).close();const db=openDatabase(path);
-      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:13});
+      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:14});
       expect(db.prepare('SELECT id,revision,config_json FROM bot_settings').get()).toEqual({id:1,revision:0,config_json:'{}'});
       expect(db.prepare('SELECT revision,config_json,actor_ref,action FROM bot_settings_history').all()).toEqual([{revision:0,config_json:'{}',actor_ref:'',action:'baseline'}]);
       expect(db.prepare('SELECT * FROM bot_runtime').get()).toEqual({id:1,applied_revision:null,checked_at:null,last_attempt_at:null,deployment_group:''});

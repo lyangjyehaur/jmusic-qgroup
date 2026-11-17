@@ -4928,7 +4928,10 @@
         "packages/database/src/schema-v4.ts",
         "packages/database/src/schema-v8.ts",
         "apps/api/src/paired-backups.ts",
-        "apps/api/src/music-export.ts"
+        "apps/api/src/music-export.ts",
+        "apps/api/src/offline-restore.ts",
+        "tools/rebuild/restore-backup.ts",
+        "packages/database/src/schema-v14.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -4939,7 +4942,9 @@
         "packages/database/src/contact-migration.test.ts",
         "packages/database/src/fields-migration.test.ts",
         "apps/api/src/admin-backups.test.ts",
-        "tools/rebuild/smoke-build.mjs"
+        "tools/rebuild/smoke-build.mjs",
+        "apps/api/src/offline-restore.test.ts",
+        "packages/database/src/storage-migration.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -4948,20 +4953,24 @@
         "packages/database/src/import-migration.test.ts",
         "packages/database/src/contact-migration.test.ts",
         "packages/database/src/fields-migration.test.ts",
-        "apps/api/src/admin-backups.test.ts"
+        "apps/api/src/admin-backups.test.ts",
+        "apps/api/src/offline-restore.test.ts",
+        "packages/database/src/storage-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/admin-backups.test.ts"
+        "apps/api/src/admin-backups.test.ts",
+        "apps/api/src/offline-restore.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
         "docs/unified-rebuild/15-contact-checkpoint.md",
-        "docs/unified-rebuild/48-backup-export-checkpoint.md"
+        "docs/unified-rebuild/48-backup-export-checkpoint.md",
+        "docs/unified-rebuild/49-offline-restore-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "schema 遷移及隔離匯入既有證據保留；新增原生 SQLite／圖片／壁紙 BLOB／ledger 配對備份、WAL／writer lock、checksum／FK／私有權限／保留期驗證。完整離線恢復、最新 bot 投遞狀態核對、回退匯出、歷史舊備份匯入與正式規模資源演練尚未完成；restoreEligible=false。"
+      "remaining": "原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -4976,30 +4985,40 @@
         "packages/database/src/legacy-erasure.ts",
         "apps/api/src/paired-backups.ts",
         "apps/api/src/admin-security.ts",
-        "apps/api/src/admin-backups.ts"
+        "apps/api/src/admin-backups.ts",
+        "apps/api/src/offline-restore.ts",
+        "tools/rebuild/restore-backup.ts",
+        "packages/database/src/schema-v14.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/admin-backups.test.ts",
-        "apps/web/tests/admin-backups.spec.ts"
+        "apps/web/tests/admin-backups.spec.ts",
+        "apps/api/src/offline-restore.test.ts",
+        "packages/database/src/storage-migration.test.ts",
+        "tools/rebuild/smoke-build.mjs"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/admin-backups.test.ts"
+        "apps/api/src/admin-backups.test.ts",
+        "apps/api/src/offline-restore.test.ts",
+        "packages/database/src/storage-migration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/admin-backups.test.ts"
+        "apps/api/src/admin-backups.test.ts",
+        "apps/api/src/offline-restore.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
-        "docs/unified-rebuild/48-backup-export-checkpoint.md"
+        "docs/unified-rebuild/48-backup-export-checkpoint.md",
+        "docs/unified-rebuild/49-offline-restore-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生寫入前及啟動／每小時配對備份、唯一暫存目錄原子發布、14 天／30 份保留、最新刪除投影與歷史 JSON 已隔離實作。舊歷史成套備份匯入、離線恢復與維護鎖整合、來源擷取、舊 adapters、回退及正式版本組合驗收仍待完成。"
+      "remaining": "原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O14",

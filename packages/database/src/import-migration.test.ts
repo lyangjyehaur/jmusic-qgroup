@@ -11,7 +11,7 @@ function versionTwo(path: string) {
   db.exec("INSERT INTO users VALUES('member','unusable','保留稱呼','before'); INSERT INTO music_entries VALUES('entry','保留詞條','sub'); INSERT INTO music_profiles VALUES('profile','member',4,'before',NULL); INSERT INTO music_selections VALUES('profile','entry',3,0)");
   for (const table of ['music_field_history','music_profile_fields','music_pin_history','music_ownership_history','music_claim_intents','music_claim_attempts','music_contact_history','music_profile_contacts']) db.exec('DROP TABLE ' + table);
   for (const table of added) db.exec('DROP TABLE ' + table);
-  db.exec('UPDATE rebuild_schema SET version=2'); db.close();
+  db.exec('DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=2'); db.close();
 }
 describe('schema 2 → import migration', () => {
   it('preserves existing profiles and all old structures, and reopens without duplicating import tables', () => {
@@ -21,7 +21,7 @@ describe('schema 2 → import migration', () => {
       const migrated = openDatabase(path);
       for (const row of schema) expect(migrated.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);
       expect(migrated.prepare('SELECT * FROM music_selections').all()).toEqual(choices); expect(migrated.pragma('foreign_key_check')).toEqual([]); migrated.close();
-      const next = openDatabase(path); expect(next.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 13 }); expect(next.prepare('SELECT * FROM music_profiles').all()).toHaveLength(1); next.close();
+      const next = openDatabase(path); expect(next.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 14 }); expect(next.prepare('SELECT * FROM music_profiles').all()).toHaveLength(1); next.close();
     } finally { rmSync(folder, { recursive: true, force: true }); }
   });
   it('rolls back the whole version migration on DDL collision, leaving old data and marker intact', () => {

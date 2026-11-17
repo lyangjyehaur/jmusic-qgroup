@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { openDatabase, seedMusicFields } from './index';
 function versionSeven(path: string, fields = JSON.stringify({ note: '原文\n' + '字'.repeat(150), noteAt: 123.456, gender: '自訂'.repeat(8), genderPublic: true })) {
   const db = openDatabase(path);
-  db.exec(`DROP TABLE music_field_history; DROP TABLE music_profile_fields; UPDATE rebuild_schema SET version=7;
+  db.exec(`DROP TABLE music_field_history; DROP TABLE music_profile_fields; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=7;
     INSERT INTO users VALUES('member','unusable','帳號稱呼','before');
     INSERT INTO music_profiles VALUES('legacy',NULL,7,'before',NULL),('native','member',2,'native-time',NULL),('erased',NULL,0,'before','erased');
     INSERT INTO music_ownership_history(id,profile_id,revision,actor_ref,reason,created_at) VALUES(900,'legacy',7,'account:member','保留歷史','before');`);
@@ -31,7 +31,7 @@ describe('schema 7 → independent music fields', () => {
       next.prepare("UPDATE users SET nickname='新帳號稱呼'").run(); next.prepare("UPDATE music_profile_fields SET note='後來編輯' WHERE profile_id='legacy'").run();
       next.transaction(() => seedMusicFields(next))(); expect(next.prepare("SELECT note FROM music_profile_fields WHERE profile_id='legacy'").get()).toEqual({note:'後來編輯'});
       expect(next.pragma('foreign_key_check')).toEqual([]); next.close();
-      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:13}); expect(reopened.prepare("SELECT name FROM music_profile_fields WHERE profile_id='native'").get()).toEqual({name:'帳號稱呼'}); reopened.close();
+      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:14}); expect(reopened.prepare("SELECT name FROM music_profile_fields WHERE profile_id='native'").get()).toEqual({name:'帳號稱呼'}); reopened.close();
     } finally { rmSync(folder, {recursive:true,force:true}); }
   });
   it('rolls back DDL and version on a table collision or invalid private source instead of losing or coercing evidence', () => {

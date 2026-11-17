@@ -84,7 +84,7 @@ function recordBoard(db: DB, reconcile = false) {
   if (reconcile) db.prepare("UPDATE migration_map SET status='erased' WHERE source='board'").run();
   for (const table of tableNames) {
     // Only the frozen 59 tables are evidence here; new migration tables are not a source.
-    if (table.startsWith('music_') || table.startsWith('migration_') || ['rebuild_schema', 'privacy_receipts', 'erasure_applied'].includes(table)) continue;
+    if (table.startsWith('music_') || table.startsWith('migration_') || ['rebuild_schema', 'rebuild_storage', 'privacy_receipts', 'erasure_applied'].includes(table)) continue;
     const pk = (db.prepare(`PRAGMA table_info(${quoted(table)})`).all() as { name: string; pk: number }[]).filter(row => row.pk).sort((a, b) => a.pk - b.pk).map(row => row.name);
     let count = 0;
     for (const value of boardRows(db, table)) {

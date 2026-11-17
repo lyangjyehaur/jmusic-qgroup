@@ -11,7 +11,7 @@ describe('isolated replacement database', () => {
       const path = join(dir, 'test.sqlite3');
       const first = openDatabase(path);
       const tables = first.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all();
-      expect(tables).toHaveLength(93); // 59 compatibility + 34 rebuild/migration tables
+      expect(tables).toHaveLength(94); // 59 compatibility + 35 rebuild/migration tables
       expect(first.pragma('integrity_check', { simple: true })).toBe('ok');
       expect(first.pragma('foreign_key_check')).toEqual([]);
       expect(first.prepare('SELECT * FROM site_settings').get()).toEqual({ id: 1, allow_name_registration: 0, revision: 0 });

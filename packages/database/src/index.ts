@@ -13,13 +13,14 @@ import { schemaV9 } from './schema-v9';
 import { schemaV10 } from './schema-v10';
 import { schemaV11 } from './schema-v11';
 import { schemaV13 } from './schema-v13';
+import { schemaV14 } from './schema-v14';
 import { seedWallpapers } from './wallpapers';
 import { schemaV12 } from './schema-v12';
 import { seedMusicShouts } from './music-shouts';
 import { seedMusicFields } from './music-fields';
 
 export type DB = Database.Database;
-export const REBUILD_SCHEMA_VERSION = 13;
+export const REBUILD_SCHEMA_VERSION = 14;
 function migratePrivacy(db: DB) {
   // Rebuild only our own table. Child foreign keys retain the stable table name.
   db.pragma('foreign_keys = OFF');
@@ -46,37 +47,54 @@ function migratePrivacy(db: DB) {
     }).immediate();
   } finally { db.pragma('foreign_keys = ON'); }
 }
+/** Recovery candidates require an offline review, including the Python bot. */
+export function assertDatabaseUsable(db: DB) {
+  if (!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rebuild_storage'").get()) {
+    if (db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='rebuild_schema'").get() &&
+      (db.prepare('SELECT version FROM rebuild_schema').get() as {version:number}|undefined)?.version === REBUILD_SCHEMA_VERSION) throw new Error('Missing storage lineage');
+    return;
+  }
+  const storage = db.prepare('SELECT lineage_id,recovery_required FROM rebuild_storage WHERE id=1').get() as {lineage_id:string;recovery_required:number}|undefined;
+  if (!storage || !/^[a-f0-9]{32}$/.test(storage.lineage_id)) throw new Error('Invalid storage lineage');
+  if (storage.recovery_required !== 0) throw new Error('Recovery candidate requires offline review; service startup refused');
+}
+/** Upgrade an owned file or disposable memory image; never an arbitrary legacy DB. */
+export function migrateDatabase(db: DB): DB {
+  assertDatabaseUsable(db);
+  const path = db.name;
+  const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
+  // Never run replacement migrations on an arbitrary legacy/production DB.
+  if (tables.length && !tables.some(t => t.name === 'rebuild_schema')) throw new Error('Refusing legacy database: use an explicit isolated migration copy');
+  if (tables.length) {
+    const versions = db.prepare('SELECT version,baseline FROM rebuild_schema').all() as { version: number; baseline: string }[];
+    if (versions.length !== 1 || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, REBUILD_SCHEMA_VERSION].includes(versions[0]?.version ?? 0) || versions[0]?.baseline !== '8da877857f163853c449474e168534e2e493121b') throw new Error('Unsupported rebuild schema');
+  }
+  db.pragma('foreign_keys = ON');
+  db.pragma('busy_timeout = 5000');
+  db.pragma('journal_mode = WAL');
+  if (!tables.length) db.transaction(() => { db.exec(legacySchema); db.exec(schemaV1); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 1) migratePrivacy(db);
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 2) db.transaction(() => { db.exec(schemaV3); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Import migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 3) db.transaction(() => { db.exec(schemaV4); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Contact migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 4) db.transaction(() => { db.exec(schemaV5); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Claim migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 5) db.transaction(() => { db.exec(schemaV6); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Ownership migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 6) db.transaction(() => { db.exec(schemaV7); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('PIN migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 7) db.transaction(() => { db.exec(schemaV8); seedMusicFields(db); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Music field migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 8) db.transaction(() => { db.exec(schemaV9); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Bot baseline migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 9) db.transaction(() => { db.exec(schemaV10); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Music creation migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 10) db.transaction(() => { db.exec(schemaV11); seedMusicShouts(db); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Shout migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 11) db.transaction(() => { db.exec(schemaV12); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Catalog migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 12) db.transaction(() => { db.exec(schemaV13); if(path!==':memory:')seedWallpapers(db,dirname(path)+'/walls'); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Wallpaper migration foreign key check failed'); }).immediate();
+  if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 13) db.transaction(() => { db.exec(schemaV14); assertDatabaseUsable(db); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Storage lineage migration foreign key check failed'); }).immediate();
+  // The frozen export contains structure only; supply the legacy secure default.
+  db.prepare('INSERT OR IGNORE INTO site_settings(id) VALUES(1)').run();
+  return db;
+}
 export function openDatabase(path: string): DB {
   if (path !== ':memory:') mkdirSync(dirname(path), { recursive: true });
   const db = new Database(path);
-  try {
-    const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as { name: string }[];
-    // Never run replacement migrations on an arbitrary legacy/production DB.
-    if (tables.length && !tables.some(t => t.name === 'rebuild_schema')) throw new Error('Refusing legacy database: use an explicit isolated migration copy');
-    if (tables.length) {
-      const versions = db.prepare('SELECT version,baseline FROM rebuild_schema').all() as { version: number; baseline: string }[];
-      if (versions.length !== 1 || ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, REBUILD_SCHEMA_VERSION].includes(versions[0]?.version ?? 0) || versions[0]?.baseline !== '8da877857f163853c449474e168534e2e493121b') throw new Error('Unsupported rebuild schema');
-    }
-    db.pragma('foreign_keys = ON');
-    db.pragma('busy_timeout = 5000');
-    db.pragma('journal_mode = WAL');
-    if (!tables.length) db.transaction(() => { db.exec(legacySchema); db.exec(schemaV1); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 1) migratePrivacy(db);
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 2) db.transaction(() => { db.exec(schemaV3); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Import migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 3) db.transaction(() => { db.exec(schemaV4); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Contact migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 4) db.transaction(() => { db.exec(schemaV5); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Claim migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 5) db.transaction(() => { db.exec(schemaV6); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Ownership migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 6) db.transaction(() => { db.exec(schemaV7); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('PIN migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 7) db.transaction(() => { db.exec(schemaV8); seedMusicFields(db); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Music field migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 8) db.transaction(() => { db.exec(schemaV9); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Bot baseline migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 9) db.transaction(() => { db.exec(schemaV10); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Music creation migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 10) db.transaction(() => { db.exec(schemaV11); seedMusicShouts(db); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Shout migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 11) db.transaction(() => { db.exec(schemaV12); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Catalog migration foreign key check failed'); }).immediate();
-    if ((db.prepare('SELECT version FROM rebuild_schema').get() as { version: number }).version === 12) db.transaction(() => { db.exec(schemaV13); if(path!==':memory:')seedWallpapers(db,dirname(path)+'/walls'); if ((db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Wallpaper migration foreign key check failed'); }).immediate();
-    // The frozen export contains structure only; supply the legacy secure default.
-    db.prepare('INSERT OR IGNORE INTO site_settings(id) VALUES(1)').run();
-    return db;
-  } catch (error) { db.close(); throw error; }
+  try { return migrateDatabase(db); }
+  catch (error) { db.close(); throw error; }
 }
 
 export { eraseLegacyProfile, detachLegacyAccount, retireLegacyProfileProofs } from './legacy-erasure';

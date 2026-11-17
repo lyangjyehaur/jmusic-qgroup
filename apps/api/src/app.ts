@@ -9,7 +9,7 @@ import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
 import { z } from 'zod';
-import { REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
+import { assertDatabaseUsable, REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
 import { SaveProfile } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { catalog, getActivity, getProfile, listActivities, saveProfile } from './repositories';
@@ -58,6 +58,7 @@ export { hash, accountScope } from './security';
 export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean }
 export function createApp(options: AppOptions) {
   const { db } = options;
+  assertDatabaseUsable(db);
   const now = options.now ?? (() => new Date());
   const origin = new URL(options.origin).origin;
   const security = createSecurity(db, origin, now, options.csrfSecret);

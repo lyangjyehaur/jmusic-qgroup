@@ -9,14 +9,14 @@ import { fixture } from '../../../apps/api/testsupport/fixture';
 import { adminCatalogFixture,catalogProfiles } from '../../../apps/api/testsupport/admin-catalog-fixture';
 function versionEleven(path:string){
   const db=openDatabase(path);fixture(db);adminCatalogFixture(db);
-  db.exec('DROP TRIGGER music_entry_creations_erasure; DROP TABLE music_entry_creations; DROP TABLE music_catalog_actions; UPDATE rebuild_schema SET version=11;');return db;
+  db.exec('DROP TRIGGER music_entry_creations_erasure; DROP TABLE music_entry_creations; DROP TABLE music_catalog_actions; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=11;');return db;
 }
 describe('schema 11 → catalog reference preservation',()=>{
   it('preserves every existing table and DDL, retains both creation-list semantics and actual Python bot reads, and reopens once',()=>{
     const root=mkdtempSync(join(tmpdir(),'qgroup-catalog-migration-')),path=join(root,'synthetic.db');try{
       const old=versionEleven(path),tables=(old.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name!='rebuild_schema' ORDER BY name").all() as {name:string}[]).map(r=>r.name),snapshot=tables.map(name=>old.prepare('SELECT * FROM "'+name+'"').all()),ddl=old.prepare("SELECT name,sql FROM sqlite_master WHERE name!='rebuild_schema' ORDER BY name").all() as {name:string;sql:string|null}[];
       const probe=()=>JSON.parse(execFileSync('python3',['tools/rebuild/probe-auth-bot.py',path],{encoding:'utf8'})),bot=probe();old.close();
-      const next=openDatabase(path);expect(next.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:13});expect(tables.map(name=>next.prepare('SELECT * FROM "'+name+'"').all())).toEqual(snapshot);for(const row of ddl)expect(next.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);
+      const next=openDatabase(path);expect(next.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:14});expect(tables.map(name=>next.prepare('SELECT * FROM "'+name+'"').all())).toEqual(snapshot);for(const row of ddl)expect(next.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);
       expect(musicCreatedIds(next,catalogProfiles.alice)).toEqual(['sub-0']);expect(musicCreatedIds(next,catalogProfiles.bob)).toEqual(['sub-1','sub-0','main-0']);expect(probe()).toEqual(bot);expect(next.pragma('foreign_key_check')).toEqual([]);next.close();
       const again=openDatabase(path);expect(again.prepare('SELECT count(*) n FROM music_catalog_actions').get()).toEqual({n:0});again.close();
     }finally{rmSync(root,{recursive:true,force:true});}
