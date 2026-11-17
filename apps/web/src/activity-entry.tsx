@@ -3,7 +3,8 @@ import { Activities } from './activities';
 const actions=new Set(['join','conditions','settlement','finance','manage','onsite']);
 /** Legacy bot cards select an event; opening one never executes the requested action. */
 export function ActivityEntry(){
-  const [search]=useSearchParams();const id=search.get('event');
+  const [search]=useSearchParams();const id=search.get('event'),poll=search.get('poll');
+  if(poll)return <Navigate replace to={'/time-polls/'+encodeURIComponent(poll)}/>;
   if(!id)return <Activities/>;
   const management=search.get('management_invite');
   if(management&&/^[A-Za-z0-9_-]{32}$/.test(management))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/delegation/'+encodeURIComponent(management)}/>;

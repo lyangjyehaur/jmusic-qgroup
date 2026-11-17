@@ -73,29 +73,38 @@
         "apps/api/src/registration-settings.ts",
         "apps/web/src/registration.tsx",
         "apps/web/src/activity-roster.tsx",
-        "apps/web/src/people.tsx"
+        "apps/web/src/people.tsx",
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/registration.test.ts",
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/registration.test.ts",
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/registration.spec.ts",
-        "apps/web/tests/activity-roster.spec.ts"
+        "apps/web/tests/activity-roster.spec.ts",
+        "apps/web/tests/time-polls.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。 已補名單浮層、完整卡與新成分保存的活動錨點返回；完整邀請／報名／分房上下文仍待完成。"
+      "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。 已補名單浮層、完整卡與新成分保存的活動錨點返回；完整邀請／報名／分房上下文仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
     },
     {
       "capability_id": "I04",
@@ -1449,13 +1458,28 @@
       "new_entry": "活動→發起投票",
       "required_behavior": "月曆選不連續日期、至少兩項、按需增刪；無舊固定項數上限",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "月曆選不連續日期、至少兩項、按需增刪；無舊固定項數上限"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx",
+        "apps/web/src/poll-calendar.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T02",
@@ -1463,13 +1487,27 @@
       "new_entry": "投票詳情",
       "required_behavior": "一次提交有效候選，不默認補票、不自動報名",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "一次提交有效候選，不默認補票、不自動報名"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T03",
@@ -1477,13 +1515,27 @@
       "new_entry": "投票詳情",
       "required_behavior": "已選答案不被覆蓋，支援鍵盤與清楚選中狀態",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "已選答案不被覆蓋，支援鍵盤與清楚選中狀態"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T04",
@@ -1491,13 +1543,27 @@
       "new_entry": "投票詳情",
       "required_behavior": "date 按該地日末、exact 按開始；過期不可改但歷史保留",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "date 按該地日末、exact 按開始；過期不可改但歷史保留"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T05",
@@ -1505,13 +1571,27 @@
       "new_entry": "投票管理",
       "required_behavior": "截止早於最後候選失效；舊截止不偷偷延長",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "截止早於最後候選失效；舊截止不偷偷延長"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T06",
@@ -1519,13 +1599,27 @@
       "new_entry": "投票結果",
       "required_behavior": "只比較未過期候選，低票定案按既有規則附原因",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "只比較未過期候選，低票定案按既有規則附原因"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T07",
@@ -1533,13 +1627,27 @@
       "new_entry": "投票→活動",
       "required_behavior": "關聯唯一活動，版本競態重驗，原票不等於報名",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "關聯唯一活動，版本競態重驗，原票不等於報名"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T08",
@@ -1547,13 +1655,27 @@
       "new_entry": "投票管理／bot",
       "required_behavior": "新投票預設同步、活動沿用；延遲通知只摘要有效候選",
       "legacy_evidence_group": "投票、機器人",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "新投票預設同步、活動沿用；延遲通知只摘要有效候選"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T09",
@@ -1561,13 +1683,27 @@
       "new_entry": "投票 API",
       "required_behavior": "不重複定案建活動，不用過期表單覆寫新票或新管理決定",
       "legacy_evidence_group": "投票",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不重複定案建活動，不用過期表單覆寫新票或新管理決定"
+      "implementation": [
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/time-polls.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/time-polls.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "P01",
@@ -3510,7 +3646,12 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/settlement-notice.ts"
+        "apps/api/src/settlement-notice.ts",
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -3519,7 +3660,8 @@
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -3528,23 +3670,26 @@
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-lifecycle.spec.ts",
         "apps/web/tests/activity-registration.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/time-polls.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "新增原生手動報名／退出／審核 producer、待確認及拆組 hook；完整原 Python 群卡片與泛化私人提醒差分通過。已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。"
+      "remaining": "新增原生手動報名／退出／審核 producer、待確認及拆組 hook；完整原 Python 群卡片與泛化私人提醒差分通過。已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
     },
     {
       "capability_id": "B05",
@@ -3717,33 +3862,42 @@
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/api/src/settlement-notice.ts"
+        "apps/api/src/settlement-notice.ts",
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/time-polls.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。"
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
     },
     {
       "capability_id": "B12",
@@ -3795,23 +3949,32 @@
       "legacy_evidence_group": "機器人、隱私",
       "implementation": [
         "apps/api/src/activity-bot.ts",
-        "apps/api/src/settlement-notice.ts"
+        "apps/api/src/settlement-notice.ts",
+        "packages/contracts/src/time-polls.ts",
+        "apps/api/src/time-polls.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/time-polls.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "既有群額明細設定需告知；未完成身份綁定不發個人款項或私聊 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。"
+      "remaining": "既有群額明細設定需告知；未完成身份綁定不發個人款項或私聊 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
     },
     {
       "capability_id": "O01",

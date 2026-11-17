@@ -23,6 +23,9 @@ try {
   const html = await page.text();
   const asset = html.match(/src="([^"]+\.js)"/)[1];
   const bundle = await fetch(base + asset); assert.equal(bundle.status, 200); assert(bundle.headers.get('content-type')?.includes('javascript'));
+  // Drain the large response before shutting down; an unread streamed bundle
+  // can keep Fastify.close() waiting on an active socket indefinitely.
+  assert((await bundle.arrayBuffer()).byteLength > 0);
   const unknown = await fetch(base + '/api/v2/missing'); assert.equal(unknown.status, 404);
   const activities = await fetch(base + '/api/v2/activities'); assert.equal(activities.headers.get('cache-control'), 'no-store');
   assert.deepEqual((await activities.json()).events, []);

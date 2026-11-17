@@ -13,10 +13,11 @@ export function useReviewedDraft<T, S, F>(options: {
   saveSchema: z.ZodType<S>;
   resultSchema: z.ZodType;
   endpoint: string;
-  latest: () => Promise<F>;
+  latest: (result?: unknown) => Promise<F>;
   matches: (value: T, input: S) => boolean;
   fromPending: (input: S) => T;
-  after?: (fresh: F) => void;
+  after?: (fresh: F, result?: unknown) => void;
+  afterRefresh?: (fresh: F) => void;
 }) {
   const { key, viewer } = options,
     active = useRef(true),
@@ -109,6 +110,7 @@ export function useReviewedDraft<T, S, F>(options: {
       setDraft(next);
       setEpoch((n) => n + 1);
       setMessage('已讀取最新版，原輸入保留；請重新預覽核對。');
+      options.afterRefresh?.(fresh);
     } catch (e) {
       if (active.current) setMessage(e instanceof Error ? e.message : '讀取失敗');
     } finally {
@@ -127,7 +129,7 @@ export function useReviewedDraft<T, S, F>(options: {
     setMessage('');
     let accepted = false;
     try {
-      await api(options.endpoint, options.resultSchema, {
+      const result = await api(options.endpoint, options.resultSchema, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -138,7 +140,7 @@ export function useReviewedDraft<T, S, F>(options: {
         body: JSON.stringify(pending.input),
       });
       accepted = true;
-      const fresh = await options.latest();
+      const fresh = await options.latest(result);
       if (!active.current) return false;
       const cleared = { value: options.blank(fresh), dirty: false };
       if (!persist(cleared)) throw Error('storage');
@@ -146,7 +148,7 @@ export function useReviewedDraft<T, S, F>(options: {
       setData(fresh);
       setEpoch((n) => n + 1);
       setMessage('已保存。');
-      options.after?.(fresh);
+      options.after?.(fresh, result);
       return true;
     } catch (e) {
       if (!active.current) return false;

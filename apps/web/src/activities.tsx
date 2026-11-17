@@ -21,7 +21,7 @@ export function Activities() {
   const period = search.get('period') === 'history' ? 'history' : 'upcoming';
   const page = Math.max(1, Math.min(10000, Number(search.get('page')) || 1));
   const query = useQuery({ queryKey: ['activities', period, page], queryFn: () => api(`/activities?period=${period}&page=${page}`, ActivityList) });
-  return <><PageIntro title="活動" /><div className="page-actions"><Link to="/activities/new">新增活動草稿</Link><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link></div>
+  return <><PageIntro title="活動" /><div className="page-actions"><Link to="/activities/new">新增活動草稿</Link><Link to="/time-polls">時間投票</Link><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link></div>
     <section aria-label="活動列表"><div className="tabs" aria-label="活動篩選">{[['upcoming', '近期活動'], ['history', '往期與歸檔']].map(([key, label]) => <Button key={key} variant={period === key ? 'primary' : 'ghost'} aria-pressed={period === key} onClick={() => setSearch({ period: key! })}>{label}</Button>)}</div>
       {query.isPending ? <Notice>正在讀取活動…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : query.data.events.length ? <div className="event-grid">{query.data.events.map(event => <ActivityCard key={event.id} event={event} />)}</div> : <Surface><EmptyState motif="paper" title="這裡還沒有公開活動" description="邀請限定的活動不會出現在公開列表。" /></Surface>}
       {query.data && <div className="pagination">{page > 1 && <Button variant="secondary" onClick={() => setSearch({ period, page: String(page - 1) })}>上一頁</Button>}{query.data.hasMore && <Button variant="secondary" onClick={() => setSearch({ period, page: String(page + 1) })}>下一頁</Button>}</div>}
@@ -43,7 +43,7 @@ export function ActivityDetail() {
     <Surface className="detail"><Heading level={2}>活動安排</Heading><dl><dt>時間</dt><dd>{dateLabel(event.startsAt)}（台北時間）{event.durationHours !== null ? ` · 預計 ${event.durationHours} 小時` : ' · 時長未定'}</dd><dt>地點</dt><dd>{event.location}</dd><dt>人數</dt><dd>{event.confirmed} / {event.capacity||'不限'} 人 · 最低 {event.minimumParticipants} 人</dd><dt>報名截止</dt><dd>{dateLabel(event.deadline)}（台北時間）</dd><dt>退出期限</dt><dd>{dateLabel(event.withdrawalDeadline||event.deadline)}（台北時間）</dd><dt>可見性</dt><dd>{event.visibility==='public'?'公開':'邀請可見'}</dd><dt>安排版本</dt><dd>{event.conditionsVersion}{event.changeSummary?' · '+event.changeSummary:''}</dd></dl>
       {event.feePolicy&&<><Heading level={2}>費用規則</Heading><Text className="description">{event.feePolicy}</Text></>}{event.estimatedOver && <Notice>預定時間已過，實際結束狀態尚未確認。</Notice>}{event.description&&<><Heading level={2}>活動說明</Heading><Text className="description">{event.description}</Text></>}
       {task&&<Notice>已開啟對應活動；此入口不會自動提交報名、確認或款項操作。</Notice>}
-      <Notice>尚未提供分房與結算。</Notice>
+      <Link to={'/activities/'+encodeURIComponent(id)+'/rooms'}>預分包間</Link>
     <Link className="text-link" to={'/me/music?from=' + encodeURIComponent('/activities/' + id)}>編輯我的成分</Link></Surface>
     {viewer&&<ActivityParticipants key={viewer.scope} eventId={id} viewer={viewer}/>}</>;
 }

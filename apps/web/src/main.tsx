@@ -18,6 +18,7 @@ import { ActivityRoomsPage } from './activity-rooms';
 import { ActivityHistoryPage } from './activity-history';
 import { ActivityAttendancePage } from './activity-attendance';
 import { ActivityDelegationPage, AcceptActivityDelegationPage } from './activity-delegation';
+import { TimePollPage, TimePollsPage, NewTimePollPage } from './time-polls';
 import { ActivityEntry } from './activity-entry';
 import { Music } from './music';
 import { MyMusic, MyPage } from './account';
@@ -42,6 +43,7 @@ import './style.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 function Missing() { return <EmptyState title="這個入口不存在" action={<Link to="/activities">回到活動</Link>} />; }
 const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeProvider theme="blue"><main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main></ThemeProvider>, children: [
+  { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <NewTimePollPage /> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
   { path: 'inbox', element: <InboxPage /> },
   { index: true, element: <ActivityEntry /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },

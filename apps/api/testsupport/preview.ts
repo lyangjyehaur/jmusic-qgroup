@@ -9,6 +9,7 @@ import { financeFixture, financeHistoryFixture } from './finance-fixture';
 import { inboxFixture } from './inbox-fixture';
 import { nicknameFixture } from './nickname-fixture';
 import { settlementFixture } from './settlement-fixture';
+import { timePollFixture } from './time-poll-fixture';
 import { paymentFixture } from './payment-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
@@ -16,6 +17,7 @@ const paymentRoot = (process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUI
 const db = openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memory:'); fixture(db);
 if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
+if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
 musicClaimFixture(db);
 if (process.env.REBUILD_TEST_FINANCE === '1') { financeFixture(db); financeHistoryFixture(db); }
 if (process.env.REBUILD_TEST_INBOX === '1') inboxFixture(db);
