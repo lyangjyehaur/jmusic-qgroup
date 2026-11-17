@@ -1,4 +1,5 @@
 import { test,expect } from './fixtures';
+import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import type { BrowserContext,Page } from '@playwright/test';
 const origin='http://127.0.0.1:5082';
 test.use({adminCatalog:true});
@@ -53,18 +54,18 @@ test('deleting a selected entry requires confirmation and removes every current 
   await confirm(page);await expect(page.getByText('已刪除詞條，更新 3 份成分。',{exact:true})).toBeVisible();await expect(listing(page).getByRole('heading',{name:'YOASOBI',exact:true})).toHaveCount(0);
   await login(context,'alice');await page.goto('/me/music');await expect(page.getByRole('button',{name:'移除YOASOBI',exact:true})).toHaveCount(0);await expect(page.getByRole('button',{name:'移除ヨルシカ',exact:true})).toBeVisible();
 });
-test('competing edits preserve input and require an explicit fresh review instead of silently replacing a revision',async({page,context})=>{
+test('competing edits preserve input and require an explicit fresh review instead of silently replacing a revision',async({page,context,browser})=>{
   await login(context);await page.goto('/admin/music-entries');await listing(page).getByRole('button',{name:'編輯 YOASOBI',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('保留我的更正');
-  const other=await context.newPage();await other.goto('/admin/music-entries');await listing(other).getByRole('button',{name:'編輯 YOASOBI',exact:true}).click();await other.getByLabel('詞條名稱',{exact:true}).fill('另一管理者更正');await confirm(other);await expect(other.getByText('已保存詞條。',{exact:true})).toBeVisible();
-  await expect(page.getByText('詞庫或會員資料已更新，請重新核對影響範圍。',{exact:true})).toBeVisible();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('保留我的更正');await expect(page.getByRole('button',{name:'確認詞條變更',exact:true})).toBeDisabled();
-  await page.getByRole('button',{name:'核對最新版，保留輸入',exact:true}).click();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('保留我的更正');await confirm(page);await expect(page.getByText('已保存詞條。',{exact:true})).toBeVisible();await other.close();
+  const independent=await browser.newContext({baseURL:origin});await login(independent);const other=await independent.newPage();await other.goto('/admin/music-entries');await listing(other).getByRole('button',{name:'編輯 YOASOBI',exact:true}).click();await other.getByLabel('詞條名稱',{exact:true}).fill('另一管理者更正');await confirm(other);await expect(other.getByText('已保存詞條。',{exact:true})).toBeVisible();
+  await refresh(page);await expect(page.getByText('詞庫或會員資料已更新，請重新核對影響範圍。',{exact:true})).toBeVisible();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('保留我的更正');await expect(page.getByRole('button',{name:'確認詞條變更',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'核對最新版，保留輸入',exact:true}).click();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('保留我的更正');await confirm(page);await expect(page.getByText('已保存詞條。',{exact:true})).toBeVisible();await independent.close();
 });
 test('damaged drafts are preserved, navigation protects work and storage failure prevents all catalog mutations',async({page,context})=>{
   await login(context);await page.goto('/admin/music-entries');await page.getByRole('button',{name:'建立詞條',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('原管理稿');
-  await page.getByRole('link',{name:'管理後台',exact:true}).click();await expect(page.getByText('仍有詞庫管理原稿或待確認操作。',{exact:true})).toBeVisible();await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();await page.getByRole('link',{name:'音樂詞庫管理',exact:true}).click();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('原管理稿');
-  await page.evaluate(()=>{const key=Object.keys(sessionStorage).find(key=>key.startsWith('qgroup:rebuild:admin-catalog:'))!;sessionStorage.setItem(key,'damaged admin catalog draft');});page.on('dialog',dialog=>void dialog.accept());await page.reload();await expect(page.getByText('無法讀取詞庫管理原稿，請先保全原稿再繼續。',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect(await page.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.includes(':recovery:')).map(key=>sessionStorage.getItem(key)))).toContain('damaged admin catalog draft');
-  await page.addInitScript(()=>{Storage.prototype.setItem=()=>{throw new DOMException('synthetic quota','QuotaExceededError');};});await page.reload();await expect(page.getByText('無法保存詞庫原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'建立詞條',exact:true})).toBeDisabled();
+  await page.getByRole('link',{name:'管理後台',exact:true}).click();await expect(page.getByText('仍有未完成原稿。',{exact:false})).toBeVisible();await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();await page.getByRole('link',{name:'音樂詞庫管理',exact:true}).click();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('原管理稿');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(page,'admin-catalog:','damaged admin catalog draft');page.on('dialog',dialog=>void dialog.accept());await page.reload();await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();
+  await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain('damaged admin catalog draft');
+  await page.getByRole('button',{name:'建立詞條',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('儲存失敗');await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await denyDraftWrites(page,'admin-catalog:');let writes=0;page.on('request',request=>{if(request.method()==='POST')writes++;});await confirm(page);await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
 });
 test('failed reads offer a retry and late private catalog data cannot restore revoked authority',async({page,context})=>{
   await login(context);let fail=true;await page.route('**/api/v2/admin/music-entries',route=>fail?route.fulfill({status:503,json:{code:'FAIL',message:'詞庫暫時無法讀取'}}):route.continue());
