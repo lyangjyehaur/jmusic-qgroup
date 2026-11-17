@@ -6,7 +6,17 @@ import type { DB } from '@qgroup/database';
 const Id = z.string().min(1).max(128);
 const LegacyIntent = z.object({ user_id: Id, request_id: Id, created_at: z.string().min(1).max(80) }).strict();
 const NewIntent = z.object({ version: z.literal(1), kind: z.enum(['music', 'account', 'both']), userId: Id, profileId: Id.nullable(), requestId: z.string().uuid(), createdAt: z.iso.datetime(), secretHash: z.string().regex(/^[a-f0-9]{64}$/), signature: z.string().regex(/^[a-f0-9]{64}$/) }).strict().refine(entry => entry.kind === 'account' || entry.profileId !== null);
-export type ErasureIntent = z.infer<typeof NewIntent>;
+const AdminIntent = z.object({
+  version:z.literal(2),kind:z.literal('admin_music'),command:z.enum(['delete_profile','reset_music']),
+  actorRef:Id,profiles:z.array(z.object({id:Id,userId:Id.nullable()}).strict()),entries:z.array(Id),
+  requestId:z.string().uuid(),createdAt:z.iso.datetime(),secretHash:z.string().regex(/^[a-f0-9]{64}$/),signature:z.string().regex(/^[a-f0-9]{64}$/),
+}).strict().superRefine((entry,ctx)=>{
+  if(new Set(entry.profiles.map(p=>p.id)).size!==entry.profiles.length||new Set(entry.entries).size!==entry.entries.length ||
+    entry.command==='delete_profile'&&(entry.profiles.length!==1||entry.entries.length!==0))
+    ctx.addIssue({code:'custom',message:'Invalid administrative erasure scope'});
+});
+const CurrentIntent = z.union([NewIntent,AdminIntent]);
+export type ErasureIntent = z.infer<typeof CurrentIntent>;
 export type StoredIntent = ErasureIntent | z.infer<typeof LegacyIntent>;
 export interface ErasureJournal { read(): StoredIntent[]; append(entry: ErasureIntent): void }
 /** The ledger must be retained separately from rolling database backups. */
@@ -26,11 +36,11 @@ export function erasureJournal(db: DB): ErasureJournal {
         fchmodSync(fd, 0o600);
         const source = readFileSync(fd, 'utf8');
         if (source && !source.endsWith('\n')) throw new Error('Incomplete erasure journal line');
-        return source.split('\n').filter(line => line.trim()).map(line => z.union([NewIntent, LegacyIntent]).parse(JSON.parse(line)));
+        return source.split('\n').filter(line => line.trim()).map(line => z.union([CurrentIntent, LegacyIntent]).parse(JSON.parse(line)));
       } finally { closeSync(fd); }
     },
     append(entry) {
-      NewIntent.parse(entry);
+      CurrentIntent.parse(entry);
       const fd = openSync(path, constants.O_WRONLY | constants.O_APPEND | constants.O_CREAT | constants.O_NOFOLLOW, 0o600);
       try {
         fchmodSync(fd, 0o600);

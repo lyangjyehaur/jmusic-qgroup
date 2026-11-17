@@ -55,6 +55,29 @@ function setup() {
   return { root, source, destination, write, music };
 }
 describe('offline paired snapshot import', () => {
+  it('replays administrative profile deletion and full music reset after importing older paired music snapshots', async () => {
+    for(const reset of [false,true]){
+      const s=setup(),requestId=randomUUID();
+      s.music.entries['e-main'].createdBy='10001';s.write('music/data.json',s.music);
+      s.write('board.erasures.jsonl',JSON.stringify({version:2,kind:'admin_music',command:reset?'reset_music':'delete_profile',actorRef:'account:alice',
+        profiles:reset?[{id:profileId('10001'),userId:'alice'},{id:profileId(native),userId:'bob'},{id:profileId('10003'),userId:null}]:[{id:profileId('10001'),userId:'alice'}],
+        entries:reset?['e-main','e-one']:[],requestId,createdAt:stamp.toISOString(),secretHash:hash('receipt'),signature:hash('command')})+'\n');
+      const before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);expect(allFiles(s.source)).toEqual(before);expect((result.report as {musicAfterErasure:unknown}).musicAfterErasure).toEqual({profiles:reset?0:2,entries:reset?0:2});
+      const db=openDatabase(join(s.destination,'unified.sqlite3'));
+      try{
+        expect(db.prepare('SELECT erased_at,user_id FROM music_profiles WHERE id=?').get(profileId('10001'))).toEqual({erased_at:stamp.toISOString(),user_id:null});
+        expect(db.prepare('SELECT * FROM music_legacy_profiles WHERE profile_id=?').get(profileId('10001'))).toBeUndefined();
+        expect(db.prepare('SELECT * FROM music_shouts WHERE profile_id=?').all(profileId('10001'))).toEqual([]);
+        expect(db.prepare("SELECT * FROM music_documents WHERE kind IN ('shouts','shoutHistory')").all()).toEqual([]);
+        if(reset){expect(db.prepare('SELECT * FROM music_entries').all()).toEqual([]);expect(db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toEqual([]);}
+        else {expect(db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='e-main'").get()).toEqual({created_by:'admin'});expect(db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toHaveLength(2);}
+        expect(db.prepare('SELECT command FROM music_catalog_actions').all()).toEqual([{command:reset?'reset_music':'delete_profile'}]);
+        expect(db.prepare('SELECT count(*) n FROM erasure_applied WHERE request_id=?').get(requestId)).toEqual({n:1});
+        expect(db.pragma('foreign_key_check')).toEqual([]);
+      }finally{db.close();}
+    }
+  });
+
   it('preserves every board column/trigger/ID/high-water mark and all bot states while projecting music recovery, explicit unlink and contact clearing', async () => {
     const s = setup(); const before = allFiles(s.source); const result = await importSnapshot(s.source, s.destination, stamp); expect(result.status).toBe('imported'); expect(allFiles(s.source)).toEqual(before);
     const old = new Database(join(s.source, 'board.sqlite3'), { readonly: true }); const db = openDatabase(join(s.destination, 'unified.sqlite3'));

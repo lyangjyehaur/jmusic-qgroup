@@ -140,7 +140,7 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     // Replay current account closures before resolving any music ownership.
     const boardCounts = db.transaction(() => recordBoard(db!)).immediate();
     const boardJournal = erasureJournal(db);
-    createPrivacy(db, boardJournal);
+    createPrivacy(db, {read:()=>boardJournal.read().filter(intent=>!('version' in intent&&intent.version===2)),append:entry=>boardJournal.append(entry)});
     const identityCopy = join(stage, '.source-identity.sqlite3');
     writePrivate(identityCopy, readPrivateFile(join(source, 'music/identity.sqlite3')));
     const identityDB = new Database(identityCopy, { readonly: true, fileMustExist: true }); let identity;
@@ -148,13 +148,30 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     const music = parseJson(decode(readPrivateFile(join(source, 'music/data.json'))));
     const ledger = readPrivateFile(join(source, 'music/erasures.jsonl')); const erased = musicErasures(decode(ledger));
     const memberKeys = new Set([...Object.keys(object(object(music, 'music').members, 'members')), ...identity.native_profiles!.map(row => String(row.qq))]);
-    for (const intent of boardJournal.read()) if ('kind' in intent && intent.kind !== 'account') for (const key of memberKeys) if (profileId(key) === intent.profileId) erased.set(key, intent.createdAt);
+    for (const intent of boardJournal.read()) if ('kind' in intent && intent.kind !== 'account') {
+      const ids=intent.version===2?new Set(intent.profiles.map(p=>p.id)):new Set([intent.profileId]);
+      for (const key of memberKeys) if (ids.has(profileId(key))) erased.set(key, intent.createdAt);
+    }
     writePrivate(join(stage, 'legacy-music.erasures.jsonl'), ledger);
     const report = db.transaction(() => {
       const imported = importMusic(db!, music, identity, erased, now.toISOString());
+      // Administrative intents apply only after importing their legacy music scopes.
+      // Captured reset entry IDs cannot return, and each action gets one audit record.
+      for(const intent of boardJournal.read())if('version' in intent&&intent.version===2){
+        if(intent.command==='delete_profile'){
+          const ids=new Set(intent.profiles.map(p=>p.id));
+          const raw=object(object(music,'music').entries,'entries');
+          for(const [id,value] of Object.entries(raw)){
+            const creator=object(value,'entry').createdBy;
+            if(typeof creator==='string'&&ids.has(profileId(creator)))db!.prepare("UPDATE music_entry_details SET created_by='admin' WHERE entry_id=?").run(id);
+          }
+        }
+      }
+      createPrivacy(db!,boardJournal);
       for (const { user_id: id } of db!.prepare('SELECT user_id FROM privacy_requests').all() as { user_id: string }[]) { detachLegacyAccount(db!, id); if (Object.keys(sharedRecords(db!, id)).length) db!.prepare("UPDATE privacy_requests SET status='shared_review' WHERE user_id=?").run(id); }
       const boardAfterErasure = recordBoard(db!, true);
-      const result = { board: boardCounts, boardAfterErasure, music: imported, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
+      const musicAfterErasure = {profiles:(db!.prepare('SELECT count(*) n FROM music_profiles WHERE erased_at IS NULL').get() as {n:number}).n,entries:(db!.prepare('SELECT count(*) n FROM music_entries').get() as {n:number}).n};
+      const result = { board: boardCounts, boardAfterErasure, music: imported, musicAfterErasure, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
       db!.prepare('INSERT INTO migration_runs VALUES(?,?,?,?)').run(fingerprint, JSON.stringify(files), JSON.stringify(result), now.toISOString()); check(db!); return result;
     }).immediate();
     for (const file of files.filter(file => file.path.startsWith('images/') || file.path.startsWith('music/walls/'))) {

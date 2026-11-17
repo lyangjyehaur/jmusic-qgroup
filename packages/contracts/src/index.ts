@@ -1,3 +1,5 @@
+import { ErasureProof } from './erasure-proof';
+export { ErasureProof } from './erasure-proof';
 import { z } from 'zod';
 export * from './activity-arrangements';
 export * from './activity-registration';
@@ -84,7 +86,7 @@ export const MusicClaimStatus = z.discriminatedUnion('status', [
   z.object({ status: z.literal('none') }),
   z.object({ status: z.enum(['pending','authorized','completed','unavailable']), claimId: z.string().uuid(), expiresAt: z.string(), profileId: z.string(), name: z.string(), legacyQQ: z.string(), targetNickname: z.string() }),
 ]);
-export const ErasureProof = z.object({ requestId: z.string().uuid(), secret: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
+
 export const EraseData = ErasureProof.extend({ target: z.enum(['music', 'account', 'both']), confirm: z.literal(true), profileId: z.string().max(80).nullable(), profileRevision: z.number().int().min(0) }).strict();
 export const ErasureResult = z.object({ requestId: z.string(), target: z.enum(['music', 'account', 'both']), status: z.enum(['completed', 'shared_review']) });
 export const PrivacySummary = z.object({ profile: Profile, activeEvents: z.number().int(), activePolls: z.number().int() });
@@ -134,3 +136,5 @@ export * from './music-trend';
 export * from './music-circles';
 export * from './music-shouts';
 export * from './admin-music-catalog';
+
+export * from './admin-music-erasure';

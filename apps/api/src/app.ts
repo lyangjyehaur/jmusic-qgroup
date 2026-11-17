@@ -1,3 +1,4 @@
+import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
@@ -90,6 +91,7 @@ export function createApp(options: AppOptions) {
     registerAdminPrivacy(app, db, admin, now);
     registerAdminMusic(app, db, admin, now);
     registerAdminMusicPins(app, db, admin, now);
+    registerAdminMusicErasure(app, db, admin, now, privacy);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);

@@ -1,7 +1,7 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { eraseLegacyProfile, detachLegacyAccount, type DB } from '@qgroup/database';
-import { EraseData, ErasureProof, type ErasureResult } from '@qgroup/contracts';
+import { AdminMusicErasureResult, EraseData, ErasureProof, type ErasureResult } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import { getProfile } from './repositories';
@@ -10,6 +10,7 @@ import { hash } from './security';
 import { erasureJournal, type ErasureJournal, type ErasureIntent, type StoredIntent } from './erasure-journal';
 import { prunePrivateImages } from './privacy-assets';
 import { clearMusicClaims } from './music-claim-state';
+import { invalidateMusicOwnership } from './music-ownership';
 
 type Result = z.infer<typeof ErasureResult>;
 const sharedChecks: Record<string, string[]> = {
@@ -39,8 +40,10 @@ function activeWork(db: DB, userId: string) {
   const activePolls = (db.prepare("SELECT count(*) n FROM time_polls WHERE owner_id=? AND status IN ('open','closed')").get(userId) as { n: number }).n;
   return { activeEvents, activePolls };
 }
-function eraseMusic(db: DB, profileId: string, userId: string, createdAt: string) {
-  if (db.prepare('SELECT 1 FROM users WHERE id=?').get(userId)) db.prepare('INSERT INTO music_account_epochs VALUES(?,1) ON CONFLICT(user_id) DO UPDATE SET epoch=epoch+1').run(userId);
+function eraseMusic(db: DB, profileId: string, userId: string | null, createdAt: string) {
+  const current = db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId) as {user_id:string|null}|undefined;
+  const owners = [...new Set([userId,current?.user_id].filter((id):id is string=>!!id&&!!db.prepare('SELECT 1 FROM users WHERE id=?').get(id)))];
+  invalidateMusicOwnership(db,profileId,owners);
   // Keep an ID-only tombstone, including when replay precedes an older profile snapshot.
   db.prepare(`INSERT INTO music_profiles(id,user_id,revision,updated_at,erased_at) VALUES(?,NULL,0,?,?)
     ON CONFLICT(id) DO UPDATE SET user_id=NULL,erased_at=excluded.erased_at`).run(profileId, createdAt, createdAt);
@@ -104,6 +107,27 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
       }
       return;
     }
+    if (!legacy && entry.version === 2) {
+      for (const profile of entry.profiles) {
+        // Administrative removal transfers public terms, never another member's selections.
+        const original=db.prepare('SELECT legacy_key FROM music_legacy_profiles WHERE profile_id=?').get(profile.id) as {legacy_key:string}|undefined;
+        db.prepare("UPDATE migration_map SET status='erasure_redacted' WHERE source='music' AND entity_type='entry' AND target_id IN (SELECT entry_id FROM music_entry_details WHERE created_by=? OR created_by=?)").run(profile.id,original?.legacy_key??profile.id);
+        db.prepare("UPDATE music_entry_details SET created_by='admin' WHERE created_by=? OR created_by=?").run(profile.id,original?.legacy_key??profile.id);
+        eraseMusic(db,profile.id,profile.userId,entry.createdAt);
+      }
+      if(entry.command==='reset_music')for(const id of entry.entries){
+        db.prepare('DELETE FROM music_selections WHERE entry_id=?').run(id);
+        db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
+        db.prepare('DELETE FROM music_entries WHERE id=?').run(id);
+        db.prepare("UPDATE migration_map SET status='deleted' WHERE source='music' AND entity_type='entry' AND target_id=?").run(id);
+      }
+      const actorId=entry.actorRef.startsWith('account:')?entry.actorRef.slice(8):null;
+      db.prepare('INSERT INTO music_catalog_actions(actor_id,actor_ref,command,entry_id,target_id,affected_profiles,created_at) VALUES(?,?,?,?,?,?,?)')
+        .run(actorId&&db.prepare('SELECT 1 FROM users WHERE id=?').get(actorId)?actorId:null,entry.actorRef,entry.command,entry.command==='delete_profile'?entry.profiles[0]!.id:'','',entry.profiles.length,entry.createdAt);
+      const result=AdminMusicErasureResult.parse({requestId,target:'admin_music',command:entry.command,status:'completed',profiles:entry.profiles.length,entries:entry.entries.length});
+      db.prepare('INSERT INTO privacy_receipts VALUES(?,?,?,?)').run(requestId,entry.secretHash,entry.signature,JSON.stringify(result));
+      db.prepare('INSERT INTO erasure_applied VALUES(?)').run(requestId);return;
+    }
     let status: Result['status'] = 'completed';
     if (!legacy && entry.kind !== 'account' && entry.profileId) eraseMusic(db, entry.profileId, entry.userId, entry.createdAt);
     if (legacy || entry.kind !== 'music') status = closeAccount(db, legacy ? entry.user_id : entry.userId, requestId, legacy ? entry.created_at : entry.createdAt);
@@ -126,11 +150,11 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
         try { recover(); } catch { throw new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503); }
       }
     },
-    receipt(requestId: string, secret: string) {
+    receipt(requestId: string, secret: string): Result | z.infer<typeof AdminMusicErasureResult> {
       const row = db.prepare('SELECT secret_hash,result_json FROM privacy_receipts WHERE request_id=?').get(requestId) as { secret_hash: string; result_json: string } | undefined;
       const candidate = Buffer.from(hash(secret), 'hex');
       if (!row || !timingSafeEqual(candidate, Buffer.from(row.secret_hash, 'hex'))) throw new DomainError('RECEIPT_NOT_FOUND', '尚未找到此操作的結果；請回原帳號確認後重試', 404);
-      return JSON.parse(row.result_json) as Result;
+      return JSON.parse(row.result_json) as Result | z.infer<typeof AdminMusicErasureResult>;
     },
     submit(entry: ErasureIntent) {
       const existing = db.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId) as { signature: string; secret_hash: string } | undefined;
@@ -155,7 +179,9 @@ export function registerPrivacy(app: FastifyInstance, db: DB, security: Security
     // Possession of a random 256-bit receipt secret proves access even after login revocation.
     // The secret is sent only in a JSON body, never a URL or log.
     const proof = ErasureProof.parse(request.body);
-    return privacy.receipt(proof.requestId, proof.secret);
+    const result=privacy.receipt(proof.requestId, proof.secret);
+    if(result.target==='admin_music')throw new DomainError('RECEIPT_NOT_FOUND','尚未找到此操作的結果',404);
+    return result;
   });
   app.post('/api/v2/me/privacy/erase', { config: { rateLimit: { max: 6, timeWindow: '1 minute' } } }, async request => {
     const input = EraseData.parse(request.body);

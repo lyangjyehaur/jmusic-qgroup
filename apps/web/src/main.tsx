@@ -1,3 +1,4 @@
+import { AdminMusicErasurePage } from './admin-music-erasure';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { createBrowserRouter, Link, RouterProvider } from 'react-router-dom';
@@ -79,7 +80,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'people/circles', element: <MusicCirclesPage /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },
   { path: 'me/music/details', element: <MusicFieldsPage /> },
-  { path: 'admin/music', element: <AdminMusicDirectory /> }, { path: 'admin/music/:id', element: <AdminMusicPage /> },
+  { path: 'admin/music', element: <AdminMusicDirectory /> }, { path: 'admin/music/:id/erase', element: <AdminMusicErasurePage /> }, { path: 'admin/music-reset', element: <AdminMusicErasurePage reset /> }, { path: 'admin/music/:id', element: <AdminMusicPage /> },
   { path: 'login', element: <Login /> }, { path: 'auth/confirm', element: <AuthConfirm /> }, { path: 'me/accounts', element: <Accounts /> }, { path: 'privacy', element: <Privacy /> }, { path: 'me/devices', element: <Devices /> }, { path: 'me/devices/accept', element: <AcceptDevice /> },
   { path: 'register', element: <Registration /> }, { path: 'admin/registration', element: <RegistrationAdmin /> },
   { path: 'me/profile', element: <AccountProfilePage /> },
