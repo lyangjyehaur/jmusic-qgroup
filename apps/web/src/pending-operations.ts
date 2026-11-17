@@ -19,6 +19,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
     else if(key===root+'music:claim:v1:'+scope){label='找回舊成分';to='/me/music/recover';standalone=true;}
     else if(key.startsWith(root+'music:fields:v1:'+scope+':')){label='成分資料';to='/me/music/details';}
     else if(key.startsWith(root+'music:contact:v1:'+scope+':')){label='聯絡 QQ';to='/me/music/contact';}
+    else if(key.startsWith(root+'music:entries:v1:'+scope+':')){const target=key.slice((root+'music:entries:v1:'+scope+':').length);if(target==='new'){label='建立詞條';to='/me/music/entries/new';}else{const match=/^([^:]{1,80}):(update|delete)$/.exec(target);if(!match)continue;label=match[2]==='delete'?'刪除詞條':'編輯詞條';to='/me/music/entries/'+segment(match[1]!)+(match[2]==='delete'?'/delete':'/edit');}}
     else{
       const activity=/^qgroup:rebuild:activity-draft:(?:(arrangements|registration|consent|lifecycle|invitations|claims|delegation|attendance|finance|settlement|rooms|poll-create|poll-vote|poll-manage):)?v1:([^:]+):(.+)$/.exec(key);
       const admin=/^qgroup:rebuild:admin-(privacy|music|music-pin|user):v1:([^:]+):[^:]+:(.+)$/.exec(key);

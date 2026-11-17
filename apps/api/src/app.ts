@@ -32,6 +32,7 @@ import { registerActivityInvitations } from './activity-invitations';
 import { registerActivityClaims } from './activity-claims';
 import { registerFinance } from './finance';
 import { registerActivityRooms } from './activity-room-overview';
+import { registerMusicCatalog } from './music-catalog';
 import { registerTimePolls } from './time-polls';
 import { registerSettlements } from './settlements';
 import { registerPaymentAssets } from './payment-codes';
@@ -96,6 +97,7 @@ export function createApp(options: AppOptions) {
     registerSettlements(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerTimePolls(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityRooms(app, db, security);
+    registerMusicCatalog(app, db, security, now);
     registerInbox(app, db, security, now);
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});

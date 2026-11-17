@@ -16,6 +16,8 @@ export function retireLegacyProfileProofs(db: DB, profileId: string) {
 
 /** Remove imported private fields and recovery proofs together with the live profile. */
 export function eraseLegacyProfile(db: DB, profileId: string, stamp: string) {
+  // Native entry creators use a profile ID. Erasure keeps the public term and other people's selections.
+  db.prepare("UPDATE music_entry_details SET created_by='' WHERE created_by=?").run(profileId);
   const row = db.prepare('SELECT legacy_key FROM music_legacy_profiles WHERE profile_id=?').get(profileId) as { legacy_key: string } | undefined;
   if (!row) return;
   const key = row.legacy_key;

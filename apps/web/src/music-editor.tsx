@@ -66,6 +66,8 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
       const result = await api('/me/music', Profile.unwrap(), { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-CSRF-Token': viewer.csrf, 'X-Account-Scope': viewer.scope, 'Idempotency-Key': pending.requestKey }, body: JSON.stringify(parsed.data) });
       setSaved(result); setDraft({ profileId: result.id, musicEpoch: draft.musicEpoch, revision: result.revision, selections: result.selections });
       queryClient.setQueryData(['private', viewer.scope, 'music', draft.musicEpoch], result);
+      void queryClient.invalidateQueries({ queryKey: ['music-catalog'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entries'] });
       setMessage('已保存。');
     } catch (error) {
       if (error instanceof ApiError && error.status < 500 && error.status !== 429) {
@@ -83,7 +85,7 @@ export function ProfileEditor({ viewer, initial, entries }: { viewer: Extract<Vi
       setMessage('已取得最新版本；你的選擇仍保留，請核對後再保存。');
     } catch (error) { setMessage(error instanceof Error ? error.message : '讀取失敗'); }
   }
-  return <><PageIntro title="我的成分" /><div className="page-actions">{saved ? <><Link to="/me/music/details">成分資料</Link><Link to="/me/music/contact">聯絡 QQ</Link><Link to={'/people/' + saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回舊成分</Link>}</div>{returnTo && <Link className="back" to={returnTo}>← 回到剛才的活動</Link>}
+  return <><PageIntro title="我的成分" /><div className="page-actions"><Link to="/me/music/entries">我的詞條</Link>{saved ? <><Link to="/me/music/details">成分資料</Link><Link to="/me/music/contact">聯絡 QQ</Link><Link to={'/people/' + saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回舊成分</Link>}</div>{returnTo && <Link className="back" to={returnTo}>← 回到剛才的活動</Link>}
     {blocker.state === 'blocked' && <Surface className="leave-prompt" role="alert"><Heading level={2}>還有未保存的選擇</Heading><Text>這個分頁已保留草稿，回來後可繼續編輯。</Text><Button onClick={() => blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={() => blocker.proceed()}>保留草稿並離開</Button></Surface>}
     {storageError && <p role="alert" className="notice">{storageError}</p>}
     {readError && <div role="alert" className="notice"><Text>{readError}</Text><Button variant="secondary" onClick={() => {

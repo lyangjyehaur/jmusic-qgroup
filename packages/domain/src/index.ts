@@ -11,6 +11,10 @@ export function musicNameKey(value: string) {
   const normalized = value.normalize('NFKC').replace(/[\u200b-\u200f\ufeff\u00ad]/g, '').replace(musicWhitespace, '');
   return Array.from(normalized, char => (legacyCasefold as Record<string, string>)[char] ?? char.toLowerCase()).join('');
 }
+/** Entry keys keep one separating space; member names remove all whitespace. */
+export function musicEntryKey(value: string) {
+  return pythonCasefold(musicText(value.normalize('NFKC').replace(/[\u200b-\u200f\ufeff\u00ad]/g, '')));
+}
 export class DomainError extends Error {
   constructor(public readonly code: string, message: string, public readonly status = 400) { super(message); }
 }

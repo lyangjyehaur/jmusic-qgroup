@@ -14,7 +14,8 @@ test('guest browses activity and music in one responsive shell', async ({ page }
   await expect(page.getByRole('heading', { name: '登入後才能保存成分' })).toBeVisible();
   await page.getByRole('navigation', { name: '主要導覽' }).getByRole('link', { name: '音樂', exact: true }).click();
   await page.getByRole('searchbox').fill('YOASOBI');
-  await expect(page.locator('.entry')).toHaveCount(1);
+  await expect(page.locator('.music-ranking li')).toHaveCount(1);
+  await expect(page.getByRole('link', { name: 'YOASOBI', exact: true })).toBeVisible();
   await page.goto('/activities');
   for (const width of [360, 390, 614, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });

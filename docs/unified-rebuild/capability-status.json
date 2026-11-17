@@ -2766,14 +2766,26 @@
       "legacy_evidence_group": "音樂",
       "implementation": [
         "apps/api/src/repositories.ts",
-        "apps/web/src/music.tsx"
+        "apps/web/src/music.tsx",
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music-entries.tsx"
       ],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "behavior_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-entries.spec.ts",
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "同一詞庫查閱已實作；分類 category、全部遷移詞條待完成。"
+      "remaining": "原生完整詞條／category／別名／原文與分類篩選已實作；正式副本、完整選取／後台與舊入口成套驗收待完成。"
     },
     {
       "capability_id": "M02",
@@ -2782,14 +2794,26 @@
       "required_behavior": "現有搜尋正規化、清空、`/` 快捷鍵與分類篩選可用",
       "legacy_evidence_group": "音樂前端",
       "implementation": [
-        "apps/web/src/music.tsx"
+        "apps/web/src/music.tsx",
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music-entries.tsx"
       ],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "behavior_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-entries.spec.ts",
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "名稱子字串搜尋可用；拼音／首字母／假名及分類／快捷鍵待完成。"
+      "remaining": "原生名稱／別名 NFKC、casefold、零寬與 whitespace、分類／類型、清空及斜線聚焦已實作；拼音／首字母／假名與成分編輯共用搜尋待完成。"
     },
     {
       "capability_id": "M03",
@@ -2880,13 +2904,27 @@
       "new_entry": "建立詞條／我的詞條",
       "required_behavior": "領域 2／細分 8、名稱至 24 字、正規化重名拒絕並指向既有詞條",
       "legacy_evidence_group": "音樂",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "領域 2／細分 8、名稱至 24 字、正規化重名拒絕並指向既有詞條"
+      "implementation": [
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entries.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-entries.spec.ts",
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生 2／8 建立額度、Unicode 24 字、名稱／別名重名指向、首次空白成分、精確重試與原建立清單已測；完整後台、舊 adapter、正式副本與跨服務驗收待完成。"
     },
     {
       "capability_id": "M08",
@@ -2894,13 +2932,27 @@
       "new_entry": "我的詞條",
       "required_behavior": "只本人建立者可改，重名檢查；管理員另有完整權限",
       "legacy_evidence_group": "音樂",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "只本人建立者可改，重名檢查；管理員另有完整權限"
+      "implementation": [
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entries.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-entries.spec.ts",
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "會員改名／分類／類型、原建立者授權、版本衝突、熟悉度保全與未知結果已測；管理員完整詞條維護、舊入口及正式副本成套驗收待完成。"
     },
     {
       "capability_id": "M09",
@@ -2908,13 +2960,27 @@
       "new_entry": "我的詞條",
       "required_behavior": "有人已選不能由建立者刪除，避免他人選擇被抹除",
       "legacy_evidence_group": "音樂",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "有人已選不能由建立者刪除，避免他人選擇被抹除"
+      "implementation": [
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entries.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-entries.spec.ts",
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生選用者刪除保護、確認／精確恢復、建立額度回收及成分刪除匿名化已測；完整後台、舊入口與正式副本成套驗收待完成。"
     },
     {
       "capability_id": "M10",
@@ -2922,13 +2988,27 @@
       "new_entry": "音樂排行",
       "required_behavior": "兩類獨立排序／展開；會員、詞條和近期統計保留",
       "legacy_evidence_group": "音樂、音樂前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "兩類獨立排序／展開；會員、詞條和近期統計保留"
+      "implementation": [
+        "packages/contracts/src/music-catalog.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entries.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-entries.spec.ts",
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生領域／細分選用人數與兩類獨立排序、相同人數 Unicode 排序已實作；排行展開、會員／詞條／近期統計及正式副本驗收待完成。"
     },
     {
       "capability_id": "M11",
