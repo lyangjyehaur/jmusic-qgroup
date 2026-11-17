@@ -1,6 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
+import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 const origin = 'http://127.0.0.1:5082';
 async function login(context: BrowserContext) { await context.addCookies([{ name: 'kanban_session', value: 'fixture-registration-admin', url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function closeMember(browser: Browser, shared: boolean) {
@@ -34,18 +35,18 @@ test('an unknown review result survives reload with the original operation key a
   await expect(page.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible(); await expect(page.getByText('申請狀態：已完成', { exact: true })).toBeVisible(); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]);
 });
 test('competing review notes require an explicit fresh assessment and preserve the original input', async ({ page, context, browser }) => {
-  const id = await closeMember(browser, true); await login(context); const other = await context.newPage();
+  const id = await closeMember(browser, true); await login(context);const otherContext=await browser.newContext({baseURL:origin});await login(otherContext);const other=await otherContext.newPage();
   await page.goto('/admin/privacy/' + id); await other.goto('/admin/privacy/' + id); await fillReview(page, '我的待審說明'); await fillReview(other, '另一管理頁的說明'); await other.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(other.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(page.getByText('申請或共享紀錄已變更，請核對目前資料', { exact: true })).toBeVisible(); await expect(page.getByLabel('處理說明', { exact: true })).toHaveValue('我的待審說明');
-  await page.getByRole('button', { name: '核對目前範圍，保留說明', exact: true }).click(); await expect(page.getByRole('checkbox')).not.toBeChecked(); await page.getByRole('checkbox').check(); await page.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(page.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible(); await other.close();
+  await page.getByRole('button', { name: '核對目前範圍，保留說明', exact: true }).click(); await expect(page.getByRole('checkbox')).not.toBeChecked(); await page.getByRole('checkbox').check(); await page.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(page.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible(); await otherContext.close();
 });
 test('unwritable and damaged review drafts block writes, preserve recovery data and clear on cross-tab admin logout', async ({ page, context, browser }) => {
   const id = await closeMember(browser, true); await login(context); let writes = 0;
-  await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('Synthetic quota failure', 'QuotaExceededError'); }; });
-  page.on('request', request => { if (request.method() === 'POST') writes++; }); await page.goto('/admin/privacy/' + id); await fillReview(page, '未送出的核對說明'); await expect(page.getByRole('button', { name: '保存處理說明', exact: true })).toBeDisabled(); await expect(page.getByText('無法保存審核草稿，尚未提交修改。', { exact: true })).toBeVisible(); expect(writes).toBe(0);
-  const clean = await context.newPage(); await clean.goto('/admin/privacy/' + id); await expect(clean.getByLabel('處理說明', { exact: true })).toBeVisible();
-  await clean.evaluate(() => { const key = Object.keys(sessionStorage).find(key => key.startsWith('qgroup:rebuild:admin-privacy:'))!; sessionStorage.setItem(key, 'damaged synthetic review'); }); await clean.reload(); await expect(clean.getByText('無法讀取審核草稿，原始內容已保留。', { exact: true })).toBeVisible();
-  await clean.getByRole('button', { name: '保全原稿後繼續', exact: true }).click(); expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged synthetic review');
+  await page.goto('/admin/privacy/'+id);await denyDraftWrites(page,'admin-privacy:');page.on('request',request=>{if(request.method()==='POST')writes++;});
+  await fillReview(page,'未送出的核對說明');await page.getByRole('button',{name:'保存處理說明',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/admin/privacy/'+id);await clean.getByLabel('處理說明',{exact:true}).fill('保全前說明');await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
+  await damageDraft(clean,'admin-privacy:','damaged synthetic review');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await expect(clean.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();
+  await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic review');
   const logout = await context.newPage(); await logout.goto('/admin'); await logout.getByRole('checkbox').check(); await logout.getByRole('button', { name: '登出管理', exact: true }).click();
-  await expect(clean.getByLabel('管理救援憑證', { exact: true })).toBeVisible(); await expect.poll(() => clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:admin-')))).toEqual([]); await clean.close(); await logout.close();
+  await expect(clean.getByLabel('管理救援憑證', { exact: true })).toBeVisible(); await expect.poll(async()=>(await durableRows(clean)).filter(row=>row.key.startsWith('qgroup:rebuild:admin-'))).toEqual([]);expect(await durableRows(clean,'versions')).toEqual([]); await clean.close(); await logout.close();
 });

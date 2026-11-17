@@ -3,7 +3,7 @@ const databaseName = 'qgroup-reviewed-drafts-v1';
 const stores = ['drafts', 'versions', 'epochs'] as const;
 type Row = { key: string; scope: string; revision: number; raw: string | null; at: number };
 export type DraftVersion = { id: string; key: string; scope: string; raw: string; at: number; reason: string };
-export type DraftHandle = { key: string; scope: string; revision: number; deviceEpoch: number; musicEpoch: number };
+export type DraftHandle = { key: string; scope: string; revision: number; deviceEpoch: number; musicEpoch: number; adminEpoch: number };
 export class DraftConflict extends Error {}
 export class DraftExpired extends Error {}
 let opening: Promise<IDBDatabase> | undefined;
@@ -42,6 +42,8 @@ async function transaction<T>(mode: IDBTransactionMode, work: (tx: IDBTransactio
   catch (error) { try { tx.abort(); } catch { /* Already completed/aborted. */ } await completion.catch(() => {}); throw error; }
 }
 const isMusic = (key: string) => key.startsWith('qgroup:rebuild:music:');
+const isAdmin = (key: string) => key.startsWith('qgroup:rebuild:admin-');
+const expiredMessage = (key:string) => isAdmin(key) ? '此管理原稿已因登出或權限變更失效，請重新載入頁面。' : '此原稿已因登出或資料刪除失效，請重新載入頁面。';
 function validate(key: string, scope: string) {
   // Explicit allowlist: never import PIN, OAuth, device or privacy receipt secrets.
   const prefix = 'qgroup:rebuild:';
@@ -53,6 +55,7 @@ function validate(key: string, scope: string) {
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
     key === prefix + 'payment-codes:v1:' + scope ||
     key === prefix + 'account-profile:v1:' + scope ||
+    new RegExp('^qgroup:rebuild:admin-(?:user|privacy):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
     new RegExp('^qgroup:rebuild:music:(?:fields|contact):v1:' + scope + ':[0-9]+:[^:]{1,80}$').test(key) ||
     key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
@@ -63,8 +66,8 @@ function validate(key: string, scope: string) {
 }
 async function epochs(tx: IDBTransaction, scope: string) {
   const store = tx.objectStore('epochs');
-  const [device, music] = await Promise.all([request(store.get('device')), request(store.get('music:' + scope))]);
-  return { deviceEpoch: (device ?? 0) as number, musicEpoch: (music ?? 0) as number };
+  const [device, music, admin] = await Promise.all([request(store.get('device')), request(store.get('music:' + scope)), request(store.get('admin:' + scope))]);
+  return { deviceEpoch: (device ?? 0) as number, musicEpoch: (music ?? 0) as number, adminEpoch: (admin ?? 0) as number };
 }
 function archive(tx: IDBTransaction, key: string, scope: string, raw: string, reason: string) {
   tx.objectStore('versions').put({ id: crypto.randomUUID(), key, scope, raw, reason, at: Date.now() } satisfies DraftVersion);
@@ -77,7 +80,7 @@ export async function openDraft(key: string, scope: string) {
     const currentEpochs = await epochs(tx, scope), store = tx.objectStore('drafts');
     let row = await request(store.get(key)) as Row | undefined;
     if (row && row.scope !== scope) throw Error('原稿帳號不符');
-    if (legacy !== null && currentEpochs.deviceEpoch === 0 && (!isMusic(key) || currentEpochs.musicEpoch === 0)) {
+    if (legacy !== null && currentEpochs.deviceEpoch === 0 && (!isMusic(key) || currentEpochs.musicEpoch === 0) && (!isAdmin(key) || currentEpochs.adminEpoch === 0)) {
       if (!row) {
         row = { key, scope, revision: 1, raw: legacy, at: Date.now() };
         store.put(row);
@@ -93,7 +96,7 @@ export async function saveDraft(handle: DraftHandle, raw: string, preserve = fal
   validate(handle.key, handle.scope);
   const result = await transaction('readwrite', async tx => {
     const now = await epochs(tx, handle.scope);
-    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch)
+    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch || isAdmin(handle.key) && now.adminEpoch !== handle.adminEpoch)
       return { expired: true } as const;
     const store = tx.objectStore('drafts'), row = await request(store.get(handle.key)) as Row | undefined;
     if (row && row.scope !== handle.scope) throw Error('原稿帳號不符');
@@ -107,7 +110,7 @@ export async function saveDraft(handle: DraftHandle, raw: string, preserve = fal
     store.put(next);
     return { handle: { ...handle, revision: next.revision } };
   });
-  if ('expired' in result) throw new DraftExpired('此原稿已因登出或資料刪除失效，請重新載入頁面。');
+  if ('expired' in result) throw new DraftExpired(expiredMessage(handle.key));
   if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
   return result.handle;
 }
@@ -137,12 +140,26 @@ export function clearDurableDrafts(scope?: string) {
   });
 }
 
+/** Only this account's management drafts expire; member drafts and other account scopes stay intact. */
+export function clearDurableAdminDrafts(scope: string) {
+  if (!/^[a-f0-9]{64}$/.test(scope)) return Promise.reject(Error('原稿帳號不符'));
+  return transaction('readwrite', async tx => {
+    const store=tx.objectStore('epochs'),epochKey='admin:'+scope;
+    const epoch=(await request(store.get(epochKey))??0) as number;store.put(epoch+1,epochKey);
+    for(const name of ['drafts','versions'] as const){
+      const entries=tx.objectStore(name);
+      for(const row of await request(entries.getAll()) as (Row & DraftVersion)[])
+        if(row.scope===scope&&isAdmin(row.key))entries.delete(name==='drafts'?row.key:row.id);
+    }
+  });
+}
+
 /** Retire a resolved source and optionally seed its server-assigned target in the same commit. */
 export async function retireDraft(handle: DraftHandle, sourceRaw: string, target?: {key: string; raw: string}) {
   validate(handle.key, handle.scope); if (target) { validate(target.key, handle.scope); if(target.key===handle.key)throw Error('來源與目標原稿不能相同'); }
   const result = await transaction('readwrite', async tx => {
     const now = await epochs(tx, handle.scope);
-    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch) return {expired:true} as const;
+    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch || isAdmin(handle.key) && now.adminEpoch !== handle.adminEpoch) return {expired:true} as const;
     const store = tx.objectStore('drafts'), row = await request(store.get(handle.key)) as Row | undefined;
     if (row?.scope !== handle.scope || row.revision !== handle.revision) {
       archive(tx, handle.key, handle.scope, sourceRaw, '完成操作時的分頁衝突'); return {conflict:true} as const;
@@ -157,7 +174,7 @@ export async function retireDraft(handle: DraftHandle, sourceRaw: string, target
     store.put({...row,revision,raw:null,at:Date.now()});
     return {handle:{...handle,revision}};
   });
-  if ('expired' in result) throw new DraftExpired('此原稿已因登出或資料刪除失效，請重新載入頁面。');
+  if ('expired' in result) throw new DraftExpired(expiredMessage(handle.key));
   if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
   return result.handle;
 }

@@ -7,12 +7,16 @@ import { AdminSession, Ok, type Viewer } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { authHeaders } from './auth';
 import { announceAccountChange, clearDeviceDrafts } from './account-session';
+import { clearDurableAdminDrafts } from './draft-store';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 export type Access = z.infer<typeof AdminSession>;
 export const adminHeaders = (viewer: Viewer, access: Access) => ({ ...authHeaders(viewer), 'X-Admin-CSRF': access.adminCsrf });
-export function clearAdminDrafts() {
-  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:admin-')) sessionStorage.removeItem(key); }
-  catch { /* Revoked server authority remains enforced when local storage is unavailable. */ }
+export async function clearAdminDrafts(scope: string) {
+  let sessionFailed=false;
+  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:admin-') && key.includes(':' + scope + ':')) sessionStorage.removeItem(key); }
+  catch { sessionFailed=true; }
+  await clearDurableAdminDrafts(scope);
+  if(sessionFailed)throw Error('無法清除分頁管理原稿');
 }
 export function AdminGate({ children }: { children: (viewer: Viewer, access: Access) => ReactNode }) {
   const session = useQuery(sessionQuery);
@@ -22,8 +26,16 @@ function AdminAuthority({ viewer, children }: { viewer: Viewer; children: (viewe
   const client = useQueryClient();
   const access = useQuery({ queryKey: ['private', viewer.scope, 'admin-session'], queryFn: () => api('/admin/session', AdminSession, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: 'always', refetchInterval: 30000 });
   const denied = access.error instanceof ApiError && [401, 403].includes(access.error.status);
-  useEffect(() => { if (denied) { clearAdminDrafts(); client.removeQueries({ queryKey: ['private', viewer.scope], predicate: query => String(query.queryKey[2]).startsWith('admin-') && query.queryKey[2] !== 'admin-session' }); } }, [denied, client, viewer.scope]);
-  return access.isPending ? <Notice>正在確認管理權限…</Notice> : denied ? <RescueLogin viewer={viewer} reload={async () => { const result = await access.refetch(); return result.isSuccess || result.error instanceof ApiError && [401, 403].includes(result.error.status); }} /> : access.error ? <Failure error={access.error} retry={() => void access.refetch()} /> : <>{children(viewer, access.data)}</>;
+  useEffect(() => { if (denied) { client.removeQueries({ queryKey: ['private', viewer.scope], predicate: query => String(query.queryKey[2]).startsWith('admin-') && query.queryKey[2] !== 'admin-session' }); } }, [denied, client, viewer.scope]);
+  return access.isPending ? <Notice>正在確認管理權限…</Notice> : denied ? <RevokedAdmin viewer={viewer} reload={async () => { const result = await access.refetch(); return result.isSuccess || result.error instanceof ApiError && [401, 403].includes(result.error.status); }} /> : access.error ? <Failure error={access.error} retry={() => void access.refetch()} /> : <>{children(viewer, access.data)}</>;
+}
+function RevokedAdmin({ viewer, reload }: { viewer: Viewer; reload: () => Promise<boolean> }) {
+  const [state,setState]=useState<'clearing'|'failed'|'ready'>('clearing');
+  async function clear(){setState('clearing');try{await clearAdminDrafts(viewer.scope);setState('ready');}catch{setState('failed');}}
+  useEffect(()=>{void clear();},[viewer.scope]);
+  if(state==='clearing')return <Notice>正在清除失效的管理原稿…</Notice>;
+  if(state==='failed')return <Notice>管理權限已失效，但本機管理原稿清除失敗。請重試清除。<Button onClick={()=>void clear()}>重試清除本機管理原稿</Button></Notice>;
+  return <RescueLogin viewer={viewer} reload={reload}/>;
 }
 function RescueLogin({ viewer, reload }: { viewer: Viewer; reload: () => Promise<boolean> }) {
   const [key, setKey] = useState(''); const [busy, setBusy] = useState(false); const [unknown, setUnknown] = useState(false); const [message, setMessage] = useState('');
@@ -59,7 +71,7 @@ function AdminMenu({ viewer, access, onCleanupFailure }: { viewer: Viewer; acces
     try {
       const result = await api('/admin/logout', z.object({ logoutAccount: z.boolean() }), { method: 'POST', headers: adminHeaders(viewer, access), body: JSON.stringify({ confirm: true }) });
       accountLoggedOut = result.logoutAccount;
-      clearAdminDrafts(); try { if (result.logoutAccount) { try { await clearDeviceDrafts(); } catch (error) { onCleanupFailure(); throw error; } } } finally { announceAccountChange(result.logoutAccount); }
+      try { if (result.logoutAccount) { try { await clearDeviceDrafts(); } catch (error) { onCleanupFailure(); throw error; } } } finally { announceAccountChange(result.logoutAccount); }
       await client.cancelQueries({ queryKey: ['private'] });
       const next = await client.fetchQuery({ ...sessionQuery, staleTime: 0 });
       client.removeQueries({ queryKey: ['private'], predicate: query => query.queryKey[1] !== next.scope || query.queryKey[2] !== 'admin-session' });

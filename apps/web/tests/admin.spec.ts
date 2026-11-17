@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
+import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 const origin = 'http://127.0.0.1:5082'; const rescueKey = 'synthetic-admin-rescue-' + 'x'.repeat(32);
 async function login(context: BrowserContext, user = 'registration-admin') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function metadata(page: Page, note: string, qq = '') { await page.getByLabel('內部備註', { exact: true }).fill(note); await page.getByLabel('人工 QQ', { exact: true }).fill(qq); await page.getByRole('button', { name: '保存備註', exact: true }).click(); }
@@ -37,21 +38,21 @@ test('unreadable metadata responses retain the exact operation through reload an
   await expect(page.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible(); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]);
   const session = await (await context.request.get('/api/v2/session')).json(); const user = await (await context.request.get('/api/v2/admin/users/bob', { headers: { 'X-Account-Scope': session.scope } })).json(); expect(user.metadataRevision).toBe(1);
 });
-test('conflicting admin metadata preserves input until an explicit rebase', async ({ page, context }) => {
-  await login(context); const other = await context.newPage(); await other.goto('/admin/users/bob'); await page.goto('/admin/users/bob');
+test('conflicting admin metadata preserves input until an explicit rebase', async ({ page, context, browser }) => {
+  await login(context); const otherContext=await browser.newContext({baseURL:origin});await login(otherContext);const other=await otherContext.newPage();await other.goto('/admin/users/bob');await page.goto('/admin/users/bob');
   await page.getByLabel('內部備註', { exact: true }).fill('保留我的核對說明'); await metadata(other, '另一個管理頁的說明'); await expect(other.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '保存備註', exact: true }).click(); await expect(page.getByText('備註或人工 QQ 已被修改，請核對目前版本', { exact: true })).toBeVisible();
   await expect(page.getByLabel('內部備註', { exact: true })).toHaveValue('保留我的核對說明'); await page.getByRole('button', { name: '核對目前資料，保留輸入', exact: true }).click();
-  await page.getByRole('button', { name: '保存備註', exact: true }).click(); await expect(page.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible(); await other.close();
+  await page.getByRole('button', { name: '保存備註', exact: true }).click(); await expect(page.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible(); await otherContext.close();
 });
 test('storage failures block writes and damaged private admin drafts can be preserved', async ({ page, context }) => {
-  await login(context); await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('Synthetic quota failure', 'QuotaExceededError'); }; });
-  let writes = 0; page.on('request', request => { if (request.method() === 'POST') writes++; });
-  await page.goto('/admin/users/bob'); await page.getByLabel('內部備註', { exact: true }).fill('不可遺失的備註'); await expect(page.getByRole('button', { name: '保存備註', exact: true })).toBeDisabled(); await expect(page.getByText('無法保存管理草稿，尚未提交修改。', { exact: true })).toBeVisible(); expect(writes).toBe(0);
-  const clean = await context.newPage(); await clean.goto('/admin/users/bob'); await expect(clean.getByLabel('內部備註', { exact: true })).toBeVisible();
-  await clean.evaluate(() => { const key = Object.keys(sessionStorage).find(key => key.startsWith('qgroup:rebuild:admin-user:'))!; sessionStorage.setItem(key, 'damaged synthetic admin draft'); }); await clean.reload();
-  await expect(clean.getByText('無法讀取此帳號的管理草稿，原始內容已保留。', { exact: true })).toBeVisible(); await clean.getByRole('button', { name: '保全原稿後繼續', exact: true }).click();
-  expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged synthetic admin draft'); await clean.close();
+  await login(context);await page.goto('/admin/users/bob');await denyDraftWrites(page,'admin-user:');
+  let writes=0;page.on('request',request=>{if(request.method()==='POST')writes++;});
+  await metadata(page,'不可遺失的備註');await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/admin/users/bob');await clean.getByLabel('內部備註',{exact:true}).fill('保全前原稿');await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
+  await damageDraft(clean,'admin-user:','damaged synthetic admin draft');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();
+  await expect(clean.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();
+  expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic admin draft');await clean.close();
 });
 test('a lost rescue login response is checked without saving or resending the credential, and rescue logout retains member login', async ({ page, context }) => {
   await login(context, 'bob'); let logins = 0;
@@ -68,7 +69,7 @@ test('account administrator logout clears this device and other tabs private adm
   await login(context); const other = await context.newPage(); await other.goto('/admin/users/bob'); await other.getByLabel('內部備註', { exact: true }).fill('此分頁的管理草稿');
   await page.goto('/admin'); await page.getByRole('checkbox', { name: '確認登出此裝置的全部帳號與管理授權，其他裝置不受影響', exact: true }).check(); await page.getByRole('button', { name: '登出管理', exact: true }).click();
   await expect(page.getByLabel('管理救援憑證', { exact: true })).toBeVisible(); await expect(other.getByLabel('管理救援憑證', { exact: true })).toBeVisible();
-  await expect(other.getByLabel('內部備註', { exact: true })).toHaveCount(0); await expect.poll(() => other.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:admin-user:')))).toEqual([]); expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(false); await other.close();
+  await expect(other.getByLabel('內部備註', { exact: true })).toHaveCount(0); await expect.poll(async()=>(await durableRows(other)).filter(row=>row.key.startsWith('qgroup:rebuild:admin-user:'))).toEqual([]);expect(await durableRows(other,'versions')).toEqual([]); expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(false); await other.close();
 });
 for (const mode of ['account', 'credential'] as const) test(`an unreadable ${mode} administrator logout is checked against the current session without a second logout`, async ({ page, context }) => {
   await login(context, mode === 'account' ? 'registration-admin' : 'bob'); await page.goto('/admin');
