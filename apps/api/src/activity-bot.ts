@@ -1,12 +1,14 @@
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
-import { BOT_MAX_CHARS, botContentProblem, botLength, botLocalTime, botMoment, botRosterName, botStartCountdown, botStrip, botTimeChange, renderBotBroadcast, renderBotTemplate, withBotRoster } from '@qgroup/domain';
+import { BOT_BLANK, botPlainText, BOT_MAX_CHARS, botContentProblem, botLength, botLocalTime, botMoment, botRosterName, botStartCountdown, botStrip, botTimeChange, renderBotBroadcast, renderBotTemplate, withBotRoster } from '@qgroup/domain';
 import { eventRow, legacyStamp, type EventRow } from './activity-arrangements';
 import { hash } from './security';
+import { settlementDetail, settlementVersion } from './settlement-context';
+import { settlementNotice } from './settlement-notice';
 
-const labels={activity_published:'活动发起',formation_confirmed:'已成团',conditions_changed:'安排变更',event_started:'活动开始',event_finished:'活动结束',event_cancelled:'活动取消',deadline_reminder:'报名即将截止',estimated_over_reminder:'活动时间已到',registration_paused:'暂停报名',registration_resumed:'恢复报名',registration_added:'有人报名',registration_changed:'报名变动',ownership_changed:'管理交接',finance_closed:'账务已结清',finance_reopened:'账务重新核对'};
+const labels={activity_published:'活动发起',formation_confirmed:'已成团',conditions_changed:'安排变更',event_started:'活动开始',event_finished:'活动结束',event_cancelled:'活动取消',deadline_reminder:'报名即将截止',estimated_over_reminder:'活动时间已到',registration_paused:'暂停报名',registration_resumed:'恢复报名',registration_added:'有人报名',registration_changed:'报名变动',ownership_changed:'管理交接',finance_closed:'账务已结清',finance_reopened:'账务重新核对',settlement_updated:'结算发布'};
 type Kind=keyof typeof labels;
-const allKinds=['time_poll_published',...Object.keys(labels),'settlement_updated'];
+const allKinds=['time_poll_published',...Object.keys(labels)];
 const rosterKinds=new Set<Kind>(['activity_published','formation_confirmed','conditions_changed','deadline_reminder','registration_paused','registration_resumed']);
 const reminders=['deadline_reminder','estimated_over_reminder'] as const;
 export interface ActivityBotDefaults {enabled?:boolean;scheduleEnabled?:boolean;broadcastKinds?:string[];baseURL?:string;keyboard?:boolean;personalQueue?:boolean}
@@ -39,26 +41,32 @@ function withCountdown(text:string,countdown:string,markdown=false){if(!countdow
 export function renderActivityBot(config:Policy,kind:Kind,context:Context,now:Date,markdown=false):string|null{
   const timing=context._countdown_event;const countdown=botStartCountdown(timing&&typeof timing==='object'&&!Array.isArray(timing)?timing:null,now);
   const roster=rosterKinds.has(kind)&&Array.isArray(context._roster_lines)?context._roster_lines:null;
-  if(!markdown){const text=Object.hasOwn(config.templates,kind)?renderBotTemplate(config.templates,kind,context)!:String(context._default_text);return withBotRoster(withCountdown(text,countdown),roster);}
+  const required=kind==='settlement_updated'?String(context._settlement_notice??''):'';
+  const notice=required.split('\n').filter(line=>botStrip(line));
+  function withoutNotice(lines:string[]){const result=[...lines];if(!notice.length)return result;for(let i=result.length-notice.length;i>=0;i--)if(notice.every((line,j)=>result[i+j]===line)){const start=i>0&&result[i-1]==='逐人应付：'?i-1:i;result.splice(start,i+notice.length-start);}return result;}
+  if(!markdown){let text=Object.hasOwn(config.templates,kind)?renderBotTemplate(config.templates,kind,context)!:String(context._default_text);if(required&&!text.includes(required)){text+='\n\n'+required;if(botLength(text)>3800)text=String(context._default_text);}return withBotRoster(withCountdown(text,countdown),roster);}
+  if(notice.length)context={...context,details:withoutNotice(String(context.details??'').split('\n').filter(line=>botStrip(line))).join('\n')};
   let custom:string|null;try{custom=renderBotTemplate(config.templates,kind,context,true);}catch{return null;}
   let text:string;
-  if(custom)text=withCountdown(custom,countdown,true);
+  if(custom){text=withCountdown(custom,countdown,true);if(notice.length)text+='\n'+BOT_BLANK+'\n## 逐人应付\n'+notice.map(line=>'- '+botPlainText(line)).join('\n');}
   else{
     const url=String(context.url??'');if(!url)return null;
-    const facts=Array.isArray(context._details_lines)?context._details_lines:String(context.details??'').split('\n').filter(line=>botStrip(line));
+    const facts=withoutNotice(Array.isArray(context._details_lines)?context._details_lines:String(context.details??'').split('\n').filter(line=>botStrip(line)));
     const comparison=kind==='conditions_changed'?botTimeChange(context.previous_starts_at,context.starts_at):null;
-    text=renderBotBroadcast(String(context._label??labels[kind]),String(context.title??''),facts,url,{systemFacts:[...(countdown?['- **'+countdown+'**']:[]),...(comparison?[comparison]:[])]});
+    text=renderBotBroadcast(String(context._label??labels[kind]),String(context.title??''),facts,url,{notice,systemFacts:[...(countdown?['- **'+countdown+'**']:[]),...(comparison?[comparison]:[])]});
   }
   if(countdown&&botLength(text)>BOT_MAX_CHARS)return renderActivityBot(config,kind,{...context,_countdown_event:null},now,true);
   text=withBotRoster(text,roster,true);return botContentProblem(text)?null:text;
 }
 export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Policy,now:Date,defaults:ActivityBotDefaults={},attendeeIds?:string[]){
   if(!botShareable(event))return null;
-  const actions:Partial<Record<Kind,string>>={activity_published:'join',conditions_changed:'conditions',event_finished:'settlement',event_cancelled:'finance',deadline_reminder:'join',estimated_over_reminder:'manage',finance_closed:'finance',finance_reopened:'finance'};
+  const actions:Partial<Record<Kind,string>>={activity_published:'join',conditions_changed:'conditions',event_finished:'settlement',event_cancelled:'finance',deadline_reminder:'join',estimated_over_reminder:'manage',finance_closed:'finance',finance_reopened:'finance',settlement_updated:'settlement'};
   const url=botActivityURL(event.id,actions[kind],defaults),when=botLocalTime(event.starts_at,event.timezone),deadline=botLocalTime(event.deadline,event.timezone),title=cut(event.title,40);
   const {confirmed,waiting,pending}=counts(db,event.id);const head='【'+labels[kind]+'】'+title;
   let lines:string[],buttons:Button[];
-  if(kind==='activity_published'){
+  const settlement=kind==='settlement_updated'?settlementDetail(db,event.id):null,settlementLines=settlement?.group_notice?settlementNotice(settlement):[],billVersion=kind==='settlement_updated'?settlementVersion(db,event.id):0;
+  if(kind==='settlement_updated'){lines=[head+'（第 '+billVersion+' 版）','每人应付与付款归属已发布，请到站内查看。',...(settlementLines.length?['','逐人应付：',...settlementLines]:[]),'',url];buttons=[['查看我的','/我的',''],['活动页','',url]];
+  }else if(kind==='activity_published'){
     lines=[head,'时间：'+when,'地点：'+event.location,'报名截止：'+deadline];if(event.fee_policy)lines.push('费用：'+cut(event.fee_policy,120));if(event.minimum_participants)lines.push('最低成团：'+event.minimum_participants+' 人');if(event.description)lines.push(cut(event.description,120));lines.push('',url);buttons=[['我要报名','',url],['看名额','/名额',''],['待办','/待办','']];
   }else if(kind==='formation_confirmed'){lines=[head,'发起者已确认成团，当前正式报名 '+confirmed+' 人','时间：'+when,'地点：'+event.location,'',url];buttons=[['活动详情','',url],['看名额','/名额','']];
   }else if(kind==='conditions_changed'){lines=[head+'（第 '+event.conditions_version+' 版）',cut(event.change_summary||'重要安排有变更',120),'原报名与原约定保留，请到站内逐人确认。'];if(pending)lines.push('待确认：'+pending+' 人');lines.push('',url);buttons=[['去确认','',url],['待办','/待办','']];
@@ -76,18 +84,21 @@ export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Po
   }
   const original=lines.join('\n');lines=original.split('\n');let previous='';
   try{const row=db.prepare('SELECT snapshot_json FROM event_conditions WHERE event_id=? AND version<? ORDER BY version DESC LIMIT 1').get(event.id,event.conditions_version) as {snapshot_json:string}|undefined;const prior=row?JSON.parse(row.snapshot_json):null;previous=prior?.starts_at?botLocalTime(prior.starts_at,event.timezone):'';}catch{/* Optional old comparison history never breaks composition. */}
-  const context:Context={heading:lines[0]!,details:botStrip(lines.slice(1,-1).join('\n')),url:lines.at(-1)!,title,starts_at:when,previous_starts_at:previous,deadline,location:event.location,confirmed:String(confirmed),waiting:String(waiting),fee_policy:cut(event.fee_policy||'',120),description:cut(event.description||'',120),version:String(event.conditions_version),change_summary:cut(event.change_summary||'',120),cancellation_reason:cut(event.cancellation_reason||'',120),_default_text:original,_countdown_event:{starts_at:event.starts_at,timezone:event.timezone,lifecycle:event.lifecycle},_label:labels[kind],_details_lines:lines.slice(1,-1).filter(line=>botStrip(line))};
+  const context:Context={heading:lines[0]!,details:botStrip(lines.slice(1,-1).join('\n')),url:lines.at(-1)!,title,starts_at:when,previous_starts_at:previous,deadline,location:event.location,confirmed:String(confirmed),waiting:String(waiting),fee_policy:cut(event.fee_policy||'',120),description:cut(event.description||'',120),version:String(billVersion||event.conditions_version),change_summary:cut(event.change_summary||'',120),cancellation_reason:cut(event.cancellation_reason||'',120),_default_text:original,_countdown_event:{starts_at:event.starts_at,timezone:event.timezone,lifecycle:event.lifecycle},_label:labels[kind],_details_lines:lines.slice(1,-1).filter(line=>botStrip(line))};
+  if(settlementLines.length)context._settlement_notice=settlementLines.join('\n');
   if(rosterKinds.has(kind))context._roster_lines=botRosterLines(db,event);
   const text=renderActivityBot(config,kind,context,now)!;const markdown=renderActivityBot(config,kind,context,now,true);
   return {text,markdown,context,buttons};
 }
 export function createActivityBot(db:DB,now:()=>Date,defaults:ActivityBotDefaults={}){
-  function enqueue(event:EventRow,kind:Kind,planned:NonNullable<ReturnType<typeof buildActivityBotMessage>>,policy:Policy,options:{factKey:string;dueAt?:string;scheduleKey?:string}){
+  function enqueue(event:EventRow,kind:Kind,planned:NonNullable<ReturnType<typeof buildActivityBotMessage>>,policy:Policy,options:{factKey:string;dueAt?:string;scheduleKey?:string;settlementVersion?:number;image?:{kind:string;name:string;digest:string}}){
     if(!policy.enabled||!policy.broadcast_kinds.includes(kind)||!botShareable(event))return false;
     const target=policy.groups===null?'':policy.groups.find(group=>group.broadcast)?.id;if(target===undefined)return false;
     const payload:Record<string,unknown>={text:planned.text,msg_type:0,_template_context:planned.context};if(planned.markdown&&botStrip(planned.markdown))payload.markdown_text=planned.markdown;
+    if(options.settlementVersion)payload._settlement_version=options.settlementVersion;
+    if(options.image){payload.text='收款码';payload.msg_type=7;payload._settlement_image=options.image;delete payload.markdown_text;delete payload._template_context;}
     if(options.scheduleKey)payload._schedule_key=options.scheduleKey;
-    if(defaults.keyboard)payload.keyboard={content:{rows:planned.buttons.map(([label,data,jump],index)=>({buttons:[{id:String(index+1),render_data:{label,visited_label:label,style:1},action:jump?{type:0,permission:{type:2},data:jump}:{type:1,permission:{type:2},data:data?data+' '+event.id:''}}]}))}};
+    if(defaults.keyboard&&!options.image)payload.keyboard={content:{rows:planned.buttons.map(([label,data,jump],index)=>({buttons:[{id:String(index+1),render_data:{label,visited_label:label,style:1},action:jump?{type:0,permission:{type:2},data:jump}:{type:1,permission:{type:2},data:data?data+' '+event.id:''}}]}))}};
     const dedupe=hash(kind+'\ngroup\n'+target+'\n\n'+options.factKey).slice(0,32);
     return db.prepare("INSERT OR IGNORE INTO bot_outbox(event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id,poll_id) VALUES(?,?,?,'group',?,?,?,'pending',?,NULL,NULL)").run(event.id,kind,dedupe,target,JSON.stringify(payload),options.dueAt??null,legacyStamp(now())).changes>0;
   }
@@ -108,7 +119,7 @@ export function createActivityBot(db:DB,now:()=>Date,defaults:ActivityBotDefault
       if(plan&&Date.parse(plan.due)>now().getTime()&&!retained){const planned=buildActivityBotMessage(db,event,kind,policy.config,now(),defaults);if(planned)enqueue(event,kind,planned,policy.config,{dueAt:plan.due,scheduleKey:plan.key,factKey:'schedule:'+plan.key+':revision:'+event.revision+':config:'+policy.revision});}
     }
   }
-  function broadcast(event:EventRow,kind:Kind,attendeeIds?:string[]){const policy=activityBotPolicy(db,defaults);if(!policy.config.enabled)return false;const planned=buildActivityBotMessage(db,event,kind,policy.config,now(),defaults,attendeeIds);if(!planned)return false;const created=enqueue(event,kind,planned,policy.config,{factKey:kind==='conditions_changed'?String(event.conditions_version):'revision:'+event.revision});if(created&&kind==='activity_published')schedule(event);return created;}
+  function broadcast(event:EventRow,kind:Kind,attendeeIds?:string[]){const policy=activityBotPolicy(db,defaults);if(!policy.config.enabled)return false;const planned=buildActivityBotMessage(db,event,kind,policy.config,now(),defaults,attendeeIds);if(!planned)return false;const created=enqueue(event,kind,planned,policy.config,{factKey:kind==='conditions_changed'?String(event.conditions_version):kind==='settlement_updated'?String(settlementVersion(db,event.id)):'revision:'+event.revision,...(kind==='settlement_updated'?{settlementVersion:settlementVersion(db,event.id)}:{})});if(kind==='settlement_updated'){const invoice=settlementDetail(db,event.id),version=settlementVersion(db,event.id);if(invoice?.group_notice)for(const image of invoice.payment_codes)enqueue(event,kind,planned,policy.config,{factKey:version+':image:'+image.kind,settlementVersion:version,image});}if(created&&kind==='activity_published')schedule(event);return created;}
   function publication(id:string){const policy=activityBotPolicy(db,defaults);if(!policy.config.enabled)return;const event=eventRow(db,id);if(!event)return;
     if(!botShareable(event))db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
     schedule(event);if(event.lifecycle!=='draft')broadcast(event,'activity_published');

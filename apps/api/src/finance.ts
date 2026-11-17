@@ -15,7 +15,7 @@ function fail(message:string,status=400):never{throw new DomainError('FINANCE_OP
 /** Same sorted Unicode JSON as the retained Python preview. */
 function canonical(value:unknown):string{if(typeof value==='bigint')return value.toString();if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';if(value&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,v])=>JSON.stringify(key)+':'+canonical(v)).join(',')+'}';return JSON.stringify(value);}
 export const financeToken=(event:EventRow,operation:z.infer<typeof FinancePrepared>)=>hash(canonical([event.id,event.revision,{...operation,...(operation.last_seq!==undefined?{last_seq:BigInt(operation.last_seq)}:{})}]));
-export function financeTransaction(db:DB,event:EventRow,user:User,input:z.infer<typeof FinanceTransaction>,reporting:boolean,now:Date):z.infer<typeof FinancePayload>{
+export function financeTransaction(db:DB,event:EventRow,user:User,input:z.infer<typeof FinanceTransaction>,reporting:boolean,now:Date,roomDefinitions?:{id:string;name:string}[]):z.infer<typeof FinancePayload>{
   const {parties,owned}=financeParties(db,event,user.id),used:string[]=[];
   if(reporting&&!['collection','expense','deposit'].includes(input.kind))fail('只能申報轉帳、個人墊付或訂金／押金',403);
   if(reporting&&input.custom_parties.length)fail('其他款項人員須由結算管理者核對建立',403);
@@ -41,7 +41,7 @@ export function financeTransaction(db:DB,event:EventRow,user:User,input:z.infer<
     if(!input.reference_id||!/^[a-f0-9]{16}$/.test(input.reference_id)||!reference||!expected.includes(reference.kind))fail('請選擇本活動對應的店家支出或訂金記錄');
     result.reference_id=reference.id;result.merchant=reference.payload.merchant;if(kind==='deposit_apply'&&!input.reason)fail('訂金抵消費或押金轉損失須填寫依據');
   }
-  const rooms=financeRooms(db,event.id);if(rooms.length||input.room_id){const room=rooms.find(r=>r.id===input.room_id);if(!room)fail('請選擇本活動的包間');if(reference&&reference.payload.room_id!==room.id)fail('退款或訂金處理須與原款項屬於同一包間');result.room_id=room.id;result.room_name=room.name;}
+  const rooms=roomDefinitions??financeRooms(db,event.id);if(rooms.length||input.room_id){const room=rooms.find(r=>r.id===input.room_id);if(!room)fail('請選擇本活動的包間');if(reference&&reference.payload.room_id!==room.id)fail('退款或訂金處理須與原款項屬於同一包間');result.room_id=room.id;result.room_name=room.name;}
   if(reporting&&(!result.payer_id||!owned.has(result.payer_id)))fail('只能申報本人或自己管理的未綁定同行款項',403);
   if(input.custom_parties.some(p=>!used.includes(p.id)))fail('新款項人員必須用於本次記錄');
   result.parties=[...new Set(used)].map(id=>parties.get(id)!);result.method=input.method;return result;

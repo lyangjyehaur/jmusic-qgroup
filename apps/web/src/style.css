@@ -154,3 +154,7 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .payment-asset img { display: block; height: auto; max-width: 100%; object-fit: contain; }
 .payment-asset-thumb { width: 220px; max-height: 260px; }
 .payment-asset-original { width: auto; }
+.settlement-person,.settlement-room{margin-block:var(--space-3,1rem);padding-block:var(--space-2,.5rem);border-bottom:1px solid var(--border,#d5dce4)}
+.settlement-person summary{cursor:pointer;padding-block:.5rem}
+.activity-editor fieldset{min-width:0}.activity-editor fieldset fieldset{margin-block:.75rem}
+.activity-editor .account-field>span{font-weight:600}

@@ -13,6 +13,8 @@ import { ActivityRegistrationPage } from './activity-registration';
 import { ActivityInvitationsPage, AcceptActivityInvitationPage } from './activity-invitations';
 import { ActivityClaimsPage, RequestAttendeeClaimPage } from './activity-claims';
 import { ActivityFinancePage } from './activity-finance';
+import { ActivitySettlementPage, ActivitySettlementEditor } from './activity-settlement';
+import { ActivityRoomsPage } from './activity-rooms';
 import { ActivityHistoryPage } from './activity-history';
 import { ActivityAttendancePage } from './activity-attendance';
 import { ActivityDelegationPage, AcceptActivityDelegationPage } from './activity-delegation';
@@ -44,6 +46,9 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { index: true, element: <ActivityEntry /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
   { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
+  { path: 'activities/:id/settlement', element: <ActivitySettlementPage /> },
+  { path: 'activities/:id/settlement/edit', element: <ActivitySettlementEditor /> },
+  { path: 'activities/:id/rooms', element: <ActivityRoomsPage /> },
   { path: 'activities/:id/finance', element: <ActivityFinancePage /> },
   { path: 'activities/:id/settlement/images', element: <SettlementImagesPage /> },
   { path: 'activities/:id/history', element: <ActivityHistoryPage /> },

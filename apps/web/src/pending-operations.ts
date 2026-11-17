@@ -20,7 +20,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
     else if(key.startsWith(root+'music:fields:v1:'+scope+':')){label='成分資料';to='/me/music/details';}
     else if(key.startsWith(root+'music:contact:v1:'+scope+':')){label='聯絡 QQ';to='/me/music/contact';}
     else{
-      const activity=/^qgroup:rebuild:activity-draft:(?:(arrangements|registration|consent|lifecycle|invitations|claims|delegation|attendance|finance):)?v1:([^:]+):(.+)$/.exec(key);
+      const activity=/^qgroup:rebuild:activity-draft:(?:(arrangements|registration|consent|lifecycle|invitations|claims|delegation|attendance|finance|settlement|rooms):)?v1:([^:]+):(.+)$/.exec(key);
       const admin=/^qgroup:rebuild:admin-(privacy|music|music-pin|user):v1:([^:]+):[^:]+:(.+)$/.exec(key);
       if(activity&&activity[2]===scope){
         const kind=activity[1]??'draft';let id=activity[3]!,mode='';
@@ -30,8 +30,8 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
         if(!id||id.length>80)continue;const path='/activities/'+segment(id);
         if(kind==='draft'){label='活動草稿';to=id==='new'?'/activities/new':path+'/edit';}
         else{
-          const suffix={arrangements:'arrangements',registration:mode==='manage'?'registration':'signup',consent:'conditions',lifecycle:'lifecycle',invitations:'invitations',claims:'claims',delegation:'delegation',attendance:'attendance',finance:'finance'}[kind];
-          if(!suffix)continue;label={arrangements:'活動安排',registration:'活動報名',consent:'安排回覆',lifecycle:'活動狀態',invitations:'補報名邀請',claims:'代報認領',delegation:'管理分工',attendance:'現場出席',finance:'收付款帳本'}[kind]!;to=path+'/'+suffix;
+          const suffix={arrangements:'arrangements',registration:mode==='manage'?'registration':'signup',consent:'conditions',lifecycle:'lifecycle',invitations:'invitations',claims:'claims',delegation:'delegation',attendance:'attendance',finance:'finance',settlement:'settlement/edit',rooms:'rooms'}[kind];
+          if(!suffix)continue;label={arrangements:'活動安排',registration:'活動報名',consent:'安排回覆',lifecycle:'活動狀態',invitations:'補報名邀請',claims:'代報認領',delegation:'管理分工',attendance:'現場出席',finance:'收付款帳本',settlement:'逐人結算',rooms:'預分包間'}[kind]!;to=path+'/'+suffix;
           const recipient=mode.split(':')[1];if(recipient&&token.test(recipient))to+='/'+segment(recipient);
         }
       }else if(admin&&admin[2]===scope){

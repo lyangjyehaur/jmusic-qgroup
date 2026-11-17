@@ -1575,13 +1575,27 @@
       "new_entry": "活動分房",
       "required_behavior": "最多 50 間、名稱同場不重複；只有發起者調整正式安排",
       "legacy_evidence_group": "包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "最多 50 間、名稱同場不重複；只有發起者調整正式安排"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-rooms.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生預分包間、穩定 ID／Unicode 名稱、最多 50 房、逐人最多一房、房付款人與追加快照已實作；只有發起者可改，既有有效款項房 ID 保留，不記實付。完整活動概況／本人房標示、所有預分歷史入口、分房演算法採用及正式副本驗收仍待完成。"
     },
     {
       "capability_id": "P02",
@@ -1589,13 +1603,27 @@
       "new_entry": "活動分房",
       "required_behavior": "每 attendee 至多一房、可未分；多人同一付款人不合併均攤",
       "legacy_evidence_group": "包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "每 attendee 至多一房、可未分；多人同一付款人不合併均攤"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-rooms.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生預分包間、穩定 ID／Unicode 名稱、最多 50 房、逐人最多一房、房付款人與追加快照已實作；只有發起者可改，既有有效款項房 ID 保留，不記實付。完整活動概況／本人房標示、所有預分歷史入口、分房演算法採用及正式副本驗收仍待完成。"
     },
     {
       "capability_id": "P03",
@@ -1617,13 +1645,27 @@
       "new_entry": "活動分房／紀錄",
       "required_behavior": "追加快照，不改報名、管理權、原費用或實收付",
       "legacy_evidence_group": "包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "追加快照，不改報名、管理權、原費用或實收付"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-rooms.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生預分包間、穩定 ID／Unicode 名稱、最多 50 房、逐人最多一房、房付款人與追加快照已實作；只有發起者可改，既有有效款項房 ID 保留，不記實付。完整活動概況／本人房標示、所有預分歷史入口、分房演算法採用及正式副本驗收仍待完成。"
     },
     {
       "capability_id": "P05",
@@ -1732,13 +1774,30 @@
       "new_entry": "活動結算",
       "required_behavior": "舊分母／金額不重算；轉換建立新版，不猜責任",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "舊分母／金額不重算；轉換建立新版，不猜責任"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S02",
@@ -1746,13 +1805,30 @@
       "new_entry": "結算編輯",
       "required_behavior": "正式全部列入；缺席／退出／拒絕安排及特殊人員需原因",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "正式全部列入；缺席／退出／拒絕安排及特殊人員需原因"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S03",
@@ -1760,13 +1836,30 @@
       "new_entry": "結算編輯",
       "required_behavior": "0／0.5 份保留人；免共同仍可負擔單獨費用",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "0／0.5 份保留人；免共同仍可負擔單獨費用"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S04",
@@ -1774,13 +1867,30 @@
       "new_entry": "費用項目",
       "required_behavior": "指定範圍、0–1000 三位比例、0–1440 分鐘、固定額精確對平",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "指定範圍、0–1000 三位比例、0–1440 分鐘、固定額精確對平"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S05",
@@ -1788,13 +1898,30 @@
       "new_entry": "費用項目",
       "required_behavior": "負項以類型扣減，總額和個人淨額非負，不能假記資金退款",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "負項以類型扣減，總額和個人淨額非負，不能假記資金退款"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S06",
@@ -1802,13 +1929,30 @@
       "new_entry": "付款責任",
       "required_behavior": "一人多人付款／多人同付均保存，ID 不按稱呼合併",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "一人多人付款／多人同付均保存，ID 不按稱呼合併"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S07",
@@ -1818,16 +1962,31 @@
       "legacy_evidence_group": "結算",
       "implementation": [
         "packages/domain/src/index.ts",
-        "packages/domain/src/domain.test.ts"
+        "packages/domain/src/domain.test.ts",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
       ],
       "behavior_evidence": [
-        "packages/domain/src/domain.test.ts"
+        "packages/domain/src/domain.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "BigInt 最大餘數與 400 組舊 Python 差分已測；結算凍結名單與正式業務整合待完成。"
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S08",
@@ -1835,13 +1994,30 @@
       "new_entry": "結算發布",
       "required_behavior": "綁 revision／base_version／名單／帳本，only settlement scope；一次入帳",
       "legacy_evidence_group": "結算、包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "綁 revision／base_version／名單／帳本，only settlement scope；一次入帳"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S09",
@@ -1849,13 +2025,30 @@
       "new_entry": "結算歷史",
       "required_behavior": "任一真實變動追加版，同內容不加版；保留操作者與修改項",
       "legacy_evidence_group": "結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "任一真實變動追加版，同內容不加版；保留操作者與修改項"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S10",
@@ -1869,22 +2062,34 @@
         "apps/api/src/payment-codes.ts",
         "apps/web/src/payment-image.tsx",
         "apps/web/src/payment-codes.tsx",
-        "apps/web/src/settlement-images.tsx"
+        "apps/web/src/settlement-images.tsx",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/payment-codes.test.ts"
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/payment-codes.test.ts"
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/payment-codes.test.ts"
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/payment-codes.spec.ts"
+        "apps/web/tests/payment-codes.spec.ts",
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生個人碼庫、凍結版本圖片讀取、原圖下載／重試及 Python 雙向相容已實作；仍須完整逐人結算編輯器的本次圖片選取／憑證上傳、每版總量上限與原子發布、完整 bot 圖片投遞及遷移驗收。"
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S11",
@@ -1898,22 +2103,34 @@
         "apps/api/src/payment-codes.ts",
         "apps/web/src/payment-image.tsx",
         "apps/web/src/payment-codes.tsx",
-        "apps/web/src/settlement-images.tsx"
+        "apps/web/src/settlement-images.tsx",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/payment-codes.test.ts"
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/payment-codes.test.ts"
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/payment-codes.test.ts"
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/payment-codes.spec.ts"
+        "apps/web/tests/payment-codes.spec.ts",
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "私人碼庫新增、來源結算另存、跨帳號隔離、封存保留舊圖與恢復已實作；仍須新逐人結算編輯器實際選碼／換收款人／發布完整流程，以及正式副本遷移與混合 bot 版本驗收。"
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S12",
@@ -1921,13 +2138,30 @@
       "new_entry": "包間結算",
       "required_behavior": "每位結算人歸一房、每房整數分對平；有效款項 room_id 不消失",
       "legacy_evidence_group": "包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "每位結算人歸一房、每房整數分對平；有效款項 room_id 不消失"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S13",
@@ -1935,13 +2169,30 @@
       "new_entry": "包間結算發布",
       "required_behavior": "指定付款不等於已付；paid 以真實時間方式原子追加 expense，不重記舊支出",
       "legacy_evidence_group": "包間、財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "指定付款不等於已付；paid 以真實時間方式原子追加 expense，不重記舊支出"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S14",
@@ -1949,13 +2200,30 @@
       "new_entry": "活動結算／bot",
       "required_behavior": "舊版人名／安排／房間／付款不隨現況變；新差額依新帳本投影",
       "legacy_evidence_group": "包間、結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "舊版人名／安排／房間／付款不隨現況變；新差額依新帳本投影"
+      "implementation": [
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlements.ts",
+        "apps/web/src/activity-settlement.tsx",
+        "apps/web/src/activity-rooms.tsx",
+        "apps/web/src/reviewed-draft.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "F01",
@@ -3241,7 +3509,8 @@
         "apps/web/src/activity-lifecycle.tsx",
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
-        "packages/contracts/src/activity-registration.ts"
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/settlement-notice.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -3249,7 +3518,8 @@
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -3257,20 +3527,24 @@
         "packages/domain/src/bot-rendering.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-lifecycle.spec.ts",
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "新增原生手動報名／退出／審核 producer、待確認及拆組 hook；完整原 Python 群卡片與泛化私人提醒差分通過。已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "新增原生手動報名／退出／審核 producer、待確認及拆組 hook；完整原 Python 群卡片與泛化私人提醒差分通過。已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。"
     },
     {
       "capability_id": "B05",
@@ -3442,28 +3716,34 @@
         "apps/api/src/activity-management.ts",
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-arrangements.ts"
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/settlement-notice.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/settlements.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。"
     },
     {
       "capability_id": "B12",
@@ -3513,13 +3793,25 @@
       "new_entry": "bot／政策",
       "required_behavior": "既有群額明細設定需告知；未完成身份綁定不發個人款項或私聊",
       "legacy_evidence_group": "機器人、隱私",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "既有群額明細設定需告知；未完成身份綁定不發個人款項或私聊"
+      "implementation": [
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/settlement-notice.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/settlements.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-settlement.spec.ts",
+        "docs/unified-rebuild/33-settlement-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "既有群額明細設定需告知；未完成身份綁定不發個人款項或私聊 本批補逐人／包間結算 opt-in、必要模板明細、逐碼工作與保留 Python worker 的隔離消費；完整 TS worker、B01–B15 與實際平台驗收仍待完成。"
     },
     {
       "capability_id": "O01",
