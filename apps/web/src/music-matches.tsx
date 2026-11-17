@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
 import type { z } from 'zod';
 import { MusicMatches, MusicComparison } from '@qgroup/contracts';
-import { peopleReturn, musicTrendReturn } from './music-return';
+import { peopleReturn, musicTrendReturn, musicCircleReturn } from './music-return';
 import { useMusicMatchSort } from './music-match-sort';
 import { api } from './api';
 import { MusicMemberAccess, type Member } from './member-access';
@@ -49,8 +49,8 @@ function MatchCard({ row }: { row: z.infer<typeof MusicMatches>['matches'][numbe
   </Surface>;
 }
 export function MusicComparisonPage() {
-  const { id = '' } = useParams(), [params] = useSearchParams(), back = peopleReturn(params.get('from')) ?? musicTrendReturn(params.get('from')) ?? '/people';
-  return <><PageIntro title="成分比較" /><div className="page-actions"><Link to={back}>{back.startsWith('/music/trends') ? '回到音樂趨勢' : '回到同好推薦'}</Link><Link to={'/people/' + encodeURIComponent(id) + '?' + new URLSearchParams({ from: back })}>查看同好成分</Link></div>
+  const { id = '' } = useParams(), [params] = useSearchParams(), back = peopleReturn(params.get('from')) ?? musicTrendReturn(params.get('from')) ?? musicCircleReturn(params.get('from')) ?? '/people';
+  return <><PageIntro title="成分比較" /><div className="page-actions"><Link to={back}>{back.startsWith('/music/trends') ? '回到音樂趨勢' : back.startsWith('/people/circles') ? '回到同好圈子' : '回到同好推薦'}</Link><Link to={'/people/' + encodeURIComponent(id) + '?' + new URLSearchParams({ from: back })}>查看同好成分</Link></div>
     <MusicMemberAccess>{viewer => <Comparison key={viewer.scope + ':' + viewer.musicEpoch + ':' + id} viewer={viewer} id={id} />}</MusicMemberAccess></>;
 }
 function Comparison({ viewer, id }: { viewer: Member; id: string }) {

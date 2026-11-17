@@ -91,6 +91,7 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-circles'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-share'] });
       announceAccountChange();

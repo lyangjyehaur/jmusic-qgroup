@@ -32,9 +32,11 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
   await expect(recommendations(page)).not.toContainText('對方的留言：留言 共同最多'); await expect(recommendations(page)).not.toContainText('不可外洩性別');
   await page.reload(); await expect(main(page).locator('.match-card:visible').first()).toContainText('共同本命'); await expect(page.getByLabel('排序', { exact: true })).toHaveValue('familiar');
   await main(page).locator('.match-card').first().getByRole('heading').getByRole('link').click();
+  await expect(page.getByRole('heading', { name: '共同本命', level: 2, exact: true })).toBeVisible();
   await page.getByRole('link', { name: '比較成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people?sort=familiar');
   await page.getByRole('link', { name: '查看同好成分', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '共同本命', level: 2, exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'YOASOBI', exact: true }).click(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people?sort=familiar');
 });

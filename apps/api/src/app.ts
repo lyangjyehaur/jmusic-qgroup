@@ -22,6 +22,7 @@ import { registerAdminPrivacy } from './admin-privacy';
 import { registerAdminMusic } from './admin-music';
 import { registerAdminMusicPins } from './admin-music-pins';
 import { registerMusicMatches } from './music-matches';
+import { registerMusicCircles } from './music-circles';
 import { registerMusicTrend, startMusicTrendSampler } from './music-trend';
 import { registerMusicContact } from './music-contact';
 import { registerMusicFields } from './music-fields';
@@ -91,6 +92,7 @@ export function createApp(options: AppOptions) {
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);
     registerMusicMatches(app, db, security);
+    registerMusicCircles(app, db, security);
     registerMusicTrend(app, db, security, now);
     registerMusicFields(app, db, security, now);
     registerActivityRoster(app, db, security, options.qq?.clientId);

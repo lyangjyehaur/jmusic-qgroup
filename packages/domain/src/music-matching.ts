@@ -30,7 +30,14 @@ const roundRatio = (num: number, den: number) => {
   return remainder * 2 === den ? low % 2 === 0 ? low : low + 1 : remainder * 2 > den ? low + 1 : low;
 };
 export function musicMatchStats(mine: readonly MusicPick[], theirs: readonly MusicPick[], entries: readonly MatchEntry[]) {
+  return prepareMusicMatchStats(entries)(mine, theirs);
+}
+/** Reuse the catalog index when comparing many pairs against the same snapshot. */
+export function prepareMusicMatchStats(entries: readonly MatchEntry[]) {
   const map = new Map(entries.map(entry => [entry.id, entry]));
+  return (mine: readonly MusicPick[], theirs: readonly MusicPick[]) => matchStats(mine, theirs, map);
+}
+function matchStats(mine: readonly MusicPick[], theirs: readonly MusicPick[], map: ReadonlyMap<string, MatchEntry>) {
   const a = new Map(mine.map(pick => [pick.entryId, pick.level])), b = new Map(theirs.map(pick => [pick.entryId, pick.level]));
   const shared = [...a.keys()].filter(id => b.has(id));
   const part = (kind: 'main' | 'sub') => {

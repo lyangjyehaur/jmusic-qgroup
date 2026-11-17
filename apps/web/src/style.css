@@ -217,3 +217,11 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .music-trend-table table { border-collapse: collapse; min-width: 100%; }
 .music-trend-table th, .music-trend-table td { padding: .5rem; border: 1px solid #bfcfc8; text-align: start; }
 .music-trend-table th { min-width: 7rem; max-width: 16rem; overflow-wrap: anywhere; }
+
+.music-circle { margin-block: 1rem; padding: 1.25rem; }
+.music-circle h3 { margin-block: 0 .75rem; }
+.music-circle h4 { margin-block: 1rem .5rem; }
+.music-circle-members { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; padding-inline-start: 1.25rem; }
+.music-circle-members li, .music-circle-tags li, .music-circle-singles li { overflow-wrap: anywhere; }
+.music-circle-tags > li { margin-block: .5rem; }
+.music-circle-singles > li { margin-block: .75rem; }

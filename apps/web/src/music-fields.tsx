@@ -50,6 +50,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-matches'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-circles'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-share'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });

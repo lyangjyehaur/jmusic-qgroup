@@ -205,6 +205,7 @@ function EntryEditor({
         void client.invalidateQueries({ queryKey: ['catalog'] });
         void client.invalidateQueries({ queryKey: ['music-catalog'] });
         void client.invalidateQueries({ queryKey: ['music-trend'] });
+        void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-circles'] });
         void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });
         void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       },

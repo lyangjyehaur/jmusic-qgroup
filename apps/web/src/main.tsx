@@ -26,6 +26,7 @@ import { Music } from './music';
 import { MusicEntryPage } from './music-entry';
 import { MusicSharePage } from './music-share';
 import { MusicTrendPage } from './music-trend';
+import { MusicCirclesPage } from './music-circles';
 import { MusicWorkspace } from './music-selection';
 import { MyMusic, MyPage } from './account';
 import { Accounts, AuthConfirm, Login } from './auth';
@@ -71,6 +72,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'me/music/entries', element: <MyMusicEntriesPage /> }, { path: 'me/music/entries/new', element: <MusicEntryEditorPage command="create" /> },
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },
+  { path: 'people/circles', element: <MusicCirclesPage /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },
   { path: 'me/music/details', element: <MusicFieldsPage /> },
   { path: 'admin/music', element: <AdminMusicDirectory /> }, { path: 'admin/music/:id', element: <AdminMusicPage /> },

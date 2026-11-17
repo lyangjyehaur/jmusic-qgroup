@@ -3502,13 +3502,30 @@
       "new_entry": "同好圈子",
       "required_behavior": "現有 minLink、群組／獨立成員和共同項結果保留；舊 UI 入口缺失另記",
       "legacy_evidence_group": "趨勢",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "現有 minLink、群組／獨立成員和共同項結果保留；舊 UI 入口缺失另記"
+      "implementation": [
+        "packages/contracts/src/music-circles.ts",
+        "packages/domain/src/music-circles.ts",
+        "apps/api/src/music-circles.ts",
+        "apps/web/src/music-circles.tsx",
+        "apps/web/src/music-return.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-circles.test.ts",
+        "apps/api/src/music-circles.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-circles.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-circles.test.ts",
+        "apps/web/tests/music-circles.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-circles.spec.ts",
+        "docs/unified-rebuild/43-music-circles-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生完整圈子／可調門檻／間接連結／獨立成員、原 Handler 多門檻順序差分、同好／比較／共用選詞動線與 bot 唯讀保全已隔離實作；正式副本完整對帳、正式規模與併發效能、舊入口 adapter、實際切換版本組合仍待驗收。"
     },
     {
       "capability_id": "C01",
