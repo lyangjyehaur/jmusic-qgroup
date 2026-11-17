@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)、[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)及[管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)、[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)、[管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md)及[現場出席與補錄檢查點](29-activity-attendance-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -44,6 +44,7 @@
 | [補報名邀請檢查點](26-activity-invitations-checkpoint.md) | 批量逐人邀請、私人有限預覽、一次性接受、候補確認、恢復及舊 bot 消費 |
 | [代報認領檢查點](27-attendee-claims-checkpoint.md) | 七日認領、本人申請／管理審核、原隊位與付款來源、恢復及 Python 差分 |
 | [管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md) | 協辦 scopes、唯一結算人、owner 交接、精確恢復與舊 worker 相容性 |
+| [現場出席與補錄檢查點](29-activity-attendance-checkpoint.md) | 出席與費用獨立、現場雙 scope／超額／候補確認、未知結果及 Python 差分 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

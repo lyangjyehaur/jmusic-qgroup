@@ -23,7 +23,8 @@ test('a pending publication that never arrived keeps the exact request and canno
 });
 test('legacy bot links select the exact activity and requested task without submitting any action or leaking invitation data',async({page,context})=>{
   let writes=0;page.on('request',request=>{if(['POST','PUT','PATCH','DELETE'].includes(request.method())&&request.url().includes('/activities/'))writes++;});
-  for(const action of ['join','conditions','settlement','finance','manage','onsite']){await page.goto('/?event=listen&action='+action);await expect(page).toHaveURL('/activities/listen?task='+action);await expect(page.getByRole('heading',{name:'週末一起聽日系音樂',exact:true})).toBeVisible();}expect(writes).toBe(0);
+  for(const action of ['join','conditions','settlement','finance','manage']){await page.goto('/?event=listen&action='+action);await expect(page).toHaveURL('/activities/listen?task='+action);await expect(page.getByRole('heading',{name:'週末一起聽日系音樂',exact:true})).toBeVisible();}expect(writes).toBe(0);
+  await page.goto('/?event=listen&action=onsite');await expect(page).toHaveURL('/activities/listen/attendance');await expect(page.getByRole('link',{name:'登入',exact:true})).toBeVisible();expect(writes).toBe(0);
   await page.goto('/?event=invite&action=join');await expect(page.getByRole('heading',{name:'私人活動',exact:true})).toHaveCount(0);await expect(page.getByRole('alert')).toHaveText('找不到活動或尚未公開');await login(context);await page.reload();await expect(page.getByRole('heading',{name:'私人活動',exact:true})).toBeVisible();expect(writes).toBe(0);
 });
 for(const kind of ['create','save'] as const)test('a completed '+kind+' raced by publication preserves the exact local input and opens the published activity across reload',async({page,context})=>{

@@ -11,6 +11,8 @@ export function ActivityEntry(){
   if(claim&&/^[A-Za-z0-9_-]{32}$/.test(claim))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/claims/'+encodeURIComponent(claim)}/>;
   const invitation=search.get('attendee_invite');
   if(invitation&&/^[A-Za-z0-9_-]{32}$/.test(invitation))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/invitations/'+encodeURIComponent(invitation)}/>;
-  const action=search.get('action');const query=action&&actions.has(action)?'?'+new URLSearchParams({task:action}):'';
+  const action=search.get('action');
+  if(action==='onsite')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/attendance'}/>;
+  const query=action&&actions.has(action)?'?'+new URLSearchParams({task:action}):'';
   return <Navigate replace to={'/activities/'+encodeURIComponent(id)+query}/>;
 }

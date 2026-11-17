@@ -985,13 +985,27 @@
       "new_entry": "活動名單",
       "required_behavior": "與名額／費用獨立；結束後更正需原因，不回寫舊帳單",
       "legacy_evidence_group": "出席",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "與名額／費用獨立；結束後更正需原因，不回寫舊帳單"
+      "implementation": [
+        "packages/contracts/src/activity-attendance.ts",
+        "apps/api/src/activity-attendance.ts",
+        "apps/web/src/activity-attendance.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-attendance.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-attendance.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-attendance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-attendance.spec.ts",
+        "apps/web/tests/activity-publish.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "五狀態、UTC 實際時間、開始／歸檔／結束後原因、原名額／付款與帳單保全、未知結果及 Python 差分已測；完整結算／分房／歷史收件匣、全部舊 API 及隔離正式資料成套驗收待完成。"
     },
     {
       "capability_id": "E16",
@@ -999,13 +1013,27 @@
       "new_entry": "活動名單",
       "required_behavior": "roster＋attendance、首版帳單前、超額／繞候補明確確認",
       "legacy_evidence_group": "出席",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "roster＋attendance、首版帳單前、超額／繞候補明確確認"
+      "implementation": [
+        "packages/contracts/src/activity-attendance.ts",
+        "apps/api/src/activity-attendance.ts",
+        "apps/web/src/activity-attendance.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-attendance.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-attendance.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-attendance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-attendance.spec.ts",
+        "apps/web/tests/activity-publish.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "雙 scope、首份帳單前、逐人條件接受、超額與繞候補分別確認、原隊序保全、去重恢復及 Python 差分已測；完整結算／付款、全部舊 API 與隔離正式資料成套驗收待完成。"
     },
     {
       "capability_id": "E17",
