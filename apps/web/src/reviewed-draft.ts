@@ -3,192 +3,189 @@ import { useBlocker } from 'react-router-dom';
 import { z } from 'zod';
 import type { Member } from './member-access';
 import { api, ApiError } from './api';
-/** Durable, account-scoped writes require an explicit retry after uncertain delivery. */
+import { DraftConflict, DraftExpired, draftVersions, openDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
+/** Persist the exact account-scoped payload before sending; uncertain delivery requires an explicit retry. */
 export function useReviewedDraft<T, S, F>(options: {
-  key: string;
-  viewer: Member;
-  initial: F;
+  key: string; viewer: Member; initial: F;
   blank: (fresh: F) => T;
-  valueSchema: z.ZodType<T>;
-  saveSchema: z.ZodType<S>;
-  resultSchema: z.ZodType;
-  endpoint: string;
-  latest: (result?: unknown) => Promise<F>;
-  matches: (value: T, input: S) => boolean;
-  fromPending: (input: S) => T;
-  after?: (fresh: F, result?: unknown) => void;
-  afterRefresh?: (fresh: F) => void;
+  valueSchema: z.ZodType<T>; saveSchema: z.ZodType<S>; resultSchema: z.ZodType;
+  endpoint: string; latest: (result?: unknown) => Promise<F>;
+  matches: (value: T, input: S) => boolean; fromPending: (input: S) => T;
+  after?: (fresh: F, result?: unknown) => void; afterRefresh?: (fresh: F) => void;
 }) {
   const { key, viewer } = options,
-    active = useRef(true),
-    schema = z
-      .object({
-        value: options.valueSchema,
-        dirty: z.boolean(),
-        pending: z.object({ key: z.string().uuid(), input: options.saveSchema }).strict().optional(),
-      })
-      .strict()
-      .refine((v) => !v.pending || options.matches(v.value, v.pending.input));
-  const [loaded] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem(key);
-      let saved = raw ? JSON.parse(raw) : null;
-      if (saved && saved.value === undefined) {
-        const compact = z
-          .object({
-            dirty: z.boolean(),
-            pending: z.object({ key: z.string().uuid(), input: options.saveSchema }).strict(),
-          })
-          .strict()
-          .parse(saved);
-        saved = { ...compact, value: options.fromPending(compact.pending.input) };
-      }
-      return {
-        draft: saved ? schema.parse(saved) : { value: options.blank(options.initial), dirty: false },
-        error: '',
-      };
-    } catch {
-      return {
-        draft: { value: options.blank(options.initial), dirty: false },
-        error: '無法讀取原稿，請先保全原稿再繼續。',
-      };
+    active = useRef(true), handle = useRef<DraftHandle | null>(null), queue = useRef(Promise.resolve()),
+    halted = useRef(false), revoked = useRef(false), submitting = useRef(false),
+    schema = z.object({
+      value: options.valueSchema, dirty: z.boolean(),
+      pending: z.object({ key: z.string().uuid(), input: options.saveSchema }).strict().optional(),
+    }).strict().refine(v => !v.pending || options.matches(v.value, v.pending.input));
+  type Draft = z.infer<typeof schema>;
+  function parse(raw: string): Draft {
+    let saved = JSON.parse(raw);
+    if (saved && saved.value === undefined) {
+      const compact = z.object({ dirty: z.boolean(), pending: z.object({ key: z.string().uuid(), input: options.saveSchema }).strict() }).strict().parse(saved);
+      saved = { ...compact, value: options.fromPending(compact.pending.input) };
     }
-  });
-  const [draft, setDraft] = useState<z.infer<typeof schema>>(loaded.draft),
-    [data, setData] = useState(options.initial),
-    [readError, setReadError] = useState(loaded.error),
-    [storageError, setStorageError] = useState(''),
-    [message, setMessage] = useState(''),
-    [busy, setBusy] = useState(false),
-    [epoch, setEpoch] = useState(0);
+    return schema.parse(saved);
+  }
+  const [draft, setDraft] = useState<Draft>(() => ({ value: options.blank(options.initial), dirty: false })),
+    [data, setData] = useState(options.initial), [loading, setLoading] = useState(true),
+    [needsRestore, setNeedsRestore] = useState(false), [readError, setReadError] = useState(''),
+    [storageError, setStorageError] = useState(''), [message, setMessage] = useState(''),
+    [busy, setBusy] = useState(false), [saving, setSaving] = useState(0), [epoch, setEpoch] = useState(0),
+    [conflict, setConflict] = useState(false), [expired, setExpired] = useState(false), [versions, setVersions] = useState<DraftVersion[]>([]);
   const dirty = draft.dirty || !!draft.pending,
-    blocker = useBlocker(dirty),
-    locked = busy || !!readError || !!draft.pending;
-  useEffect(() => {
-    active.current = true;
-    return () => {
-      active.current = false;
-    };
-  }, []);
-  function persist(next: typeof draft) {
+    blocker = useBlocker(dirty || saving > 0),
+    locked = loading || needsRestore || busy || !!readError || !!draft.pending;
+  async function loadVersions() {
+    const rows = await draftVersions(key, viewer.scope);
+    if (active.current) setVersions(rows);
+  }
+  function applyRaw(raw: string | null) {
+    setConflict(false);
     try {
-      sessionStorage.setItem(key, JSON.stringify(next.pending ? { dirty: next.dirty, pending: next.pending } : next));
-      setStorageError('');
-      return true;
-    } catch {
-      setStorageError('無法保存原稿及操作編號，尚未送出。');
-      return false;
-    }
+      const saved = raw === null ? { value: options.blank(options.initial), dirty: false } : parse(raw);
+      setDraft(saved); setNeedsRestore(saved.dirty && !saved.pending); setReadError(''); setConflict(false);
+      setEpoch(n => n + 1);
+    } catch { setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
   }
   useEffect(() => {
-    if (!readError) persist(draft);
-  }, [draft, readError, key]);
+    active.current = true; let cancelled = false;
+    void (async () => {
+      try {
+        const saved = await openDraft(key, viewer.scope);
+        if (cancelled) return;
+        handle.current = saved.handle; halted.current = false; applyRaw(saved.raw);
+        await loadVersions();
+      } catch { if (!cancelled) setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
+      finally { if (!cancelled) setLoading(false); }
+    })();
+    return () => { cancelled = true; active.current = false; };
+  }, [key, viewer.scope]);
+  function persist(next: Draft, preserve = false, failureText = '無法保存原稿及操作編號，尚未送出。') {
+    const raw = JSON.stringify(next.pending ? { dirty: next.dirty, pending: next.pending } : next);
+    setSaving(n => n + 1);
+    const work = queue.current.then(async () => {
+      // Writes already queued before a conflict must also be preserved. Revoked data must never return.
+      if (revoked.current || !handle.current) return false;
+      try {
+        handle.current = await saveDraft(handle.current, raw, preserve);
+        if (active.current) setStorageError('');
+        return true;
+      } catch (error) {
+        if (error instanceof DraftConflict || error instanceof DraftExpired) {
+          halted.current = true;
+          if (error instanceof DraftExpired) revoked.current = true;
+          if (active.current) {
+            setReadError(error.message); setConflict(error instanceof DraftConflict); setExpired(error instanceof DraftExpired);
+            await loadVersions().catch(() => {});
+          }
+        } else if (active.current) setStorageError(failureText);
+        return false;
+      }
+    });
+    queue.current = work.then(() => {});
+    void work.finally(() => { if (active.current) setSaving(n => n - 1); });
+    return work;
+  }
   useEffect(() => {
-    if (!dirty) return;
-    const leave = (e: BeforeUnloadEvent) => {
-      e.preventDefault();
-      e.returnValue = '';
-    };
+    if (!dirty && !saving) return;
+    const leave = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', leave);
     return () => window.removeEventListener('beforeunload', leave);
-  }, [dirty]);
+  }, [dirty, saving]);
   function edit(value: T) {
-    if (locked) return;
-    setDraft({ ...draft, value, dirty: true });
-    setEpoch((n) => n + 1);
-    setMessage('');
+    if (locked || halted.current || submitting.current) return;
+    const next = { ...draft, value, dirty: true };
+    setDraft(next); void persist(next); setEpoch(n => n + 1); setMessage('');
   }
   async function refresh(rebase: (old: T, fresh: F) => T) {
-    if (locked) return;
+    if (locked || halted.current) return;
     setBusy(true);
     try {
       const fresh = await options.latest();
       if (!active.current) return;
       const next = { ...draft, value: rebase(draft.value, fresh) };
-      if (!persist(next)) return;
-      setData(fresh);
-      setDraft(next);
-      setEpoch((n) => n + 1);
-      setMessage('已讀取最新版，原輸入保留；請重新預覽核對。');
-      options.afterRefresh?.(fresh);
-    } catch (e) {
-      if (active.current) setMessage(e instanceof Error ? e.message : '讀取失敗');
-    } finally {
-      if (active.current) setBusy(false);
-    }
+      if (!await persist(next)) return;
+      setData(fresh); setDraft(next); setEpoch(n => n + 1);
+      setMessage('已讀取最新版，原輸入保留；請重新預覽核對。'); options.afterRefresh?.(fresh);
+    } catch (e) { if (active.current) setMessage(e instanceof Error ? e.message : '讀取失敗'); }
+    finally { if (active.current) setBusy(false); }
   }
   async function submit(input?: S) {
-    if (busy || readError) return false;
-    const pending =
-      draft.pending ?? (input ? { key: crypto.randomUUID(), input: options.saveSchema.parse(input) } : undefined);
+    if (busy || loading || needsRestore || readError || halted.current || submitting.current) return false;
+    const pending = draft.pending ?? (input ? { key: crypto.randomUUID(), input: options.saveSchema.parse(input) } : undefined);
     if (!pending) return false;
     const next = { ...draft, pending };
-    if (!persist(next)) return false;
-    setDraft(next);
-    setBusy(true);
-    setMessage('');
+    submitting.current = true; setBusy(true); setMessage('');
     let accepted = false;
     try {
+      if (!await persist(next) || !active.current) return false;
+      setDraft(next);
       const result = await api(options.endpoint, options.resultSchema, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Account-Scope': viewer.scope,
-          'X-CSRF-Token': viewer.csrf,
-          'Idempotency-Key': pending.key,
-        },
+        headers: { 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': pending.key },
         body: JSON.stringify(pending.input),
       });
       accepted = true;
       const fresh = await options.latest(result);
       if (!active.current) return false;
       const cleared = { value: options.blank(fresh), dirty: false };
-      if (!persist(cleared)) throw Error('storage');
-      setDraft(cleared);
-      setData(fresh);
-      setEpoch((n) => n + 1);
-      setMessage('已保存。');
-      options.after?.(fresh, result);
-      return true;
+      if (!await persist(cleared, false, '操作已送出，但無法保存確認狀態；請保留原操作並核對結果。')) throw Error('storage');
+      setDraft(cleared); setData(fresh); setEpoch(n => n + 1); setMessage('已保存。');
+      options.after?.(fresh, result); return true;
     } catch (e) {
       if (!active.current) return false;
       if (!accepted && e instanceof ApiError && e.status < 500 && e.status !== 429) {
         const fresh = { ...next, pending: undefined };
-        if (persist(fresh)) setDraft(fresh);
-        setEpoch((n) => n + 1);
-        setMessage(e.message);
+        if (await persist(fresh, false, '無法保存拒絕結果；原操作仍保留，請重新核對。')) setDraft(fresh);
+        setEpoch(n => n + 1); setMessage(e.message);
       } else setMessage('尚未確認操作結果。原操作已保留，請確認原操作結果。');
       return false;
-    } finally {
-      if (active.current) setBusy(false);
-    }
+    } finally { submitting.current = false; if (active.current) setBusy(false); }
   }
-  function recover() {
+  async function recover() {
+    if (busy || loading) return;
+    setBusy(true);
     try {
-      const raw = sessionStorage.getItem(key);
-      if (raw !== null) sessionStorage.setItem(key + ':recovery:' + Date.now(), raw);
-      setReadError('');
-    } catch {
-      setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。');
-    }
+      await queue.current;
+      if (conflict) {
+        const saved = await openDraft(key, viewer.scope);
+        handle.current = saved.handle; halted.current = false; applyRaw(saved.raw);
+      } else {
+        // Re-open only if the original open failed. Never bypass a revoked handle's epoch.
+        if (!handle.current) handle.current = (await openDraft(key, viewer.scope)).handle;
+        const blank: Draft = { value: options.blank(data), dirty: false };
+        if (!await persist(blank, true)) return;
+        applyRaw(null);
+      }
+      await loadVersions();
+    } catch { setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。'); }
+    finally { if (active.current) setBusy(false); }
+  }
+  async function restoreVersion(id: string) {
+    if (busy || loading || readError) return;
+    const version = versions.find(row => row.id === id); if (!version) return;
+    let next: Draft;
+    try { next = parse(version.raw); } catch { setMessage('這份原稿格式無法讀取，請下載保全檔。'); return; }
+    setBusy(true);
+    try {
+      if (!await persist(next, true)) return;
+      setDraft(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage('已載入保全版本；請核對原操作與最新資料。');
+      await loadVersions();
+    } finally { if (active.current) setBusy(false); }
+  }
+  async function leave() {
+    if (loading || busy) return;
+    const proceed = blocker.proceed;
+    await queue.current;
+    // Unreadable originals remain untouched; a conflict's competing versions have already committed.
+    if (readError || halted.current || await persist(draft)) proceed?.();
   }
   return {
-    draft,
-    data,
-    locked,
-    busy,
-    dirty,
-    blocker,
-    readError,
-    storageError,
-    message,
-    setMessage,
-    edit,
-    refresh,
-    submit,
-    recover,
-    epoch,
-    active,
-    setBusy,
+    draft, data, locked, busy, dirty, blocker, readError, storageError, message, setMessage,
+    edit, refresh, submit, recover, epoch, active, setBusy, leave,
+    loading, saving: saving > 0, needsRestore, restore: () => setNeedsRestore(false), conflict, expired, versions, restoreVersion,
   };
 }

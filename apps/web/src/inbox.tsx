@@ -7,7 +7,8 @@ import { InboxTodos, MarkNotificationsRead, NotificationCount, Notifications, Ok
 import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
-import { pendingOperations } from './pending-operations';
+import { pendingOperations, type PendingOperation } from './pending-operations';
+import { listDurableDrafts, listDurableVersions } from './draft-store';
 const ReadOperation=z.object({key:z.string().uuid(),input:MarkNotificationsRead}).strict();
 const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:'確認變更後的安排',claims:'核對報名認領',withdrawal:'處理退出申請',formation:'決定是否成團',finish:'確認活動結束／延長',settlement:'核對並發布結算',reports:'款項申報待核對',payment:'我的款項待補',refund:'我的退款／墊付待收回',reconcile:'核對收退款與結清'};
@@ -22,12 +23,24 @@ export function InboxLink({viewer}:{viewer:Member}){
 }
 export function InboxPage(){return <><PageIntro title="收件匣"/><MemberAccess>{viewer=><Inbox key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function PendingOperations({viewer}:{viewer:Member}){
-  const [inventory,setInventory]=useState(()=>read()),[results,setResults]=useState<Record<string,string>>({}),[busy,setBusy]=useState('');const active=useRef(true);
-  function read(){try{return {rows:pendingOperations(sessionStorage,viewer.scope),error:''};}catch{return {rows:[],error:'無法讀取本分頁保存的操作，請檢查瀏覽器儲存設定後重試。'};}}
-  useEffect(()=>{active.current=true;const refresh=()=>setInventory(read());window.addEventListener('focus',refresh);return()=>{active.current=false;window.removeEventListener('focus',refresh);};},[viewer.scope]);
+  const [inventory,setInventory]=useState<{rows:PendingOperation[];error:string}>({rows:[],error:''}),[results,setResults]=useState<Record<string,string>>({}),[busy,setBusy]=useState('');const active=useRef(true);
+  async function read(){
+    try {
+      const [saved,versions]=await Promise.all([listDurableDrafts(viewer.scope),listDurableVersions(viewer.scope)]), values=new Map(saved.map(row=>[row.key,row.raw]));
+      const keys=[...values.keys()], durable=pendingOperations({length:keys.length,key:i=>keys[i]??null,getItem:key=>values.get(key)??null},viewer.scope);
+      for(const version of versions){
+        const recovered=pendingOperations({length:1,key:()=>version.key,getItem:()=>version.raw},viewer.scope)[0];
+        if(recovered&&!durable.some(row=>row.to===recovered.to&&row.requestKey&&row.requestKey===recovered.requestKey))
+          durable.push({...recovered,id:version.id,label:recovered.label+'（保全版本）'});
+      }
+      const session=pendingOperations(sessionStorage,viewer.scope).filter(row=>!values.has(row.id));
+      if(active.current)setInventory({rows:[...session,...durable],error:''});
+    }catch{if(active.current)setInventory({rows:[],error:'無法讀取本機保存的操作，請檢查瀏覽器儲存設定後重試。'});}
+  }
+  useEffect(()=>{active.current=true;const refresh=()=>{void read();};refresh();window.addEventListener('focus',refresh);return()=>{active.current=false;window.removeEventListener('focus',refresh);};},[viewer.scope]);
   async function check(id:string,key:string){setBusy(id);try{const receipt=await api('/me/operations/'+encodeURIComponent(key),z.object({committed:z.boolean()}),{headers:scope(viewer)});if(active.current)setResults(prior=>({...prior,[id]:receipt.committed?'此操作編號已有回執，請回原頁核對內容及目前權限。':'尚未查到此操作編號的回執，請回原頁確認原操作結果。'}));}catch(error){if(active.current)setResults(prior=>({...prior,[id]:error instanceof Error?error.message:'查詢失敗'}));}finally{if(active.current)setBusy('');}}
-  if(!inventory.error&&!inventory.rows.length)return <div className="page-actions"><Button variant="secondary" onClick={()=>setInventory(read())}>重新檢查本分頁操作</Button></div>;
-  return <Surface role="region" className="detail inbox-section" aria-label="未完成操作"><Heading level={2}>未完成操作</Heading>{inventory.error?<Notice>{inventory.error}</Notice>:inventory.rows.length?<><Notice>此清單只包含本分頁、目前帳號保存的操作。回原頁核對結果後，才可重試。</Notice><ul className="inbox-list">{inventory.rows.map(row=><li key={row.id}><Link to={row.to}>{row.label}</Link>{row.damaged?<Text role="alert">原稿格式損壞，請回原頁保全原稿。</Text>:row.requestKey&&<Button variant="ghost" disabled={!!busy} onClick={()=>void check(row.id,row.requestKey!)}>核對結果</Button>}{results[row.id]&&<Text role="status">{results[row.id]}</Text>}</li>)}</ul></>:null}<Button variant="secondary" onClick={()=>setInventory(read())}>重新檢查本分頁操作</Button></Surface>;
+  if(!inventory.error&&!inventory.rows.length)return <div className="page-actions"><Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></div>;
+  return <Surface role="region" className="detail inbox-section" aria-label="未完成操作"><Heading level={2}>未完成操作</Heading>{inventory.error?<Notice>{inventory.error}</Notice>:inventory.rows.length?<><Notice>此清單包含目前帳號的本機操作及本分頁紀錄。回原頁核對結果後，才可重試。</Notice><ul className="inbox-list">{inventory.rows.map(row=><li key={row.id}><Link to={row.to}>{row.label}</Link>{row.damaged?<Text role="alert">原稿格式損壞，請回原頁保全原稿。</Text>:row.requestKey&&<Button variant="ghost" disabled={!!busy} onClick={()=>void check(row.id,row.requestKey!)}>核對結果</Button>}{results[row.id]&&<Text role="status">{results[row.id]}</Text>}</li>)}</ul></>:null}<Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></Surface>;
 }
 function Inbox({viewer}:{viewer:Member}){
   const [search]=useSearchParams(),event=search.get('event'),client=useQueryClient(),active=useRef(true),storageKey='qgroup:rebuild:notifications-read:v1:'+viewer.scope;

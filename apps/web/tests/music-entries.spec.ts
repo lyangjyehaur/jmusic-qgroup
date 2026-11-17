@@ -1,3 +1,4 @@
+import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 const origin = 'http://127.0.0.1:5082',
@@ -202,13 +203,7 @@ test('storage denial prevents writes and damaged drafts require preservation bef
   await login(context);
   await page.goto(endpoint + '/new');
   await field(page).fill('保留原稿');
-  await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (key, value) {
-      if (key.startsWith('qgroup:rebuild:music:entries:')) throw Error('denied');
-      return original.call(this, key, value);
-    };
-  });
+  await denyDraftWrites(page, 'qgroup:rebuild:music:entries:');
   let writes = 0;
   page.on('request', (request) => {
     if (request.method() === 'POST' && request.url().endsWith('/me/music/entries')) writes++;
@@ -220,21 +215,12 @@ test('storage denial prevents writes and damaged drafts require preservation bef
   page.on('dialog', (dialog) => void dialog.accept());
   await page.reload();
   await expect(field(page)).toHaveValue('保留原稿');
-  await page.evaluate(() => {
-    const key = Object.keys(sessionStorage).find((key) => key.startsWith('qgroup:rebuild:music:entries:'))!;
-    sessionStorage.setItem(key, 'DAMAGED_ENTRY_DRAFT');
-  });
+  await damageDraft(page, 'qgroup:rebuild:music:entries:', 'DAMAGED_ENTRY_DRAFT');
   await page.reload();
   await expect(field(page)).toBeDisabled();
   await page.getByRole('button', { name: '保全原稿後繼續', exact: true }).click();
   await expect(field(page)).toBeEnabled();
-  expect(
-    await page.evaluate(() =>
-      Object.entries(sessionStorage)
-        .filter(([key]) => key.includes(':recovery:'))
-        .map(([, value]) => value),
-    ),
-  ).toContain('DAMAGED_ENTRY_DRAFT');
+  expect((await durableRows(page, 'versions')).map(row => row.raw)).toContain('DAMAGED_ENTRY_DRAFT');
 });
 test('preserves selection drafts while creating terms, isolates switched accounts and clears term drafts on logout', async ({
   page,

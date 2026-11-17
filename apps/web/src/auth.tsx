@@ -98,6 +98,8 @@ export function AuthConfirm() {
 }
 export function Accounts() {
   const session = useQuery(sessionQuery);
+  const client = useQueryClient();
+  const [cleanup, setCleanup] = useState(false);
   const viewer = session.data;
   const changed = useAccountChange();
   const [busy, setBusy] = useState(false);
@@ -111,11 +113,16 @@ export function Accounts() {
   }
   async function logout() {
     if (!viewer) return; setBusy(true); setError('');
+    let committed = false, cleaned = false;
     try {
       await api('/auth/logout', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true }) });
-      clearDeviceDrafts();
+      committed = true;
+      try { await clearDeviceDrafts(); cleaned = true; } finally { announceAccountChange(true); }
       await changed('/me', true);
-    } catch (failure) { setError(failure instanceof Error ? failure.message : '登出失敗'); } finally { setBusy(false); }
+    } catch (failure) {
+      if (committed) { setCleanup(!cleaned); setError(cleaned ? '此裝置已登出，但無法讀取目前帳號。請重新載入頁面。' : '此裝置已登出，但本機原稿清除失敗。請重試清除。'); void client.invalidateQueries({ queryKey: ['session'] }); }
+      else setError(failure instanceof Error ? failure.message : '登出失敗');
+    } finally { setBusy(false); }
   }
   return <><PageIntro title="帳號" />{params.has('returnTo') && <Link className="back" to={localReturn(params.get('returnTo'))}>回到原任務</Link>}{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink(localReturn(params.get('returnTo')) === '/' ? '/me/accounts' : localReturn(params.get('returnTo')))}>登入</Link> : <>
     <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><Link to="/me/profile">修改站內稱呼</Link>{viewer.qq.bound && <QQAvatar url={viewer.qq.avatarUrl} nickname={viewer.qq.nickname} />}<Text>{viewer.qq.bound ? `已綁定 QQ：${viewer.qq.nickname}` : '尚未綁定 QQ'}</Text>
@@ -127,7 +134,11 @@ export function Accounts() {
     <Link className="back" to="/me/devices">裝置與帳號紀錄</Link>
     <Link className="back" to="/me/privacy">隱私與資料刪除</Link>
     {viewer.administrator && <Link className="back" to="/admin/registration">註冊設定</Link>}
-    <Surface className="detail auth-panel"><Text>登出會撤銷此裝置的所有帳號授權並清除成分分頁草稿；其他裝置不受影響。</Text><Button variant="secondary" disabled={busy} onClick={() => void logout()}>登出此裝置</Button></Surface>
+    <Surface className="detail auth-panel"><Text>登出會撤銷此裝置的所有帳號授權並清除本機原稿；其他裝置不受影響。</Text><Button variant="secondary" disabled={busy || cleanup} onClick={() => void logout()}>登出此裝置</Button></Surface>
+  </>}
+    {cleanup && <Button loading={busy} onClick={() => {
+      setBusy(true); void clearDeviceDrafts().then(async () => { setCleanup(false); await changed('/me', true); }).catch(() => setError('仍無法清除本機原稿，請檢查瀏覽器儲存設定。')).finally(() => setBusy(false));
+    }}>重試清除本機原稿</Button>}
     {error && <Text role="alert">{error}</Text>}
-  </>}</>;
+  </>;
 }

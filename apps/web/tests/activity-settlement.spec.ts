@@ -1,3 +1,4 @@
+import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ settlementExamples: true });
@@ -148,17 +149,12 @@ test('restores incomplete payer drafts, requires preservation for damaged drafts
   await page.getByLabel('店家款項狀態', { exact: true }).selectOption('paid');
   page.on('dialog', (d) => void d.accept());
   await page.reload();
+  await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
   await expect(page.getByLabel('實際付款金額', { exact: true })).toHaveValue('');
   await expect(page.getByRole('button', { name: '保全原稿後繼續', exact: true })).toHaveCount(0);
   await page.getByLabel('店家款項狀態', { exact: true }).selectOption('unpaid');
   await preview(page);
-  await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (key, value) {
-      if (key.includes('activity-draft:settlement:')) throw Error('storage denied');
-      return original.call(this, key, value);
-    };
-  });
+  await denyDraftWrites(page, 'activity-draft:settlement:');
   let writes = 0;
   page.on('request', (r) => {
     if (r.method() === 'POST' && r.url().endsWith('/settlement')) writes++;
@@ -168,20 +164,11 @@ test('restores incomplete payer drafts, requires preservation for damaged drafts
   await expect(page.getByText('無法保存原稿及操作編號，尚未送出。', { exact: true })).toBeVisible();
   expect(writes).toBe(0);
   await page.reload();
-  await page.evaluate(() => {
-    const key = Object.keys(sessionStorage).find((k) => k.includes('activity-draft:settlement:'))!;
-    sessionStorage.setItem(key, 'DAMAGED_ORIGINAL');
-  });
+  await damageDraft(page, 'activity-draft:settlement:', 'DAMAGED_ORIGINAL');
   await page.reload();
   await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '保全原稿後繼續', exact: true }).click();
-  expect(
-    await page.evaluate(() =>
-      Object.entries(sessionStorage)
-        .filter(([k]) => k.includes(':recovery:'))
-        .map(([, v]) => v),
-    ),
-  ).toContain('DAMAGED_ORIGINAL');
+  expect((await durableRows(page, 'versions')).map(row => row.raw)).toContain('DAMAGED_ORIGINAL');
 });
 test('bot settlement links open the published bill without writes and preserve invitation access', async ({
   page,

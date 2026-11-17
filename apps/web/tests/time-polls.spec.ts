@@ -1,3 +1,4 @@
+import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ pollExamples: true });
@@ -43,6 +44,7 @@ test('creates date/exact polls with durable incomplete drafts and dynamic candid
   await page.getByRole('button', { name: '移除候選 2', exact: true }).click();
   page.on('dialog', (d) => void d.accept());
   await page.reload();
+  await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
   await expect(page.getByLabel('候選日期 2', { exact: true })).toHaveValue('2099-12-27');
   await page.getByRole('button', { name: '建立時間投票', exact: true }).click();
   await expect(page.getByRole('heading', { name: '不連續日期', exact: true })).toBeVisible();
@@ -198,13 +200,7 @@ test('blocks writes when storage is denied, preserves damaged drafts and isolate
   await login(context);
   await page.goto('/time-polls/new');
   await definition(page);
-  await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (key, value) {
-      if (key.includes('poll-create:')) throw Error('denied');
-      return original.call(this, key, value);
-    };
-  });
+  await denyDraftWrites(page, 'poll-create:');
   let writes = 0;
   page.on('request', (r) => {
     if (r.method() === 'POST') writes++;
@@ -214,25 +210,17 @@ test('blocks writes when storage is denied, preserves damaged drafts and isolate
   expect(writes).toBe(0);
   page.on('dialog', (d) => void d.accept());
   await page.reload();
-  await page.evaluate(() => {
-    const k = Object.keys(sessionStorage).find((k) => k.includes('poll-create:'))!;
-    sessionStorage.setItem(k, 'DAMAGED_POLL');
-  });
+  await damageDraft(page, 'poll-create:', 'DAMAGED_POLL');
   await page.reload();
   await page.getByRole('button', { name: '保全原稿後繼續', exact: true }).click();
-  expect(
-    await page.evaluate(() =>
-      Object.entries(sessionStorage)
-        .filter(([k]) => k.includes(':recovery:'))
-        .map(([, v]) => v),
-    ),
-  ).toContain('DAMAGED_POLL');
+  expect((await durableRows(page, 'versions')).map(row => row.raw)).toContain('DAMAGED_POLL');
   await page.getByLabel('投票名稱', { exact: true }).fill('只屬於小青');
   await login(context, 'bob');
   await page.reload();
   await expect(page.getByLabel('投票名稱', { exact: true })).toHaveValue('');
   await login(context);
   await page.reload();
+  await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
   await expect(page.getByLabel('投票名稱', { exact: true })).toHaveValue('只屬於小青');
 });
 test('explicitly closes, extends, cancels with reason and removes while preserving the result history', async ({

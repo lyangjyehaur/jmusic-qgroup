@@ -1,0 +1,128 @@
+// Only reviewed, non-credential form payloads belong in this database.
+const databaseName = 'qgroup-reviewed-drafts-v1';
+const stores = ['drafts', 'versions', 'epochs'] as const;
+type Row = { key: string; scope: string; revision: number; raw: string; at: number };
+export type DraftVersion = { id: string; key: string; scope: string; raw: string; at: number; reason: string };
+export type DraftHandle = { key: string; scope: string; revision: number; deviceEpoch: number; musicEpoch: number };
+export class DraftConflict extends Error {}
+export class DraftExpired extends Error {}
+let opening: Promise<IDBDatabase> | undefined;
+function database() {
+  return opening ??= new Promise<IDBDatabase>((resolve, reject) => {
+    const request = indexedDB.open(databaseName, 1);
+    let blocked = false;
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore('drafts', { keyPath: 'key' });
+      request.result.createObjectStore('versions', { keyPath: 'id' }).createIndex('key', 'key');
+      request.result.createObjectStore('epochs');
+    };
+    request.onsuccess = () => {
+      const db = request.result;
+      if (blocked) { db.close(); return; }
+      db.onversionchange = () => { db.close(); opening = undefined; };
+      resolve(db);
+    };
+    request.onerror = () => reject(request.error);
+    request.onblocked = () => { blocked = true; reject(Error('請關閉其他舊頁面後重試。')); };
+  }).catch(error => { opening = undefined; throw error; });
+}
+function request<T>(operation: IDBRequest<T>) {
+  return new Promise<T>((resolve, reject) => {
+    operation.onsuccess = () => resolve(operation.result);
+    operation.onerror = () => reject(operation.error);
+  });
+}
+async function transaction<T>(mode: IDBTransactionMode, work: (tx: IDBTransaction) => Promise<T>) {
+  const db = await database(), tx = db.transaction([...stores], mode, { durability: mode === 'readwrite' ? 'strict' : 'default' });
+  const completion = new Promise<void>((resolve, reject) => {
+    tx.oncomplete = () => resolve();
+    tx.onabort = tx.onerror = () => reject(tx.error ?? Error('瀏覽器儲存失敗'));
+  });
+  try { const value = await work(tx); await completion; return value; }
+  catch (error) { try { tx.abort(); } catch { /* Already completed/aborted. */ } await completion.catch(() => {}); throw error; }
+}
+const isMusic = (key: string) => key.startsWith('qgroup:rebuild:music:');
+function validate(key: string, scope: string) {
+  // Explicit allowlist: never import PIN, OAuth, device or privacy receipt secrets.
+  const prefix = 'qgroup:rebuild:';
+  if (!/^[a-f0-9]{64}$/.test(scope) || !(
+    key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
+    ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms'].some(kind =>
+      key.startsWith(prefix + 'activity-draft:' + kind + ':v1:' + scope + ':'))
+  )) throw Error('不支援的原稿範圍');
+}
+async function epochs(tx: IDBTransaction, scope: string) {
+  const store = tx.objectStore('epochs');
+  const [device, music] = await Promise.all([request(store.get('device')), request(store.get('music:' + scope))]);
+  return { deviceEpoch: (device ?? 0) as number, musicEpoch: (music ?? 0) as number };
+}
+function archive(tx: IDBTransaction, key: string, scope: string, raw: string, reason: string) {
+  tx.objectStore('versions').put({ id: crypto.randomUUID(), key, scope, raw, reason, at: Date.now() } satisfies DraftVersion);
+}
+export async function openDraft(key: string, scope: string) {
+  validate(key, scope);
+  // Retain the session source until the IDB transaction has committed.
+  const legacy = sessionStorage.getItem(key);
+  const result = await transaction('readwrite', async tx => {
+    const currentEpochs = await epochs(tx, scope), store = tx.objectStore('drafts');
+    let row = await request(store.get(key)) as Row | undefined;
+    if (row && row.scope !== scope) throw Error('原稿帳號不符');
+    if (legacy !== null && currentEpochs.deviceEpoch === 0 && (!isMusic(key) || currentEpochs.musicEpoch === 0)) {
+      if (!row) {
+        row = { key, scope, revision: 1, raw: legacy, at: Date.now() };
+        store.put(row);
+      } else if (row.raw !== legacy) archive(tx, key, scope, legacy, '分頁原稿');
+    }
+    return { handle: { key, scope, revision: row?.revision ?? 0, ...currentEpochs }, raw: row?.raw ?? null };
+  });
+  if (legacy !== null && sessionStorage.getItem(key) === legacy) sessionStorage.removeItem(key);
+  return result;
+}
+/** A committed CAS failure preserves the competing payload; it never overwrites another tab. */
+export async function saveDraft(handle: DraftHandle, raw: string, preserve = false) {
+  validate(handle.key, handle.scope);
+  const result = await transaction('readwrite', async tx => {
+    const now = await epochs(tx, handle.scope);
+    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch)
+      return { expired: true } as const;
+    const store = tx.objectStore('drafts'), row = await request(store.get(handle.key)) as Row | undefined;
+    if (row && row.scope !== handle.scope) throw Error('原稿帳號不符');
+    if (!preserve && row?.raw === raw) return { handle: { ...handle, revision: row.revision } };
+    if ((row?.revision ?? 0) !== handle.revision) {
+      archive(tx, handle.key, handle.scope, raw, '分頁衝突');
+      return { conflict: true } as const;
+    }
+    if (preserve && row) archive(tx, handle.key, handle.scope, row.raw, '替換前原稿');
+    const next = { key: handle.key, scope: handle.scope, revision: handle.revision + 1, raw, at: Date.now() };
+    store.put(next);
+    return { handle: { ...handle, revision: next.revision } };
+  });
+  if ('expired' in result) throw new DraftExpired('此原稿已因登出或資料刪除失效，請重新載入頁面。');
+  if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
+  return result.handle;
+}
+export function draftVersions(key: string, scope: string) {
+  validate(key, scope);
+  return transaction('readonly', async tx => (await request(tx.objectStore('versions').index('key').getAll(key)) as DraftVersion[])
+    .filter(row => row.scope === scope).sort((a, b) => b.at - a.at));
+}
+export function listDurableDrafts(scope: string) {
+  return transaction('readonly', async tx => (await request(tx.objectStore('drafts').getAll()) as Row[]).filter(row => row.scope === scope));
+}
+export function listDurableVersions(scope: string) {
+  return transaction('readonly', async tx => (await request(tx.objectStore('versions').getAll()) as DraftVersion[]).filter(row => row.scope === scope));
+}
+/** Epoch increment and deletion share one transaction, fencing delayed writes from all tabs. */
+export function clearDurableDrafts(scope?: string) {
+  return transaction('readwrite', async tx => {
+    const epochKey = scope ? 'music:' + scope : 'device', store = tx.objectStore('epochs');
+    const epoch = (await request(store.get(epochKey)) ?? 0) as number;
+    store.put(epoch + 1, epochKey);
+    for (const name of ['drafts', 'versions'] as const) {
+      const entries = tx.objectStore(name);
+      if (!scope) { entries.clear(); continue; }
+      for (const row of await request(entries.getAll()) as (Row & DraftVersion)[])
+        if (row.scope === scope && isMusic(row.key)) entries.delete(name === 'drafts' ? row.key : row.id);
+    }
+  });
+}

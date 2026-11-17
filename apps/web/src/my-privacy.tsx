@@ -25,6 +25,7 @@ export function MyPrivacy() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
+  const [cleanup, setCleanup] = useState<PendingValue | null>(null);
   useEffect(() => {
     if (!pending || result) return;
     const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
@@ -32,8 +33,12 @@ export function MyPrivacy() {
   }, [pending, result]);
   async function finished(done: Result, operation: PendingValue) {
     setResult(done); setError('');
-    if (done.target === 'music') announceMusicErasure(operation.scope);
-    else { clearDeviceDrafts(); announceAccountChange(true); }
+    setCleanup(operation);
+    try {
+      if (done.target === 'music') await announceMusicErasure(operation.scope);
+      else { try { await clearDeviceDrafts(); } finally { announceAccountChange(true); } }
+      setCleanup(null);
+    } catch { setError('伺服器刪除已完成，但本機原稿清除失敗。請重試清除。'); }
     client.removeQueries({ queryKey: ['private'] });
     await client.invalidateQueries({ queryKey: ['music-catalog'] });
     await client.invalidateQueries({ queryKey: ['music-trend'] });
@@ -71,7 +76,7 @@ export function MyPrivacy() {
     {readError ? <Surface role="alert"><Text>{readError}</Text><Button onClick={() => {
       try { const raw = sessionStorage.getItem(storageKey); if (raw !== null) sessionStorage.setItem(storageKey + ':recovery:' + Date.now(), raw); sessionStorage.removeItem(storageKey); setReadError(''); }
       catch { setError('仍無法保全紀錄，請檢查瀏覽器儲存設定。'); }
-    }}>保全原紀錄後繼續</Button></Surface> : result ? <Surface className="detail auth-panel"><Heading level={2}>{result.target === 'music' ? '成分已刪除' : '帳號已關閉'}</Heading><Text>{result.status === 'shared_review' ? '身份與登入授權已移除；共享活動、帳務或歷史紀錄仍待人工審核，尚未全部刪除。' : result.target === 'music' ? '原成分 ID 已停用；重新建立會使用全新 ID。' : result.target === 'both' ? '帳號私人資料與成分已移除。' : '帳號私人資料已移除。'}</Text>{result.target === 'account' && <Text>原成分及其歷史仍保留，已解除帳號關聯。</Text>}<Button variant="secondary" onClick={dismiss}>完成</Button></Surface> : pending ? <Surface className="detail auth-panel"><Text>此分頁有待確認的刪除操作。確認結果會使用原操作編號；不會刪除目前其他帳號的資料。</Text><Button loading={busy} onClick={() => void submit(pending, true)}>確認刪除結果</Button></Surface> : viewer.isPending ? <Notice>正在確認帳號…</Notice> : viewer.error ? <Failure error={viewer.error} retry={() => void viewer.refetch()} /> : !viewer.data.authenticated ? <Link to={loginLink('/me/privacy')}>登入</Link> : <PrivacyOptions key={viewer.data.scope} viewer={viewer.data} busy={busy} submit={operation => void submit(operation)} />}
+    }}>保全原紀錄後繼續</Button></Surface> : result ? <Surface className="detail auth-panel"><Heading level={2}>{result.target === 'music' ? '成分已刪除' : '帳號已關閉'}</Heading><Text>{result.status === 'shared_review' ? '身份與登入授權已移除；共享活動、帳務或歷史紀錄仍待人工審核，尚未全部刪除。' : result.target === 'music' ? '原成分 ID 已停用；重新建立會使用全新 ID。' : result.target === 'both' ? '帳號私人資料與成分已移除。' : '帳號私人資料已移除。'}</Text>{result.target === 'account' && <Text>原成分及其歷史仍保留，已解除帳號關聯。</Text>}<Button variant="secondary" disabled={!!cleanup} onClick={dismiss}>完成</Button>{cleanup && <Button loading={busy} onClick={() => { setBusy(true); void finished(result, cleanup).finally(() => setBusy(false)); }}>重試清除本機原稿</Button>}</Surface> : pending ? <Surface className="detail auth-panel"><Text>此分頁有待確認的刪除操作。確認結果會使用原操作編號；不會刪除目前其他帳號的資料。</Text><Button loading={busy} onClick={() => void submit(pending, true)}>確認刪除結果</Button></Surface> : viewer.isPending ? <Notice>正在確認帳號…</Notice> : viewer.error ? <Failure error={viewer.error} retry={() => void viewer.refetch()} /> : !viewer.data.authenticated ? <Link to={loginLink('/me/privacy')}>登入</Link> : <PrivacyOptions key={viewer.data.scope} viewer={viewer.data} busy={busy} submit={operation => void submit(operation)} />}
     {error && <Text role="alert">{error}</Text>}
   </>;
 }
@@ -84,7 +89,7 @@ function PrivacyOptions({ viewer, busy, submit }: { viewer: Extract<Viewer, { au
   const blocked = target !== 'music' && (summary.data.activeEvents > 0 || summary.data.activePolls > 0);
   const noProfile = target !== 'account' && !summary.data.profile;
   return <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><fieldset disabled={busy}><legend>刪除範圍</legend>{([['music', '只刪除成分'], ['account', '只關閉帳號'], ['both', '關閉帳號並刪除成分']] as const).map(([value, label]) => <label className="consent" key={value}><input type="radio" name="erase-target" checked={target === value} onChange={() => { setTarget(value); setConfirmed(false); }} />{label}</label>)}</fieldset>
-    <Text>{target === 'music' ? '移除目前成分選擇與成分修改歷史，並清除此瀏覽器的成分草稿；保留帳號、活動與帳務。' : target === 'account' ? '撤銷所有裝置登入、QQ 綁定與管理權，清除此裝置的分頁草稿。原成分及其歷史保留並解除關聯；共享活動、帳務或歷史紀錄另行審核。' : '刪除目前成分並撤銷所有裝置登入、QQ 綁定與管理權，清除此裝置的分頁草稿；共享活動、帳務或歷史紀錄另行審核。'}</Text>
+    <Text>{target === 'music' ? '移除目前成分選擇與成分修改歷史，並清除此瀏覽器的成分草稿；保留帳號、活動與帳務。' : target === 'account' ? '撤銷所有裝置登入、QQ 綁定與管理權，清除此裝置的本機原稿。原成分及其歷史保留並解除關聯；共享活動、帳務或歷史紀錄另行審核。' : '刪除目前成分並撤銷所有裝置登入、QQ 綁定與管理權，清除此裝置的本機原稿；共享活動、帳務或歷史紀錄另行審核。'}</Text>
     {blocked && <Text role="alert">仍由你管理的活動 {summary.data.activeEvents} 個、時間投票 {summary.data.activePolls} 個；請先轉交、結束或取消，再關閉帳號。</Text>}
     {noProfile && <Text>目前沒有可刪除的成分。</Text>}
     <label className="consent"><input type="checkbox" checked={confirmed} disabled={busy || !!blocked || noProfile} onChange={event => setConfirmed(event.target.checked)} /><span>我已確認範圍，了解此操作無法復原</span></label>
