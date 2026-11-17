@@ -57,7 +57,7 @@ export function createApp(options: AppOptions) {
   const musicClaims = createMusicClaims(db, now);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
-  app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
+  app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
   // Register routes after plugins so their onRoute hooks enforce per-route limits.
   app.register(async function routes(app) {

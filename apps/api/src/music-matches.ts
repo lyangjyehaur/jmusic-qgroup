@@ -1,6 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { MusicMatches, MusicComparison, LookupMusicProfile } from '@qgroup/contracts';
+import { MusicMatches, MusicComparison, MusicShareContext, LookupMusicProfile } from '@qgroup/contracts';
 import { DomainError, musicComparison, musicMatches } from '@qgroup/domain';
 import { z } from 'zod';
 import type { Security } from './security';
@@ -20,6 +20,18 @@ function compare(db: DB, userId: string, target: string) {
   return MusicComparison.parse({ ...musicComparison(me.selections, other.selections, entries), me: matchingIdentity(me, true, true), other: matchingIdentity(other, allowed) });
 }
 export function registerMusicMatches(app: FastifyInstance, db: DB, security: Security) {
+  // Export projection is separate from matchingIdentity: it never loads notes into a response.
+  app.get('/api/v2/me/music/share', async request => db.transaction(() => {
+    const viewer = security.scopedMember(request), profile = getProfile(db, viewer.id);
+    const { sort } = z.object({ sort: z.enum(['rare', 'familiar']).default('rare') }).strict().parse(request.query);
+    const musicEpoch = (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(viewer.id) as { epoch: number } | undefined)?.epoch ?? 0;
+    if (!profile) return MusicShareContext.parse({ profileId: null, musicEpoch, name: viewer.nickname, contactQQ: '', contactSource: '', sort, topMatch: null });
+    const { entries, members } = musicMatchData(db), me = members.find(member => member.id === profile.id)!;
+    const top = musicMatches(me, members, entries, sort).matches[0];
+    return MusicShareContext.parse({ profileId: profile.id, musicEpoch, name: me.name, contactQQ: me.contactQQ, contactSource: me.contactSource, sort,
+      topMatch: top ? { id: top.member.id, name: top.member.name, contactQQ: top.member.contactQQ, contactSource: top.member.contactSource,
+        matchPercent: top.stats.matchPercent, sharedCount: top.stats.sharedCount } : null });
+  })());
   app.get('/api/v2/music/matches', async request => db.transaction(() => {
     const viewer = security.scopedMember(request), profile = viewerProfile(db, viewer.id);
     const { sort } = z.object({ sort: z.enum(['rare', 'familiar']).default('rare') }).strict().parse(request.query);

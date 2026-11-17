@@ -4,6 +4,7 @@ import { Heading, Surface, Text } from 'yahha-ui';
 import type { z } from 'zod';
 import { MusicMatches, MusicComparison } from '@qgroup/contracts';
 import { peopleReturn } from './music-return';
+import { useMusicMatchSort } from './music-match-sort';
 import { api } from './api';
 import { MusicMemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -11,11 +12,11 @@ import { ContactValue } from './music-contact-value';
 import { CopyMusicValue } from './music-copy';
 import { ComparedPicks, MatchStats } from './music-match-view';
 export function MusicRecommendations({ viewer }: { viewer: Member }) {
-  const [params, setParams] = useSearchParams(), sort = params.get('sort') === 'familiar' ? 'familiar' : 'rare';
+  const { sort, change } = useMusicMatchSort();
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-matches', viewer.musicEpoch, sort],
     queryFn: ({ signal }) => api('/music/matches?sort=' + sort, MusicMatches, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always', refetchInterval: 10000 });
   return <section aria-label="同好推薦" className="music-recommendations"><Heading level={2}>同好推薦</Heading>
-    <label className="match-sort">排序<select aria-label="排序" value={sort} onChange={event => setParams(old => { const next = new URLSearchParams(old); next.set('sort', event.target.value); return next; }, { replace: true })}>
+    <label className="match-sort">排序<select aria-label="排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}>
       <option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option>
     </select></label>
     <details><summary>匹配度與排序規則</summary><Text>嚴格重合按領域 55%、細分 45% 及雙方較低熟悉度計算；四檔權重為 0.3／0.5／0.8／1，只有一種類型時使用該類完整比重。匹配度為 100 × √嚴格重合率；共同 1／2／3 項上限為 36／49／64%。</Text>

@@ -51,6 +51,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-matches'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-share'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
       void client.invalidateQueries({ queryKey: ['music-catalog'] }); announceAccountChange();
       setMessage(result.revision === latest.revision ? '成分資料已保存。' : '原操作已保存，資料已再次變更；請核對目前內容。');

@@ -200,3 +200,9 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .match-pick-group { margin-block: 1.25rem; }
 .match-pick-group h4 { margin-block: .75rem; }
 .match-note { padding-inline-start: .75rem; border-inline-start: 3px solid #7a9cb8; white-space: pre-wrap; }
+
+.music-share-options { margin-block: 1.5rem; max-width: 44rem; }
+.music-share-options .account-field { margin-block: 1rem; }
+.music-share-preview { margin-block: 1.5rem; max-width: 44rem; }
+.music-share-preview img { display: block; width: 100%; height: auto; border: 1px solid #c6d6e8; border-radius: .5rem; }
+.music-share-preview .page-actions { margin-block: 1rem; }

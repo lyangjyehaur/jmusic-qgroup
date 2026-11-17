@@ -34,6 +34,7 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
     {(!form.message || form.dirty) && <Text size="sm" tone="muted">{form.dirty ? '尚有未保存的修改；草稿只留在此分頁。' : form.saved ? '所有選擇已保存。' : '選擇後即可建立成分。'}</Text>}
     <Link to={(location.pathname !== '/me/music' ? '/me/music' : '/music') + location.search}>
       {location.pathname !== '/me/music' ? '編輯我的成分' : '音樂詞庫'}</Link>
+    <Link to={'/me/music/share' + location.search}>分享成分</Link>
   </Surface></aside>;
 }
 export function ProfileEditor({ selection: form }: { selection: MusicSelection }) {

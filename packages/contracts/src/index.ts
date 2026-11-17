@@ -129,3 +129,4 @@ export * from './activity-history';
 export * from './inbox';
 export * from './finance';
 export * from './music-matching';
+export * from './music-share';

@@ -3211,11 +3211,13 @@
         "apps/web/src/music-matches.tsx",
         "apps/web/src/music-match-view.tsx",
         "apps/web/src/music-return.ts",
-        "apps/web/src/people.tsx"
+        "apps/web/src/people.tsx",
+        "apps/web/src/music-match-sort.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/music-matching.test.ts",
-        "apps/api/src/music-matches.test.ts"
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-share.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-matches.test.ts",
@@ -3227,10 +3229,12 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-matches.spec.ts",
-        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+        "docs/unified-rebuild/40-music-matching-checkpoint.md",
+        "apps/web/tests/music-share.spec.ts",
+        "docs/unified-rebuild/41-music-sharing-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
+      "remaining": "原生兩種排序、資料較少分區、tie-break、偏好記憶／舊偏好讀取與 URL 優先已隔離實作；正式副本、大量資料效能、舊入口 adapter、跨 origin client migrator 及切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M15",
@@ -3432,13 +3436,33 @@
       "new_entry": "我的成分分享",
       "required_behavior": "Canvas 圖、下載與分享可用，API 不可用時有退路，無憑證／私人留言",
       "legacy_evidence_group": "音樂前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "Canvas 圖、下載與分享可用，API 不可用時有退路，無憑證／私人留言"
+      "implementation": [
+        "packages/contracts/src/music-share.ts",
+        "packages/domain/src/music-share.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/web/src/music-share.tsx",
+        "apps/web/src/music-share-canvas.ts",
+        "apps/web/src/music-match-sort.ts",
+        "apps/web/src/music-selection.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-share.test.ts",
+        "apps/api/src/music-share.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-share.test.ts",
+        "docs/unified-rebuild/41-music-sharing-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-share.test.ts",
+        "apps/web/tests/music-share.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-share.spec.ts",
+        "docs/unified-rebuild/41-music-sharing-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "目前草稿／完整文字清單、原生 Canvas PNG、可選聯絡、配色／下載／原生分享與 API 失敗退路已隔離實作；正式副本、實機分享面板、舊入口 adapter、browser migrator 與切換版本組合仍待成套驗收。"
     },
     {
       "capability_id": "M21",
