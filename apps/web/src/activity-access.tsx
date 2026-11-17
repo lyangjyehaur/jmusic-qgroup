@@ -1,44 +1,58 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { z } from 'zod';
 import { Button, Surface, Text } from 'yahha-ui';
-import { AcceptActivityAccess, ActivityAccessPreview, ActivityAccessResult, ActivityShare, type Viewer } from '@qgroup/contracts';
+import { ActivityAccessPreview, ActivityAccessResult, ActivityShare, type Viewer } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { authHeaders } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro, useSession } from './shared';
+import { useDurableValue } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
+import { PendingActivityAccess as Pending } from './activity-access-record';
 const base=(id:string)=>'/activities/'+encodeURIComponent(id);
 export function ActivityAccessPage(){
   const {id='',token=''}=useParams();
   return <><PageIntro title="接受活動可見邀請"/><MemberAccess>{viewer=><Access key={viewer.scope+':'+id+':'+token} viewer={viewer} id={id} token={token}/>}</MemberAccess></>;
 }
-const Pending=z.object({key:z.string().uuid(),input:AcceptActivityAccess}).strict();
 function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
   const path=base(id)+'/access/'+encodeURIComponent(token),key='qgroup:rebuild:activity-draft:access:v1:'+viewer.scope+':'+id+':'+token,client=useQueryClient();
-  const active=useRef(true);useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
-  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(key);return {pending:raw?Pending.parse(JSON.parse(raw)):null,error:''};}catch{return {pending:null,error:'無法讀取邀請操作原稿，請先保全原稿。'};}});
-  const [readError,setReadError]=useState(loaded.error),[pending,setPending]=useState(loaded.pending),[confirmed,setConfirmed]=useState(false),[busy,setBusy]=useState(false),[done,setDone]=useState(false),[message,setMessage]=useState('');
-  const view=useQuery({queryKey:['private',viewer.scope,'activity-access',id,token],queryFn:()=>api(path,ActivityAccessPreview,{headers:{'X-Account-Scope':viewer.scope}}),gcTime:0,refetchOnWindowFocus:false});
+  const record=useDurableValue<Pending|null>({key,scope:viewer.scope,seed:()=>null,parse:raw=>Pending.nullable().parse(JSON.parse(raw)),dirty:value=>!!value,pending:value=>!!value});
+  const {value:pending,busy,locked,unavailable,begin,persist,replace,setBusy}=record;
+  const active=useRef(true),cancel=useRef(new AbortController());
+  useEffect(()=>{active.current=true;cancel.current=new AbortController();return()=>{active.current=false;cancel.current.abort();};},[]);
+  const [confirmed,setConfirmed]=useState(false),[done,setDone]=useState(false),[message,setMessage]=useState(''),[authorityLost,setAuthorityLost]=useState(false);
+  const view=useQuery({queryKey:['private',viewer.scope,'activity-access',id,token],queryFn:({signal})=>api(path,ActivityAccessPreview,{headers:{'X-Account-Scope':viewer.scope},signal}),gcTime:0,refetchOnWindowFocus:false});
+  useEffect(()=>{setConfirmed(false);},[view.dataUpdatedAt]);
+  useEffect(()=>{setConfirmed(false);setDone(false);setMessage('');},[record.epoch]);
+  const denied=authorityLost||view.error instanceof ApiError&&([401,403].includes(view.error.status)||view.error.code==='ACCOUNT_CHANGED');
   async function accept(){
-    if(busy||readError||(!pending&&(!confirmed||!view.data)))return;setBusy(true);setMessage('');
-    let persisted=false;
+    if(denied||done||(!pending&&(!confirmed||!view.data||view.error||view.isFetching))||!begin())return;
+    setMessage('');let accepted=false;
     const operation=pending??{key:crypto.randomUUID(),input:{revision:view.data!.revision,confirm:true as const}};
     try{
-      sessionStorage.setItem(key,JSON.stringify(operation));persisted=true;setPending(operation);
-      await api(path+'/accept',ActivityAccessResult,{method:'POST',headers:{...authHeaders(viewer),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});
-      if(!active.current)return;sessionStorage.removeItem(key);setPending(null);setDone(true);void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',id]});
+      if(!await persist(operation,false,'無法保存邀請操作編號，尚未送出授權。')||!active.current)return;
+      replace(operation);
+      const result=await api(path+'/accept',ActivityAccessResult,{method:'POST',headers:{...authHeaders(viewer),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input),signal:cancel.current.signal});accepted=true;
+      if(!active.current)return;
+      if(result.id!==id)throw Error('原邀請回執的活動不符，請保全紀錄後核對。');
+      if(!await persist(null,false,'已取得查看權限，但無法保存本機確認狀態；請保留原操作並核對結果。')||!active.current)return;
+      replace(null);setConfirmed(false);setDone(true);void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',id]});
     }catch(error){
       if(!active.current)return;
-      if(error instanceof ApiError&&error.status<500){try{sessionStorage.removeItem(key);setPending(null);}catch{/* Preserve the original operation if storage is unavailable. */}setConfirmed(false);}
-      setMessage(!persisted?'無法保存邀請操作編號，尚未送出授權。':error instanceof Error?error.message:'尚未確認邀請結果，請用原操作核對。');
+      if(error instanceof ApiError&&([401,403].includes(error.status)||error.code==='ACCOUNT_CHANGED')){setAuthorityLost(true);return;}
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){
+        if(await persist(null,false,'無法保存拒絕結果；原邀請操作仍保留，請重新核對。')&&active.current)replace(null);
+        setConfirmed(false);setMessage(error.message);void view.refetch();
+      }else setMessage(error instanceof Error&&error.message==='原邀請回執的活動不符，請保全紀錄後核對。'?error.message:'尚未確認邀請結果，原操作已保留，請確認原邀請操作結果。');
     }finally{if(active.current)setBusy(false);}
   }
-  return <Surface className="detail">{readError?<Notice>{readError}<Button disabled={busy} onClick={()=>{try{const raw=sessionStorage.getItem(key);if(raw!==null)sessionStorage.setItem(key+':recovery:'+Date.now(),raw);sessionStorage.removeItem(key);setReadError('');}catch{setMessage('仍無法保全原稿，請檢查瀏覽器儲存設定。');}}}>保全原稿後繼續</Button></Notice>:done?<><Notice>已取得活動查看權限。</Notice><Link to={base(id)}>查看活動</Link></>:<>
+  if(denied)return <Notice>目前帳號或邀請權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
+  return <Surface className="detail"><DraftFeedback form={record} navigation={false}/>{done?<><Notice>已取得活動查看權限。</Notice><Link to={base(id)}>查看活動</Link></>:<>
     {view.isPending?<Notice>正在核對邀請…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<><h2>{view.data.title}</h2><Text>以「{viewer.nickname}」接受後可查看活動；報名仍需另行提交，不會取得管理權限。</Text></>}
-    {!pending&&view.data&&<label className="consent"><input type="checkbox" checked={confirmed} disabled={busy} onChange={event=>setConfirmed(event.target.checked)}/>確認接受活動查看邀請</label>}
-    <Button loading={busy} disabled={!pending&&(!confirmed||!view.data)} onClick={()=>void accept()}>{pending?'確認原邀請操作結果':'接受查看邀請'}</Button>
-    {!pending&&<Button variant="secondary" disabled={busy} onClick={()=>{setConfirmed(false);void view.refetch();}}>重新核對邀請</Button>}
+    {!pending&&view.data&&!view.error&&<label className="consent"><input type="checkbox" checked={confirmed} disabled={locked||view.isFetching} onChange={event=>setConfirmed(event.target.checked)}/>確認接受活動查看邀請</label>}
+    <Button loading={busy} disabled={pending?busy||unavailable:locked||!confirmed||!view.data||!!view.error||view.isFetching} onClick={()=>void accept()}>{pending?'確認原邀請操作結果':'接受查看邀請'}</Button>
+    {!pending&&<Button variant="secondary" disabled={locked||view.isFetching} onClick={()=>{setConfirmed(false);void view.refetch();}}>重新核對邀請</Button>}
   </>}{message&&<Text role="status">{message}</Text>}</Surface>;
 }
 export function ActivitySharePage(){const {id=''}=useParams(),session=useSession();return <><PageIntro title="分享活動"/>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:session.data?<Share key={session.data.scope+':'+id} viewer={session.data} id={id}/>:<Notice>正在確認帳號…</Notice>}</>;}

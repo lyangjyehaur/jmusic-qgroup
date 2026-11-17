@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
+import { denyDraftWrites, durableRows } from './draft-helpers';
 const origin='http://127.0.0.1:5082';
 async function login(context:BrowserContext,id='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+id,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const viewer=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()};}
@@ -58,8 +59,8 @@ test('the bot mine entry lists owner drafts and published activities behind the 
 test('damaged access receipts are preserved and unavailable storage prevents a grant request',async({page,context})=>{
   const {id,token}=await published(context);await login(context,'bob');await page.goto('/?event='+id+'&invite='+token);await expect(page.getByLabel('確認接受活動查看邀請',{exact:true})).toBeVisible();
   await page.evaluate(({id,token})=>{const key='qgroup:rebuild:activity-draft:access:v1:';return fetch('/api/v2/session').then(r=>r.json()).then(viewer=>sessionStorage.setItem(key+viewer.scope+':'+id+':'+token,'damaged access receipt'));},{id,token});
-  await page.reload();await expect(page.getByRole('button',{name:'接受查看邀請',exact:true})).toHaveCount(0);await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect(await page.evaluate(()=>Object.entries(sessionStorage).filter(([key])=>key.includes(':access:')&&key.includes(':recovery:')).map(([,value])=>value))).toContain('damaged access receipt');
-  let grants=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/access/'))grants++;});await page.evaluate(()=>{const set=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.startsWith('qgroup:rebuild:activity-draft:access:'))throw new DOMException('synthetic denial');set.call(this,key,value);};});
+  await page.reload();await expect(page.getByRole('button',{name:'接受查看邀請',exact:true})).toBeDisabled();await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain('damaged access receipt');
+  let grants=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().includes('/access/'))grants++;});await denyDraftWrites(page,':access:');
   await page.getByLabel('確認接受活動查看邀請',{exact:true}).check();await page.getByRole('button',{name:'接受查看邀請',exact:true}).click();await expect(page.getByText('無法保存邀請操作編號，尚未送出授權。',{exact:true})).toBeVisible();expect(grants).toBe(0);
 });
 

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { activityAccessDraftRoute } from '../../web/src/activity-access-record';
 import { botDeliveryDraftRoute } from '../../web/src/bot-delivery-record';
 import { pendingOperations } from '../../web/src/pending-operations';
 const current='a'.repeat(64),other='b'.repeat(64),authority='c'.repeat(64),key='00000000-0000-4000-8000-000000000001',root='qgroup:rebuild:';
@@ -59,5 +60,28 @@ describe('manual bot delivery recovery inventory',()=>{
   const paths=['https://evil.example','//evil.example/bot-deliveries','/activities/./bot-deliveries','/activities/../bot-deliveries','/activities/%2E/bot-deliveries','/activities/%2e%2e/bot-deliveries','/activities/%zz/bot-deliveries','/activities/%61/bot-deliveries','/activities/a%2fb/bot-deliveries','/activities/x/bot-deliveries?x=1','/activities/x/bot-deliveries#x','/activities/x/bot-deliveries/extra','/activities/'+('x'.repeat(81))+'/bot-deliveries'];
   for(const value of paths){expect(botDeliveryDraftRoute(prefix+value,current),value).toBeNull();expect(pendingOperations(storage({[prefix+value]:raw}),current),value).toEqual([]);}
   expect(botDeliveryDraftRoute(prefix+path,other)).toBeNull();expect(botDeliveryDraftRoute(prefix+path,'A'.repeat(64))).toBeNull();
+ });
+});
+
+describe('activity view invitation recovery inventory',()=>{
+ const prefix=root+'activity-draft:access:v1:'+current+':',token='x'.repeat(32),raw=JSON.stringify({key,input:{revision:7,confirm:true}});
+ it('links to the original invitation and member receipt without exposing input fields or payload URLs',()=>{
+  const name=prefix+'activity:'+token,to='/activities/activity/access/'+token;
+  expect(pendingOperations(storage({[name]:raw}),current)).toEqual([{id:name,label:'活動查看邀請',to,damaged:false,requestKey:key}]);
+  expect(pendingOperations(storage({[name]:raw}),other)).toEqual([]);
+  expect(pendingOperations(storage({[name]:'null'}),current)).toEqual([]);
+  expect(pendingOperations(storage({[name]:JSON.stringify({...JSON.parse(raw),url:'https://evil.example'})}),current)).toEqual([{id:name,label:'活動查看邀請',to,damaged:true}]);
+ });
+ it('escapes original IDs including colons and rejects malformed scope, token and path normalization segments',()=>{
+  expect(activityAccessDraftRoute(prefix+'活動/a:b:'+token,current)).toEqual({id:'活動/a:b',token,path:'/activities/'+encodeURIComponent('活動/a:b')+'/access/'+token});
+  for(const tail of [':'+token,'a:bad','a:'+token+':extra','.:'+token,'..:'+token,'x'.repeat(81)+':'+token,'\ud800:'+token]){
+   expect(activityAccessDraftRoute(prefix+tail,current),tail).toBeNull();expect(pendingOperations(storage({[prefix+tail]:raw}),current)).toEqual([]);
+  }
+  expect(activityAccessDraftRoute(prefix+'activity:'+token,other)).toBeNull();
+ });
+ it('keeps damaged commands actionable while rejecting malformed original bodies',()=>{
+  const name=prefix+'activity:'+token;
+  for(const value of ['PRIVATE_DAMAGED',JSON.stringify({key,input:{revision:-1,confirm:true}}),JSON.stringify({key,input:{revision:1,confirm:false}})])
+   expect(pendingOperations(storage({[name]:value}),current)).toEqual([{id:name,label:'活動查看邀請',to:'/activities/activity/access/'+token,damaged:true}]);
  });
 });

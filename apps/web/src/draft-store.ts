@@ -1,4 +1,5 @@
 import { MusicPinResultRequest } from '@qgroup/contracts';
+import { activityAccessDraftRoute } from './activity-access-record';
 import { botDeliveryDraftRoute } from './bot-delivery-record';
 // Only reviewed form payloads and scoped operation routes belong in this database; never login credentials.
 const databaseName = 'qgroup-reviewed-drafts-v1';
@@ -59,6 +60,7 @@ function validate(key: string, scope: string) {
     key === prefix + 'account-profile:v1:' + scope ||
     key === prefix + 'notifications-read:v1:' + scope ||
     !!botDeliveryDraftRoute(key, scope) ||
+    !!activityAccessDraftRoute(key, scope) ||
     new RegExp('^qgroup:rebuild:admin-(?:bot|catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
     new RegExp('^qgroup:rebuild:admin-(?:user|privacy|music|music-pin):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
