@@ -29,6 +29,7 @@ import { registerActivityManagement } from './activity-management';
 import { registerActivityLifecycle } from './activity-lifecycle';
 import { registerActivityRegistration } from './activity-registration';
 import { registerActivityInvitations } from './activity-invitations';
+import { registerActivityClaims } from './activity-claims';
 import type { ActivityBotDefaults } from './activity-bot';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
@@ -78,6 +79,7 @@ export function createApp(options: AppOptions) {
     registerActivityLifecycle(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityRegistration(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityInvitations(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
+    registerActivityClaims(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());

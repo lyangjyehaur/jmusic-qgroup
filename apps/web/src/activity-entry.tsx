@@ -5,6 +5,8 @@ const actions=new Set(['join','conditions','settlement','finance','manage','onsi
 export function ActivityEntry(){
   const [search]=useSearchParams();const id=search.get('event');
   if(!id)return <Activities/>;
+  const claim=search.get('claim');
+  if(claim&&/^[A-Za-z0-9_-]{32}$/.test(claim))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/claims/'+encodeURIComponent(claim)}/>;
   const invitation=search.get('attendee_invite');
   if(invitation&&/^[A-Za-z0-9_-]{32}$/.test(invitation))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/invitations/'+encodeURIComponent(invitation)}/>;
   const action=search.get('action');const query=action&&actions.has(action)?'?'+new URLSearchParams({task:action}):'';

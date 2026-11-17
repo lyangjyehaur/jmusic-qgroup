@@ -1241,13 +1241,29 @@
       "new_entry": "名單／認領連結",
       "required_behavior": "7 天、原管理權重驗、未審不授私有內容、不按同名合併",
       "legacy_evidence_group": "認領",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "7 天、原管理權重驗、未審不授私有內容、不按同名合併"
+      "implementation": [
+        "apps/api/src/activity-claims.ts",
+        "apps/api/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts",
+        "packages/contracts/src/activity-claims.ts",
+        "apps/web/src/activity-claims.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-claims.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-claims.test.ts",
+        "docs/unified-rebuild/27-attendee-claims-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-claims.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-claims.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生認領邀請／七日效期／原 issuer 重驗／有限預覽／本人雙確認／管理審核／拒絕撤銷／未知結果恢復已測；全部舊 API、正式副本與實際平台驗收待完成。"
     },
     {
       "capability_id": "R11",
@@ -1255,13 +1271,29 @@
       "new_entry": "認領／結算",
       "required_behavior": "attendee／party／排序／帳單／原投入不變；既有付款來源凍結",
       "legacy_evidence_group": "認領、財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "attendee／party／排序／帳單／原投入不變；既有付款來源凍結"
+      "implementation": [
+        "apps/api/src/activity-claims.ts",
+        "apps/api/src/activity-registration.ts",
+        "apps/api/src/activity-bot.ts",
+        "packages/contracts/src/activity-claims.ts",
+        "apps/web/src/activity-claims.tsx",
+        "apps/web/src/activity-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-claims.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-claims.test.ts",
+        "docs/unified-rebuild/27-attendee-claims-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-claims.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-claims.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "批准保留原 attendee／party／隊序／consent 與全部帳務／圖片，兩種 append-only 付款來源凍結及舊 finance consumer 已測；新版結算／申報權利全流程、正式副本與實際平台驗收待完成。"
     },
     {
       "capability_id": "R12",

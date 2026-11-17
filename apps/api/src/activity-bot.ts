@@ -111,9 +111,9 @@ export function createActivityBot(db:DB,now:()=>Date,defaults:ActivityBotDefault
     if(!botShareable(event))db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
     schedule(event);if(event.lifecycle!=='draft')broadcast(event,'activity_published');
   }
-  function personal(eventId:string,userId:string,kind:'promoted'|'conditions_declined'|'withdrawal_request'|'withdrawal_decision'|'removed'){
+  function personal(eventId:string,userId:string,kind:'promoted'|'conditions_declined'|'withdrawal_request'|'withdrawal_decision'|'removed'|'claim_requested'|'claim_decided'){
     if(!defaults.personalQueue||!activityBotPolicy(db,defaults).config.enabled)return;
-    const label={promoted:'你的报名已递补为正式名额',conditions_declined:'有人暂不同意新安排，请协调处理',withdrawal_request:'有一条退出申请待处理',withdrawal_decision:'退出申请已有处理结果',removed:'你的报名已被撤销'}[kind];
+    const label={promoted:'你的报名已递补为正式名额',conditions_declined:'有人暂不同意新安排，请协调处理',withdrawal_request:'有一条退出申请待处理',withdrawal_decision:'退出申请已有处理结果',removed:'你的报名已被撤销',claim_requested:'有一条报名认领申请待核对',claim_decided:'报名认领申请已有结果'}[kind];
     const text=label+'\n'+botActivityURL(eventId,undefined,defaults);const dedupe=hash(kind+'\nprivate\n\n'+userId+'\n'+text).slice(0,32);
     db.prepare("INSERT OR IGNORE INTO bot_outbox(event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id,poll_id) VALUES(?,?,?,'private','',?,NULL,'pending',?,?,NULL)").run(eventId,kind,dedupe,JSON.stringify({text,msg_type:0,...(defaults.keyboard?{keyboard:{content:{rows:[]}}}:{})}),legacyStamp(now()),userId);
   }
