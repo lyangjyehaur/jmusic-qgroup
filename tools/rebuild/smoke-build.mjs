@@ -11,9 +11,10 @@ const botSmoke = spawnSync(process.execPath, ['--import', 'tsx', 'tools/rebuild/
 });
 assert.equal(botSmoke.status, 0, botSmoke.stderr || botSmoke.stdout);process.stdout.write(botSmoke.stdout);
 const rescueKey='synthetic-built-wallpaper-rescue-'+randomUUID();
+const partnerKey='synthetic_built_partner_'+randomUUID().replaceAll('-','');
 const directory = realpathSync(mkdtempSync(join(tmpdir(), 'qgroup-built-')));
 const port = 5084;
-const child = spawn(process.execPath, ['.rebuild-dist/api/start.mjs'], { env: { ...process.env, REBUILD_ADMIN_KEY_HASH: createHash('sha256').update(rescueKey).digest('hex'), REBUILD_QQ_APP_ID: '', REBUILD_QQ_APP_KEY: '', REBUILD_DB: join(directory, 'empty.sqlite3'), REBUILD_PORT: String(port), REBUILD_ORIGIN: `http://127.0.0.1:${port}` }, stdio: ['ignore', 'pipe', 'pipe'] });
+const child = spawn(process.execPath, ['.rebuild-dist/api/start.mjs'], { env: { ...process.env, KANBAN_PUBLIC_API_KEYS: partnerKey, REBUILD_ADMIN_KEY_HASH: createHash('sha256').update(rescueKey).digest('hex'), REBUILD_QQ_APP_ID: '', REBUILD_QQ_APP_KEY: '', REBUILD_DB: join(directory, 'empty.sqlite3'), REBUILD_PORT: String(port), REBUILD_ORIGIN: `http://127.0.0.1:${port}` }, stdio: ['ignore', 'pipe', 'pipe'] });
 let logs = ''; child.stdout.on('data', data => { logs += data; }); child.stderr.on('data', data => { logs += data; });
 const closed = new Promise(resolve => child.once('exit', resolve));
 try {
@@ -53,6 +54,12 @@ try {
   const unknown = await fetch(base + '/api/v2/missing'); assert.equal(unknown.status, 404);
   const activities = await fetch(base + '/api/v2/activities'); assert.equal(activities.headers.get('cache-control'), 'no-store');
   assert.deepEqual((await activities.json()).events, []);
+  const partnerHeaders={Authorization:'Bearer '+partnerKey};
+  const partnerUnauthorized=await fetch(base+'/api/public/v1/events?disguised='+partnerKey);assert.equal(partnerUnauthorized.status,401);assert.equal(partnerUnauthorized.headers.get('www-authenticate'),'Bearer realm="qgroup-partner-api"');assert.equal(partnerUnauthorized.headers.get('set-cookie'),null);await partnerUnauthorized.arrayBuffer();
+  const partnerIndex=await fetch(base+'/api/public/v1',{headers:partnerHeaders});assert.equal(partnerIndex.status,200);assert.equal((await partnerIndex.json()).identity.account,'user_id');
+  const partner=await fetch(base+'/api/public/v1/events',{headers:{...partnerHeaders,Origin:'https://partner.example'}});assert.equal(partner.status,200);assert.equal(partner.headers.get('cache-control'),'no-store');assert.equal(partner.headers.get('access-control-allow-origin'),null);assert.equal(partner.headers.get('set-cookie'),null);assert.deepEqual(await partner.json(),{api_version:1,events:[],total:0,limit:20,offset:0,next_offset:null});
+  const partnerHead=await fetch(base+'/api/public/v1/events',{method:'HEAD',headers:partnerHeaders});assert.equal(partnerHead.status,200);assert.equal(await partnerHead.text(),'');
+  const partnerWrite=await fetch(base+'/api/public/v1/events',{method:'POST',headers:partnerHeaders});assert.equal(partnerWrite.status,405);assert.equal(partnerWrite.headers.get('allow'),'GET, HEAD, OPTIONS');await partnerWrite.arrayBuffer();
   const session = await fetch(base + '/api/v2/session');
   const viewer=await session.json(); assert.equal(viewer.qqEnabled, false);
   assert(session.headers.get('set-cookie')?.includes('HttpOnly'));
@@ -84,6 +91,7 @@ try {
   const callback = await fetch(base + '/auth/qq/callback?state=invalid&code=synthetic', { redirect: 'manual' });
   assert.equal(callback.status, 303); assert.equal(callback.headers.get('location'), '/auth/confirm?status=invalid');
   child.kill('SIGTERM'); await closed;
+  assert(!logs.includes(partnerKey),'Partner credentials must not enter request logs');
   // Only immutable native archives and new synthetic evidence are passed to the
   // offline CLI after the synthetic server has stopped. No bot runs here.
   const evidence=join(directory,'evidence'),candidate=join(directory,'candidate');mkdirSync(evidence);writeFileSync(join(directory,'empty.erasures.jsonl'),'');

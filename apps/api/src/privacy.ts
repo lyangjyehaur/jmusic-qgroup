@@ -147,6 +147,10 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
   }
   recover(); // Fail closed before any routes are registered or sockets are opened.
   return {
+    assertReadable() {
+      // Partner reads must fail closed without replaying a pending erasure.
+      if (journalFailed || recoveryRequired) throw new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503);
+    },
     guard() {
       if (journalFailed || recoveryRequired) {
         try { recover(); } catch { throw new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503); }

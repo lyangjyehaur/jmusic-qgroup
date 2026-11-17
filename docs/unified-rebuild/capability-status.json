@@ -5237,13 +5237,27 @@
       "new_entry": "原 /api/public/v1",
       "required_behavior": "Bearer、未配置停用、GET／HEAD、分頁／篩選、白名單、CORS／快取政策不變",
       "legacy_evidence_group": "公開 API",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "Bearer、未配置停用、GET／HEAD、分頁／篩選、白名單、CORS／快取政策不變"
+      "implementation": [
+        "apps/api/src/public-api.ts",
+        "apps/api/src/app.ts",
+        "apps/api/src/privacy.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/public-api.test.ts",
+        "tools/rebuild/smoke-build.mjs",
+        "docs/unified-rebuild/60-partner-api-checkpoint.md"
+      ],
+      "data_evidence": [
+        "apps/api/src/public-api.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/public-api.test.ts"
+      ],
+      "ux_evidence": [
+        "docs/public-api.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生 v1 列表／明細／名冊／包間、Bearer 與未配置停用、讀取交易／唯讀連線、HEAD／OPTIONS／405、白名單及 Cookie 隔離已有合成差分；保留 Python bot 的公開查詢與全部資料零異動已測。正式合作方與實際 web／bot 版本組合、資料副本、全部舊連結與切換／回退仍待 P6／P7 驗收；未部署。"
     },
     {
       "capability_id": "O02",

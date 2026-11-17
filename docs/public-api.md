@@ -146,3 +146,9 @@ const page = await response.json();
 驗證指令：`python3 -m unittest discover -s tests -p test_public_api.py -q`，以及專案完整 Python／前端回歸。新增測試涵蓋跨活動 ID、代報認領、註銷、可見性、分頁、包間快照、後端存取、HEAD／OPTIONS、方法限制及讀取零資料異動，以及缺少／錯誤／重複金鑰 header、錯誤配置、換鑰撤銷、Cookie 不可代替金鑰與日誌遮蔽。
 
 2026-11-14 鑑權版驗證：API 專項 14 項、完整 Python 682 項及全部 15 組前端測試通過，簡繁產物已重新生成。核准來源的同一份 linux/amd64 映像匯入本機後，完成 682 項容器測試（skipped=8），退出碼 0、OOMKilled=false。正式配對備份的隔離副本完成重複初始化、資料／圖片完整性及原 bot 相容性驗證，schema 維持 19。正式 HTTP／HTTPS 及本機對外 HTTPS 驗證金鑰錯誤 401、有效金鑰 200、寫入 405；正式非公開活動的詳情／名單／包間均為 404。完整映像、版本、備份、回退及驗收結果見發布紀錄。
+
+## 統一重構版（隔離實作，未部署）
+
+2026-11-18 原生 TypeScript API 已保留相同路徑、環境金鑰、鑑權、分頁、欄位及資料白名單，直接讀取統一資料庫。網站 Cookie 不增加權限，無跨站 CORS、不建立 session，每次請求使用唯讀交易快照。刪除恢復未完成、恢復候選、資料庫不可用或快照損壞時回 `503 {"error":"Partner API temporarily unavailable"}`；不能當作活動已刪除。
+
+本批程式影響範圍 `web`，實際發布範圍 `none`，不代表上文正式 Python 服務已更換。差分、bot 資料保全及尚待正式驗收項目見[重構檢查點](unified-rebuild/60-partner-api-checkpoint.md)。

@@ -57,8 +57,9 @@ import type { ActivityBotDefaults } from './activity-bot';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
+import { registerPublicAPI } from './public-api';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean }
 export function createApp(options: AppOptions) {
   const { db } = options;
   assertDatabaseUsable(db);
@@ -79,6 +80,8 @@ export function createApp(options: AppOptions) {
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
+  // Independent of browser sessions, write recovery hooks and browser errors.
+  registerPublicAPI(app, db, now, options.publicAPIKeys ?? (() => process.env.KANBAN_PUBLIC_API_KEYS ?? ''), privacy.assertReadable);
   if (backups && options.pairedBackupScheduling !== false) {
     let timer: ReturnType<typeof setInterval> | undefined;
     const tick = () => { try { privacy.guard(); const last = backups.list()[0]; if (!last || now().getTime() - Date.parse(last.createdAt) >= 3600000) backups.capture(); backups.prune(); } catch (error) { app.log.error(error, 'Paired backup failed'); } };
