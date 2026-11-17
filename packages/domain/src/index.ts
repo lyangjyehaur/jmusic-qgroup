@@ -62,3 +62,4 @@ export * from './music-share';
 export * from './music-trend';
 export * from './music-circles';
 export * from './music-shouts';
+export * from './music-merge';

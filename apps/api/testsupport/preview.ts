@@ -6,6 +6,7 @@ import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
 import { musicMatchingFixture } from './music-matching-fixture';
 import { musicShoutFixture } from './music-shout-fixture';
+import { adminCatalogFixture } from './admin-catalog-fixture';
 import { musicCircleFixture } from './music-circle-fixture';
 import { musicTrendFixture } from './music-trend-fixture';
 import { musicClaimFixture } from './music-claim-fixture';
@@ -22,8 +23,9 @@ const db = openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memor
 if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
-musicClaimFixture(db);
+if (process.env.REBUILD_TEST_ADMIN_CATALOG !== '1') musicClaimFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_SHOUTS === '1') musicShoutFixture(db);
+if (process.env.REBUILD_TEST_ADMIN_CATALOG === '1') adminCatalogFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_CIRCLES === '1') musicCircleFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_TREND === '1') musicTrendFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_MATCHES === '1') musicMatchingFixture(db);

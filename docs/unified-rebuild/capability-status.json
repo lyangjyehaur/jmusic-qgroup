@@ -3939,13 +3939,30 @@
       "new_entry": "後台音樂",
       "required_behavior": "來源／目標、選擇程度與建立紀錄完整處理，無重名或孤兒選擇",
       "legacy_evidence_group": "成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "來源／目標、選擇程度與建立紀錄完整處理，無重名或孤兒選擇"
+      "implementation": [
+        "apps/api/src/admin-music-catalog.ts",
+        "apps/web/src/admin-music-catalog.tsx",
+        "packages/contracts/src/admin-music-catalog.ts",
+        "packages/domain/src/music-merge.ts",
+        "packages/database/src/music-creations.ts",
+        "packages/database/src/schema-v12.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-music-catalog.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-music-catalog.test.ts",
+        "packages/database/src/catalog-migration.test.ts",
+        "docs/unified-rebuild/45-admin-music-catalog-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-music-catalog.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-music-catalog.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生管理 CRUD／合併、Python 選擇順序與熟悉度差分、建立清單轉移及額度、目標編輯權保留、全域版本核對、精確恢復與 bot 資料保全已合成驗證；來源全量對帳、備份／還原／回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。"
     },
     {
       "capability_id": "A10",

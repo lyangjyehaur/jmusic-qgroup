@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import type { DB } from '@qgroup/database';
+import { musicCreatedIds, type DB } from '@qgroup/database';
 import { MusicCatalog, MyMusicEntries, MusicEntryCommand, MusicEntryResult, MusicEntryMembers } from '@qgroup/contracts';
 import { DomainError, musicEntryKey, musicText } from '@qgroup/domain';
 import { z } from 'zod';
@@ -72,7 +72,7 @@ const serialize = (row: Row, names: Map<string, string>) => ({
   aliases: z
     .array(z.string())
     .parse(JSON.parse(row.aliases_json))
-    .filter((v) => v.trim()),
+    .filter((v) => musicText(v)),
   count: row.count,
   creatorName: names.get(row.created_by) ?? '',
   createdAt:
@@ -121,10 +121,7 @@ export function myMusicEntries(db: DB, userId: string) {
     ? all.filter((e) => e.created_by === profile.id || (!!legacy && e.created_by === legacy.legacy_key))
     : [];
   // The source's created list is authoritative for imported quota. Native entries use a stable profile ID.
-  const created = new Set<string>(
-    legacy ? z.array(z.string()).parse(JSON.parse(legacy.created_entries_json)) : [],
-  );
-  if (profile) for (const entry of all) if (entry.created_by === profile.id) created.add(entry.id);
+  const created = new Set<string>(profile ? musicCreatedIds(db,profile.id) : []);
   const counted = all.filter((e) => created.has(e.id));
   return MyMusicEntries.parse({
     profileId: profile?.id ?? null,

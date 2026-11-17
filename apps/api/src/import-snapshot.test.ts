@@ -190,7 +190,7 @@ describe('offline paired snapshot import', () => {
     await expect(importSnapshot(s.source, s.destination, stamp)).rejects.toThrow('Referenced board image is missing'); expect(existsSync(s.destination)).toBe(false);
     mkdirSync(join(s.source, 'images', image.slice(0, 2))); writeFileSync(join(s.source, path), bytes);
     const output = execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' }); const result = JSON.parse(output);
-    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 11, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
+    expect(Object.keys(result).sort()).toEqual(['releaseEligible', 'schema', 'sourceDigest', 'status']); expect(result).toMatchObject({ status: 'imported', schema: 12, releaseEligible: false }); expect(output).not.toMatch(/alice|bob|pin|private|QQ|10001/);
     expect(readFileSync(join(s.destination, path))).toEqual(bytes);
     const second = JSON.parse(execFileSync(process.execPath, ['--import', 'tsx', 'tools/migration/import-snapshot.ts', s.source, s.destination], { encoding: 'utf8' })); expect(second.status).toBe('already_imported');
   });

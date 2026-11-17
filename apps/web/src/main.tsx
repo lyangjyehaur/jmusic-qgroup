@@ -28,6 +28,7 @@ import { MusicSharePage } from './music-share';
 import { MusicTrendPage } from './music-trend';
 import { MusicShoutsPage, MusicShoutPage } from './music-shouts';
 import { AdminShoutsPage } from './admin-shouts';
+import { AdminMusicCatalogPage } from './admin-music-catalog';
 import { MusicCirclesPage } from './music-circles';
 import { MusicWorkspace } from './music-selection';
 import { MyMusic, MyPage } from './account';
@@ -74,7 +75,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'me/music/entries', element: <MyMusicEntriesPage /> }, { path: 'me/music/entries/new', element: <MusicEntryEditorPage command="create" /> },
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },
-  { path: 'people/shouts', element: <MusicShoutsPage /> }, { path: 'people/shouts/history', element: <MusicShoutsPage history /> }, { path: 'people/shouts/:id', element: <MusicShoutPage /> }, { path: 'admin/shouts', element: <AdminShoutsPage /> },
+  { path: 'people/shouts', element: <MusicShoutsPage /> }, { path: 'people/shouts/history', element: <MusicShoutsPage history /> }, { path: 'people/shouts/:id', element: <MusicShoutPage /> }, { path: 'admin/shouts', element: <AdminShoutsPage /> }, { path: 'admin/music-entries', element: <AdminMusicCatalogPage /> },
   { path: 'people/circles', element: <MusicCirclesPage /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },
   { path: 'me/music/details', element: <MusicFieldsPage /> },

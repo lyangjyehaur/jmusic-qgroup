@@ -18,7 +18,7 @@ describe('schema 4 → persistent PIN recovery', () => {
       const before=tables.map(({name})=>old.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all()); old.close();
       const next=openDatabase(path);expect(tables.map(({name})=>next.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all())).toEqual(before);
       expect(next.prepare('SELECT * FROM music_claim_attempts').all()).toEqual([{bucket:'qq:'+'a'.repeat(64),created:1794902400.25}]); expect(next.pragma('foreign_key_check')).toEqual([]);next.close();
-      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:11});expect(reopened.prepare('SELECT * FROM music_claim_attempts').all()).toHaveLength(1);reopened.close();
+      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:12});expect(reopened.prepare('SELECT * FROM music_claim_attempts').all()).toHaveLength(1);reopened.close();
     }finally{rmSync(folder,{recursive:true,force:true});}
   });
   it('rolls back DDL, marker and projections when a private source rate bucket is malformed',()=>{
