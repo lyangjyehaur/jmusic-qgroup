@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useBlocker } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
@@ -17,6 +17,8 @@ import { AdminGate, adminHeaders, type Access } from './admin';
 import { api, ApiError } from './api';
 import { Failure, Notice, PageIntro } from './shared';
 import { Field } from './settlement-controls';
+import { useDurableRecord } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
 const policyLabels: Record<keyof BotPolicy, string> = {
   enabled: '主動通知',
   replies_enabled: '群內回覆',
@@ -102,7 +104,7 @@ const Draft = z
     value: Value,
     dirty: z.boolean(),
     command: z.enum(['save', 'revert']),
-    pending: z.object({ key: z.string().uuid(), input: BotPolicyCommand }).optional(),
+    pending: z.object({ key: z.string().uuid(), input: BotPolicyCommand }).strict().optional(),
   })
   .strict()
   .refine((draft) => {
@@ -144,22 +146,7 @@ export function AdminBotPage() {
 function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
   const client = useQueryClient(),
     storageKey = 'qgroup:rebuild:admin-bot:v1:' + viewer.scope + ':' + access.scope;
-  const [loaded] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem(storageKey);
-      return { draft: raw ? Draft.parse(JSON.parse(raw)) : null, error: '' };
-    } catch {
-      return {
-        draft: null,
-        error: '無法讀取 bot 設定原稿，請先保全原稿再繼續。',
-      };
-    }
-  });
-  const [draft, setDraft] = useState<Draft | null>(loaded.draft),
-    [readError, setReadError] = useState(loaded.error),
-    [storageError, setStorageError] = useState(''),
-    [busy, setBusy] = useState(false),
-    [message, setMessage] = useState(''),
+  const [message, setMessage] = useState(''),
     [confirmed, setConfirmed] = useState(false),
     [kind, setKind] = useState<BotKind>('activity_published'),
     [rich, setRich] = useState(false),
@@ -168,13 +155,6 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
       text: string;
       markdown: string | null;
     } | null>(null);
-  const active = useRef(true);
-  useEffect(() => {
-    active.current = true;
-    return () => {
-      active.current = false;
-    };
-  }, []);
   const catalog = useQuery({
     queryKey: ['private', viewer.scope, 'admin-bot', access.scope],
     queryFn: ({ signal }) =>
@@ -185,54 +165,34 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always',
   });
-  const dirty = !!draft && (draft.dirty || !!draft.pending),
-    locked = busy || !!readError || !!draft?.pending,
-    stale = !!draft && !!catalog.data && catalog.data.revision !== draft.revision;
-  const blocker = useBlocker(
-    ({ nextLocation, currentLocation }) =>
-      (dirty || busy) && nextLocation.pathname !== currentLocation.pathname,
-  );
-  function persist(next: Draft | null) {
-    try {
-      if (next) sessionStorage.setItem(storageKey, JSON.stringify(next));
-      else sessionStorage.removeItem(storageKey);
-      setStorageError('');
-      return true;
-    } catch {
-      setStorageError('無法保存 bot 原稿與操作編號，尚未送出；請檢查瀏覽器儲存空間後重試。');
-      return false;
+  const blank = (fresh: z.infer<typeof BotPolicyView>): Draft => ({
+    revision: fresh.revision, value: valueOf(fresh.config), dirty: false, command: 'save',
+  });
+  const record = useDurableRecord<Draft | null>({
+    key: storageKey, scope: viewer.scope,
+    seed: () => catalog.data ? blank(catalog.data) : null,
+    parse: raw => Draft.nullable().parse(JSON.parse(raw)),
+    dirty: draft => !!draft?.dirty, pending: draft => !!draft?.pending,
+    blocking: ({ nextLocation, currentLocation }) => nextLocation.pathname !== currentLocation.pathname,
+  });
+  const { value: draft, replace: setDraft, busy, setBusy, active, unavailable, locked, begin, persist,
+    readError, storageError, blocker } = record;
+  const dirty = record.dirty, stale = !!draft && !!catalog.data && catalog.data.revision !== draft.revision;
+  useEffect(() => { setConfirmed(false); setPreview(null); setMessage(''); }, [record.epoch]);
+  useEffect(() => {
+    if (catalog.data && !dirty && !busy && !unavailable) {
+      const next = blank(catalog.data);
+      if (JSON.stringify(draft) !== JSON.stringify(next)) setDraft(next);
     }
+  }, [catalog.data, dirty, busy, unavailable, draft]);
+  function failed(error: unknown) {
+    if (error instanceof ApiError && [401, 403].includes(error.status))
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'admin-session'] });
   }
-  useEffect(() => {
-    if (!readError && draft && (draft.dirty || draft.pending)) persist(draft);
-  }, [draft, readError, storageKey]);
-  useEffect(() => {
-    if (catalog.data && !dirty && !busy && !readError)
-      setDraft({
-        revision: catalog.data.revision,
-        value: valueOf(catalog.data.config),
-        dirty: false,
-        command: 'save',
-      });
-  }, [catalog.data, dirty, busy, readError]);
-  useEffect(() => {
-    if (!dirty && !busy) return;
-    const leave = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', leave);
-    return () => window.removeEventListener('beforeunload', leave);
-  }, [dirty, busy]);
-  useEffect(() => {
-    if (catalog.error instanceof ApiError && [401, 403].includes(catalog.error.status))
-      void client.invalidateQueries({
-        queryKey: ['private', viewer.scope, 'admin-session'],
-      });
-  }, [catalog.error, client, viewer.scope]);
+  useEffect(() => { failed(catalog.error); }, [catalog.error, client, viewer.scope]);
   function edit(patch: Partial<Value>) {
     if (locked || !draft) return;
-    setDraft({
+    record.change({
       ...draft,
       value: { ...draft.value, ...patch },
       dirty: true,
@@ -243,89 +203,74 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     setPreview(null);
   }
   async function rebase() {
-    if (locked || !draft) return;
-    setBusy(true);
+    if (locked || !draft || !begin()) return;
     try {
-      const result = await catalog.refetch();
-      if (result.error) throw result.error;
-      if (active.current && result.data) {
-        setDraft({ ...draft, revision: result.data.revision });
-        setConfirmed(false);
-        setMessage('已讀取最新版，原輸入保留；請核對差異後重新確認。');
-      }
+      const latest = await api('/admin/bot', BotPolicyView, { headers: { 'X-Account-Scope': viewer.scope } });
+      const next = { ...draft, revision: latest.revision };
+      if (!active.current || !await persist(next)) return;
+      setDraft(next); client.setQueryData(['private', viewer.scope, 'admin-bot', access.scope], latest);
+      setConfirmed(false); setPreview(null);
+      setMessage('已讀取最新版，原輸入保留；請核對差異後重新確認。');
     } catch (error) {
-      if (active.current) setMessage(error instanceof Error ? error.message : '無法讀取設定');
-    } finally {
-      if (active.current) setBusy(false);
-    }
+      if (active.current) { setMessage(error instanceof Error ? error.message : '無法讀取設定'); failed(error); }
+    } finally { if (active.current) setBusy(false); }
   }
   async function send() {
-    if (!draft || busy || readError || (!draft.pending && (!confirmed || stale || !!catalog.error))) return;
+    if (!draft || unavailable || (!draft.pending && (!confirmed || stale || !!catalog.error))) return;
     let operation = draft.pending;
-    try {
-      operation ??= { key: crypto.randomUUID(), input: commandOf(draft) };
-    } catch (error) {
-      setMessage(
-        error instanceof z.ZodError
-          ? '請檢查時間、時區、群標識、唯一通知群及模板欄位。'
-          : error instanceof Error
-            ? error.message
-            : '設定格式不符',
-      );
+    try { operation ??= { key: crypto.randomUUID(), input: commandOf(draft) }; }
+    catch (error) {
+      setMessage(error instanceof z.ZodError ? '請檢查時間、時區、群標識、唯一通知群及模板欄位。' : error instanceof Error ? error.message : '設定格式不符');
       return;
     }
-    const pending = { ...draft, pending: operation };
-    if (!persist(pending)) return;
-    setDraft(pending);
-    setBusy(true);
+    if (!begin()) return;
     setMessage('');
+    const pending = { ...draft, pending: operation };
+    let accepted = false;
     try {
-      await api('/admin/bot', BotPolicyResult, {
-        method: 'POST',
-        headers: {
-          ...adminHeaders(viewer, access),
-          'Idempotency-Key': operation.key,
-        },
+      if (!await persist(pending) || !active.current) return;
+      setDraft(pending); setMessage('');
+      await api('/admin/bot', BotPolicyResult, { method: 'POST',
+        headers: { ...adminHeaders(viewer, access), 'Idempotency-Key': operation.key },
         body: JSON.stringify(operation.input),
       });
+      accepted = true;
+      const latest = await api('/admin/bot', BotPolicyView, { headers: { 'X-Account-Scope': viewer.scope } });
       if (!active.current) return;
-      if (!persist(null)) {
-        setStorageError('設定已保存，但無法清除本機操作紀錄；請恢復儲存空間後確認原操作結果。');
-        setMessage('設定已保存，但本機操作紀錄尚未清除；請確認原操作結果。');
-        return;
-      }
-      setDraft(null);
-      setConfirmed(false);
-      setPreview(null);
+      const next = blank(latest);
+      if (!await persist(next, false, '設定已保存，但無法保存本機確認狀態；請保留原操作並核對結果。')) return;
+      setDraft(next); setConfirmed(false); setPreview(null);
+      client.setQueryData(['private', viewer.scope, 'admin-bot', access.scope], latest);
       setMessage('bot 設定已保存。');
-      await catalog.refetch();
     } catch (error) {
       if (!active.current) return;
-      if (error instanceof ApiError && error.status < 500 && error.status !== 429) {
-        const next = { ...draft, pending: undefined };
-        persist(next);
-        setDraft(next);
-        setConfirmed(false);
-        setMessage(error.message);
+      if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) {
+        const next = { ...pending, pending: undefined };
+        if (await persist(next, false, '無法保存拒絕結果；原操作仍保留，請重新核對。')) setDraft(next);
+        setConfirmed(false); setPreview(null); setMessage(error.message);
         void catalog.refetch();
-        if ([401, 403].includes(error.status))
-          void client.invalidateQueries({
-            queryKey: ['private', viewer.scope, 'admin-session'],
-          });
       } else setMessage('尚未確認 bot 設定結果，原稿與操作編號已保留，請確認原操作結果。');
-    } finally {
-      if (active.current) setBusy(false);
-    }
+      failed(error);
+    } finally { if (active.current) setBusy(false); }
+  }
+  async function discard() {
+    if (locked || !begin()) return;
+    try {
+      const next = catalog.data ? blank(catalog.data) : null;
+      if (!await persist(next) || !active.current) return;
+      setDraft(next); setConfirmed(false); setPreview(null); setMessage('');
+      void catalog.refetch();
+    } finally { if (active.current) setBusy(false); }
   }
   const signature = JSON.stringify([draft?.value, kind]),
     currentSignature = useRef(signature);
   currentSignature.current = signature;
   async function showPreview() {
-    if (!draft || locked) return;
-    setBusy(true);
+    if (!draft || locked || !begin()) return;
     setMessage('');
     const stamp = signature;
     try {
+      if (!await persist(draft) || !active.current) return;
       const result = await api(
         '/admin/bot/preview',
         z.object({ text: z.string(), markdown: z.string().nullable() }),
@@ -345,6 +290,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
               ? error.message
               : '無法預覽',
         );
+      failed(error);
     } finally {
       if (active.current) setBusy(false);
     }
@@ -358,40 +304,15 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
         <Surface role="alert">
           <Text>仍有 bot 設定原稿或待確認操作。</Text>
           <Button onClick={() => blocker.reset()}>繼續核對</Button>
-          <Button variant="secondary" disabled={busy} onClick={() => blocker.proceed()}>
+          <Button variant="secondary" disabled={busy || record.loading} onClick={() => void record.leave()}>
             保留原稿並離開
           </Button>
         </Surface>
       )}
       <Link to="/admin/bot/deliveries">投遞紀錄</Link>
       {message && <Notice>{message}</Notice>}
-      {storageError && (
-        <div role="alert">
-          <Text>{storageError}</Text>
-          <Button disabled={busy || !!readError} onClick={() => persist(draft)}>
-            重試保存原稿
-          </Button>
-        </div>
-      )}
-      {readError && (
-        <Surface role="alert">
-          <Text>{readError}</Text>
-          <Button
-            onClick={() => {
-              try {
-                const raw = sessionStorage.getItem(storageKey);
-                if (raw !== null) sessionStorage.setItem(storageKey + ':recovery:' + Date.now(), raw);
-                sessionStorage.removeItem(storageKey);
-                setReadError('');
-              } catch {
-                setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。');
-              }
-            }}
-          >
-            保全原稿後繼續
-          </Button>
-        </Surface>
-      )}
+      <DraftFeedback form={record} navigation={false} />
+      {storageError && <Button disabled={busy || !!readError || record.loading} onClick={() => void persist(draft)}>重試保存原稿</Button>}
       {catalog.isPending || !catalog.isFetchedAfterMount ? (
         <Notice>正在讀取 bot 設定…</Notice>
       ) : catalog.error ? (
@@ -716,7 +637,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
             <Button
               loading={busy}
               disabled={
-                !!readError ||
+                busy || unavailable ||
                 !!storageError ||
                 (!draft.pending && (!dirty || !confirmed || stale || !!catalog.error))
               }
@@ -734,13 +655,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
             <Button
               variant="secondary"
               disabled={locked || !dirty}
-              onClick={() => {
-                if (!persist(null)) return;
-                setDraft(null);
-                setConfirmed(false);
-                setPreview(null);
-                void catalog.refetch();
-              }}
+              onClick={() => void discard()}
             >
               放棄原稿
             </Button>
@@ -748,8 +663,8 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
               variant="secondary"
               disabled={locked || dirty || !catalog.data || catalog.data.revision < 1 || !!catalog.error}
               onClick={() => {
-                setDraft({ ...draft, command: 'revert', dirty: true });
-                setConfirmed(false);
+                record.change({ ...draft, command: 'revert', dirty: true });
+                setConfirmed(false); setPreview(null);
               }}
             >
               恢復上一版

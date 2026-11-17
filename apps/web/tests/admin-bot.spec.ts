@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
+import { denyDraftWrites, durableRows } from './draft-helpers';
 const origin = 'http://127.0.0.1:5082';
 async function login(context: BrowserContext, user = 'registration-admin') {
   await context.addCookies([
@@ -120,24 +121,28 @@ test('lost save response survives reload and replays the same UUID exactly once'
 test('concurrent edits preserve input and require explicit review of the latest revision', async ({
   page,
   context,
+  browser,
 }) => {
   await login(context);
   await page.goto('/admin/bot');
   await page.getByLabel('主動發送最小間隔（秒）', { exact: true }).fill('31');
-  const other = await context.newPage();
-  await other.goto('/admin/bot');
-  await other.getByLabel('主動發送最小間隔（秒）', { exact: true }).fill('32');
-  await confirm(other);
-  await expect(other.getByText('bot 設定已保存。', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '核對最新版，保留輸入', exact: true }).click();
-  await expect(page.getByLabel('主動發送最小間隔（秒）', { exact: true })).toHaveValue('31');
-  await expect(page.getByRole('button', { name: '確認 bot 設定', exact: true })).toBeDisabled();
-  await page.getByText('核對目前保存的設定', { exact: true }).click();
-  await expect(page.locator('dl').filter({ hasText: '發送間隔' })).toContainText('32');
-  await confirm(page);
-  await expect(page.getByText('bot 設定已保存。', { exact: true })).toBeVisible();
-  expect((await value(context)).config.min_interval_seconds).toBe(31);
-  await other.close();
+  const otherContext = await browser.newContext({ baseURL: origin });
+  await login(otherContext);
+  const other = await otherContext.newPage();
+  try {
+    await other.goto('/admin/bot');
+    await other.getByLabel('主動發送最小間隔（秒）', { exact: true }).fill('32');
+    await confirm(other);
+    await expect(other.getByText('bot 設定已保存。', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '核對最新版，保留輸入', exact: true }).click();
+    await expect(page.getByLabel('主動發送最小間隔（秒）', { exact: true })).toHaveValue('31');
+    await expect(page.getByRole('button', { name: '確認 bot 設定', exact: true })).toBeDisabled();
+    await page.getByText('核對目前保存的設定', { exact: true }).click();
+    await expect(page.locator('dl').filter({ hasText: '發送間隔' })).toContainText('32');
+    await confirm(page);
+    await expect(page.getByText('bot 設定已保存。', { exact: true })).toBeVisible();
+    expect((await value(context)).config.min_interval_seconds).toBe(31);
+  } finally { await otherContext.close(); }
 });
 test('storage failure blocks submission and broken drafts are preserved before recovery; navigation protects unfinished work', async ({
   page,
@@ -146,15 +151,9 @@ test('storage failure blocks submission and broken drafts are preserved before r
   await login(context);
   await page.goto('/admin/bot');
   await expect(page.getByLabel('發送模式', { exact: true })).toBeVisible();
-  await page.evaluate(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function (key, value) {
-      if (key.includes('admin-bot')) throw Error('synthetic storage full');
-      return original.call(this, key, value);
-    };
-  });
+  await denyDraftWrites(page, 'admin-bot:');
   await page.getByLabel('主動發送最小間隔（秒）', { exact: true }).fill('61');
-  await expect(page.getByRole('alert')).toContainText('無法保存 bot 原稿');
+  await expect(page.getByRole('alert')).toContainText('無法保存原稿及操作編號');
   await expect(page.getByRole('button', { name: '確認 bot 設定', exact: true })).toBeDisabled();
   await page.getByRole('link', { name: '管理後台', exact: true }).click();
   await expect(page.getByText('仍有 bot 設定原稿或待確認操作。', { exact: true })).toBeVisible();
@@ -174,21 +173,13 @@ test('storage failure blocks submission and broken drafts are preserved before r
   });
   await page.reload();
   await expect(
-    page.getByText('無法讀取 bot 設定原稿，請先保全原稿再繼續。', {
-      exact: true,
+    page.getByText('無法讀取原稿，請先保全原稿再繼續。', {
+      exact: false,
     }),
   ).toBeVisible();
   await page.getByRole('button', { name: '保全原稿後繼續', exact: true }).click();
   await expect(page.getByLabel('發送模式', { exact: true })).toBeVisible();
-  expect(
-    await page.evaluate(
-      (key) =>
-        Object.keys(sessionStorage)
-          .filter((k) => k.startsWith(key + ':recovery:'))
-          .map((k) => sessionStorage.getItem(k)),
-      key,
-    ),
-  ).toEqual(['{damaged']);
+  expect((await durableRows(page, 'versions')).filter(row => row.key === key).map(row => row.raw)).toContain('{damaged');
 });
 test('rescue access works without music membership and a late response cannot revive revoked settings', async ({
   page,
@@ -236,19 +227,15 @@ test('a completed save retains its exact operation when local receipt cleanup fa
   await login(context);
   await page.goto('/admin/bot');
   await page.getByLabel('主動發送最小間隔（秒）', { exact: true }).fill('90');
+  await expect(page.getByText('正在保存本機原稿…', { exact: true })).toHaveCount(0);
   await page.evaluate(() => {
-    const remove = Storage.prototype.removeItem;
-    Storage.prototype.removeItem = function (key) {
-      if (key.includes('admin-bot')) throw Error('synthetic cleanup failure');
-      return remove.call(this, key);
+    const put = IDBObjectStore.prototype.put;
+    IDBObjectStore.prototype.put = function(value, key) {
+      const request = put.call(this, value, key);
+      if (this.name === 'drafts' && String(value.key).includes('admin-bot:') && !JSON.parse(value.raw).pending)
+        request.addEventListener('success', () => { IDBObjectStore.prototype.put = put; this.transaction.abort(); });
+      return request;
     };
-    window.addEventListener(
-      'test:restore-storage',
-      () => {
-        Storage.prototype.removeItem = remove;
-      },
-      { once: true },
-    );
   });
   const writes: { key: string | undefined; body: string | null }[] = [];
   page.on('request', (request) => {
@@ -260,13 +247,12 @@ test('a completed save retains its exact operation when local receipt cleanup fa
   });
   await confirm(page);
   await expect(
-    page.getByText('設定已保存，但本機操作紀錄尚未清除；請確認原操作結果。', {
+    page.getByText('設定已保存，但無法保存本機確認狀態；請保留原操作並核對結果。', {
       exact: true,
     }),
   ).toBeVisible();
   await expect(page.getByRole('button', { name: '確認原操作結果', exact: true })).toBeVisible();
   expect((await value(context)).revision).toBe(1);
-  await page.evaluate(() => window.dispatchEvent(new Event('test:restore-storage')));
   await page.getByRole('button', { name: '重試保存原稿', exact: true }).click();
   await page.getByRole('button', { name: '確認原操作結果', exact: true }).click();
   await expect(page.getByText('bot 設定已保存。', { exact: true })).toBeVisible();

@@ -56,7 +56,7 @@ function validate(key: string, scope: string) {
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
     key === prefix + 'payment-codes:v1:' + scope ||
     key === prefix + 'account-profile:v1:' + scope ||
-    new RegExp('^qgroup:rebuild:admin-(?:catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
+    new RegExp('^qgroup:rebuild:admin-(?:bot|catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
     new RegExp('^qgroup:rebuild:admin-(?:user|privacy|music|music-pin):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
     new RegExp('^qgroup:rebuild:music:(?:fields|contact):v1:' + scope + ':[0-9]+:[^:]{1,80}$').test(key) ||

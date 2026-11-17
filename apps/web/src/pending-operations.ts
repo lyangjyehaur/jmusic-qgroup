@@ -20,8 +20,8 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
     else if(key.startsWith(root+'music:fields:v1:'+scope+':')){label='成分資料';to='/me/music/details';}
     else if(key.startsWith(root+'music:contact:v1:'+scope+':')){label='聯絡 QQ';to='/me/music/contact';}
     else if(key.startsWith(root+'music:entries:v1:'+scope+':')){const target=key.slice((root+'music:entries:v1:'+scope+':').length);if(target==='new'){label='建立詞條';to='/me/music/entries/new';}else{const match=/^([^:]{1,80}):(update|delete)$/.exec(target);if(!match)continue;label=match[2]==='delete'?'刪除詞條':'編輯詞條';to='/me/music/entries/'+segment(match[1]!)+(match[2]==='delete'?'/delete':'/edit');}}
-    else if(new RegExp('^qgroup:rebuild:admin-(catalog|appearance|shouts):v1:'+scope+':[a-f0-9]{64}$').test(key)){
-      const kind=key.split(':')[2]!.slice(6);label={catalog:'音樂詞庫管理',appearance:'壁紙管理',shouts:'找搭子管理'}[kind]!;to={catalog:'/admin/music-entries',appearance:'/admin/appearance',shouts:'/admin/shouts'}[kind]!;
+    else if(new RegExp('^qgroup:rebuild:admin-(bot|catalog|appearance|shouts):v1:'+scope+':[a-f0-9]{64}$').test(key)){
+      const kind=key.split(':')[2]!.slice(6);label={bot:'bot 設定',catalog:'音樂詞庫管理',appearance:'壁紙管理',shouts:'找搭子管理'}[kind]!;to={bot:'/admin/bot',catalog:'/admin/music-entries',appearance:'/admin/appearance',shouts:'/admin/shouts'}[kind]!;
     }
     else{
       const activity=/^qgroup:rebuild:activity-draft:(?:(arrangements|registration|consent|lifecycle|invitations|claims|delegation|attendance|finance|settlement|rooms|poll-create|poll-vote|poll-manage):)?v1:([^:]+):(.+)$/.exec(key);
@@ -45,7 +45,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
       }else continue;
     }
     try{
-      const value:unknown=JSON.parse(storage.getItem(key)??'null');if(value===null&&key.startsWith(root+'admin-music-pin:v1:'+scope+':'))continue;if(!value||Array.isArray(value)||typeof value!=='object')throw Error('draft');
+      const value:unknown=JSON.parse(storage.getItem(key)??'null');if(value===null&&(key.startsWith(root+'admin-music-pin:v1:'+scope+':')||new RegExp('^qgroup:rebuild:admin-bot:v1:'+scope+':[a-f0-9]{64}$').test(key)))continue;if(!value||Array.isArray(value)||typeof value!=='object')throw Error('draft');
       const data=value as Record<string,unknown>,pending=data.pending;
       if(standalone){rows.push({id:key,label,to,damaged:!('input' in data)&&!uuid.safeParse(data.requestId).success});continue;}
       if(pending===undefined&&data.requestKey===undefined)continue;

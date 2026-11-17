@@ -9,11 +9,16 @@ describe('scoped pending operation inventory',()=>{
    const result=pendingOperations(storage(Object.fromEntries(Object.keys(paths).map(name=>[root+name,pending]))),current);expect(result.map(row=>row.to)).toEqual(Object.values(paths));expect(result.every(row=>row.requestKey===key&&!row.damaged)).toBe(true);expect(JSON.stringify(result)).not.toMatch(/PRIVATE_/);
  });
  it('links reviewed content-management pending operations to fixed managers, without image data, targets or authority confusion',()=>{
-   const authority='c'.repeat(64),families=['catalog','appearance','shouts'],paths=['/admin/music-entries','/admin/appearance','/admin/shouts'];
+   const authority='c'.repeat(64),families=['bot','catalog','appearance','shouts'],paths=['/admin/bot','/admin/music-entries','/admin/appearance','/admin/shouts'];
    const raw=JSON.stringify({value:{name:'PRIVATE_NAME',data:'PRIVATE_IMAGE',id:'PRIVATE_TARGET'},pending:{key,input:{data:'PRIVATE_IMAGE'}}});
    const rows=Object.fromEntries(families.map(family=>[root+'admin-'+family+':v1:'+current+':'+authority,raw]));
    const result=pendingOperations(storage(rows),current);expect(result.map(row=>row.to)).toEqual(paths);expect(result.every(row=>!row.damaged&&row.requestKey===key)).toBe(true);expect(JSON.stringify(result)).not.toMatch(/PRIVATE_/);
    expect(pendingOperations(storage({[root+'admin-appearance:v1:'+other+':'+authority]:raw,[root+'admin-catalog:v1:'+current+':https://evil.example']:raw,[root+'admin-shouts:v1:'+current+':'+authority+':unexpected']:raw}),current)).toEqual([]);
+ });
+ it('does not expose an empty bot placeholder or unsent policy as an unfinished command',()=>{
+   const name=root+'admin-bot:v1:'+current+':'+'c'.repeat(64);
+   for(const raw of ['null',JSON.stringify({value:{templates:{private:'PRIVATE_TEMPLATE'},groups:[{id:'PRIVATE_GROUP'}]},dirty:true,command:'save'})])
+     expect(pendingOperations(storage({[name]:raw}),current)).toEqual([]);
  });
  it('omits completed PIN placeholders while retaining only the original receipt lookup destination',()=>{
    const name=root+'admin-music-pin:v1:'+current+':'+'c'.repeat(64)+':profile';expect(pendingOperations(storage({[name]:'null'}),current)).toEqual([]);
