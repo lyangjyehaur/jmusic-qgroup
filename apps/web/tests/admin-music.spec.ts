@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = 'http://127.0.0.1:5082';
 const confirmation = '確認已核對成分與目標帳號，執行此關聯變更';
@@ -22,10 +23,10 @@ test('lost linking results survive reload and retry the exact original operation
   page.on('dialog', dialog => void dialog.accept()); await page.reload(); await page.getByRole('button', { name: '確認關聯結果', exact: true }).click(); await done(page); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]);
   const viewer = await (await context.request.get('/api/v2/session')).json(); const history = await (await context.request.get('/api/v2/admin/music/' + page.url().split('/').pop() + '/history', { headers: { 'X-Account-Scope': viewer.scope } })).json(); expect(history.history).toHaveLength(1);
 });
-test('concurrent previews require a new explicit confirmation and preserve the original reason', async ({ page, context }) => {
-  await login(context); await openProfile(page); const url = page.url(); const other = await context.newPage(); await other.goto(url); await preview(page, 'bob', '保留這份核對原因'); await preview(other, 'alice', '另一位管理員的核對'); await save(other); await done(other);
+test('concurrent previews require a new explicit confirmation and preserve the original reason', async ({ page, context, browser }) => {
+  await login(context); await openProfile(page); const url = page.url(); const independent=await browser.newContext({baseURL:origin});await login(independent);try{const other=await independent.newPage();await other.goto(url); await preview(page, 'bob', '保留這份核對原因'); await preview(other, 'alice', '另一位管理員的核對'); await save(other); await done(other);
   await save(page); await expect(page.getByText('成分、關聯或目標帳號已有變更，請重新預覽後核對', { exact: true })).toBeVisible(); await expect(page.getByLabel('核對原因', { exact: true })).toHaveValue('保留這份核對原因'); await expect(page.getByRole('button', { name: '保存關聯變更', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: '預覽關聯變更', exact: true }).click(); await expect(page.getByText('原帳號：小青（alice）', { exact: true })).toBeVisible(); await expect(page.getByRole('checkbox', { name: confirmation, exact: true })).not.toBeChecked(); await save(page); await done(page); await other.close();
+  await page.getByRole('button', { name: '預覽關聯變更', exact: true }).click(); await expect(page.getByText('原帳號：小青（alice）', { exact: true })).toBeVisible(); await expect(page.getByRole('checkbox', { name: confirmation, exact: true })).not.toBeChecked(); await save(page); await done(page);}finally{await independent.close();}
 });
 test('an already populated target cannot be overwritten and a normal member cannot inspect the management page', async ({ page, context }) => {
   await login(context, 'bob'); await page.goto('/me/music'); await page.getByRole('button', { name: 'YOASOBI', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
@@ -33,14 +34,12 @@ test('an already populated target cannot be overwritten and a normal member cann
   page.on('dialog', dialog => void dialog.accept()); await login(context, 'bob'); await page.goto(url); await expect(page.getByLabel('管理救援憑證', { exact: true })).toBeVisible(); await expect(page.getByLabel('目標帳號 ID', { exact: true })).toHaveCount(0); await page.goto('/me/music'); await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toHaveAttribute('aria-pressed', 'true');
 });
 test('unwritable and damaged management drafts block writes and can be preserved', async ({ page, context }) => {
-  await login(context); await page.addInitScript(() => { const original = Storage.prototype.setItem; Storage.prototype.setItem = function(key, value) { if (key.startsWith('qgroup:rebuild:admin-music:')) throw new DOMException('synthetic quota failure'); original.call(this, key, value); }; });
-  await openProfile(page); await expect(page.getByText('無法保存關聯草稿，尚未提交修改。', { exact: true })).toBeVisible(); await expect(page.getByRole('button', { name: '預覽關聯變更', exact: true })).toBeDisabled();
-  const clean = await context.newPage(); await clean.goto(page.url()); await expect(clean.getByLabel('目標帳號 ID', { exact: true })).toBeVisible();
-  await clean.evaluate(() => { const key = Object.keys(sessionStorage).find(key => key.startsWith('qgroup:rebuild:admin-music:'))!; sessionStorage.setItem(key, 'damaged synthetic draft'); }); await clean.reload(); await expect(clean.getByLabel('目標帳號 ID', { exact: true })).toBeDisabled(); await clean.getByRole('button', { name: '保全原稿後繼續', exact: true }).click(); expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged synthetic draft'); await clean.close();
+  await login(context);await openProfile(page);await preview(page);await denyDraftWrites(page,'admin-music:');let writes=0;page.on('request',r=>{if(r.url().endsWith('/link'))writes++;});await save(page);await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto(page.url());await clean.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await damageDraft(clean,'admin-music:','damaged synthetic draft');await clean.reload();await expect(clean.getByLabel('目標帳號 ID',{exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic draft');await clean.close();
 });
 test('navigation preserves an unsubmitted ownership draft without executing it', async ({ page, context }) => {
   await login(context); await openProfile(page); await preview(page, 'bob', '未保存的核對草稿'); await page.getByRole('link', { name: '回到成分關聯', exact: true }).click(); await expect(page.getByText('仍有未保存的關聯草稿或待確認操作。', { exact: true })).toBeVisible(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
-  await expect(page.getByLabel('核對原因', { exact: true })).toHaveValue('未保存的核對草稿'); await expect(page.getByText('目前關聯：未關聯', { exact: true })).toBeVisible(); await expect(page.getByRole('button', { name: '保存關聯變更', exact: true })).toHaveCount(0);
+  await expect(page.getByLabel('核對原因', { exact: true })).toHaveValue('未保存的核對草稿');await expect(page.getByLabel('核對原因',{exact:true})).toBeDisabled();await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expect(page.getByText('目前關聯：未關聯', { exact: true })).toBeVisible(); await expect(page.getByRole('button', { name: '保存關聯變更', exact: true })).toHaveCount(0);
 });
 test('a former owner retains an unsaved choice but cannot edit music transferred to another account', async ({ page, context, browser }) => {
   await login(context); await openProfile(page); await preview(page); await save(page); await done(page);

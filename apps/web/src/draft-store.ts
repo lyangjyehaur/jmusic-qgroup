@@ -1,3 +1,4 @@
+import { MusicPinResultRequest } from '@qgroup/contracts';
 // Only reviewed form payloads and scoped operation routes belong in this database; never login credentials.
 const databaseName = 'qgroup-reviewed-drafts-v1';
 const stores = ['drafts', 'versions', 'epochs'] as const;
@@ -56,7 +57,7 @@ function validate(key: string, scope: string) {
     key === prefix + 'payment-codes:v1:' + scope ||
     key === prefix + 'account-profile:v1:' + scope ||
     new RegExp('^qgroup:rebuild:admin-(?:catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
-    new RegExp('^qgroup:rebuild:admin-(?:user|privacy):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
+    new RegExp('^qgroup:rebuild:admin-(?:user|privacy|music|music-pin):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
     new RegExp('^qgroup:rebuild:music:(?:fields|contact):v1:' + scope + ':[0-9]+:[^:]{1,80}$').test(key) ||
     key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
@@ -70,18 +71,25 @@ async function epochs(tx: IDBTransaction, scope: string) {
   const [device, music, admin] = await Promise.all([request(store.get('device')), request(store.get('music:' + scope)), request(store.get('admin:' + scope))]);
   return { deviceEpoch: (device ?? 0) as number, musicEpoch: (music ?? 0) as number, adminEpoch: (admin ?? 0) as number };
 }
+function validateRaw(key: string, raw: string) {
+  // PIN commands and reasons never enter the durable store, including legacy import or archives.
+  if (key.startsWith('qgroup:rebuild:admin-music-pin:')) MusicPinResultRequest.nullable().parse(JSON.parse(raw));
+}
 function archive(tx: IDBTransaction, key: string, scope: string, raw: string, reason: string) {
+  validateRaw(key, raw);
   tx.objectStore('versions').put({ id: crypto.randomUUID(), key, scope, raw, reason, at: Date.now() } satisfies DraftVersion);
 }
 export async function openDraft(key: string, scope: string) {
   validate(key, scope);
   // Retain the session source until the IDB transaction has committed.
   const legacy = sessionStorage.getItem(key);
+  let importableLegacy=true;
+  try { if(legacy!==null)validateRaw(key,legacy); } catch { importableLegacy=false; }
   const result = await transaction('readwrite', async tx => {
     const currentEpochs = await epochs(tx, scope), store = tx.objectStore('drafts');
     let row = await request(store.get(key)) as Row | undefined;
     if (row && row.scope !== scope) throw Error('原稿帳號不符');
-    if (legacy !== null && currentEpochs.deviceEpoch === 0 && (!isMusic(key) || currentEpochs.musicEpoch === 0) && (!isAdmin(key) || currentEpochs.adminEpoch === 0)) {
+    if (legacy !== null && importableLegacy && currentEpochs.deviceEpoch === 0 && (!isMusic(key) || currentEpochs.musicEpoch === 0) && (!isAdmin(key) || currentEpochs.adminEpoch === 0)) {
       if (!row) {
         row = { key, scope, revision: 1, raw: legacy, at: Date.now() };
         store.put(row);
@@ -89,12 +97,12 @@ export async function openDraft(key: string, scope: string) {
     }
     return { handle: { key, scope, revision: row?.revision ?? 0, ...currentEpochs }, raw: row?.raw ?? null };
   });
-  if (legacy !== null && sessionStorage.getItem(key) === legacy) sessionStorage.removeItem(key);
+  if (legacy !== null && importableLegacy && sessionStorage.getItem(key) === legacy) sessionStorage.removeItem(key);
   return result;
 }
 /** A committed CAS failure preserves the competing payload; it never overwrites another tab. */
 export async function saveDraft(handle: DraftHandle, raw: string, preserve = false) {
-  validate(handle.key, handle.scope);
+  validate(handle.key, handle.scope); validateRaw(handle.key, raw);
   const result = await transaction('readwrite', async tx => {
     const now = await epochs(tx, handle.scope);
     if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch || isAdmin(handle.key) && now.adminEpoch !== handle.adminEpoch)
@@ -157,7 +165,7 @@ export function clearDurableAdminDrafts(scope: string) {
 
 /** Retire a resolved source and optionally seed its server-assigned target in the same commit. */
 export async function retireDraft(handle: DraftHandle, sourceRaw: string, target?: {key: string; raw: string}) {
-  validate(handle.key, handle.scope); if (target) { validate(target.key, handle.scope); if(target.key===handle.key)throw Error('來源與目標原稿不能相同'); }
+  validate(handle.key, handle.scope); validateRaw(handle.key, sourceRaw); if (target) { validate(target.key, handle.scope); validateRaw(target.key, target.raw); if(target.key===handle.key)throw Error('來源與目標原稿不能相同'); }
   const result = await transaction('readwrite', async tx => {
     const now = await epochs(tx, handle.scope);
     if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch || isAdmin(handle.key) && now.adminEpoch !== handle.adminEpoch) return {expired:true} as const;

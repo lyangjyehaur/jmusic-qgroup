@@ -45,7 +45,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
       }else continue;
     }
     try{
-      const value:unknown=JSON.parse(storage.getItem(key)??'null');if(!value||Array.isArray(value)||typeof value!=='object')throw Error('draft');
+      const value:unknown=JSON.parse(storage.getItem(key)??'null');if(value===null&&key.startsWith(root+'admin-music-pin:v1:'+scope+':'))continue;if(!value||Array.isArray(value)||typeof value!=='object')throw Error('draft');
       const data=value as Record<string,unknown>,pending=data.pending;
       if(standalone){rows.push({id:key,label,to,damaged:!('input' in data)&&!uuid.safeParse(data.requestId).success});continue;}
       if(pending===undefined&&data.requestKey===undefined)continue;

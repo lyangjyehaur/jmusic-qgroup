@@ -2,26 +2,25 @@ import { useEffect, useRef, useState, type SetStateAction } from 'react';
 import { useBlocker, type BlockerFunction } from 'react-router-dom';
 import { DraftConflict, DraftExpired, draftVersions, openDraft, retireDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
 /** Browser persistence only; each caller keeps its own business validation and exact pending format. */
-export function useDurableRecord<T>(options: {
+type RecordOptions<T> = {
   key: string; scope: string; seed: () => T; parse: (raw: string) => T;
   serialize?: (value: T) => string; dirty: (value: T) => boolean;
-  pending: (value: T) => boolean; blocking?: boolean | BlockerFunction;
+  pending: (value: T) => boolean;
   // Clean saved placeholders can acquire a new URL preset without restoring old user input.
   needsRestore?: (raw: string) => boolean;
-}) {
+};
+export function useDurableValue<T>(options: RecordOptions<T>) {
   const [value, rawSetValue] = useState(options.seed), current = useRef(value), active = useRef(true),
     handle = useRef<DraftHandle | null>(null), queue = useRef(Promise.resolve()), revoked = useRef(false), halted = useRef(false),
     optionsRef = useRef(options), unavailableRef = useRef(true), busyRef = useRef(false);
   optionsRef.current = options;
   const [loading, setLoading] = useState(true), [saving, setSaving] = useState(0), [busy, rawSetBusy] = useState(false),
-    [readError, setReadError] = useState(''), [storageError, setStorageError] = useState(''), [message, setMessage] = useState(''),
+    [readError, setReadError] = useState(''), [damagedRaw,setDamagedRaw]=useState<string|null>(null), [storageError, setStorageError] = useState(''), [message, setMessage] = useState(''),
     [needsRestore, setNeedsRestore] = useState(false), [conflict, setConflict] = useState(false), [expired, setExpired] = useState(false),
     [versions, setVersions] = useState<DraftVersion[]>([]), [epoch, setEpoch] = useState(0);
   const unavailable = loading || needsRestore || !!readError;
   unavailableRef.current = unavailable;
-  const dirty = options.dirty(value) || options.pending(value),
-    blocker = useBlocker(transition => (dirty || !!saving || busy) && (typeof options.blocking === 'function' ? options.blocking(transition) : options.blocking !== false)),
-    locked = unavailable || busy || options.pending(value);
+  const dirty = options.dirty(value) || options.pending(value), locked = unavailable || busy || options.pending(value);
   const encode = (next: T) => optionsRef.current.serialize?.(next) ?? JSON.stringify(next);
   function replace(next: T) { current.current = next; rawSetValue(next); }
   function setBusy(next: boolean) { busyRef.current = next; rawSetBusy(next); }
@@ -30,9 +29,9 @@ export function useDurableRecord<T>(options: {
     setConflict(false);
     try {
       const next = raw === null ? optionsRef.current.seed() : optionsRef.current.parse(raw);
-      replace(next); setReadError(''); setNeedsRestore(raw !== null && !optionsRef.current.pending(next) && (optionsRef.current.needsRestore?.(raw) ?? optionsRef.current.dirty(next)));
+      replace(next); setReadError(''); setDamagedRaw(null); setNeedsRestore(raw !== null && !optionsRef.current.pending(next) && (optionsRef.current.needsRestore?.(raw) ?? optionsRef.current.dirty(next)));
       if(raw === null && optionsRef.current.dirty(next)) void persist(next); setEpoch(n => n + 1);
-    } catch { setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
+    } catch { setDamagedRaw(raw); setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
   }
   useEffect(() => {
     active.current = true; let cancelled = false;
@@ -86,7 +85,7 @@ export function useDurableRecord<T>(options: {
       } else {
         if (!handle.current) handle.current = (await openDraft(options.key, options.scope)).handle;
         const blank = optionsRef.current.seed(); if (!await persist(blank, true)) return;
-        replace(blank); setReadError(''); setNeedsRestore(false); setEpoch(n => n + 1);
+        replace(blank); setReadError(''); setDamagedRaw(null); setNeedsRestore(false); setEpoch(n => n + 1);
       }
       await loadVersions();
     } catch { setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。'); }
@@ -100,17 +99,25 @@ export function useDurableRecord<T>(options: {
     try { if (await persist(next, true)) { replace(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage('已載入保全版本；請核對原操作與最新資料。'); await loadVersions(); } }
     finally { if (active.current) setBusy(false); }
   }
-  async function leave() {
-    if (loading || busyRef.current) return;
-    const proceed = blocker.proceed; await queue.current;
-    if (readError || halted.current || await persist(current.current)) proceed?.();
+  async function canLeave() {
+    if (loading || busyRef.current) return false;
+    await queue.current;
+    return !!readError || halted.current || await persist(current.current);
   }
+  return { value, change, replace, persist, retire, begin, unavailable, locked, busy, setBusy, active, dirty,
+    loading, saving:!!saving, readError, damagedRaw, storageError, message, setMessage, needsRestore, restore:() => {setNeedsRestore(false); setEpoch(n => n + 1);},
+    conflict, expired, versions, recover, restoreVersion, canLeave, epoch };
+}
+
+/** A page owns one router blocker, including any nested memory-only operation. */
+export function useDurableRecord<T>(options: RecordOptions<T> & { blocking?: boolean | BlockerFunction; extraDirty?: boolean }) {
+  const form = useDurableValue(options), dirty = form.dirty || !!options.extraDirty;
+  const blocker = useBlocker(transition => (dirty || form.saving || form.busy) && (typeof options.blocking === 'function' ? options.blocking(transition) : options.blocking !== false));
+  async function leave() { const proceed = blocker.proceed; if (await form.canLeave()) proceed?.(); }
   useEffect(() => {
-    if ((!dirty && !saving && !busy) || options.blocking === false) return;
+    if ((!dirty && !form.saving && !form.busy) || options.blocking === false) return;
     const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', leave); return () => window.removeEventListener('beforeunload', leave);
-  }, [dirty, saving, busy, options.blocking]);
-  return { value, change, replace, persist, retire, begin, unavailable, locked, busy, setBusy, active, dirty, blocker,
-    loading, saving:!!saving, readError, storageError, message, setMessage, needsRestore, restore:() => {setNeedsRestore(false); setEpoch(n => n + 1);},
-    conflict, expired, versions, recover, restoreVersion, leave, epoch };
+  }, [dirty, form.saving, form.busy, options.blocking]);
+  return { ...form, blocker, leave };
 }

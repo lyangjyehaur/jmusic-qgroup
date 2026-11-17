@@ -19,8 +19,8 @@ export function DraftFeedback({
     busy: boolean;
     versions: import('./draft-store').DraftVersion[];
     restoreVersion: (id: string) => Promise<void>;
-    leave: () => Promise<void>;
-    blocker: ReturnType<typeof import('react-router-dom').useBlocker>;
+    leave?: () => Promise<void>;
+    blocker?: ReturnType<typeof import('react-router-dom').useBlocker>;
   };
 }) {
   return (
@@ -47,10 +47,10 @@ export function DraftFeedback({
           }}>下載保全檔</Button>
         </li>)}</ul>
       </details>}
-      {navigation && form.blocker.state === 'blocked' && (
+      {navigation && form.blocker?.state === 'blocked' && (
         <Notice>
-          仍有未完成原稿。<Button onClick={() => form.blocker.reset?.()}>繼續核對</Button>
-          <Button variant="secondary" disabled={form.busy || form.loading} onClick={() => void form.leave()}>
+          仍有未完成原稿。<Button onClick={() => form.blocker?.reset?.()}>繼續核對</Button>
+          <Button variant="secondary" disabled={form.busy || form.loading} onClick={() => void form.leave?.()}>
             保留原稿並離開
           </Button>
         </Notice>
