@@ -9,6 +9,8 @@ import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { pendingOperations, type PendingOperation } from './pending-operations';
 import { listDurableDrafts, listDurableVersions } from './draft-store';
+import { useDurableValue } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
 const ReadOperation=z.object({key:z.string().uuid(),input:MarkNotificationsRead}).strict();
 const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:'確認變更後的安排',claims:'核對報名認領',withdrawal:'處理退出申請',formation:'決定是否成團',finish:'確認活動結束／延長',settlement:'核對並發布結算',reports:'款項申報待核對',payment:'我的款項待補',refund:'我的退款／墊付待收回',reconcile:'核對收退款與結清'};
@@ -50,24 +52,29 @@ function PendingOperations({viewer}:{viewer:Member}){
   return <Surface role="region" className="detail inbox-section" aria-label="未完成操作"><Heading level={2}>未完成操作</Heading>{inventory.error?<Notice>{inventory.error}</Notice>:inventory.rows.length?<><Notice>此清單包含目前帳號的本機操作及本分頁紀錄。回原頁核對結果後，才可重試。</Notice><ul className="inbox-list">{inventory.rows.map(row=><li key={row.id}><Link to={row.to}>{row.label}</Link>{row.damaged?<Text role="alert">原稿格式損壞，請回原頁保全原稿。</Text>:row.requestKey&&<Button variant="ghost" disabled={!!busy} onClick={()=>void check(row)}>核對結果</Button>}{results[row.id]&&<Text role="status">{results[row.id]}</Text>}</li>)}</ul></>:null}<Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></Surface>;
 }
 function Inbox({viewer}:{viewer:Member}){
-  const [search]=useSearchParams(),event=search.get('event'),client=useQueryClient(),active=useRef(true),storageKey='qgroup:rebuild:notifications-read:v1:'+viewer.scope;
-  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(storageKey);return {operation:raw?ReadOperation.parse(JSON.parse(raw)):null,error:''};}catch{return {operation:null,error:'無法讀取已讀操作原稿，請先保全原稿。'};}});
-  const [operation,setOperation]=useState(loaded.operation),[readError,setReadError]=useState(loaded.error),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);
-  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
+  const [search]=useSearchParams(),event=search.get('event'),client=useQueryClient(),storageKey='qgroup:rebuild:notifications-read:v1:'+viewer.scope;
+  const record=useDurableValue<z.infer<typeof ReadOperation>|null>({
+    key:storageKey,scope:viewer.scope,seed:()=>null,parse:raw=>ReadOperation.nullable().parse(JSON.parse(raw)),dirty:value=>!!value,pending:value=>!!value,
+  });
+  const {value:operation,replace:setOperation,busy,setBusy,active,locked,unavailable,begin,persist}=record;
+  const [message,setMessage]=useState('');
+  useEffect(()=>{setMessage('');},[record.epoch]);
   const notifications=useInfiniteQuery({queryKey:['private',viewer.scope,'notifications'],initialPageParam:null as string|null,queryFn:({pageParam})=>api('/me/notifications'+(pageParam?'?before='+pageParam:''),Notifications,{headers:scope(viewer)}),getNextPageParam:last=>last.nextBefore??undefined});
   const todos=useQuery({queryKey:['private',viewer.scope,'inbox-todos',event],queryFn:()=>api('/me/todos'+(event?'?'+new URLSearchParams({event}):''),InboxTodos,{headers:scope(viewer)}),refetchInterval:30000});
   const messages=notifications.data?.pages.flatMap(page=>page.notifications)??[];
   async function mark(ids:string[]){
-    if(busy||readError)return;const pending=operation??{key:crypto.randomUUID(),input:{ids}};
-    try{sessionStorage.setItem(storageKey,JSON.stringify(pending));}catch{setMessage('無法保存已讀操作編號，尚未送出。');return;}
-    setOperation(pending);setBusy(true);let committed=false;
+    const pending=operation??{key:crypto.randomUUID(),input:MarkNotificationsRead.parse({ids})};if(!begin())return;
+    setMessage('');let committed=false;
     try{
+      if(!await persist(pending,false,'無法保存已讀操作編號，尚未送出。')||!active.current)return;
+      setOperation(pending);
       await api('/me/notifications/read',Ok,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':pending.key},body:JSON.stringify(pending.input)});committed=true;
-      if(!active.current)return;sessionStorage.removeItem(storageKey);setOperation(null);setMessage('通知已標為已讀；待辦仍按目前狀態計算。');
+      if(!active.current||!await persist(null,false,'已讀操作已送出，但無法保存本機確認狀態；請保留原操作並核對結果。'))return;
+      setOperation(null);setMessage('通知已標為已讀；待辦仍按目前狀態計算。');
       await client.invalidateQueries({queryKey:['private',viewer.scope,'notifications']});void client.invalidateQueries({queryKey:['private',viewer.scope,'notification-count']});
     }catch(error){
       if(!active.current)return;
-      if(!committed&&error instanceof ApiError&&error.status<500&&error.status!==429){try{sessionStorage.removeItem(storageKey);setOperation(null);}catch{/* Keep exact operation when storage cannot clear. */}setMessage(error.message);}
+      if(!committed&&error instanceof ApiError&&error.status<500&&error.status!==429){if(await persist(null,false,'無法保存拒絕結果；原操作仍保留，請重新核對。'))setOperation(null);setMessage(error.message);}
       else setMessage('尚未確認已讀結果，原操作已保留，請確認原操作結果。');
     }finally{if(active.current)setBusy(false);}
   }
@@ -75,8 +82,8 @@ function Inbox({viewer}:{viewer:Member}){
     <PendingOperations viewer={viewer}/>
     <Surface role="region" className="detail inbox-section" aria-label="目前待辦"><Heading level={2}>目前待辦{todos.data?.eventTitle?' · '+todos.data.eventTitle:''}</Heading>{todos.isPending?<Notice>正在核對待辦…</Notice>:todos.error?<Failure error={todos.error} retry={()=>void todos.refetch()}/>:todos.data.todos.length?<TodoList todos={todos.data.todos}/>:<Text>目前沒有待辦事項。</Text>}<Button variant="secondary" disabled={todos.isFetching} onClick={()=>void todos.refetch()}>重新核對待辦</Button></Surface>
     <Surface role="region" className="detail inbox-section" aria-label="站內通知"><Heading level={2}>站內通知{notifications.data?' · '+notifications.data.pages[0]!.unreadCount+' 未讀':''}</Heading>
-      {readError&&<Notice>{readError}<Button onClick={()=>{try{const raw=sessionStorage.getItem(storageKey);if(raw!==null)sessionStorage.setItem(storageKey+':recovery:'+Date.now(),raw);sessionStorage.removeItem(storageKey);setReadError('');}catch{setMessage('仍無法保全原稿，請檢查瀏覽器儲存設定。');}}}>保全原稿後繼續</Button></Notice>}
-      {message&&<Text role="status">{message}</Text>}{operation&&<Notice>有一筆已讀操作的結果待確認。<Button disabled={busy||!!readError} onClick={()=>void mark([])}>確認原已讀操作結果</Button></Notice>}
-      {notifications.isPending?<Notice>正在讀取通知…</Notice>:notifications.error&&!notifications.data?<Failure error={notifications.error} retry={()=>void notifications.refetch()}/>:<>{!messages.length?<Text>尚未收到站內通知。</Text>:<><Button variant="secondary" disabled={busy||!!operation||!!readError||!messages.some(n=>!n.readAt)} onClick={()=>void mark(messages.filter(n=>!n.readAt).slice(0,100).map(n=>n.id))}>將已載入的通知標為已讀（最多 100 筆）</Button><ul className="inbox-list">{messages.map(n=><li key={n.id}><Text className="preserve-lines">{n.message}</Text><Text tone="muted">{n.readAt?'已讀':'未讀'} · {n.createdAt.replace('T',' ')}</Text><Link to={'/activities/'+encodeURIComponent(n.eventId)}>查看活動</Link>{!n.readAt&&<Button variant="ghost" disabled={busy||!!operation||!!readError} onClick={()=>void mark([n.id])}>標為已讀</Button>}</li>)}</ul></>}{notifications.error&&<Failure error={notifications.error} retry={()=>void (notifications.isFetchNextPageError?notifications.fetchNextPage():notifications.refetch())}/>} {notifications.hasNextPage&&<Button variant="secondary" disabled={notifications.isFetching} onClick={()=>void notifications.fetchNextPage()}>載入更早通知</Button>}</>}
+      <DraftFeedback form={record} navigation={false}/>
+      {message&&<Text role="status">{message}</Text>}{operation&&<Notice>有一筆已讀操作的結果待確認。<Button disabled={busy||unavailable} onClick={()=>void mark([])}>確認原已讀操作結果</Button></Notice>}
+      {notifications.isPending?<Notice>正在讀取通知…</Notice>:notifications.error&&!notifications.data?<Failure error={notifications.error} retry={()=>void notifications.refetch()}/>:<>{!messages.length?<Text>尚未收到站內通知。</Text>:<><Button variant="secondary" disabled={locked||!messages.some(n=>!n.readAt)} onClick={()=>void mark(messages.filter(n=>!n.readAt).slice(0,100).map(n=>n.id))}>將已載入的通知標為已讀（最多 100 筆）</Button><ul className="inbox-list">{messages.map(n=><li key={n.id}><Text className="preserve-lines">{n.message}</Text><Text tone="muted">{n.readAt?'已讀':'未讀'} · {n.createdAt.replace('T',' ')}</Text><Link to={'/activities/'+encodeURIComponent(n.eventId)}>查看活動</Link>{!n.readAt&&<Button variant="ghost" disabled={locked} onClick={()=>void mark([n.id])}>標為已讀</Button>}</li>)}</ul></>}{notifications.error&&<Failure error={notifications.error} retry={()=>void (notifications.isFetchNextPageError?notifications.fetchNextPage():notifications.refetch())}/>} {notifications.hasNextPage&&<Button variant="secondary" disabled={notifications.isFetching} onClick={()=>void notifications.fetchNextPage()}>載入更早通知</Button>}</>}
     </Surface></>;
 }
