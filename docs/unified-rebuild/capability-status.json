@@ -726,13 +726,26 @@
       "new_entry": "活動管理",
       "required_behavior": "報名開關與生命週期獨立；截止後不自動遞補",
       "legacy_evidence_group": "活動、名冊",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "報名開關與生命週期獨立；截止後不自動遞補"
+      "implementation": [
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/web/src/activity-lifecycle.tsx",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-lifecycle.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "暫停／恢復、截止阻擋與只在實際開放時嚴格 FIFO 遞補已實作，已做原 Python 完整資料／bot 差分；完整報名／退出、舊 API 與正式副本驗收待完成。"
     },
     {
       "capability_id": "E07",
@@ -740,13 +753,26 @@
       "new_entry": "活動管理／待辦",
       "required_behavior": "人數不足仍可附原因確認；不自動取消",
       "legacy_evidence_group": "活動",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "人數不足仍可附原因確認；不自動取消"
+      "implementation": [
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/web/src/activity-lifecycle.tsx",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/activity-bot.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-lifecycle.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "發起者成團確認、低於門檻原因、通知及無操作去重已實作並差分；全站待辦、全部舊入口與正式副本驗收待完成。"
     },
     {
       "capability_id": "E08",
@@ -756,16 +782,27 @@
       "legacy_evidence_group": "活動",
       "implementation": [
         "packages/domain/src/index.ts",
-        "packages/domain/src/domain.test.ts"
+        "packages/domain/src/domain.test.ts",
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/web/src/activity-lifecycle.tsx",
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
-        "packages/domain/src/domain.test.ts"
+        "packages/domain/src/domain.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-lifecycle.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-lifecycle.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "只計算顯示階段，預計超時不改實際結束；開始／結束／延長指令及當地時區 UI 待完成。"
+      "remaining": "實際開始／結束、原時間保留與明確確認已實作，預定時間不自動轉實際；安排可延長並保留條件版本。當地時區完整 UI、待辦、舊入口、跨日與正式副本驗收待完成。"
     },
     {
       "capability_id": "E09",
@@ -777,22 +814,29 @@
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/activity-drafts.ts",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/web/src/activity-drafts.tsx"
+        "apps/web/src/activity-drafts.tsx",
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/web/src/activity-lifecycle.tsx",
+        "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-drafts.test.ts"
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-drafts.spec.ts"
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/activity-lifecycle.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "草稿明確確認刪除、原 revision、帳務／他人全部報名／協辦阻擋、只標 deleted 與取消未送工作、刪除後結果查回已實作；取消、歸檔／取消歸檔與非草稿刪除流程仍待完成。"
+      "remaining": "已發布活動取消、歸檔／取消歸檔、受限移除及原 key 恢復已實作，保留名單／帳務，必要寫入回滾；取消損失／結算流程、全部舊入口與正式副本驗收待完成。"
     },
     {
       "capability_id": "E10",
@@ -2716,28 +2760,34 @@
         "apps/api/src/activity-management.ts",
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-arrangements.ts"
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/web/src/activity-lifecycle.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/activity-lifecycle.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B05",
@@ -2753,28 +2803,34 @@
         "apps/api/src/activity-management.ts",
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-arrangements.ts"
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/web/src/activity-lifecycle.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/activity-lifecycle.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "已增加暫停／恢復／成團／實際開始／結束／取消的原生業務 hook、完整 Python 差分及保留 Python worker 的 plain／rich／dry-run 隔離消費驗證。本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
     },
     {
       "capability_id": "B06",

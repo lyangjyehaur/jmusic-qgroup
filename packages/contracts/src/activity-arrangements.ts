@@ -29,3 +29,10 @@ export const ConditionArrangement = z.object({category:z.string(),starts_at:z.st
 export const ConditionVersion = z.object({version:z.number().int(),arrangement:ConditionArrangement,summary:z.string(),createdAt:z.string(),actorName:z.string()});
 export const ActivityConditions = z.object({id:z.string(),revision:z.number().int(),current:ConditionVersion,history:z.array(ConditionVersion),page:z.number().int(),hasMore:z.boolean(),canRespond:z.boolean(),people:z.array(z.object({id:z.string(),name:z.string(),status:z.string(),confirmationState:z.string(),acceptedVersion:z.number().int().nullable()}))});
 export const RespondActivityConditions = z.object({revision:z.number().int().min(0),conditionsVersion:z.number().int().min(1),decision:z.enum(['accepted','declined']),reason:text(200).default('')}).strict().refine(value=>value.decision!=='declined'||!!value.reason);
+export const ActivityLifecycleAction = z.enum(['pause','resume','formation','start','finish','cancel','archive','unarchive','remove']);
+export const ChangeActivityLifecycle = z.object({revision:z.number().int().min(0),action:ActivityLifecycleAction,reason:text(200).default(''),confirm:z.literal(true)}).strict();
+export const ActivityLifecycle = z.object({
+  id:z.string(),title:z.string(),revision:z.number().int(),lifecycle:z.string(),registrationOpen:z.boolean(),formationState:z.string(),
+  actualStartedAt:z.string().nullable(),actualEndedAt:z.string().nullable(),archivedAt:z.string().nullable(),cancellationReason:z.string(),removed:z.boolean(),
+  actions:z.array(z.object({action:ActivityLifecycleAction,blockedReason:z.string(),requiresReason:z.boolean()})),
+});

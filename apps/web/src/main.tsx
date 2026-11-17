@@ -7,6 +7,7 @@ import { Layout } from './layout';
 import { Activities, ActivityDetail } from './activities';
 import { ActivityDraftPage, ActivityDraftsPage, ActivityArrangementPage } from './activity-drafts';
 import { ActivityConditionsPage } from './activity-conditions';
+import { ActivityLifecyclePage } from './activity-lifecycle';
 import { ActivityEntry } from './activity-entry';
 import { Music } from './music';
 import { MyMusic, MyPage } from './account';
@@ -32,6 +33,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { index: true, element: <ActivityEntry /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
   { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
+  { path: 'activities/:id/lifecycle', element: <ActivityLifecyclePage /> },
   { path: 'music', element: <Music /> }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> }, { path: 'me/music', element: <MyMusic /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },

@@ -126,5 +126,14 @@ export function createActivityBot(db:DB,now:()=>Date,defaults:ActivityBotDefault
     if(event.conditions_version!==before.conditions_version)broadcast(event,'conditions_changed');
     if(!before.bot_enabled&&event.bot_enabled)broadcast(event,'activity_published');
   }
-  return {schedule,broadcast,publication,reminderPlan,personal,promoted:(eventId:string,userId:string)=>personal(eventId,userId,'promoted'),arrangementsUpdated};
+  function lifecycleUpdated(id:string,action:string,promotedIds:string[]){
+    if(!activityBotPolicy(db,defaults).config.enabled)return;
+    const event=eventRow(db,id)!;
+    if(!botShareable(event))db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
+    schedule(event);
+    if(promotedIds.length)broadcast(event,'registration_changed',promotedIds);
+    const kinds:Record<string,Kind>={formation:'formation_confirmed',start:'event_started',finish:'event_finished',cancel:'event_cancelled',pause:'registration_paused',resume:'registration_resumed'};
+    if(kinds[action])broadcast(event,kinds[action]);
+  }
+  return {schedule,broadcast,publication,reminderPlan,personal,promoted:(eventId:string,userId:string)=>personal(eventId,userId,'promoted'),arrangementsUpdated,lifecycleUpdated};
 }
