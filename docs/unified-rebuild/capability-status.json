@@ -3166,13 +3166,35 @@
       "new_entry": "同好／個人卡",
       "required_behavior": "領域／細分拆分、各自程度、共同本命、冷門、覆蓋、比例與標籤完整",
       "legacy_evidence_group": "匹配",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "領域／細分拆分、各自程度、共同本命、冷門、覆蓋、比例與標籤完整"
+      "implementation": [
+        "packages/domain/src/music-matching.ts",
+        "packages/contracts/src/music-matching.ts",
+        "apps/api/src/music-match-data.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/api/src/music-profile-id.ts",
+        "apps/web/src/music-matches.tsx",
+        "apps/web/src/music-match-view.tsx",
+        "apps/web/src/music-return.ts",
+        "apps/web/src/people.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-matching.test.ts",
+        "apps/api/src/music-matches.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-matches.spec.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M14",
@@ -3180,13 +3202,35 @@
       "new_entry": "同好",
       "required_behavior": "保留 tie-break、證據折算、個人偏好及顯示分上限",
       "legacy_evidence_group": "匹配",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "保留 tie-break、證據折算、個人偏好及顯示分上限"
+      "implementation": [
+        "packages/domain/src/music-matching.ts",
+        "packages/contracts/src/music-matching.ts",
+        "apps/api/src/music-match-data.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/api/src/music-profile-id.ts",
+        "apps/web/src/music-matches.tsx",
+        "apps/web/src/music-match-view.tsx",
+        "apps/web/src/music-return.ts",
+        "apps/web/src/people.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-matching.test.ts",
+        "apps/api/src/music-matches.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-matches.spec.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M15",
@@ -3194,13 +3238,35 @@
       "new_entry": "同好",
       "required_behavior": "少量選擇不造成虛假的高排名；主榜與 sparseMatches 都保留",
       "legacy_evidence_group": "匹配",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "少量選擇不造成虛假的高排名；主榜與 sparseMatches 都保留"
+      "implementation": [
+        "packages/domain/src/music-matching.ts",
+        "packages/contracts/src/music-matching.ts",
+        "apps/api/src/music-match-data.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/api/src/music-profile-id.ts",
+        "apps/web/src/music-matches.tsx",
+        "apps/web/src/music-match-view.tsx",
+        "apps/web/src/music-return.ts",
+        "apps/web/src/people.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-matching.test.ts",
+        "apps/api/src/music-matches.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-matches.spec.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M16",
@@ -3208,13 +3274,35 @@
       "new_entry": "同好比較",
       "required_behavior": "支援自填別名、拒絕自己／不存在；展示共同／各自獨有與程度",
       "legacy_evidence_group": "匹配、成分身分",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "支援自填別名、拒絕自己／不存在；展示共同／各自獨有與程度"
+      "implementation": [
+        "packages/domain/src/music-matching.ts",
+        "packages/contracts/src/music-matching.ts",
+        "apps/api/src/music-match-data.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/api/src/music-profile-id.ts",
+        "apps/web/src/music-matches.tsx",
+        "apps/web/src/music-match-view.tsx",
+        "apps/web/src/music-return.ts",
+        "apps/web/src/people.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-matching.test.ts",
+        "apps/api/src/music-matches.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-matches.spec.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
     },
     {
       "capability_id": "M17",
@@ -3229,28 +3317,37 @@
         "apps/web/src/member-access.tsx",
         "packages/contracts/src/index.ts",
         "packages/database/src/schema-v4.ts",
-        "apps/web/src/music-copy.tsx"
+        "apps/web/src/music-copy.tsx",
+        "apps/api/src/music-match-data.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/web/src/music-matches.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/music-contact.test.ts",
-        "apps/web/tests/music-entry.spec.ts"
+        "apps/web/tests/music-entry.spec.ts",
+        "apps/api/src/music-matches.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-contact.test.ts",
-        "packages/database/src/contact-migration.test.ts"
+        "packages/database/src/contact-migration.test.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-contact.test.ts",
-        "apps/web/tests/music-entry.spec.ts"
+        "apps/web/tests/music-entry.spec.ts",
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-contact.spec.ts",
         "docs/unified-rebuild/15-contact-checkpoint.md",
         "apps/web/tests/music-entry.spec.ts",
-        "docs/unified-rebuild/38-music-entry-checkpoint.md"
+        "docs/unified-rebuild/38-music-entry-checkpoint.md",
+        "apps/web/tests/music-matches.spec.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "同好基礎成分卡、固定 ID／別名查詢、原順序選擇、聯絡來源、名稱／QQ／ID 複製與退路、詞條往返及快取刪除已測；保持成分身份門檻，不回傳身份憑證／私人欄位。公開性別與私人留言完整規則、舊入口及正式版本組合成套驗收待完成。"
+      "remaining": "原生獨立欄位、原生／匯入資料優先與私人留言依所選排序或預設首位授權已隔離實作；正式副本、舊入口 adapter、外部入口及切換版本組合仍待成套驗收。"
     },
     {
       "capability_id": "M18",
@@ -3264,27 +3361,36 @@
         "packages/database/src/music-fields.ts",
         "packages/database/src/schema-v8.ts",
         "apps/api/src/music-contact.ts",
-        "apps/web/src/people.tsx"
+        "apps/web/src/people.tsx",
+        "apps/api/src/music-match-data.ts",
+        "apps/api/src/music-matches.ts",
+        "apps/web/src/music-matches.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/music-fields.test.ts",
-        "packages/domain/src/music-name.test.ts"
+        "packages/domain/src/music-name.test.ts",
+        "apps/api/src/music-matches.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/fields-migration.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "apps/api/src/music-fields.test.ts"
+        "apps/api/src/music-fields.test.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-fields.test.ts",
-        "apps/api/src/admin-music.test.ts"
+        "apps/api/src/admin-music.test.ts",
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-fields.spec.ts",
-        "docs/unified-rebuild/19-fields-checkpoint.md"
+        "docs/unified-rebuild/19-fields-checkpoint.md",
+        "apps/web/tests/music-matches.spec.ts",
+        "docs/unified-rebuild/40-music-matching-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "本人留言編輯、140 字／清空、原 noteAt 保全、私有歷史／回執與刪除已實作；目前不向其他會員提供留言，仍須完成匹配演算法與舊 viewer／推薦排序差異的差分授權、真實匯入及平台驗收。"
+      "remaining": "原生獨立欄位、原生／匯入資料優先與私人留言依所選排序或預設首位授權已隔離實作；正式副本、舊入口 adapter、外部入口及切換版本組合仍待成套驗收。"
     },
     {
       "capability_id": "M19",

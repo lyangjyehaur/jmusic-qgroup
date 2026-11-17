@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import { getProfile } from './repositories';
 import { hash, type Security } from './security';
+import { musicNoteAllowed } from './music-match-data';
+import { resolveMusicProfileId } from './music-profile-id';
 import { musicNameJoins, musicNameSQL, profileFields } from './music-fields';
 
 type Contact = z.infer<typeof MusicContact>;
@@ -15,17 +17,17 @@ export function musicContact(db: DB, userId: string): Contact {
     FROM music_profiles p LEFT JOIN music_profile_contacts c ON c.profile_id=p.id WHERE p.id=?`).get(profile.id) as Contact;
 }
 function memberProfile(db: DB, query: string, viewerId: string): z.infer<typeof MemberMusicProfile> {
+  const id = resolveMusicProfileId(db, query);
   const profile = db.prepare(`SELECT p.id,${musicNameSQL} AS name,
     COALESCE(c.contact_qq,'') AS contactQQ,CASE WHEN c.contact_qq!='' THEN c.source ELSE '' END AS contactSource
     FROM music_profiles p ${musicNameJoins}
-    LEFT JOIN music_profile_contacts c ON c.profile_id=p.id WHERE p.erased_at IS NULL AND (p.id=? OR l.legacy_key=? OR (c.contact_qq!='' AND c.contact_qq=?))
-    ORDER BY CASE WHEN p.id=? THEN 0 ELSE 1 END LIMIT 1`).get(query, query, query, query) as Omit<z.infer<typeof MemberMusicProfile>, 'selections'> | undefined;
-  if (!profile) throw new DomainError('NOT_FOUND', '找不到這份成分；請核對固定成分 ID 或聯絡 QQ', 404);
+    LEFT JOIN music_profile_contacts c ON c.profile_id=p.id WHERE p.id=?`).get(id) as Omit<z.infer<typeof MemberMusicProfile>, 'selections'>;
   const selections = db.prepare(`SELECT s.entry_id AS entryId,e.name,e.kind,s.level FROM music_selections s JOIN music_entries e ON e.id=s.entry_id
     WHERE s.profile_id=? ORDER BY s.position`).all(profile.id) as z.infer<typeof MemberMusicProfile>['selections'];
   const fields = profileFields(db, profile.id);
   const owner = db.prepare('SELECT 1 FROM music_profiles WHERE id=? AND user_id=?').get(profile.id, viewerId);
-  return { ...profile, gender: owner || fields.genderPublic ? fields.gender : '', selections };
+  return { ...profile, gender: owner || fields.genderPublic ? fields.gender : '',
+    note: musicNoteAllowed(db, viewerId, profile.id) ? fields.note : '', selections };
 }
 export function registerMusicContact(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
   app.get('/api/v2/me/music/contact', async request => musicContact(db, security.scopedMember(request).id));
@@ -63,15 +65,15 @@ export function registerMusicContact(app: FastifyInstance, db: DB, security: Sec
     return result;
   }).immediate());
   // Numbers stay in the JSON body, outside browser history and request URL logs.
-  app.post('/api/v2/music/profiles/lookup', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => {
+  app.post('/api/v2/music/profiles/lookup', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const viewer = security.memberWrite(request);
     if (!getProfile(db, viewer.id)) throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403);
     return memberProfile(db, LookupMusicProfile.parse(request.body).query, viewer.id);
-  });
-  app.get('/api/v2/music/profiles/:id', async request => {
+  })());
+  app.get('/api/v2/music/profiles/:id', async request => db.transaction(() => {
     const viewer = security.scopedMember(request);
     if (!getProfile(db, viewer.id)) throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403);
     const { id } = z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(request.params);
     return memberProfile(db, id, viewer.id);
-  });
+  })());
 }

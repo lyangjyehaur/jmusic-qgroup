@@ -49,6 +49,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       client.setQueryData(['private', viewer.scope, 'music-fields', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-matches'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
       void client.invalidateQueries({ queryKey: ['music-catalog'] }); announceAccountChange();
       setMessage(result.revision === latest.revision ? '成分資料已保存。' : '原操作已保存，資料已再次變更；請核對目前內容。');
@@ -73,7 +75,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       <div className="account-field"><label htmlFor="music-gender">性別</label><select id="music-gender" value={draft.genderChoice} disabled={locked} onChange={event => { const choice = GenderChoice.parse(event.target.value); edit({ genderChoice: choice, genderPublic: choice ? draft.genderPublic : false }); }}><option value="">不填</option><option value="female">女</option><option value="male">男</option><option value="custom">自訂</option></select></div>
       {draft.genderChoice === 'custom' && <label className="account-field">自訂性別<input value={draft.genderCustom} maxLength={Math.max(24, initial.gender.length)} disabled={locked} onChange={event => edit({ genderCustom: event.target.value })} /></label>}
       <label className="consent"><input type="checkbox" checked={draft.genderPublic} disabled={locked || !draft.genderChoice} onChange={event => edit({ genderPublic: event.target.checked })} /><span>在成分卡公開性別</span></label><Text>未公開的性別不會提供給其他成分會員。</Text>
-      <div className="account-field"><label htmlFor="music-private-note">私人留言</label><textarea id="music-private-note" rows={3} maxLength={Math.max(280, initial.note.length)} value={draft.note} disabled={locked} onChange={event => edit({ note: event.target.value })} aria-describedby="music-note-help" /></div><Text id="music-note-help">最多 140 字，可清空。私人留言不會公開展示。</Text>
+      <div className="account-field"><label htmlFor="music-private-note">私人留言</label><textarea id="music-private-note" rows={3} maxLength={Math.max(280, initial.note.length)} value={draft.note} disabled={locked} onChange={event => edit({ note: event.target.value })} aria-describedby="music-note-help" /></div><Text id="music-note-help">最多 140 字，可清空。成分會員的所選排序推薦首位可顯示你的留言；成分卡與比較頁僅對預設排序將你列為首位的會員顯示。資料較少的推薦不顯示留言。</Text>
       <Button type="submit" loading={busy} disabled={!dirty || !!readError}>{draft.pending ? '確認成分資料結果' : '保存成分資料'}</Button>
     </form>{dirty && !draft.pending && <Button variant="secondary" disabled={busy || !!readError} onClick={() => void rebase()}>核對目前成分資料，保留輸入</Button>}
       {message && <Text role="status">{message}</Text>}{storageError && <Text role="alert">{storageError}</Text>}

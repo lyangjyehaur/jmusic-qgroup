@@ -38,6 +38,7 @@ import { AdminPrivacy, AdminPrivacyReview } from './admin-privacy';
 import { AdminDirectory, AdminUserPage } from './admin-users';
 import { MyPrivacy } from './my-privacy';
 import { MusicContactPage } from './music-contact';
+import { MusicComparisonPage } from './music-matches';
 import { People, PersonMusic } from './people';
 import { MusicRecovery } from './music-recovery';
 import { MusicFieldsPage } from './music-fields';
@@ -67,7 +68,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { element: <MusicWorkspace />, children: [{ path: 'music', element: <Music /> }, { path: 'music/entries/:id', element: <MusicEntryPage /> }, { path: 'me/music', element: <MyMusic /> }] }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> },
   { path: 'me/music/entries', element: <MyMusicEntriesPage /> }, { path: 'me/music/entries/new', element: <MusicEntryEditorPage command="create" /> },
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
-  { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> },
+  { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },
   { path: 'me/music/details', element: <MusicFieldsPage /> },
   { path: 'admin/music', element: <AdminMusicDirectory /> }, { path: 'admin/music/:id', element: <AdminMusicPage /> },

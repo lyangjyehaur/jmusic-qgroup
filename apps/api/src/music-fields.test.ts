@@ -37,7 +37,7 @@ describe('independent music fields', () => {
       await s.db.backup(path); const probe = () => JSON.parse(execFileSync('python3', ['tools/rebuild/probe-auth-bot.py', path], { encoding: 'utf8' })); const oldBot = probe();
       const response = await s.save({ ...s.alice.input, name: '  成分\n稱呼 ', note: ' 私人\n  留言 ', gender: ' FEMALE ', genderPublic: true });
       expect(response.statusCode, response.body).toBe(200); expect(response.json()).toEqual({ profileId: s.alice.profile.id, revision: 1, name: '成分 稱呼', note: '私人 留言', noteAt: 1794902400.123, gender: 'female', genderPublic: true });
-      expect((await s.card()).json()).toMatchObject({ name: '成分 稱呼', gender: 'female' }); expect((await s.card()).body).not.toMatch(/note|私人|genderPublic|noteAt|revision/);
+      expect((await s.card()).json()).toMatchObject({ name: '成分 稱呼', gender: 'female', note: '' }); expect((await s.card()).body).not.toMatch(/私人|genderPublic|noteAt|revision/);
       expect(tables.map(table => s.db.prepare('SELECT * FROM ' + table).all())).toEqual(before);
       await s.db.backup(path); expect(probe()).toEqual(oldBot);
       expect(s.db.prepare('SELECT revision FROM music_profiles WHERE id=?').get(s.alice.profile.id)).toEqual({ revision: 2 });

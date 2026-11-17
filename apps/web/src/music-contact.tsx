@@ -8,7 +8,7 @@ import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { announceAccountChange } from './account-session';
-import { ContactValue } from './people';
+import { ContactValue } from './music-contact-value';
 type Value = z.infer<typeof MusicContact>;
 const Draft = SaveMusicContact.extend({ contactQQ: z.string().max(24), requestKey: z.string().uuid().optional() });
 export function MusicContactPage() {
@@ -54,6 +54,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
       client.setQueryData(['private', viewer.scope, 'music-contact', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-matches'] });
+      void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] }); announceAccountChange();
       setMessage(latest.revision === result.revision ? '已保存聯絡 QQ。' : '原操作已保存，聯絡 QQ 已再次變更；請核對目前資料。');
     } catch (error) {

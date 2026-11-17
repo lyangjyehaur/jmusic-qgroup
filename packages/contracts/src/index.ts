@@ -31,7 +31,7 @@ export const MusicFields = z.object({ profileId: z.string(), name: z.string(), n
 // against the actual prior value on the server, without silently truncating imports.
 export const SaveMusicFields = z.object({ profileId: z.string().min(1).max(80), musicEpoch: z.number().int().min(0), revision: z.number().int().min(0), name: z.string().max(16384), note: z.string().max(16384), gender: z.string().max(16384), genderPublic: z.boolean() }).strict();
 export const LookupMusicProfile = z.object({ query: z.string().trim().min(1).max(80) }).strict();
-export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), gender: z.string(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
+export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), gender: z.string(), note: z.string(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
 export const ActivityRoster = z.object({eventId:z.string(),revision:z.number().int(),participants:z.array(z.object({
   id:z.string(),name:z.string(),note:z.string(),status:z.enum(['confirmed','waiting','tentative']),position:z.number().int(),waitingPosition:z.number().int().nullable(),
   isMe:z.boolean(),isGuest:z.boolean(),managedByMe:z.boolean(),managerName:z.string(),payerName:z.string(),withdrawalRequested:z.boolean(),confirmationState:z.string(),attendance:z.string(),avatarUrl:z.string(),
@@ -128,3 +128,4 @@ export * from './activity-attendance';
 export * from './activity-history';
 export * from './inbox';
 export * from './finance';
+export * from './music-matching';

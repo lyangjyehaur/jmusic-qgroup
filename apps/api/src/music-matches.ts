@@ -1,0 +1,41 @@
+import type { FastifyInstance } from 'fastify';
+import type { DB } from '@qgroup/database';
+import { MusicMatches, MusicComparison, LookupMusicProfile } from '@qgroup/contracts';
+import { DomainError, musicComparison, musicMatches } from '@qgroup/domain';
+import { z } from 'zod';
+import type { Security } from './security';
+import { getProfile } from './repositories';
+import { matchingIdentity, musicMatchData } from './music-match-data';
+import { resolveMusicProfileId } from './music-profile-id';
+function viewerProfile(db: DB, userId: string) {
+  const profile = getProfile(db, userId);
+  if (!profile) throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403);
+  return profile;
+}
+function compare(db: DB, userId: string, target: string) {
+  const profile = viewerProfile(db, userId), otherId = resolveMusicProfileId(db, target);
+  if (profile.id === otherId) throw new DomainError('COMPARE_SELF', '這是你自己的成分，請選擇另一份成分', 400);
+  const { entries, members } = musicMatchData(db), me = members.find(m => m.id === profile.id)!, other = members.find(m => m.id === otherId)!;
+  const allowed = musicMatches(me, members, entries).matches[0]?.member.id === other.id;
+  return MusicComparison.parse({ ...musicComparison(me.selections, other.selections, entries), me: matchingIdentity(me, true, true), other: matchingIdentity(other, allowed) });
+}
+export function registerMusicMatches(app: FastifyInstance, db: DB, security: Security) {
+  app.get('/api/v2/music/matches', async request => db.transaction(() => {
+    const viewer = security.scopedMember(request), profile = viewerProfile(db, viewer.id);
+    const { sort } = z.object({ sort: z.enum(['rare', 'familiar']).default('rare') }).strict().parse(request.query);
+    const { entries, members } = musicMatchData(db), me = members.find(m => m.id === profile.id)!;
+    const result = musicMatches(me, members, entries, sort);
+    const expose = (row: typeof result.matches[number], index: number, sparse: boolean) => ({ member: matchingIdentity(row.member, !sparse && index === 0), stats: row.stats, shared: row.shared, onlyTheirs: row.onlyTheirs });
+    return MusicMatches.parse({ me: matchingIdentity(me, true, true), mine: musicComparison(me.selections, [], entries).mine, sort,
+      matches: result.matches.map((row, index) => expose(row, index, false)), sparseMatches: result.sparseMatches.map((row, index) => expose(row, index, true)) });
+  })());
+  app.post('/api/v2/music/compare', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
+    const viewer = security.memberWrite(request); viewerProfile(db, viewer.id);
+    return compare(db, viewer.id, LookupMusicProfile.parse(request.body).query);
+  })());
+  app.get('/api/v2/music/profiles/:id/comparison', async request => db.transaction(() => {
+    const viewer = security.scopedMember(request); viewerProfile(db, viewer.id);
+    const { id } = z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(request.params);
+    return compare(db, viewer.id, id);
+  })());
+}

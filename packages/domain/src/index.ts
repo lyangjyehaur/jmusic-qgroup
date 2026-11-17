@@ -57,3 +57,4 @@ export function activityState(event: { lifecycle: string; starts_at: string; dea
   };
 }
 export * from './music-rankings';
+export * from './music-matching';

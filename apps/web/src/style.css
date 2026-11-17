@@ -184,3 +184,19 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .music-bubbles a.is-selected circle { stroke: #1e4e99; stroke-width: 3; }
 .music-bubbles a:hover circle, .music-bubbles a:focus-visible circle { stroke: #152d50; stroke-width: 4; }
 .music-bubbles a:focus-visible { outline: 2px solid #152d50; outline-offset: 3px; }
+
+.music-recommendations { margin-block: 2rem; }
+.match-sort { display: flex; align-items: center; flex-wrap: wrap; gap: .75rem; margin-block: 1rem; }
+.music-matches { padding-inline-start: 1.5rem; }
+.music-matches > li { margin-block: 1rem; padding-inline-start: .25rem; }
+.match-card, .music-comparison { padding: 1.25rem; overflow-wrap: anywhere; }
+.match-card h3 { margin-top: 0; }
+.match-stats dl { display: flex; flex-wrap: wrap; gap: .5rem 1.25rem; font-size: .875rem; }
+.match-stats dl > div { display: flex; flex-wrap: wrap; gap: .5rem; }
+.match-stats dd { margin: 0; font-variant-numeric: tabular-nums; }
+.match-picks { display: flex; flex-wrap: wrap; gap: .5rem; list-style: none; padding: 0; }
+.match-picks li { display: flex; flex-direction: column; gap: .25rem; border: 1px solid #c6d6e8; border-radius: .6rem; padding: .65rem; max-width: 100%; }
+.match-picks span { font-size: .8rem; }
+.match-pick-group { margin-block: 1.25rem; }
+.match-pick-group h4 { margin-block: .75rem; }
+.match-note { padding-inline-start: .75rem; border-inline-start: 3px solid #7a9cb8; white-space: pre-wrap; }

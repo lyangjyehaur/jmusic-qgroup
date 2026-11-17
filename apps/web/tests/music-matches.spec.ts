@@ -1,0 +1,122 @@
+import { test, expect } from './fixtures';
+import type { BrowserContext, Page } from '@playwright/test';
+const origin = 'http://127.0.0.1:5082';
+const id = (n: number) => 'm_' + n.toString(16).padStart(24, '0');
+test.use({ musicMatches: true });
+async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
+async function auth(context: BrowserContext) {
+  const viewer = await (await context.request.get('/api/v2/session')).json();
+  return { Origin: origin, 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() };
+}
+const recommendations = (page: Page) => page.getByRole('region', { name: '同好推薦', exact: true });
+const main = (page: Page) => page.getByRole('region', { name: '推薦名單', exact: true });
+const comparison = (page: Page) => page.locator('.music-comparison');
+test('both rankings keep all matches, sparse separation, familiarity and authorized first notes', async ({ page, context }) => {
+  await login(context); await page.goto('/people');
+  await expect(main(page).getByRole('heading', { name: '推薦名單 · 6 人', exact: true })).toBeVisible();
+  const visible = main(page).locator('.match-card:visible'); await expect(visible).toHaveCount(3);
+  await expect(visible.first().getByRole('heading', { name: '共同最多', exact: true })).toBeVisible();
+  await expect(visible.first()).toContainText('共同詞條4（領域 2／細分 2）');
+  await expect(visible.first()).toContainText('你：聽過一些／對方：聽過一些');
+  await expect(visible.first()).toContainText('你：只聽過幾首／對方：只聽過幾首');
+  await expect(visible.first()).toContainText('對方的留言：留言 共同最多');
+  await expect(recommendations(page).getByText('對方的留言：留言 共同本命', { exact: true })).toHaveCount(0);
+  await main(page).getByText('其餘同好 · 3 人', { exact: true }).click(); await expect(visible).toHaveCount(6);
+  const sparse = page.getByRole('group', { name: '資料較少的同好', exact: true });
+  await sparse.locator('summary').first().click(); await expect(sparse.locator('.match-card:visible')).toHaveCount(4);
+  await expect(sparse).toContainText('資料較少：你 6 項，對方 1 項。'); await expect(sparse.locator('.match-note')).toHaveCount(0);
+  await expect(sparse).toContainText('匹配度 36%');
+  await page.getByLabel('排序', { exact: true }).selectOption('familiar'); await expect(page).toHaveURL('/people?sort=familiar');
+  await expect(visible.first().getByRole('heading', { name: '共同本命', exact: true })).toBeVisible();
+  await expect(visible.first()).toContainText('對方的留言：留言 共同本命'); await expect(visible.first()).toContainText('共同本命2');
+  await expect(recommendations(page)).not.toContainText('對方的留言：留言 共同最多'); await expect(recommendations(page)).not.toContainText('不可外洩性別');
+  await page.reload(); await expect(main(page).locator('.match-card:visible').first()).toContainText('共同本命'); await expect(page.getByLabel('排序', { exact: true })).toHaveValue('familiar');
+  await main(page).locator('.match-card').first().getByRole('heading').getByRole('link').click();
+  await page.getByRole('link', { name: '比較成分', exact: true }).click();
+  await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people?sort=familiar');
+  await page.getByRole('link', { name: '查看同好成分', exact: true }).click();
+  await page.getByRole('link', { name: 'YOASOBI', exact: true }).click(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
+  await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people?sort=familiar');
+});
+test('alias comparisons reject self and missing members, use safe IDs in URLs and preserve all comparison groups', async ({ page, context }) => {
+  await login(context); await page.goto('/people');
+  const query = page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true });
+  await query.fill(id(1)); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('這是你自己的成分，請選擇另一份成分');
+  await query.fill('999999'); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
+  await query.fill('20003'); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page).toHaveURL('/people/' + id(3) + '/compare');
+  await expect(comparison(page).getByRole('heading', { name: '我的成分／共同本命', exact: true })).toBeVisible();
+  await expect(comparison(page).getByRole('region', { name: '共同喜歡', exact: true })).toContainText('你：本命／對方：本命');
+  await expect(comparison(page)).not.toContainText('留言 共同本命');
+  await comparison(page).getByText('只有你選擇 · 4 項', { exact: true }).click(); await expect(comparison(page).getByRole('link', { name: 'J-POP', exact: true })).toBeVisible();
+  await comparison(page).getByText('只有對方選擇 · 2 項', { exact: true }).click(); await expect(comparison(page).getByRole('link', { name: '宇多田光', exact: true })).toBeVisible();
+  await comparison(page).getByText('雙方完整成分', { exact: true }).click(); await expect(comparison(page).getByRole('region', { name: '你的完整成分', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: '查看同好成分', exact: true }).click(); await expect(page.getByRole('heading', { name: '共同本命', exact: true })).toBeVisible(); await expect(page.locator('.match-note')).toHaveCount(0);
+  await page.goto('/people/' + id(2) + '/compare'); await expect(comparison(page)).toContainText('對方的留言：留言 共同最多');
+});
+test('comparison terms use the shared selection workspace and return with saved familiarity reflected', async ({ page, context }) => {
+  await login(context); const back = '/people/' + id(2) + '/compare?from=%2Fpeople%3Fsort%3Dfamiliar'; await page.goto(back);
+  await comparison(page).getByText('只有對方選擇 · 1 項', { exact: true }).click(); await comparison(page).getByRole('link', { name: '米津玄師', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '米津玄師', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await page.getByLabel('米津玄師喜歡程度', { exact: true }).selectOption('4');
+  await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: '回到同好成分', exact: true }).click(); await expect(page).toHaveURL(back);
+  await expect(comparison(page).getByRole('region', { name: '共同喜歡', exact: true })).toContainText('米津玄師');
+  await expect(comparison(page).getByRole('region', { name: '共同喜歡細分', exact: true })).toContainText('你：本命／對方：常聽');
+  await expect(comparison(page).getByRole('heading', { name: '只有對方選擇 · 0 項', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: '回到同好推薦', exact: true }).click(); await expect(page).toHaveURL('/people?sort=familiar');
+});
+test('leaving a comparison term keeps the draft and provides explicit leave confirmation', async ({ page, context }) => {
+  await login(context); await page.goto('/people?sort=familiar'); const card = main(page).locator('.match-card').first();
+  await card.getByText('對方獨有 · 2 項', { exact: true }).click(); await card.getByRole('link', { name: '宇多田光', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible(); await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
+  await expect(page.getByRole('button', { name: '取消選取', exact: true })).toBeVisible(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
+  await expect(page).toHaveURL('/people?sort=familiar'); await page.goto('/me/music'); await expect(page.getByRole('button', { name: '宇多田光', exact: true })).toHaveAttribute('aria-pressed', 'true');
+});
+test('cross-tab saved selections refresh ranking and revoke notes that no longer qualify', async ({ page, context }) => {
+  await login(context); await page.goto('/people'); await expect(main(page)).toContainText('對方的留言：留言 共同最多');
+  const editor = await context.newPage(); await editor.goto('/me/music');
+  for (const name of ['J-POP', '動畫歌曲', 'Aimer', 'ずっと真夜中でいいのに。']) await editor.getByRole('button', { name, exact: true }).click();
+  await editor.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(editor.getByText('已保存。', { exact: true })).toBeVisible();
+  await expect(main(page).locator('.match-card').first()).toContainText('共同本命'); await expect(main(page)).not.toContainText('對方的留言：留言 共同最多'); await editor.close();
+});
+test('sort changes discard late responses and comparison errors support retry', async ({ page, context }) => {
+  await login(context); let release!: () => void, captured!: () => void;
+  const pending = new Promise<void>(resolve => { release = resolve; }), ready = new Promise<void>(resolve => { captured = resolve; });
+  await page.route('**/api/v2/music/matches?sort=rare', async route => { const response = await route.fetch(); captured(); await pending; await route.fulfill({ response }).catch(() => {}); });
+  await page.goto('/people'); await ready; await page.getByLabel('排序', { exact: true }).selectOption('familiar');
+  await expect(main(page).locator('.match-card').first()).toContainText('共同本命'); release(); await expect(main(page).locator('.match-card').first()).not.toContainText('共同最多');
+  let fail = true; await page.route('**/api/v2/music/profiles/*/comparison', route => fail ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'READ_FAILED', message: '比較暫時無法讀取' }) }) : route.continue());
+  await page.goto('/people/' + id(2) + '/compare'); await expect(page.getByRole('alert')).toContainText('比較暫時無法讀取');
+  fail = false; await page.getByRole('button', { name: '重新讀取', exact: true }).click(); await expect(comparison(page)).toContainText('我的成分／共同最多');
+});
+test('erasure and account switching clear private recommendation and comparison data, including late reads', async ({ page, context }) => {
+  await login(context); await page.goto('/people/' + id(2) + '/compare'); await expect(comparison(page)).toContainText('留言 共同最多');
+  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
+  await expect(comparison(page)).toHaveCount(0); await expect(page.getByText('請先保存成分，再查看同好成分。', { exact: true })).toBeVisible(); await privacy.close();
+  await login(context, 'bob'); await page.goto('/people'); await expect(main(page)).not.toContainText('我的成分');
+  let release!: () => void, captured!: () => void; const pending = new Promise<void>(resolve => { release = resolve; }), ready = new Promise<void>(resolve => { captured = resolve; });
+  await page.route('**/api/v2/music/profiles/*/comparison', async route => { const response = await route.fetch(); captured(); await pending; await route.fulfill({ response }).catch(() => {}); });
+  await page.goto('/people/' + id(3) + '/compare'); await ready; await context.clearCookies(); await page.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('logout'); channel.close(); });
+  await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible(); release(); await expect(comparison(page)).toHaveCount(0); await expect(page.getByText('留言 共同本命', { exact: false })).toHaveCount(0);
+});
+test('copy controls, mobile layout, keyboard term links and safe return destinations remain usable', async ({ page, context }) => {
+  await login(context); await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (value: string) => Object.assign(window, { musicCopied: value }) }, configurable: true }));
+  await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/people'); const card = main(page).locator('.match-card').first();
+  await card.getByRole('button', { name: '複製名稱', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('共同最多');
+  await card.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('234567');
+  await card.getByRole('button', { name: '複製成分 ID', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe(id(2));
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-matches-mobile.png', fullPage: true });
+  const link = card.getByRole('link', { name: 'Aimer', exact: true }); await link.focus(); await page.keyboard.press('Enter'); await expect(page.getByRole('heading', { name: 'Aimer', exact: true })).toBeVisible();
+  await page.goto('/people/' + id(2) + '/compare?from=https%3A%2F%2Fevil.example'); await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people');
+  await expect(comparison(page)).toContainText('共同最多'); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-comparison-mobile.png', fullPage: true });
+  await page.goto('/music/entries/sub-4?from=%2F%2Fevil.example'); await expect(page.getByRole('link', { name: '回到同好成分', exact: true })).toHaveCount(0);
+});
+test('blank profiles and visitors receive actionable gates without member data', async ({ page, context }) => {
+  await page.goto('/people'); await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible(); await expect(recommendations(page)).toHaveCount(0);
+  await login(context, 'auth-owner'); const headers = await auth(context);
+  expect((await context.request.post('/api/v2/me/music/entries', { headers, data: { command: 'create', profileId: null, musicEpoch: 0, confirm: true, name: '空白成分詞條', kind: 'sub', category: '其他' } })).status()).toBe(200);
+  await page.reload(); await expect(recommendations(page)).toContainText('尚未選擇詞條'); await expect(recommendations(page).getByRole('link', { name: '保存成分選擇', exact: true })).toBeVisible(); await expect(page.locator('.match-card')).toHaveCount(0);
+  await page.goto('/people/' + id(2) + '/compare'); await expect(comparison(page)).toContainText('嚴格重合0%'); await expect(comparison(page)).not.toContainText('留言 共同最多');
+  await page.goto('/me/music/details'); await expect(page.locator('#music-note-help')).toContainText('推薦首位'); await expect(page.locator('#music-note-help')).toContainText('資料較少的推薦不顯示留言');
+});

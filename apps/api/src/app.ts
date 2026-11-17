@@ -21,6 +21,7 @@ import { registerAdminUsers } from './admin-users';
 import { registerAdminPrivacy } from './admin-privacy';
 import { registerAdminMusic } from './admin-music';
 import { registerAdminMusicPins } from './admin-music-pins';
+import { registerMusicMatches } from './music-matches';
 import { registerMusicContact } from './music-contact';
 import { registerMusicFields } from './music-fields';
 import { activityViewer, registerActivityRoster } from './activity-roster';
@@ -83,6 +84,7 @@ export function createApp(options: AppOptions) {
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
     registerMusicContact(app, db, security, now);
+    registerMusicMatches(app, db, security);
     registerMusicFields(app, db, security, now);
     registerActivityRoster(app, db, security, options.qq?.clientId);
     registerActivityDrafts(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});

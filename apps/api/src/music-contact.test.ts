@@ -32,7 +32,7 @@ describe('music contacts and member lookup', () => {
     const tables = ['events','attendees','finance_entries','settlements','bot_outbox','bot_settings','browser_sessions','external_identities','qq_accounts','account_audit'];
     const before = tables.map(table => db.prepare('SELECT * FROM ' + table).all());
     const first = await save({ ...alice.input, contactQQ: ' 123456 ' }); expect(first.statusCode).toBe(200); expect(first.json()).toEqual({ profileId: alice.profile.id, revision: 1, contactQQ: '123456', source: 'self_reported' });
-    expect((await lookup('123456')).json()).toEqual({ id: alice.profile.id, name: '小青', gender: '', contactQQ: '123456', contactSource: 'self_reported', selections: [{ entryId: 'sub-2', level: 4, name: 'Aimer', kind: 'sub' }] });
+    expect((await lookup('123456')).json()).toEqual({ id: alice.profile.id, name: '小青', gender: '', note: '', contactQQ: '123456', contactSource: 'self_reported', selections: [{ entryId: 'sub-2', level: 4, name: 'Aimer', kind: 'sub' }] });
     expect((await save({ ...alice.input, revision: 1, contactQQ: '' })).json()).toMatchObject({ contactQQ: '', revision: 2 });
     expect((await lookup('123456')).statusCode).toBe(404); expect((await lookup(alice.profile.id)).json().id).toBe(alice.profile.id);
     const profile = (await app.inject({ url: '/api/v2/me/music', headers: alice.headers })).json(); expect(profile).toMatchObject({ id: alice.profile.id, revision: 3, selections: alice.profile.selections });

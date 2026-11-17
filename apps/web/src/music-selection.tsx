@@ -6,6 +6,8 @@ import { z } from 'zod';
 import { MusicCatalog, Profile, SaveProfile, Selection, Session, type MusicProfile } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { Failure, Notice, useSession } from './shared';
+import { musicPeopleReturn } from './music-return';
+import { announceAccountChange } from './account-session';
 import type { Member } from './member-access';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
 const isWorkspace = (pathname: string) => pathname === '/music' || pathname === '/me/music' || /^\/music\/entries\/[^/]+$/.test(pathname);
@@ -33,7 +35,7 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   const [saved, setSaved] = useState(initial);
   const [params] = useSearchParams();
   const from = params.get('from');
-  const validReturn = from && /^\/activities\/[^/?#]+(?:#participants)?$/.test(from) ? from : null;
+  const validReturn = from && /^\/activities\/[^/?#]+(?:#participants)?$/.test(from) ? from : musicPeopleReturn(from);
   const [returnTo, setReturnTo] = useState(validReturn);
   useEffect(() => { if (validReturn) setReturnTo(validReturn); }, [validReturn]);
   const queryClient = useQueryClient();
@@ -86,6 +88,9 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entries'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-matches'] });
+      void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
+      announceAccountChange();
       setMessage('已保存。');
     } catch (error) {
       if (!mounted.current) return;
