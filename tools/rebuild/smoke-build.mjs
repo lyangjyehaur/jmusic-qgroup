@@ -69,6 +69,12 @@ try {
   const configure=await fetch(base+'/api/v2/admin/appearance',{method:'POST',headers:{...headers,Cookie:cookie,'X-Admin-CSRF':access.adminCsrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({command:'config',revision:after.revision,confirm:true,rotateSeconds:30})});assert.equal(configure.status,200);await configure.arrayBuffer();
   const readHeaders={Cookie:cookie,'X-Account-Scope':viewer.scope};
   const backups=await(await fetch(base+'/api/v2/admin/backups',{headers:readHeaders})).json();assert.equal(backups.available,true);assert.equal(backups.backups.length,3);
+  const botPage=await fetch(base+'/admin/bot');assert.equal(botPage.status,200);await botPage.arrayBuffer();
+  const policyResponse=await fetch(base+'/api/v2/admin/bot',{headers:readHeaders});assert.equal(policyResponse.status,200);assert.equal(policyResponse.headers.get('cache-control'),'no-store');
+  const policy=await policyResponse.json();assert.equal(policy.revision,0);assert.equal(policy.config.enabled,false);assert.equal(policy.runtime.applied_revision,null);
+  const syntheticPreview=await fetch(base+'/api/v2/admin/bot/preview',{method:'POST',headers:{...headers,Cookie:cookie,'X-Admin-CSRF':access.adminCsrf},body:JSON.stringify({config:policy.config,kind:'activity_published'})});
+  assert.equal(syntheticPreview.status,200);assert((await syntheticPreview.json()).text.includes('周末聚餐'));
+  const unchangedPolicy=await(await fetch(base+'/api/v2/admin/bot',{headers:readHeaders})).json();assert.deepEqual(unchangedPolicy,policy);
   const id=backups.backups[0].id;
   const proof=JSON.parse(readFileSync(join(directory,'paired-backups',id,'manifest.json'),'utf8'));assert.equal(proof.restoreEligible,false);assert.equal(proof.version,2);assert.equal(proof.schema,14);assert.match(proof.lineageId,/^[a-f0-9]{32}$/);assert(proof.files.some(file=>file.path==='state.sqlite3'));
   for(const path of ['/api/v2/admin/music-export','/api/v2/admin/music-export?backup='+id]){const exported=await fetch(base+path,{headers:readHeaders});assert.equal(exported.status,200);assert.equal(exported.headers.get('cache-control'),'no-store');const data=await exported.json();assert.deepEqual({...data,trend:[]},{entries:{},members:{},settings:{},shouts:[],shoutHistory:[],trend:[]});assert.equal(data.trend.length,1);assert.deepEqual(data.trend[0].counts,{});assert(Number.isSafeInteger(data.trend[0].t));}
@@ -83,7 +89,7 @@ try {
   assert.equal(recovered.status,0,recovered.stderr);assert.equal(JSON.parse(recovered.stdout).recoveryRequired,true);
   const blocked=spawnSync(process.execPath,['.rebuild-dist/api/start.mjs'],{env:{...process.env,REBUILD_DB:join(candidate,'unified.sqlite3'),REBUILD_PORT:String(port)},encoding:'utf8',timeout:10000});
   assert.equal(blocked.status,1);assert.match(blocked.stderr,/Recovery candidate requires offline review/);
-  console.log('Built API + bounded room worker + blocked recovery startup + native SQLite/sharp wallpaper + paired backup/current and historical export + TS workspace bundle + SPA assets: passed on an empty isolated DB');
+  console.log('Built API + bot policy/isolated preview + bounded room worker + blocked recovery startup + native SQLite/sharp wallpaper + paired backup/current and historical export + TS workspace bundle + SPA assets: passed on an empty isolated DB');
 } finally {
   child.kill('SIGTERM'); await closed; rmSync(directory, { recursive: true, force: true });
 }

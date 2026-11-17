@@ -64,3 +64,4 @@ export * from './music-circles';
 export * from './music-shouts';
 export * from './music-merge';
 export * from './music-rooms';
+export * from './bot-policy';

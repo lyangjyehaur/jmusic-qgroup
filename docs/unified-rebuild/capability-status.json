@@ -4493,13 +4493,32 @@
       "new_entry": "後台／活動",
       "required_behavior": "沿部署／模擬／實際，模擬不算送出；重送不重做業務、不回放舊提醒",
       "legacy_evidence_group": "機器人",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "沿部署／模擬／實際，模擬不算送出；重送不重做業務、不回放舊提醒"
+      "implementation": [
+        "packages/contracts/src/bot-policy.ts",
+        "packages/domain/src/bot-policy.ts",
+        "packages/database/src/bot-policy.ts",
+        "apps/api/src/admin-bot.ts",
+        "apps/web/src/admin-bot.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/bot-policy.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-bot.test.ts",
+        "apps/web/tests/admin-bot.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-bot.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已提供沿部署／模擬／實際設定與原操作查回，保存差分保全模擬／已送／不確定紀錄；完整 TS consumer、通用手動重送、實際 QQ 與版本組合仍待驗收，見 52-bot-policy-checkpoint.md。"
     },
     {
       "capability_id": "B07",
@@ -4511,22 +4530,38 @@
         "apps/api/src/activity-bot.ts",
         "packages/domain/src/bot-markdown.ts",
         "packages/domain/src/bot-templates.ts",
-        "packages/domain/src/bot-clock.ts"
+        "packages/domain/src/bot-clock.ts",
+        "packages/contracts/src/bot-policy.ts",
+        "packages/domain/src/bot-policy.ts",
+        "packages/database/src/bot-policy.ts",
+        "apps/api/src/admin-bot.ts",
+        "apps/web/src/admin-bot.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "packages/domain/src/bot-rendering.test.ts"
+        "packages/domain/src/bot-rendering.test.ts",
+        "packages/domain/src/bot-policy.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "packages/domain/src/bot-rendering.test.ts"
+        "packages/domain/src/bot-rendering.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
       ],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "permission_evidence": [
+        "apps/api/src/admin-bot.test.ts",
+        "apps/web/tests/admin-bot.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-bot.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "完整模板驗證、17 類隔離預覽、保存／恢復追加版本、未來提醒重算及後台原稿／收據保全已測；最新設定於完整 TS worker 的投遞套用、所有回覆與實際版本組合／QQ 驗收仍待完成，見 52-bot-policy-checkpoint.md。"
     },
     {
       "capability_id": "B08",
@@ -4534,13 +4569,32 @@
       "new_entry": "後台 bot",
       "required_behavior": "group_openid 非 QQ 群號；空政策全停；換群作廢舊工作、不轉發給新群",
       "legacy_evidence_group": "bot 設定",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "group_openid 非 QQ 群號；空政策全停；換群作廢舊工作、不轉發給新群"
+      "implementation": [
+        "packages/contracts/src/bot-policy.ts",
+        "packages/domain/src/bot-policy.ts",
+        "packages/database/src/bot-policy.ts",
+        "apps/api/src/admin-bot.ts",
+        "apps/web/src/admin-bot.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/bot-policy.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-bot.test.ts",
+        "apps/web/tests/admin-bot.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-bot.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "群發現／忽略有界紀錄、允許清單、唯一通知群、部署 fallback、空清單全停與換群作廢舊工作及後台已實作並完成 Python 差分；Gateway runtime 尚待接入，每次指令／回呼驗群及實際版本組合／QQ 驗收仍待完成，見 52-bot-policy-checkpoint.md。"
     },
     {
       "capability_id": "B09",
@@ -4556,28 +4610,42 @@
         "apps/api/src/activity-management.ts",
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-arrangements.ts"
+        "packages/contracts/src/activity-arrangements.ts",
+        "packages/contracts/src/bot-policy.ts",
+        "packages/domain/src/bot-policy.ts",
+        "packages/database/src/bot-policy.ts",
+        "apps/api/src/admin-bot.ts",
+        "apps/web/src/admin-bot.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "packages/domain/src/bot-policy.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "apps/web/tests/admin-bot.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/admin-bot.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "本批僅完成活動 producer：12 類卡片與原 Python 差分、公開名單／倒計時／模板／按鈕、發布通知及兩類未來提醒去重；原 Python worker 純文字／Markdown／dry-run 無網路消費已測。完整指令回覆、所有業務 hook、設定後台與替代 TS worker、跨重啟／回呼／平台限制及真實 QQ 驗收仍待完成；不等於 B01–B15 通過。"
+      "remaining": "共用提醒設定／跨日與 DST 勿擾差分、兩連線與重啟 pacing、未來提醒重排及後台已完成；完整 outbox 尚待接入，延後不耗失敗次數、公開回覆即時及實際版本組合／QQ 驗收仍待完成，見 52-bot-policy-checkpoint.md。"
     },
     {
       "capability_id": "B10",
@@ -4668,24 +4736,38 @@
       "implementation": [
         "apps/bot/src/config.ts",
         "apps/bot/src/observability.ts",
-        "apps/bot/src/protocol.ts"
+        "apps/bot/src/protocol.ts",
+        "packages/contracts/src/bot-policy.ts",
+        "packages/domain/src/bot-policy.ts",
+        "packages/database/src/bot-policy.ts",
+        "apps/api/src/admin-bot.ts",
+        "apps/web/src/admin-bot.tsx"
       ],
       "behavior_evidence": [
         "apps/bot/src/config-protocol.test.ts",
-        "apps/bot/src/observability.test.ts"
+        "apps/bot/src/observability.test.ts",
+        "packages/domain/src/bot-policy.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts"
       ],
       "data_evidence": [
-        "apps/bot/src/observability.test.ts"
+        "apps/bot/src/observability.test.ts",
+        "packages/database/src/bot-policy.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "docs/unified-rebuild/52-bot-policy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
-        "apps/bot/src/api.test.ts"
+        "apps/bot/src/api.test.ts",
+        "apps/api/src/admin-bot.test.ts",
+        "apps/web/tests/admin-bot.spec.ts"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/51-bot-transport-checkpoint.md"
+        "docs/unified-rebuild/51-bot-transport-checkpoint.md",
+        "apps/web/tests/admin-bot.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "已實作 TS 設定／私有 JSONL／trace／遮罩／health 基礎並完成 Python 差分及本機隔離測試；完整設定載入版本、runtime、投遞紀錄與後台查詢、實際版本組合及 QQ 驗收仍待完成，見 51-bot-transport-checkpoint.md。"
+      "remaining": "TS 私有診斷／trace／health 與共用政策／設定版本／後台已實作；已讀版本不代表連線或投遞健康。完整 runtime、投遞紀錄查詢、實際版本組合及 QQ 驗收仍待完成，見 51／52 號檢查點。"
     },
     {
       "capability_id": "B14",

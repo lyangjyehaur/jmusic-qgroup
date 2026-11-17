@@ -1,5 +1,5 @@
-import type { DB } from '@qgroup/database';
-import { z } from 'zod';
+import { readBotPolicy, type DB } from '@qgroup/database';
+import { BOT_KINDS } from '@qgroup/contracts';
 import { BOT_BLANK, botPlainText, BOT_MAX_CHARS, botContentProblem, botLength, botLocalTime, botMoment, botRosterName, botStartCountdown, botStrip, botTimeChange, renderBotBroadcast, renderBotTemplate, withBotRoster } from '@qgroup/domain';
 import { eventRow, legacyStamp, type EventRow } from './activity-arrangements';
 import { hash } from './security';
@@ -8,14 +8,17 @@ import { settlementNotice } from './settlement-notice';
 
 const labels={activity_published:'活动发起',formation_confirmed:'已成团',conditions_changed:'安排变更',event_started:'活动开始',event_finished:'活动结束',event_cancelled:'活动取消',deadline_reminder:'报名即将截止',estimated_over_reminder:'活动时间已到',registration_paused:'暂停报名',registration_resumed:'恢复报名',registration_added:'有人报名',registration_changed:'报名变动',ownership_changed:'管理交接',finance_closed:'账务已结清',finance_reopened:'账务重新核对',settlement_updated:'结算发布'};
 type Kind=keyof typeof labels;
-const allKinds=['time_poll_published',...Object.keys(labels)];
 const rosterKinds=new Set<Kind>(['activity_published','formation_confirmed','conditions_changed','deadline_reminder','registration_paused','registration_resumed']);
 const reminders=['deadline_reminder','estimated_over_reminder'] as const;
 export interface ActivityBotDefaults {enabled?:boolean;scheduleEnabled?:boolean;broadcastKinds?:string[];baseURL?:string;keyboard?:boolean;personalQueue?:boolean}
-const policySchema=z.object({enabled:z.boolean(),schedule_enabled:z.boolean(),broadcast_kinds:z.array(z.string()),deadline_hours:z.number().int().min(1).max(720),estimated_over_delay_minutes:z.number().int().min(0).max(1440),templates:z.record(z.string(),z.string()),groups:z.array(z.object({id:z.string().regex(/^[A-Za-z0-9_-]{1,128}$/),name:z.string(),replies:z.boolean(),broadcast:z.boolean()})).max(100).nullable()});
-export function activityBotPolicy(db:DB,defaults:ActivityBotDefaults={}){
-  const row=db.prepare('SELECT revision,config_json FROM bot_settings WHERE id=1').get() as {revision:number;config_json:string}|undefined;
-  return {revision:row?.revision??0,config:policySchema.parse({enabled:defaults.enabled??false,schedule_enabled:defaults.scheduleEnabled??true,broadcast_kinds:defaults.broadcastKinds??allKinds,deadline_hours:24,estimated_over_delay_minutes:0,templates:{},groups:null,...(row?JSON.parse(row.config_json):{})})};
+export function activityBotPolicy(db: DB, defaults: ActivityBotDefaults = {}) {
+  return readBotPolicy(db, {
+    enabled: defaults.enabled ?? false,
+    schedule_enabled: defaults.scheduleEnabled ?? true,
+    ...(defaults.broadcastKinds ? {
+      broadcast_kinds: defaults.broadcastKinds.filter((kind): kind is keyof typeof BOT_KINDS => Object.hasOwn(BOT_KINDS, kind)),
+    } : {}),
+  });
 }
 type Policy=ReturnType<typeof activityBotPolicy>['config'];
 type Context=Record<string,string|number|boolean|null|string[]|{starts_at:string;timezone:string|null;lifecycle:string}>;

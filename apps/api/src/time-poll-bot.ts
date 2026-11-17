@@ -1,3 +1,4 @@
+import type { BotPolicy } from '@qgroup/contracts';
 import type { DB } from '@qgroup/database';
 import { botContentProblem, botLocalTime, botStrip, renderBotBroadcast, renderBotTemplate } from '@qgroup/domain';
 import { activityBotPolicy, type ActivityBotDefaults } from './activity-bot';
@@ -21,6 +22,30 @@ export function announcePoll(
   if (target === undefined) return false;
   const candidates = pollOptions(db, poll.id).filter((o) => pollAvailable(o, poll, now));
   if (!candidates.length) return false;
+  const { payload } = composeTimePollBotMessage(poll, candidates, policy, defaults);
+  return (
+    db
+      .prepare(
+        "INSERT OR IGNORE INTO bot_outbox(event_id,poll_id,kind,dedupe_key,channel,target,payload_json,status,created_at) VALUES(NULL,?,?,?,'group',?,?,'pending',?)",
+      )
+      .run(
+        poll.id,
+        kind,
+        hash(kind + '\ngroup\n' + target + '\n\n' + fact).slice(0, 32),
+        target,
+        JSON.stringify(payload),
+        legacyStamp(now),
+      ).changes > 0
+  );
+}
+
+export function composeTimePollBotMessage(
+  poll: PollRow,
+  candidates: { starts_at: string }[],
+  policy: BotPolicy,
+  defaults: ActivityBotDefaults = {},
+) {
+  const kind = 'time_poll_published';
   const title = Array.from(poll.title).slice(0, 40).join(''),
     label = '活动时间投票',
     heading = '【' + label + '】' + title;
@@ -112,18 +137,5 @@ export function announcePoll(
         }
       : {}),
   };
-  return (
-    db
-      .prepare(
-        "INSERT OR IGNORE INTO bot_outbox(event_id,poll_id,kind,dedupe_key,channel,target,payload_json,status,created_at) VALUES(NULL,?,?,?,'group',?,?,'pending',?)",
-      )
-      .run(
-        poll.id,
-        kind,
-        hash(kind + '\ngroup\n' + target + '\n\n' + fact).slice(0, 32),
-        target,
-        JSON.stringify(payload),
-        legacyStamp(now),
-      ).changes > 0
-  );
+  return { text, markdown: rich, payload, context };
 }

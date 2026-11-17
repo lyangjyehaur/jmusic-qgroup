@@ -103,3 +103,4 @@ export { seedMusicShouts, removeMusicShout } from './music-shouts';
 export { musicCreatedIds } from './music-creations';
 
 export { seedWallpapers,wallpaperDigest,wallpaperFile } from './wallpapers';
+export * from './bot-policy';
