@@ -1044,11 +1044,14 @@
       "implementation": [
         "packages/contracts/src/activity-history.ts",
         "apps/api/src/activity-history.ts",
-        "apps/web/src/activity-history.tsx"
+        "apps/web/src/activity-history.tsx",
+        "apps/api/src/finance.ts",
+        "apps/web/src/activity-finance.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-history.test.ts",
-        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md",
+        "apps/api/src/finance.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-history.test.ts"
@@ -1057,10 +1060,11 @@
         "apps/api/src/activity-history.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/inbox-history.spec.ts"
+        "apps/web/tests/inbox-history.spec.ts",
+        "apps/web/tests/activity-finance.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "公開／私人歷史、前後快照、數字游標／分頁、未確認申報與 token 防洩漏、錯誤恢復已測；完整帳本／結算／包間歷史及全部舊 API 與隔離正式資料成套驗收待完成。"
+      "remaining": "公開／私人歷史、前後快照、數字游標／分頁、未確認申報與 token 防洩漏、錯誤恢復已測；完整帳本／結算／包間歷史及全部舊 API 與隔離正式資料成套驗收待完成。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "E18",
@@ -1929,13 +1933,29 @@
       "new_entry": "活動帳本",
       "required_behavior": "申報是待核對主張，不算已收；只能本人責任／受管理未綁同行",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "申報是待核對主張，不算已收；只能本人責任／受管理未綁同行"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F02",
@@ -1943,13 +1963,29 @@
       "new_entry": "核對待辦",
       "required_behavior": "有結算權者核對原額，拒絕須原因；未確認原文不向其他人公開",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "有結算權者核對原額，拒絕須原因；未確認原文不向其他人公開"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F03",
@@ -1957,13 +1993,29 @@
       "new_entry": "款項登記",
       "required_behavior": "預收、實收、實退及償還墊付各有真實對象，不自動發起支付",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "預收、實收、實退及償還墊付各有真實對象，不自動發起支付"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F04",
@@ -1971,13 +2023,29 @@
       "new_entry": "款項登記",
       "required_behavior": "個人先付與代收池支付分清，退款關聯原支出或抵扣",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "個人先付與代收池支付分清，退款關聯原支出或抵扣"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F05",
@@ -1985,13 +2053,29 @@
       "new_entry": "訂金／押金",
       "required_behavior": "訂金非消費，退回與抵損失分開，關聯剩額不能為負",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "訂金非消費，退回與抵損失分開，關聯剩額不能為負"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F06",
@@ -1999,13 +2083,29 @@
       "new_entry": "款項更正／交接",
       "required_behavior": "責任歸屬調整與實際資金移交不同；需理由且對平",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "責任歸屬調整與實際資金移交不同；需理由且對平"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F07",
@@ -2013,13 +2113,29 @@
       "new_entry": "款項表單",
       "required_behavior": "正額、時間不能未來；預覽隨輸入失效，409 不偷改金額重送",
       "legacy_evidence_group": "財務、恢復",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "正額、時間不能未來；預覽隨輸入失效，409 不偷改金額重送"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F08",
@@ -2027,13 +2143,29 @@
       "new_entry": "帳本歷史",
       "required_behavior": "不 UPDATE／DELETE；先處理已退款／抵扣依賴，不能沖銷沖銷",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不 UPDATE／DELETE；先處理已退款／抵扣依賴，不能沖銷沖銷"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F09",
@@ -2041,13 +2173,29 @@
       "new_entry": "本人摘要／帳本",
       "required_behavior": "無逐人帳單不猜應付；同行管理權不代表本人金額；改帳不搬錢",
       "legacy_evidence_group": "財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "無逐人帳單不猜應付；同行管理權不代表本人金額；改帳不搬錢"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F10",
@@ -2055,13 +2203,29 @@
       "new_entry": "包間帳本",
       "required_behavior": "不跨房花代收、不跨房退款／關聯；同收款人可合計但不淨抵",
       "legacy_evidence_group": "包間、財務",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "不跨房花代收、不跨房退款／關聯；同收款人可合計但不淨抵"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F11",
@@ -2069,13 +2233,29 @@
       "new_entry": "帳本",
       "required_behavior": "每人／房／店家／訂金／持有款／申報均對平；新帳或新款重新待處理",
       "legacy_evidence_group": "財務、包間",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "每人／房／店家／訂金／持有款／申報均對平；新帳或新款重新待處理"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "F12",
@@ -2083,13 +2263,29 @@
       "new_entry": "帳本／歷史",
       "required_behavior": "同名不合併，退出／轉交／認領後舊款與查看責任保留",
       "legacy_evidence_group": "財務、認領",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "同名不合併，退出／轉交／認領後舊款與查看責任保留"
+      "implementation": [
+        "packages/contracts/src/finance.ts",
+        "apps/api/src/finance-context.ts",
+        "apps/api/src/finance.ts",
+        "apps/api/src/finance-projection.ts",
+        "apps/web/src/activity-finance.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/activity-bot.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/finance-projection.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/finance.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-finance.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
     },
     {
       "capability_id": "M01",
@@ -3333,20 +3529,24 @@
         "apps/web/src/activity-entry.tsx",
         "apps/api/src/inbox.ts",
         "apps/web/src/inbox.tsx",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/finance.ts",
+        "apps/web/src/activity-finance.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
-        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md",
+        "apps/api/src/finance.test.ts"
       ],
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [
         "apps/web/tests/activity-publish.spec.ts",
-        "apps/web/tests/inbox-history.spec.ts"
+        "apps/web/tests/inbox-history.spec.ts",
+        "apps/web/tests/activity-finance.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "根網址 event 與六種既有活動 action 已轉成活動／task，唯讀開啟不自動提交，邀請內容仍驗權；各 action 完整業務、投票／邀請／認領／hash／舊成分入口及返回上下文仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
+      "remaining": "根網址 event 與六種既有活動 action 已轉成活動／task，唯讀開啟不自動提交，邀請內容仍驗權；各 action 完整業務、投票／邀請／認領／hash／舊成分入口及返回上下文仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O04",
@@ -3363,13 +3563,16 @@
         "apps/web/src/activity-conditions.tsx",
         "apps/api/src/inbox.ts",
         "apps/web/src/inbox.tsx",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/finance.ts",
+        "apps/web/src/activity-finance.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/inbox.test.ts",
-        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md",
+        "apps/api/src/finance.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -3382,10 +3585,11 @@
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-conditions.spec.ts",
-        "apps/web/tests/inbox-history.spec.ts"
+        "apps/web/tests/inbox-history.spec.ts",
+        "apps/web/tests/activity-finance.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "活動草稿、已發布安排及逐人確認已有按帳號／活動隔離的 sessionStorage 原稿、版本、完整 pending payload，離站保留、損壞保全及登出清除已測；IndexedDB、明確恢復、跨裝置／舊草稿及其他表單／圖片恢復仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
+      "remaining": "活動草稿、已發布安排及逐人確認已有按帳號／活動隔離的 sessionStorage 原稿、版本、完整 pending payload，離站保留、損壞保全及登出清除已測；IndexedDB、明確恢復、跨裝置／舊草稿及其他表單／圖片恢復仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O05",
@@ -3409,7 +3613,9 @@
         "apps/web/src/activity-conditions.tsx",
         "apps/api/src/inbox.ts",
         "apps/web/src/inbox.tsx",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/finance.ts",
+        "apps/web/src/activity-finance.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -3418,7 +3624,8 @@
         "apps/api/src/activity-publish.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/inbox.test.ts",
-        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md",
+        "apps/api/src/finance.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -3437,10 +3644,11 @@
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
         "apps/web/tests/activity-conditions.spec.ts",
-        "apps/web/tests/inbox-history.spec.ts"
+        "apps/web/tests/inbox-history.spec.ts",
+        "apps/web/tests/activity-finance.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂／隱私、活動草稿／發布／已發布安排與逐人確認先持久化、同 key／payload 重試、收據逐次重驗目前權限；較新狀態重新讀取及跨裝置發布競態已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
+      "remaining": "音樂／隱私、活動草稿／發布／已發布安排與逐人確認先持久化、同 key／payload 重試、收據逐次重驗目前權限；較新狀態重新讀取及跨裝置發布競態已測。其餘 mutations、伺服器跨裝置 create intent 與全部結果查詢仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O06",
@@ -3464,7 +3672,9 @@
         "apps/web/src/activity-conditions.tsx",
         "apps/api/src/inbox.ts",
         "apps/web/src/inbox.tsx",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/finance.ts",
+        "apps/web/src/activity-finance.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
@@ -3473,7 +3683,8 @@
         "apps/api/src/activity-publish.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/inbox.test.ts",
-        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md",
+        "apps/api/src/finance.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -3492,10 +3703,11 @@
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
         "apps/web/tests/activity-conditions.spec.ts",
-        "apps/web/tests/inbox-history.spec.ts"
+        "apps/web/tests/inbox-history.spec.ts",
+        "apps/web/tests/activity-finance.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。"
+      "remaining": "音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O07",
@@ -3508,12 +3720,15 @@
         "apps/api/src/inbox.ts",
         "apps/api/src/finance-projection.ts",
         "apps/web/src/inbox.tsx",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/finance.ts",
+        "apps/web/src/activity-finance.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
         "apps/api/src/finance-projection.test.ts",
-        "docs/unified-rebuild/30-inbox-history-checkpoint.md"
+        "docs/unified-rebuild/30-inbox-history-checkpoint.md",
+        "apps/api/src/finance.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/inbox.test.ts",
@@ -3524,10 +3739,11 @@
         "apps/api/testsupport/pending-operations.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/inbox-history.spec.ts"
+        "apps/web/tests/inbox-history.spec.ts",
+        "apps/web/tests/activity-finance.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "十類動態待辦、分頁通知／總未讀、本人首次已讀、精確恢復、包間不可抵銷／原付款鍵、Python 差分與保留 worker 已測；完整財務／結算處理頁與寫入、全部舊入口及隔離正式副本驗收待完成。"
+      "remaining": "十類動態待辦、分頁通知／總未讀、本人首次已讀、精確恢復、包間不可抵銷／原付款鍵、Python 差分與保留 worker 已測；完整財務／結算處理頁與寫入、全部舊入口及隔離正式副本驗收待完成。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O08",

@@ -4,9 +4,9 @@ import { BOT_MAX_CHARS, botContentProblem, botLength, botLocalTime, botMoment, b
 import { eventRow, legacyStamp, type EventRow } from './activity-arrangements';
 import { hash } from './security';
 
-const labels={activity_published:'活动发起',formation_confirmed:'已成团',conditions_changed:'安排变更',event_started:'活动开始',event_finished:'活动结束',event_cancelled:'活动取消',deadline_reminder:'报名即将截止',estimated_over_reminder:'活动时间已到',registration_paused:'暂停报名',registration_resumed:'恢复报名',registration_added:'有人报名',registration_changed:'报名变动',ownership_changed:'管理交接'};
+const labels={activity_published:'活动发起',formation_confirmed:'已成团',conditions_changed:'安排变更',event_started:'活动开始',event_finished:'活动结束',event_cancelled:'活动取消',deadline_reminder:'报名即将截止',estimated_over_reminder:'活动时间已到',registration_paused:'暂停报名',registration_resumed:'恢复报名',registration_added:'有人报名',registration_changed:'报名变动',ownership_changed:'管理交接',finance_closed:'账务已结清',finance_reopened:'账务重新核对'};
 type Kind=keyof typeof labels;
-const allKinds=['time_poll_published',...Object.keys(labels),'settlement_updated','finance_closed','finance_reopened'];
+const allKinds=['time_poll_published',...Object.keys(labels),'settlement_updated'];
 const rosterKinds=new Set<Kind>(['activity_published','formation_confirmed','conditions_changed','deadline_reminder','registration_paused','registration_resumed']);
 const reminders=['deadline_reminder','estimated_over_reminder'] as const;
 export interface ActivityBotDefaults {enabled?:boolean;scheduleEnabled?:boolean;broadcastKinds?:string[];baseURL?:string;keyboard?:boolean;personalQueue?:boolean}
@@ -54,7 +54,7 @@ export function renderActivityBot(config:Policy,kind:Kind,context:Context,now:Da
 }
 export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Policy,now:Date,defaults:ActivityBotDefaults={},attendeeIds?:string[]){
   if(!botShareable(event))return null;
-  const actions:Partial<Record<Kind,string>>={activity_published:'join',conditions_changed:'conditions',event_finished:'settlement',event_cancelled:'finance',deadline_reminder:'join',estimated_over_reminder:'manage'};
+  const actions:Partial<Record<Kind,string>>={activity_published:'join',conditions_changed:'conditions',event_finished:'settlement',event_cancelled:'finance',deadline_reminder:'join',estimated_over_reminder:'manage',finance_closed:'finance',finance_reopened:'finance'};
   const url=botActivityURL(event.id,actions[kind],defaults),when=botLocalTime(event.starts_at,event.timezone),deadline=botLocalTime(event.deadline,event.timezone),title=cut(event.title,40);
   const {confirmed,waiting,pending}=counts(db,event.id);const head='【'+labels[kind]+'】'+title;
   let lines:string[],buttons:Button[];
@@ -68,6 +68,7 @@ export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Po
   }else if(kind==='deadline_reminder'){lines=[head,'报名截止：'+deadline,'当前正式报名 '+confirmed+' 人',...(waiting?['候补 '+waiting+' 人']:[]),url];buttons=[['我要报名','',url],['看名额','/名额','']];
   }else if(kind==='estimated_over_reminder'){lines=[head,'已超过预计结束时间，请发起者确认实际结束或延长。','',url];buttons=[['活动页','',url],['待办','/待办','']];
   }else if(kind==='registration_paused'||kind==='registration_resumed'){lines=[head,registrationLabel(event,now),'原名单与候补保留，名额按当前队列分配。','',botActivityURL(event.id,'join',defaults)];buttons=[['看名额','/名额','']];
+  }else if(kind==='finance_closed'||kind==='finance_reopened'){lines=[head,kind==='finance_closed'?'发起者已确认本版账务结清；原账单与账本记录保留。':'账务重新待核对，请以站内最新补退款及结清状态为准。','',url];buttons=[['查看账本','',url]];
   }else if(kind==='ownership_changed'){lines=[head,'发起者交接已完成，当前管理者请到活动页查看。','管理交接不代表实际代收资金已移交。','',url];buttons=[['活动页','',url]];
   }else{
     const changed=kind==='registration_changed';const names=attendeeIds?.length?botRosterLines(db,event,changed?{ids:new Set(attendeeIds),groups:[['withdrawn','本次退出'],['confirmed','递补为正式']]}:{ids:new Set(attendeeIds),prefix:'本次'}):[changed?'退出或候补递补详情请到活动页查看。':'本次新增报名请到活动页查看。'];
@@ -112,9 +113,9 @@ export function createActivityBot(db:DB,now:()=>Date,defaults:ActivityBotDefault
     if(!botShareable(event))db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
     schedule(event);if(event.lifecycle!=='draft')broadcast(event,'activity_published');
   }
-  function personal(eventId:string,userId:string,kind:'promoted'|'conditions_declined'|'withdrawal_request'|'withdrawal_decision'|'removed'|'claim_requested'|'claim_decided'|'ownership_transferred'|'cohost_accepted'|'cohost_removed'){
+  function personal(eventId:string,userId:string,kind:'promoted'|'conditions_declined'|'withdrawal_request'|'withdrawal_decision'|'removed'|'claim_requested'|'claim_decided'|'ownership_transferred'|'cohost_accepted'|'cohost_removed'|'finance_updated'){
     if(!defaults.personalQueue||!activityBotPolicy(db,defaults).config.enabled)return;
-    const label={promoted:'你的报名已递补为正式名额',conditions_declined:'有人暂不同意新安排，请协调处理',withdrawal_request:'有一条退出申请待处理',withdrawal_decision:'退出申请已有处理结果',removed:'你的报名已被撤销',claim_requested:'有一条报名认领申请待核对',claim_decided:'报名认领申请已有结果',ownership_transferred:'发起者已交接',cohost_accepted:'协办邀请已被接受',cohost_removed:'协办权限已撤销'}[kind];
+    const label={promoted:'你的报名已递补为正式名额',conditions_declined:'有人暂不同意新安排，请协调处理',withdrawal_request:'有一条退出申请待处理',withdrawal_decision:'退出申请已有处理结果',removed:'你的报名已被撤销',claim_requested:'有一条报名认领申请待核对',claim_decided:'报名认领申请已有结果',ownership_transferred:'发起者已交接',cohost_accepted:'协办邀请已被接受',cohost_removed:'协办权限已撤销',finance_updated:'款项记录有更新'}[kind];
     const text=label+'\n'+botActivityURL(eventId,undefined,defaults);const dedupe=hash(kind+'\nprivate\n\n'+userId+'\n'+text).slice(0,32);
     db.prepare("INSERT OR IGNORE INTO bot_outbox(event_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at,recipient_user_id,poll_id) VALUES(?,?,?,'private','',?,NULL,'pending',?,?,NULL)").run(eventId,kind,dedupe,JSON.stringify({text,msg_type:0,...(defaults.keyboard?{keyboard:{content:{rows:[]}}}:{})}),legacyStamp(now()),userId);
   }

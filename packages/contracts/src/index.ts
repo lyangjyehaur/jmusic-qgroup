@@ -122,3 +122,4 @@ export * from './activity-attendance';
 
 export * from './activity-history';
 export * from './inbox';
+export * from './finance';

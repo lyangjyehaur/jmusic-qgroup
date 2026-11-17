@@ -139,3 +139,12 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .history-entry dd { overflow-wrap: anywhere; }
 .inbox-section { margin-block: 1.25rem; }
 .inbox-event-title { font-size: 1rem; margin: 1.25rem 0 .25rem; overflow-wrap: anywhere; }
+.finance-entry,.finance-report { border-top:1px solid var(--color-border,#dbe2ea); padding-block:.8rem; scroll-margin-top:1rem; overflow-wrap:anywhere; }
+.finance-entry summary,.finance-report summary { cursor:pointer; line-height:1.6; }
+.finance-facts dd { overflow-wrap:anywhere; }
+#finance-operation { scroll-margin-top:1rem; }
+.finance-facts { grid-template-columns:minmax(0, 1fr) minmax(5.5em, auto); gap:8px 16px; }
+.finance-facts dd { text-align:right; max-width:36ch; }
+.finance-facts dd:has(a),.finance-facts dd.preserve-lines { text-align:left; }
+.finance-operation-panel > summary { cursor:pointer; font-weight:650; font-size:1.25rem; }
+.finance-operation-panel[open] > summary { margin-bottom:1rem; }

@@ -12,6 +12,7 @@ export function ActivityEntry(){
   const invitation=search.get('attendee_invite');
   if(invitation&&/^[A-Za-z0-9_-]{32}$/.test(invitation))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/invitations/'+encodeURIComponent(invitation)}/>;
   const action=search.get('action');
+  if(action==='finance')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/finance'}/>;
   if(action==='todos')return <Navigate replace to={'/inbox?'+new URLSearchParams({event:id})}/>;
   if(action==='onsite'||action==='attendance')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/attendance'}/>;
   const query=action&&actions.has(action)?'?'+new URLSearchParams({task:action}):'';

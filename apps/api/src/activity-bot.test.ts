@@ -12,7 +12,7 @@ import { eventRow } from './activity-arrangements';
 const at=new Date('2026-11-17T00:00:00Z');const stamp='2026-11-17T00:00:00+00:00';
 const cleanups:(()=>void)[]=[];afterEach(()=>{for(const close of cleanups.splice(0).reverse())close();});
 function setup(){const db=openDatabase(':memory:');fixture(db);nicknameFixture(db);db.exec(`UPDATE events SET starts_at='2026-11-20T10:00:00+00:00',deadline='2026-11-19T10:00:00+00:00',revision=7,conditions_version=2,change_summary='時間與地點已變更',minimum_participants=4,fee_policy='原費用 <qqbot-at-everyone />',cancellation_reason='取消原因',title='活動 **標題** 𠀀' WHERE id='listen'; UPDATE users SET nickname='<@123> [稱呼](https://evil.example) @everyone'; INSERT INTO event_conditions VALUES('listen',1,'{"starts_at":"2026-11-19T10:00:00+00:00"}','初始安排','原發起者','before'); DELETE FROM bot_outbox;`);cleanups.push(()=>db.close());return db;}
-const kinds=['activity_published','formation_confirmed','conditions_changed','event_started','event_finished','event_cancelled','deadline_reminder','estimated_over_reminder','registration_paused','registration_resumed','registration_added','registration_changed'] as const;
+const kinds=['activity_published','formation_confirmed','conditions_changed','event_started','event_finished','event_cancelled','deadline_reminder','estimated_over_reminder','registration_paused','registration_resumed','registration_added','registration_changed','finance_closed','finance_reopened'] as const;
 const source=`import datetime,json,sqlite3,sys
 from qgroup_core import bot_outbox as out,bot_views,bot_settings
 db=sqlite3.connect(sys.argv[1]);db.row_factory=sqlite3.Row
@@ -29,7 +29,7 @@ describe('activity outbox compatibility with the retained Python bot',()=>{
   it('matches all activity card text, frozen context, rich template and button variants against original Python',async()=>{
     const db=setup();const folder=mkdtempSync(join(tmpdir(),'qgroup-card-diff-'));const path=join(folder,'synthetic.sqlite3');
     try{
-      for(const templates of [{},{activity_published:'{{公開}} {heading}\n{details}\n{url}','activity_published@md':'## 自訂\n{title}\n{details}\n[活動]({url})',conditions_changed:'{previous_starts_at} → {starts_at}\n{url}','conditions_changed@md':'~~{previous_starts_at}~~ → **{starts_at}**\n[確認]({url})'}]){
+      for(const templates of [{},{activity_published:'{{公開}} {heading}\n{details}\n{url}','activity_published@md':'## 自訂\n{title}\n{details}\n[活動]({url})',finance_closed:'結清 {title}\n{details}\n{url}','finance_reopened@md':'## 核對 {title}\n{details}\n[帳本]({url})',conditions_changed:'{previous_starts_at} → {starts_at}\n{url}','conditions_changed@md':'~~{previous_starts_at}~~ → **{starts_at}**\n[確認]({url})'}]){
         db.prepare('UPDATE bot_settings SET config_json=?').run(JSON.stringify({enabled:true,templates}));await db.backup(path);
         const expected=JSON.parse(execFileSync('python3',['-c',source+`result={}
 for kind in json.loads(sys.argv[2]):

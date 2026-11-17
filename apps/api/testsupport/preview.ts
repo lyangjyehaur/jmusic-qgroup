@@ -3,12 +3,14 @@ import { openDatabase } from '@qgroup/database';
 import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
 import { musicClaimFixture } from './music-claim-fixture';
+import { financeFixture, financeHistoryFixture } from './finance-fixture';
 import { inboxFixture } from './inbox-fixture';
 import { nicknameFixture } from './nickname-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const db = openDatabase(':memory:'); fixture(db);
 musicClaimFixture(db);
+if (process.env.REBUILD_TEST_FINANCE === '1') { financeFixture(db); financeHistoryFixture(db); }
 if (process.env.REBUILD_TEST_INBOX === '1') inboxFixture(db);
 if (process.env.REBUILD_TEST_ROSTER === '1') {
   nicknameFixture(db);
