@@ -225,3 +225,10 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .music-circle-members li, .music-circle-tags li, .music-circle-singles li { overflow-wrap: anywhere; }
 .music-circle-tags > li { margin-block: .5rem; }
 .music-circle-singles > li { margin-block: .75rem; }
+
+.shout-list { list-style: none; padding: 0; }
+.shout-card, .shout-compose { padding: 1.25rem; margin-block: 1rem; overflow-wrap: anywhere; }
+.shout-card h3 { font-size: 1.125rem; margin-block: 0 .75rem; }
+.shout-body { white-space: pre-wrap; }
+.shout-card .page-actions { margin-block: 1rem 0; }
+.shout-compose textarea { width: 100%; box-sizing: border-box; }

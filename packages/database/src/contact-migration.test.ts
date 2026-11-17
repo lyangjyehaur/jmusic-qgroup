@@ -29,7 +29,7 @@ describe('schema 3 → canonical music contacts', () => {
       ]);
       expect(() => next.prepare("INSERT INTO music_profile_contacts VALUES('p3','10001','self_reported',0,'now')").run()).toThrow('UNIQUE');
       expect(next.pragma('foreign_key_check')).toEqual([]); next.close();
-      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 10 }); expect(reopened.prepare('SELECT * FROM music_profile_contacts').all()).toHaveLength(2); reopened.close();
+      const reopened = openDatabase(path); expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 11 }); expect(reopened.prepare('SELECT * FROM music_profile_contacts').all()).toHaveLength(2); reopened.close();
     } finally { rmSync(folder, { recursive: true, force: true }); }
   });
   it('rolls back the complete migration on an existing-table collision', () => {

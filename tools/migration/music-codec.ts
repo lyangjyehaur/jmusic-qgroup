@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { seedMusicFields, type DB } from '@qgroup/database';
+import { seedMusicFields, seedMusicShouts, type DB } from '@qgroup/database';
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type ObjectValue = { [key: string]: Json };
@@ -172,5 +172,6 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
     map.run('music', 'profile', key, profileId(key), '', '', 'erased');
   }
   seedMusicFields(db);
+  seedMusicShouts(db);
   return { entries: Object.keys(entries).length, profiles: Object.keys(members).length, owned, selections, erased: erased.size };
 }

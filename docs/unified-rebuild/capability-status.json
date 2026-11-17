@@ -3533,13 +3533,33 @@
       "new_entry": "同好找搭子",
       "required_behavior": "最多 140 字、每 24 小時一條、顯示冷卻與錯誤，不靠前端限流",
       "legacy_evidence_group": "喊話",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "最多 140 字、每 24 小時一條、顯示冷卻與錯誤，不靠前端限流"
+      "implementation": [
+        "packages/contracts/src/music-shouts.ts",
+        "packages/domain/src/music-shouts.ts",
+        "apps/api/src/music-shouts.ts",
+        "apps/web/src/music-shouts.tsx",
+        "packages/database/src/schema-v11.ts",
+        "packages/database/src/music-shouts.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-shouts.test.ts",
+        "apps/api/src/music-shouts.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/shouts-migration.test.ts",
+        "apps/api/src/music-shouts.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-shouts.spec.ts",
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生發布、140 code point／Python 空白、24 小時邊界、帳號隔離草稿及同操作編號恢復已隔離實作；完整副本對帳、併發、舊入口 adapter、實際 bot 組合與 QQ WebView 待驗收。"
     },
     {
       "capability_id": "C02",
@@ -3547,13 +3567,33 @@
       "new_entry": "找搭子",
       "required_behavior": "發布者資料依權限、複製失敗有退路，不把自填 QQ 當驗證",
       "legacy_evidence_group": "喊話、音樂前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "發布者資料依權限、複製失敗有退路，不把自填 QQ 當驗證"
+      "implementation": [
+        "packages/contracts/src/music-shouts.ts",
+        "packages/domain/src/music-shouts.ts",
+        "apps/api/src/music-shouts.ts",
+        "apps/web/src/music-shouts.tsx",
+        "packages/database/src/schema-v11.ts",
+        "packages/database/src/music-shouts.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-shouts.test.ts",
+        "apps/api/src/music-shouts.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/shouts-migration.test.ts",
+        "apps/api/src/music-shouts.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-shouts.spec.ts",
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "會員列表／詳情、目前稱呼／權威聯絡及來源、複製失敗退路、成分／比較安全返回已隔離實作；完整舊入口 adapter、正式來源與實際版本組合待驗收。"
     },
     {
       "capability_id": "C03",
@@ -3561,13 +3601,33 @@
       "new_entry": "找搭子歷史",
       "required_behavior": "30 天、歷史至 500、分頁／更多；不可把過期當已刪",
       "legacy_evidence_group": "喊話",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "30 天、歷史至 500、分頁／更多；不可把過期當已刪"
+      "implementation": [
+        "packages/contracts/src/music-shouts.ts",
+        "packages/domain/src/music-shouts.ts",
+        "apps/api/src/music-shouts.ts",
+        "apps/web/src/music-shouts.tsx",
+        "packages/database/src/schema-v11.ts",
+        "packages/database/src/music-shouts.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-shouts.test.ts",
+        "apps/api/src/music-shouts.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/shouts-migration.test.ts",
+        "apps/api/src/music-shouts.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-shouts.spec.ts",
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "30 天浮點邊界、穩定歷史分頁／500 則、Python 差分、刪除與裁切清原副本、schema 11 遷移已隔離實作；正式副本完整對帳、備份／還原與舊入口待驗收。"
     },
     {
       "capability_id": "C04",
@@ -3944,13 +4004,34 @@
       "new_entry": "後台找搭子",
       "required_behavior": "活躍／歷史可查、刪除不殘留發布者敏感資料",
       "legacy_evidence_group": "喊話、成分管理",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "活躍／歷史可查、刪除不殘留發布者敏感資料"
+      "implementation": [
+        "packages/contracts/src/music-shouts.ts",
+        "packages/domain/src/music-shouts.ts",
+        "apps/api/src/music-shouts.ts",
+        "apps/web/src/music-shouts.tsx",
+        "packages/database/src/schema-v11.ts",
+        "packages/database/src/music-shouts.ts",
+        "apps/web/src/admin-shouts.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-shouts.test.ts",
+        "apps/api/src/music-shouts.test.ts"
+      ],
+      "data_evidence": [
+        "packages/database/src/shouts-migration.test.ts",
+        "apps/api/src/music-shouts.test.ts",
+        "apps/api/src/import-snapshot.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-shouts.spec.ts",
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；完整備份／還原、舊入口與實際版本組合待驗收。"
     },
     {
       "capability_id": "A13",

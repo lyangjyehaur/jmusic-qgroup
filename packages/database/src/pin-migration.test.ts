@@ -13,7 +13,7 @@ describe('schema 6 → PIN reset audit', () => {
       const before=tables.map(({name})=>old.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all());
       const schema=old.prepare("SELECT name,sql FROM sqlite_master WHERE name!='rebuild_schema' ORDER BY name").all() as {name:string;sql:string|null}[];old.close();
       const next=openDatabase(path);expect(tables.map(({name})=>next.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all())).toEqual(before);for(const row of schema)expect(next.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);expect(next.pragma('foreign_key_check')).toEqual([]);next.close();
-      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:10});expect(reopened.prepare('SELECT * FROM music_pin_history').all()).toEqual([]);reopened.close();
+      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:11});expect(reopened.prepare('SELECT * FROM music_pin_history').all()).toEqual([]);reopened.close();
     }finally{rmSync(folder,{recursive:true,force:true});}
   });
   it('rolls DDL and marker back on collision while preserving private evidence', () => {

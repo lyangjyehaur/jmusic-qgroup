@@ -29,7 +29,7 @@ describe('schema 9 → immutable native music creation provenance', () => {
       const probe = () => JSON.parse(execFileSync('python3', ['tools/rebuild/probe-auth-bot.py', path], { encoding: 'utf8' }));
       const bot = probe(); old.close();
       const db = openDatabase(path);
-      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 10 });
+      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 11 });
       expect(tables.map(({ name }) => db.prepare('SELECT * FROM "' + name + '" ORDER BY rowid').all())).toEqual(snapshot);
       for (const row of ddl) expect(db.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);
       expect(db.prepare('SELECT * FROM music_profile_creation ORDER BY profile_id').all()).toEqual([
