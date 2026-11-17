@@ -13,6 +13,7 @@ let bot: typeof import('../../apps/bot/src/index');
 let outbox: typeof import('../../apps/bot/src/worker');
 let replies: typeof import('../../apps/bot/src/public');
 let abbreviations: typeof import('../../apps/bot/src/abbreviation-service');
+let dispatch: typeof import('../../apps/bot/src/dispatch-service');
 try {
   process.chdir(directory);
   globalThis.fetch = async () => {
@@ -28,6 +29,8 @@ try {
   outbox = await import(new URL('../../.rebuild-dist/bot/outbox.mjs', import.meta.url).href);
   replies = await import(new URL('../../.rebuild-dist/bot/public.mjs', import.meta.url).href);
   abbreviations = await import(new URL('../../.rebuild-dist/bot/abbreviations.mjs', import.meta.url).href);
+  dispatch = await import(new URL('../../.rebuild-dist/bot/dispatch.mjs', import.meta.url).href);
+  await import(new URL('../../.rebuild-dist/bot/dispatch-task.mjs', import.meta.url).href);
   assert.deepEqual(readdirSync(directory), []);
   assert.equal(JSON.stringify(process.env), environment);
 } finally {
@@ -50,6 +53,26 @@ try {
     assert.throws(()=>replies!.readPublicBotReply(path,'帮助'),/Recovery candidate/);
   } finally {db.close();}
 } finally {rmSync(replyDirectory,{recursive:true,force:true});}
+const dispatchDirectory=mkdtempSync(join(tmpdir(),'qgroup-built-dispatch-'));
+try {
+  const path=join(dispatchDirectory,'state.sqlite3'),db=openDatabase(path);
+  db.prepare('UPDATE bot_settings SET config_json=?').run(JSON.stringify({enabled:false,dry_run:false,groups:[{id:'synthetic-group',name:'',replies:true,broadcast:false}]}));
+  const config=bot!.loadBotConfig({KANBAN_DB:path,KANBAN_BOT_BASE_URL:'https://example.test',KANBAN_BOT_DRY_RUN:'0'});
+  const calls:string[]=[],api={replyGroup:async(_group:string,text:string)=>{calls.push(text);return {ok:true,code:0,data:{},status:200,kind:'ok' as const,platformTrace:null};}};
+  const workers=new dispatch!.BotDispatchWorkers(config,{api});
+  const router=new dispatch!.BotDispatcher({business:workers,api:{ackInteraction:async()=>{calls.push('ACK');return {ok:true,code:0,data:{},status:200,kind:'ok' as const,platformTrace:null};}}});
+  try {
+    const signal=new AbortController().signal;
+    await router.onDispatch({op:0,t:'READY',s:1,d:{user:{id:'SYNTHETIC'}}},signal);
+    const message={op:0 as const,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:'message',group_openid:'synthetic-group',content:'<@SYNTHETIC> /帮助'}};
+    await router.onDispatch(message,signal);await router.onDispatch({...message,t:'GROUP_MESSAGE_CREATE',s:3},signal);
+    await router.onDispatch({op:0,t:'INTERACTION_CREATE',s:4,id:'outer-event',d:{id:'interaction',type:11,group_openid:'synthetic-group',data:{resolved:{button_data:'/我的'}}}},signal);
+    await router.drain();assert.equal(calls.length,3);assert(calls.includes('ACK'));assert(calls.some(text=>text.includes('机器人尚未绑定')));
+    assert.deepEqual(db.prepare('SELECT COUNT(*) AS n FROM bot_outbox').get(),{n:0});
+    db.exec('UPDATE rebuild_storage SET recovery_required=1');
+    await assert.rejects(workers.reply({group:'synthetic-group',command:'帮助',argument:'',msgId:'blocked'},signal));
+  } finally {await router.close();db.close();}
+} finally {rmSync(dispatchDirectory,{recursive:true,force:true});}
 const abbreviationDirectory=mkdtempSync(join(tmpdir(),'qgroup-built-abbreviations-'));
 try {
   assert.deepEqual(abbreviations!.groupBotCommand({content:'<@synthetic>',message_type:103,msg_elements:[{content:'這也太YYDS了 https://private.test/awsl'}]}),['缩写','yyds']);
@@ -203,7 +226,7 @@ try {
     rmSync(outboxDirectory, { recursive: true, force: true });
   }
   console.log(
-    'Built TS bot transport/outbox/public replies/abbreviations: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + complete masked lookup/continuation + recovery block passed; no production worker or QQ delivery started',
+    'Built TS bot transport/outbox/public replies/abbreviations/isolated dispatch: inert imports + local native HTTP/WebSocket + ACK + Resume + durable unconfirmed/simulation + read-only public query + complete masked lookup/continuation + recovery block passed; no production worker or QQ delivery started',
   );
 } finally {
   stop.abort();

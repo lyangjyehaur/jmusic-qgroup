@@ -4326,23 +4326,32 @@
       "implementation": [
         "apps/bot/src/commands.ts",
         "apps/bot/src/public-queries.ts",
-        "apps/bot/src/replies.ts"
+        "apps/bot/src/replies.ts",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/replies.test.ts"
       ],
       "permission_evidence": [
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生 TS 六主指令、全部簡繁／英文別名與 25 種公開指令普通／Markdown 回覆已與 Python 差分；縮寫只保留解析並由獨立非同步服務承接，未宣稱完成。訊息／引用／回呼 dispatch、群政策再驗、完整 runtime、實際 web-bot 版本組合與 QQ 驗收仍待完成，見 54 號檢查點。"
+      "remaining": "原生六主指令、全部別名及 25 種公開回覆已與 Python 差分；縮寫／引用／續讀與訊息／按鈕 dispatch 已在隔離 worker 接通，含去重與當前政策。本批本機平台驗證不代表完整 runtime／實際版本組合／QQ 驗收；panels、唯一投遞者、完整停止與待送對帳仍待完成，見 54–56 號檢查點。"
     },
     {
       "capability_id": "B02",
@@ -4353,23 +4362,32 @@
       "implementation": [
         "apps/bot/src/commands.ts",
         "apps/bot/src/public-queries.ts",
-        "apps/bot/src/replies.ts"
+        "apps/bot/src/replies.ts",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/replies.test.ts"
       ],
       "permission_evidence": [
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生 TS 清單排序、限額前排除逾時、1–8 序號、8–16 位短碼、錯碼／歧義／私密排除、往期／歸檔與公開查詢不要求群同步已完成 Python 差分與 built readonly smoke。完整 dispatch、舊網站入口 adapters、runtime、正式資料及實際版本組合／QQ 仍待驗收，見 54 號檢查點。"
+      "remaining": "原生清單排序、期限／序號／短碼／公開範圍已完成 Python 差分，並接入隔離 dispatch 及建置後 worker。舊網站入口 adapters、完整 runtime、正式資料及實際版本組合／QQ 待驗收，見 54／56 號檢查點。"
     },
     {
       "capability_id": "B03",
@@ -4384,13 +4402,19 @@
         "packages/domain/src/bot-clock.ts",
         "apps/bot/src/commands.ts",
         "apps/bot/src/public-queries.ts",
-        "apps/bot/src/replies.ts"
+        "apps/bot/src/replies.ts",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4399,14 +4423,17 @@
         "apps/bot/src/replies.test.ts"
       ],
       "permission_evidence": [
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "活動 producer／consumer 與公開指令的當前正式／候補名單、人數、倒數、限長／名稱清理、凍結通知與最新提醒已完成 Python 差分；原生公開指令只讀同一交易快照，不推斷群內身份。完整 dispatch／runtime、跨重啟／回呼與實際 web-bot 組合／QQ 仍待完成，見 22／53／54 號檢查點。"
+      "remaining": "當前／凍結名單、正式／候補／倒數、隱私／限長與原生公開查詢的同交易讀取已有 Python 差分；隔離 dispatch 已接入。完整 runtime、跨程序／正式資料、實際 web-bot 組合／QQ 待驗收，見 22／53／54／56 號檢查點。"
     },
     {
       "capability_id": "B04",
@@ -4638,7 +4665,11 @@
         "apps/bot/src/outbox.ts",
         "apps/bot/src/outbox-store.ts",
         "apps/bot/src/outbox-planning.ts",
-        "apps/bot/src/group-state.ts"
+        "apps/bot/src/group-state.ts",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
@@ -4647,7 +4678,9 @@
         "apps/bot/src/outbox.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -4659,14 +4692,18 @@
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
         "apps/web/tests/admin-bot.spec.ts",
-        "apps/bot/src/outbox.test.ts"
+        "apps/bot/src/outbox.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
-        "docs/unified-rebuild/53-bot-outbox-checkpoint.md"
+        "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "state": "in_progress",
-      "remaining": "群政策、空清單停用、換群作廢與 consumer 再驗目的群、私有拒絕檔已測；Gateway 發現／授權事件、每次指令／回呼驗群及實際 QQ／版本組合仍待完成，見 52／53 號檢查點。"
+      "remaining": "群政策、通知目的群與 consumer 保全已有隔離證據；原生 Gateway 群觀察、訊息／回呼驗群及每次發送前／token 後重新讀政策已接入兩個隔離 worker。完整 runtime、部署預設紀錄／版本套用及實際 QQ／版本組合仍待驗收，見 52／53／56 號檢查點。"
     },
     {
       "capability_id": "B09",
@@ -4789,7 +4826,11 @@
         "apps/bot/src/group-state.ts",
         "apps/bot/src/commands.ts",
         "apps/bot/src/public-queries.ts",
-        "apps/bot/src/replies.ts"
+        "apps/bot/src/replies.ts",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4800,7 +4841,9 @@
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
         "tools/rebuild/smoke-bot.ts",
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4818,7 +4861,9 @@
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -4827,10 +4872,11 @@
         "apps/web/tests/time-polls.spec.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生 consumer 的 Markdown／文字互斥、域名／按鈕限制、拒絕不降級及結算必要明細已有證據；新增 25 種公開指令的原生共用 Markdown renderer，與 Python 比對並保持普通文字相同事實。按鈕事件去重、每次驗群／身份、縮寫／引用、完整 runtime／QQ／版本組合仍待完成，見 53／54 號檢查點。"
+      "remaining": "原生通知與 25 種公開指令 Markdown／普通文字已有 Python 差分；按鈕先 ACK、去重、11／12 與授權事件區分、外層 event_id、群／回覆／dry-run 及 token 後再驗已接入隔離 dispatch。群內身份仍不推斷，全部個人操作留網站；完整 runtime／QQ／版本組合待驗收，見 53／54／56 號檢查點。"
     },
     {
       "capability_id": "B12",
@@ -4844,11 +4890,17 @@
         "apps/bot/src/word-mask.ts",
         "apps/bot/src/abbreviations.ts",
         "apps/bot/src/abbreviation-delivery.ts",
-        "apps/bot/assets/sensitive_words.json"
+        "apps/bot/assets/sensitive_words.json",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/abbreviations.test.ts",
-        "apps/bot/src/abbreviation-delivery.test.ts"
+        "apps/bot/src/abbreviation-delivery.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -4856,14 +4908,17 @@
       ],
       "permission_evidence": [
         "apps/bot/src/abbreviations.test.ts",
-        "apps/bot/src/abbreviation-delivery.test.ts"
+        "apps/bot/src/abbreviation-delivery.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/55-bot-abbreviations-checkpoint.md",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生 TS 引用選取／英文擷取、查詢快取／限流／期限、全部本機遮罩規則與例外、完整結果／分段／續讀／不確定保全已實作，並完成 Python 差分、新舊續讀檔雙向互讀與 built smoke。仍須接入每次驗群／身份／政策的完整 dispatch、KANBAN_BOT_SENSITIVE_WORDS_FILE 設定、CPU／SQLite 工作隔離與停止流程，以及實際 web-bot 組合／QQ／正式規模驗收；不等於完整 bot 可切換，見 55 號檢查點。"
+      "remaining": "原生縮寫／引用／遮罩／快取／完整分段／續讀與新舊檔案互讀已有差分；本批接入隔離 dispatch、額外詞檔設定、SQLite／CPU 隔離、取消／關閉及每次發送／token 後再驗政策。完整 runtime、程序間互斥、正式規模／巨量傳遞及實際 web-bot 組合／QQ 待驗收，見 55／56 號檢查點。"
     },
     {
       "capability_id": "B13",
@@ -4929,13 +4984,19 @@
         "apps/bot/src/api.ts",
         "apps/bot/src/gateway.ts",
         "apps/bot/src/lifecycle.ts",
-        "apps/bot/src/protocol.ts"
+        "apps/bot/src/protocol.ts",
+        "apps/bot/src/dispatch.ts",
+        "apps/bot/src/dispatch-business.ts",
+        "apps/bot/src/dispatch-workers.ts",
+        "apps/bot/src/dispatch-task.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/api.test.ts",
         "apps/bot/src/gateway.test.ts",
         "apps/bot/src/config-protocol.test.ts",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/gateway.test.ts",
@@ -4943,13 +5004,17 @@
       ],
       "permission_evidence": [
         "apps/bot/src/api.test.ts",
-        "apps/bot/src/gateway.test.ts"
+        "apps/bot/src/gateway.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/51-bot-transport-checkpoint.md"
+        "docs/unified-rebuild/51-bot-transport-checkpoint.md",
+        "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
+        "tools/rebuild/smoke-bot.ts"
       ],
       "state": "in_progress",
-      "remaining": "已實作原生 TS token／OpenAPI／Identify／Resume／心跳／有界 callback 及停止清理，以本機原生 HTTP／WebSocket 與 bundle smoke 驗證；尚未整合完整指令及 outbox worker、實際運行版本組合／QQ／長期連線，B01–B15 未完整驗收，見 51-bot-transport-checkpoint.md。"
+      "remaining": "原生 Gateway／Resume／token／心跳已有本機平台證據；本批接入有界事件／公開回覆／縮寫 workers，CPU 占用期間仍可心跳／ACK／查詢，token 後及 auth retry 前可再驗政策。完整 outbox／Gateway runtime、唯一投遞者、版本組合／QQ／長期連線待驗收，見 51／56 號檢查點。"
     },
     {
       "capability_id": "B15",

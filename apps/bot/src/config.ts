@@ -23,6 +23,8 @@ export interface BotConfig {
   logContent: boolean;
   logContentLimit: number;
   abbreviationPageBytes: number;
+  baseURL: string;
+  sensitiveWordsFile: string;
 }
 const expand = (path: string) =>
   path === '~' ? homedir() : path.startsWith('~/') ? resolve(homedir(), path.slice(2)) : resolve(path);
@@ -67,6 +69,8 @@ export function loadBotConfig(
   const database = text('KANBAN_DB'),
     sandbox = env.QQBOT_SANDBOX === '1';
   return {
+    baseURL: text('KANBAN_BOT_BASE_URL', 'https://kanban.danndann.cn').replace(/\/+$/, ''),
+    sensitiveWordsFile: text('KANBAN_BOT_SENSITIVE_WORDS_FILE') ? expand(text('KANBAN_BOT_SENSITIVE_WORDS_FILE')) : '',
     appId: text('QQBOT_APP_ID'),
     appSecret: text('QQBOT_APP_SECRET'),
     database: database ? expand(database) : '',
@@ -118,7 +122,7 @@ export function validateBotConfig(config: BotConfig) {
     } catch {
       errors.push('KANBAN_DB 不可寫：bot 必須更新投遞狀態');
     }
-  for (const base of [config.apiBase, config.legacyApiBase])
+  for (const base of [config.apiBase, config.legacyApiBase, config.baseURL])
     try {
       const u = new URL(base);
       if (!['http:', 'https:'].includes(u.protocol) || u.username || u.password || u.search || u.hash) throw Error();

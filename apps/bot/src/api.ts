@@ -225,7 +225,7 @@ export class QQBotAPI {
     this.#base = this.config.legacyApiBase;
     return 'wss://api.bot.qq.com/websocket/';
   }
-  async post(path: string, payload: APIObject, signal?: AbortSignal): Promise<BotAPIResult> {
+  async post(path: string, payload: APIObject, signal?: AbortSignal, beforeSend?: () => void | Promise<void>): Promise<BotAPIResult> {
     return this.#observer.scope({ trace_id: this.#observer.traceId() }, async () => {
       for (const attempt of [1, 2]) {
         if (!path.startsWith('/') || path.startsWith('//')) throw new BotTransportError();
@@ -237,6 +237,9 @@ export class QQBotAPI {
             api_attempt: attempt,
             request_ref: reference(randomUUID()),
           };
+        // Revalidate after token acquisition, including an authorization retry.
+        await beforeSend?.();
+        aborted(signal);
         this.#observer.event('api_request', fields);
         let response: HTTPResult;
         try {
@@ -321,9 +324,9 @@ export class QQBotAPI {
     }
     return this.put('/interactions/' + id, { code }, signal);
   }
-  sendGroup(id: string, payload: APIObject, signal?: AbortSignal) {
+  sendGroup(id: string, payload: APIObject, signal?: AbortSignal, beforeSend?: () => void | Promise<void>) {
     if (!validPlatformId(id)) throw new BotTransportError();
-    return this.post('/v2/groups/' + id + '/messages', payload, signal);
+    return this.post('/v2/groups/' + id + '/messages', payload, signal, beforeSend);
   }
   replyGroup(
     id: string,
@@ -335,6 +338,7 @@ export class QQBotAPI {
       keyboard?: APIObject;
       markdown?: string;
       signal?: AbortSignal;
+      beforeSend?: () => void | Promise<void>;
     } = {},
   ) {
     const body: APIObject = options.markdown
@@ -345,7 +349,7 @@ export class QQBotAPI {
       body.msg_seq = options.seq ?? 1;
     } else if (options.eventId) body.event_id = options.eventId;
     if (options.keyboard) body.keyboard = options.keyboard;
-    return this.sendGroup(id, body, options.signal);
+    return this.sendGroup(id, body, options.signal, options.beforeSend);
   }
   async setupPanels(commands: { name: string; desc: string }[], group = '', signal?: AbortSignal) {
     try {

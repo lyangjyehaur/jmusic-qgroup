@@ -34,3 +34,11 @@ const abbreviations = await build({ entryPoints: ['apps/bot/src/abbreviation-ser
 for (const path of Object.keys(abbreviations.metafile.inputs)) {
   if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts') || path.startsWith('qgroup_bot/')) throw new Error(`Invalid dependency in bot abbreviation bundle: ${path}`);
 }
+
+for (const [entry, output] of [['dispatch-service', 'dispatch'], ['dispatch-task', 'dispatch-task']]) {
+  const result = await build({ entryPoints: [`apps/bot/src/${entry}.ts`], outfile: `.rebuild-dist/bot/${output}.mjs`,
+    bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
+  for (const path of Object.keys(result.metafile.inputs)) {
+    if (path.includes('/testsupport/') || path.endsWith('.test.ts') || path.endsWith('/start.ts') || path.startsWith('qgroup_bot/')) throw new Error(`Invalid dependency in bot dispatch bundle: ${path}`);
+  }
+}

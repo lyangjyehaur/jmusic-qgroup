@@ -14,6 +14,8 @@ export interface AbbreviationPage { text:string|AbbreviationText; token?:string 
 type Metadata={group:string;created:number;offset:number;budget:number;uncertain:boolean;body?:string;section_ends?:unknown};
 export type AbbreviationDeliveryResult=Pick<BotAPIResult,'ok'|'code'|'data'>;
 class CursorSaveError extends Error {}
+export { AbbreviationSendBlocked } from './send-policy';
+import { AbbreviationSendBlocked } from './send-policy';
 const unavailable='续读结果不存在、已过期或不属于本群，请重新查询缩写。';
 const locks=new Map<string,{tail:Promise<void>;count:number}>();
 const hash=(group:string)=>createHash('sha256').update(group).digest('hex');
@@ -68,12 +70,12 @@ export class AbbreviationDelivery {
   async #call(api:Pick<QQBotAPI,'replyGroup'>,group:string,text:string,seq:number,options:{msgId?:string;eventId?:string;signal?:AbortSignal;beforeSend?:()=>void|Promise<void>}):Promise<AbbreviationDeliveryResult>{
     checkAbort(options.signal);await options.beforeSend?.();checkAbort(options.signal);
     try{return await abortable(api.replyGroup(group,text,{seq,msgId:options.msgId,eventId:options.eventId,signal:options.signal}),options.signal);}
-    catch(error){this.#observer.event('abbreviation_send_unconfirmed',safeError(error));return {ok:false,code:null,data:{uncertain:true}};}
+    catch(error){if(error instanceof AbbreviationSendBlocked)throw error;this.#observer.event('abbreviation_send_unconfirmed',safeError(error));return {ok:false,code:null,data:{uncertain:true}};}
   }
   send(api:Pick<QQBotAPI,'replyGroup'>,group:string,page:AbbreviationPage,options:{msgId?:string;eventId?:string;signal?:AbortSignal;beforeSend?:()=>void|Promise<void>}={}):Promise<AbbreviationDeliveryResult>{
     return this.#exclusive(async()=>{
       try{return await this.#send(api,group,page,options);}
-      catch(error){if(options.signal?.aborted)throw error;this.#observer.event('abbreviation_result_storage_failed',safeError(error));
+      catch(error){if(options.signal?.aborted||error instanceof AbbreviationSendBlocked)throw error;this.#observer.event('abbreviation_result_storage_failed',safeError(error));
         await this.#call(api,group,error instanceof CursorSaveError?'上一段已确认送出，但续读位置未能保存；请核对后继续，续读可能重复。':'暂时无法保存完整查询结果，请稍后重新查询。',5,options);return {ok:false,code:null,data:{storage_error:true}};}
     },options.signal);
   }

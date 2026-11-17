@@ -71,6 +71,7 @@
 | [TypeScript outbox consumer 檢查點](53-bot-outbox-checkpoint.md) | 原生 claim／重試／pacing、凍結與當前內容、逐碼投遞、取消／不確定保全及新舊 worker 差分 |
 | [TypeScript bot 公開指令與回覆檢查點](54-bot-public-replies-checkpoint.md) | 全部指令別名、25 種公開回覆、相同交易快照、唯讀保全、Python 差分與 runtime 剩餘工作 |
 | [TypeScript bot 縮寫與完整續讀檢查點](55-bot-abbreviations-checkpoint.md) | 引用擷取、完整遮罩／快取、QQ 分段／續讀、游標保全、新舊檔案互讀及 runtime 剩餘工作 |
+| [TypeScript bot 事件與 worker 隔離檢查點](56-bot-dispatch-checkpoint.md) | 訊息／按鈕 ACK、去重、群政策、CPU／SQLite 隔離、token 後再驗與本機平台驗證 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

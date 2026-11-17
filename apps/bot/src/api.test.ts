@@ -251,3 +251,19 @@ describe('isolated QQ OpenAPI transport', () => {
     }
   });
 });
+
+// A reply may wait for token refresh; permission must be checked afterwards.
+it('checks optional reply policy immediately before each HTTP attempt, including auth retry', async () => {
+  const calls: string[] = [];
+  let permitted = true;
+  const api = new QQBotAPI({ appId: 'synthetic', appSecret: 'synthetic', apiBase: 'https://synthetic.invalid', legacyApiBase: 'https://synthetic.invalid' }, {
+    request: async (_method, url) => {
+      if (url.endsWith('/app/getAppAccessToken')) { calls.push('token'); return { status: 200, data: { access_token: 'synthetic', expires_in: 7200 } }; }
+      calls.push('post'); permitted = false; return { status: 401, data: { code: 11241 } };
+    },
+  });
+  try {
+    await expect(api.replyGroup('group', 'text', { msgId: 'message', beforeSend: () => { calls.push('policy'); if (!permitted) throw Error('Policy revoked'); } })).rejects.toThrow('Policy revoked');
+    expect(calls).toEqual(['token', 'policy', 'post', 'token', 'policy']);
+  } finally { api.close(); }
+});
