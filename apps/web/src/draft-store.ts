@@ -49,7 +49,7 @@ function validate(key: string, scope: string) {
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
     key === prefix + 'payment-codes:v1:' + scope ||
     key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
-    ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms', 'arrangements', 'finance'].some(kind =>
+    ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms', 'arrangements', 'finance', 'lifecycle', 'consent', 'attendance', 'registration'].some(kind =>
       key.startsWith(prefix + 'activity-draft:' + kind + ':v1:' + scope + ':'))
   )) throw Error('不支援的原稿範圍');
 }

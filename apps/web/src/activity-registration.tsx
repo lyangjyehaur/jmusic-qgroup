@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useBlocker, useParams, useSearchParams } from 'react-router-dom';
+import { useDurableRecord } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
+import { useEffect, useState } from 'react';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
@@ -36,35 +38,41 @@ function when(value:string,timezone:string|null){
   try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:timezone}).format(new Date(value));}catch{return value;}
 }
 function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:boolean}){
-  const active=useRef(true);useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   const [search]=useSearchParams(),client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:registration:v1:'+viewer.scope+':'+initial.id+':'+(manage?'manage':'signup');
-  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(storageKey),saved=raw?Draft.parse(JSON.parse(raw)):empty(initial),clean=JSON.stringify({...saved,revision:initial.revision})===JSON.stringify(empty(initial));if(clean&&!manage){const next=empty(initial);if(search.get('preset')==='party')next.values.people=[companion()];if(search.get('preset')==='tentative')next.values.intent='tentative';return {draft:next,error:''};}return {draft:clean?empty(initial):saved,error:''};}catch{return {draft:empty(initial),error:'無法讀取報名原稿，請先保全原稿。'};}});
-  const [data,setData]=useState(initial),[draft,setDraft]=useState(loaded.draft),[readError,setReadError]=useState(loaded.error),[storageError,setStorageError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false),[partial,setPartial]=useState(false),[preview,setPreview]=useState<z.infer<typeof RegistrationPreview>|null>(null);
-  const dirty=!!draft.pending||JSON.stringify(draft)!==JSON.stringify(empty(data)),blocker=useBlocker(dirty),locked=busy||!!readError||!!draft.pending,stale=draft.revision!==data.revision;
+  const [data,setData]=useState(initial),[message,setMessage]=useState(''),[confirm,setConfirm]=useState(false),[partial,setPartial]=useState(false),[preview,setPreview]=useState<z.infer<typeof RegistrationPreview>|null>(null);
+  const seed=():DraftValue=>{
+    const next=empty(data);
+    if(!manage){if(search.get('preset')==='party')next.values.people=[companion()];if(search.get('preset')==='tentative')next.values.intent='tentative';}
+    else {const person=data.people.find(item=>item.id===search.get('person'));if(person)Object.assign(next,{personId:person.id,name:person.name,note:person.note,payerKind:person.payerKind,action:search.get('preset')==='withdraw'&&person.canWithdraw?'withdraw':actions(person)[0]??'edit'});}
+    return next;
+  };
+  const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>{
+    const saved=Draft.parse(JSON.parse(raw));if(saved.pending&&((saved.pending.kind==='person')!==manage))throw Error('operation target');
+    return JSON.stringify({...saved,revision:data.revision})===JSON.stringify(empty(data))?seed():saved;
+  },needsRestore:raw=>JSON.stringify({...Draft.parse(JSON.parse(raw)),revision:data.revision})!==JSON.stringify(empty(data)),dirty:value=>JSON.stringify(value)!==JSON.stringify(empty(data)),pending:value=>!!value.pending});
+  const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist}=record;
+  const locked=record.locked,stale=draft.revision!==data.revision;
   const selected=data.people.find(person=>person.id===draft.personId),availableActions=actions(selected),available=manage?availableActions.includes(draft.action):!data.signupBlocker;
   const reasonRequired=!!selected&&(selected.requiresReason||(draft.action==='withdraw'&&selected.needsWithdrawalRequest)||['approve','reject'].includes(draft.action));
   const mixed=!!preview?.allocation.some(person=>person.status==='confirmed')&&preview.allocation.some(person=>person.status==='waiting');
-  useEffect(()=>{if(readError)return;try{sessionStorage.setItem(storageKey,JSON.stringify(draft));setStorageError('');}catch{setStorageError('無法保存報名原稿，尚未送出操作。');}},[draft,readError,storageKey]);
-  useEffect(()=>{if(!dirty)return;const leave=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',leave);return()=>window.removeEventListener('beforeunload',leave);},[dirty]);
-  function persist(value:DraftValue){try{sessionStorage.setItem(storageKey,JSON.stringify(value));setStorageError('');return true;}catch{setStorageError('無法保存操作編號，尚未送出報名操作。');return false;}}
-  function edit(patch:Partial<DraftValue>){setDraft({...draft,...patch});setConfirm(false);setPartial(false);setPreview(null);setMessage('');}
+  useEffect(()=>{setConfirm(false);setPartial(false);setPreview(null);},[record.epoch]);
+  function edit(patch:Partial<DraftValue>){record.change({...draft,...patch});setConfirm(false);setPartial(false);setPreview(null);setMessage('');}
   function choose(personId:string){const person=data.people.find(item=>item.id===personId);edit({personId,name:person?.name??'',note:person?.note??'',payerKind:person?.payerKind??'self',action:search.get('preset')==='withdraw'&&person?.canWithdraw?'withdraw':actions(person)[0]??'edit',reason:''});}
-  useEffect(()=>{const id=search.get('person');if(manage&&id&&!draft.personId&&!dirty&&!readError&&data.people.some(person=>person.id===id))choose(id);},[]); // A link may select a stable attendee; it never submits.
   async function latest(){return api('/activities/'+encodeURIComponent(data.id)+'/registration',RegistrationContext,{headers:scope(viewer)});}
   function update(fresh:Context){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-registration',data.id],fresh);}
   async function rebase(){
-    if(locked)return;setBusy(true);
-    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!persist(next))return;update(fresh);setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage('已取得最新名單與安排；輸入仍保留，請重新預覽或核對後確認。');}
+    if(locked||!record.begin())return;
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage('已取得最新名單與安排；輸入仍保留，請重新預覽或核對後確認。');}
     catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
   }
   async function makePreview(){
     if(locked||stale)return;const values=RegistrationValues.safeParse(draft.values);if(!values.success){setMessage('請填寫 1–20 位參加者；稱呼最多 24 字、備註最多 100 字，本人只能一位。');return;}
-    if(!persist(draft))return;setBusy(true);setConfirm(false);setPartial(false);setPreview(null);setMessage('');
+    if(!record.begin())return;if(!await persist(draft)||!active.current){if(active.current)setBusy(false);return;}setConfirm(false);setPartial(false);setPreview(null);setMessage('');
     try{const result=await api('/activities/'+encodeURIComponent(data.id)+'/registration/preview',RegistrationPreview,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf},body:JSON.stringify({...values.data,revision:draft.revision})});if(active.current)setPreview(result);}
     catch(error){if(active.current)setMessage(error instanceof Error?error.message:'預覽失敗');}finally{if(active.current)setBusy(false);}
   }
   async function submit(){
-    if(busy||readError)return;let operation=draft.pending;
+    if(busy||record.unavailable)return;let operation=draft.pending;
     if(!operation){
       if(!confirm||!available||stale)return;
       if(manage){
@@ -80,21 +88,21 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
         operation={kind:'signup',key:crypto.randomUUID(),input:input.data};
       }
     }
-    const pending={...draft,pending:operation};if(!persist(pending))return;setDraft(pending);setBusy(true);setMessage('');let accepted=false;
+    const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const path=operation.kind==='signup'?'/registration':'/attendees/'+encodeURIComponent(operation.personId)+'/registration';
       await api('/activities/'+encodeURIComponent(data.id)+path,ActivityDraftResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!persist(next))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?'報名已保存。':'報名操作已保存。');
+      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?'報名已保存。':'報名操作已保存。');
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-lifecycle','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){setDraft({...pending,pending:undefined});setConfirm(false);setPartial(false);setPreview(null);setMessage(error.message);}
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(error.message);}
       else setMessage('尚未確認操作結果。原操作已保留，請按「確認報名操作結果」安全重試。');
     }finally{if(active.current)setBusy(false);}
   }
   const consent=manage?'已核對此人的報名，確認'+labels[draft.action]:'已核對第 '+data.conditionsVersion+' 版安排、費用與逐人分配，代表本人及代報者接受安排';
   return <><Surface className="detail"><Heading level={2}>{data.title}</Heading><dl><dt>目前安排</dt><dd>第 {data.conditionsVersion} 版</dd><dt>時間</dt><dd>{when(data.arrangement.starts_at,data.arrangement.timezone)}（{data.arrangement.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{data.arrangement.duration_hours===null?'未設定':data.arrangement.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{data.arrangement.location}</dd><dt>退出期限</dt><dd>{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}</dd>{data.arrangement.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{data.arrangement.fee_policy}</dd></>}{data.arrangement.description&&<><dt>注意事項</dt><dd className="preserve-lines">{data.arrangement.description}</dd></>}</dl><Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看完整安排與版本</Link></Surface>
-    <Surface className="detail activity-editor"><Heading level={2}>{manage?'現有報名':'本人與同行'}</Heading>{blocker.state==='blocked'&&<Notice>仍有報名原稿。<Button onClick={()=>blocker.reset()}>繼續核對</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留原稿並離開</Button></Notice>}
+    <Surface className="detail activity-editor"><Heading level={2}>{manage?'現有報名':'本人與同行'}</Heading>
       {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新資料。</Notice>}
       {manage&&<><ul>{data.people.map(person=><li key={person.id}>{person.name} · {statusLabels[person.status]??person.status}{person.withdrawalRequested?' · 退出申請中':''} · 付款：{person.payerName}</li>)}</ul>{!data.people.length&&<Notice>目前沒有可由此帳號管理的有效報名。</Notice>}</>}
       {!manage&&data.signupBlocker&&<Notice>{data.signupBlocker}</Notice>}
@@ -128,6 +136,6 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
         {(!manage||draft.personId)&&<label className="consent"><input type="checkbox" disabled={!available||stale||(!manage&&(!preview||(mixed&&!partial)))} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>{consent}</span></label>}
       </fieldset>{(!manage||draft.personId||draft.pending)&&<Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認報名操作結果':manage?'提交報名操作':'提交報名'}</Button>}</form>}
       {!draft.pending&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新資料，保留輸入</Button>}
-      {message&&<Text role="status">{message}</Text>}{storageError&&<Text role="alert">{storageError}</Text>}{readError&&<Notice>{readError}<Button onClick={()=>{try{const raw=sessionStorage.getItem(storageKey);if(raw!==null)sessionStorage.setItem(storageKey+':recovery:'+Date.now(),raw);setReadError('');}catch{setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。');}}}>保全原稿後繼續</Button></Notice>}
+      {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record}/>
     </Surface></>;
 }

@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useBlocker, useParams } from 'react-router-dom';
+import { useDurableRecord } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
+import { useEffect, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
@@ -32,25 +34,25 @@ function Loader({viewer,id}:{viewer:Member;id:string}){
 }
 function time(value:string|null){return value?new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Taipei'}).format(new Date(value))+'（台北）':'尚未記錄';}
 function Editor({viewer,initial}:{viewer:Member;initial:State}){
-  const active=useRef(true);useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   const client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:lifecycle:v1:'+viewer.scope+':'+initial.id;
-  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(storageKey),value=raw?Draft.parse(JSON.parse(raw)):empty(initial);return {draft:value.pending?{...value,revision:value.pending.input.revision,action:value.pending.input.action,reason:value.pending.input.reason}:!value.action&&!value.reason?empty(initial):value,error:''};}catch{return {draft:empty(initial),error:'無法讀取活動狀態原稿，請先保全原稿。'};}});
-  const [data,setData]=useState(initial),[draft,setDraft]=useState(loaded.draft),[readError,setReadError]=useState(loaded.error),[storageError,setStorageError]=useState(''),[message,setMessage]=useState(''),[busy,setBusy]=useState(false),[confirm,setConfirm]=useState(false);
-  const dirty=!!draft.action||!!draft.reason||!!draft.pending,blocker=useBlocker(dirty),locked=busy||!!readError||!!draft.pending,stale=draft.revision!==data.revision;
+  const [data,setData]=useState(initial),[message,setMessage]=useState(''),[confirm,setConfirm]=useState(false);
+  const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed:()=>empty(data),parse:raw=>{
+    const value=Draft.parse(JSON.parse(raw));return value.pending?{...value,revision:value.pending.input.revision,action:value.pending.input.action,reason:value.pending.input.reason}:!value.action&&!value.reason?empty(data):value;
+  },dirty:value=>!!value.action||!!value.reason,pending:value=>!!value.pending});
+  const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist}=record;
+  const locked=record.locked,stale=draft.revision!==data.revision;
   const choice=data.actions.find(item=>item.action===draft.action),available=!!choice&&!choice.blockedReason&&!data.removed;
-  useEffect(()=>{if(readError)return;try{sessionStorage.setItem(storageKey,JSON.stringify(draft));setStorageError('');}catch{setStorageError('無法保存活動狀態原稿，尚未送出操作。');}},[draft,readError,storageKey]);
-  useEffect(()=>{if(!dirty)return;const leave=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',leave);return()=>window.removeEventListener('beforeunload',leave);},[dirty]);
-  function persist(value:DraftValue){try{sessionStorage.setItem(storageKey,JSON.stringify(value));setStorageError('');return true;}catch{setStorageError('無法保存操作編號，尚未送出狀態變更。');return false;}}
-  function edit(patch:Partial<DraftValue>){setDraft({...draft,...patch});setConfirm(false);setMessage('');}
+  useEffect(()=>{setConfirm(false);},[record.epoch]);
+  function edit(patch:Partial<DraftValue>){record.change({...draft,...patch});setConfirm(false);setMessage('');}
   async function latest(){return api('/activities/'+encodeURIComponent(data.id)+'/lifecycle',ActivityLifecycle,{headers:headers(viewer)});}
   function update(fresh:State){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-lifecycle',data.id],fresh);}
   async function rebase(){
-    if(locked)return;setBusy(true);
-    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!persist(next))return;update(fresh);setDraft(next);setConfirm(false);setMessage('已取得最新狀態；操作與原因仍保留，請重新核對後確認。');}
+    if(locked||!record.begin())return;
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setMessage('已取得最新狀態；操作與原因仍保留，請重新核對後確認。');}
     catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
   }
   async function submit(){
-    if(busy||readError)return;let operation=draft.pending;
+    if(busy||record.unavailable)return;let operation=draft.pending;
     if(!operation){
       if(!confirm||!available||stale)return;
       const parsed=ChangeActivityLifecycle.safeParse({revision:draft.revision,action:draft.action,reason:draft.reason,confirm:true});
@@ -58,18 +60,18 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
       if(choice?.requiresReason&&!parsed.data.reason){setMessage('此操作必須填寫原因。');return;}
       operation={key:crypto.randomUUID(),input:parsed.data};
     }
-    const pending={...draft,pending:operation};if(!persist(pending))return;setDraft(pending);setBusy(true);setMessage('');let accepted=false;
+    const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api('/activities/'+encodeURIComponent(data.id)+'/lifecycle',ActivityDraftResult,{method:'POST',headers:{...headers(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!persist(next))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setMessage(result.removed?'活動已移除。':'活動狀態已保存。');
+      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setMessage(result.removed?'活動已移除。':'活動狀態已保存。');
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-arrangements','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){setDraft({...pending,pending:undefined});setConfirm(false);setMessage(error.message);}
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setMessage(error.message);}
       else setMessage('尚未確認操作結果。原操作已保留，請按「確認狀態操作結果」安全重試。');
     }finally{if(active.current)setBusy(false);}
   }
-  return <Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading>{blocker.state==='blocked'&&<Notice>仍有活動狀態原稿。<Button onClick={()=>blocker.reset()}>繼續核對</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留原稿並離開</Button></Notice>}
+  return <Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading>
     <dl><dt>目前狀態</dt><dd>{data.removed?'已移除':phases[data.lifecycle]??data.lifecycle}{data.archivedAt?' · 已歸檔':''}</dd><dt>報名開關</dt><dd>{data.registrationOpen?'開啟（仍受截止時間限制）':'關閉'}</dd><dt>成團</dt><dd>{data.formationState==='confirmed'?'已確認':'尚未確認'}</dd><dt>實際開始</dt><dd>{time(data.actualStartedAt)}</dd><dt>實際結束</dt><dd>{time(data.actualEndedAt)}</dd>{data.cancellationReason&&<><dt>取消原因</dt><dd className="preserve-lines">{data.cancellationReason}</dd></>}</dl>
     {data.removed&&<Notice>活動已移除，記錄仍保留。<Link to="/activities">回到活動列表</Link></Notice>}
     {!data.actions.length&&<Notice>目前帳號沒有活動狀態管理權限。</Notice>}
@@ -81,6 +83,6 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
       <label className="consent"><input type="checkbox" disabled={!available||stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>已核對目前狀態，確認{draft.action?labels[draft.action]:'此操作'}</span></label>
     </fieldset><Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認狀態操作結果':'提交狀態變更'}</Button></form>}
     {!draft.pending&&!data.removed&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新狀態，保留輸入</Button>}
-    {message&&<Text role="status">{message}</Text>}{storageError&&<Text role="alert">{storageError}</Text>}{readError&&<Notice>{readError}<Button onClick={()=>{try{const raw=sessionStorage.getItem(storageKey);if(raw!==null)sessionStorage.setItem(storageKey+':recovery:'+Date.now(),raw);setReadError('');}catch{setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。');}}}>保全原稿後繼續</Button></Notice>}
+    {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record}/>
   </Surface>;
 }

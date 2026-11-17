@@ -6,6 +6,8 @@ export function useDurableRecord<T>(options: {
   key: string; scope: string; seed: () => T; parse: (raw: string) => T;
   serialize?: (value: T) => string; dirty: (value: T) => boolean;
   pending: (value: T) => boolean; blocking?: boolean;
+  // Clean saved placeholders can acquire a new URL preset without restoring old user input.
+  needsRestore?: (raw: string) => boolean;
 }) {
   const [value, rawSetValue] = useState(options.seed), current = useRef(value), active = useRef(true),
     handle = useRef<DraftHandle | null>(null), queue = useRef(Promise.resolve()), revoked = useRef(false), halted = useRef(false),
@@ -28,7 +30,7 @@ export function useDurableRecord<T>(options: {
     setConflict(false);
     try {
       const next = raw === null ? optionsRef.current.seed() : optionsRef.current.parse(raw);
-      replace(next); setReadError(''); setNeedsRestore(raw !== null && optionsRef.current.dirty(next) && !optionsRef.current.pending(next));
+      replace(next); setReadError(''); setNeedsRestore(raw !== null && !optionsRef.current.pending(next) && (optionsRef.current.needsRestore?.(raw) ?? optionsRef.current.dirty(next)));
       if(raw === null && optionsRef.current.dirty(next)) void persist(next); setEpoch(n => n + 1);
     } catch { setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
   }
