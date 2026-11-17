@@ -7,7 +7,7 @@
     "build:ui": "npm run typecheck && node deploy/build_ui.mjs",
     "build": "npm run build:locales && npm run build:ui && npm run build:locales",
     "check:ui": "npm run typecheck && node deploy/build_ui.mjs --check",
-    "test:ui": "npm run typecheck && node tests/test_board_react.mjs && node tests/test_react_controllers.mjs && node tests/test_music_selection.mjs && node tests/test_yahha_patterns.mjs && node tests/test_react_ui.mjs",
+    "test:ui": "npm run typecheck && node tests/test_board_react.mjs && node tests/test_react_controllers.mjs && node tests/test_music_selection.mjs && node tests/test_yahha_patterns.mjs && node tests/test_qq_navigation.mjs && node tests/test_react_ui.mjs",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {

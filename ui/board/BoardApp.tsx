@@ -413,7 +413,7 @@ export function BoardApp({ client, storage, i18n }: D.BoardServices) {
     title: string,
     text: string,
     action: () => unknown,
-    labels: { confirm?: string; cancel?: string } = {},
+    labels: { confirm?: string; cancel?: string; closeOnSuccess?: boolean } = {},
   ) => open("confirm", { title, text, action, ...labels });
   const app: D.BoardContextValue = {
     api,
@@ -1000,6 +1000,7 @@ function Confirm({
   action,
   confirm = "确认",
   cancel = "返回",
+  closeOnSuccess = true,
 }: D.ModalProps["confirm"]) {
   const app = useBoard(),
     modal = useModal(),
@@ -1010,7 +1011,7 @@ function Confirm({
       onSubmit={() =>
         f.run(async () => {
           await action?.();
-          modal.close();
+          if (closeOnSuccess) modal.close();
         })
       }
       footer={
