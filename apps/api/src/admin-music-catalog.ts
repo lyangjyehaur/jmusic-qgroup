@@ -63,6 +63,7 @@ export function registerAdminMusicCatalog(app:FastifyInstance,db:DB,admin:AdminS
     if(input.revision!==current.revision)throw new DomainError('CATALOG_CHANGED','詞庫或會員選擇已有更新，請重新核對影響範圍後確認',409);
     const before=input.command==='create'?undefined:current.entries.find(e=>e.id===input.id);
     if(input.command!=='create'&&!before)throw new DomainError('ENTRY_NOT_FOUND','詞條不存在或已刪除',404);
+    admin.preserve(request);
     const stamp=now().toISOString(),seconds=JSON.stringify(Math.trunc(now().getTime()/1000));
     const id=before?.id??'e_'+randomUUID().replaceAll('-','');let targetId='',affectedProfiles=0;
     if(input.command==='create'||input.command==='update'){

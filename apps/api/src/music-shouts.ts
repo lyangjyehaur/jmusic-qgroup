@@ -61,6 +61,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
     if(prior){if(prior.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409);return{ok:true};}
     const row=db.prepare('SELECT * FROM music_shouts WHERE id=?').get(id);if(!row)throw new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404);
     if(hash(JSON.stringify(row))!==input.revision)throw new DomainError('SHOUT_CHANGED','內容狀態已變更，請重新讀取後確認',409);
+    admin.preserve(request);
     removeMusicShout(db,id,'deleted');db.prepare('INSERT INTO music_shout_deletions(shout_id,actor_ref,created_at) VALUES(?,?,?)').run(id,access.actorRef,now().toISOString());
     db.prepare('INSERT INTO auth_requests VALUES(?,?,?,?,?)').run(access.receiptScope,key,signature,'{"ok":true}',now().toISOString());return{ok:true};
   }).immediate());

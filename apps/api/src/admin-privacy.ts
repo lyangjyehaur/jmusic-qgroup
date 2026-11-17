@@ -43,6 +43,7 @@ export function registerAdminPrivacy(app: FastifyInstance, db: DB, admin: AdminS
       }
       const current = entry(db, id);
       if (current.revision !== input.revision) throw new DomainError('PRIVACY_REVIEW_CHANGED', '申請或共享紀錄已變更，請核對目前資料', 409);
+      admin.preserve(request);
       // No client-supplied status or completion checkbox can override real retained data.
       const status = Object.keys(current.sharedRecords).length ? 'shared_review' : 'completed';
       db.prepare('UPDATE privacy_requests SET note=?,status=?,updated_at=? WHERE id=?').run(input.note, status, now().toISOString(), id);

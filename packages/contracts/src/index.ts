@@ -140,3 +140,4 @@ export * from './admin-music-catalog';
 export * from './admin-music-erasure';
 
 export * from './appearance';
+export * from './backups';

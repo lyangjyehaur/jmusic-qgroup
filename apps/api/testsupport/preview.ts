@@ -18,8 +18,14 @@ import { timePollFixture } from './time-poll-fixture';
 import { paymentFixture } from './payment-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
-const paymentRoot = (process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
+const paymentRoot = (process.env.REBUILD_TEST_BACKUPS === '1'||process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
 const db = openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memory:'); fixture(db);
+if (process.env.REBUILD_TEST_BACKUPS === '1') {
+  const id='m_'+'d'.repeat(32);
+  db.prepare("INSERT INTO music_profiles VALUES(?,'alice',0,'2026-11-17T00:00:00.000Z',NULL)").run(id);
+  db.prepare("INSERT INTO music_profile_fields VALUES(?,'合成會員','合成私人留言',0,'',0,0,'synthetic')").run(id);
+  db.prepare("INSERT INTO music_profile_contacts VALUES(?,'11111','self_reported',0,'synthetic')").run(id);
+}
 if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);

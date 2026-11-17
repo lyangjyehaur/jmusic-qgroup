@@ -66,7 +66,7 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
       const key = z.string().uuid().parse(request.headers['idempotency-key']); const signature = hash('v2:admin:' + path + ':' + id + ':' + JSON.stringify(input));
       const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
       if (prior) { if (prior.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409); return { ok: true }; }
-      user(db, id); action(access, id);
+      user(db, id); admin.preserve(request); action(access, id);
       // Only a minimal acknowledgement is retained; private notes/identities are never copied to retry storage.
       db.prepare('INSERT INTO auth_requests VALUES(?,?,?,?,?)').run(access.receiptScope, key, signature, '{"ok":true}', now().toISOString());
       return { ok: true };

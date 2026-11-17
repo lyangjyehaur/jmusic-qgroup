@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import assert from 'node:assert/strict';
@@ -45,9 +45,15 @@ try {
   const upload=await fetch(base+'/api/v2/admin/appearance',{method:'POST',headers:{...headers,Cookie:cookie,'X-Admin-CSRF':access.adminCsrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({command:'upload',revision:manifest.revision,confirm:true,name:'合成圖片',mime:'image/png',data:raw.toString('base64')})});assert.equal(upload.status,200);await upload.arrayBuffer();
   const after=await(await fetch(base+'/api/v2/appearance')).json();assert.equal(after.items.length,1);
   const image=await fetch(base+after.items[0].url);assert.deepEqual(Buffer.from(await image.arrayBuffer()),raw);
+  const configure=await fetch(base+'/api/v2/admin/appearance',{method:'POST',headers:{...headers,Cookie:cookie,'X-Admin-CSRF':access.adminCsrf,'Idempotency-Key':randomUUID()},body:JSON.stringify({command:'config',revision:after.revision,confirm:true,rotateSeconds:30})});assert.equal(configure.status,200);await configure.arrayBuffer();
+  const readHeaders={Cookie:cookie,'X-Account-Scope':viewer.scope};
+  const backups=await(await fetch(base+'/api/v2/admin/backups',{headers:readHeaders})).json();assert.equal(backups.available,true);assert.equal(backups.backups.length,3);
+  const id=backups.backups[0].id;
+  const proof=JSON.parse(readFileSync(join(directory,'paired-backups',id,'manifest.json'),'utf8'));assert.equal(proof.restoreEligible,false);assert(proof.files.some(file=>file.path==='state.sqlite3'));
+  for(const path of ['/api/v2/admin/music-export','/api/v2/admin/music-export?backup='+id]){const exported=await fetch(base+path,{headers:readHeaders});assert.equal(exported.status,200);assert.equal(exported.headers.get('cache-control'),'no-store');const data=await exported.json();assert.deepEqual({...data,trend:[]},{entries:{},members:{},settings:{},shouts:[],shoutHistory:[],trend:[]});assert.equal(data.trend.length,1);assert.deepEqual(data.trend[0].counts,{});assert(Number.isSafeInteger(data.trend[0].t));}
   const callback = await fetch(base + '/auth/qq/callback?state=invalid&code=synthetic', { redirect: 'manual' });
   assert.equal(callback.status, 303); assert.equal(callback.headers.get('location'), '/auth/confirm?status=invalid');
-  console.log('Built API + native SQLite/sharp wallpaper round trip + TS workspace bundle + SPA assets: passed on an empty isolated DB');
+  console.log('Built API + native SQLite/sharp wallpaper + paired backup/current and historical export + TS workspace bundle + SPA assets: passed on an empty isolated DB');
 } finally {
   child.kill('SIGTERM'); await closed; rmSync(directory, { recursive: true, force: true });
 }

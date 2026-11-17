@@ -1,4 +1,7 @@
 import { registerAppearance } from './appearance';
+import { registerAdminBackups } from './admin-backups';
+import { createPairedBackups } from './paired-backups';
+import { erasureJournal as defaultErasureJournal } from './erasure-journal';
 import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
@@ -52,19 +55,32 @@ import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; musicTrendSampling?: boolean }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean }
 export function createApp(options: AppOptions) {
   const { db } = options;
   const now = options.now ?? (() => new Date());
   const origin = new URL(options.origin).origin;
   const security = createSecurity(db, origin, now, options.csrfSecret);
-  const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash);
-  const privacy = createPrivacy(db, options.erasureJournal);
+  const journal = options.erasureJournal ?? defaultErasureJournal(db);
+  const privacy = createPrivacy(db, journal);
+  const backups = createPairedBackups(db, journal, now);
+  const backedUp = new WeakSet<object>();
+  const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash, request => {
+    if (!backups || backedUp.has(request)) return;
+    try { backups.capture(); backups.prune(); backedUp.add(request); }
+    catch { throw new DomainError('BACKUP_REQUIRED', '操作尚未執行：無法完成配對備份，請維運人員檢查儲存空間、圖片與刪除紀錄', 503); }
+  });
   const musicClaims = createMusicClaims(db, now);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
+  if (backups && options.pairedBackupScheduling !== false) {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const tick = () => { try { privacy.guard(); const last = backups.list()[0]; if (!last || now().getTime() - Date.parse(last.createdAt) >= 3600000) backups.capture(); backups.prune(); } catch (error) { app.log.error(error, 'Paired backup failed'); } };
+    app.addHook('onReady', async () => { tick(); timer = setInterval(tick, 3600000); timer.unref(); });
+    app.addHook('onClose', async () => { clearInterval(timer); });
+  }
   if (options.musicTrendSampling) {
     let stop: (() => void) | undefined;
     app.addHook('onReady', async () => { stop = startMusicTrendSampler(db, now, error => app.log.error(error, 'Music trend sampling failed')); });
@@ -90,6 +106,7 @@ export function createApp(options: AppOptions) {
     registerRegistrationSettings(app, db, admin, now);
     registerAdminUsers(app, db, admin, now);
     registerAppearance(app, db, admin, now);
+    registerAdminBackups(app, db, admin, journal, backups, now);
     registerAdminPrivacy(app, db, admin, now);
     registerAdminMusic(app, db, admin, now);
     registerAdminMusicPins(app, db, admin, now);

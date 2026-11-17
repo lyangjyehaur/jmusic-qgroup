@@ -62,6 +62,7 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
     if (prior) { if (prior.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409); return { ok: true }; }
     const before = preview(db, id, input.targetUserId);
     if (input.revision !== before.revision) throw new DomainError('MUSIC_LINK_CHANGED', '成分、關聯或目標帳號已有變更，請重新預覽後核對', 409);
+    admin.preserve(request);
     if ((before.profile.owner?.id ?? null) !== input.targetUserId) {
       const stamp = now().toISOString();
       db.prepare('UPDATE music_profiles SET user_id=?,revision=revision+1,updated_at=? WHERE id=?').run(input.targetUserId, stamp, id);

@@ -39,6 +39,7 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
       const freshAccess=admin.authority(request,true);if(freshAccess.scope!==access.scope)throw new DomainError('ADMIN_CHANGED','管理權限已有變更，請重新確認',403);
       const prior=previous();if(prior)return replay(prior);
       const before=appearance(db);if(input.revision!==before.revision)throw new DomainError('APPEARANCE_CHANGED','外觀設定已有更新，請核對最新版後重新確認',409);
+      admin.preserve(request);
       let id='';
       if(input.command==='upload'){
         const name=musicText(input.name)||'壁紙';if(Array.from(name).length>40||/[\x00-\x1f\x7f]/.test(name))throw new DomainError('WALLPAPER_NAME','壁紙名稱最多 40 字，不可包含控制字元');

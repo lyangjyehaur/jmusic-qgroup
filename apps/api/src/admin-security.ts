@@ -9,7 +9,7 @@ import { clearMusicClaims } from './music-claim-state';
 export function administratorRevision(db: DB, userId: string): number | undefined {
   return (db.prepare('SELECT revision FROM user_admin_roles WHERE user_id=? AND is_admin=1').get(userId) as { revision: number } | undefined)?.revision;
 }
-export function createAdminSecurity(db: DB, security: Security, origin: string, now: () => Date, configured: () => string = () => '') {
+export function createAdminSecurity(db: DB, security: Security, origin: string, now: () => Date, configured: () => string = () => '', beforeWrite: (request: FastifyRequest) => void = () => {}) {
   const credential = () => { const value = configured(); return /^[a-f0-9]{64}$/.test(value) ? value : ''; };
   const cookieHash = (request: FastifyRequest) => { const token = request.cookies.kanban_admin; return token && token.length <= 512 ? hash(token) : ''; };
   function authority(request: FastifyRequest, write = false) {
@@ -56,6 +56,9 @@ export function createAdminSecurity(db: DB, security: Security, origin: string, 
     reply.clearCookie('kanban_admin', { path: '/', httpOnly: true, sameSite: 'lax' });
     return { logoutAccount: access.method === 'account' };
   }
-  return { authority, login, logout, enabled: () => !!credential() };
+  // Call inside the mutation transaction after validation/receipt replay and
+  // before any business write. Auth-only POSTs and logout need no data backup.
+  const preserve = (request: FastifyRequest) => { authority(request, true); beforeWrite(request); };
+  return { authority, preserve, login, logout, enabled: () => !!credential() };
 }
 export type AdminSecurity = ReturnType<typeof createAdminSecurity>;

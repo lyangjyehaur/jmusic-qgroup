@@ -38,6 +38,7 @@ export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminS
         const scope=musicErasureScope(db,id);
         if(scope.preview.revision!==input.revision)throw new DomainError('MUSIC_ERASURE_CHANGED','成分、詞庫或相關資料已有變更，請重新核對刪除範圍',409);
         if(!scope.profiles.length&&!scope.entries.length)throw new DomainError('NO_MUSIC_DATA','目前沒有可重置的成分或詞條',409);
+        admin.preserve(request);
         privacy.submit({version:2,kind:'admin_music',command:reset?'reset_music':'delete_profile',actorRef:access.actorRef,profiles:scope.profiles,entries:scope.entries,requestId:input.requestId,secretHash:hash(input.secret),signature,createdAt:now().toISOString()});
       }).immediate();
       privacy.guard();return AdminMusicErasureResult.parse(privacy.receipt(input.requestId,input.secret));

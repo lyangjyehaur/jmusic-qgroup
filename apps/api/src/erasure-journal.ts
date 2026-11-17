@@ -18,7 +18,30 @@ const AdminIntent = z.object({
 const CurrentIntent = z.union([NewIntent,AdminIntent]);
 export type ErasureIntent = z.infer<typeof CurrentIntent>;
 export type StoredIntent = ErasureIntent | z.infer<typeof LegacyIntent>;
+const StoredIntentValue = z.union([CurrentIntent, LegacyIntent]);
 export interface ErasureJournal { read(): StoredIntent[]; append(entry: ErasureIntent): void }
+export function decodeErasureJournal(source: string): StoredIntent[] {
+  if (source && !source.endsWith('\n')) throw new Error('Incomplete erasure journal line');
+  return source.split('\n').filter(line => line.trim()).map(line => StoredIntentValue.parse(JSON.parse(line)));
+}
+export const erasureRequestId = (entry: StoredIntent) => 'request_id' in entry ? entry.request_id : entry.requestId;
+/** Missing, changed or pending deletion intents must never authorize an export. */
+export function readVerifiedErasureJournal(db: DB, journal: ErasureJournal) {
+  const entries = journal.read().map(entry => StoredIntentValue.parse(entry));
+  const intents = new Map<string, string>();
+  for (const entry of entries) {
+    const id = erasureRequestId(entry), encoded = JSON.stringify(entry);
+    if (intents.has(id) && intents.get(id) !== encoded) throw new Error('Conflicting erasure journal entries');
+    intents.set(id, encoded);
+  }
+  const applied = new Set((db.prepare('SELECT request_id FROM erasure_applied').all() as { request_id: string }[]).map(row => row.request_id));
+  if (applied.size !== intents.size || [...applied].some(id => !intents.has(id))) throw new Error('Erasure journal and applied markers differ');
+  for (const entry of entries) if ('version' in entry) {
+    const receipt = db.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId) as { signature: string; secret_hash: string } | undefined;
+    if (receipt?.signature !== entry.signature || receipt.secret_hash !== entry.secretHash) throw new Error('Erasure journal and receipt differ');
+  }
+  return entries;
+}
 /** The ledger must be retained separately from rolling database backups. */
 export function erasureJournal(db: DB): ErasureJournal {
   if (db.name === ':memory:') {
@@ -35,8 +58,7 @@ export function erasureJournal(db: DB): ErasureJournal {
       try {
         fchmodSync(fd, 0o600);
         const source = readFileSync(fd, 'utf8');
-        if (source && !source.endsWith('\n')) throw new Error('Incomplete erasure journal line');
-        return source.split('\n').filter(line => line.trim()).map(line => z.union([CurrentIntent, LegacyIntent]).parse(JSON.parse(line)));
+        return decodeErasureJournal(source);
       } finally { closeSync(fd); }
     },
     append(entry) {

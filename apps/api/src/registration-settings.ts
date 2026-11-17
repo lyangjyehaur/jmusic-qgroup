@@ -18,6 +18,7 @@ export function registerRegistrationSettings(app: FastifyInstance, db: DB, admin
     const current = nameRegistration(db);
     if (current.revision !== data.revision) throw new DomainError('SETTINGS_CHANGED', '註冊設定已被修改，請重新讀取後確認', 409);
     if (current.enabled !== data.enabled) {
+      admin.preserve(request);
       db.prepare('UPDATE site_settings SET allow_name_registration=?,revision=revision+1 WHERE id=1').run(Number(data.enabled));
       db.prepare('INSERT INTO admin_audit(action,before_value,after_value,created_at) VALUES(?,?,?,?)').run('name_registration', Number(current.enabled), Number(data.enabled), now().toISOString());
     }

@@ -21,6 +21,7 @@ export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: Admi
     const before = adminMusicProfile(db, id);
     if (!/^[0-9]{4,12}$/.test(before.legacyKey)) throw new DomainError('PIN_NOT_SUPPORTED', '只有原數字 QQ 成分使用找回口令；此成分請用帳號登入或核對關聯', 409);
     if (before.revision !== input.revision) throw new DomainError('MUSIC_PIN_CHANGED', '成分、口令或關聯已有變更，請核對目前資料後再重設', 409);
+    admin.preserve(request);
     const stamp = now().toISOString();
     db.prepare('UPDATE music_legacy_profiles SET pin_hash=? WHERE profile_id=?').run(hash('jpm-pin|' + input.pin), id);
     db.prepare('UPDATE music_profiles SET revision=revision+1,updated_at=? WHERE id=?').run(stamp, id);

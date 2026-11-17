@@ -4144,13 +4144,31 @@
       "new_entry": "後台資料",
       "required_behavior": "當前身份／刪除投影優先，不是完整恢復包；不重新啟用舊管理口令",
       "legacy_evidence_group": "成分維運",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "當前身份／刪除投影優先，不是完整恢復包；不重新啟用舊管理口令"
+      "implementation": [
+        "apps/api/src/admin-backups.ts",
+        "apps/api/src/music-export.ts",
+        "apps/api/src/paired-backups.ts",
+        "apps/web/src/admin-backups.tsx",
+        "packages/contracts/src/backups.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/admin-backups.test.ts",
+        "apps/web/tests/admin-backups.spec.ts",
+        "tools/rebuild/smoke-build.mjs"
+      ],
+      "data_evidence": [
+        "apps/api/src/admin-backups.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/admin-backups.test.ts",
+        "apps/web/tests/admin-backups.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/admin-backups.spec.ts",
+        "docs/unified-rebuild/48-backup-export-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生目前／歷史 JSON、最新刪除／RESET 重播、關聯／明確清空聯絡／口令投影、私有下載與晚回應防護已隔離實作；舊 paired-backups 匯入、舊下載 adapters、完整資料對帳及正式規模驗收尚待完成。"
     },
     {
       "capability_id": "A15",
@@ -4908,7 +4926,9 @@
         "packages/database/src/schema-v3.ts",
         "packages/database/src/legacy-erasure.ts",
         "packages/database/src/schema-v4.ts",
-        "packages/database/src/schema-v8.ts"
+        "packages/database/src/schema-v8.ts",
+        "apps/api/src/paired-backups.ts",
+        "apps/api/src/music-export.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -4917,7 +4937,9 @@
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "packages/database/src/contact-migration.test.ts",
-        "packages/database/src/fields-migration.test.ts"
+        "packages/database/src/fields-migration.test.ts",
+        "apps/api/src/admin-backups.test.ts",
+        "tools/rebuild/smoke-build.mjs"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -4925,18 +4947,21 @@
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "packages/database/src/contact-migration.test.ts",
-        "packages/database/src/fields-migration.test.ts"
+        "packages/database/src/fields-migration.test.ts",
+        "apps/api/src/admin-backups.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/admin-backups.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
-        "docs/unified-rebuild/15-contact-checkpoint.md"
+        "docs/unified-rebuild/15-contact-checkpoint.md",
+        "docs/unified-rebuild/48-backup-export-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "schema 1→2→3→4、成套副本隔離匯入、逐表 ID／BLOB／序號／trigger／FK 保全、權威聯絡投影、媒體 digest／引用、原快照重跑不覆蓋已測；完整備份／歷史快照／還原／回退匯出、資源及正式副本演練仍待完成。 schema 7→8 已驗證完整回滾、原欄位／小數時間及 native 稱呼固定。"
+      "remaining": "schema 遷移及隔離匯入既有證據保留；新增原生 SQLite／圖片／壁紙 BLOB／ledger 配對備份、WAL／writer lock、checksum／FK／私有權限／保留期驗證。完整離線恢復、最新 bot 投遞狀態核對、回退匯出、歷史舊備份匯入與正式規模資源演練尚未完成；restoreEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -4948,25 +4973,33 @@
         "tools/migration/import-snapshot.ts",
         "tools/migration/music-codec.ts",
         "packages/database/src/schema-v3.ts",
-        "packages/database/src/legacy-erasure.ts"
+        "packages/database/src/legacy-erasure.ts",
+        "apps/api/src/paired-backups.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-backups.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/admin-backups.test.ts",
+        "apps/web/tests/admin-backups.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/admin-backups.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/admin-backups.test.ts"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/14-import-checkpoint.md"
+        "docs/unified-rebuild/14-import-checkpoint.md",
+        "docs/unified-rebuild/48-backup-export-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "離線成套 data／identity／walls／ledger 匯入、權威投影、私有暫存原子發布、來源變動與未知欄位拒絕已實作；舊 session／intent adapter、來源擷取與維護鎖整合、歷史配對備份、恢復／回退與正式資料驗收尚未完成。"
+      "remaining": "原生寫入前及啟動／每小時配對備份、唯一暫存目錄原子發布、14 天／30 份保留、最新刪除投影與歷史 JSON 已隔離實作。舊歷史成套備份匯入、離線恢復與維護鎖整合、來源擷取、舊 adapters、回退及正式版本組合驗收仍待完成。"
     },
     {
       "capability_id": "O14",
