@@ -15,6 +15,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
     }else if(key===root+'notifications-read:v1:'+scope){continue;/* Recovered directly in the inbox. */}
     else if(key===root+'music:v1:'+scope){label='成分選擇';to='/me/music';}
     else if(key===root+'account-profile:v1:'+scope){label='帳號稱呼';to='/me/profile';}
+    else if(key===root+'payment-codes:v1:'+scope){label='我的收款碼';to='/me/payment-codes';}
     else if(key===root+'music:claim:v1:'+scope){label='找回舊成分';to='/me/music/recover';standalone=true;}
     else if(key.startsWith(root+'music:fields:v1:'+scope+':')){label='成分資料';to='/me/music/details';}
     else if(key.startsWith(root+'music:contact:v1:'+scope+':')){label='聯絡 QQ';to='/me/music/contact';}

@@ -1,4 +1,6 @@
 import { resolve } from 'node:path';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { openDatabase } from '@qgroup/database';
 import { createApp, hash } from '../src/app';
 import { fixture } from './fixture';
@@ -6,9 +8,12 @@ import { musicClaimFixture } from './music-claim-fixture';
 import { financeFixture, financeHistoryFixture } from './finance-fixture';
 import { inboxFixture } from './inbox-fixture';
 import { nicknameFixture } from './nickname-fixture';
+import { paymentFixture } from './payment-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
-const db = openDatabase(':memory:'); fixture(db);
+const paymentRoot = process.env.REBUILD_TEST_PAYMENT === '1' ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
+const db = openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memory:'); fixture(db);
+if (paymentRoot) paymentFixture(db);
 musicClaimFixture(db);
 if (process.env.REBUILD_TEST_FINANCE === '1') { financeFixture(db); financeHistoryFixture(db); }
 if (process.env.REBUILD_TEST_INBOX === '1') inboxFixture(db);
@@ -38,6 +43,6 @@ app.get('/__test/qq', async (request, reply) => {
 });
 await app.listen({ host: '127.0.0.1', port });
 process.send?.('ready');
-async function stop() { await app.close(); db.close(); }
+async function stop() { await app.close(); db.close(); if (paymentRoot) rmSync(paymentRoot, { recursive: true, force: true }); }
 process.once('SIGTERM', () => { void stop(); });
 process.once('SIGINT', () => { void stop(); });

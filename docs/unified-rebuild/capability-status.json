@@ -1863,13 +1863,28 @@
       "new_entry": "結算／圖片檢視",
       "required_behavior": "圖片格式／大小／總量、原圖／下載／失敗重試；每版獨立引用",
       "legacy_evidence_group": "媒體、結算",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "圖片格式／大小／總量、原圖／下載／失敗重試；每版獨立引用"
+      "implementation": [
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/payment-media.ts",
+        "apps/api/src/payment-codes.ts",
+        "apps/web/src/payment-image.tsx",
+        "apps/web/src/payment-codes.tsx",
+        "apps/web/src/settlement-images.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/payment-codes.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/payment-codes.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/payment-codes.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/payment-codes.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生個人碼庫、凍結版本圖片讀取、原圖下載／重試及 Python 雙向相容已實作；仍須完整逐人結算編輯器的本次圖片選取／憑證上傳、每版總量上限與原子發布、完整 bot 圖片投遞及遷移驗收。"
     },
     {
       "capability_id": "S11",
@@ -1877,13 +1892,28 @@
       "new_entry": "我的收款碼",
       "required_behavior": "只本人管理；刪／封存碼庫不改舊帳圖片與版本",
       "legacy_evidence_group": "媒體",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "只本人管理；刪／封存碼庫不改舊帳圖片與版本"
+      "implementation": [
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/payment-media.ts",
+        "apps/api/src/payment-codes.ts",
+        "apps/web/src/payment-image.tsx",
+        "apps/web/src/payment-codes.tsx",
+        "apps/web/src/settlement-images.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/payment-codes.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/payment-codes.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/payment-codes.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/payment-codes.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "私人碼庫新增、來源結算另存、跨帳號隔離、封存保留舊圖與恢復已實作；仍須新逐人結算編輯器實際選碼／換收款人／發布完整流程，以及正式副本遷移與混合 bot 版本驗收。"
     },
     {
       "capability_id": "S12",

@@ -123,6 +123,7 @@ export function Accounts() {
       {viewer.qq.needsReauth && <Text>尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</Text>}
     </Surface>
     <Surface className="detail auth-panel"><Heading level={2}>此裝置已授權的帳號</Heading><Text>切換帳號會保留各自資料。</Text>{accounts.isPending ? <Notice>正在讀取授權…</Notice> : accounts.error ? <Failure error={accounts.error} retry={() => void accounts.refetch()} /> : <ul className="account-list">{accounts.data.accounts.map(account => <li key={account.scope}><span>{account.nickname}{account.current ? '（目前帳號）' : ''}</span>{!account.current && <Button variant="secondary" disabled={busy} onClick={() => void switchTo(account.scope)}>切換至 {account.nickname}</Button>}</li>)}</ul>}</Surface>
+    <Link className="back" to="/me/payment-codes">我的收款碼</Link>
     <Link className="back" to="/me/devices">裝置與帳號紀錄</Link>
     <Link className="back" to="/me/privacy">隱私與資料刪除</Link>
     {viewer.administrator && <Link className="back" to="/admin/registration">註冊設定</Link>}

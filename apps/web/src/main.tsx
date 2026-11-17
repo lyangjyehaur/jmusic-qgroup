@@ -24,6 +24,8 @@ import { Devices, AcceptDevice } from './devices';
 import { Privacy } from './privacy';
 import { Registration, RegistrationAdmin } from './registration';
 import { AccountProfilePage } from './account-profile';
+import { PaymentCodesPage } from './payment-codes';
+import { SettlementImagesPage } from './settlement-images';
 import { AdminHome } from './admin';
 import { AdminPrivacy, AdminPrivacyReview } from './admin-privacy';
 import { AdminDirectory, AdminUserPage } from './admin-users';
@@ -43,6 +45,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
   { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
   { path: 'activities/:id/finance', element: <ActivityFinancePage /> },
+  { path: 'activities/:id/settlement/images', element: <SettlementImagesPage /> },
   { path: 'activities/:id/history', element: <ActivityHistoryPage /> },
   { path: 'activities/:id/attendance', element: <ActivityAttendancePage /> },
   { path: 'activities/:id/delegation', element: <ActivityDelegationPage /> }, { path: 'activities/:id/delegation/:token', element: <AcceptActivityDelegationPage /> },
@@ -58,6 +61,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'login', element: <Login /> }, { path: 'auth/confirm', element: <AuthConfirm /> }, { path: 'me/accounts', element: <Accounts /> }, { path: 'privacy', element: <Privacy /> }, { path: 'me/devices', element: <Devices /> }, { path: 'me/devices/accept', element: <AcceptDevice /> },
   { path: 'register', element: <Registration /> }, { path: 'admin/registration', element: <RegistrationAdmin /> },
   { path: 'me/profile', element: <AccountProfilePage /> },
+  { path: 'me/payment-codes', element: <PaymentCodesPage /> },
   { path: 'me/privacy', element: <MyPrivacy /> },
   { path: 'admin', element: <AdminHome /> }, { path: 'admin/privacy', element: <AdminPrivacy /> }, { path: 'admin/privacy/:id', element: <AdminPrivacyReview /> }, { path: 'admin/users', element: <AdminDirectory /> }, { path: 'admin/users/:id', element: <AdminUserPage /> },
 ] }]);

@@ -148,3 +148,9 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .finance-facts dd:has(a),.finance-facts dd.preserve-lines { text-align:left; }
 .finance-operation-panel > summary { cursor:pointer; font-weight:650; font-size:1.25rem; }
 .finance-operation-panel[open] > summary { margin-bottom:1rem; }
+.payment-library { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 250px), 1fr)); gap: 1rem; }
+.payment-library > li { min-width: 0; padding: .75rem; border: 1px solid var(--border, #ccd9eb); border-radius: .6rem; overflow-wrap: anywhere; }
+.payment-asset { display: grid; gap: .5rem; margin: .5rem 0; min-width: 0; }
+.payment-asset img { display: block; height: auto; max-width: 100%; object-fit: contain; }
+.payment-asset-thumb { width: 220px; max-height: 260px; }
+.payment-asset-original { width: auto; }

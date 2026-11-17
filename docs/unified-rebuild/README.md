@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)、[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)、[管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md)、[現場出席與補錄檢查點](29-activity-attendance-checkpoint.md)、[統一收件匣與活動歷史檢查點](30-inbox-history-checkpoint.md)及[統一收付款帳本檢查點](31-finance-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)、[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)、[管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md)、[現場出席與補錄檢查點](29-activity-attendance-checkpoint.md)、[統一收件匣與活動歷史檢查點](30-inbox-history-checkpoint.md)、[統一收付款帳本檢查點](31-finance-checkpoint.md)及[收款碼與原圖檢查點](32-payment-assets-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -47,6 +47,7 @@
 | [現場出席與補錄檢查點](29-activity-attendance-checkpoint.md) | 出席與費用獨立、現場雙 scope／超額／候補確認、未知結果及 Python 差分 |
 | [統一收件匣與活動歷史檢查點](30-inbox-history-checkpoint.md) | 十類待辦／首次已讀、原操作清單／恢復、數字游標、私密快照及 Python 差分 |
 | [統一收付款帳本檢查點](31-finance-checkpoint.md) | 十種款項／八種命令、私人申報、逐房核對、追加沖正、結清與舊 worker 消費 |
+| [收款碼與原圖檢查點](32-payment-assets-checkpoint.md) | 私人碼庫、凍結碼／憑證原圖、版本分頁、封存保留舊圖與 Python 雙向互讀 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

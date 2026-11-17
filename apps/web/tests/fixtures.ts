@@ -5,15 +5,16 @@ import { fileURLToPath } from 'node:url';
 
 // A fresh process per test prevents one scenario consuming another's real IP quotas
 // or leaving mutable synthetic accounts/settings behind. Runtime limits stay enabled.
-export const test = base.extend<{ preview: void; musicHistory: boolean; rosterExamples: boolean; inboxExamples: boolean; financeExamples: boolean }>({
+export const test = base.extend<{ preview: void; musicHistory: boolean; rosterExamples: boolean; inboxExamples: boolean; financeExamples: boolean; paymentExamples: boolean }>({
+  paymentExamples: [false, { option: true }],
   financeExamples: [false, { option: true }],
   inboxExamples: [false, { option: true }],
   musicHistory: [false, { option: true }],
   rosterExamples: [false, { option: true }],
-  preview: [async ({ musicHistory, rosterExamples, inboxExamples, financeExamples }, use) => {
+  preview: [async ({ musicHistory, rosterExamples, inboxExamples, financeExamples, paymentExamples }, use) => {
     const preview = spawn(process.execPath, ['--import', 'tsx', 'apps/api/testsupport/preview.ts'], {
       cwd: fileURLToPath(new URL('../../../', import.meta.url)), stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-      env: { ...process.env, REBUILD_TEST_FINANCE: financeExamples ? '1' : '0', REBUILD_TEST_MUSIC_HISTORY: musicHistory ? '1' : '0', REBUILD_TEST_ROSTER: rosterExamples ? '1' : '0', REBUILD_TEST_INBOX: inboxExamples ? '1' : '0' },
+      env: { ...process.env, REBUILD_TEST_PAYMENT: paymentExamples ? '1' : '0', REBUILD_TEST_FINANCE: financeExamples ? '1' : '0', REBUILD_TEST_MUSIC_HISTORY: musicHistory ? '1' : '0', REBUILD_TEST_ROSTER: rosterExamples ? '1' : '0', REBUILD_TEST_INBOX: inboxExamples ? '1' : '0' },
     });
     let output = '';
     preview.stdout?.on('data', chunk => { output = (output + String(chunk)).slice(-4000); });

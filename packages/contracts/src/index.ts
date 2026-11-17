@@ -4,6 +4,7 @@ export * from './activity-registration';
 export * from './activity-invitations';
 export * from './activity-claims';
 export * from './activity-delegation';
+export * from './payment-assets';
 
 export const Selection = z.object({ entryId: z.string().min(1).max(80), level: z.number().int().min(1).max(4) }).strict();
 export const SaveProfile = z.object({
