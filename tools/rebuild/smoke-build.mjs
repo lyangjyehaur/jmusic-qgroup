@@ -30,6 +30,17 @@ try {
   const page = await fetch(base + '/me/music'); assert.equal(page.status, 200);
   assert(page.headers.get('content-security-policy')?.includes("script-src 'self'"));
   const html = await page.text();
+  assert.match(html, /name="qgroup-build" content="[a-f0-9]{64}"/);
+  assert(html.includes('href="/manifest.webmanifest"'));
+  const nativeManifest=await fetch(base+'/manifest.webmanifest');assert.equal(nativeManifest.headers.get('cache-control'),'no-store');
+  const pwa=await nativeManifest.json();assert.equal(pwa.id,'/music/index.html');assert.equal(pwa.scope,'/');assert.equal(pwa.start_url,'/activities');
+  const legacyManifest=await fetch(base+'/music/manifest.json');assert.equal(legacyManifest.headers.get('cache-control'),'no-store');assert.deepEqual(await legacyManifest.json(),pwa);
+  for(const path of ['/sw.js','/music/sw.js']){
+    const response=await fetch(base+path);assert.equal(response.status,200);assert.match(response.headers.get('content-type'),/javascript/);assert.equal(response.headers.get('cache-control'),'no-store');assert((await response.text()).length>100);
+  }
+  for(const size of [192,512]){
+    const response=await fetch(base+`/icon-${size}.png`);assert.equal(response.status,200);const info=await sharp(Buffer.from(await response.arrayBuffer())).metadata();assert.equal(info.width,size);assert.equal(info.height,size);assert.equal(info.format,'png');
+  }
   const asset = html.match(/src="([^"]+\.js)"/)[1];
   const bundle = await fetch(base + asset); assert.equal(bundle.status, 200); assert(bundle.headers.get('content-type')?.includes('javascript'));
   // Drain the large response before shutting down; an unread streamed bundle

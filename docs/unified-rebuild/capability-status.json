@@ -3878,13 +3878,29 @@
       "new_entry": "全站",
       "required_behavior": "舊 /music/ 安裝者可更新；API／登入導覽不被離線快取越權",
       "legacy_evidence_group": "成分建置",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "舊 /music/ 安裝者可更新；API／登入導覽不被離線快取越權"
+      "implementation": [
+        "apps/web/pwa-build.ts",
+        "apps/web/src/pwa.tsx",
+        "apps/web/src/pwa/worker.ts",
+        "apps/web/src/pwa/retire-music-worker.ts",
+        "apps/api/src/app.ts"
+      ],
+      "behavior_evidence": [
+        "apps/web/tests/pwa.spec.ts",
+        "tools/rebuild/smoke-build.mjs"
+      ],
+      "data_evidence": [
+        "apps/web/tests/pwa.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/web/tests/pwa.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/pwa.spec.ts",
+        "docs/unified-rebuild/62-pwa-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "統一安裝身分、明確啟用且不自動重載、多視窗舊快取／分塊保全、離線私密隔離、下載失敗與舊 worker 自然退役已有本機瀏覽器證據。真實既有安裝者、手機實機與多平台升級、全部語系及正式切換／回退仍待 P6／P7 驗收；IndexedDB／舊草稿遷移未完成。未部署。"
     },
     {
       "capability_id": "C07",
@@ -4385,7 +4401,8 @@
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "apps/bot/src/outbox.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/replies.test.ts",
@@ -4401,7 +4418,8 @@
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生六主指令、全部別名、公開回覆、縮寫及訊息／按鈕已接入可執行 runtime；面板設定 revision、停止與本機投遞互斥已有隔離證據。完整舊入口、正式資料、實際版本組合與 QQ 仍待驗收，見 54–57 號檢查點。"
@@ -4788,7 +4806,8 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。"
@@ -4897,7 +4916,8 @@
         "apps/bot/src/ownership.test.ts",
         "apps/api/src/bot-deliveries.test.ts",
         "apps/web/tests/bot-deliveries.spec.ts",
-        "tools/rebuild/smoke-build.mjs"
+        "tools/rebuild/smoke-build.mjs",
+        "apps/bot/src/dispatch-workers.test.ts"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -4918,7 +4938,8 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "apps/web/tests/bot-deliveries.spec.ts",
-        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
+        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。"
@@ -5300,11 +5321,14 @@
         "packages/domain/src/legacy-navigation.ts",
         "apps/web/src/activity-entry.tsx",
         "apps/web/src/main.tsx",
-        "apps/api/src/app.ts"
+        "apps/api/src/app.ts",
+        "apps/web/src/pwa.tsx",
+        "apps/web/src/pwa/retire-music-worker.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/legacy-navigation.test.ts",
-        "apps/api/src/activity-access.test.ts"
+        "apps/api/src/activity-access.test.ts",
+        "apps/web/tests/pwa.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-access.test.ts"
@@ -5313,10 +5337,11 @@
         "apps/api/src/activity-access.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/legacy-navigation.spec.ts"
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "docs/unified-rebuild/62-pwa-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "舊 /music/ hash、index.html／admin.html／privacy.html 已轉原生入口；舊 /music/api 的內部／管理／export 路徑明確 404，偽造代理 context 不取得原生管理權。舊 worker／cookie／SW 退役、全量成分網址及正式切換來源仍待後續驗收；未部署。"
+      "remaining": "舊 hash／HTML／bot 入口已轉原生流程，偽造代理 context 的舊 API 明確拒絕。精確 /music/ SW 註冊自然退役、原草稿及其他應用快取保全已有本機瀏覽器證據。舊 worker／cookie 最終退役、真實已安裝使用者、全量成分網址及正式切換／回退仍待驗收；未部署。"
     },
     {
       "capability_id": "O03",
@@ -5338,14 +5363,17 @@
         "apps/web/src/activity-drafts.tsx",
         "apps/web/src/activity-registration.tsx",
         "apps/web/src/activity-attendance.tsx",
-        "apps/web/src/contact.tsx"
+        "apps/web/src/contact.tsx",
+        "apps/web/src/pwa.tsx",
+        "apps/web/src/pwa/retire-music-worker.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
         "docs/unified-rebuild/30-inbox-history-checkpoint.md",
         "apps/api/src/finance.test.ts",
         "packages/domain/src/legacy-navigation.test.ts",
-        "apps/api/src/activity-access.test.ts"
+        "apps/api/src/activity-access.test.ts",
+        "apps/web/tests/pwa.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-access.test.ts"
@@ -5358,7 +5386,8 @@
         "apps/web/tests/inbox-history.spec.ts",
         "apps/web/tests/activity-finance.spec.ts",
         "apps/web/tests/legacy-navigation.spec.ts",
-        "apps/web/tests/activity-invitations.spec.ts"
+        "apps/web/tests/activity-invitations.spec.ts",
+        "docs/unified-rebuild/62-pwa-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已補全部既有 bot action 的明確原生目標、四類活動 token、poll／裝置 fragment／QQ return、音樂八類 hash、管理／隱私／聯絡入口與 replace 返回；party／tentative／report／onsite 預設保留舊稿，無 URL 自動業務提交。Python bot 實際產生連結有交叉測試；完整使用手冊、舊已安裝 PWA、真實 QQ 回調與切換後實際版本組合仍待驗收。"

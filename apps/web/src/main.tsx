@@ -1,3 +1,4 @@
+import { AppSettingsPage, PWAProvider } from './pwa';
 import { AdminBotPage } from './admin-bot';
 import { AdminBotDeliveriesPage,BotDeliveriesPage } from './bot-deliveries';
 import { MusicRoomsPage } from './music-rooms';
@@ -70,6 +71,7 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'time-polls/:id/bot-deliveries', element: <BotDeliveriesPage entity="poll" /> },
   { path: 'admin/appearance', element: <AdminAppearancePage /> },
   { path: 'admin/backups', element: <AdminBackupsPage /> },
+  { path: 'me/app', element: <AppSettingsPage /> },
   { path: 'me/appearance', element: <AppearancePage /> },
   { path: 'inbox', element: <InboxPage /> },
   { index: true, element: <Activities /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
@@ -107,4 +109,4 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'admin', element: <AdminHome /> }, { path: 'admin/privacy', element: <AdminPrivacy /> }, { path: 'admin/privacy/:id', element: <AdminPrivacyReview /> }, { path: 'admin/users', element: <AdminDirectory /> }, { path: 'admin/users/:id', element: <AdminUserPage /> },
 ] }]);
 bootstrapAppearance();
-createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><AppearanceProvider><RouterProvider router={router} /></AppearanceProvider></QueryClientProvider></React.StrictMode>);
+createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><AppearanceProvider><PWAProvider><RouterProvider router={router} /></PWAProvider></AppearanceProvider></QueryClientProvider></React.StrictMode>);

@@ -6,6 +6,9 @@ import { fileURLToPath } from 'node:url';
 // A fresh process per test prevents one scenario consuming another's real IP quotas
 // or leaving mutable synthetic accounts/settings behind. Runtime limits stay enabled.
 export const test = base.extend<{ preview: void; backupExamples: boolean; botDeliveryExamples:boolean; adminCatalog: boolean; musicShouts: boolean; musicCircles: boolean; musicMatches: boolean; musicRooms: boolean; musicTrend: boolean; musicHistory: boolean; rosterExamples: boolean; inboxExamples: boolean; financeExamples: boolean; paymentExamples: boolean; settlementExamples: boolean; pollExamples: boolean }>({
+  // Business specs intercept requests to inject lost responses and mock OAuth.
+  // A SW fetch bypasses Playwright's page routing; lifecycle specs opt in below.
+  serviceWorkers: 'block',
   botDeliveryExamples: [false, { option: true }],
   backupExamples: [false, { option: true }],
   adminCatalog: [false, { option: true }],

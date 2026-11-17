@@ -77,6 +77,8 @@
 | [bot 跨應用身分診斷檢查點](59-bot-identity-diagnostics-checkpoint.md) | UnionID 是否存在／站內布林匹配、唯讀隔離、診斷容量限制與原始識別值保密 |
 | [合作方 API v1 檢查點](60-partner-api-checkpoint.md) | 原路徑／鑑權／錯誤契約、逐欄 Python 差分、唯讀快照、名冊／包間白名單與 bot 資料保全 |
 | [舊入口與活動邀請檢查點](61-legacy-navigation-checkpoint.md) | bot actions／成分 hash、明確可見授權、私人分享、再約草稿與本人活動 |
+| [統一 PWA 與舊離線元件退役檢查點](62-pwa-checkpoint.md) | 安裝身分、明確更新、多視窗快取保全、離線資料隔離及舊 worker 自然退役 |
+| [bot 並行寫入交易檢查點](63-bot-sqlite-locking-checkpoint.md) | WAL writer 競爭、群觀察保全、政策版本刷新及修正前後回歸 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論
