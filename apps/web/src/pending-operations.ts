@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { musicShoutDraftTarget,parseMusicShoutDraft } from './music-shout-record';
 import { activityAccessDraftRoute, PendingActivityAccess } from './activity-access-record';
 import { botDeliveryDraftRoute, PendingBotDelivery } from './bot-delivery-record';
 export type PendingOperation={id:string;label:string;to:string;damaged:boolean;requestKey?:string;adminScope?:string};
@@ -10,6 +11,14 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
   const rows:PendingOperation[]=[];
   for(let i=0;i<storage.length;i++){
     const key=storage.key(i);if(!key||!key.startsWith(root)||key.includes(':recovery:'))continue;
+    const shout=musicShoutDraftTarget(key,scope);
+    if(shout){
+      try{
+        const draft=parseMusicShoutDraft(storage.getItem(key)??'{}',shout);
+        if(draft.pending)rows.push({id:key,label:'發布找搭子',to:'/people/shouts',damaged:false,requestKey:draft.pending.key});
+      }catch{rows.push({id:key,label:'發布找搭子',to:'/people/shouts',damaged:true});}
+      continue;
+    }
     const access=activityAccessDraftRoute(key,scope);
     if(access){
       try{

@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
+import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 const origin = 'http://127.0.0.1:5082';
 test.use({ musicShouts: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
@@ -35,10 +36,10 @@ test('details, author profiles, clipboard fallbacks and all history pages preser
 });
 test('drafts survive explicit navigation and reload; Unicode limits, publication and cooldown stay consistent', async ({ page, context }) => {
   await login(context); await page.goto('/people/shouts'); await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('草稿保留');
-  await page.getByRole('link', { name: '回到同好', exact: true }).click(); await expect(page.getByText('仍有找搭子草稿或待確認發布。', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.getByRole('link', { name: '找搭子', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); page.on('dialog', dialog => void dialog.accept()); await page.reload();
-  await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留');
+  await page.getByRole('link', { name: '回到同好', exact: true }).click(); await expect(page.getByText('仍有未完成原稿。', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('link', { name: '找搭子', exact: true }).click();
+  await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
+  await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('\u0085\u001c'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('\ufeff'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeEnabled();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('𠀀'.repeat(141));
@@ -71,12 +72,10 @@ test('administrators recover an unknown deletion even after the detail is gone a
 });
 test('damaged drafts are preserved and unavailable storage prevents publication', async ({ page, context }) => {
   await login(context); await page.goto('/people/shouts'); await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toBeVisible();
-  await page.evaluate(() => { const key = Object.keys(sessionStorage).find(key => key.startsWith('qgroup:rebuild:music:shout:'))!; sessionStorage.setItem(key, 'damaged shout draft'); }); await page.reload();
-  await expect(page.getByText('無法讀取找搭子草稿，原始內容已保留。請先保全原稿。', { exact: true })).toBeVisible(); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled();
-  await page.getByRole('button', { name: '保全原稿後繼續', exact: true }).click(); expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged shout draft');
-  await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('synthetic quota', 'QuotaExceededError'); }; }); await page.reload();
-  await expect(page.getByText('無法保存找搭子草稿，尚未送出。', { exact: true })).toBeVisible(); let writes = 0; page.on('request', request => { if (request.method() === 'POST') writes++; });
-  await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('不可遺失'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled(); expect(writes).toBe(0);
+  await page.getByRole('textbox',{name:'找搭子內容',exact:true}).fill('損壞前的原稿');await damageDraft(page,':shout:','damaged shout draft');page.on('dialog',dialog=>void dialog.accept());await page.reload();
+  await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();await expect(page.getByRole('button',{name:'發布找搭子',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain('damaged shout draft');
+  await denyDraftWrites(page,':shout:');let writes=0;page.on('request',request=>{if(request.method()==='POST')writes++;});await page.getByRole('textbox',{name:'找搭子內容',exact:true}).fill('不可遺失');await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await page.getByRole('button',{name:'發布找搭子',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未發布。',{exact:true})).toBeVisible();expect(writes).toBe(0);
 });
 test('late responses do not cross account changes and cross-tab erasure removes drafts and private details', async ({ page, context }) => {
   await login(context); let arrived!: () => void, release!: () => void; const captured = new Promise<void>(resolve => { arrived = resolve; }), pending = new Promise<void>(resolve => { release = resolve; }); let hold = true;
@@ -85,7 +84,7 @@ test('late responses do not cross account changes and cross-tab erasure removes 
   await login(context); await refresh(page); await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('跨分頁刪除的草稿');
   const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible(); await expect(list(page)).toHaveCount(0);
-  await expect.poll(() => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:shout:')))).toEqual([]); await privacy.close();
+  await expect.poll(() => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:shout:')))).toEqual([]); expect((await durableRows(page)).filter(row=>row.key.includes(':shout:'))).toEqual([]); await privacy.close();
 });
 test('failed refreshes hide old private results and offer a retry; unsafe return paths are discarded', async ({ page, context }) => {
   await login(context); let fail = false; await page.route('**/api/v2/music/shouts?*', route => fail ? route.fulfill({ status: 503, json: { code: 'FAIL', message: '找搭子暫時無法讀取' } }) : route.continue());

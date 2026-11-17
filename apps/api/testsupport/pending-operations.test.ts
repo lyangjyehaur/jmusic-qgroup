@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { musicShoutDraftTarget,parseMusicShoutDraft } from '../../web/src/music-shout-record';
 import { activityAccessDraftRoute } from '../../web/src/activity-access-record';
 import { botDeliveryDraftRoute } from '../../web/src/bot-delivery-record';
 import { pendingOperations } from '../../web/src/pending-operations';
@@ -83,5 +84,28 @@ describe('activity view invitation recovery inventory',()=>{
   const name=prefix+'activity:'+token;
   for(const value of ['PRIVATE_DAMAGED',JSON.stringify({key,input:{revision:-1,confirm:true}}),JSON.stringify({key,input:{revision:1,confirm:false}})])
    expect(pendingOperations(storage({[name]:value}),current)).toEqual([{id:name,label:'活動查看邀請',to:'/activities/activity/access/'+token,damaged:true}]);
+ });
+});
+
+describe('scoped shout recovery inventory',()=>{
+ const prefix=root+'music:shout:v1:'+current+':',name=prefix+'2:profile',raw=JSON.stringify({text:'PRIVATE_TEXT',pending:{key,input:{profileId:'profile',musicEpoch:2,text:'PRIVATE_TEXT',confirm:true}}});
+ it('shows only pending or damaged original commands at the fixed composer and uses member receipts',()=>{
+  expect(pendingOperations(storage({[name]:raw}),current)).toEqual([{id:name,label:'發布找搭子',to:'/people/shouts',damaged:false,requestKey:key}]);
+  expect(JSON.stringify(pendingOperations(storage({[name]:raw}),current))).not.toContain('PRIVATE_TEXT');
+  expect(pendingOperations(storage({[name]:raw}),other)).toEqual([]);
+  expect(pendingOperations(storage({[name]:JSON.stringify({text:'PRIVATE_UNSENT'})}),current)).toEqual([]);
+  expect(pendingOperations(storage({[name]:'PRIVATE_DAMAGED'}),current)).toEqual([{id:name,label:'發布找搭子',to:'/people/shouts',damaged:true}]);
+ });
+ it('rejects noncanonical epochs and malformed or cross-account targets',()=>{
+  expect(musicShoutDraftTarget(name,current)).toEqual({musicEpoch:2,profileId:'profile'});
+  for(const tail of ['02:profile','-1:profile','1e2:profile','9007199254740992:profile','2:','2:profile:extra'])expect(musicShoutDraftTarget(prefix+tail,current)).toBeNull();
+  expect(musicShoutDraftTarget(name,other)).toBeNull();
+ });
+ it('preserves inconsistent text, profile or epoch as damaged instead of silently substituting a new command',()=>{
+  for(const patch of [{text:'other'}, {profileId:'other'}, {musicEpoch:3}]){
+   const value=JSON.parse(raw);Object.assign(value.pending.input,patch);
+   expect(()=>parseMusicShoutDraft(JSON.stringify(value),{musicEpoch:2,profileId:'profile'})).toThrow();
+   expect(pendingOperations(storage({[name]:JSON.stringify(value)}),current)[0]?.damaged).toBe(true);
+  }
  });
 });

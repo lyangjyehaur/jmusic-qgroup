@@ -1,3 +1,4 @@
+import { musicShoutDraftTarget } from './music-shout-record';
 import { MusicPinResultRequest } from '@qgroup/contracts';
 import { activityAccessDraftRoute } from './activity-access-record';
 import { botDeliveryDraftRoute } from './bot-delivery-record';
@@ -61,6 +62,7 @@ function validate(key: string, scope: string) {
     key === prefix + 'notifications-read:v1:' + scope ||
     !!botDeliveryDraftRoute(key, scope) ||
     !!activityAccessDraftRoute(key, scope) ||
+    !!musicShoutDraftTarget(key, scope) ||
     new RegExp('^qgroup:rebuild:admin-(?:bot|catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
     new RegExp('^qgroup:rebuild:admin-(?:user|privacy|music|music-pin):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
