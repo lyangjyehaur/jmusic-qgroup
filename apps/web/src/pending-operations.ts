@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { botDeliveryDraftRoute, PendingBotDelivery } from './bot-delivery-record';
 export type PendingOperation={id:string;label:string;to:string;damaged:boolean;requestKey?:string;adminScope?:string};
 const root='qgroup:rebuild:';
 const uuid=z.string().uuid(),token=/^[A-Za-z0-9_-]{32}$/;
@@ -8,6 +9,14 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
   const rows:PendingOperation[]=[];
   for(let i=0;i<storage.length;i++){
     const key=storage.key(i);if(!key||!key.startsWith(root)||key.includes(':recovery:'))continue;
+    const delivery=botDeliveryDraftRoute(key,scope);
+    if(delivery){
+      try{
+        const pending=PendingBotDelivery.nullable().parse(JSON.parse(storage.getItem(key)??'null'));
+        if(pending)rows.push({id:key,label:'群通知重送',to:delivery.path,damaged:false,requestKey:pending.key});
+      }catch{rows.push({id:key,label:'群通知重送',to:delivery.path,damaged:true});}
+      continue;
+    }
     let label='',to='',standalone=false,adminScope:string|undefined;
     if(key===root+'privacy-pending:v1'){
       try{const raw=JSON.parse(storage.getItem(key)??'null');if(typeof raw?.scope!=='string'||!/^[a-f0-9]{64}$/.test(raw.scope))throw Error('scope');if(raw.scope!==scope)continue;}catch{rows.push({id:key,label:'無法辨識帳號的刪除紀錄',to:'/me/privacy',damaged:true});continue;}

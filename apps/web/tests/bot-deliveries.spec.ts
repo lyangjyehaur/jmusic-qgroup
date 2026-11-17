@@ -1,5 +1,6 @@
 import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
+import { denyDraftWrites } from './draft-helpers';
 const origin='http://127.0.0.1:5082';
 test.use({botDeliveryExamples:true});
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
@@ -28,8 +29,9 @@ test('storage failure prevents submission and uncertain or already sent records 
   await login(context);let writes=0;page.on('request',request=>{if(request.url().endsWith('/retry')&&request.method()==='POST')writes++;});
   await page.goto('/activities/listen/bot-deliveries?delivery=3');await expect(page.getByRole('alert').filter({hasText:'投遞結果未確認'})).toBeVisible();await expect(page.getByRole('button',{name:'建立重送工作',exact:true})).toHaveCount(0);
   await page.goto('/activities/listen/bot-deliveries?delivery=4');await expect(page.getByRole('alert').filter({hasText:'已確認送出'})).toBeVisible();await page.goto('/activities/listen/bot-deliveries?delivery=1');
-  await page.evaluate(()=>{const original=Storage.prototype.setItem;Object.defineProperty(window,'restoreSyntheticStorage',{configurable:true,value:()=>{Storage.prototype.setItem=original;}});Storage.prototype.setItem=function(key,value){if(key.startsWith('qgroup:rebuild:activity-draft:bot-delivery:'))throw Error('synthetic storage unavailable');return original.call(this,key,value);};});
-  await confirm(page);await expect(page.getByText('無法保存重送操作編號，請先修復瀏覽器儲存後再操作。',{exact:true})).toBeVisible();expect(writes).toBe(0);await page.evaluate(()=>(window as unknown as {restoreSyntheticStorage:()=>void}).restoreSyntheticStorage());await page.getByRole('button',{name:'保全操作紀錄後繼續',exact:true}).click();await confirm(page);await expect(page.getByText(/已建立待送工作 #7/)).toBeVisible();expect(writes).toBe(1);
+  await page.evaluate(()=>{Object.defineProperty(window,'restoreSyntheticStorage',{configurable:true,value:IDBObjectStore.prototype.put});});
+  await denyDraftWrites(page,'bot-delivery:');
+  await confirm(page);await expect(page.getByText('無法保存重送操作編號，請先修復瀏覽器儲存後再操作。',{exact:true})).toBeVisible();expect(writes).toBe(0);await page.evaluate(()=>{IDBObjectStore.prototype.put=(window as unknown as {restoreSyntheticStorage:typeof IDBObjectStore.prototype.put}).restoreSyntheticStorage;});await page.getByRole('button',{name:'建立重送工作',exact:true}).click();await expect(page.getByText(/已建立待送工作 #7/)).toBeVisible();expect(writes).toBe(1);
 });
 test('poll owner reviews regenerated candidates and queues a new notice from the unified delivery screen',async({page,context})=>{
   await login(context);await page.goto('/time-polls/poll-exact/manage');await page.getByRole('link',{name:'群通知紀錄',exact:true}).click();await page.getByRole('button',{name:'核對通知 #6',exact:true}).click();await expect(page.getByRole('region',{name:'通知核對 #6',exact:true})).toContainText('共 2 个候选');await confirm(page);await expect(page.getByText(/已建立待送工作 #7/)).toBeVisible();expect((await rows(context,'/time-polls/poll-exact/bot-deliveries')).entries).toHaveLength(2);

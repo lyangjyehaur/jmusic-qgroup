@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { botDeliveryDraftRoute } from '../../web/src/bot-delivery-record';
 import { pendingOperations } from '../../web/src/pending-operations';
 const current='a'.repeat(64),other='b'.repeat(64),authority='c'.repeat(64),key='00000000-0000-4000-8000-000000000001',root='qgroup:rebuild:';
 function storage(rows:Record<string,string>){const values=Object.entries(rows);return {length:values.length,key:(i:number)=>values[i]?.[0]??null,getItem:(key:string)=>rows[key]??null};}
@@ -34,4 +35,29 @@ describe('scoped pending operation inventory',()=>{
  it('excludes other accounts, preserved damaged copies, device authorizations and ordinary unsent drafts',()=>{const result=pendingOperations(storage({[root+'music:v1:'+other]:pending,[root+'activity-draft:v1:'+other+':new']:pending,[root+'music:v1:'+current+':recovery:123']:pending,[root+'device-link']:JSON.stringify({token:'PRIVATE_TOKEN'}),[root+'music:v1:'+current]:JSON.stringify({selections:[],revision:0}),[root+'activity-draft:lifecycle:v1:'+current+':e']:JSON.stringify({action:'start'})}),current);expect(result).toEqual([]);});
  it('retains damaged drafts as actionable entries and keeps standalone privacy, PIN and music recovery operations private',()=>{const rows={[root+'music:v1:'+current]:'broken raw private text',[root+'activity-draft:attendance:v1:'+current+':e']:JSON.stringify({pending:{key}}),[root+'privacy-pending:v1']:JSON.stringify({scope:current,input:{secret:'PRIVATE_SECRET'}}),[root+'admin-music-pin:v1:'+current+':'+authority+':p']:JSON.stringify({requestId:key}),[root+'music:claim:v1:'+current]:JSON.stringify({requestId:key,legacyQQ:'PRIVATE_QQ'})};const result=pendingOperations(storage(rows),current);expect(result).toHaveLength(5);expect(result.filter(row=>row.damaged)).toHaveLength(2);expect(JSON.stringify(result)).not.toMatch(/PRIVATE_|private text/);expect(pendingOperations(storage({[root+'privacy-pending:v1']:JSON.stringify({scope:other,input:{}})}),current)).toEqual([]);expect(pendingOperations(storage({[root+'privacy-pending:v1']:'damaged PRIVATE_PRIVACY'}),current)).toEqual([{id:root+'privacy-pending:v1',label:'無法辨識帳號的刪除紀錄',to:'/me/privacy',damaged:true}]);});
  it('accepts original requestKey drafts without treating invalid keys as successfully recoverable',()=>{const result=pendingOperations(storage({[root+'music:v1:'+current]:JSON.stringify({requestKey:key}),[root+'account-profile:v1:'+current]:JSON.stringify({requestKey:'bad'})}),current);expect(result[0]).toMatchObject({requestKey:key,damaged:false});expect(result[1]).toMatchObject({damaged:true});});
+});
+
+describe('manual bot delivery recovery inventory',()=>{
+ const prefix=root+'activity-draft:bot-delivery:v1:'+current+':';
+ const raw=JSON.stringify({id:'1',key,input:{reviewToken:'d'.repeat(64),confirm:true}});
+ it('keeps both original business routes and member receipts without exposing the command token',()=>{
+  const paths=['/activities/listen/bot-deliveries','/time-polls/poll-exact/bot-deliveries'];
+  const result=pendingOperations(storage(Object.fromEntries(paths.map(path=>[prefix+path,raw]))),current);
+  expect(result).toEqual(paths.map(to=>({id:prefix+to,label:'群通知重送',to,requestKey:key,damaged:false})));
+  expect(JSON.stringify(result)).not.toContain('d'.repeat(64));expect(result.every(row=>!row.adminScope)).toBe(true);
+  expect(pendingOperations(storage({[prefix+paths[0]]:raw}),other)).toEqual([]);
+ });
+ it('omits null completion placeholders but preserves damaged original commands as actionable routes',()=>{
+  const name=prefix+'/activities/listen/bot-deliveries';
+  expect(pendingOperations(storage({[name]:'null'}),current)).toEqual([]);
+  for(const value of ['PRIVATE_RAW',JSON.stringify({id:'1',key,input:{reviewToken:'bad',confirm:true}}),JSON.stringify({...JSON.parse(raw),url:'https://evil.example'})])
+   expect(pendingOperations(storage({[name]:value}),current)).toEqual([{id:name,label:'群通知重送',to:'/activities/listen/bot-deliveries',damaged:true}]);
+ });
+ it('accepts canonical encoded IDs and rejects injected or noncanonical navigation',()=>{
+  const path='/activities/'+encodeURIComponent('活動/a:b')+'/bot-deliveries';
+  expect(botDeliveryDraftRoute(prefix+path,current)).toEqual({path,id:'活動/a:b',entity:'activity'});
+  const paths=['https://evil.example','//evil.example/bot-deliveries','/activities/./bot-deliveries','/activities/../bot-deliveries','/activities/%2E/bot-deliveries','/activities/%2e%2e/bot-deliveries','/activities/%zz/bot-deliveries','/activities/%61/bot-deliveries','/activities/a%2fb/bot-deliveries','/activities/x/bot-deliveries?x=1','/activities/x/bot-deliveries#x','/activities/x/bot-deliveries/extra','/activities/'+('x'.repeat(81))+'/bot-deliveries'];
+  for(const value of paths){expect(botDeliveryDraftRoute(prefix+value,current),value).toBeNull();expect(pendingOperations(storage({[prefix+value]:raw}),current),value).toEqual([]);}
+  expect(botDeliveryDraftRoute(prefix+path,other)).toBeNull();expect(botDeliveryDraftRoute(prefix+path,'A'.repeat(64))).toBeNull();
+ });
 });
