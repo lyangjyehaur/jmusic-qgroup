@@ -144,3 +144,4 @@ export * from './backups';
 export * from './music-rooms';
 export * from './bot-policy';
 export * from './bot-deliveries';
+export * from './activity-access';

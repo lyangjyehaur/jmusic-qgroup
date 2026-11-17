@@ -1,3 +1,4 @@
+import { registerActivityAccess } from './activity-access';
 import { registerAdminBot } from './admin-bot';
 import { registerBotDeliveries } from './bot-deliveries';
 import { registerMusicRooms } from './music-rooms';
@@ -15,7 +16,7 @@ import { z } from 'zod';
 import { assertDatabaseUsable, REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
 import { SaveProfile } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
-import { catalog, getActivity, getProfile, listActivities, saveProfile } from './repositories';
+import { catalog, getActivity, getProfile, listActivities, listMyActivities, saveProfile } from './repositories';
 
 import { createSecurity, hash } from './security';
 import { registerAuth } from './auth';
@@ -96,7 +97,7 @@ export function createApp(options: AppOptions) {
   // Register routes after plugins so their onRoute hooks enforce per-route limits.
   app.register(async function routes(app) {
     app.addHook('onRequest', async (request, reply) => {
-      if (request.url.startsWith('/api/') || request.url.startsWith('/auth/')) reply.header('Cache-Control', 'no-store').header('Vary', 'Cookie');
+      if (request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || request.url.startsWith('/auth/')) reply.header('Cache-Control', 'no-store').header('Vary', 'Cookie');
       privacy.guard();
     });
     app.setErrorHandler((error, request, reply) => {
@@ -130,6 +131,7 @@ export function createApp(options: AppOptions) {
     registerMusicTrend(app, db, security, now);
     registerMusicFields(app, db, security, now);
     registerActivityRoster(app, db, security, options.qq?.clientId);
+    registerActivityAccess(app, db, security, now);
     registerActivityDrafts(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityManagement(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerActivityLifecycle(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
@@ -147,6 +149,10 @@ export function createApp(options: AppOptions) {
     registerInbox(app, db, security, now);
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
+    app.get('/api/v2/me/activities', async request => {
+      const user=security.scopedMember(request),query=z.object({page:z.coerce.number().int().min(1).max(10000).default(1)}).strict().parse(request.query);
+      return db.transaction(()=>listMyActivities(db,user.id,query.page,now()))();
+    });
     app.get('/api/v2/activities', async request => {
       const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
       return listActivities(db, query.page, query.period, now());
@@ -181,7 +187,7 @@ export function createApp(options: AppOptions) {
     if (options.staticRoot) {
       app.register(staticFiles, { root: options.staticRoot, wildcard: false });
       app.setNotFoundHandler((request, reply) => {
-        if (request.method !== 'GET' || request.url.startsWith('/api/') || request.url.split('?')[0]!.includes('.')) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
+        if (request.method !== 'GET' || request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || (request.url.split('?')[0]!.includes('.')&&!['/music/index.html','/music/admin.html','/privacy.html','/music/privacy.html','/contact.html'].includes(request.url.split('?')[0]!))) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
         return reply.type('text/html').sendFile('index.html', { maxAge: 0 });
       });
     }

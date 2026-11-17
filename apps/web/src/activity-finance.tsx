@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useBlocker, useParams } from 'react-router-dom';
+import { Link, useBlocker, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
@@ -26,7 +26,7 @@ function Summary({data}:{data:View}){const s=data.summary,recipients=new Map<str
   {s.custodians.some(c=>c.held_cents>0)&&<details><summary>代收資金保管人</summary><ul>{s.custodians.filter(c=>c.held_cents>0).map(c=><li key={c.id}>{c.label}：{money(c.held_cents)}</li>)}</ul></details>}
 </Surface>;}
 export function ActivityFinancePage(){const {id=''}=useParams(),session=useSession();return <><PageIntro title="收付款帳本"/><div className="page-actions"><Link to={path(id)}>回到活動</Link><Link to={path(id)+'/settlement'}>逐人結算</Link><Link to={path(id)+'/settlement/images'}>結算原圖</Link><Link to={path(id)+'/history'}>活動歷史</Link></div>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:session.data?<Loader key={session.data.scope+':'+id} viewer={session.data} id={id}/>:<Notice>正在確認帳號…</Notice>}</>;}
-function Loader({viewer,id}:{viewer:Viewer;id:string}){const query=useQuery({queryKey:['private',viewer.scope,'finance',id],queryFn:()=>api(path(id)+'/finance',FinanceView,{headers:headers(viewer)}),refetchOnWindowFocus:false});return query.isPending?<Notice>正在讀取帳本…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:viewer.authenticated?<Editor viewer={viewer} initial={query.data}/>:<><Summary data={query.data}/><Notice><Link to={loginLink(path(id)+'/finance')}>登入</Link>後可申報本人款項。</Notice><Journal viewer={viewer} data={query.data}/></>;}
+function Loader({viewer,id}:{viewer:Viewer;id:string}){const [search]=useSearchParams();const query=useQuery({queryKey:['private',viewer.scope,'finance',id],queryFn:()=>api(path(id)+'/finance',FinanceView,{headers:headers(viewer)}),refetchOnWindowFocus:false});return query.isPending?<Notice>正在讀取帳本…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:viewer.authenticated?<Editor viewer={viewer} initial={query.data}/>:<><Summary data={query.data}/><Notice><Link to={loginLink(path(id)+'/finance'+(search.size?'?'+search:''))}>登入</Link>後可申報本人款項。</Notice><Journal viewer={viewer} data={query.data}/></>;}
 const Pending=z.object({key:z.string().uuid(),input:FinanceSaveInput}).strict();
 const Draft=z.object({revision:z.number().int().nonnegative(),operation:FinanceCommand,dirty:z.boolean(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
@@ -38,10 +38,11 @@ const EditableCommand=z.discriminatedUnion('command',[
 ]);
 const EditableDraft=Draft.extend({operation:EditableCommand}).refine(value=>!value.pending||(value.pending.input.revision===value.revision&&JSON.stringify(FinanceCommand.safeParse(value.operation).data)===JSON.stringify(value.pending.input.operation)));
 function Editor({viewer,initial}:{viewer:Member;initial:View}){
+ const [search]=useSearchParams(),reportPreset=search.get('preset')==='report';
  const [data,setData]=useState(initial),key='qgroup:rebuild:activity-draft:finance:v1:'+viewer.scope+':'+initial.id,client=useQueryClient(),active=useRef(true);
- const blank=(fresh:View):DraftValue=>({revision:fresh.revision,operation:newOperation(fresh,fresh.summary.can_manage?'record':'report'),dirty:false});
- const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(key);if(!raw)return {value:blank(initial),error:''};const value=EditableDraft.parse(JSON.parse(raw));return {value,error:''};}catch{return {value:blank(initial),error:'無法讀取帳本原稿，請先保全原稿。'};}});
- const [expanded,setExpanded]=useState(loaded.value.dirty||!!loaded.value.pending||!!loaded.error),[draft,setDraft]=useState<DraftValue>(loaded.value),[readError,setReadError]=useState(loaded.error),[storageError,setStorageError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[preview,setPreview]=useState<z.infer<typeof FinancePreview>|null>(null),[confirmed,setConfirmed]=useState(false);
+ const blank=(fresh:View):DraftValue=>({revision:fresh.revision,operation:newOperation(fresh,reportPreset?'report':fresh.summary.can_manage?'record':'report'),dirty:false});
+ const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(key);if(!raw)return {value:blank(initial),error:''};const value=EditableDraft.parse(JSON.parse(raw));return {value:reportPreset&&!value.dirty&&!value.pending?blank(initial):value,error:''};}catch{return {value:blank(initial),error:'無法讀取帳本原稿，請先保全原稿。'};}});
+ const [expanded,setExpanded]=useState(reportPreset||loaded.value.dirty||!!loaded.value.pending||!!loaded.error),[draft,setDraft]=useState<DraftValue>(loaded.value),[readError,setReadError]=useState(loaded.error),[storageError,setStorageError]=useState(''),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[preview,setPreview]=useState<z.infer<typeof FinancePreview>|null>(null),[confirmed,setConfirmed]=useState(false);
  const dirty=draft.dirty||!!draft.pending,blocker=useBlocker(dirty),locked=busy||!!readError||!!draft.pending,stale=draft.revision!==data.revision;
  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
  function persist(next:DraftValue){try{sessionStorage.setItem(key,JSON.stringify(next));setStorageError('');return true;}catch{setStorageError('無法保存帳本操作編號，尚未送出。');return false;}}

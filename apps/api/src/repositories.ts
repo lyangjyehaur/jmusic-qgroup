@@ -1,3 +1,5 @@
+import { eventRow } from './activity-arrangements';
+import { financeSummary } from './finance-context';
 import { randomUUID } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import type { ActivityView, MusicEntry, MusicProfile, SaveProfileInput } from '@qgroup/contracts';
@@ -30,6 +32,12 @@ export function listActivities(db: DB, page: number, period: 'upcoming' | 'histo
   const condition = period === 'history' ? "(e.archived_at IS NOT NULL OR e.lifecycle IN ('ended','cancelled'))" : "(e.archived_at IS NULL AND e.lifecycle NOT IN ('ended','cancelled'))";
   const rows = db.prepare(publicEvents + ' AND ' + condition + ` ORDER BY e.starts_at ${period === 'history' ? 'DESC' : 'ASC'},e.id LIMIT 21 OFFSET ?`).all((page - 1) * 20) as EventRow[];
   return { events: rows.slice(0, 20).map(r => serializeEvent(r, now)), page, hasMore: rows.length > 20 };
+}
+/** Include historical obligations after withdrawal; an access grant alone is not participation. */
+export function listMyActivities(db:DB,userId:string,page:number,now:Date){
+  const rows=db.prepare(eventProjection+" WHERE e.status!='deleted' AND ((e.lifecycle='draft' AND (e.owner_id=? OR EXISTS(SELECT 1 FROM event_roles r WHERE r.event_id=e.id AND r.user_id=?))) OR (e.lifecycle!='draft' AND (e.visibility='public' OR e.owner_id=? OR EXISTS(SELECT 1 FROM event_access x WHERE x.event_id=e.id AND x.user_id=?)))) ORDER BY e.starts_at DESC,e.id").all(userId,userId,userId,userId) as (EventRow&{owner_id:string})[];
+  const mine=rows.filter(event=>event.owner_id===userId||!!db.prepare('SELECT 1 FROM event_roles WHERE event_id=? AND user_id=?').get(event.id,userId)||!!db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status NOT IN ('withdrawn','invited') AND (user_id=? OR manager_id=?)").get(event.id,userId,userId)||financeSummary(db,eventRow(db,event.id)!,userId).my_balance_cents!==null);
+  const start=(page-1)*20;return {events:mine.slice(start,start+20).map(event=>serializeEvent(event,now)),page,hasMore:mine.length>start+20};
 }
 export function getActivity(db: DB, id: string, now: Date, viewerId: string | null = null) {
   requireActivityAccess(db,id,viewerId);

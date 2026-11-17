@@ -1,22 +1,11 @@
-import { Navigate, useSearchParams } from 'react-router-dom';
-import { Activities } from './activities';
-const actions=new Set(['join','conditions','settlement','finance','manage','onsite']);
-/** Legacy bot cards select an event; opening one never executes the requested action. */
-export function ActivityEntry(){
-  const [search]=useSearchParams();const id=search.get('event'),poll=search.get('poll');
-  if(poll)return <Navigate replace to={'/time-polls/'+encodeURIComponent(poll)}/>;
-  if(!id)return <Activities/>;
-  const management=search.get('management_invite');
-  if(management&&/^[A-Za-z0-9_-]{32}$/.test(management))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/delegation/'+encodeURIComponent(management)}/>;
-  const claim=search.get('claim');
-  if(claim&&/^[A-Za-z0-9_-]{32}$/.test(claim))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/claims/'+encodeURIComponent(claim)}/>;
-  const invitation=search.get('attendee_invite');
-  if(invitation&&/^[A-Za-z0-9_-]{32}$/.test(invitation))return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/invitations/'+encodeURIComponent(invitation)}/>;
-  const action=search.get('action');
-  if(action==='settlement')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/settlement'}/>;
-  if(action==='finance')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/finance'}/>;
-  if(action==='todos')return <Navigate replace to={'/inbox?'+new URLSearchParams({event:id})}/>;
-  if(action==='onsite'||action==='attendance')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/attendance'}/>;
-  const query=action&&actions.has(action)?'?'+new URLSearchParams({task:action}):'';
-  return <Navigate replace to={'/activities/'+encodeURIComponent(id)+query}/>;
+import { Navigate, useLocation } from 'react-router-dom';
+import { legacyNavigation } from '@qgroup/domain';
+import { Notice } from './shared';
+import { Layout } from './layout';
+/** Resolve old entry points before mounting any page or fetching its private data. */
+export function LegacyEntryLayout(){
+  const route=useLocation(),entry=legacyNavigation(route.pathname,route.search,route.hash);
+  if(entry?.kind==='redirect')return <Navigate replace to={entry.to}/>;
+  if(entry?.kind==='invalid')return <main className="main"><Notice>連結不完整或包含衝突的操作，請重新取得連結。</Notice></main>;
+  return <Layout/>;
 }

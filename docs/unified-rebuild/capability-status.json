@@ -635,14 +635,23 @@
       "legacy_evidence_group": "活動、前端",
       "implementation": [
         "apps/api/src/repositories.ts",
-        "apps/web/src/activities.tsx"
+        "apps/web/src/activities.tsx",
+        "apps/api/src/app.ts"
       ],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "behavior_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/legacy-navigation.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "公開近期／往期／歸檔分頁已實作；本人參與與帳務相關活動可達性待完成。"
+      "remaining": "公開列表以外已補本人所有／協辦／有效本人及同行、草稿與歷史結算義務的 scoped 分頁；只持查看權不視為參與。合成權限、結算後不再代管、草稿入口與分頁已測；正式副本、規模及全部篩選／實際版本組合仍待成套驗收。"
     },
     {
       "capability_id": "E02",
@@ -722,13 +731,25 @@
       "new_entry": "活動發起",
       "required_behavior": "只複製安排；日期／截止重填，不複製人、錢、圖、協辦與歷史",
       "legacy_evidence_group": "恢復",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "只複製安排；日期／截止重填，不複製人、錢、圖、協辦與歷史"
+      "implementation": [
+        "apps/api/src/activity-access.ts",
+        "apps/web/src/activity-drafts.tsx",
+        "packages/contracts/src/activity-access.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/legacy-navigation.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
     },
     {
       "capability_id": "E05",
@@ -738,16 +759,26 @@
       "legacy_evidence_group": "活動、名冊",
       "implementation": [
         "apps/api/src/repositories.ts",
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/web/src/activity-access.tsx",
+        "packages/contracts/src/activity-access.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/activity-access.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/legacy-navigation.spec.ts"
+      ],
       "state": "in_progress",
-      "remaining": "公開投影及私人／草稿／刪除一致 404 已測；邀請 access／分享／歷史權限待完成。"
+      "remaining": "已補有限預覽、明確 scoped／CSRF／Origin／revision／冪等授權、owner-only 邀請分享、撤銷／草稿／刪除與原結果再驗權；僅 event_access 改動及原名單／帳務／bot 工作保全已測。私有資產／歷史完整矩陣、正式副本與實際版本組合仍待成套驗收。"
     },
     {
       "capability_id": "E06",
@@ -5265,13 +5296,27 @@
       "new_entry": "遷移 adapter／新 policy",
       "required_behavior": "拒絕偽造 context；內部接口不因改架構變成公開，舊網址仍可銜接",
       "legacy_evidence_group": "成分橋接",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "拒絕偽造 context；內部接口不因改架構變成公開，舊網址仍可銜接"
+      "implementation": [
+        "packages/domain/src/legacy-navigation.ts",
+        "apps/web/src/activity-entry.tsx",
+        "apps/web/src/main.tsx",
+        "apps/api/src/app.ts"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/legacy-navigation.test.ts",
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "data_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/legacy-navigation.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "舊 /music/ hash、index.html／admin.html／privacy.html 已轉原生入口；舊 /music/api 的內部／管理／export 路徑明確 404，偽造代理 context 不取得原生管理權。舊 worker／cookie／SW 退役、全量成分網址及正式切換來源仍待後續驗收；未部署。"
     },
     {
       "capability_id": "O03",
@@ -5285,22 +5330,38 @@
         "apps/web/src/inbox.tsx",
         "apps/web/src/pending-operations.ts",
         "apps/api/src/finance.ts",
-        "apps/web/src/activity-finance.tsx"
+        "apps/web/src/activity-finance.tsx",
+        "packages/domain/src/legacy-navigation.ts",
+        "apps/web/src/activity-access.tsx",
+        "apps/api/src/activity-access.ts",
+        "apps/web/src/activities.tsx",
+        "apps/web/src/activity-drafts.tsx",
+        "apps/web/src/activity-registration.tsx",
+        "apps/web/src/activity-attendance.tsx",
+        "apps/web/src/contact.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
         "docs/unified-rebuild/30-inbox-history-checkpoint.md",
-        "apps/api/src/finance.test.ts"
+        "apps/api/src/finance.test.ts",
+        "packages/domain/src/legacy-navigation.test.ts",
+        "apps/api/src/activity-access.test.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/activity-access.test.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/activity-publish.spec.ts",
         "apps/web/tests/inbox-history.spec.ts",
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "apps/web/tests/activity-invitations.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "根網址 event 與六種既有活動 action 已轉成活動／task，唯讀開啟不自動提交，邀請內容仍驗權；各 action 完整業務、投票／邀請／認領／hash／舊成分入口及返回上下文仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
+      "remaining": "已補全部既有 bot action 的明確原生目標、四類活動 token、poll／裝置 fragment／QQ return、音樂八類 hash、管理／隱私／聯絡入口與 replace 返回；party／tentative／report／onsite 預設保留舊稿，無 URL 自動業務提交。Python bot 實際產生連結有交叉測試；完整使用手冊、舊已安裝 PWA、真實 QQ 回調與切換後實際版本組合仍待驗收。"
     },
     {
       "capability_id": "O04",

@@ -35,6 +35,12 @@ try {
   // Drain the large response before shutting down; an unread streamed bundle
   // can keep Fastify.close() waiting on an active socket indefinitely.
   assert((await bundle.arrayBuffer()).byteLength > 0);
+  for(const alias of ['/music/index.html','/music/admin.html','/music/privacy.html','/privacy.html','/contact.html']){
+    const response=await fetch(base+alias);assert.equal(response.status,200);assert.equal(await response.text(),html);
+  }
+  for(const path of ['/music/api/me','/music/api/admin/members','/music/api/export','/unknown.html']){
+    const response=await fetch(base+path,{headers:{'X-Music-Proxy-Key':'forged','X-Music-Identity':'forged'}});assert.equal(response.status,404);assert.equal((await response.json()).code,'NOT_FOUND');
+  }
   const worker = new Worker(new URL('../../.rebuild-dist/api/music-room-worker.mjs', import.meta.url), {
     workerData: {
       input: { command: 'split', sourceVersion: 'a'.repeat(64), selected: ['one', 'two', 'three'], config: { mode: 'sizes', sizes: [1, 2] }, sameGender: false },

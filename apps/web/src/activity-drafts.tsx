@@ -3,7 +3,7 @@ import { Link, useBlocker, useNavigate, useParams, useSearchParams } from 'react
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult, CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
+import { ActivityCopy, ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult, CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -37,8 +37,14 @@ function DraftList({viewer}:{viewer:Member}){
   return query.isPending?<Notice>正在讀取活動草稿…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>{query.data.drafts.length?<div className="event-grid">{query.data.drafts.map(draft=><Surface key={draft.id}><h2><Link to={'/activities/'+encodeURIComponent(draft.id)+'/edit'}>{draft.title}</Link></h2><Text>{draft.isOwner?'由我發起':'發起者：'+draft.ownerName}</Text><Link to={'/activities/'+encodeURIComponent(draft.id)+'/edit'}>{draft.canEdit?'編輯草稿':'查看草稿'}</Link></Surface>)}</div>:<Notice>沒有可存取的活動草稿。</Notice>}<div className="pagination">{page>1&&<Button variant="secondary" onClick={()=>setSearch({page:String(page-1)})}>上一頁</Button>}{query.data.hasMore&&<Button variant="secondary" onClick={()=>setSearch({page:String(page+1)})}>下一頁</Button>}</div></>;
 }
 export function ActivityDraftPage(){
-  const {id}=useParams();
-  return <><PageIntro title={id?'活動草稿':'新增活動草稿'}/><div className="page-actions"><Link to="/me/activities/drafts">活動草稿</Link><Link to="/activities">所有活動</Link></div><MemberAccess>{viewer=>id?<Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>:<Editor key={viewer.scope+':new'} viewer={viewer} initial={null}/>}</MemberAccess></>;
+  const {id}=useParams(),[search]=useSearchParams(),copyId=search.get('copyFrom');
+  return <><PageIntro title={id?'活動草稿':'新增活動草稿'}/><div className="page-actions"><Link to="/me/activities/drafts">活動草稿</Link><Link to="/activities">所有活動</Link></div><MemberAccess>{viewer=>id?<Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>:copyId?<CopyLoader key={viewer.scope+':copy:'+copyId} viewer={viewer} id={copyId}/>:<Editor key={viewer.scope+':new'} viewer={viewer} initial={null}/>}</MemberAccess></>;
+}
+function CopyLoader({viewer,id}:{viewer:Member;id:string}){
+  const [restorable]=useState(()=>{try{const value=Draft.parse(JSON.parse(sessionStorage.getItem('qgroup:rebuild:activity-draft:v1:'+viewer.scope+':copy:'+id)??'null'));return value.id===null&&(!value.pending||value.pending.kind==='create');}catch{return false;}});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-copy',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/copy-source',ActivityCopy,{headers:{'X-Account-Scope':viewer.scope}}),enabled:!restorable,refetchOnWindowFocus:false});
+  if(restorable)return <><Notice>已恢復這個帳號的再約草稿；不會重新帶入原活動或覆蓋輸入。</Notice><Editor viewer={viewer} initial={null} copyId={id}/></>;
+  return query.isPending?<Notice>正在讀取原活動安排…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<><Notice>已帶入原活動安排；請重新填寫日期與截止時間。名單、款項、圖片與通知設定不會複製。</Notice><Editor viewer={viewer} initial={null} copy={query.data}/></>;
 }
 export function ActivityArrangementPage(){
   const {id=''}=useParams();
@@ -69,11 +75,12 @@ function Comparison({saved}:{saved:Saved}){
   const v=saved.values;
   return <Surface aria-label="目前已保存的活動安排"><h2>目前已保存的活動安排</h2><dl className="draft-comparison"><dt>活動名稱</dt><dd>{v.title}</dd><dt>活動類型</dt><dd>{categories.find(([key])=>key===v.category)?.[1]??v.category}</dd><dt>地點</dt><dd>{v.location}</dd><dt>開始時間（台北）</dt><dd>{localTime(v.startsAt)}</dd><dt>報名截止（台北）</dt><dd>{localTime(v.deadline)}</dd><dt>持續時間</dt><dd>{v.durationHours} 小時</dd><dt>人數上限／最低成團人數</dt><dd>{v.capacity||'不限'}／{v.minimumParticipants}</dd><dt>退出期限（台北）</dt><dd>{localTime(v.withdrawalDeadline)||'依報名截止時間'}</dd><dt>可見性</dt><dd>{v.visibility==='public'?'公開':'邀請可見'}</dd><dt>顯示時區</dt><dd>{v.timezone||'未指定'}</dd><dt>群同步</dt><dd>{v.botEnabled?'開啟':'關閉'}</dd><dt>費用規則</dt><dd>{v.feePolicy||'未填寫'}</dd><dt>活動說明</dt><dd>{v.description||'未填寫'}</dd></dl></Surface>;
 }
-function Editor({viewer,initial,published=false}:{viewer:Member;initial:Saved|null;published?:boolean}){
+function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;initial:Saved|null;published?:boolean;copy?:z.infer<typeof ActivityCopy>;copyId?:string}){
   const active=useRef(true);useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   const client=useQueryClient();const navigate=useNavigate();const path=initial?'/activities/'+encodeURIComponent(initial.id)+(published?'/arrangements':'/draft'):'/activities/drafts';
-  const storageKey='qgroup:rebuild:activity-draft:'+(published?'arrangements:v1:':'v1:')+viewer.scope+':'+(initial?.id??'new');
-  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(storageKey);const value=raw?Draft.parse(JSON.parse(raw)):original(initial);if(published&&value.pending&&value.pending.kind!=='save')throw Error('operation target');if(value.id!==(initial?.id??null))throw Error('draft target');return {value,error:''};}catch{return {value:original(initial),error:'無法讀取活動草稿，原始內容已保留。請先保全原稿。'};}});
+  const storageKey='qgroup:rebuild:activity-draft:'+(published?'arrangements:v1:':'v1:')+viewer.scope+':'+(initial?.id??(copyId||copy?'copy:'+(copyId??copy!.id):'new'));
+  const seed=():DraftValue=>copy?{...original(null),form:{...empty(),...copy.values,durationHours:String(copy.values.durationHours),capacity:String(copy.values.capacity),minimumParticipants:String(copy.values.minimumParticipants),timezone:copy.values.timezone??''}}:original(initial);
+  const [loaded]=useState(()=>{try{const raw=sessionStorage.getItem(storageKey);const value=raw?Draft.parse(JSON.parse(raw)):seed();if(published&&value.pending&&value.pending.kind!=='save')throw Error('operation target');if(value.id!==(initial?.id??null))throw Error('draft target');return {value,error:''};}catch{return {value:seed(),error:'無法讀取活動草稿，原始內容已保留。請先保全原稿。'};}});
   const [draft,setDraft]=useState(loaded.value);const [saved,setSaved]=useState(initial);const [readError,setReadError]=useState(loaded.error);
   const [storageError,setStorageError]=useState('');const [busy,setBusy]=useState(false);const [message,setMessage]=useState('');
   const [comparison,setComparison]=useState(false);const [confirmRemove,setConfirmRemove]=useState(false);const [confirmPublish,setConfirmPublish]=useState(false);const [destination,setDestination]=useState('');
