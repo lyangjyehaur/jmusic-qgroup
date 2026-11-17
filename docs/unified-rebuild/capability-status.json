@@ -2769,10 +2769,16 @@
         "apps/web/src/music.tsx",
         "packages/contracts/src/music-catalog.ts",
         "apps/api/src/music-catalog.ts",
-        "apps/web/src/music-entries.tsx"
+        "apps/web/src/music-entries.tsx",
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music-editor.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-catalog.test.ts"
@@ -2782,10 +2788,12 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
-        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md",
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生完整詞條／category／別名／原文與分類篩選已實作；正式副本、完整選取／後台與舊入口成套驗收待完成。"
+      "remaining": "詞庫與編輯已共用完整 category／別名／原文與分類；正式副本、後台及舊入口成套驗收待完成。"
     },
     {
       "capability_id": "M02",
@@ -2797,10 +2805,16 @@
         "apps/web/src/music.tsx",
         "packages/contracts/src/music-catalog.ts",
         "apps/api/src/music-catalog.ts",
-        "apps/web/src/music-entries.tsx"
+        "apps/web/src/music-entries.tsx",
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music-editor.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-catalog.test.ts"
@@ -2810,10 +2824,12 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
-        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md",
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生名稱／別名 NFKC、casefold、零寬與 whitespace、分類／類型、清空及斜線聚焦已實作；拼音／首字母／假名與成分編輯共用搜尋待完成。"
+      "remaining": "名稱／別名、完整拼音／首字母／假名、正規化、分類／類型、清空／Escape／斜線及兩頁共用搜尋已實作並對照原字典；舊 adapter、browser 遷移與正式副本成套驗收待完成。"
     },
     {
       "capability_id": "M03",
@@ -2824,16 +2840,25 @@
       "implementation": [
         "packages/domain/src/index.ts",
         "apps/api/src/app.test.ts",
-        "apps/web/src/music-editor.tsx"
+        "apps/web/src/music-editor.tsx",
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
       ],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
+      "ux_evidence": [
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "前後端 5／15／20 及至少一項保存已測；未開始空白 profile 及匯入保全待驗收。"
+      "remaining": "兩頁同一選擇與前後端 5／15／20、至少一項保存、首次空白成分及快取更新已測；正式副本、全部入口與舊資料成套驗收待完成。"
     },
     {
       "capability_id": "M04",
@@ -2843,14 +2868,24 @@
       "legacy_evidence_group": "音樂、成分選取",
       "implementation": [
         "apps/api/src/repositories.ts",
-        "apps/web/src/music-editor.tsx"
+        "apps/web/src/music-editor.tsx",
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music.tsx"
       ],
-      "behavior_evidence": [],
+      "behavior_evidence": [
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
+      "ux_evidence": [
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "細項四級、領域隱藏程度控制且保留等級已實作；真實匯入與舊值對帳待驗收。"
+      "remaining": "兩頁共用細分四級，領域不顯示程度且保留等級；舊值正式副本對帳及其他音樂入口成套驗收待完成。"
     },
     {
       "capability_id": "M05",
@@ -2859,14 +2894,24 @@
       "required_behavior": "和搜尋／排行共用同一 selection，不維護兩份草稿",
       "legacy_evidence_group": "成分選取",
       "implementation": [
-        "apps/web/src/music-editor.tsx"
+        "apps/web/src/music-editor.tsx",
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music.tsx"
       ],
-      "behavior_evidence": [],
+      "behavior_evidence": [
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
+      "ux_evidence": [
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+      ],
       "state": "in_progress",
-      "remaining": "選取／移除共用單一草稿；分類收合、排行選取與其他入口整合待完成。"
+      "remaining": "詞庫詳情／排行入口與成分編輯共用一份 React selection／分頁草稿、四級程度、移除及分類收合；氣泡、誰選了及其他入口成套驗收待完成。"
     },
     {
       "capability_id": "M06",
@@ -2880,11 +2925,17 @@
         "apps/api/src/music-contact.ts",
         "apps/web/src/music-contact.tsx",
         "apps/web/src/people.tsx",
-        "apps/web/src/member-access.tsx"
+        "apps/web/src/member-access.tsx",
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-contact.test.ts"
@@ -2893,10 +2944,12 @@
         "apps/api/src/music-contact.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/music-contact.spec.ts"
+        "apps/web/tests/music-contact.spec.ts",
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "分頁草稿、刷新、未知結果重試、離站提示、改聯絡號保留未保存選擇、相同已存選擇基準更新及衝突明確核對已測；排行／完整跨入口、browser 舊草稿遷移及實際平台驗收待完成。"
+      "remaining": "兩頁共用草稿／原 UUID／保存中鎖定、變更才出現保存列、未知結果重試、背景更新及聯絡號保全已測；browser 舊草稿遷移、完整跨入口與實際平台驗收待完成。"
     },
     {
       "capability_id": "M07",
@@ -3030,13 +3083,25 @@
       "new_entry": "詞條詳情",
       "required_behavior": "可看選取者、選／取消詞條，沿用登入與可見範圍",
       "legacy_evidence_group": "音樂",
-      "implementation": [],
-      "behavior_evidence": [],
+      "implementation": [
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music-editor.tsx",
+        "apps/web/src/music.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "可看選取者、選／取消詞條，沿用登入與可見範圍"
+      "ux_evidence": [
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "詞條詳情已可選／取消並連到共用草稿；誰選了名單、可見範圍、其他詳細入口及正式副本驗收待完成。"
     },
     {
       "capability_id": "M13",
@@ -3325,13 +3390,25 @@
       "new_entry": "全站",
       "required_behavior": "底導覽／保存／鍵盤不互遮、長名稱可換行、尊重減少動效",
       "legacy_evidence_group": "成分選取、音樂前端",
-      "implementation": [],
-      "behavior_evidence": [],
+      "implementation": [
+        "packages/domain/src/music-search.ts",
+        "apps/web/src/music-selection.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music-editor.tsx",
+        "apps/web/src/music.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-search.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "data_evidence": [],
       "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "底導覽／保存／鍵盤不互遮、長名稱可換行、尊重減少動效"
+      "ux_evidence": [
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "詞庫／成分修改後手機固定保存列、長名稱換行及減少動效已實作；底部導覽、鍵盤避讓、回頂部與全站成套驗收待完成。"
     },
     {
       "capability_id": "A01",

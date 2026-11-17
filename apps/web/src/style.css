@@ -165,3 +165,4 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 
 .room-overview-card{border:1px solid currentColor;border-radius:.5rem;padding:1rem;min-width:0}.room-overview-mine{border:2px solid #24536b}.room-overview-card ul{padding-inline-start:1.25rem;overflow-wrap:anywhere}
 .music-ranking{padding-inline-start:1.5rem}.music-ranking li{padding:.5rem;overflow-wrap:anywhere}.music-ranking li p{display:inline;margin-inline-start:.75rem;font-size:.85rem}.music-ranking a{font-weight:600}
+.music-category{margin-block:1rem}.music-category summary{cursor:pointer;min-height:44px;padding-block:.7rem;font-weight:600}.music-category .choice-list{margin-top:.5rem}.choice-list button{max-width:100%;white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px}.music-editor .aside-note>a{display:inline-block;margin-top:1rem}.music-editor .aside-note button{max-width:100%;white-space:normal;height:auto;min-height:44px}

@@ -25,7 +25,7 @@ test('a guest recovers original music through one login and explicit linking wit
 });
 test('an existing account binds QQ, keeps its name and reopens the original selections after an untouched blank editor',async({page,context})=>{
   await login(context);await page.goto('/me/music');await expect(page.getByRole('button',{name:'Aimer',exact:true})).toHaveAttribute('aria-pressed','false');await page.getByRole('link',{name:'找回舊成分',exact:true}).click();await pin(page);await oauth(page,true);await complete(page);
-  await page.getByRole('link',{name:'編輯原成分',exact:true}).click();await expect(page.locator('.viewer')).toHaveText('小白');await expect(page.getByRole('button',{name:'Aimer',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.getByRole('button',{name:'保存我的成分',exact:true})).toBeDisabled();
+  await page.getByRole('link',{name:'編輯原成分',exact:true}).click();await expect(page.locator('.viewer')).toHaveText('小白');await expect(page.getByRole('button',{name:'Aimer',exact:true})).toHaveAttribute('aria-pressed','true');await expect(page.getByRole('button',{name:'保存我的成分',exact:true})).toHaveCount(0);
 });
 test('an unreadable PIN response is checked from the server and never resends or stores the PIN automatically',async({page})=>{
   let requests=0;await page.route('**/api/v2/music/claim/start',async route=>{requests++;const response=await route.fetch();await route.fulfill({response,body:'{'});});

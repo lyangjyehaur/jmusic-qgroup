@@ -1,99 +1,32 @@
-import { useEffect, useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { MusicCatalog } from '@qgroup/contracts';
-import { musicEntryKey } from '@qgroup/domain';
 import { api } from './api';
 import { Failure, Notice, PageIntro } from './shared';
 import { categoryLabel } from './music-entries';
-import { Field } from './settlement-controls';
+import { MusicSearch, useMusicSearch } from './music-search';
+import { useMusicWorkspace } from './music-selection';
+import { SelectionPanel } from './music-editor';
 export function Music() {
-  const [params, setParams] = useSearchParams(),
-    search = params.get('q') ?? '',
-    category = params.get('category') ?? '',
-    kind = params.get('kind') ?? '',
-    input = useRef<HTMLInputElement>(null);
   const query = useQuery({ queryKey: ['music-catalog'], queryFn: () => api('/music/catalog', MusicCatalog) });
-  const update = (key: string, value: string) =>
-    setParams(
-      (old) => {
-        const next = new URLSearchParams(old);
-        if (value) next.set(key, value);
-        else next.delete(key);
-        return next;
-      },
-      { replace: true },
-    );
-  useEffect(() => {
-    const focus = (event: KeyboardEvent) => {
-      const target = event.target as HTMLElement | null;
-      if (
-        event.key === '/' &&
-        !event.ctrlKey &&
-        !event.metaKey &&
-        !event.altKey &&
-        !target?.closest('input,textarea,select,[contenteditable=true]')
-      ) {
-        event.preventDefault();
-        input.current?.focus();
-      }
-    };
-    document.addEventListener('keydown', focus);
-    return () => document.removeEventListener('keydown', focus);
-  }, []);
-  const key = musicEntryKey(search),
-    entries =
-      query.data?.entries.filter(
-        (e) =>
-          (!category || e.category === category) &&
-          (!kind || e.kind === kind) &&
-          [e.name, ...e.aliases].some((value) => musicEntryKey(value).includes(key)),
-      ) ?? [],
-    selected = query.data?.entries.find((e) => e.id === params.get('entry'));
+  const filters = useMusicSearch(query.data?.entries ?? []);
+  const { params, search, category, kind, update } = filters;
+  const entries = filters.filtered;
+  const selected = query.data?.entries.find(entry => entry.id === params.get('entry'));
+  const workspace = useMusicWorkspace();
+  const selection = workspace.state === 'ready' ? workspace.selection : null;
   return (
     <>
       <PageIntro title="音樂" />
       <div className="page-actions">
-        <Link to="/me/music">編輯我的成分</Link>
+        {!selection && <Link to="/me/music">編輯我的成分</Link>}
         <Link to="/me/music/entries">我的詞條</Link>
         <Link to="/me/music/entries/new">建立詞條</Link>
       </div>
-      <section aria-label="音樂詞庫搜尋">
-        <Field label="搜尋音樂詞條">
-          <input
-            ref={input}
-            type="search"
-            value={search}
-            onChange={(event) => update('q', event.target.value)}
-            placeholder="名稱或別名"
-          />
-        </Field>
-        {search && (
-          <Button variant="secondary" onClick={() => update('q', '')}>
-            清除搜尋
-          </Button>
-        )}
-        <div className="page-actions">
-          <Field label="詞庫類型">
-            <select value={kind} onChange={(event) => update('kind', event.target.value)}>
-              <option value="">全部類型</option>
-              <option value="main">領域</option>
-              <option value="sub">細分</option>
-            </select>
-          </Field>
-          <Field label="詞庫分類">
-            <select value={category} onChange={(event) => update('category', event.target.value)}>
-              <option value="">全部分類</option>
-              {query.data?.categories.map((value) => (
-                <option key={value} value={value}>
-                  {categoryLabel(value)}
-                </option>
-              ))}
-            </select>
-          </Field>
-        </div>
-      </section>
+      {workspace.state === 'error' && !query.error && <Failure error={workspace.error} retry={workspace.retry} />}
+      <div className={selection ? 'content-columns music-editor' : undefined}><section>
+      <MusicSearch filters={filters} categories={query.data?.categories ?? []} />
       {query.isPending ? (
         <Notice>正在讀取詞條…</Notice>
       ) : query.error ? (
@@ -109,7 +42,9 @@ export function Music() {
               </Text>
               {selected.aliases.length > 0 && <Text>別名：{selected.aliases.join('、')}</Text>}
               {selected.creatorName && <Text>建立者：{selected.creatorName}</Text>}
-              <Link to="/me/music">編輯我的選擇</Link>
+              {selection ? <Button aria-pressed={selection.selected.has(selected.id)} disabled={selection.locked}
+                onClick={() => selection.toggle(selected)}>{selection.selected.has(selected.id) ? '取消選取' : '選取此詞條'}</Button>
+                : <Link to="/me/music">編輯我的選擇</Link>}
               <Button variant="ghost" onClick={() => update('entry', '')}>
                 關閉詞條資料
               </Button>
@@ -156,6 +91,7 @@ export function Music() {
           </Surface>
         </>
       )}
+      </section>{selection && <SelectionPanel selection={selection} />}</div>
     </>
   );
 }

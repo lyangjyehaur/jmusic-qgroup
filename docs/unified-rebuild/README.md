@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)、[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)、[管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md)、[現場出席與補錄檢查點](29-activity-attendance-checkpoint.md)、[統一收件匣與活動歷史檢查點](30-inbox-history-checkpoint.md)、[統一收付款帳本檢查點](31-finance-checkpoint.md)、[收款碼與原圖檢查點](32-payment-assets-checkpoint.md)、[逐人結算與包間檢查點](33-settlement-checkpoint.md)、[時間投票檢查點](34-time-polls-checkpoint.md)、[活動包間概況與歷史檢查點](35-room-overview-checkpoint.md)及[音樂詞庫與自建詞條檢查點](36-music-catalog-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
+日期：2026-11-17（Asia/Taipei）。狀態：完成盤點與 Git 保全，已完成[第一批隔離實作](07-implementation-checkpoint.md)、[共用帳號檢查點](08-identity-checkpoint.md)、[裝置授權檢查點](09-device-checkpoint.md)、[名稱註冊檢查點](10-registration-checkpoint.md)、[稱呼／QQ 檢查點](11-profile-checkpoint.md)、[隱私／刪除恢復檢查點](12-privacy-checkpoint.md)、[管理／審核檢查點](13-admin-checkpoint.md)、[隔離匯入檢查點](14-import-checkpoint.md)、[聯絡／同好入口檢查點](15-contact-checkpoint.md)、[舊成分找回檢查點](16-recovery-checkpoint.md)、[管理成分關聯檢查點](17-ownership-checkpoint.md)、[管理口令／原歷史檢查點](18-pin-history-checkpoint.md)、[獨立成分資料檢查點](19-fields-checkpoint.md)、[活動名單／同好銜接檢查點](20-roster-checkpoint.md)、[活動草稿檢查點](21-activity-drafts-checkpoint.md)、[活動發布與 bot 消費檢查點](22-activity-publication-checkpoint.md)、[已發布安排與逐人確認檢查點](23-activity-conditions-checkpoint.md)、[管理分工與發起者交接檢查點](28-activity-delegation-checkpoint.md)、[現場出席與補錄檢查點](29-activity-attendance-checkpoint.md)、[統一收件匣與活動歷史檢查點](30-inbox-history-checkpoint.md)、[統一收付款帳本檢查點](31-finance-checkpoint.md)、[收款碼與原圖檢查點](32-payment-assets-checkpoint.md)、[逐人結算與包間檢查點](33-settlement-checkpoint.md)、[時間投票檢查點](34-time-polls-checkpoint.md)、[活動包間概況與歷史檢查點](35-room-overview-checkpoint.md)、[音樂詞庫與自建詞條檢查點](36-music-catalog-checkpoint.md)及[共用音樂工作區檢查點](37-music-workspace-checkpoint.md)，尚未切換或發布新版。目前發布範圍為 **`none`**。
 
 ## 這次要做的事
 
@@ -52,6 +52,7 @@
 | [時間投票檢查點](34-time-polls-checkpoint.md) | 跨月日期／精確時段、逐項意願、截止與唯一活動定案、原操作恢復及舊 worker 消費 |
 | [活動包間概況與歷史檢查點](35-room-overview-checkpoint.md) | 本人／同行房間、實際凍結姓名、所有預分版本、可見性與唯讀保全 |
 | [音樂詞庫與自建詞條檢查點](36-music-catalog-checkpoint.md) | 分類／別名、原建立清單限額、會員建立／改名／刪除、未知結果與成分刪除保全 |
+| [共用音樂搜尋與成分工作區檢查點](37-music-workspace-checkpoint.md) | 拼音／首字母／假名差分、同一草稿／選擇／保存狀態、分類收合、跨頁恢復及帳號隔離 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

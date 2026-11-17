@@ -47,7 +47,7 @@ test('scoped draft survives refresh, preserves activity return, and safely retri
   await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '確認保存結果', exact: true }).click();
   await expect(page.getByText('已保存。')).toBeVisible();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
   await page.screenshot({ path: 'test-results/unified-music-desktop.png', fullPage: true });
   await page.getByRole('link', { name: '回到剛才的活動' }).click();
   await expect(page.getByRole('heading', { name: '週末一起聽日系音樂' })).toBeVisible();

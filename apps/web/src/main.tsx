@@ -23,6 +23,7 @@ import { ActivityDelegationPage, AcceptActivityDelegationPage } from './activity
 import { TimePollPage, TimePollsPage, NewTimePollPage } from './time-polls';
 import { ActivityEntry } from './activity-entry';
 import { Music } from './music';
+import { MusicWorkspace } from './music-selection';
 import { MyMusic, MyPage } from './account';
 import { Accounts, AuthConfirm, Login } from './auth';
 import { Devices, AcceptDevice } from './devices';
@@ -62,7 +63,7 @@ const router = createBrowserRouter([{ element: <Layout />, errorElement: <ThemeP
   { path: 'activities/:id/invitations', element: <ActivityInvitationsPage /> }, { path: 'activities/:id/invitations/:token', element: <AcceptActivityInvitationPage /> },
   { path: 'activities/:id/lifecycle', element: <ActivityLifecyclePage /> },
   { path: 'activities/:id/signup', element: <ActivityRegistrationPage /> }, { path: 'activities/:id/registration', element: <ActivityRegistrationPage manage /> },
-  { path: 'music', element: <Music /> }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> }, { path: 'me/music', element: <MyMusic /> },
+  { element: <MusicWorkspace />, children: [{ path: 'music', element: <Music /> }, { path: 'me/music', element: <MyMusic /> }] }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> },
   { path: 'me/music/entries', element: <MyMusicEntriesPage /> }, { path: 'me/music/entries/new', element: <MusicEntryEditorPage command="create" /> },
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> },

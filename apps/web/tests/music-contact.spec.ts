@@ -21,7 +21,7 @@ test('a member edits, finds, copies and clears a contact while keeping the same 
   await page.setViewportSize({ width: 360, height: 800 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-contact-mobile.png', fullPage: true });
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true'); await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
+  await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true'); await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
   await page.getByRole('navigation').getByRole('link', { name: '同好', exact: true }).click();
   await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
   await expect(page).toHaveURL('/people/' + profile.id); await expect(page.getByRole('heading', { name: '小青', exact: true })).toBeVisible(); await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
