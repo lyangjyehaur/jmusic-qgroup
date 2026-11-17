@@ -16,7 +16,7 @@ export function musicErasureScope(db:DB,id?:string){
   const tables=['music_profiles','music_legacy_profiles','music_profile_fields','music_profile_contacts','music_selections','music_entry_details','music_entry_creations','music_claim_intents','music_legacy_identity','music_shouts','music_shout_authors','music_entries','music_documents'];
   const revision=hash(JSON.stringify([id??null,...tables.map(table=>db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all())]));
   const count=(table:string)=> (db.prepare('SELECT count(*) n FROM '+table+(id?' WHERE profile_id=?':'')).get(...id?[id]:[]) as {n:number}).n;
-  const shouts=(db.prepare('SELECT count(*) n FROM music_shouts WHERE '+(id?'profile_id=?':'profile_id IN (SELECT id FROM music_profiles WHERE erased_at IS NULL)')).get(...id?[id]:[]) as {n:number}).n;
+  const shouts=(db.prepare('SELECT count(*) n FROM music_shouts'+(id?' WHERE profile_id=?':'')).get(...id?[id]:[]) as {n:number}).n;
   const preview=AdminMusicErasurePreview.parse({command:id?'delete_profile':'reset_music',revision,profile:profile?{id:profile.id,name:profile.name,ownerId:profile.owner?.id??null}:null,profiles:profiles.length,entries:id?(db.prepare("SELECT count(*) n FROM music_entry_details WHERE created_by=? OR created_by=?").get(id,profile!.legacyKey||id) as {n:number}).n:entries.length,selections:count('music_selections'),shouts});
   return{preview,profiles,entries};
 }

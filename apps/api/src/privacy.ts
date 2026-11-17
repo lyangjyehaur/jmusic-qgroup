@@ -1,6 +1,6 @@
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { eraseLegacyProfile, detachLegacyAccount, type DB } from '@qgroup/database';
+import { eraseLegacyProfile, detachLegacyAccount, removeMusicShout, type DB } from '@qgroup/database';
 import { AdminMusicErasureResult, EraseData, ErasureProof, type ErasureResult } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
@@ -108,12 +108,13 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
       return;
     }
     if (!legacy && entry.version === 2) {
-      for (const profile of entry.profiles) {
-        // Administrative removal transfers public terms, never another member's selections.
-        const original=db.prepare('SELECT legacy_key FROM music_legacy_profiles WHERE profile_id=?').get(profile.id) as {legacy_key:string}|undefined;
-        db.prepare("UPDATE migration_map SET status='erasure_redacted' WHERE source='music' AND entity_type='entry' AND target_id IN (SELECT entry_id FROM music_entry_details WHERE created_by=? OR created_by=?)").run(profile.id,original?.legacy_key??profile.id);
-        db.prepare("UPDATE music_entry_details SET created_by='admin' WHERE created_by=? OR created_by=?").run(profile.id,original?.legacy_key??profile.id);
-        eraseMusic(db,profile.id,profile.userId,entry.createdAt);
+      for (const profile of entry.profiles) eraseMusic(db,profile.id,profile.userId,entry.createdAt);
+      if(entry.command==='reset_music'){
+        // Match the effective service's administration.erase(reset=True), including unlinked history.
+        for(const {id} of db.prepare('SELECT id FROM music_shouts').all() as {id:string}[])removeMusicShout(db,id,'deleted');
+        db.prepare("UPDATE migration_map SET status='deleted' WHERE source='music' AND entity_type IN ('shouts','shoutHistory','trend')").run();
+        db.prepare("DELETE FROM music_documents WHERE kind IN ('shouts','shoutHistory','trend','trend_sample')").run();
+        db.prepare('DELETE FROM music_shout_authors').run();
       }
       if(entry.command==='reset_music')for(const id of entry.entries){
         db.prepare('DELETE FROM music_selections WHERE entry_id=?').run(id);

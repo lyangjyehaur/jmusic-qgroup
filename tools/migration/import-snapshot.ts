@@ -157,16 +157,6 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
       const imported = importMusic(db!, music, identity, erased, now.toISOString());
       // Administrative intents apply only after importing their legacy music scopes.
       // Captured reset entry IDs cannot return, and each action gets one audit record.
-      for(const intent of boardJournal.read())if('version' in intent&&intent.version===2){
-        if(intent.command==='delete_profile'){
-          const ids=new Set(intent.profiles.map(p=>p.id));
-          const raw=object(object(music,'music').entries,'entries');
-          for(const [id,value] of Object.entries(raw)){
-            const creator=object(value,'entry').createdBy;
-            if(typeof creator==='string'&&ids.has(profileId(creator)))db!.prepare("UPDATE music_entry_details SET created_by='admin' WHERE entry_id=?").run(id);
-          }
-        }
-      }
       createPrivacy(db!,boardJournal);
       for (const { user_id: id } of db!.prepare('SELECT user_id FROM privacy_requests').all() as { user_id: string }[]) { detachLegacyAccount(db!, id); if (Object.keys(sharedRecords(db!, id)).length) db!.prepare("UPDATE privacy_requests SET status='shared_review' WHERE user_id=?").run(id); }
       const boardAfterErasure = recordBoard(db!, true);

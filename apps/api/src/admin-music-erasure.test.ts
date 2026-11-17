@@ -25,7 +25,7 @@ async function setup(options:{db?:DB;journal?:ErasureJournal;seed?:boolean}={}){
   return{db,app,headers,admin,preview,input,send,receipt};
 }
 describe('durable administrator music removal and reset',()=>{
-  it('deletes linked and unlinked profiles, transfers terms, retires identity proofs and receipts, while retaining accounts and other selections',async()=>{
+  it('deletes linked and unlinked profiles, retains terms with creator information removed, retires identity proofs and receipts, while retaining accounts and other selections',async()=>{
     const s=await setup();s.db.prepare("INSERT INTO music_shouts VALUES('shout',?,'10002','詞庫bob','私密喊話',100,NULL,0)").run(catalogProfiles.bob);
     s.db.prepare("INSERT INTO music_documents VALUES('shouts',0,?)").run(JSON.stringify({id:'shout',qq:'10002',text:'私密喊話'}));
     s.db.prepare("INSERT INTO music_legacy_identity VALUES('sessions',0,?)").run(JSON.stringify({qq:'10002',token_hash:'old-secret'}));
@@ -33,13 +33,39 @@ describe('durable administrator music removal and reset',()=>{
     expect(await s.preview()).toMatchObject({profiles:1,entries:1,selections:2,shouts:1,profile:{name:'詞庫bob',ownerId:'bob'}});
     const before=s.db.prepare('SELECT * FROM users').all(),alice=s.db.prepare('SELECT * FROM music_selections WHERE profile_id=?').all(catalogProfiles.alice),body=await s.input();
     const response=await s.send(body);expect(response.statusCode,response.body).toBe(200);expect(response.json()).toEqual({requestId:body.requestId,target:'admin_music',command:'delete_profile',status:'completed',profiles:1,entries:0});
-    expect(s.db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='sub-1'").get()).toEqual({created_by:'admin'});
+    expect(s.db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='sub-1'").get()).toEqual({created_by:''});
     expect(s.db.prepare('SELECT * FROM music_selections WHERE profile_id=?').all(catalogProfiles.alice)).toEqual(alice);expect(s.db.prepare('SELECT * FROM users').all()).toEqual(before);
     for(const table of ['music_legacy_profiles','music_profile_fields','music_profile_contacts','music_selections','music_entry_creations'])expect(s.db.prepare('SELECT * FROM '+table+' WHERE profile_id=?').all(catalogProfiles.bob)).toEqual([]);
     expect(s.db.prepare('SELECT * FROM music_shouts').all()).toEqual([]);expect(s.db.prepare("SELECT * FROM music_documents WHERE kind='shouts'").all()).toEqual([]);expect(s.db.prepare('SELECT * FROM music_legacy_identity').all()).toEqual([]);
     expect(s.db.prepare("SELECT response_status,response_json FROM request_results WHERE request_key='old-save'").get()).toEqual({response_status:410,response_json:JSON.stringify({code:'PROFILE_ERASED',message:'這份成分已刪除，原保存操作不會重建資料'})});
     expect((await s.send(body)).json()).toEqual(response.json());expect((await s.receipt(body)).json()).toEqual(response.json());
     expect((await s.send(await s.input(catalogProfiles.orphan),catalogProfiles.orphan)).statusCode).toBe(200);expect(s.db.pragma('foreign_key_check')).toEqual([]);
+  });
+  it('matches the effective Python administration wrapper for creator redaction and full reset of orphan shouts and trend history',async()=>{
+    for(const reset of [false,true]){
+      const s=await setup();s.db.prepare("INSERT INTO music_shouts VALUES('orphan-shout',NULL,'99999','原稱呼','原文',123,NULL,0)").run();
+      s.db.prepare("INSERT INTO music_documents VALUES('shouts',0,?)").run(JSON.stringify({id:'orphan-shout',qq:'99999',name:'原稱呼',text:'原文',createdAt:123}));
+      s.db.prepare("INSERT INTO music_documents VALUES('trend',0,?)").run(JSON.stringify({t:123,counts:{'sub-1':2}}));
+      const raw={entries:Object.fromEntries((s.db.prepare('SELECT id,name FROM music_entries').all() as {id:string;name:string}[]).map(e=>[e.id,{id:e.id,text:e.name,createdBy:(s.db.prepare('SELECT created_by FROM music_entry_details WHERE entry_id=?').get(e.id) as {created_by:string}|undefined)?.created_by??''}])),members:Object.fromEntries(Object.entries(catalogProfiles).map(([key,id])=>[key==='alice'?id:key==='bob'?'10002':'10003',{name:key}])),settings:{},shouts:[{id:'orphan-shout',qq:'99999',text:'原文'}],shoutHistory:[],trend:[{t:123,counts:{'sub-1':2}}]};
+      const expected=JSON.parse(execFileSync('python3',['-c',`import json,sys,tempfile
+from pathlib import Path
+from unittest.mock import patch
+from music_site import administration as a,upstream as u
+from music_site.identity_store import Store
+with tempfile.TemporaryDirectory() as root:
+ folder=Path(root);(folder/'data.json').write_text(sys.stdin.read());store=Store(folder/'identity.sqlite3')
+ def load(): u.data=json.loads((folder/'data.json').read_text())
+ def save(): (folder/'data.json').write_text(json.dumps(u.data))
+ load()
+ with patch.object(u,'load',load),patch.object(u,'save',save):
+  a.erase(folder,store,{'qq':'10002','confirm':'RESET' if sys.argv[1]=='1' else 'DELETE'},reset=sys.argv[1]=='1')
+ print(json.dumps(u.data))` ,reset?'1':'0'],{input:JSON.stringify(raw),encoding:'utf8'}));
+      expect((await s.send(await s.input(reset?'':undefined),reset?'':undefined)).statusCode).toBe(200);
+      expect(Object.fromEntries((s.db.prepare('SELECT entry_id,created_by FROM music_entry_details').all() as {entry_id:string;created_by:string}[]).map(e=>[e.entry_id,e.created_by]))).toEqual(Object.fromEntries(Object.entries(expected.entries).filter(([id])=>['sub-0','sub-1'].includes(id)).map(([id,e]:[string,any])=>[id,e.createdBy])));
+      expect(s.db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toHaveLength(Object.keys(expected.members).length);
+      expect(s.db.prepare('SELECT id FROM music_shouts').all()).toEqual(expected.shouts.map((s:any)=>({id:s.id})));
+      expect(s.db.prepare("SELECT payload_json FROM music_documents WHERE kind='trend'").all().map((r:any)=>JSON.parse(r.payload_json))).toEqual(expected.trend);
+    }
   });
   it('retires only associated OAuth proofs and epochs, rejects stale saves, and keeps unrelated login attempts and rate limits',async()=>{
     const s=await setup(),id=catalogProfiles.bob;
@@ -52,17 +78,18 @@ describe('durable administrator music removal and reset',()=>{
     const cookie='kanban_session=fixture-bob',viewer=(await s.app.inject({url:'/api/v2/session',headers:{cookie}})).json();expect(viewer).toMatchObject({authenticated:true,musicEpoch:1});
     expect((await s.app.inject({method:'PUT',url:'/api/v2/me/music',headers:{cookie,origin,'x-account-scope':viewer.scope,'x-csrf-token':viewer.csrf,'idempotency-key':randomUUID()},payload:{profileId:id,musicEpoch:0,revision:0,selections:[{entryId:'main-0',level:3}]}})).statusCode).toBe(409);
   });
-  it('resets only the reviewed music IDs and keeps settings, trends, catalog history, accounts and bot work intact',async()=>{
-    const s=await setup(),tables=['users','events','attendees','bot_outbox','bot_settings','music_documents'];
+  it('resets only the reviewed music IDs and clears all shouts and trends while keeping settings, catalog history, accounts and bot work intact',async()=>{
+    const s=await setup(),tables=['users','events','attendees','bot_outbox','bot_settings'];
     s.db.prepare("INSERT INTO music_documents VALUES('settings',0,?)").run(JSON.stringify({theme:'dark',adminPasswordHash:'legacy-unused'}));
     s.db.prepare("INSERT INTO music_documents VALUES('trend',0,?)").run(JSON.stringify({t:123,counts:{'sub-0':3}}));
     const before=tables.map(t=>s.db.prepare('SELECT * FROM '+t).all()),body=await s.input('');expect(await s.preview('')).toMatchObject({profiles:3,entries:22,selections:7});
     expect((await s.send(body,'')).json()).toMatchObject({command:'reset_music',profiles:3,entries:22});
     expect(tables.map(t=>s.db.prepare('SELECT * FROM '+t).all())).toEqual(before);
+    expect(s.db.prepare("SELECT kind FROM music_documents ORDER BY kind").all()).toEqual([{kind:'settings'}]);
     for(const table of ['music_entries','music_entry_details','music_selections','music_legacy_profiles','music_profile_fields','music_entry_creations'])expect(s.db.prepare('SELECT * FROM '+table).all()).toEqual([]);
     expect(s.db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toEqual([]);
     expect(s.db.prepare('SELECT command,affected_profiles FROM music_catalog_actions').all()).toEqual([{command:'reset_music',affected_profiles:3}]);
-    s.db.prepare("INSERT INTO music_entries VALUES('new','新詞條','sub')").run();const again=await s.send(body,'');expect(again.statusCode,again.body).toBe(200);expect(s.db.prepare("SELECT id FROM music_entries WHERE id='new'").get()).toBeDefined();
+    s.db.prepare("INSERT INTO music_entries VALUES('new','新詞條','sub')").run();s.db.prepare("INSERT INTO music_documents VALUES('trend_sample',999,'{\"t\":999,\"counts\":{}}')").run();const again=await s.send(body,'');expect(again.statusCode,again.body).toBe(200);expect(s.db.prepare("SELECT id FROM music_entries WHERE id='new'").get()).toBeDefined();expect(s.db.prepare("SELECT position FROM music_documents WHERE kind='trend_sample'").all()).toEqual([{position:999}]);
     expect(s.db.pragma('foreign_key_check')).toEqual([]);
   });
   it('checks current authority, origin, admin CSRF, strict confirmation and every reviewed revision before writing the durable journal',async()=>{

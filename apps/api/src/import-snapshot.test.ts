@@ -70,7 +70,7 @@ describe('offline paired snapshot import', () => {
         expect(db.prepare('SELECT * FROM music_shouts WHERE profile_id=?').all(profileId('10001'))).toEqual([]);
         expect(db.prepare("SELECT * FROM music_documents WHERE kind IN ('shouts','shoutHistory')").all()).toEqual([]);
         if(reset){expect(db.prepare('SELECT * FROM music_entries').all()).toEqual([]);expect(db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toEqual([]);}
-        else {expect(db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='e-main'").get()).toEqual({created_by:'admin'});expect(db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toHaveLength(2);}
+        else {expect(db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='e-main'").get()).toEqual({created_by:''});expect(db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toHaveLength(2);}
         expect(db.prepare('SELECT command FROM music_catalog_actions').all()).toEqual([{command:reset?'reset_music':'delete_profile'}]);
         expect(db.prepare('SELECT count(*) n FROM erasure_applied WHERE request_id=?').get(requestId)).toEqual({n:1});
         expect(db.pragma('foreign_key_check')).toEqual([]);

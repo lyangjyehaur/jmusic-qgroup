@@ -7,9 +7,9 @@ const review=(page:Page)=>page.getByRole('region',{name:'刪除範圍核對',exa
 async function confirm(page:Page,reset=false){await page.getByLabel('輸入 '+(reset?'RESET':'DELETE')+' 確認',{exact:true}).fill(reset?'RESET':'DELETE');await page.getByRole('checkbox',{name:'我已核對刪除範圍及不可復原的影響',exact:true}).check();await page.getByRole('button',{name:reset?'重置成分與詞庫':'確認刪除成分',exact:true}).click();}
 test('profile-free administrators navigate to removal, review exact scope and retain another member’s selections',async({page,context})=>{
   await login(context);await page.goto('/admin/music/'+bob);await page.getByRole('link',{name:'刪除此成分',exact:true}).click();await expect(review(page)).toContainText('詞庫bob');await expect(review(page)).toContainText('1 份成分 · 2 項選擇');
-  await expect(page.getByRole('button',{name:'確認刪除成分',exact:true})).toBeDisabled();await confirm(page);await expect(page.getByText('成分已刪除，建立的詞條已轉交管理員。',{exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'確認刪除成分',exact:true})).toBeDisabled();await confirm(page);await expect(page.getByText('成分已刪除，自建詞條保留並移除原建立者資訊。',{exact:true})).toBeVisible();
   await page.getByRole('link',{name:'返回成分關聯',exact:true}).click();await expect(page.getByRole('link',{name:'詞庫bob',exact:true})).toHaveCount(0);await expect(page.getByRole('link',{name:'詞庫alice',exact:true})).toBeVisible();
-  const catalog=await (await context.request.get('/api/v2/music/catalog')).json();expect(catalog.entries.find((e:any)=>e.id==='sub-1')).toMatchObject({creatorName:'管理員',count:1});
+  const catalog=await (await context.request.get('/api/v2/music/catalog')).json();expect(catalog.entries.find((e:any)=>e.id==='sub-1')).toMatchObject({creatorName:'',count:1});
 });
 test('full reset requires its own confirmation, works at 360px and preserves activities and logged-in accounts',async({page,context})=>{
   await login(context);await page.setViewportSize({width:360,height:800});await page.goto('/admin');await page.getByRole('link',{name:'重置成分與詞庫',exact:true}).click();
@@ -21,7 +21,7 @@ test('full reset requires its own confirmation, works at 360px and preserves act
 test('a lost deletion response is recovered by receipt after reload despite the source profile returning 404',async({page,context})=>{
   await login(context);let writes=0;await page.route('**/api/v2/admin/music/'+bob+'/erase',async route=>{if(route.request().method()!=='POST')return route.continue();writes++;const response=await route.fetch();await route.fulfill({response,body:'{'});});
   await page.goto('/admin/music/'+bob+'/erase');await confirm(page);await expect(page.getByRole('button',{name:'查詢刪除結果',exact:true})).toBeVisible();page.on('dialog',dialog=>void dialog.accept());await page.reload();
-  await expect(page.getByRole('alert')).toContainText('成分不存在或已刪除');await page.getByRole('button',{name:'查詢刪除結果',exact:true}).click();await expect(page.getByText('成分已刪除，建立的詞條已轉交管理員。',{exact:true})).toBeVisible();expect(writes).toBe(1);
+  await expect(page.getByRole('alert')).toContainText('成分不存在或已刪除');await page.getByRole('button',{name:'查詢刪除結果',exact:true}).click();await expect(page.getByText('成分已刪除，自建詞條保留並移除原建立者資訊。',{exact:true})).toBeVisible();expect(writes).toBe(1);
 });
 test('an undelivered reset can only retry its exact original request and cannot delete data changed after review',async({page,context})=>{
   await login(context);let fail=true;const writes:{body:string|null}[]=[];await page.route('**/api/v2/admin/music-reset',async route=>{if(route.request().method()!=='POST')return route.continue();writes.push({body:route.request().postData()});if(fail){fail=false;return route.abort();}return route.continue();});
@@ -45,6 +45,6 @@ test('non-admins cannot read previews and late private data cannot restore revok
 });
 test('rescue administrators remove unlinked music without creating or closing a member account',async({page,context})=>{
   await page.goto('/admin');await page.getByLabel('管理救援憑證',{exact:true}).fill('synthetic-admin-rescue-'+'x'.repeat(32));await page.getByRole('button',{name:'使用救援憑證登入',exact:true}).click();await expect(page.getByText('管理授權：救援憑證（1 小時）',{exact:true})).toBeVisible();
-  await page.goto('/admin/music/'+orphan+'/erase');await expect(review(page)).toContainText('關聯帳號：未關聯');await confirm(page);await expect(page.getByText('成分已刪除，建立的詞條已轉交管理員。',{exact:true})).toBeVisible();
+  await page.goto('/admin/music/'+orphan+'/erase');await expect(review(page)).toContainText('關聯帳號：未關聯');await confirm(page);await expect(page.getByText('成分已刪除，自建詞條保留並移除原建立者資訊。',{exact:true})).toBeVisible();
   expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(false);
 });
