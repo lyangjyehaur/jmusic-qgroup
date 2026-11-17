@@ -21,7 +21,7 @@ describe('schema 2 → import migration', () => {
       const migrated = openDatabase(path);
       for (const row of schema) expect(migrated.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);
       expect(migrated.prepare('SELECT * FROM music_selections').all()).toEqual(choices); expect(migrated.pragma('foreign_key_check')).toEqual([]); migrated.close();
-      const next = openDatabase(path); expect(next.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 9 }); expect(next.prepare('SELECT * FROM music_profiles').all()).toHaveLength(1); next.close();
+      const next = openDatabase(path); expect(next.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 10 }); expect(next.prepare('SELECT * FROM music_profiles').all()).toHaveLength(1); next.close();
     } finally { rmSync(folder, { recursive: true, force: true }); }
   });
   it('rolls back the whole version migration on DDL collision, leaving old data and marker intact', () => {

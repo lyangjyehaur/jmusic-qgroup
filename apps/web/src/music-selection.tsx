@@ -139,7 +139,9 @@ export function MusicWorkspace() {
   const profile = useQuery({ queryKey: ['private', viewer?.scope, 'music', viewer?.musicEpoch],
     queryFn: () => api('/me/music', Profile, { headers: { 'X-Account-Scope': viewer!.scope } }), enabled: !!viewer, refetchOnMount: 'always' });
   const catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => api('/music/catalog', MusicCatalog) });
-  const error = session.error ?? profile.error ?? catalog.error;
+  // A failed public background refresh must not unmount the draft/save controller.
+  // Child pages show its read error and retry; private/session failures still gate access.
+  const error = session.error ?? profile.error ?? (catalog.data ? null : catalog.error);
   if (viewer && profile.isFetchedAfterMount && profile.data !== undefined && catalog.data && !error) return <ReadyWorkspace
     key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} initial={profile.data} entries={catalog.data.entries} />;
   // The ready controller adds selection hooks and a blocker. Mount the interactive

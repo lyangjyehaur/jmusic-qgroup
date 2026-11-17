@@ -167,3 +167,20 @@ select { max-width: 100%; border: 1px solid #bfcfc8; border-radius: 6px; padding
 .music-ranking{padding-inline-start:1.5rem}.music-ranking li{padding:.5rem;overflow-wrap:anywhere}.music-ranking li p{display:inline;margin-inline-start:.75rem;font-size:.85rem}.music-ranking a{font-weight:600}
 .music-category{margin-block:1rem}.music-category summary{cursor:pointer;min-height:44px;padding-block:.7rem;font-weight:600}.music-category .choice-list{margin-top:.5rem}.choice-list button{max-width:100%;white-space:normal;overflow-wrap:anywhere;height:auto;min-height:44px}.music-editor .aside-note>a{display:inline-block;margin-top:1rem}.music-editor .aside-note button{max-width:100%;white-space:normal;height:auto;min-height:44px}
 .music-entry-detail{overflow-wrap:anywhere}.music-entry-detail button{max-width:100%;height:auto;min-height:44px;white-space:normal}.music-entry-members{list-style:none;padding:0;margin:0}.music-entry-members>li{padding-block:1rem;border-bottom:1px solid #d5dce4;overflow-wrap:anywhere}.music-entry-members>li>a{font-weight:600}.music-entry-members .page-actions{margin-block:.5rem 0}.music-copy{display:inline-flex;flex-direction:column;align-items:start;gap:.4rem;max-width:100%}.music-copy p{margin:0;font-size:.85rem}
+
+.music-stats { display: flex; flex-wrap: wrap; gap: 1rem 2rem; margin-block: 1.25rem; }
+.music-stats div { display: flex; gap: .5rem; align-items: baseline; }
+.music-stats dt { font-size: .875rem; color: #4b5563; }
+.music-stats dd { margin: 0; font-weight: 700; font-variant-numeric: tabular-nums; }
+.music-rank-group { margin-block: 1.5rem; min-width: 0; }
+.music-ranking .is-selected { background: #e8f0ff; border-radius: .5rem; }
+.music-bubbles { width: 100%; min-width: 0; }
+.music-bubbles svg { display: block; overflow: visible; }
+.music-bubbles circle { fill: #e8f0ff; stroke: #8ca8d0; stroke-width: 1; }
+.music-bubbles a:nth-child(3n + 2) circle { fill: #ecf6f2; stroke: #7caf9c; }
+.music-bubbles a:nth-child(3n) circle { fill: #f4effb; stroke: #b19bcd; }
+.music-bubbles text { fill: #152d50; font-size: 13px; font-weight: 600; pointer-events: none; }
+.music-bubbles .bubble-count { font-size: 12px; font-weight: 400; }
+.music-bubbles a.is-selected circle { stroke: #1e4e99; stroke-width: 3; }
+.music-bubbles a:hover circle, .music-bubbles a:focus-visible circle { stroke: #152d50; stroke-width: 4; }
+.music-bubbles a:focus-visible { outline: 2px solid #152d50; outline-offset: 3px; }

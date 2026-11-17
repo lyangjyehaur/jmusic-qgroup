@@ -6,14 +6,20 @@ import { categoryLabel } from './music-entries';
 import { Field } from './settlement-controls';
 export function useMusicSearch<T extends { id: string; name: string; aliases?: readonly string[]; kind: string; category: string }>(entries: readonly T[]) {
   const [params, setParams] = useSearchParams();
+  // React Router's functional search setter is not a queued React state update.
+  // Retain event-time edits until navigation commits so a rapid search cannot
+  // overwrite an expansion/view/range change using the previous render's URL.
+  const latest = useRef({ rendered: params, pending: params });
+  if (latest.current.rendered !== params) latest.current = { rendered: params, pending: params };
   const search = params.get('q') ?? '', category = params.get('category') ?? '', kind = params.get('kind') ?? '';
   const match = useMemo(() => createMusicSearch(entries), [entries]);
   const filtered = entries.filter(entry => (!kind || entry.kind === kind) && (!category || entry.category === category) && match(entry.id, search));
-  const update = (key: string, value: string) => setParams(old => {
-    const next = new URLSearchParams(old);
+  const update = (key: string, value: string) => {
+    const next = new URLSearchParams(latest.current.pending);
     if (value) next.set(key, value); else next.delete(key);
-    return next;
-  }, { replace: true });
+    latest.current.pending = next;
+    setParams(next, { replace: true });
+  };
   return { search, category, kind, filtered, params, update };
 }
 export function MusicSearch({ filters, categories, label = '搜尋音樂詞條' }: {

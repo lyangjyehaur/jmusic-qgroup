@@ -2814,7 +2814,8 @@
       "behavior_evidence": [
         "apps/api/src/music-catalog.test.ts",
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "apps/web/tests/music-ranking.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-catalog.test.ts"
@@ -2826,7 +2827,8 @@
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "名稱／別名、完整拼音／首字母／假名、正規化、分類／類型、清空／Escape／斜線及兩頁共用搜尋已實作並對照原字典；舊 adapter、browser 遷移與正式副本成套驗收待完成。"
@@ -2940,7 +2942,8 @@
         "apps/api/src/music-contact.test.ts",
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
-        "apps/web/tests/music-entry.spec.ts"
+        "apps/web/tests/music-entry.spec.ts",
+        "apps/web/tests/music-ranking.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-contact.test.ts"
@@ -2952,7 +2955,8 @@
         "apps/web/tests/music-contact.spec.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
-        "docs/unified-rebuild/38-music-entry-checkpoint.md"
+        "docs/unified-rebuild/38-music-entry-checkpoint.md",
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "詞庫／獨立詞條／成分共用草稿、原 UUID、保存中鎖定及變更保存列，名單只反映已保存資料，跨成分卡恢復已測；browser 舊草稿遷移、完整跨入口與實際平台驗收待完成。"
@@ -3051,23 +3055,37 @@
         "packages/contracts/src/music-catalog.ts",
         "apps/api/src/music-catalog.ts",
         "apps/web/src/music.tsx",
-        "apps/web/src/music-entries.tsx"
+        "apps/web/src/music-entries.tsx",
+        "packages/domain/src/music-rankings.ts",
+        "apps/web/src/music-ranking.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/api/src/music-stats.ts",
+        "packages/database/src/schema-v10.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "packages/domain/src/music-rankings.test.ts",
+        "apps/web/tests/music-ranking.spec.ts",
+        "apps/api/src/music-stats.test.ts"
       ],
       "data_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "packages/database/src/creation-migration.test.ts",
+        "apps/api/src/music-stats.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "apps/api/src/music-stats.test.ts",
+        "apps/api/src/music-entry-members.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
-        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md",
+        "apps/web/tests/music-ranking.spec.ts",
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生領域／細分選用人數與兩類獨立排序、相同人數 Unicode 排序已實作；排行展開、會員／詞條／近期統計及正式副本驗收待完成。"
+      "remaining": "原生兩類獨立顯示排序、10／20／完整展開、成分／詞條／近期統計及建立時間保全已隔離驗證；正式匯入副本全量對帳、全部舊入口與切換版本組合驗收待完成。"
     },
     {
       "capability_id": "M11",
@@ -3075,13 +3093,31 @@
       "new_entry": "音樂排行",
       "required_behavior": "氣泡標籤與點擊詞條可用；列表為可及性退路",
       "legacy_evidence_group": "音樂前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "氣泡標籤與點擊詞條可用；列表為可及性退路"
+      "implementation": [
+        "packages/domain/src/music-rankings.ts",
+        "apps/web/src/music-ranking.tsx",
+        "apps/web/src/music-search.tsx",
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-entry.tsx"
+      ],
+      "behavior_evidence": [
+        "packages/domain/src/music-rankings.test.ts",
+        "apps/web/tests/music-ranking.spec.ts"
+      ],
+      "data_evidence": [
+        "packages/domain/src/music-rankings.test.ts",
+        "apps/api/src/music-stats.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/music-stats.test.ts",
+        "apps/api/src/music-entry-members.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-ranking.spec.ts",
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生兩類獨立氣泡／清單、完整標籤與人數、鍵盤詳情、共用草稿、響應式全量配置已隔離驗證；正式大詞庫副本、舊入口與切換版本組合驗收待完成。"
     },
     {
       "capability_id": "M12",

@@ -6,6 +6,7 @@ import { DomainError, musicEntryKey, musicText } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
 import { getProfile } from './repositories';
+import { musicStats } from './music-stats';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 export const entryCategories = [
   '歌手',
@@ -87,13 +88,14 @@ function textOrder(a: string, b: string) {
   }
   return x.length - y.length;
 }
-export function musicCatalog(db: DB) {
-  const names = labels(db),
-    entries = rows(db)
+export function musicCatalog(db: DB, now = new Date()) {
+  const names = labels(db), all = rows(db),
+    entries = all
       .map((r) => serialize(r, names))
       .sort((a, b) => b.count - a.count || textOrder(a.name, b.name));
   return MusicCatalog.parse({
     entries,
+    stats: musicStats(db, all.map(row => row.created_at_json), now),
     categories: [...new Set(entries.map((e) => e.category))].sort(textOrder),
   });
 }
@@ -155,7 +157,7 @@ function blankProfile(db: DB, user: { id: string; nickname: string }, stamp: str
   return id;
 }
 export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
-  app.get('/api/v2/music/catalog', async () => db.transaction(() => musicCatalog(db))());
+  app.get('/api/v2/music/catalog', async () => db.transaction(() => musicCatalog(db, now()))());
   app.get('/api/v2/music/entries/:id/members', async request => db.transaction(() => {
     const viewer = security.scopedMember(request);
     if (!getProfile(db, viewer.id))

@@ -77,6 +77,7 @@ test('recovers one original save UUID and body after moving workspace during a l
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByRole('button', { name: '確認保存結果', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await page.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
   await page.getByRole('link', { name: 'YOASOBI', exact: true }).click();
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toBeDisabled();
   page.on('dialog', dialog => void dialog.accept());
@@ -128,6 +129,7 @@ test('keeps storage denial and damaged drafts visible and non-writable from both
   const session = await (await context.request.get('/api/v2/session')).json();
   await clean.evaluate(scope => sessionStorage.setItem('qgroup:rebuild:music:v1:' + scope, 'DAMAGED_SHARED_SELECTION'), session.scope);
   await clean.reload();
+  await clean.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
   await clean.getByRole('link', { name: 'YOASOBI', exact: true }).click();
   await expect(clean.getByRole('button', { name: '選取此詞條', exact: true })).toBeDisabled();
   await clean.getByRole('button', { name: '保全原稿，從已保存版本開始' }).click();
@@ -156,6 +158,7 @@ test('enforces separate 5/15 limits across both pages and allows removal without
   const names = await sub.allTextContents();
   for (const name of names.slice(0, 15)) await page.getByRole('button', { name, exact: true }).click();
   await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await page.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
   await page.getByRole('link', { name: names[15]!, exact: true }).click();
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
   await expect(page.getByText('領域最多 5 項、細分最多 15 項，合計最多 20 項。', { exact: true })).toBeVisible();

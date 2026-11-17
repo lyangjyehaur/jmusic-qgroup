@@ -12,6 +12,13 @@ export const MusicCatalogEntry = z.object({
 export const MusicCatalog = z.object({
   entries: z.array(MusicCatalogEntry),
   categories: z.array(z.string()),
+  stats: z.object({
+    members: z.number().int().nonnegative(),
+    entries: z.number().int().nonnegative(),
+    recentMembers24h: z.number().int().nonnegative(),
+    recentEntries24h: z.number().int().nonnegative(),
+    asOf: z.number(),
+  }),
 });
 export const MusicEntryMembers = z.object({
   entryId: z.string(),
