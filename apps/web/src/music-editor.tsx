@@ -10,9 +10,6 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
   return <aside><Surface variant="note" className="aside-note" aria-label="我的選擇">
     <Heading level={2}>我的選擇 <small>{form.selected.size} / 20</small></Heading>
     <Text>領域 {form.mainCount}／5 · 細分 {form.subCount}／15</Text>
-    {form.storageError && <p role="alert" className="notice">{form.storageError}</p>}
-    {form.readError && <div role="alert" className="notice"><Text>{form.readError}</Text>
-      <Button variant="secondary" onClick={form.preserve}>保全原稿，從已保存版本開始</Button></div>}
     {form.draft.selections.length ? <ul className="selected-list">{form.draft.selections.map(selected => {
       const entry = form.entries.find(entry => entry.id === selected.entryId);
       const name = entry?.name ?? '已移除的詞條';
@@ -26,12 +23,12 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
     })}</ul> : <Text tone="muted">請選擇詞條。</Text>}
     {form.dirty && <div className="editor-actions"><span className="mobile-summary" role="status">
       已選 {form.selected.size} / 20<small>{form.draft.requestKey ? '保存結果待確認' : '有未保存的選擇'}</small>
-    </span><Button className="save" loading={form.sending} disabled={!!form.storageError || !!form.readError}
+    </span><Button className="save" loading={form.sending} disabled={form.unavailable}
       onClick={() => void form.save()}>{form.draft.requestKey ? '確認保存結果' : '保存我的成分'}</Button></div>}
     {form.message && <p role="status" className="save-message">{form.message}</p>}
-    {!form.draft.requestKey && form.dirty && <Button variant="ghost" disabled={form.sending}
+    {!form.draft.requestKey && form.dirty && <Button variant="ghost" disabled={form.locked}
       onClick={() => void form.rebase()}>核對最新版本，保留我的選擇</Button>}
-    {(!form.message || form.dirty) && <Text size="sm" tone="muted">{form.dirty ? '尚有未保存的修改；草稿只留在此分頁。' : form.saved ? '所有選擇已保存。' : '選擇後即可建立成分。'}</Text>}
+    {(!form.message || form.dirty) && <Text size="sm" tone="muted">{form.dirty ? '尚有未保存的修改。' : form.saved ? '所有選擇已保存。' : '選擇後即可建立成分。'}</Text>}
     <div className="page-actions"><Link to={(location.pathname !== '/me/music' ? '/me/music' : '/music') + location.search}>
       {location.pathname !== '/me/music' ? '編輯我的成分' : '音樂詞庫'}</Link>
     <Link to={'/me/music/share' + location.search}>分享成分</Link></div>

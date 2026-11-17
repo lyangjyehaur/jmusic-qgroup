@@ -1,3 +1,4 @@
+import { durableRows } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = 'http://127.0.0.1:5082';
@@ -27,7 +28,7 @@ test('trend terms share the original unsaved selection, preserve search and retu
   await page.getByRole('link', { name: '回到音樂趨勢', exact: true }).click(); await expect(page).toHaveURL('/music/trends?q=Yoa');
   await expect(page.getByRole('button', { name: '移除Aimer', exact: true })).toHaveCount(0); await expect(page.getByRole('button', { name: '移除J-POP', exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: '回到音樂詞庫', exact: true }).click(); await expect(page).toHaveURL('/music?q=Yoa'); expect(writes).toBe(0);
-  const drafts = await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:v1:'))); expect(drafts).toHaveLength(1);
+  await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);const drafts=(await durableRows(page)).filter(row=>row.key.startsWith('qgroup:rebuild:music:v1:'));expect(drafts).toHaveLength(1);
 });
 test('new members link through scoped profiles and keyboard navigation; mobile chart and data table remain within the page', async ({ page, context }) => {
   await login(context); await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/music/trends');

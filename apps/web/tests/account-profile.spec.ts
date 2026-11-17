@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 const baseURL = 'http://127.0.0.1:5082';
 async function loginFixture(context: BrowserContext, account = 'alice') {
@@ -68,19 +69,10 @@ test('conflicting nickname edits preserve input and require an explicit read bef
 });
 test('blocked browser storage prevents nickname writes and damaged drafts remain recoverable', async ({ page, context }) => {
   await loginFixture(context);
-  await page.addInitScript(() => {
-    const original = Storage.prototype.setItem;
-    Storage.prototype.setItem = function(key, value) { if (key.startsWith('qgroup:rebuild:account-profile:')) throw new Error('synthetic storage failure'); return original.call(this, key, value); };
-  });
   let writes = 0; page.on('request', request => { if (request.method() === 'PUT' && request.url().endsWith('/me/profile')) writes++; });
-  await page.goto('/me/profile'); await page.getByLabel('站內稱呼', { exact: true }).fill('尚未送出'); await page.getByRole('button', { name: '保存稱呼', exact: true }).click();
-  await expect(page.getByText('無法保存操作編號，尚未送出修改。', { exact: true })).toBeVisible(); expect(writes).toBe(0);
-  const clean = await context.newPage(); await clean.goto('/activities');
-  const viewer = await (await context.request.get('/api/v2/session')).json(); const key = 'qgroup:rebuild:account-profile:v1:' + viewer.scope;
-  await clean.evaluate(key => sessionStorage.setItem(key, 'damaged nickname draft'), key); await clean.goto('/me/profile');
-  await expect(clean.getByText('此分頁的稱呼草稿無法讀取，原始內容已保留。請先保全原稿。', { exact: true })).toBeVisible();
-  await clean.getByRole('button', { name: '保全原稿，從目前稱呼開始', exact: true }).click();
-  expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes('account-profile:') && key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged nickname draft');
+  await page.goto('/me/profile'); await denyDraftWrites(page,'account-profile:'); await page.getByLabel('站內稱呼', { exact: true }).fill('尚未送出'); await page.getByRole('button', { name: '保存稱呼', exact: true }).click();
+  await expect(page.getByText('無法保存原稿及操作編號，尚未送出。', { exact: true })).toBeVisible(); expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/me/profile');await clean.getByLabel('站內稱呼', { exact: true }).fill('損壞前原稿');await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'account-profile:','damaged nickname draft');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await expect(clean.getByLabel('站內稱呼', { exact: true })).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged nickname draft');
   await expect(clean.getByLabel('站內稱呼', { exact: true })).toBeEnabled(); await clean.close();
 });
 test('reauth reminders defer during editing and invitations, respect the existing 24 hour scope key and never force logout', async ({ page, context }) => {
@@ -88,8 +80,8 @@ test('reauth reminders defer during editing and invitations, respect the existin
   await page.goto('/activities?invite=synthetic#roster'); await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toHaveCount(0);
   await page.goto('/me/profile'); await page.getByLabel('站內稱呼', { exact: true }).fill('還在編輯');
   await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toHaveCount(0);
-  await page.getByRole('link', { name: '活動', exact: true }).click(); await expect(page.getByRole('heading', { name: '還有未保存的稱呼' })).toBeVisible();
-  await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
+  await page.getByRole('link', { name: '活動', exact: true }).click(); await expect(page.getByText('仍有未完成原稿。',{exact:false})).toBeVisible();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toBeVisible();
   await page.getByRole('button', { name: '稍後處理', exact: true }).click(); await page.reload();
   await expect(page.getByRole('heading', { name: '活動', exact: true })).toBeVisible(); await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toHaveCount(0);
@@ -114,12 +106,12 @@ test('missing UnionID reauthorization keeps the original account and reports the
 });
 test('nickname drafts stay with their account across switching and are cleared on device logout', async ({ page, context }) => {
   await loginFixture(context); await page.goto('/me/profile'); await page.getByLabel('站內稱呼', { exact: true }).fill('尚未保存的原帳號稱呼');
-  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
+  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await fakeQQ(page, 'profile-other'); await page.goto('/login?returnTo=%2Fme%2Faccounts'); await authorize(page, '前往 QQ 登入');
   await page.goto('/me/profile'); await expect(page.getByLabel('站內稱呼', { exact: true })).toHaveValue('測試帳號 profile-other');
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '切換至 小青', exact: true }).click();
   await page.goto('/me/profile'); await expect(page.getByLabel('站內稱呼', { exact: true })).toHaveValue('尚未保存的原帳號稱呼');
-  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
+  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click(); await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible();
-  expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:account-profile:')))).toEqual([]);
+  expect(await durableRows(page)).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);
 });

@@ -52,6 +52,9 @@ function validate(key: string, scope: string) {
   if (!/^[a-f0-9]{64}$/.test(scope) || !(
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
     key === prefix + 'payment-codes:v1:' + scope ||
+    key === prefix + 'account-profile:v1:' + scope ||
+    key === prefix + 'music:v1:' + scope ||
+    new RegExp('^qgroup:rebuild:music:(?:fields|contact):v1:' + scope + ':[0-9]+:[^:]{1,80}$').test(key) ||
     key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
     scopedRoute ||
     ['poll-create', 'poll-vote', 'poll-manage', 'settlement', 'rooms', 'arrangements', 'finance', 'lifecycle', 'consent', 'attendance', 'registration'].some(kind =>

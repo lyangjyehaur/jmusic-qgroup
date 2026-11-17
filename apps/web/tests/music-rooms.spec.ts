@@ -291,6 +291,7 @@ test('adoption preserves an existing draft until explicitly replaced and keeps a
   await button(page, '核對並採用為正式分房').click();
   await leave(page);
   await expect(page.getByLabel('包間名稱', { exact: true })).toHaveValue('原稿包間');
+  await button(page, '恢復本機原稿').click();
   await expect(button(page, '載入建議到草稿')).toBeDisabled();
   await page
     .getByRole('checkbox', {

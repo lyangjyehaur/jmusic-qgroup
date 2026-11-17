@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
+import { durableRows } from './draft-helpers';
 const baseURL = 'http://127.0.0.1:5082';
 async function login(page: Page, code: string, destination = '/me/accounts') {
   await page.route('**/__test/qq?*', async route => {
@@ -123,10 +124,10 @@ test('logout clears the same browser other tab private views and music drafts wi
   await login(page, 'device-tabs');
   const editor = await context.newPage(); await editor.goto('/me/music');
   await editor.getByRole('button', { name: 'YOASOBI', exact: true }).click();
-  expect(await editor.evaluate(() => Object.keys(sessionStorage).some(key => key.startsWith('qgroup:rebuild:music:')))).toBe(true);
+  await expect.poll(async () => (await durableRows(editor)).some(row => row.key.startsWith('qgroup:rebuild:music:'))).toBe(true);
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
   await expect(editor.getByRole('heading', { name: '登入後才能保存成分', exact: true })).toBeVisible();
-  expect(await editor.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:')))).toEqual([]);
+  await expect.poll(async () => (await durableRows(editor)).filter(row => row.key.startsWith('qgroup:rebuild:music:'))).toEqual([]);
   await editor.close();
 });
 test('switching accounts updates another tab while preserving its original account draft', async ({ page, context }) => {

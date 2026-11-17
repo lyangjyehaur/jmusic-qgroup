@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext } from '@playwright/test';
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: 'http://127.0.0.1:5082', httpOnly: true, sameSite: 'Lax' }]);
@@ -34,7 +35,8 @@ test('scoped draft survives refresh, preserves activity return, and safely retri
   await page.getByRole('button', { name: 'J-POP', exact: true }).click();
   await page.getByRole('button', { name: 'YOASOBI', exact: true }).click();
   await page.getByLabel('YOASOBI喜歡程度').selectOption('4');
-  await page.reload();
+  await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await page.reload();
+  await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByLabel('YOASOBI喜歡程度')).toHaveValue('4');
   let first = true;
@@ -75,25 +77,9 @@ test('unsaved navigation is explicit and mobile selection stays usable', async (
   await expect(page.getByText('已保存。')).toBeVisible();
 });
 test('storage failure blocks sending and damaged drafts are preserved for recovery', async ({ context, page }) => {
-  await login(context, 'bob');
-  await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('Synthetic quota failure', 'QuotaExceededError'); }; });
-  let writes = 0;
-  page.on('request', request => { if (request.method() === 'PUT') writes++; });
-  await page.goto('/me/music');
-  await page.getByRole('button', { name: 'J-POP', exact: true }).click();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
-  await expect(page.getByText('瀏覽器無法保存草稿', { exact: false })).toBeVisible();
-  expect(writes).toBe(0);
-  const clean = await context.newPage();
-  await clean.goto('/me/music');
-  await expect(clean.getByRole('heading', { name: '我的成分', exact: true })).toBeVisible();
-  const viewer = await (await context.request.get('/api/v2/session')).json();
-  await clean.evaluate(scope => sessionStorage.setItem('qgroup:rebuild:music:v1:' + scope, 'damaged synthetic draft'), viewer.scope);
-  await clean.reload();
-  await expect(clean.getByText('此分頁的原草稿無法讀取', { exact: false })).toBeVisible();
-  await clean.getByRole('button', { name: '保全原稿，從已保存版本開始' }).click();
-  expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes(':recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged synthetic draft');
-  await clean.close();
+  await login(context,'bob');await page.goto('/me/music');await denyDraftWrites(page,'music:v1:');
+  let writes=0;page.on('request',request=>{if(request.method()==='PUT')writes++;});await page.getByRole('button',{name:'J-POP',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/me/music');await clean.getByRole('button',{name:'J-POP',exact:true}).click();await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'music:v1:','damaged synthetic draft');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await expect(clean.getByRole('button',{name:'J-POP',exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic draft');await clean.close();
 });
 test('a concurrent profile update returns conflict without replacing the local selection', async ({ context, page }) => {
   await login(context, 'bob'); await page.goto('/me/music');

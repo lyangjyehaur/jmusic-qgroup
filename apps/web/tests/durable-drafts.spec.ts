@@ -179,6 +179,7 @@ for(const kind of ['logout','admin-logout','music-erasure'] as const)test('retri
   await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
   await page.goto('/me/music/entries/new');await page.getByLabel('詞條名稱（最多 24 字）',{exact:true}).fill('待清除原稿');await saved(page);
   page.on('dialog',d=>void d.accept());await page.goto(kind==='logout'?'/me/accounts':kind==='admin-logout'?'/admin':'/me/privacy');
+  const beforeCleanup=await durableRows(page);expect(beforeCleanup.some(row=>row.key.includes('music:entries:'))).toBe(true);expect(beforeCleanup.some(row=>row.key.includes('music:v1:'))).toBe(true);
   await page.evaluate(kind=>{
     if(kind!=='music-erasure'){
       const original=IDBObjectStore.prototype.clear;
@@ -200,7 +201,7 @@ for(const kind of ['logout','admin-logout','music-erasure'] as const)test('retri
     await expect(page.getByRole('button',{name:'完成',exact:true})).toBeDisabled();
   }
   await expect(page.getByText(kind!=='music-erasure'?'此裝置已登出，但本機原稿清除失敗。請重試清除。':'伺服器刪除已完成，但本機原稿清除失敗。請重試清除。',{exact:kind!=='admin-logout'})).toBeVisible();
-  expect(await durableRows(page)).toHaveLength(1);
+  expect(await durableRows(page)).toEqual(beforeCleanup);
   await page.getByRole('button',{name:'重試清除本機原稿',exact:true}).click();
   if(kind==='logout')await expect(page.getByRole('heading',{name:'尚未登入',exact:true})).toBeVisible();
   else if(kind==='music-erasure') await expect(page.getByRole('button',{name:'完成',exact:true})).toBeEnabled();

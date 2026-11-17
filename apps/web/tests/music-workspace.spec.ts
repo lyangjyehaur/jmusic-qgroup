@@ -1,5 +1,6 @@
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
+import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 const origin = 'http://127.0.0.1:5082';
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]);
@@ -27,7 +28,7 @@ test('shares one selection, search, levels and activity return across catalog an
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
-  const drafts = await page.evaluate(() => Object.keys(sessionStorage).filter(key => /^qgroup:rebuild:music:v1:/.test(key)));
+  const drafts=(await durableRows(page)).filter(row=>row.key.includes('music:v1:'));
   expect(drafts).toHaveLength(1);
   await page.getByRole('link', { name: '回到剛才的活動' }).click();
   await expect(page.getByRole('heading', { name: '週末一起聽日系音樂' })).toBeVisible();
@@ -106,36 +107,12 @@ test('keeps account drafts separate on the catalog and clears them after logout 
   await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible();
   await page.goto('/music?entry=sub-0');
   await expect(page.getByRole('button', { name: '選取此詞條', exact: true })).toHaveCount(0);
-  expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:')))).toEqual([]);
+  expect(await durableRows(page)).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);
 });
 test('keeps storage denial and damaged drafts visible and non-writable from both workspace pages', async ({ page, context }) => {
-  await login(context);
-  await page.addInitScript(() => {
-    const set = Storage.prototype.setItem;
-    Storage.prototype.setItem = function(key, value) {
-      if (/^qgroup:rebuild:music:v1:/.test(key)) throw Error('synthetic denied');
-      return set.call(this, key, value);
-    };
-  });
-  let writes = 0;
-  page.on('request', request => { if (request.method() === 'PUT' && request.url().endsWith('/me/music')) writes++; });
-  await page.goto('/music?entry=sub-0');
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
-  await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
-  expect(writes).toBe(0);
-  const clean = await context.newPage(); await clean.goto('/music');
-  const session = await (await context.request.get('/api/v2/session')).json();
-  await clean.evaluate(scope => sessionStorage.setItem('qgroup:rebuild:music:v1:' + scope, 'DAMAGED_SHARED_SELECTION'), session.scope);
-  await clean.reload();
-  await clean.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
-  await clean.getByRole('link', { name: 'YOASOBI', exact: true }).click();
-  await expect(clean.getByRole('button', { name: '選取此詞條', exact: true })).toBeDisabled();
-  await clean.getByRole('button', { name: '保全原稿，從已保存版本開始' }).click();
-  await expect(clean.getByRole('button', { name: '選取此詞條', exact: true })).toBeEnabled();
-  expect(await clean.evaluate(() => Object.entries(sessionStorage).filter(([key]) => key.includes(':recovery:')).map(([, value]) => value))).toContain('DAMAGED_SHARED_SELECTION');
-  await clean.close();
+  await login(context);await page.goto('/music?entry=sub-0');await denyDraftWrites(page,'music:v1:');let writes=0;page.on('request',request=>{if(request.method()==='PUT')writes++;});
+  await page.getByRole('button',{name:'選取此詞條',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'編輯我的成分',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/me/music');await clean.getByRole('button',{name:'Aimer',exact:true}).click();await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'music:v1:','DAMAGED_SHARED_SELECTION');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await clean.getByRole('link',{name:'音樂詞庫',exact:true}).click();await clean.getByRole('button',{name:'展開細分前 20 名',exact:true}).click();await clean.getByRole('link',{name:'YOASOBI',exact:true}).click();await expect(clean.getByRole('button',{name:'選取此詞條',exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();await expect(clean.getByRole('button',{name:'選取此詞條',exact:true})).toBeEnabled();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('DAMAGED_SHARED_SELECTION');await clean.close();
 });
 test('keeps mobile selection, long labels and save controls usable and hides the bar after save', async ({ page, context }) => {
   await login(context); await page.setViewportSize({ width: 360, height: 800 });
@@ -214,6 +191,6 @@ test('does not restore private selection or cleared drafts when a save response 
   release(); await (await received).finished();
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveCount(0);
   await expect(page.locator('.selected-list')).toHaveCount(0);
-  expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:')))).toEqual([]);
+  expect(await durableRows(page)).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);
   await account.close();
 });

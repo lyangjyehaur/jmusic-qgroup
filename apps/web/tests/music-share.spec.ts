@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
+import { durableRows, damageDraft } from './draft-helpers';
 const origin = 'http://127.0.0.1:5082';
 test.use({ musicMatches: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
@@ -101,9 +102,10 @@ test('late share metadata cannot cross an account switch and delayed PNG convers
 test('supports a first unsaved profile and preserves pending or damaged draft recovery instead of exporting a fallback', async ({ page, context }) => {
   await login(context, 'auth-owner'); await inspectCanvas(page); await page.goto('/me/music/share'); await expect(page.getByText('尚未選擇可分享的詞條', { exact: false })).toBeVisible();
   await page.getByRole('link', { name: '選擇成分', exact: true }).click(); await page.getByRole('button', { name: 'YOASOBI', exact: true }).click(); await page.getByRole('link', { name: '分享成分', exact: true }).click(); await ready(page); expect((await lines(page)).join('')).toContain('1 項 · 目前草稿'); expect((await lines(page)).join('')).not.toContain('成分 ID');
-  const viewer = await (await context.request.get('/api/v2/session')).json(), key = 'qgroup:rebuild:music:v1:' + viewer.scope;
-  await page.evaluate(key => { const draft = JSON.parse(sessionStorage.getItem(key)!); draft.requestKey = crypto.randomUUID(); sessionStorage.setItem(key, JSON.stringify(draft)); }, key); page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByText('成分保存結果尚未確認，請回到我的成分確認結果。', { exact: true })).toBeVisible(); await expect(image(page)).toHaveCount(0);
-  await page.evaluate(key => sessionStorage.setItem(key, 'damaged draft'), key); await page.reload(); await expect(page.getByText('請回到我的成分保全原稿，再產生分享內容。', { exact: true })).toBeVisible(); await expect(image(page)).toHaveCount(0); expect(await page.evaluate(key => sessionStorage.getItem(key), key)).toBe('damaged draft');
+  await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
+  const row=(await durableRows(page)).find(row=>row.key.includes('music:v1:'))!, draft=JSON.parse(row.raw);draft.requestKey=crypto.randomUUID();
+  await damageDraft(page,'music:v1:',JSON.stringify(draft)); page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByText('成分保存結果尚未確認，請回到我的成分確認結果。', { exact: true })).toBeVisible(); await expect(image(page)).toHaveCount(0);
+  await damageDraft(page,'music:v1:','damaged draft'); await page.reload(); await expect(page.getByText('請先在本機原稿提示中完成恢復或保全，再產生分享內容。', { exact: true })).toBeVisible(); await expect(image(page)).toHaveCount(0); expect((await durableRows(page)).find(row=>row.key.includes('music:v1:'))!.raw).toBe('damaged draft');
 });
 test('erasure removes prior images and rebuilt drafts use a fresh epoch; mobile controls remain legible', async ({ page, context }) => {
   await login(context); await inspectCanvas(page); await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/me/music/share'); await ready(page); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-music-share-mobile.png', fullPage: true });

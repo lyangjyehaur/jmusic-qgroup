@@ -1,7 +1,9 @@
-import { useEffect, useState } from 'react';
-import { Link, useBlocker } from 'react-router-dom';
+import { useState } from 'react';
+import { useDurableRecord } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
+import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AccountProfile, SaveNickname, type Viewer } from '@qgroup/contracts';
 import { api, ApiError } from './api';
@@ -22,43 +24,21 @@ function ProfileLoader({ viewer }: { viewer: Viewer }) {
 function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value }) {
   const queryClient = useQueryClient();
   const storageKey = 'qgroup:rebuild:account-profile:v1:' + viewer.scope;
-  const [loaded] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem(storageKey);
-      return { value: raw ? Draft.parse(JSON.parse(raw)) : initial as z.infer<typeof Draft>, error: '' };
-    } catch { return { value: initial as z.infer<typeof Draft>, error: '此分頁的稱呼草稿無法讀取，原始內容已保留。請先保全原稿。' }; }
-  });
-  const [draft, setDraft] = useState(loaded.value);
-  const [readError, setReadError] = useState(loaded.error);
-  const [storageError, setStorageError] = useState('');
-  const [saved, setSaved] = useState(initial);
-  const [message, setMessage] = useState('');
-  const [sending, setSending] = useState(false);
-  const dirty = !!draft.requestKey || draft.nickname !== saved.nickname || draft.revision !== saved.revision;
-  const blocker = useBlocker(dirty);
-  useEffect(() => {
-    if (readError) return;
-    try { sessionStorage.setItem(storageKey, JSON.stringify(draft)); setStorageError(''); }
-    catch { setStorageError('瀏覽器無法保存稱呼草稿，尚未送出修改。請允許本站儲存後重試。'); }
-  }, [draft, readError, storageKey]);
-  useEffect(() => {
-    if (!dirty) return;
-    const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
-    window.addEventListener('beforeunload', leave);
-    return () => window.removeEventListener('beforeunload', leave);
-  }, [dirty]);
+  const [saved, setSaved] = useState(initial), [message, setMessage] = useState('');
+  const record = useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:()=>saved,
+    parse:raw=>Draft.parse(JSON.parse(raw)),dirty:value=>value.nickname!==saved.nickname||value.revision!==saved.revision,pending:value=>!!value.requestKey});
+  const {value:draft,replace:setDraft,busy:sending,setBusy:setSending,active,dirty,locked,persist,begin,unavailable}=record;
   async function save() {
-    if (sending || readError) return;
+    if (sending || unavailable) return;
     const parsed = SaveNickname.safeParse({ nickname: draft.nickname, revision: draft.revision });
     if (!parsed.success) { setMessage('稱呼須為 1–24 字，不能包含控制字元。'); return; }
     const pending = { ...parsed.data, requestKey: draft.requestKey ?? crypto.randomUUID() };
-    try { sessionStorage.setItem(storageKey, JSON.stringify(pending)); setStorageError(''); }
-    catch { setStorageError('無法保存操作編號，尚未送出修改。'); return; }
-    setDraft(pending); setSending(true); setMessage('');
+    if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setSending(false);return;}
+    setDraft(pending); setMessage('');let accepted=false;
     try {
-      const result = await api('/me/profile', AccountProfile, { method: 'PUT', headers: { ...authHeaders(viewer), 'Idempotency-Key': pending.requestKey }, body: JSON.stringify(parsed.data) });
+      const result = await api('/me/profile', AccountProfile, { method: 'PUT', headers: { ...authHeaders(viewer), 'Idempotency-Key': pending.requestKey }, body: JSON.stringify(parsed.data) });accepted=true;
       const latest = await api('/me/profile', AccountProfile, { headers: { 'X-Account-Scope': viewer.scope } });
-      sessionStorage.setItem(storageKey, JSON.stringify(latest));
+      if(!active.current)return;if(!await persist(latest,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');
       setSaved(latest); setDraft(latest);
       queryClient.setQueryData(['private', viewer.scope, 'account-profile'], latest);
       announceAccountChange();
@@ -68,34 +48,30 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'accounts'] });
       setMessage(latest.revision === result.revision ? '已保存稱呼。' : '原操作已保存，目前稱呼已再次變更；請核對目前資料。');
     } catch (failure) {
-      if (failure instanceof ApiError && failure.status < 500 && failure.status !== 429) {
-        setDraft({ nickname: pending.nickname, revision: pending.revision });
+      if(!active.current)return;
+      if (!accepted && failure instanceof ApiError && failure.status < 500 && failure.status !== 429) {
+        const next={ nickname: pending.nickname, revision: pending.revision };if(await persist(next))setDraft(next);
         setMessage(failure.message);
       } else setMessage('尚未確認修改結果。操作編號已保留，請按「確認修改結果」安全重試。');
-    } finally { setSending(false); }
+    } finally { if(active.current)setSending(false); }
   }
   async function rebase() {
-    setSending(true);
+    if(locked||!begin())return;
     try {
       const latest = await api('/me/profile', AccountProfile, { headers: { 'X-Account-Scope': viewer.scope } });
       const next = { nickname: draft.nickname, revision: latest.revision };
-      sessionStorage.setItem(storageKey, JSON.stringify(next)); setStorageError('');
+      if(!active.current||!await persist(next))return;
       setSaved(latest); setDraft(next); setMessage('已取得目前稱呼；你的輸入仍保留，請核對後再保存。');
-    } catch (failure) { setMessage(failure instanceof Error ? failure.message : '讀取失敗'); }
-    finally { setSending(false); }
+    } catch (failure) { if(active.current)setMessage(failure instanceof Error ? failure.message : '讀取失敗'); }
+    finally { if(active.current)setSending(false); }
   }
   return <>
-    {blocker.state === 'blocked' && <Surface className="leave-prompt" role="alert"><Heading level={2}>還有未保存的稱呼</Heading><Text>草稿與待確認操作只保留在此分頁。</Text><Button onClick={() => blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={() => blocker.proceed()}>保留草稿並離開</Button></Surface>}
     <Surface className="detail auth-panel"><form onSubmit={event => { event.preventDefault(); void save(); }}>
-      <Text>目前稱呼：{saved.nickname}</Text><label className="account-field">站內稱呼<input value={draft.nickname} maxLength={48} autoComplete="nickname" disabled={sending || !!draft.requestKey || !!readError} onChange={event => { setDraft({ ...draft, nickname: event.target.value }); setMessage(''); }} aria-describedby="nickname-help" /></label>
+      <Text>目前稱呼：{saved.nickname}</Text><label className="account-field">站內稱呼<input value={draft.nickname} maxLength={48} autoComplete="nickname" disabled={locked} onChange={event => { record.change({ ...draft, nickname: event.target.value }); setMessage(''); }} aria-describedby="nickname-help" /></label>
       <Text id="nickname-help">1–24 字。修改會更新名冊顯示，不更換帳號，也不修改 QQ 暱稱、付款歸屬或既有帳單。</Text>
-      <Button type="submit" loading={sending} disabled={!dirty || !!readError || !SaveNickname.safeParse({ nickname: draft.nickname, revision: draft.revision }).success}>{draft.requestKey ? '確認修改結果' : '保存稱呼'}</Button>
+      <Button type="submit" loading={sending} disabled={!dirty || unavailable || !SaveNickname.safeParse({ nickname: draft.nickname, revision: draft.revision }).success}>{draft.requestKey ? '確認修改結果' : '保存稱呼'}</Button>
       {message && <Text role="status">{message}</Text>}
-      {storageError && <Text role="alert">{storageError}</Text>}
-    </form>{dirty && !draft.requestKey && <Button variant="secondary" disabled={sending || !!readError} onClick={() => void rebase()}>核對目前稱呼，保留輸入</Button>}
-    {readError && <div role="alert"><Text>{readError}</Text><Button variant="secondary" onClick={() => {
-      try { const raw = sessionStorage.getItem(storageKey); if (raw !== null) sessionStorage.setItem(storageKey + ':recovery:' + Date.now(), raw); setReadError(''); }
-      catch { setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。'); }
-    }}>保全原稿，從目前稱呼開始</Button></div>}</Surface>
+    </form>{dirty && !draft.requestKey && <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前稱呼，保留輸入</Button>}
+    <DraftFeedback form={record}/></Surface>
   </>;
 }

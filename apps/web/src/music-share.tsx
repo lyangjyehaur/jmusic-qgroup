@@ -26,6 +26,7 @@ function ShareEditor({ selection }: { selection: MusicSelection }) {
     refetchOnMount: 'always', refetchOnWindowFocus: 'always', staleTime: 0, refetchInterval: 10000 });
   const picks = musicSharePicks(selection.draft.selections, selection.entries), text = musicSelectionText(picks);
   const [contact, setContact] = useState(false), [topMatch, setTopMatch] = useState(true), [topContact, setTopContact] = useState(false), [dark, setDark] = useState(false);
+  if (selection.unavailable) return <Notice>請先在本機原稿提示中完成恢復或保全，再產生分享內容。</Notice>;
   if (selection.readError || selection.draft.requestKey) return <Notice>{selection.readError ? '請回到我的成分保全原稿，再產生分享內容。' : '成分保存結果尚未確認，請回到我的成分確認結果。'}</Notice>;
   if (!picks.length) return <Notice>尚未選擇可分享的詞條，請<Link to={'/me/music?' + params}>選擇成分</Link>。</Notice>;
   const current = context.data && context.isFetchedAfterMount && !context.error ? context.data : undefined;

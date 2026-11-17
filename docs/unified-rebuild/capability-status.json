@@ -5421,7 +5421,11 @@
         "apps/web/src/activity-registration.tsx",
         "apps/web/src/activity-invitations.tsx",
         "apps/web/src/activity-claims.tsx",
-        "apps/web/src/activity-delegation.tsx"
+        "apps/web/src/activity-delegation.tsx",
+        "apps/web/src/account-profile.tsx",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/music-fields.tsx",
+        "apps/web/src/music-selection.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5432,7 +5436,8 @@
         "docs/unified-rebuild/64-durable-drafts-checkpoint.md",
         "docs/unified-rebuild/65-durable-authoring-checkpoint.md",
         "docs/unified-rebuild/66-durable-participation-checkpoint.md",
-        "docs/unified-rebuild/67-durable-invitations-checkpoint.md"
+        "docs/unified-rebuild/67-durable-invitations-checkpoint.md",
+        "docs/unified-rebuild/68-durable-identity-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5440,7 +5445,8 @@
         "apps/web/tests/durable-drafts.spec.ts",
         "apps/web/tests/durable-authoring.spec.ts",
         "apps/web/tests/durable-participation.spec.ts",
-        "apps/web/tests/durable-invitations.spec.ts"
+        "apps/web/tests/durable-invitations.spec.ts",
+        "apps/web/tests/durable-identity.spec.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5448,7 +5454,8 @@
         "apps/web/tests/durable-drafts.spec.ts",
         "apps/web/tests/durable-authoring.spec.ts",
         "apps/web/tests/durable-participation.spec.ts",
-        "apps/web/tests/durable-invitations.spec.ts"
+        "apps/web/tests/durable-invitations.spec.ts",
+        "apps/web/tests/durable-identity.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
@@ -5466,10 +5473,12 @@
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/66-durable-participation-checkpoint.md",
         "docs/unified-rebuild/67-durable-invitations-checkpoint.md",
-        "apps/web/tests/durable-invitations.spec.ts"
+        "apps/web/tests/durable-invitations.spec.ts",
+        "docs/unified-rebuild/68-durable-identity-checkpoint.md",
+        "apps/web/tests/durable-identity.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。帳號／成分／管理表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–67。"
+      "remaining": "帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–68。"
     },
     {
       "capability_id": "O05",
@@ -5507,7 +5516,11 @@
         "apps/web/src/activity-registration.tsx",
         "apps/web/src/activity-invitations.tsx",
         "apps/web/src/activity-claims.tsx",
-        "apps/web/src/activity-delegation.tsx"
+        "apps/web/src/activity-delegation.tsx",
+        "apps/web/src/account-profile.tsx",
+        "apps/web/src/music-contact.tsx",
+        "apps/web/src/music-fields.tsx",
+        "apps/web/src/music-selection.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -5521,7 +5534,8 @@
         "docs/unified-rebuild/64-durable-drafts-checkpoint.md",
         "docs/unified-rebuild/65-durable-authoring-checkpoint.md",
         "docs/unified-rebuild/66-durable-participation-checkpoint.md",
-        "docs/unified-rebuild/67-durable-invitations-checkpoint.md"
+        "docs/unified-rebuild/67-durable-invitations-checkpoint.md",
+        "docs/unified-rebuild/68-durable-identity-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -5531,7 +5545,8 @@
         "apps/web/tests/durable-drafts.spec.ts",
         "apps/web/tests/durable-authoring.spec.ts",
         "apps/web/tests/durable-participation.spec.ts",
-        "apps/web/tests/durable-invitations.spec.ts"
+        "apps/web/tests/durable-invitations.spec.ts",
+        "apps/web/tests/durable-identity.spec.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -5541,7 +5556,8 @@
         "apps/web/tests/durable-drafts.spec.ts",
         "apps/web/tests/durable-authoring.spec.ts",
         "apps/web/tests/durable-participation.spec.ts",
-        "apps/web/tests/durable-invitations.spec.ts"
+        "apps/web/tests/durable-invitations.spec.ts",
+        "apps/web/tests/durable-identity.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -5561,10 +5577,12 @@
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/66-durable-participation-checkpoint.md",
         "docs/unified-rebuild/67-durable-invitations-checkpoint.md",
-        "apps/web/tests/durable-invitations.spec.ts"
+        "apps/web/tests/durable-invitations.spec.ts",
+        "docs/unified-rebuild/68-durable-identity-checkpoint.md",
+        "apps/web/tests/durable-identity.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、伺服器跨裝置 create intent、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–67。"
+      "remaining": "帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、伺服器跨裝置 create intent、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–68。"
     },
     {
       "capability_id": "O06",

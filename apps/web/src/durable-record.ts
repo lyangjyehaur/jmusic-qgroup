@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState, type SetStateAction } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, type BlockerFunction } from 'react-router-dom';
 import { DraftConflict, DraftExpired, draftVersions, openDraft, retireDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
 /** Browser persistence only; each caller keeps its own business validation and exact pending format. */
 export function useDurableRecord<T>(options: {
   key: string; scope: string; seed: () => T; parse: (raw: string) => T;
   serialize?: (value: T) => string; dirty: (value: T) => boolean;
-  pending: (value: T) => boolean; blocking?: boolean;
+  pending: (value: T) => boolean; blocking?: boolean | BlockerFunction;
   // Clean saved placeholders can acquire a new URL preset without restoring old user input.
   needsRestore?: (raw: string) => boolean;
 }) {
@@ -20,7 +20,7 @@ export function useDurableRecord<T>(options: {
   const unavailable = loading || needsRestore || !!readError;
   unavailableRef.current = unavailable;
   const dirty = options.dirty(value) || options.pending(value),
-    blocker = useBlocker(options.blocking !== false && (dirty || !!saving || busy)),
+    blocker = useBlocker(transition => (dirty || !!saving || busy) && (typeof options.blocking === 'function' ? options.blocking(transition) : options.blocking !== false)),
     locked = unavailable || busy || options.pending(value);
   const encode = (next: T) => optionsRef.current.serialize?.(next) ?? JSON.stringify(next);
   function replace(next: T) { current.current = next; rawSetValue(next); }
