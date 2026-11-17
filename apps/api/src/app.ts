@@ -1,5 +1,6 @@
 import { registerActivityAccess } from './activity-access';
 import { registerAdminBot } from './admin-bot';
+import { registerAdminOperations } from './admin-operations';
 import { registerBotDeliveries } from './bot-deliveries';
 import { registerMusicRooms } from './music-rooms';
 import { registerAppearance } from './appearance';
@@ -113,6 +114,7 @@ export function createApp(options: AppOptions) {
     registerAccountDevices(app, db, security, now);
     registerRegistrationSettings(app, db, admin, now);
     registerAdminUsers(app, db, admin, now);
+    registerAdminOperations(app, db, admin);
     registerAppearance(app, db, admin, now);
     registerAdminBot(app, db, admin, now, { enabled: options.botEnabledDefault, ...options.activityBot });
     registerBotDeliveries(app, db, security, admin, now, { enabled: options.botEnabledDefault, ...options.activityBot });

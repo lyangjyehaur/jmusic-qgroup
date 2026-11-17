@@ -3942,26 +3942,35 @@
         "apps/api/src/admin-security.ts",
         "apps/api/src/admin-users.ts",
         "apps/web/src/admin.tsx",
-        "apps/web/src/admin-users.tsx"
+        "apps/web/src/admin-users.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/registration.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/registration.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/registration.spec.ts",
-        "apps/web/tests/admin.spec.ts"
+        "apps/web/tests/admin.spec.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "逐請求角色／救援憑證、輪替／到期、管理 CSRF、限流、兩種登出與未知結果查回已實作；完整後台、跨裝置／真 QQ WebView 與正式版本組合待驗收。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。逐請求角色／救援憑證、輪替／到期、管理 CSRF、限流、兩種登出與未知結果查回已實作；完整後台、跨裝置／真 QQ WebView 與正式版本組合待驗收。"
     },
     {
       "capability_id": "A02",
@@ -4000,22 +4009,31 @@
         "apps/api/src/admin-security.ts",
         "apps/api/src/admin-users.ts",
         "apps/web/src/admin.tsx",
-        "apps/web/src/admin-users.tsx"
+        "apps/web/src/admin-users.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin.spec.ts"
+        "apps/web/tests/admin.spec.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "角色獨立版本、不可自撤／對註銷授權、同交易不可變歷史及歷史分頁已實作；關閉帳號歷史入口、完整後台與匯入角色對照待驗收。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。角色獨立版本、不可自撤／對註銷授權、同交易不可變歷史及歷史分頁已實作；關閉帳號歷史入口、完整後台與匯入角色對照待驗收。"
     },
     {
       "capability_id": "A04",
@@ -4027,22 +4045,31 @@
         "apps/api/src/admin-security.ts",
         "apps/api/src/admin-users.ts",
         "apps/web/src/admin.tsx",
-        "apps/web/src/admin-users.tsx"
+        "apps/web/src/admin-users.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin.spec.ts"
+        "apps/web/tests/admin.spec.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "私人備註／人工 QQ 版本、唯一檢查、恢復與會員隔離已實作；未用於認領，完整 ownership／匯入資料與舊站所有管理流程待驗收。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。私人備註／人工 QQ 版本、唯一檢查、恢復與會員隔離已實作；未用於認領，完整 ownership／匯入資料與舊站所有管理流程待驗收。"
     },
     {
       "capability_id": "A05",
@@ -4088,7 +4115,9 @@
         "apps/web/src/admin-music-pin.tsx",
         "apps/web/src/durable-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/admin-music-profile.ts"
+        "apps/web/src/admin-music-profile.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/admin-music.test.ts",
@@ -4096,7 +4125,9 @@
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "apps/api/testsupport/pending-operations.test.ts",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/admin-music.test.ts",
@@ -4105,23 +4136,28 @@
         "docs/unified-rebuild/18-pin-history-checkpoint.md",
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music.test.ts",
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music.spec.ts",
         "apps/web/tests/admin-music-pin.spec.ts",
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史、原 link_audit 分頁合流與 Python 差分已驗證；重建／回退投影、舊 adapter 及正式副本待完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史、原 link_audit 分頁合流與 Python 差分已驗證；重建／回退投影、舊 adapter 及正式副本待完成。"
     },
     {
       "capability_id": "A07",
@@ -4160,26 +4196,35 @@
         "apps/api/src/registration-settings.ts",
         "apps/web/src/registration.tsx",
         "apps/api/src/admin-privacy.ts",
-        "apps/web/src/admin-privacy.tsx"
+        "apps/web/src/admin-privacy.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/registration.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/registration.test.ts",
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/registration.spec.ts",
-        "apps/web/tests/admin-privacy.spec.ts"
+        "apps/web/tests/admin-privacy.spec.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "註冊開關／revision／稽核及刪除申請分頁、即時共享紀錄／bot 收件人檢查與明確說明、衝突及未知結果恢復已實作；政策版本更新／重同意、完整審核歷史與共享資料處理、備份／還原濾除仍待完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。註冊開關／revision／稽核及刪除申請分頁、即時共享紀錄／bot 收件人檢查與明確說明、衝突及未知結果恢復已實作；政策版本更新／重同意、完整審核歷史與共享資料處理、備份／還原濾除仍待完成。"
     },
     {
       "capability_id": "A09",
@@ -4193,24 +4238,33 @@
         "packages/contracts/src/admin-music-catalog.ts",
         "packages/domain/src/music-merge.ts",
         "packages/database/src/music-creations.ts",
-        "packages/database/src/schema-v12.ts"
+        "packages/database/src/schema-v12.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-music-catalog.test.ts"
+        "apps/api/src/admin-music-catalog.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/admin-music-catalog.test.ts",
         "packages/database/src/catalog-migration.test.ts",
-        "docs/unified-rebuild/45-admin-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/45-admin-music-catalog-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/admin-music-catalog.test.ts"
+        "apps/api/src/admin-music-catalog.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-music-catalog.spec.ts"
+        "apps/web/tests/admin-music-catalog.spec.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生管理 CRUD／合併、Python 選擇順序與熟悉度差分、建立清單轉移及額度、目標編輯權保留、全域版本核對、精確恢復與 bot 資料保全已合成驗證；來源全量對帳、備份／還原／回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。原生管理 CRUD／合併、Python 選擇順序與熟悉度差分、建立清單轉移及額度、目標編輯權保留、全域版本核對、精確恢復與 bot 資料保全已合成驗證；來源全量對帳、備份／還原／回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。"
     },
     {
       "capability_id": "A10",
@@ -4309,27 +4363,36 @@
         "apps/web/src/music-shouts.tsx",
         "packages/database/src/schema-v11.ts",
         "packages/database/src/music-shouts.ts",
-        "apps/web/src/admin-shouts.tsx"
+        "apps/web/src/admin-shouts.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/music-shouts.test.ts",
-        "apps/api/src/music-shouts.test.ts"
+        "apps/api/src/music-shouts.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
-        "apps/api/src/import-snapshot.test.ts"
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
-        "apps/web/tests/music-shouts.spec.ts"
+        "apps/web/tests/music-shouts.spec.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
-        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；完整備份／還原、舊入口與實際版本組合待驗收。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；完整備份／還原、舊入口與實際版本組合待驗收。"
     },
     {
       "capability_id": "A13",
@@ -4342,27 +4405,36 @@
         "apps/api/src/appearance.ts",
         "packages/contracts/src/appearance.ts",
         "packages/database/src/schema-v13.ts",
-        "packages/database/src/wallpapers.ts"
+        "packages/database/src/wallpapers.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/appearance.test.ts",
         "apps/web/tests/appearance.spec.ts",
-        "tools/rebuild/smoke-build.mjs"
+        "tools/rebuild/smoke-build.mjs",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "packages/database/src/wallpapers.test.ts",
-        "apps/api/src/import-snapshot.test.ts"
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/appearance.test.ts",
-        "apps/web/tests/appearance.spec.ts"
+        "apps/web/tests/appearance.spec.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/appearance.spec.ts",
-        "docs/unified-rebuild/47-appearance-checkpoint.md"
+        "docs/unified-rebuild/47-appearance-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "管理 CRUD、排序／間隔、PNG／JPEG／WebP 完整解碼、2 MiB 邊界、交易回滾、未知結果與 schema 13 已隔離驗證；成套備份／配對恢復、正式資料卷與舊 adapters／實際版本組合待完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理 CRUD、排序／間隔、PNG／JPEG／WebP 完整解碼、2 MiB 邊界、交易回滾、未知結果與 schema 13 已隔離驗證；成套備份／配對恢復、正式資料卷與舊 adapters／實際版本組合待完成。"
     },
     {
       "capability_id": "A14",
@@ -4708,7 +4780,9 @@
         "apps/web/src/bot-deliveries.tsx",
         "apps/web/src/durable-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
@@ -4723,7 +4797,9 @@
         "apps/web/tests/bot-deliveries.spec.ts",
         "tools/rebuild/smoke-build.mjs",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -4735,7 +4811,8 @@
         "apps/api/src/bot-deliveries.test.ts",
         "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -4745,7 +4822,9 @@
         "apps/api/src/bot-deliveries.test.ts",
         "apps/web/tests/bot-deliveries.spec.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -4754,10 +4833,12 @@
         "apps/web/tests/bot-deliveries.spec.ts",
         "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。三種模式、通用群通知核對／明確新工作重送、原 UUID 回執查回、模擬不重播及 Python／TS consumer 差分已有隔離證據。相容投票 API 保留既有重新生成語意，未改成新核對 token 協議；正式待送對帳、QQ 與實際版本組合仍待驗收，見 52／53／57／58 號檢查點。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。三種模式、通用群通知核對／明確新工作重送、原 UUID 回執查回、模擬不重播及 Python／TS consumer 差分已有隔離證據。相容投票 API 保留既有重新生成語意，未改成新核對 token 協議；正式待送對帳、QQ 與實際版本組合仍待驗收，見 52／53／57／58 號檢查點。"
     },
     {
       "capability_id": "B07",
@@ -4781,7 +4862,9 @@
         "apps/bot/src/group-state.ts",
         "apps/web/src/durable-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4795,7 +4878,9 @@
         "apps/api/src/time-polls.test.ts",
         "tools/rebuild/smoke-bot.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4807,24 +4892,29 @@
         "apps/bot/src/outbox.test.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
         "apps/web/tests/admin-bot.spec.ts",
         "apps/bot/src/outbox.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。模板設定／預覽／版本恢復、TS consumer 最新模板重組與凍結事實、未來提醒重算已隔離驗證；公開回覆與 runtime 的 revision 套用已接通。完整瀏覽器驗收、正式資料及實際版本組合／QQ 尚待完成，見 52–54／57 號檢查點。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。模板設定／預覽／版本恢復、TS consumer 最新模板重組與凍結事實、未來提醒重算已隔離驗證；公開回覆與 runtime 的 revision 套用已接通。完整瀏覽器驗收、正式資料及實際版本組合／QQ 尚待完成，見 52–54／57 號檢查點。"
     },
     {
       "capability_id": "B08",
@@ -4852,7 +4942,9 @@
         "apps/bot/src/bot-start.ts",
         "apps/web/src/durable-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
@@ -4866,7 +4958,9 @@
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -4876,7 +4970,8 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -4886,7 +4981,9 @@
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -4896,10 +4993,12 @@
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。"
     },
     {
       "capability_id": "B09",
@@ -4931,7 +5030,9 @@
         "apps/bot/src/bot-start.ts",
         "apps/web/src/durable-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4947,7 +5048,9 @@
         "tools/rebuild/smoke-bot.ts",
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -4961,7 +5064,8 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
@@ -4970,7 +5074,9 @@
         "apps/bot/src/outbox.test.ts",
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -4978,10 +5084,12 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。持久勿擾／間隔、頻控不耗失敗次數、提醒去重及公開回覆已有差分；runtime 驗證 Gateway 離線輪詢，新增 token 等待跨入勿擾時段的延後保全。QQ／版本組合及長期負載尚待驗收，見 53／54／57 號檢查點。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。持久勿擾／間隔、頻控不耗失敗次數、提醒去重及公開回覆已有差分；runtime 驗證 Gateway 離線輪詢，新增 token 等待跨入勿擾時段的延後保全。QQ／版本組合及長期負載尚待驗收，見 53／54／57 號檢查點。"
     },
     {
       "capability_id": "B10",
@@ -5222,7 +5330,9 @@
         "apps/bot/src/dispatch.ts",
         "apps/web/src/durable-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/pending-operations.ts"
+        "apps/web/src/pending-operations.ts",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/config-protocol.test.ts",
@@ -5241,7 +5351,9 @@
         "apps/bot/src/identity-diagnostics.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5256,7 +5368,8 @@
         "apps/bot/src/identity-diagnostics.test.ts",
         "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5269,7 +5382,9 @@
         "apps/web/tests/bot-deliveries.spec.ts",
         "apps/bot/src/identity-diagnostics.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
@@ -5280,10 +5395,12 @@
         "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
         "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。"
     },
     {
       "capability_id": "B14",
@@ -5688,7 +5805,9 @@
         "apps/web/src/admin-music.tsx",
         "apps/web/src/admin-music-pin.tsx",
         "apps/web/src/admin-music-profile.ts",
-        "apps/web/src/admin-bot.tsx"
+        "apps/web/src/admin-bot.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -5713,7 +5832,9 @@
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -5733,7 +5854,8 @@
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -5753,7 +5875,9 @@
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -5784,10 +5908,12 @@
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/web/tests/durable-admin-bot.spec.ts",
-        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md"
+        "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、伺服器跨裝置 create intent、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、伺服器跨裝置 create intent、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。"
     },
     {
       "capability_id": "O06",
@@ -5861,28 +5987,37 @@
         "apps/web/src/inbox.tsx",
         "apps/web/src/pending-operations.ts",
         "apps/api/src/finance.ts",
-        "apps/web/src/activity-finance.tsx"
+        "apps/web/src/activity-finance.tsx",
+        "apps/api/src/admin-operations.ts",
+        "packages/contracts/src/operations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "docs/unified-rebuild/30-inbox-history-checkpoint.md",
-        "apps/api/src/finance.test.ts"
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/inbox.test.ts",
-        "apps/api/src/finance-projection.test.ts"
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/admin-operations.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/inbox.test.ts",
-        "apps/api/testsupport/pending-operations.test.ts"
+        "apps/api/testsupport/pending-operations.test.ts",
+        "apps/api/src/admin-operations.test.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/inbox-history.spec.ts",
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "十類動態待辦、分頁通知／總未讀、本人首次已讀、精確恢復、包間不可抵銷／原付款鍵、Python 差分與保留 worker 已測；完整財務／結算處理頁與寫入、全部舊入口及隔離正式副本驗收待完成。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。十類動態待辦、分頁通知／總未讀、本人首次已讀、精確恢復、包間不可抵銷／原付款鍵、Python 差分與保留 worker 已測；完整財務／結算處理頁與寫入、全部舊入口及隔離正式副本驗收待完成。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O08",

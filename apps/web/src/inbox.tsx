@@ -3,7 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { InboxTodos, MarkNotificationsRead, NotificationCount, Notifications, Ok } from '@qgroup/contracts';
+import { InboxTodos, MarkNotificationsRead, NotificationCount, Notifications, Ok, OperationReceipt } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -38,9 +38,16 @@ function PendingOperations({viewer}:{viewer:Member}){
     }catch{if(active.current)setInventory({rows:[],error:'無法讀取本機保存的操作，請檢查瀏覽器儲存設定後重試。'});}
   }
   useEffect(()=>{active.current=true;const refresh=()=>{void read();};refresh();window.addEventListener('focus',refresh);return()=>{active.current=false;window.removeEventListener('focus',refresh);};},[viewer.scope]);
-  async function check(id:string,key:string){setBusy(id);try{const receipt=await api('/me/operations/'+encodeURIComponent(key),z.object({committed:z.boolean()}),{headers:scope(viewer)});if(active.current)setResults(prior=>({...prior,[id]:receipt.committed?'此操作編號已有回執，請回原頁核對內容及目前權限。':'尚未查到此操作編號的回執，請回原頁確認原操作結果。'}));}catch(error){if(active.current)setResults(prior=>({...prior,[id]:error instanceof Error?error.message:'查詢失敗'}));}finally{if(active.current)setBusy('');}}
+  async function check(row:PendingOperation){
+    if(!row.requestKey||busy)return;setBusy(row.id);setResults(prior=>({...prior,[row.id]:''}));
+    try{
+      const receipt=await api((row.adminScope?'/admin':'/me')+'/operations/'+encodeURIComponent(row.requestKey),OperationReceipt,{headers:{...scope(viewer),...row.adminScope?{'X-Admin-Scope':row.adminScope}:{}}});
+      if(active.current)setResults(prior=>({...prior,[row.id]:receipt.committed?'此操作編號已有回執，請回原頁核對內容及目前權限。':'尚未查到此操作編號的回執，請回原頁確認原操作結果。'}));
+    }catch(error){if(active.current)setResults(prior=>({...prior,[row.id]:error instanceof ApiError?error.message:'無法讀取操作回執，請稍後重試。'}));}
+    finally{if(active.current)setBusy('');}
+  }
   if(!inventory.error&&!inventory.rows.length)return <div className="page-actions"><Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></div>;
-  return <Surface role="region" className="detail inbox-section" aria-label="未完成操作"><Heading level={2}>未完成操作</Heading>{inventory.error?<Notice>{inventory.error}</Notice>:inventory.rows.length?<><Notice>此清單包含目前帳號的本機操作及本分頁紀錄。回原頁核對結果後，才可重試。</Notice><ul className="inbox-list">{inventory.rows.map(row=><li key={row.id}><Link to={row.to}>{row.label}</Link>{row.damaged?<Text role="alert">原稿格式損壞，請回原頁保全原稿。</Text>:row.requestKey&&<Button variant="ghost" disabled={!!busy} onClick={()=>void check(row.id,row.requestKey!)}>核對結果</Button>}{results[row.id]&&<Text role="status">{results[row.id]}</Text>}</li>)}</ul></>:null}<Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></Surface>;
+  return <Surface role="region" className="detail inbox-section" aria-label="未完成操作"><Heading level={2}>未完成操作</Heading>{inventory.error?<Notice>{inventory.error}</Notice>:inventory.rows.length?<><Notice>此清單包含目前帳號的本機操作及本分頁紀錄。回原頁核對結果後，才可重試。</Notice><ul className="inbox-list">{inventory.rows.map(row=><li key={row.id}><Link to={row.to}>{row.label}</Link>{row.damaged?<Text role="alert">原稿格式損壞，請回原頁保全原稿。</Text>:row.requestKey&&<Button variant="ghost" disabled={!!busy} onClick={()=>void check(row)}>核對結果</Button>}{results[row.id]&&<Text role="status">{results[row.id]}</Text>}</li>)}</ul></>:null}<Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></Surface>;
 }
 function Inbox({viewer}:{viewer:Member}){
   const [search]=useSearchParams(),event=search.get('event'),client=useQueryClient(),active=useRef(true),storageKey='qgroup:rebuild:notifications-read:v1:'+viewer.scope;

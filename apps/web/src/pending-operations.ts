@@ -1,5 +1,5 @@
 import { z } from 'zod';
-export type PendingOperation={id:string;label:string;to:string;damaged:boolean;requestKey?:string};
+export type PendingOperation={id:string;label:string;to:string;damaged:boolean;requestKey?:string;adminScope?:string};
 const root='qgroup:rebuild:';
 const uuid=z.string().uuid(),token=/^[A-Za-z0-9_-]{32}$/;
 const segment=(value:string)=>encodeURIComponent(value);
@@ -8,7 +8,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
   const rows:PendingOperation[]=[];
   for(let i=0;i<storage.length;i++){
     const key=storage.key(i);if(!key||!key.startsWith(root)||key.includes(':recovery:'))continue;
-    let label='',to='',standalone=false;
+    let label='',to='',standalone=false,adminScope:string|undefined;
     if(key===root+'privacy-pending:v1'){
       try{const raw=JSON.parse(storage.getItem(key)??'null');if(typeof raw?.scope!=='string'||!/^[a-f0-9]{64}$/.test(raw.scope))throw Error('scope');if(raw.scope!==scope)continue;}catch{rows.push({id:key,label:'無法辨識帳號的刪除紀錄',to:'/me/privacy',damaged:true});continue;}
       label='資料刪除';to='/me/privacy';standalone=true;
@@ -22,10 +22,11 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
     else if(key.startsWith(root+'music:entries:v1:'+scope+':')){const target=key.slice((root+'music:entries:v1:'+scope+':').length);if(target==='new'){label='建立詞條';to='/me/music/entries/new';}else{const match=/^([^:]{1,80}):(update|delete)$/.exec(target);if(!match)continue;label=match[2]==='delete'?'刪除詞條':'編輯詞條';to='/me/music/entries/'+segment(match[1]!)+(match[2]==='delete'?'/delete':'/edit');}}
     else if(new RegExp('^qgroup:rebuild:admin-(bot|catalog|appearance|shouts):v1:'+scope+':[a-f0-9]{64}$').test(key)){
       const kind=key.split(':')[2]!.slice(6);label={bot:'bot 設定',catalog:'音樂詞庫管理',appearance:'壁紙管理',shouts:'找搭子管理'}[kind]!;to={bot:'/admin/bot',catalog:'/admin/music-entries',appearance:'/admin/appearance',shouts:'/admin/shouts'}[kind]!;
+      adminScope=key.split(':')[5]!;
     }
     else{
       const activity=/^qgroup:rebuild:activity-draft:(?:(arrangements|registration|consent|lifecycle|invitations|claims|delegation|attendance|finance|settlement|rooms|poll-create|poll-vote|poll-manage):)?v1:([^:]+):(.+)$/.exec(key);
-      const admin=/^qgroup:rebuild:admin-(privacy|music|music-pin|user):v1:([^:]+):[^:]+:(.+)$/.exec(key);
+      const admin=/^qgroup:rebuild:admin-(privacy|music|music-pin|user):v1:([^:]+):([a-f0-9]{64}):([^:]{1,128})$/.exec(key);
       if(activity&&activity[2]===scope){
         const kind=activity[1]??'draft';let id=activity[3]!,mode='';
         if(['registration','invitations','claims','delegation'].includes(kind)){
@@ -41,7 +42,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
         }
       }else if(admin&&admin[2]===scope){
         label={privacy:'隱私審查',music:'成分關聯',user:'帳號管理','music-pin':'成分口令'}[admin[1]!]!;
-        to='/admin/'+(admin[1]==='user'?'users':admin[1]==='privacy'?'privacy':'music')+'/'+segment(admin[3]!);standalone=admin[1]==='music-pin';
+        to='/admin/'+(admin[1]==='user'?'users':admin[1]==='privacy'?'privacy':'music')+'/'+segment(admin[4]!);standalone=admin[1]==='music-pin';adminScope=admin[3]!;
       }else continue;
     }
     try{
@@ -51,7 +52,7 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
       if(pending===undefined&&data.requestKey===undefined)continue;
       if(pending!==undefined&&(!pending||typeof pending!=='object'||!('input' in pending)))throw Error('pending');
       const requestKey=uuid.parse(pending&&typeof pending==='object'?'key' in pending?pending.key:undefined:data.requestKey);
-      rows.push({id:key,label,to,damaged:false,requestKey});
+      rows.push({id:key,label,to,damaged:false,requestKey,...adminScope?{adminScope}:{}});
     }catch{rows.push({id:key,label,to,damaged:true});}
   }
   return rows;

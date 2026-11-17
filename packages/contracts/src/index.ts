@@ -1,4 +1,5 @@
 import { ErasureProof } from './erasure-proof';
+export { OperationReceipt } from './operations';
 export { ErasureProof } from './erasure-proof';
 import { z } from 'zod';
 export * from './activity-arrangements';

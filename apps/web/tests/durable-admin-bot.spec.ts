@@ -1,3 +1,4 @@
+import { checkAdminReceipt } from './operation-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { damageDraft, denyDraftWrites, durableRows } from './draft-helpers';
@@ -44,7 +45,7 @@ for(const command of ['save','revert'] as const) {
       const response=await route.fetch();await route.fulfill(writes.length===1?{response,body:'{'}:{response});
     });
     await submit(page,command);await pending(page);const raw=(await botDraft(page)).raw;expect(JSON.parse(raw).pending.input.command).toBe(command);await page.close();
-    const latest=await advance(context,99),fresh=await context.newPage();await fresh.goto(origin+'/inbox');const inbox=fresh.getByRole('region',{name:'未完成操作',exact:true});expect(await inbox.textContent()).not.toMatch(/group_openid|templates|61|activity_published/);await inbox.getByRole('link',{name:'bot 設定',exact:true}).click();
+    const latest=await advance(context,99),fresh=await context.newPage();await fresh.goto(origin+'/inbox');const inbox=fresh.getByRole('region',{name:'未完成操作',exact:true});expect(await inbox.textContent()).not.toMatch(/group_openid|templates|61|activity_published/);await checkAdminReceipt(fresh,inbox,writes[0]!.key);expect(writes).toHaveLength(1);await inbox.getByRole('link',{name:'bot 設定',exact:true}).click();
     expect(writes).toHaveLength(1);expect((await botDraft(fresh)).raw).toBe(raw);await retry(fresh).click();await expect(fresh.getByText('bot 設定已保存。',{exact:true})).toBeVisible();expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);
     await expect(fresh.getByLabel(interval,{exact:true})).toHaveValue('99');expect((await current(context)).revision).toBe(latest.revision);expect((await current(context)).config).toEqual(latest.config);await fresh.goto(origin+'/inbox');await expect(fresh.getByRole('region',{name:'未完成操作',exact:true})).toHaveCount(0);
   });

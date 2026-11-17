@@ -1,3 +1,4 @@
+import { checkAdminReceipt } from './operation-helpers';
 import { test,expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import type { BrowserContext,Page } from '@playwright/test';
@@ -23,7 +24,7 @@ for(const kind of ['link','pin'] as const){
     await login(context);const path=await open(page);await fill(page,kind);const writes:{key:string;body:string;authority:string;url:string}[]=[],checks:string[]=[];
     await context.route('**/api/v2'+path+'/'+kind,async route=>{const r=route.request();writes.push({key:r.headers()['idempotency-key']!,body:r.postData()!,authority:r.headers()['x-admin-csrf']!,url:r.url()});const response=await route.fetch();await route.fulfill(writes.length===1?{response,body:'{'}:{response});});
     await context.route('**/api/v2'+path+'/pin-result',route=>{checks.push(route.request().postDataJSON().requestId);return route.continue();});await confirm(page,kind);await unknown(page,kind);await safePinRows(page);const before=await(await context.request.get(origin+'/api/v2'+path,{headers:await headers(context)})).json();await page.close();
-    const fresh=await context.newPage();await fresh.goto(origin+'/inbox');const pending=fresh.getByRole('region',{name:'未完成操作',exact:true});expect(await pending.textContent()).not.toMatch(/私人核對原因|654321/);await pending.getByRole('link',{name:kind==='link'?'成分關聯':'成分口令',exact:true}).click();expect(writes).toHaveLength(1);await fresh.getByRole('button',{name:retry(kind),exact:true}).click();await expect(fresh.getByText(success(kind),{exact:true})).toBeVisible();
+    const fresh=await context.newPage();await fresh.goto(origin+'/inbox');const pending=fresh.getByRole('region',{name:'未完成操作',exact:true});expect(await pending.textContent()).not.toMatch(/私人核對原因|654321/);if(kind==='link')await checkAdminReceipt(fresh,pending,writes[0]!.key);else await expect(pending.getByRole('button',{name:'核對結果',exact:true})).toHaveCount(0);await pending.getByRole('link',{name:kind==='link'?'成分關聯':'成分口令',exact:true}).click();expect(writes).toHaveLength(1);await fresh.getByRole('button',{name:retry(kind),exact:true}).click();await expect(fresh.getByText(success(kind),{exact:true})).toBeVisible();
     if(kind==='link'){expect(writes).toHaveLength(2);expect(writes[1]).toEqual(writes[0]);}else{expect(writes).toHaveLength(1);expect(checks).toEqual([writes[0]!.key]);await expect(fresh.getByLabel('新找回口令',{exact:true})).toHaveValue('');}
     expect(await(await context.request.get(origin+'/api/v2'+path,{headers:await headers(context)})).json()).toEqual(before);await safePinRows(fresh);await fresh.goto(origin+'/inbox');await expect(fresh.getByRole('region',{name:'未完成操作',exact:true})).toHaveCount(0);
   });
