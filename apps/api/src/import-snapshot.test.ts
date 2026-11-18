@@ -5,10 +5,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
 import sharp from 'sharp';
-import { afterEach, describe, expect, it } from 'vitest';
-import { openDatabase } from '@qgroup/database';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { openDatabase, type DB } from '@qgroup/database';
 import { legacySchema } from '../../../packages/database/src/legacy-schema';
 import { importSnapshot } from '../../../tools/migration/import-snapshot';
+import * as boardVerification from '../../../tools/migration/board-reconciliation';
 import { digest, parseJson, profileId } from '../../../tools/migration/music-codec';
 import { fixture } from '../testsupport/fixture';
 import { nicknameFixture } from '../testsupport/nickname-fixture';
@@ -56,6 +57,122 @@ function setup() {
   return { root, source, destination, write, music };
 }
 describe('offline paired snapshot import', () => {
+  it('reconciles exactly the frozen 59 tables, paginated rows, BLOBs and safe SQLite integers without classifying new tables as sources', async () => {
+    const s=setup(),source=new Database(join(s.source,'board.sqlite3'));
+    try {
+      source.transaction(()=>{for(let i=0;i<600;i++)source.prepare('INSERT INTO users VALUES(?,?,?,?)').run('page-'+i,'page-token-'+i,'分页原文 '+i,'source-time');}).immediate();
+      source.prepare('UPDATE bot_outbox SET attempts=? WHERE id=(SELECT min(id) FROM bot_outbox)').run(9007199254740993n);
+    } finally {source.close();}
+    const before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);
+    expect(allFiles(s.source)).toEqual(before);
+    const report=result.report as {board:Record<string,number>;boardAfterErasure:Record<string,number>;boardReconciliation:{verified:boolean;tableCount:number;revokedTokens:number;sourceRows:number;tables:Record<string,{source:number;target:number;sourceDigest:string;targetDigest:string;comparisonDigest:string}>}};
+    expect(Object.keys(report.board).sort()).toEqual([...boardVerification.boardTables].sort());
+    expect(Object.keys(report.boardAfterErasure)).toEqual(Object.keys(report.board));
+    expect(report.boardReconciliation).toMatchObject({verified:true,tableCount:59,revokedTokens:0});
+    expect(report.boardReconciliation.sourceRows).toBe(Object.values(report.board).reduce((a,b)=>a+b,0));
+    for(const [table,evidence] of Object.entries(report.boardReconciliation.tables)){
+      expect(evidence.source,table).toBe(report.board[table]);expect(evidence.target,table).toBe(evidence.source);
+      expect(evidence.targetDigest,table).toBe(evidence.sourceDigest);expect(evidence.comparisonDigest,table).toBe(evidence.sourceDigest);
+    }
+    expect(JSON.stringify(report)).not.toContain('分页原文');expect(JSON.stringify(report)).not.toContain('page-token');
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      expect(db.prepare("SELECT DISTINCT entity_type FROM migration_map WHERE source IN ('board','erasure')").all().every(row=>boardVerification.boardTables.includes((row as {entity_type:string}).entity_type))).toBe(true);
+      expect(db.prepare('SELECT attempts FROM bot_outbox ORDER BY id LIMIT 1').safeIntegers(true).get()).toEqual({attempts:9007199254740993n});
+      expect(db.prepare("SELECT qr_image FROM settlements WHERE event_id='listen'").get()).toEqual({qr_image:Buffer.from([0,1,255,17])});
+    }finally{db.close();}
+    expect(Object.keys(allFiles(s.destination)).some(file=>file.includes('source-board')||file.includes('expected-board'))).toBe(false);
+    expect((await importSnapshot(s.source,s.destination,stamp)).status).toBe('already_imported');
+  });
+  it('independently checks administrative closure, duplicate intents, prior closures and missing accounts without changing bot history',async()=>{
+    const s=setup(),source=new Database(join(s.source,'board.sqlite3'));
+    source.prepare("INSERT INTO privacy_requests(id,user_id,status,created_at,updated_at) VALUES('prior-bob','bob','completed','prior','prior')").run();source.close();
+    const closure={user_id:'alice',request_id:'latest-alice',created_at:stamp.toISOString()};
+    s.write('board.erasures.jsonl',[closure,closure,{user_id:'bob',request_id:'bob-again',created_at:stamp.toISOString()},{user_id:'absent',request_id:'absent',created_at:stamp.toISOString()}].map(row=>JSON.stringify(row)).join('\n')+'\n');
+    const before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);
+    expect(allFiles(s.source)).toEqual(before);
+    const report=result.report as {boardReconciliation:{revokedTokens:number;replayedRows:number;tables:Record<string,{redacted:number;erased:number;replayed:number}>}};
+    expect(report.boardReconciliation.revokedTokens).toBe(1);
+    expect(report.boardReconciliation.tables.user_admin_roles?.redacted).toBe(1);
+    expect(report.boardReconciliation.tables.admin_role_history?.replayed).toBe(1);
+    expect(report.boardReconciliation.tables.privacy_requests).toMatchObject({redacted:1,replayed:1});
+    expect(report.boardReconciliation.tables.browser_sessions?.erased).toBeGreaterThan(0);
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      expect(db.prepare("SELECT is_admin,revision FROM user_admin_roles WHERE user_id='alice'").get()).toEqual({is_admin:0,revision:8});
+      expect(db.prepare("SELECT status,created_at FROM privacy_requests WHERE user_id='bob'").get()).toEqual({status:'shared_review',created_at:'prior'});
+      expect(db.prepare("SELECT * FROM privacy_requests WHERE user_id='absent'").get()).toBeUndefined();
+      expect(db.prepare("SELECT token_hash FROM users WHERE id='alice'").get()).toMatchObject({token_hash:expect.stringMatching(/^[a-f0-9]{64}$/)});
+    }finally{db.close();}
+  });
+  it('reconciles active and finalized poll revisions plus session-bound and QQ-bound authorization erasures',async()=>{
+    const s=setup(),source=new Database(join(s.source,'board.sqlite3'));
+    try{
+      source.pragma('foreign_keys = ON');
+      for(const status of ['open','closed','decided','cancelled']){
+        const poll='poll-'+status;
+        source.prepare(`INSERT INTO time_polls(id,owner_id,title,category,location,description,timezone,duration_hours,capacity,minimum_participants,fee_policy,deadline,status,vote_revision,created_at)
+          VALUES(?,'alice','原投票','其他','','','Asia/Taipei',2,10,1,'','2099',?,7,'source')`).run(poll,status);
+        source.prepare("INSERT INTO time_poll_options VALUES(?,?,0,'2099-01-01')").run(poll+'-option',poll);
+        for(const user of ['alice','bob']){
+          source.prepare("INSERT INTO time_poll_ballots VALUES(?,?,'source')").run(poll,user);
+          source.prepare("INSERT INTO time_poll_votes VALUES(?,?,?,'yes')").run(poll,user,poll+'-option');
+        }
+      }
+      source.prepare("INSERT INTO visitor_sessions VALUES(?,'2099','source')").run(hash('fixture-alice'));
+      source.prepare("INSERT INTO auth_requests VALUES(?,'request','original-signature','{}','source')").run(hash('fixture-alice'));
+      const login=source.prepare(`INSERT INTO login_attempts(id,token_hash,user_id,provider,app_id,mode,status,expires_at,created_at,openid) VALUES(?,?,NULL,'qq','synthetic-app','login','pending','2099','source',?)`);
+      login.run('same-device',hash('fixture-alice'),'different-subject');
+      login.run('same-qq','other-device','synthetic-subject');
+      login.run('unrelated','other-device','unrelated-subject');
+    }finally{source.close();}
+    s.write('board.erasures.jsonl',['alice','bob'].map(user=>JSON.stringify({user_id:user,request_id:'closure-'+user,created_at:stamp.toISOString()})).join('\n')+'\n');
+    const before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);expect(allFiles(s.source)).toEqual(before);
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      expect(db.prepare('SELECT status,vote_revision FROM time_polls ORDER BY status').all()).toEqual([{status:'cancelled',vote_revision:7},{status:'closed',vote_revision:9},{status:'decided',vote_revision:7},{status:'open',vote_revision:9}]);
+      expect(db.prepare('SELECT * FROM time_poll_votes').all()).toEqual([]);expect(db.prepare('SELECT * FROM time_poll_ballots').all()).toEqual([]);
+      expect(db.prepare('SELECT id FROM login_attempts').all()).toEqual([{id:'unrelated'}]);
+      expect(db.prepare('SELECT * FROM auth_requests').all()).toEqual([]);expect(db.prepare('SELECT * FROM visitor_sessions').all()).toEqual([]);
+      expect((result.report as {boardReconciliation:unknown}).boardReconciliation).toMatchObject({verified:true,revokedTokens:2,tables:{time_polls:{redacted:2,preserved:2},time_poll_votes:{erased:8},time_poll_ballots:{erased:8},login_attempts:{erased:2,preserved:1}}});
+    }finally{db.close();}
+  });
+  it('rejects conflicting legacy erasure request IDs even when the runtime applied marker would skip the second intent',async()=>{
+    const s=setup();s.write('board.erasures.jsonl',['alice','bob'].map(user=>JSON.stringify({user_id:user,request_id:'same-request',created_at:stamp.toISOString()})).join('\n')+'\n');
+    const before=allFiles(s.source);await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow('Board reconciliation failed');
+    expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);expect(allFiles(s.source)).toEqual(before);
+  });
+  const corruptions: [string,(db:DB)=>void][] = [
+    ['sent work becomes pending',db=>{expect(db.prepare("UPDATE bot_outbox SET status='pending' WHERE status='sent'").run().changes).toBeGreaterThan(0);}],
+    ['simulation becomes live',db=>{expect(db.prepare('UPDATE bot_outbox SET simulated_at=NULL WHERE simulated_at IS NOT NULL').run().changes).toBeGreaterThan(0);}],
+    ['claim or retry changes',db=>{db.prepare("UPDATE bot_outbox SET claim_token='other-deliverer',retry_at='changed' WHERE id=(SELECT min(id) FROM bot_outbox)").run();}],
+    ['frozen delivered body changes',db=>{db.prepare("UPDATE bot_outbox SET delivered_payload_json='{}' WHERE id=(SELECT min(id) FROM bot_outbox)").run();}],
+    ['settlement BLOB loses bytes',db=>{db.prepare("UPDATE settlements SET qr_image=? WHERE event_id='listen'").run(Buffer.from([0,1,17]));}],
+    ['source rowid changes despite preserved primary key',db=>{db.prepare("UPDATE users SET rowid=rowid+1000 WHERE id='bob'").run();}],
+    ['revoked credential becomes original',db=>{db.prepare("UPDATE users SET token_hash=? WHERE id='alice'").run(hash('fixture-alice'));}],
+    ['erasure masks unrelated user edits',db=>{db.prepare("UPDATE users SET created_at='changed' WHERE id='alice'").run();}],
+    ['closed account falsely completes shared review',db=>{db.prepare("UPDATE privacy_requests SET status='completed' WHERE user_id='alice'").run();}],
+    ['sequence moves backwards',db=>{expect(db.prepare("UPDATE sqlite_sequence SET seq=1 WHERE name='attendees'").run().changes).toBe(1);}],
+    ['sequence moves forwards without an erasure insert',db=>{db.prepare("UPDATE sqlite_sequence SET seq=9001 WHERE name='attendees'").run();}],
+    ['append-only trigger disappears',db=>{db.exec('DROP TRIGGER bot_outbox_payload_immutable');}],
+    ['unreviewed trigger is added to a board table',db=>{db.exec('CREATE TRIGGER unexpected AFTER UPDATE ON users BEGIN SELECT 1; END');}],
+    ['original table gains an unclassified column',db=>{db.exec('ALTER TABLE users ADD COLUMN unexplained TEXT');}],
+    ['mapping source digest changes',db=>{db.prepare("UPDATE migration_map SET payload_digest='wrong' WHERE source='board' AND entity_type='users'").run();}],
+    ['missing source mapping',db=>{db.prepare("DELETE FROM migration_map WHERE source='board' AND entity_type='users'").run();}],
+    ['new table is misclassified as board',db=>{db.prepare("INSERT INTO migration_map VALUES('board','music_profiles','fake','fake','','fake','preserved')").run();}],
+    ['erased row falsely marked preserved',db=>{expect(db.prepare("UPDATE migration_map SET status='preserved' WHERE source='board' AND status='erased'").run().changes).toBeGreaterThan(0);}],
+    ['erasure audit mapping loses evidence',db=>{expect(db.prepare("UPDATE migration_map SET payload_digest='wrong' WHERE source='erasure' AND entity_type='admin_role_history'").run().changes).toBe(1);}],
+    ['applied erasure marker disappears',db=>{expect(db.prepare('DELETE FROM erasure_applied').run().changes).toBeGreaterThan(0);}],
+    ['an unrelated erasure marker is added',db=>{db.prepare("INSERT INTO erasure_applied VALUES('unrelated')").run();}],
+    ['signed erasure receipt changes',db=>{expect(db.prepare("UPDATE privacy_receipts SET signature='wrong'").run().changes).toBe(1);}],
+  ];
+  it.each(corruptions)('rejects candidate corruption before publication: %s',async(_label,mutate)=>{
+    const s=setup();s.write('board.erasures.jsonl',JSON.stringify({version:1,kind:'account',userId:'alice',profileId:null,requestId:randomUUID(),createdAt:stamp.toISOString(),secretHash:hash('receipt'),signature:hash('signed-command')})+'\n');const before=allFiles(s.source);
+    const original=boardVerification.reconcileBoard;
+    const spy=vi.spyOn(boardVerification,'reconcileBoard').mockImplementation((source,expected,candidate,entries)=>{mutate(candidate);return original(source,expected,candidate,entries);});
+    try{await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow('Board reconciliation failed');}finally{spy.mockRestore();}
+    expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);expect(allFiles(s.source)).toEqual(before);
+  });
   it('replays administrative profile deletion and full music reset after importing older paired music snapshots', async () => {
     for(const reset of [false,true]){
       const s=setup(),requestId=randomUUID();

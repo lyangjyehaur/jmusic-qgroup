@@ -5694,7 +5694,8 @@
         "apps/api/src/bot-deliveries.test.ts",
         "apps/web/tests/bot-deliveries.spec.ts",
         "tools/rebuild/smoke-build.mjs",
-        "apps/bot/src/dispatch-workers.test.ts"
+        "apps/bot/src/dispatch-workers.test.ts",
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -5705,7 +5706,9 @@
         "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
         "packages/database/src/consent-migration.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
+        "apps/api/src/import-snapshot.test.ts"
       ],
       "permission_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -7040,7 +7043,8 @@
         "apps/api/src/music-export.ts",
         "apps/api/src/offline-restore.ts",
         "tools/rebuild/restore-backup.ts",
-        "packages/database/src/schema-v14.ts"
+        "packages/database/src/schema-v14.ts",
+        "tools/migration/board-reconciliation.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7053,7 +7057,8 @@
         "apps/api/src/admin-backups.test.ts",
         "tools/rebuild/smoke-build.mjs",
         "apps/api/src/offline-restore.test.ts",
-        "packages/database/src/storage-migration.test.ts"
+        "packages/database/src/storage-migration.test.ts",
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7064,7 +7069,8 @@
         "packages/database/src/fields-migration.test.ts",
         "apps/api/src/admin-backups.test.ts",
         "apps/api/src/offline-restore.test.ts",
-        "packages/database/src/storage-migration.test.ts"
+        "packages/database/src/storage-migration.test.ts",
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7079,7 +7085,7 @@
         "docs/unified-rebuild/49-offline-restore-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -7097,7 +7103,8 @@
         "apps/api/src/admin-backups.ts",
         "apps/api/src/offline-restore.ts",
         "tools/rebuild/restore-backup.ts",
-        "packages/database/src/schema-v14.ts"
+        "packages/database/src/schema-v14.ts",
+        "tools/migration/board-reconciliation.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7106,14 +7113,16 @@
         "apps/web/tests/admin-backups.spec.ts",
         "apps/api/src/offline-restore.test.ts",
         "packages/database/src/storage-migration.test.ts",
-        "tools/rebuild/smoke-build.mjs"
+        "tools/rebuild/smoke-build.mjs",
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/admin-backups.test.ts",
         "apps/api/src/offline-restore.test.ts",
-        "packages/database/src/storage-migration.test.ts"
+        "packages/database/src/storage-migration.test.ts",
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7127,7 +7136,7 @@
         "docs/unified-rebuild/49-offline-restore-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O14",

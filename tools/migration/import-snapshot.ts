@@ -8,11 +8,9 @@ import { schemaV1 } from '../../packages/database/src/schema-v1';
 import { createPrivacy, sharedRecords } from '../../apps/api/src/privacy';
 import { erasureJournal } from '../../apps/api/src/erasure-journal';
 import { digest, importMusic, musicErasures, parseJson, profileId, readIdentity, object } from './music-codec';
+import { boardTables, boardRows, boardPrimaryKeys, boardId, boardPayload, canonical, schemaObjects as objects, reconcileBoard } from './board-reconciliation';
 
 type File = { path: string; digest: string; size: number };
-type ObjectRow = { type: string; name: string; tbl_name: string; sql: string | null };
-const objects = (db: DB) => db.prepare("SELECT type,name,tbl_name,sql FROM sqlite_master WHERE name NOT LIKE 'sqlite_%' ORDER BY type,name").all() as ObjectRow[];
-const quoted = (name: string) => '"' + name.replaceAll('"', '""') + '"';
 function check(db: DB) {
   if (db.pragma('integrity_check', { simple: true }) !== 'ok' || (db.pragma('foreign_key_check') as unknown[]).length) throw new Error('Snapshot database integrity/foreign-key check failed');
 }
@@ -66,29 +64,15 @@ function validateLayout(files: File[]) {
     throw new Error('Unclassified snapshot file; no data was published');
   }
 }
-function canonical(value: unknown): string {
-  return JSON.stringify(value, (_key, item: unknown) => typeof item === 'bigint' ? { sqliteInteger: item.toString() } : Buffer.isBuffer(item) ? { sqliteBlob: item.toString('base64') } : item);
-}
-function* boardRows(db: DB, table: string) {
-  let last: bigint | null = null;
-  const read = db.prepare(`SELECT rowid AS __source_rowid__,* FROM ${quoted(table)} WHERE (? IS NULL OR rowid>?) ORDER BY rowid LIMIT 256`).safeIntegers(true);
-  for (;;) {
-    const rows = read.all(last, last) as Record<string, unknown>[];
-    if (!rows.length) return;
-    yield* rows; last = rows.at(-1)!.__source_rowid__ as bigint;
-  }
-}
 function recordBoard(db: DB, reconcile = false) {
-  const tableNames = objects(db).filter(row => row.type === 'table').map(row => row.name); const counts: Record<string, number> = {};
+  const counts: Record<string, number> = {};
   const insert = db.prepare('INSERT INTO migration_map VALUES(?,?,?,?,?,?,?)');
   if (reconcile) db.prepare("UPDATE migration_map SET status='erased' WHERE source='board'").run();
-  for (const table of tableNames) {
-    // Only the frozen 59 tables are evidence here; new migration tables are not a source.
-    if (table.startsWith('music_') || table.startsWith('migration_') || ['rebuild_schema', 'rebuild_storage', 'privacy_receipts', 'erasure_applied'].includes(table)) continue;
-    const pk = (db.prepare(`PRAGMA table_info(${quoted(table)})`).all() as { name: string; pk: number }[]).filter(row => row.pk).sort((a, b) => a.pk - b.pk).map(row => row.name);
+  for (const table of boardTables) {
+    const pk = boardPrimaryKeys(db, table);
     let count = 0;
     for (const value of boardRows(db, table)) {
-      const { __source_rowid__, ...row } = value; const id = canonical(pk.length ? pk.map(key => row[key]) : [__source_rowid__]);
+      const row = boardPayload(value); const id = boardId(value, pk);
       const hash = digest(canonical(row));
       if (!reconcile) insert.run('board', table, id, id, canonical(row.revision ?? row.version ?? ''), hash, 'preserved');
       else {
@@ -127,10 +111,10 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
   const stage = mkdtempSync(join(dirname(destination), '.qgroup-import-')); chmodSync(stage, 0o700);
   let db: DB | undefined;
   try {
-    const boardCopy = join(stage, '.source-board.sqlite3');
+    const boardCopy = join(stage, '.source-board.sqlite3'), expectedCopy = join(stage, '.expected-board.sqlite3');
     writePrivate(boardCopy, readPrivateFile(join(source, 'board.sqlite3')));
     const sourceDB = new Database(boardCopy, { readonly: true, fileMustExist: true });
-    try { assertLegacyBoard(sourceDB); await sourceDB.backup(join(stage, 'unified.sqlite3')); } finally { sourceDB.close(); }
+    try { assertLegacyBoard(sourceDB); await sourceDB.backup(join(stage, 'unified.sqlite3')); await sourceDB.backup(expectedCopy); chmodSync(expectedCopy, 0o600); } finally { sourceDB.close(); }
     const copy = new Database(join(stage, 'unified.sqlite3'));
     try { copy.pragma('foreign_keys = ON'); copy.transaction(() => copy.exec(schemaV1)).immediate(); } finally { copy.close(); }
     db = openDatabase(join(stage, 'unified.sqlite3')); chmodSync(db.name, 0o600);
@@ -162,7 +146,10 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
       for (const { user_id: id } of db!.prepare('SELECT user_id FROM privacy_requests').all() as { user_id: string }[]) { detachLegacyAccount(db!, id); if (Object.keys(sharedRecords(db!, id)).length) db!.prepare("UPDATE privacy_requests SET status='shared_review' WHERE user_id=?").run(id); }
       const boardAfterErasure = recordBoard(db!, true);
       const musicAfterErasure = {profiles:(db!.prepare('SELECT count(*) n FROM music_profiles WHERE erased_at IS NULL').get() as {n:number}).n,entries:(db!.prepare('SELECT count(*) n FROM music_entries').get() as {n:number}).n};
-      const result = { board: boardCounts, boardAfterErasure, music: imported, musicAfterErasure, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
+      const original = new Database(boardCopy, { readonly: true, fileMustExist: true }), expected = new Database(expectedCopy, { fileMustExist: true });
+      let boardReconciliation;
+      try { boardReconciliation = reconcileBoard(original, expected, db!, boardJournal.read()); } finally { original.close(); expected.close(); }
+      const result = { board: boardCounts, boardAfterErasure, boardReconciliation, music: imported, musicAfterErasure, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
       db!.prepare('INSERT INTO migration_runs VALUES(?,?,?,?)').run(fingerprint, JSON.stringify(files), JSON.stringify(result), now.toISOString()); check(db!); return result;
     }).immediate();
     for (const file of files.filter(file => file.path.startsWith('images/') || file.path.startsWith('music/walls/'))) {
@@ -181,7 +168,7 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     }
     if (JSON.stringify(walk(source)) !== JSON.stringify(files)) throw new Error('Snapshot changed during import');
     db.pragma('wal_checkpoint(TRUNCATE)'); db.close(); db = undefined;
-    for (const path of [boardCopy, identityCopy]) for (const suffix of ['', '-wal', '-shm']) rmSync(path + suffix, { force: true });
+    for (const path of [boardCopy, expectedCopy, identityCopy]) for (const suffix of ['', '-wal', '-shm']) rmSync(path + suffix, { force: true });
     const manifest = { sourceDigest: fingerprint, schema: REBUILD_SCHEMA_VERSION, report };
     writePrivate(join(stage, 'import-manifest.json'), JSON.stringify(manifest, null, 2) + '\n'); syncTree(stage);
     if (existsSync(destination)) throw new Error('Destination appeared during import');
