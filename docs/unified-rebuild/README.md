@@ -115,6 +115,7 @@
 | [統一政策與獨立同意紀錄檢查點](95-unified-privacy-checkpoint.md) | 完整用途說明、schema 15、舊同意保全、既有帳號確認、原回執與恢復 |
 | [系統錯誤獨立顯示檢查點](96-system-error-displays-checkpoint.md) | 來源標記、可選 API 顯示、原例外／schema issues、原稿／回執保全及完整回歸進度 |
 | [看板來源獨立對帳檢查點](97-board-reconciliation-checkpoint.md) | 固定 59 張來源表、逐列／序號／trigger、獨立刪除規格、bot 保全及候選損壞阻擋 |
+| [成分來源封存與對帳檢查點](98-music-reconciliation-checkpoint.md) | 原會員／詞條、25 表獨立模型、身份精度、刪除／關閉與舊授權隔離 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 原系統盤點結論

@@ -56,7 +56,16 @@ export function readIdentity(db: DB): Identity {
   return Object.fromEntries(tables.map(({ name }) => {
     const columns = db.prepare(`PRAGMA table_info("${name}")`).all() as { name: string }[];
     if (columns.map(row => row.name).join() !== identityColumns[name]!.join()) throw new Error('Unsupported music identity columns');
-    const rows = db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).all() as ObjectValue[];
+    const rawRows = db.prepare(`SELECT * FROM "${name}" ORDER BY rowid`).safeIntegers(true).all() as Record<string, unknown>[];
+    const rows = rawRows.map(row => Object.fromEntries(Object.entries(row).map(([column, raw]) => {
+      let value = raw;
+      if (typeof value === 'bigint') {
+        if (value > BigInt(Number.MAX_SAFE_INTEGER) || value < BigInt(Number.MIN_SAFE_INTEGER)) throw new Error('Unsafe music identity integer; explicit representation review required');
+        value = Number(value);
+      }
+      if (typeof value !== 'string' && (typeof value !== 'number' || !Number.isFinite(value) || Math.abs(value) > Number.MAX_SAFE_INTEGER)) throw new Error('Unsupported music identity storage value');
+      return [column, value];
+    }))) as ObjectValue[];
     for (const row of rows) { keys(row, identityColumns[name]!, 'identity'); if (row.payload !== undefined) parseJson(text(row.payload, 'identity payload')); }
     return [name, rows];
   }));
@@ -71,7 +80,7 @@ export function musicErasures(source: string) {
   }
   return erased;
 }
-export function projectMusic(raw: Json, originalIdentity: Identity, erased: Map<string, Json>) {
+export function projectMusic(raw: Json, originalIdentity: Identity, erased: Map<string, Json>, additionalErasedIds:ReadonlySet<string>=new Set()) {
   const data = structuredClone(object(raw, 'music root'));
   keys(data, ['entries', 'members', 'settings', 'shouts', 'shoutHistory', 'trend'], 'music root');
   const members = object(data.members, 'music members'); const entries = object(data.entries, 'music entries');
@@ -85,16 +94,17 @@ export function projectMusic(raw: Json, originalIdentity: Identity, erased: Map<
   }
   for (const row of identity.profile_contacts!) if (Object.hasOwn(members, String(row.qq))) object(members[String(row.qq)], 'member').contactQQ = row.number!;
   for (const table of ['link_overrides', 'prelinks', 'links']) for (const row of identity[table]!) if (Object.hasOwn(members, String(row.qq))) object(members[String(row.qq)], 'member').boardUserId = row.user_id!;
-  for (const entry of Object.values(entries)) { const item = object(entry, 'entry'); if (erased.has(String(item.createdBy ?? ''))) item.createdBy = ''; }
+  const erasedIds=new Set([...erased.keys()].map(profileId));for(const id of additionalErasedIds)erasedIds.add(id);
+  for (const entry of Object.values(entries)) { const item = object(entry, 'entry'); if (erased.has(String(item.createdBy ?? ''))||erasedIds.has(String(item.createdBy??''))) item.createdBy = ''; }
   for (const kind of ['shouts', 'shoutHistory']) data[kind] = list(data[kind], kind).filter(value => !erased.has(String(object(value, kind).qq ?? '')));
   return { data, identity };
 }
-export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased: Map<string, Json>, stamp: string) {
-  const { data, identity } = projectMusic(raw, sourceIdentity, erased);
-  const original = object(raw, 'original music'); const originalEntries = object(original.entries, 'original entries');
+export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased: Map<string, Json>, stamp: string, additionalErasedIds:ReadonlySet<string>=new Set()) {
+  const { data, identity } = projectMusic(raw, sourceIdentity, erased,additionalErasedIds);
+  const original = object(raw, 'original music'); const originalEntries = object(original.entries, 'original entries'), originalMembers = object(original.members, 'original members');
   const members = object(data.members, 'members'); const entries = object(data.entries, 'entries');
   const map = db.prepare('INSERT INTO migration_map VALUES(?,?,?,?,?,?,?)');
-  let owned = 0; let selections = 0;
+  let owned = 0; let selections = 0;let entrySourcePosition=0;
   for (const [key, value] of Object.entries(entries)) {
     const entry = object(value, 'entry'); keys(entry, ['id', 'text', 'kind', 'category', 'aliases', 'createdAt', 'updatedAt', 'createdBy'], 'entry');
     if (text(entry.id, 'entry id') !== key || !key || key.length > 80) throw new Error('Entry key does not match stable ID');
@@ -102,10 +112,11 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
     db.prepare('INSERT INTO music_entries VALUES(?,?,?)').run(key, text(entry.text, 'entry text'), kind);
     const aliases = list(entry.aliases, 'aliases'); if (aliases.some(alias => typeof alias !== 'string')) throw new Error('Invalid aliases');
     db.prepare('INSERT INTO music_entry_details VALUES(?,?,?,?,?,?)').run(key, text(entry.category, 'category', '其他'), JSON.stringify(aliases), text(entry.createdBy, 'entry creator'), JSON.stringify(entry.createdAt ?? 0), JSON.stringify(entry.updatedAt ?? null));
+    db.prepare('INSERT INTO music_documents VALUES(?,?,?)').run('entry_source',entrySourcePosition++,JSON.stringify({entryId:key,entry}));
     const sourceEntry = JSON.stringify(originalEntries[key]);
     map.run('music', 'entry', key, key, '', digest(sourceEntry), sourceEntry === JSON.stringify(entry) ? 'preserved' : 'erasure_redacted');
   }
-  const owners = new Set<string>(); const contacts = new Set<string>();
+  const owners = new Set<string>(); const contacts = new Set<string>(); let sourcePosition=0;
   for (const [key, value] of Object.entries(members)) {
     const member = object(value, 'member');
     keys(member, memberFields, 'member');
@@ -142,7 +153,12 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
       seen.add(entryId); if (!Object.hasOwn(entries, entryId)) throw new Error('Unresolved selection entry');
       db.prepare('INSERT INTO music_selections VALUES(?,?,?,?)').run(id, entryId, level, position++); selections++;
     }
-    map.run('music', 'profile', key, id, '', digest(JSON.stringify(member)), 'preserved');
+    const native = sourceIdentity.native_profiles!.find(row => row.qq === key);
+    const sourceMember = Object.hasOwn(originalMembers,key) ? originalMembers[key]! : parseJson(text(native?.payload,'native source'));
+    // Private, inactive source evidence retains duplicate choices, original
+    // fields and overridden projections. It never authenticates an account.
+    db.prepare('INSERT INTO music_documents VALUES(?,?,?)').run('profile_source',sourcePosition++,JSON.stringify({profileId:id,legacyKey:key,source:Object.hasOwn(originalMembers,key)?'json':'native',member:sourceMember}));
+    map.run('music', 'profile', key, id, '', digest(JSON.stringify(sourceMember)), 'preserved');
   }
   for (const [table, rows] of Object.entries(sourceIdentity)) rows.forEach((row, index) => {
     // Preserved as private migration evidence; never accepted as new authentication.
@@ -169,7 +185,9 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
   for (const [key, time] of erased) {
     db.prepare('INSERT INTO music_legacy_erasures VALUES(?,?)').run(key, JSON.stringify(time));
     db.prepare('INSERT INTO music_profiles(id,user_id,revision,updated_at,erased_at) VALUES(?,NULL,0,?,?) ON CONFLICT(id) DO NOTHING').run(profileId(key), stamp, stamp);
-    map.run('music', 'profile', key, profileId(key), '', '', 'erased');
+    const native = sourceIdentity.native_profiles!.find(row => row.qq === key);
+    const sourceMember = Object.hasOwn(originalMembers,key) ? originalMembers[key]! : native ? parseJson(text(native.payload,'native source')) : undefined;
+    map.run('music', 'profile', key, profileId(key), '', sourceMember===undefined?'':digest(JSON.stringify(sourceMember)), 'erased');
   }
   seedMusicFields(db);
   seedMusicShouts(db);

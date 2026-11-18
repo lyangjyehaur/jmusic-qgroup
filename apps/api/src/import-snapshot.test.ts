@@ -10,10 +10,12 @@ import { openDatabase, type DB } from '@qgroup/database';
 import { legacySchema } from '../../../packages/database/src/legacy-schema';
 import { importSnapshot } from '../../../tools/migration/import-snapshot';
 import * as boardVerification from '../../../tools/migration/board-reconciliation';
+import * as musicVerification from '../../../tools/migration/music-reconciliation';
 import { digest, parseJson, profileId } from '../../../tools/migration/music-codec';
 import { fixture } from '../testsupport/fixture';
 import { nicknameFixture } from '../testsupport/nickname-fixture';
 import { createApp, hash } from './app';
+import { exportMusic } from './music-export';
 const cleanups: (() => void | Promise<void>)[] = []; afterEach(async () => { for (const close of cleanups.splice(0).reverse()) await close(); });
 const native = 'm_' + 'b'.repeat(24); const stamp = new Date('2026-11-17T08:00:00Z');
 function allFiles(root: string, prefix = ''): Record<string, string> {
@@ -57,6 +59,104 @@ function setup() {
   return { root, source, destination, write, music };
 }
 describe('offline paired snapshot import', () => {
+  it('archives original member choices and overridden fields privately while checking the complete independent music projection',async()=>{
+    const s=setup(),before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);
+    expect(allFiles(s.source)).toEqual(before);
+    expect((result.report as {musicReconciliation:unknown}).musicReconciliation).toMatchObject({verified:true,tableCount:25,sourceEntries:2,sourceMembers:3,nativeRecovered:1,archivedProfiles:3,erasedKeys:1});
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      const sources=(db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as {payload_json:string}[]).map(row=>JSON.parse(row.payload_json));
+      expect(sources[0]).toEqual({profileId:profileId('10001'),legacyKey:'10001',source:'json',member:s.music.members['10001']});
+      expect(sources[0].member.selection).toHaveLength(3);expect(sources[0].member.boardUserId).toBe('outdated-json-id');
+      expect(db.prepare("SELECT payload_digest FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id='10001'").get()).toEqual({payload_digest:digest(JSON.stringify(s.music.members['10001']))});
+      expect(sources.find(row=>row.legacyKey===native)).toMatchObject({source:'native',member:{name:'未寫入 JSON 的成分',note:'native private note'}});
+      expect(sources.some(row=>row.legacyKey==='10004')).toBe(false);
+      expect(JSON.stringify(exportMusic(db))).not.toContain('outdated-json-id');
+      expect(JSON.stringify(result.report)).not.toContain('private member note');expect(JSON.stringify(result.report)).not.toContain('synthetic-old-music-session');
+    }finally{db.close();}
+  });
+  it('keeps explicit contact clearing and Unicode native source content through account-only redaction without retaining old account proofs',async()=>{
+    const s=setup(),identity=new Database(join(s.source,'music/identity.sqlite3'));
+    const value={qq:native,name:'\\u539f\\u6587的稱呼',note:'原文 / slash',boardUserId:'bob',selection:['e-main'],created:[]};
+    identity.prepare('UPDATE native_profiles SET payload=? WHERE qq=?').run(JSON.stringify(value).replaceAll('原','\\u539f'),native);identity.close();
+    s.write('board.erasures.jsonl',JSON.stringify({user_id:'bob',request_id:'bob-source-erasure',created_at:stamp.toISOString()})+'\n');
+    const result=await importSnapshot(s.source,s.destination,stamp);expect((result.report as {musicReconciliation:unknown}).musicReconciliation).toMatchObject({verified:true});
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      const source=db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.legacyKey')=?").get(native) as {payload_json:string};
+      expect(JSON.parse(source.payload_json).member).toEqual({...value,boardUserId:''});
+      expect(db.prepare('SELECT contact_qq FROM music_profile_contacts WHERE profile_id=?').get(profileId(native))).toEqual({contact_qq:''});
+      expect(db.prepare("SELECT * FROM music_legacy_identity WHERE table_name IN ('links','prelinks','sessions','entry_intents') AND json_extract(payload_json,'$.qq')=?").all(native)).toEqual([]);
+    }finally{db.close();}
+  });
+  it('preserves numeric native recovery order and raw creator/choice provenance while erasing stable-ID authors',async()=>{
+    const s=setup(),identity=new Database(join(s.source,'music/identity.sqlite3'));
+    identity.prepare('INSERT INTO native_profiles VALUES(?,?)').run('10000',JSON.stringify({qq:'10000',name:'較早序號',selection:['e-main'],created:[]}));identity.close();
+    s.music.entries['e-main'].createdBy=profileId('10004');s.write('music/data.json',s.music);
+    const result=await importSnapshot(s.source,s.destination,stamp);expect((result.report as {musicReconciliation:unknown}).musicReconciliation).toMatchObject({verified:true,nativeRecovered:2,archivedProfiles:4});
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      expect(db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='e-main'").get()).toEqual({created_by:''});
+      expect(db.prepare("SELECT status FROM migration_map WHERE source='music' AND entity_type='entry' AND source_id='e-main'").get()).toEqual({status:'erasure_redacted'});
+      const sources=(db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as {payload_json:string}[]).map(row=>JSON.parse(row.payload_json).legacyKey);
+      expect(sources).toEqual(['10000','10001','10003',native]);
+    }finally{db.close();}
+  });
+  it('archives original term fields and clears creator references for ledger profile IDs absent from the older member snapshot',async()=>{
+    const s=setup(),missing='native-after-snapshot';
+    Object.assign(s.music.entries['e-main'],{kind:'legacy-category-fallback',createdBy:missing});s.write('music/data.json',s.music);
+    s.write('board.erasures.jsonl',JSON.stringify({version:1,kind:'music',userId:'alice',profileId:missing,requestId:randomUUID(),createdAt:stamp.toISOString(),secretHash:hash('receipt'),signature:hash('missing-profile')})+'\n');
+    const before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);expect(allFiles(s.source)).toEqual(before);
+    expect((result.report as {musicReconciliation:unknown}).musicReconciliation).toMatchObject({verified:true});
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try{
+      expect(db.prepare("SELECT name,kind FROM music_entries WHERE id='e-main'").get()).toEqual({name:'日系音樂',kind:'main'});
+      const document=db.prepare("SELECT payload_json FROM music_documents WHERE kind='entry_source' AND json_extract(payload_json,'$.entryId')='e-main'").get() as {payload_json:string};
+      expect(JSON.parse(document.payload_json)).toEqual({entryId:'e-main',entry:{...s.music.entries['e-main'],createdBy:''}});
+      expect(db.prepare('SELECT erased_at FROM music_profiles WHERE id=?').get(missing)).toEqual({erased_at:stamp.toISOString()});
+    }finally{db.close();}
+  });
+  it.each(['unsafe audit integer','unsafe real timestamp','non-JSON BLOB credential'])('rejects identity representation loss: %s',async(kind)=>{
+    const s=setup(),identity=new Database(join(s.source,'music/identity.sqlite3'));
+    try{
+      if(kind==='unsafe audit integer')identity.prepare('UPDATE link_audit SET id=?').run(9007199254740993n);
+      else if(kind==='unsafe real timestamp')identity.prepare('UPDATE sessions SET expires=?').run(Number.MAX_SAFE_INTEGER+10);
+      else identity.prepare('UPDATE sessions SET token_hash=?').run(Buffer.from([0,1,255]));
+    }finally{identity.close();}
+    const before=allFiles(s.source);await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow(/Unsafe music identity|Unsupported music identity/);
+    expect(allFiles(s.source)).toEqual(before);expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);
+  });
+  const musicCorruptions:[string,(db:DB)=>void][]=[
+    ['choices change level',db=>{db.prepare('UPDATE music_selections SET level=1 WHERE profile_id=?').run(profileId('10001'));}],
+    ['choice order changes',db=>{db.prepare('UPDATE music_selections SET position=position+10 WHERE profile_id=?').run(profileId('10001'));}],
+    ['profile ownership disappears',db=>{db.prepare('UPDATE music_profiles SET user_id=NULL WHERE id=?').run(profileId('10001'));}],
+    ['contact clearing is overwritten',db=>{db.prepare("UPDATE music_profile_contacts SET contact_qq='19999' WHERE profile_id=?").run(profileId(native));}],
+    ['creation provenance changes',db=>{db.prepare("UPDATE music_legacy_profiles SET created_entries_json='[\"e-main\"]' WHERE legacy_key='10003'").run();}],
+    ['private note changes',db=>{db.prepare("UPDATE music_profile_fields SET note='wrong' WHERE profile_id=?").run(profileId('10001'));}],
+    ['term aliases change',db=>{db.prepare("UPDATE music_entry_details SET aliases_json='[]' WHERE entry_id='e-main'").run();}],
+    ['term historical timestamp changes',db=>{db.prepare("UPDATE music_entry_details SET created_at_json='999' WHERE entry_id='e-main'").run();}],
+    ['source JSON disappears',db=>{expect(db.prepare("DELETE FROM music_documents WHERE kind='profile_source'").run().changes).toBeGreaterThan(0);}],
+    ['source JSON silently loses duplicate choices',db=>{db.prepare("UPDATE music_documents SET payload_json=json_set(payload_json,'$.member.selection',json('[\"e-main\"]')) WHERE kind='profile_source' AND json_extract(payload_json,'$.legacyKey')='10001'").run();}],
+    ['original term JSON disappears',db=>{expect(db.prepare("DELETE FROM music_documents WHERE kind='entry_source'").run().changes).toBeGreaterThan(0);}],
+    ['an erased source is restored in a private document',db=>{db.prepare("INSERT INTO music_documents VALUES('profile_source',99,?)").run(JSON.stringify({legacyKey:'10004',member:{name:'erased private name'}}));}],
+    ['native recovery proof disappears',db=>{expect(db.prepare("DELETE FROM music_legacy_identity WHERE table_name='native_profiles'").run().changes).toBeGreaterThan(0);}],
+    ['OAuth used markers lose rows',db=>{db.prepare("INSERT INTO music_legacy_identity VALUES('used_oauth',99,'{}')").run();}],
+    ['old credential becomes a native claim',db=>{db.prepare("INSERT INTO music_claim_intents VALUES('unexpected','old-token',NULL,?,0,'proof','digest',NULL,'pending',NULL,'','','2099','source')").run(profileId('10003'));}],
+    ['inactive source administrator credential is classified active',db=>{db.prepare("UPDATE migration_map SET status='preserved' WHERE source='music' AND entity_type='settings'").run();}],
+    ['trend source loses values',db=>{db.prepare("UPDATE music_documents SET payload_json='{}' WHERE kind='trend'").run();}],
+    ['frozen shout name changes',db=>{db.prepare("UPDATE music_shouts SET name='changed' WHERE id='shout-1'").run();}],
+    ['frozen shout author changes',db=>{db.prepare("UPDATE music_shouts SET profile_id=NULL WHERE id='shout-1'").run();}],
+    ['tombstone deletion timestamp changes',db=>{db.prepare("UPDATE music_profiles SET erased_at='changed' WHERE id=?").run(profileId('10004'));}],
+    ['profile source digest changes to projected content',db=>{db.prepare("UPDATE migration_map SET payload_digest='wrong' WHERE source='music' AND entity_type='profile'").run();}],
+    ['identity mapping loses a row',db=>{db.prepare("DELETE FROM migration_map WHERE source='music-identity' AND entity_type='sessions'").run();}],
+    ['erasure provenance timestamp changes',db=>{db.prepare("UPDATE music_legacy_erasures SET erased_at_json='456'").run();}],
+  ];
+  it.each(musicCorruptions)('rejects independent music source mismatch before publication: %s',async(_label,mutate)=>{
+    const s=setup(),before=allFiles(s.source),original=musicVerification.reconcileMusic;
+    const spy=vi.spyOn(musicVerification,'reconcileMusic').mockImplementation((candidate,...args)=>{mutate(candidate);return original(candidate,...args);});
+    try{await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow('Music reconciliation failed');}finally{spy.mockRestore();}
+    expect(allFiles(s.source)).toEqual(before);expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);
+  });
   it('reconciles exactly the frozen 59 tables, paginated rows, BLOBs and safe SQLite integers without classifying new tables as sources', async () => {
     const s=setup(),source=new Database(join(s.source,'board.sqlite3'));
     try {
@@ -259,7 +359,7 @@ describe('offline paired snapshot import', () => {
     finally { db.close(); }
   });
   it('erases imported PIN/contact/native/history data with music while preserving the account and rejects resurrection on source replay', async () => {
-    const s = setup(); await importSnapshot(s.source, s.destination, stamp); const db = openDatabase(join(s.destination, 'unified.sqlite3')); const app = createApp({ db, origin: 'https://rebuild.example' }); await app.ready();
+    const s = setup();s.music.entries['e-main'].createdBy=native;s.write('music/data.json',s.music); await importSnapshot(s.source, s.destination, stamp); const db = openDatabase(join(s.destination, 'unified.sqlite3')); const app = createApp({ db, origin: 'https://rebuild.example' }); await app.ready();
     try {
       const cookie = 'kanban_session=fixture-bob'; const viewer = (await app.inject({ url: '/api/v2/session', headers: { cookie } })).json(); const id = profileId(native);
       const response = await app.inject({ method: 'POST', url: '/api/v2/me/privacy/erase', headers: { cookie, origin: 'https://rebuild.example', 'x-account-scope': viewer.scope, 'x-csrf-token': viewer.csrf }, payload: { target: 'music', profileId: id, profileRevision: 0, requestId: randomUUID(), secret: 'd'.repeat(64), confirm: true } });
@@ -268,6 +368,8 @@ describe('offline paired snapshot import', () => {
       expect(db.prepare("SELECT status FROM migration_map WHERE source='music-identity' AND entity_type='native_profiles'").get()).toEqual({ status: 'erased' });
       expect(db.prepare("SELECT status FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=?").get(native)).toEqual({ status: 'erased' });
       expect((await importSnapshot(s.source, s.destination, stamp)).status).toBe('already_imported'); expect(db.prepare('SELECT * FROM music_selections WHERE profile_id=?').all(id)).toEqual([]);
+      expect(db.prepare("SELECT * FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.profileId')=?").all(id)).toEqual([]);
+      expect(db.prepare("SELECT json_extract(payload_json,'$.entry.createdBy') AS creator FROM music_documents WHERE kind='entry_source' AND json_extract(payload_json,'$.entryId')='e-main'").get()).toEqual({creator:''});
       expect((await app.inject({ url: '/api/v2/session', headers: { cookie } })).json().authenticated).toBe(true);
     } finally { await app.close(); db.close(); }
   });
@@ -284,6 +386,7 @@ describe('offline paired snapshot import', () => {
       expect(db.prepare("SELECT status FROM migration_map WHERE source='music-identity' AND entity_type='prelinks' AND source_id='0'").get()).toEqual({ status: 'erased' });
       expect(db.prepare('SELECT fields_json,ownership_source FROM music_legacy_profiles WHERE legacy_key=?').get(native)).toMatchObject({ ownership_source: 'closed_account', fields_json: expect.stringContaining('native private note') });
       expect(db.prepare("SELECT count(*) n FROM music_legacy_identity WHERE table_name='link_audit'").get()).toEqual({ n: 2 });
+      const archive=db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.legacyKey')=?").get(native) as {payload_json:string};expect(JSON.parse(archive.payload_json).member.boardUserId).toBe('');expect(JSON.parse(archive.payload_json).member.note).toBe('native private note');
     } finally { await app.close(); db.close(); }
   });
   it('rejects unknown fields, orphan choices, JSON-only links, duplicate owners and aliases without publishing a partial directory', async () => {

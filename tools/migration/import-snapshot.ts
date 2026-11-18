@@ -9,6 +9,7 @@ import { createPrivacy, sharedRecords } from '../../apps/api/src/privacy';
 import { erasureJournal } from '../../apps/api/src/erasure-journal';
 import { digest, importMusic, musicErasures, parseJson, profileId, readIdentity, object } from './music-codec';
 import { boardTables, boardRows, boardPrimaryKeys, boardId, boardPayload, canonical, schemaObjects as objects, reconcileBoard } from './board-reconciliation';
+import { reconcileMusic } from './music-reconciliation';
 
 type File = { path: string; digest: string; size: number };
 function check(db: DB) {
@@ -131,14 +132,15 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     try { check(identityDB); identity = readIdentity(identityDB); } finally { identityDB.close(); }
     const music = parseJson(decode(readPrivateFile(join(source, 'music/data.json'))));
     const ledger = readPrivateFile(join(source, 'music/erasures.jsonl')); const erased = musicErasures(decode(ledger));
-    const memberKeys = new Set([...Object.keys(object(object(music, 'music').members, 'members')), ...identity.native_profiles!.map(row => String(row.qq))]);
+    const memberKeys = new Set([...Object.keys(object(object(music, 'music').members, 'members')), ...identity.native_profiles!.map(row => String(row.qq))]);const erasedProfileIds=new Set<string>();
     for (const intent of boardJournal.read()) if ('kind' in intent && intent.kind !== 'account') {
       const ids=intent.version===2?new Set(intent.profiles.map(p=>p.id)):new Set([intent.profileId]);
+      for(const id of ids)if(id)erasedProfileIds.add(id);
       for (const key of memberKeys) if (ids.has(profileId(key))) erased.set(key, intent.createdAt);
     }
     writePrivate(join(stage, 'legacy-music.erasures.jsonl'), ledger);
     const report = db.transaction(() => {
-      const imported = importMusic(db!, music, identity, erased, now.toISOString());
+      const imported = importMusic(db!, music, identity, erased, now.toISOString(),erasedProfileIds);
       seedWallpapers(db!,join(source,'music/walls'));
       // Administrative intents apply only after importing their legacy music scopes.
       // Captured reset entry IDs cannot return, and each action gets one audit record.
@@ -147,9 +149,14 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
       const boardAfterErasure = recordBoard(db!, true);
       const musicAfterErasure = {profiles:(db!.prepare('SELECT count(*) n FROM music_profiles WHERE erased_at IS NULL').get() as {n:number}).n,entries:(db!.prepare('SELECT count(*) n FROM music_entries').get() as {n:number}).n};
       const original = new Database(boardCopy, { readonly: true, fileMustExist: true }), expected = new Database(expectedCopy, { fileMustExist: true });
-      let boardReconciliation;
-      try { boardReconciliation = reconcileBoard(original, expected, db!, boardJournal.read()); } finally { original.close(); expected.close(); }
-      const result = { board: boardCounts, boardAfterErasure, boardReconciliation, music: imported, musicAfterErasure, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
+      let boardReconciliation,musicReconciliation;
+      try {
+        boardReconciliation = reconcileBoard(original, expected, db!, boardJournal.read());
+        const identitySource = new Database(identityCopy,{readonly:true,fileMustExist:true});
+        try { musicReconciliation=reconcileMusic(db!,parseJson(decode(readPrivateFile(join(source,'music/data.json')))),readIdentity(identitySource),decode(ledger),boardJournal.read(),original,now.toISOString()); }
+        finally { identitySource.close(); }
+      } finally { original.close(); expected.close(); }
+      const result = { board: boardCounts, boardAfterErasure, boardReconciliation, music: imported, musicAfterErasure, musicReconciliation, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
       db!.prepare('INSERT INTO migration_runs VALUES(?,?,?,?)').run(fingerprint, JSON.stringify(files), JSON.stringify(result), now.toISOString()); check(db!); return result;
     }).immediate();
     for (const file of files.filter(file => file.path.startsWith('images/') || file.path.startsWith('music/walls/'))) {

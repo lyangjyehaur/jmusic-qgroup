@@ -16,11 +16,18 @@ export function retireLegacyProfileProofs(db: DB, profileId: string) {
 
 /** Remove imported private fields and recovery proofs together with the live profile. */
 export function eraseLegacyProfile(db: DB, profileId: string, stamp: string) {
+  // Source evidence must disappear even if a prior replay already removed the
+  // legacy projection. It is never a recovery source for an erased profile.
+  db.prepare("DELETE FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.profileId')=?").run(profileId);
+  db.prepare("UPDATE music_documents SET payload_json=json_set(payload_json,'$.entry.createdBy','') WHERE kind='entry_source' AND json_extract(payload_json,'$.entry.createdBy')=?").run(profileId);
   // Native entry creators use a profile ID. Erasure keeps the public term and other people's selections.
+  db.prepare("UPDATE migration_map SET status='erasure_redacted' WHERE source='music' AND entity_type='entry' AND target_id IN (SELECT entry_id FROM music_entry_details WHERE created_by=?)").run(profileId);
   db.prepare("UPDATE music_entry_details SET created_by='' WHERE created_by=?").run(profileId);
   const row = db.prepare('SELECT legacy_key FROM music_legacy_profiles WHERE profile_id=?').get(profileId) as { legacy_key: string } | undefined;
   if (!row) return;
   const key = row.legacy_key;
+  db.prepare("UPDATE music_documents SET payload_json=json_set(payload_json,'$.entry.createdBy','') WHERE kind='entry_source' AND json_extract(payload_json,'$.entry.createdBy')=?").run(key);
+  db.prepare("DELETE FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.legacyKey')=?").run(key);
   db.prepare('DELETE FROM music_legacy_profiles WHERE profile_id=?').run(profileId);
   db.prepare("UPDATE migration_map SET status='erased' WHERE source='music' AND entity_type='profile' AND source_id=?").run(key);
   deleteIdentity(db, "json_extract(payload_json,'$.qq')=?", [key]);
@@ -47,4 +54,9 @@ export function detachLegacyAccount(db: DB, userId: string) {
   db.prepare(`UPDATE music_legacy_identity SET payload_json=json_set(payload_json,'$.payload',
     json_set(json_extract(payload_json,'$.payload'),'$.boardUserId','')||'') WHERE table_name='native_profiles'
     AND json_extract(json_extract(payload_json,'$.payload'),'$.boardUserId')=?`).run(userId);
+  db.prepare(`UPDATE migration_map SET status='erasure_redacted' WHERE source='music' AND entity_type='profile' AND status!='erased'
+    AND source_id IN (SELECT json_extract(payload_json,'$.legacyKey') FROM music_documents WHERE kind='profile_source'
+      AND json_extract(payload_json,'$.member.boardUserId')=?)`).run(userId);
+  db.prepare(`UPDATE music_documents SET payload_json=json_set(payload_json,'$.member.boardUserId','') WHERE kind='profile_source'
+    AND json_extract(payload_json,'$.member.boardUserId')=?`).run(userId);
 }
