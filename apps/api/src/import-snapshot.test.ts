@@ -11,6 +11,8 @@ import { legacySchema } from '../../../packages/database/src/legacy-schema';
 import { importSnapshot } from '../../../tools/migration/import-snapshot';
 import * as boardVerification from '../../../tools/migration/board-reconciliation';
 import * as musicVerification from '../../../tools/migration/music-reconciliation';
+import * as identityVerification from '../../../tools/migration/identity-reconciliation';
+import type { IdentitySourceEvidence } from '../../../tools/migration/identity-source';
 import { digest, parseJson, profileId } from '../../../tools/migration/music-codec';
 import { fixture } from '../testsupport/fixture';
 import { nicknameFixture } from '../testsupport/nickname-fixture';
@@ -59,6 +61,116 @@ function setup() {
   return { root, source, destination, write, music };
 }
 describe('offline paired snapshot import', () => {
+  it('preserves exact identity DDL, implicit indexes, signed rowids, storage classes and the deleted audit high-water without retaining erased row bodies', async () => {
+    const s = setup(), source = new Database(join(s.source, 'music/identity.sqlite3'));
+    const highWater = 9007199254740993n;
+    source.prepare("UPDATE sessions SET rowid=? WHERE qq='10003'").run(highWater);
+    source.prepare('INSERT INTO sessions(rowid,token_hash,qq,expires,source_session,pending_until) VALUES(?,?,?,?,?,?)').run(-7n,'negative-row-session','10003',789.25,'device-a',0);
+    source.prepare('INSERT INTO sessions(rowid,token_hash,qq,expires,source_session,pending_until) VALUES(?,?,?,?,?,?)').run(42n,'erased-row-session','10004',123,'device-b',0);
+    source.prepare("INSERT INTO link_audit(id,qq,actor,before_user_id,after_user_id,created) VALUES(5000,'10004','erased audit actor','alice','',123)").run();
+    source.prepare("UPDATE sqlite_sequence SET seq=? WHERE name='link_audit'").run(highWater);
+    const bucket='qq:'+'f'.repeat(64);
+    source.prepare('INSERT INTO login_attempts(rowid,bucket,created) VALUES(?,?,?)').run(14,bucket,123.5);
+    source.prepare('INSERT INTO login_attempts(rowid,bucket,created) VALUES(?,?,?)').run(28,bucket,123.5);
+    const schema = source.prepare('SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name').all(); source.close();
+    const before = allFiles(s.source), result = await importSnapshot(s.source,s.destination,stamp);
+    expect(allFiles(s.source)).toEqual(before);
+    expect((result.report as {musicReconciliation:unknown}).musicReconciliation).toMatchObject({identitySource:{verified:true,tableCount:10,sequenceRows:1}});
+    const db = openDatabase(join(s.destination,'unified.sqlite3'));
+    try {
+      const record=db.prepare("SELECT payload_json FROM music_documents WHERE kind='identity_source'").get() as {payload_json:string};
+      const evidence=JSON.parse(record.payload_json) as IdentitySourceEvidence;
+      expect(evidence.schema).toEqual(schema);expect(evidence.schema.some(row=>row.name.startsWith('sqlite_autoindex_'))).toBe(true);
+      expect(evidence.sqliteSequence).toEqual([{name:'link_audit',seq:String(highWater)}]);
+      expect(evidence.pragmas).toEqual({userVersion:0,applicationId:0,encoding:'UTF-8'});
+      expect(evidence.tables.find(table=>table.name==='sessions')!.rows).toEqual([
+        {rowNumber:0,rowid:'-7',storageClasses:['text','text','real','text','real']},
+        {rowNumber:1,rowid:'42',storageClasses:['text','text','real','text','real']},
+        {rowNumber:2,rowid:String(highWater),storageClasses:['text','text','real','text','real']},
+      ]);
+      expect(evidence.tables.find(table=>table.name==='link_audit')!.rows.map(row=>row.rowid)).toEqual(['1','5000']);
+      expect(evidence.tables.find(table=>table.name==='login_attempts')!.rows.map(row=>row.rowid)).toEqual(['14','28']);
+      expect(db.prepare("SELECT row_number FROM music_legacy_identity WHERE table_name='sessions' ORDER BY row_number").all()).toEqual([{row_number:0},{row_number:2}]);
+      expect(db.prepare("SELECT count(*) n FROM music_claim_attempts WHERE bucket=?").get(bucket)).toEqual({n:2});
+      expect(db.prepare("SELECT status FROM migration_map WHERE source='music-identity' AND entity_type='sessions' AND source_id='1'").get()).toEqual({status:'erased'});
+      expect(JSON.stringify(db.prepare('SELECT * FROM music_legacy_identity').all())).not.toContain('erased audit actor');
+      expect(record.payload_json).not.toContain('row-session');expect(record.payload_json).not.toContain('10004');
+      expect(JSON.stringify(exportMusic(db))).not.toContain('storageClasses');expect(JSON.stringify(result.report)).not.toContain(String(highWater));
+    } finally {db.close();}
+    expect((await importSnapshot(s.source,s.destination,stamp)).status).toBe('already_imported');
+  });
+  it.each([
+    ['a required partial unique index disappears',"DROP INDEX contact_number"],
+    ['a partial index predicate changes',"DROP INDEX contact_number; CREATE UNIQUE INDEX contact_number ON profile_contacts(number) WHERE number!='' AND number!='0'"],
+    ['an unexpected index is added',"CREATE INDEX credential_copy ON sessions(qq)"],
+    ['an unexpected trigger is added',"CREATE TRIGGER identity_copy AFTER INSERT ON sessions BEGIN INSERT INTO used_oauth VALUES(new.token_hash,0); END"],
+    ['an unexpected view is added',"CREATE VIEW identity_copy AS SELECT * FROM sessions"],
+    ['column affinity changes with the same column names',"DROP TABLE login_attempts; CREATE TABLE login_attempts(bucket TEXT NOT NULL,created INTEGER NOT NULL); CREATE INDEX attempt_bucket ON login_attempts(bucket,created)"],
+    ['a database version needs review',"PRAGMA user_version=1"],
+    ['an application ID needs review',"PRAGMA application_id=123"],
+    ['a sequence has a REAL value',"UPDATE sqlite_sequence SET seq=12.5"],
+    ['a sequence has a TEXT value',"UPDATE sqlite_sequence SET seq='unclassified'"],
+    ['a sequence has a negative value',"UPDATE sqlite_sequence SET seq=-1"],
+    ['an audit sequence moves backwards',"UPDATE sqlite_sequence SET seq=0"],
+    ['a sequence row is missing',"DELETE FROM sqlite_sequence"],
+    ['a sequence row is duplicated',"INSERT INTO sqlite_sequence VALUES('link_audit',2)"],
+    ['an unknown sequence is added',"INSERT INTO sqlite_sequence VALUES('sessions',2)"],
+  ])('rejects identity structure before publication: %s', async (_label, sql) => {
+    const s=setup(),source=new Database(join(s.source,'music/identity.sqlite3'));source.exec(sql);source.close();
+    const before=allFiles(s.source);await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow(/Unsupported music identity/);
+    expect(allFiles(s.source)).toEqual(before);expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);
+  });
+  it('rejects changed defaults even when all identity column names and stored row values still match',async()=>{
+    const s=setup(),source=new Database(join(s.source,'music/identity.sqlite3'));
+    const sql=(source.prepare("SELECT sql FROM sqlite_master WHERE name='sessions'").get() as {sql:string}).sql;
+    source.exec("ALTER TABLE sessions RENAME TO copied_sessions");
+    source.exec(sql.replace("DEFAULT ''","DEFAULT 'changed-default'"));
+    source.exec('INSERT INTO sessions SELECT * FROM copied_sessions; DROP TABLE copied_sessions');source.close();
+    const before=allFiles(s.source);await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow('Unsupported music identity schema');
+    expect(allFiles(s.source)).toEqual(before);expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);
+  });
+  it('keeps an empty audit table and its exhausted signed-64-bit sequence without deriving the high-water from surviving rows',async()=>{
+    const s=setup(),source=new Database(join(s.source,'music/identity.sqlite3'));
+    source.exec('DELETE FROM link_audit');source.prepare("UPDATE sqlite_sequence SET seq=? WHERE name='link_audit'").run(9223372036854775807n);source.close();
+    const before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);expect(allFiles(s.source)).toEqual(before);
+    expect((result.report as {musicReconciliation:unknown}).musicReconciliation).toMatchObject({identitySource:{verified:true,sequenceRows:1}});
+    const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try {
+      const record=db.prepare("SELECT payload_json FROM music_documents WHERE kind='identity_source'").get() as {payload_json:string},evidence=JSON.parse(record.payload_json) as IdentitySourceEvidence;
+      expect(evidence.tables.find(table=>table.name==='link_audit')!.rows).toEqual([]);
+      expect(evidence.sqliteSequence).toEqual([{name:'link_audit',seq:'9223372036854775807'}]);
+    }finally{db.close();}
+  });
+  it('records an initially absent audit sequence explicitly and does not fabricate a new sequence or source row',async()=>{
+    const s=setup(),source=new Database(join(s.source,'music/identity.sqlite3'));source.exec('DELETE FROM link_audit; DELETE FROM sqlite_sequence');source.close();
+    await importSnapshot(s.source,s.destination,stamp);const db=openDatabase(join(s.destination,'unified.sqlite3'));
+    try {
+      const record=db.prepare("SELECT payload_json FROM music_documents WHERE kind='identity_source'").get() as {payload_json:string},evidence=JSON.parse(record.payload_json) as IdentitySourceEvidence;
+      expect(evidence.sqliteSequence).toEqual([]);expect(evidence.tables.find(table=>table.name==='link_audit')!.rows).toEqual([]);
+    }finally{db.close();}
+  });
+  it.each(['missing document','duplicate document','changed DDL','changed rowid','changed storage class','changed high-water','missing source row','changed column default','changed database version'])('rejects independent identity evidence corruption: %s',async(kind)=>{
+    const s=setup(),before=allFiles(s.source),original=identityVerification.reconcileIdentitySource;
+    const spy=vi.spyOn(identityVerification,'reconcileIdentitySource').mockImplementation((candidate,source)=>{
+      const record=candidate.prepare("SELECT payload_json FROM music_documents WHERE kind='identity_source'").get() as {payload_json:string};
+      const evidence=JSON.parse(record.payload_json) as IdentitySourceEvidence;
+      if(kind==='missing document')candidate.prepare("DELETE FROM music_documents WHERE kind='identity_source'").run();
+      else if(kind==='duplicate document')candidate.prepare("INSERT INTO music_documents VALUES('identity_source',1,?)").run(record.payload_json);
+      else {
+        if(kind==='changed DDL')evidence.schema[0]!.sql='changed';
+        if(kind==='changed rowid')evidence.tables.find(table=>table.name==='sessions')!.rows[0]!.rowid='999';
+        if(kind==='changed storage class')evidence.tables.find(table=>table.name==='sessions')!.rows[0]!.storageClasses[2]='integer';
+        if(kind==='changed high-water')evidence.sqliteSequence[0]!.seq='999';
+        if(kind==='missing source row')evidence.tables.find(table=>table.name==='sessions')!.rows=[];
+        if(kind==='changed column default')evidence.tables.find(table=>table.name==='sessions')!.columns[3]!.dflt_value="'changed'";
+        if(kind==='changed database version')evidence.pragmas.userVersion=1;
+        candidate.prepare("UPDATE music_documents SET payload_json=? WHERE kind='identity_source'").run(JSON.stringify(evidence));
+      }
+      return original(candidate,source);
+    });
+    try{await expect(importSnapshot(s.source,s.destination,stamp)).rejects.toThrow('Music identity source reconciliation failed');}finally{spy.mockRestore();}
+    expect(allFiles(s.source)).toEqual(before);expect(existsSync(s.destination)).toBe(false);expect(readdirSync(s.root)).toEqual(['snapshot']);
+  });
   it('archives original member choices and overridden fields privately while checking the complete independent music projection',async()=>{
     const s=setup(),before=allFiles(s.source),result=await importSnapshot(s.source,s.destination,stamp);
     expect(allFiles(s.source)).toEqual(before);

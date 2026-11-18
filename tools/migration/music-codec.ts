@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { seedMusicFields, seedMusicShouts, type DB } from '@qgroup/database';
+import { assertIdentitySchema } from './identity-source';
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 export type ObjectValue = { [key: string]: Json };
@@ -51,6 +52,7 @@ const identityColumns: Record<string, string[]> = {
   login_attempts: ['bucket', 'created'], used_oauth: ['attempt', 'created'],
 };
 export function readIdentity(db: DB): Identity {
+  assertIdentitySchema(db);
   const tables = db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all() as { name: string }[];
   if (tables.map(row => row.name).join() !== Object.keys(identityColumns).sort().join()) throw new Error('Unsupported music identity tables');
   return Object.fromEntries(tables.map(({ name }) => {

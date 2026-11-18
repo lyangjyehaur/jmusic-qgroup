@@ -7045,7 +7045,10 @@
         "tools/rebuild/restore-backup.ts",
         "packages/database/src/schema-v14.ts",
         "tools/migration/board-reconciliation.ts",
-        "tools/migration/music-reconciliation.ts"
+        "tools/migration/music-reconciliation.ts",
+        "tools/migration/identity-schema.ts",
+        "tools/migration/identity-source.ts",
+        "tools/migration/identity-reconciliation.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7061,7 +7064,8 @@
         "packages/database/src/storage-migration.test.ts",
         "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
         "docs/unified-rebuild/98-music-reconciliation-checkpoint.md",
-        "packages/database/src/source-archive.test.ts"
+        "packages/database/src/source-archive.test.ts",
+        "docs/unified-rebuild/99-identity-source-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7075,7 +7079,8 @@
         "packages/database/src/storage-migration.test.ts",
         "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
         "docs/unified-rebuild/98-music-reconciliation-checkpoint.md",
-        "packages/database/src/source-archive.test.ts"
+        "packages/database/src/source-archive.test.ts",
+        "docs/unified-rebuild/99-identity-source-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7090,7 +7095,7 @@
         "docs/unified-rebuild/49-offline-restore-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／rowid／高水位與正式規模仍待驗收。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -7110,7 +7115,10 @@
         "tools/rebuild/restore-backup.ts",
         "packages/database/src/schema-v14.ts",
         "tools/migration/board-reconciliation.ts",
-        "tools/migration/music-reconciliation.ts"
+        "tools/migration/music-reconciliation.ts",
+        "tools/migration/identity-schema.ts",
+        "tools/migration/identity-source.ts",
+        "tools/migration/identity-reconciliation.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7122,7 +7130,8 @@
         "tools/rebuild/smoke-build.mjs",
         "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
         "docs/unified-rebuild/98-music-reconciliation-checkpoint.md",
-        "packages/database/src/source-archive.test.ts"
+        "packages/database/src/source-archive.test.ts",
+        "docs/unified-rebuild/99-identity-source-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7132,7 +7141,8 @@
         "packages/database/src/storage-migration.test.ts",
         "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
         "docs/unified-rebuild/98-music-reconciliation-checkpoint.md",
-        "packages/database/src/source-archive.test.ts"
+        "packages/database/src/source-archive.test.ts",
+        "docs/unified-rebuild/99-identity-source-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7146,7 +7156,7 @@
         "docs/unified-rebuild/49-offline-restore-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／rowid／高水位與正式規模仍待驗收。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源擷取／跨服務停寫鎖、平台不確定投遞審核、候選啟用、舊歷史備份 adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O14",

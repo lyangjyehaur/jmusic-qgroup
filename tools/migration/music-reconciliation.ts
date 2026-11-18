@@ -1,6 +1,7 @@
 import type { DB } from '@qgroup/database';
 import type { StoredIntent } from '../../apps/api/src/erasure-journal';
 import { digest, parseJson, profileId, musicErasures, type Identity, type Json, type ObjectValue } from './music-codec';
+import { reconcileIdentitySource } from './identity-reconciliation';
 
 type Row = Record<string, unknown>;
 function reject():never { throw new Error('Music reconciliation failed; no candidate was published'); }
@@ -26,10 +27,12 @@ const tables=[
 
 /** Independent source projection: never calls importMusic/projectMusic, seeds,
  * privacy replay, or uses migration statuses to authorize data differences. */
-export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacyLedger:string, journal:StoredIntent[], board:DB, stamp:string){
+export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacyLedger:string, journal:StoredIntent[], board:DB, stamp:string, identitySource:DB){
   const data=obj(raw),originalMembers=obj(data.members),originalEntries=obj(data.entries);
   const expected:Record<string,Row[]>=Object.fromEntries(tables.map(table=>[table,[]]));
   const add=(table:string,row:Row)=>expected[table]!.push(row);
+  const identityReconciliation = reconcileIdentitySource(candidate, identitySource);
+  add('music_documents', {kind:'identity_source',position:0,payload_json:encode(identityReconciliation.evidence)});
   const mappings:Row[]=[];
   const map=(source:string,entity_type:string,source_id:string,target_id:string,payload_digest:string,status:string)=>mappings.push({source,entity_type,source_id,target_id,source_revision:'',payload_digest,status});
   const users=new Set((board.prepare('SELECT id FROM users').all() as {id:string}[]).map(row=>row.id));
@@ -161,5 +164,5 @@ export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacy
   equal(actualMaps.map(encode).sort(),mappings.map(encode).sort());
   return {version:1,verified:true,sourceEntries:Object.keys(originalEntries).length,sourceMembers:Object.keys(originalMembers).length,sourceIdentityRows:Object.values(identity).reduce((sum,rows)=>sum+rows.length,0),
     nativeRecovered:[...sourceMembers.values()].filter(row=>row.source==='native').length,archivedProfiles:expected.music_documents!.filter(row=>row.kind==='profile_source').length,
-    sourceMappings:mappings.length,erasedKeys:erased.size,tableCount:tables.length,tables:reports};
+    sourceMappings:mappings.length,erasedKeys:erased.size,tableCount:tables.length,tables:reports,identitySource:identityReconciliation.report};
 }

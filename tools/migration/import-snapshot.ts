@@ -10,6 +10,7 @@ import { erasureJournal } from '../../apps/api/src/erasure-journal';
 import { digest, importMusic, musicErasures, parseJson, profileId, readIdentity, object } from './music-codec';
 import { boardTables, boardRows, boardPrimaryKeys, boardId, boardPayload, canonical, schemaObjects as objects, reconcileBoard } from './board-reconciliation';
 import { reconcileMusic } from './music-reconciliation';
+import { captureIdentitySource } from './identity-source';
 
 type File = { path: string; digest: string; size: number };
 function check(db: DB) {
@@ -128,8 +129,8 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     createPrivacy(db, {read:()=>boardJournal.read().filter(intent=>!('version' in intent&&intent.version===2)),append:entry=>boardJournal.append(entry)});
     const identityCopy = join(stage, '.source-identity.sqlite3');
     writePrivate(identityCopy, readPrivateFile(join(source, 'music/identity.sqlite3')));
-    const identityDB = new Database(identityCopy, { readonly: true, fileMustExist: true }); let identity;
-    try { check(identityDB); identity = readIdentity(identityDB); } finally { identityDB.close(); }
+    const identityDB = new Database(identityCopy, { readonly: true, fileMustExist: true }); let identity, identityEvidence;
+    try { check(identityDB); identity = readIdentity(identityDB); identityEvidence = captureIdentitySource(identityDB); } finally { identityDB.close(); }
     const music = parseJson(decode(readPrivateFile(join(source, 'music/data.json'))));
     const ledger = readPrivateFile(join(source, 'music/erasures.jsonl')); const erased = musicErasures(decode(ledger));
     const memberKeys = new Set([...Object.keys(object(object(music, 'music').members, 'members')), ...identity.native_profiles!.map(row => String(row.qq))]);const erasedProfileIds=new Set<string>();
@@ -140,6 +141,7 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     }
     writePrivate(join(stage, 'legacy-music.erasures.jsonl'), ledger);
     const report = db.transaction(() => {
+      db!.prepare('INSERT INTO music_documents VALUES(?,?,?)').run('identity_source', 0, JSON.stringify(identityEvidence));
       const imported = importMusic(db!, music, identity, erased, now.toISOString(),erasedProfileIds);
       seedWallpapers(db!,join(source,'music/walls'));
       // Administrative intents apply only after importing their legacy music scopes.
@@ -153,7 +155,7 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
       try {
         boardReconciliation = reconcileBoard(original, expected, db!, boardJournal.read());
         const identitySource = new Database(identityCopy,{readonly:true,fileMustExist:true});
-        try { musicReconciliation=reconcileMusic(db!,parseJson(decode(readPrivateFile(join(source,'music/data.json')))),readIdentity(identitySource),decode(ledger),boardJournal.read(),original,now.toISOString()); }
+        try { musicReconciliation=reconcileMusic(db!,parseJson(decode(readPrivateFile(join(source,'music/data.json')))),readIdentity(identitySource),decode(ledger),boardJournal.read(),original,now.toISOString(),identitySource); }
         finally { identitySource.close(); }
       } finally { original.close(); expected.close(); }
       const result = { board: boardCounts, boardAfterErasure, boardReconciliation, music: imported, musicAfterErasure, musicReconciliation, releaseEligible: false, remaining: ['historical_backups', 'browser_drafts', 'legacy_auth_adapters', 'rollback_export', 'full_capability_acceptance', 'production_version_pair'] };
