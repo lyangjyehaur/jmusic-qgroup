@@ -6823,13 +6823,33 @@
       "new_entry": "全站含說明／後台",
       "required_behavior": "主站既有最高優先語言策略保留並擴到新共用頁；用戶內容／協議值不轉換",
       "legacy_evidence_group": "語言",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "主站既有最高優先語言策略保留並擴到新共用頁；用戶內容／協議值不轉換"
+      "implementation": [
+        "packages/contracts/src/language.ts",
+        "apps/web/src/language.ts",
+        "apps/web/ui-language.ts",
+        "apps/web/vite.config.ts",
+        "apps/api/src/app.ts",
+        "apps/web/src/pwa/offline.ts",
+        "apps/web/src/pwa/worker.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/language.spec.ts",
+        "tools/rebuild/verify-image.mjs"
+      ],
+      "data_evidence": [
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/language.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/testsupport/language.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/language.spec.ts",
+        "docs/unified-rebuild/92-display-language-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "首批最高優先 Accept-Language、公開 shell／HEAD、建置期靜態 JSX／顯示屬性／固定分支、明確 uiText 與 offline 語言已實作；82 檔／2,868 顯示邊界、原文／表單協議值／ICP／translate=no、兩語稱呼保存與草稿、PWA 與 bot 舊入口已驗（檢查點 92）。其餘 enum／object labels、hooks／系統訊息、API 通知／安排／結算／錯誤及 user interpolation 邊界、統一手冊／政策、完整候選版本組合與實體裝置驗收待完成；禁止全文轉換使用者資料。"
     },
     {
       "capability_id": "O09",
@@ -6839,7 +6859,8 @@
       "legacy_evidence_group": "前端、隱私",
       "implementation": [
         "apps/web/src/privacy.tsx",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/web/ui-language.ts"
       ],
       "behavior_evidence": [
         "docs/unified-rebuild/08-identity-checkpoint.md"
@@ -6847,10 +6868,12 @@
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/language.spec.ts",
+        "docs/unified-rebuild/92-display-language-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "既有政策直接 TSX 鏡像、聯絡與 ICP、登入同意入口已實作；統一用途政策、手冊、簡繁及舊 URL 相容待完成。"
+      "remaining": "既有版本政策直接 TSX 鏡像、聯絡與 ICP、登入同意入口已實作；政策顯示跟隨新簡繁協商且原版本／ICP 保留（檢查點 92）。統一成分用途政策、新手冊與 guide 原 URL、回調說明及全域文案仍待完成。"
     },
     {
       "capability_id": "O10",
