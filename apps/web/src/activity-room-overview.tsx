@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -10,9 +11,9 @@ type Overview = z.infer<typeof ActivityRoomOverview>;
 const base = (id: string) => '/activities/' + encodeURIComponent(id),
   scoped = (viewer: Viewer) => ({ 'X-Account-Scope': viewer.scope });
 const statuses: Record<string, string> = {
-  waiting: '候補',
-  tentative: '待確認',
-  withdrawn: '已退出',
+  waiting: uiText("候補"),
+  tentative: uiText("待確認"),
+  withdrawn: uiText("已退出"),
 };
 function People({ people }: { people: Overview['unassigned'] }) {
   return (

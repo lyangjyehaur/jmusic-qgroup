@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -34,7 +35,7 @@ function NameForm({ viewer, returnTo }: { viewer: Viewer; returnTo: string }) {
     } catch (failure) {
       const unknown = !(failure instanceof ApiError) || failure.status >= 500;
       setUncertain(unknown); setBusy(false);
-      setError(unknown ? '尚未確認註冊結果，請先核對目前帳號，避免重複建立。' : failure.message);
+      setError(unknown ? uiText("尚未確認註冊結果，請先核對目前帳號，避免重複建立。") : errorText(failure));
     }
   }
   return <Surface className="detail auth-panel"><form onSubmit={event => { event.preventDefault(); void register(); }}>
@@ -71,7 +72,7 @@ function SettingsForm({ viewer, initial, reload }: { viewer: Viewer; initial: z.
       await reload();
     } catch (failure) {
       setBlocked(true);
-      setError(failure instanceof ApiError && failure.status < 500 ? failure.message : '尚未確認修改結果，請重新讀取目前設定後核對。');
+      setError(failure instanceof ApiError && failure.status < 500 ? errorText(failure) : uiText("尚未確認修改結果，請重新讀取目前設定後核對。"));
     } finally { setBusy(false); }
   }
   return <Surface className="detail auth-panel"><Text role="status">名稱註冊：{initial.enabled ? '已開放' : '已關閉'}</Text>

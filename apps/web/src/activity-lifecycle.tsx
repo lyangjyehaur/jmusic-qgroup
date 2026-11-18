@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
@@ -12,9 +13,9 @@ import { Failure, Notice, PageIntro } from './shared';
 
 type State=z.infer<typeof ActivityLifecycle>;
 type Action=z.infer<typeof ActivityLifecycleAction>;
-const labels:Record<Action,string>={pause:'暫停報名',resume:'恢復報名',formation:'確認成團',start:'標記實際開始',finish:'標記實際結束',cancel:'取消活動',archive:'歸檔活動',unarchive:'取消歸檔',remove:'移除活動'};
-const phases:Record<string,string>={draft:'草稿',scheduled:'已排定',ongoing:'實際進行中',ended:'實際已結束',cancelled:'已取消'};
-const hints:Record<Action,string>={pause:'保留原名單與候補；暫停接收報名。',resume:'依原候補順序分配可用名額。',formation:'通知參加者與協辦；不改動報名或費用。',start:'記錄現在為實際開始時間，關閉報名並通知參加者與協辦。',finish:'記錄現在為實際結束時間，關閉報名並通知參加者核對結算。',cancel:'原名單與帳務保留，通知參加者與協辦；費用以公布的結算為準。',archive:'將活動放入往期與歸檔，保留名單與帳務。',unarchive:'恢復活動的管理入口，不會重新開放報名。',remove:'移除後無法從活動列表開啟；取消尚未送出的通知，保留操作記錄。'};
+const labels:Record<Action,string>={pause:uiText("暫停報名"),resume:uiText("恢復報名"),formation:uiText("確認成團"),start:uiText("標記實際開始"),finish:uiText("標記實際結束"),cancel:uiText("取消活動"),archive:uiText("歸檔活動"),unarchive:uiText("取消歸檔"),remove:uiText("移除活動")};
+const phases:Record<string,string>={draft:uiText("草稿"),scheduled:uiText("已排定"),ongoing:uiText("實際進行中"),ended:uiText("實際已結束"),cancelled:uiText("已取消")};
+const hints:Record<Action,string>={pause:uiText("保留原名單與候補；暫停接收報名。"),resume:uiText("依原候補順序分配可用名額。"),formation:uiText("通知參加者與協辦；不改動報名或費用。"),start:uiText("記錄現在為實際開始時間，關閉報名並通知參加者與協辦。"),finish:uiText("記錄現在為實際結束時間，關閉報名並通知參加者核對結算。"),cancel:uiText("原名單與帳務保留，通知參加者與協辦；費用以公布的結算為準。"),archive:uiText("將活動放入往期與歸檔，保留名單與帳務。"),unarchive:uiText("恢復活動的管理入口，不會重新開放報名。"),remove:uiText("移除後無法從活動列表開啟；取消尚未送出的通知，保留操作記錄。")};
 const Pending=z.object({key:z.string().uuid(),input:ChangeActivityLifecycle}).strict();
 const Draft=z.object({revision:z.number().int().min(0),action:ActivityLifecycleAction.or(z.literal('')),reason:z.string(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
@@ -48,27 +49,27 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
   function update(fresh:State){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-lifecycle',data.id],fresh);}
   async function rebase(){
     if(locked||!record.begin())return;
-    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setMessage('已取得最新狀態；操作與原因仍保留，請重新核對後確認。');}
-    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setMessage(uiText("已取得最新狀態；操作與原因仍保留，請重新核對後確認。"));}
+    catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   async function submit(){
     if(busy||record.unavailable)return;let operation=draft.pending;
     if(!operation){
       if(!confirm||!available||stale)return;
       const parsed=ChangeActivityLifecycle.safeParse({revision:draft.revision,action:draft.action,reason:draft.reason,confirm:true});
-      if(!parsed.success){setMessage('請選擇操作，原因最多 200 字。');return;}
-      if(choice?.requiresReason&&!parsed.data.reason){setMessage('此操作必須填寫原因。');return;}
+      if(!parsed.success){setMessage(uiText("請選擇操作，原因最多 200 字。"));return;}
+      if(choice?.requiresReason&&!parsed.data.reason){setMessage(uiText("此操作必須填寫原因。"));return;}
       operation={key:crypto.randomUUID(),input:parsed.data};
     }
     const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api('/activities/'+encodeURIComponent(data.id)+'/lifecycle',ActivityDraftResult,{method:'POST',headers:{...headers(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setMessage(result.removed?'活動已移除。':'活動狀態已保存。');
+      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setMessage(result.removed?uiText("活動已移除。"):uiText("活動狀態已保存。"));
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-arrangements','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setMessage(error.message);}
-      else setMessage('尚未確認操作結果。原操作已保留，請按「確認狀態操作結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認狀態操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   return <Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading>

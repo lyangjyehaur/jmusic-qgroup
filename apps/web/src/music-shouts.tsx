@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useLocation,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -52,24 +53,24 @@ function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Me
   async function publish(){
     if(denied||!draft.pending&&(cooling||!normalized||count>140))return;
     const input=PublishMusicShout.safeParse({profileId,musicEpoch:viewer.musicEpoch,text:draft.text,confirm:true});
-    if(!draft.pending&&!input.success){setMessage('請檢查找搭子內容。');return;}
+    if(!draft.pending&&!input.success){setMessage(uiText("請檢查找搭子內容。"));return;}
     if(!begin())return;setMessage('');let accepted=false;
     const operation=draft.pending??{key:crypto.randomUUID(),input:input.data!},pending={...draft,pending:operation};
     try{
-      if(!await persist(pending,false,'無法保存原稿及操作編號，尚未發布。')||!active.current)return;
+      if(!await persist(pending,false,uiText("無法保存原稿及操作編號，尚未發布。"))||!active.current)return;
       replace(pending);
       await api('/me/music/shouts',PublishedMusicShout,{method:'POST',headers:{...authHeaders(viewer),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input),signal:cancel.current.signal});accepted=true;
-      if(!active.current||!await persist({text:''},false,'已發布，但無法保存本機確認狀態；請保留原操作並核對結果。')||!active.current)return;
-      replace({text:''});setMessage('已發布。');
+      if(!active.current||!await persist({text:''},false,uiText("已發布，但無法保存本機確認狀態；請保留原操作並核對結果。"))||!active.current)return;
+      replace({text:''});setMessage(uiText("已發布。"));
       void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shouts']});announceAccountChange();
     }catch(error){if(!active.current)return;
       if(error instanceof ApiError&&([401,403].includes(error.status)||['ACCOUNT_CHANGED','PROFILE_ERASED','MUSIC_PROFILE_REQUIRED'].includes(error.code))){
         setDenied(true);onDenied();void client.invalidateQueries({queryKey:['session']});void client.invalidateQueries({queryKey:['private',viewer.scope,'music']});return;
       }
       if(!accepted&&error instanceof ApiError&&error.status<500&&(error.status!==429||error.code==='SHOUT_COOLDOWN')){
-        if(await persist({text:pending.text},false,'無法保存拒絕結果；原發布操作仍保留，請重新核對。')&&active.current)replace({text:pending.text});
-        setMessage(error.message);void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shouts']});
-      }else setMessage('尚未確認發布結果。內容與操作編號已保留，請按「確認發布結果」安全重試。');
+        if(await persist({text:pending.text},false,uiText("無法保存拒絕結果；原發布操作仍保留，請重新核對。"))&&active.current)replace({text:pending.text});
+        setMessage(errorText(error));void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shouts']});
+      }else setMessage(uiText("尚未確認發布結果。內容與操作編號已保留，請按「確認發布結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;

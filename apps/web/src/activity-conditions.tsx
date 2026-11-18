@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
@@ -11,7 +12,7 @@ import { type Member } from './member-access';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { ActivityLocation } from './activity-sharing';
 type Conditions=z.infer<typeof ActivityConditions>;
-const choices={accepted:'接受',declined:'暫不同意',pending:'待確認'};
+const choices={accepted:uiText("接受"),declined:uiText("暫不同意"),pending:uiText("待確認")};
 const Pending=z.object({key:z.string().uuid(),personId:z.string().min(1),input:RespondActivityConditions}).strict();
 const Draft=z.object({revision:z.number().int().min(0),conditionsVersion:z.number().int().min(1),personId:z.string(),decision:z.enum(['accepted','declined']),reason:z.string(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
@@ -57,26 +58,26 @@ function ConsentEditor({viewer,initial,preferred,update}:{viewer:Member;initial:
   async function latest(){return api('/activities/'+encodeURIComponent(data.id)+'/conditions',ActivityConditions,{headers:{'X-Account-Scope':viewer.scope}});}
   async function rebase(){
     if(locked||!record.begin())return;
-    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision,conditionsVersion:fresh.current.version};if(!await persist(next))return;setData(fresh);setDraft(next);setConfirm(false);update(fresh);setMessage('已取得最新安排；選擇與原因仍保留，請重新核對後確認。');}
-    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision,conditionsVersion:fresh.current.version};if(!await persist(next))return;setData(fresh);setDraft(next);setConfirm(false);update(fresh);setMessage(uiText("已取得最新安排；選擇與原因仍保留，請重新核對後確認。"));}
+    catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   async function submit(){
     if(busy||record.unavailable)return;let operation=draft.pending;
     if(!operation){
       if(!confirm||!data.canRespond||!data.people.some(person=>person.id===draft.personId))return;
       const parsed=RespondActivityConditions.safeParse({revision:draft.revision,conditionsVersion:draft.conditionsVersion,decision:draft.decision,reason:draft.reason});
-      if(!parsed.success){setMessage('暫不同意新安排時請填寫原因（最多 200 字）。');return;}
+      if(!parsed.success){setMessage(uiText("暫不同意新安排時請填寫原因（最多 200 字）。"));return;}
       operation={key:crypto.randomUUID(),personId:draft.personId,input:parsed.data};
     }
     const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       await api('/activities/'+encodeURIComponent(data.id)+'/attendees/'+encodeURIComponent(operation.personId)+'/conditions',ActivityDraftResult,{method:'POST',headers:{'Content-Type':'application/json','X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      const fresh=await latest();if(!active.current)return;const next=original(fresh);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(next);setData(fresh);setConfirm(false);update(fresh);setMessage('安排確認已保存。');
+      const fresh=await latest();if(!active.current)return;const next=original(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);setData(fresh);setConfirm(false);update(fresh);setMessage(uiText("安排確認已保存。"));
       void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-roster',data.id]});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setMessage(error.message);}
-      else setMessage('尚未確認操作結果。原操作已保留，請按「確認安排回覆結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認安排回覆結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   return <Surface className="detail activity-editor"><Heading level={2}>我的安排確認</Heading>

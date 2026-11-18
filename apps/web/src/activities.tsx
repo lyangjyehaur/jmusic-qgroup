@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { Navigate, Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, EmptyState, Heading, Surface, Text } from 'yahha-ui';
@@ -11,7 +12,7 @@ import { ActivityManagementLink } from './activity-conditions';
 import { ActivityLifecycleLink } from './activity-lifecycle';
 import { ActivityLocation } from './activity-sharing';
 import { activityDate, activityTimeRange } from './activity-summary';
-const phaseLabel: Record<string, string> = { draft: '草稿', scheduled: '即將開始', ongoing: '進行中', ended: '已結束', cancelled: '已取消' };
+const phaseLabel: Record<string, string> = { draft: uiText("草稿"), scheduled: uiText("即將開始"), ongoing: uiText("進行中"), ended: uiText("已結束"), cancelled: uiText("已取消") };
 function ActivityCard({ event, rooms=false }: { event: ActivityView;rooms?:boolean }) {
   const destination=event.lifecycle==='draft'?'/activities/'+encodeURIComponent(event.id)+'/edit':rooms?'/tools/room-lab?eventId='+encodeURIComponent(event.id):'/activities/'+encodeURIComponent(event.id);
   return <Surface className="event-card"><div className="event-meta"><span className="pill">{event.category}</span><span>{event.archived ? '已歸檔' : phaseLabel[event.phase] ?? event.phase}</span></div>

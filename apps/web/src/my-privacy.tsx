@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,7 +30,7 @@ export function MyPrivacy() {
   async function finished(done: Result, original: MemberErasureValue) {
     if (!record.active.current) return;
     let completed = MemberErasure.parse({ ...original, result: done, cleaned: false }), saved = false;
-    try { await record.save(completed); saved = true; } catch (failure) { if (failure instanceof ErasureConflict) { setError(failure.message); return; } /* Still clear erased local data; retain original proof for receipt recovery. */ }
+    try { await record.save(completed); saved = true; } catch (failure) { if (failure instanceof ErasureConflict) { setError(errorText(failure)); return; } /* Still clear erased local data; retain original proof for receipt recovery. */ }
     if (!record.active.current) return;
     setObserved(completed); setNotFound(false); setError('');
     try {
@@ -37,8 +38,8 @@ export function MyPrivacy() {
       else { try { await clearDeviceDrafts(); } finally { announceAccountChange(true); } }
       completed = { ...completed, cleaned: true }; setObserved(completed);
       if (saved) { try { await record.save(completed); } catch { saved = false; } }
-      if (!saved) setError('伺服器刪除已完成，但無法保存本機確認狀態。請重新讀取原操作並查詢回執。');
-    } catch { setError('伺服器刪除已完成，但本機原稿清除失敗。請重試清除。'); }
+      if (!saved) setError(uiText("伺服器刪除已完成，但無法保存本機確認狀態。請重新讀取原操作並查詢回執。"));
+    } catch { setError(uiText("伺服器刪除已完成，但本機原稿清除失敗。請重試清除。")); }
     client.removeQueries({ queryKey: ['private'] });
     for (const key of ['music-catalog', 'music-trend', 'session']) void client.invalidateQueries({ queryKey: [key] });
   }
@@ -61,8 +62,8 @@ export function MyPrivacy() {
       if (!record.active.current) return;
       if (sent && failure instanceof ApiError && failure.status < 500 && ![401, 403, 429].includes(failure.status)) {
         try { await record.save(null); setObserved(null); } catch { /* Keep original proof. */ }
-        void client.invalidateQueries({ queryKey: ['private', original.scope, 'privacy'] }); setError(failure.message);
-      } else setError(sent ? '尚未確認刪除結果。請以原操作查詢回執。' : '無法保存或核對原刪除紀錄，尚未提交刪除。' + (failure instanceof Error ? ' ' + failure.message : ''));
+        void client.invalidateQueries({ queryKey: ['private', original.scope, 'privacy'] }); setError(errorText(failure));
+      } else setError(sent ? uiText("尚未確認刪除結果。請以原操作查詢回執。") : uiText("無法保存或核對原刪除紀錄，尚未提交刪除。") + (failure instanceof Error ? ' ' + errorText(failure) : ''));
     } finally { record.end(); }
   }
   async function check() {
@@ -75,14 +76,14 @@ export function MyPrivacy() {
       await finished(done, original);
     } catch (failure) {
       if (!record.active.current) return;
-      if (failure instanceof ApiError && failure.status === 404) { setNotFound(true); setError('尚未找到完成紀錄。可稍後再查，或登入原帳號重新提交原刪除；不會使用目前帳號提交刪除。'); }
-      else setError('尚未確認刪除結果。請重新讀取原操作後查詢。');
+      if (failure instanceof ApiError && failure.status === 404) { setNotFound(true); setError(uiText("尚未找到完成紀錄。可稍後再查，或登入原帳號重新提交原刪除；不會使用目前帳號提交刪除。")); }
+      else setError(uiText("尚未確認刪除結果。請重新讀取原操作後查詢。"));
     } finally { record.end(); }
   }
   async function dismiss() {
     if (!record.begin()) return;
     try { await record.save(null); setObserved(null); setError(''); setNotFound(false); }
-    catch { setError('無法清除操作紀錄，原回執仍保留。請重新讀取後重試。'); }
+    catch { setError(uiText("無法清除操作紀錄，原回執仍保留。請重新讀取後重試。")); }
     finally { record.end(); }
   }
   const acknowledged = !!result && !!operation?.cleaned && record.value?.result?.requestId === result.requestId && record.value.cleaned;

@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -7,8 +8,8 @@ import { api } from './api';
 import { loginLink } from './auth';
 import { Failure, Notice } from './shared';
 import { QQAvatar } from './qq-profile';
-const statusLabels = {confirmed:'正式',waiting:'候補',tentative:'待確認'};
-const levels:Record<number,string> = {1:'只聽過幾首',2:'聽過一些',3:'常聽',4:'本命'};
+const statusLabels = {confirmed:uiText("正式"),waiting:uiText("候補"),tentative:uiText("待確認")};
+const levels:Record<number,string> = {1:uiText("只聽過幾首"),2:uiText("聽過一些"),3:uiText("常聽"),4:uiText("本命")};
 export function ActivityParticipants({ eventId, viewer }: {eventId:string;viewer:Viewer}) {
   const client=useQueryClient();const [selected,setSelected]=useState<{id:string;name:string}|null>(null);
   const query=useQuery({queryKey:['private',viewer.scope,'activity-roster',eventId],queryFn:()=>api('/activities/'+encodeURIComponent(eventId)+'/roster',ActivityRoster,{headers:{'X-Account-Scope':viewer.scope}})});

@@ -94,7 +94,7 @@ test('sort changes discard late responses and comparison errors support retry', 
 });
 test('erasure and account switching clear private recommendation and comparison data, including late reads', async ({ page, context }) => {
   await login(context); await page.goto('/people/' + id(2) + '/compare'); await expect(comparison(page)).toContainText('留言 共同最多');
-  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
+  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(comparison(page)).toHaveCount(0); await expect(page.getByText('請先保存成分，再查看同好成分。', { exact: true })).toBeVisible(); await privacy.close();
   await login(context, 'bob'); await page.goto('/people'); await expect(main(page)).not.toContainText('我的成分');
   let release!: () => void, captured!: () => void; const pending = new Promise<void>(resolve => { release = resolve; }), ready = new Promise<void>(resolve => { captured = resolve; });

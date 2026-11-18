@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,7 +16,7 @@ import { DraftFeedback } from './draft-feedback';
 import { LegacyLocalLink } from './legacy-local';
 const ReadOperation=z.object({key:z.string().uuid(),input:MarkNotificationsRead}).strict();
 const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
-const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:'確認變更後的安排',claims:'核對報名認領',withdrawal:'處理退出申請',formation:'決定是否成團',finish:'確認活動結束／延長',settlement:'核對並發布結算',reports:'款項申報待核對',payment:'我的款項待補',refund:'我的退款／墊付待收回',reconcile:'核對收退款與結清'};
+const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:uiText("確認變更後的安排"),claims:uiText("核對報名認領"),withdrawal:uiText("處理退出申請"),formation:uiText("決定是否成團"),finish:uiText("確認活動結束／延長"),settlement:uiText("核對並發布結算"),reports:uiText("款項申報待核對"),payment:uiText("我的款項待補"),refund:uiText("我的退款／墊付待收回"),reconcile:uiText("核對收退款與結清")};
 const destinations:Record<keyof typeof labels,string>={conditions:'conditions',claims:'claims',withdrawal:'registration',formation:'lifecycle',finish:'lifecycle',settlement:'?task=settlement',reports:'finance',payment:'finance',refund:'finance',reconcile:'finance'};
 function TodoList({todos}:{todos:z.infer<typeof InboxTodos>['todos']}){
   const groups=new Map<string,typeof todos>();for(const todo of todos){const group=groups.get(todo.eventId);if(group)group.push(todo);else groups.set(todo.eventId,[todo]);}
@@ -68,16 +69,16 @@ function Inbox({viewer}:{viewer:Member}){
     const pending=operation??{key:crypto.randomUUID(),input:MarkNotificationsRead.parse({ids})};if(!begin())return;
     setMessage('');let committed=false;
     try{
-      if(!await persist(pending,false,'無法保存已讀操作編號，尚未送出。')||!active.current)return;
+      if(!await persist(pending,false,uiText("無法保存已讀操作編號，尚未送出。"))||!active.current)return;
       setOperation(pending);
       await api('/me/notifications/read',Ok,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':pending.key},body:JSON.stringify(pending.input)});committed=true;
-      if(!active.current||!await persist(null,false,'已讀操作已送出，但無法保存本機確認狀態；請保留原操作並核對結果。'))return;
-      setOperation(null);setMessage('通知已標為已讀；待辦仍按目前狀態計算。');
+      if(!active.current||!await persist(null,false,uiText("已讀操作已送出，但無法保存本機確認狀態；請保留原操作並核對結果。")))return;
+      setOperation(null);setMessage(uiText("通知已標為已讀；待辦仍按目前狀態計算。"));
       await client.invalidateQueries({queryKey:['private',viewer.scope,'notifications']});void client.invalidateQueries({queryKey:['private',viewer.scope,'notification-count']});
     }catch(error){
       if(!active.current)return;
-      if(!committed&&error instanceof ApiError&&error.status<500&&error.status!==429){if(await persist(null,false,'無法保存拒絕結果；原操作仍保留，請重新核對。'))setOperation(null);setMessage(error.message);}
-      else setMessage('尚未確認已讀結果，原操作已保留，請確認原操作結果。');
+      if(!committed&&error instanceof ApiError&&error.status<500&&error.status!==429){if(await persist(null,false,uiText("無法保存拒絕結果；原操作仍保留，請重新核對。")))setOperation(null);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認已讀結果，原操作已保留，請確認原操作結果。"));
     }finally{if(active.current)setBusy(false);}
   }
   return <>{event&&<div className="page-actions"><Link to="/inbox">全部待辦</Link><Link to={'/activities/'+encodeURIComponent(event)}>回到活動</Link></div>}

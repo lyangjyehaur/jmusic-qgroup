@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -9,7 +10,7 @@ import { AcceptActivityManager, ActivityDelegation, ActivityDelegationPreview, A
 import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
-const labels:Record<z.infer<typeof ActivityScope>,string>={schedule:'活動安排',roster:'名單管理',attendance:'現場出席',settlement:'結算管理'};
+const labels:Record<z.infer<typeof ActivityScope>,string>={schedule:uiText("活動安排"),roster:uiText("名單管理"),attendance:uiText("現場出席"),settlement:uiText("結算管理")};
 const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 const Pending=z.discriminatedUnion('kind',[
   z.object({kind:z.literal('invite'),key:z.string().uuid(),input:InviteActivityManager}).strict(),
@@ -49,22 +50,22 @@ function Editor({viewer,initial}:{viewer:Member;initial:z.infer<typeof ActivityD
   const blocked=!data.isOwner||(s.draft.action==='revoke'?!selected:!!data.blocker);
   function update(fresh:typeof data){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-delegation',data.id],fresh);}
   function choose(target:string){s.edit({action:'revoke',target,reason:''});}
-  async function rebase(){if(s.locked||!s.begin())return;try{const fresh=await latest();if(!s.active.current)return;const next={...s.draft,revision:fresh.revision};if(!await s.persist(next))return;update(fresh);s.setDraft(next);s.reset();s.setMessage('已取得最新分工；原輸入保留，請重新確認。');}catch(error){if(s.active.current)s.setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(s.active.current)s.setBusy(false);}}
+  async function rebase(){if(s.locked||!s.begin())return;try{const fresh=await latest();if(!s.active.current)return;const next={...s.draft,revision:fresh.revision};if(!await s.persist(next))return;update(fresh);s.setDraft(next);s.reset();s.setMessage(uiText("已取得最新分工；原輸入保留，請重新確認。"));}catch(error){if(s.active.current)s.setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(s.active.current)s.setBusy(false);}}
   async function submit(){
     if(s.busy||s.unavailable)return;let operation=s.draft.pending;
     if(!operation){
       if(!s.confirm||stale||blocked)return;
       if(s.draft.action==='revoke'){
-        const input=RevokeActivityManager.safeParse({revision:s.draft.revision,reason:s.draft.reason,confirm:true});if(!input.success){s.setMessage('請填寫撤銷原因，最多 200 字。');return;}
+        const input=RevokeActivityManager.safeParse({revision:s.draft.revision,reason:s.draft.reason,confirm:true});if(!input.success){s.setMessage(uiText("請填寫撤銷原因，最多 200 字。"));return;}
         const [target,...parts]=s.draft.target.split(':');if(target!=='roles'&&target!=='invitations')return;operation={kind:'revoke',key:crypto.randomUUID(),target,itemId:parts.join(':'),input:input.data};
       }else{
         const input=InviteActivityManager.safeParse({revision:s.draft.revision,kind:s.draft.action==='transfer'?'transfer':'cohost',targetName:s.draft.targetName,attendeeId:s.draft.attendeeId||null,permissions:s.draft.action==='transfer'?[]:s.draft.action==='settlement'?['settlement']:s.draft.permissions,reason:s.draft.reason,confirm:true});
-        if(!input.success){s.setMessage('請填寫受邀者稱呼、職責及原因；稱呼最多 24 字、原因 200 字。');return;}operation={kind:'invite',key:crypto.randomUUID(),input:input.data};
+        if(!input.success){s.setMessage(uiText("請填寫受邀者稱呼、職責及原因；稱呼最多 24 字、原因 200 字。"));return;}operation={kind:'invite',key:crypto.randomUUID(),input:input.data};
       }
     }
     if(operation.kind==='accept')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{const endpoint=operation.kind==='invite'?'/invitations':'/'+operation.target+'/'+encodeURIComponent(operation.itemId)+'/revoke';await api(path+endpoint,ActivityDelegationResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');s.setDraft(next);update(fresh);s.reset();s.setMessage(operation.kind==='invite'?'管理邀請已建立。':'管理權限或邀請已撤銷。');void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});}
-    catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(error.message);}else s.setMessage('尚未確認操作結果。原操作已保留，請按「確認管理操作結果」安全重試。');}finally{if(s.active.current)s.setBusy(false);}
+    try{const endpoint=operation.kind==='invite'?'/invitations':'/'+operation.target+'/'+encodeURIComponent(operation.itemId)+'/revoke';await api(path+endpoint,ActivityDelegationResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.reset();s.setMessage(operation.kind==='invite'?uiText("管理邀請已建立。"):uiText("管理權限或邀請已撤銷。"));void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});}
+    catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認管理操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   return <><Surface className="detail"><Heading level={2}>{data.title}</Heading><Text>發起者：{data.ownerName}</Text><Heading level={2}>現有協辦</Heading>{!data.roles.length?<Notice>目前沒有協辦。</Notice>:<ul className="invitation-list">{data.roles.map(role=><li key={role.id}><Text>{role.name} · {duties(role.permissions)}</Text>{data.isOwner&&<Button variant="secondary" disabled={s.locked} onClick={()=>choose('roles:'+role.id)}>撤銷職責（{role.name}）</Button>}</li>)}</ul>}</Surface>
     <Surface className="detail activity-editor">{!data.isOwner&&<Notice>只有發起者可以邀請或撤銷管理者。</Notice>}{data.blocker&&<Notice>{data.blocker}</Notice>}
@@ -87,8 +88,8 @@ function Recipient({viewer,id,token}:{viewer:Member;id:string;token:string}){
     if(s.busy||s.unavailable)return;let operation=s.draft.pending;
     if(!operation){if(!data||data.isOwner||!s.confirm||!s.responsibility)return;operation={kind:'accept',key:crypto.randomUUID(),input:{revision:data.revision,acceptResponsibility:true,confirm:true}};}
     if(operation.kind!=='accept')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await api(path+'/accept',ActivityDelegationResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');s.setDraft(empty());s.reset();setDone(true);s.setMessage('已接受管理邀請。');void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-drafts','activity-delegation','activity-arrangements','activity-lifecycle','activity-attendance','activity-registration','activity-roster'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,...(key==='activity-drafts'?[]:[id])]});}
-    catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(error.message);}else s.setMessage('尚未確認操作結果。原操作已保留，請按「確認管理操作結果」安全重試。');}finally{if(s.active.current)s.setBusy(false);}
+    try{await api(path+'/accept',ActivityDelegationResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.reset();setDone(true);s.setMessage(uiText("已接受管理邀請。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-drafts','activity-delegation','activity-arrangements','activity-lifecycle','activity-attendance','activity-registration','activity-roster'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,...(key==='activity-drafts'?[]:[id])]});}
+    catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認管理操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   async function refresh(){if(s.locked)return;s.reset();await query.refetch();}
   return <Surface className="detail activity-editor">{!done&&query.isPending&&<Notice>正在讀取管理邀請…</Notice>}{!done&&query.error&&!s.draft.pending&&<Failure error={query.error} retry={()=>void refresh()}/>}{!done&&data&&<><Heading level={2}>{data.title}</Heading><dl><dt>目前發起者</dt><dd>{data.ownerName}</dd><dt>受邀稱呼</dt><dd>{data.targetName}</dd><dt>接受帳號</dt><dd>{viewer.nickname}</dd><dt>接受職責</dt><dd>{data.kind==='transfer'?'發起者':duties(data.permissions)}</dd><dt>期限</dt><dd>{data.expiresAt.replace('T',' ')}</dd></dl>{data.isOwner&&<Notice>發起者不能接受自己的交接邀請。</Notice>}{data.kind==='transfer'?<Notice>接受後接任發起者，原發起者所有待接受管理邀請失效；保留報名與帳務。實際代收資金須另行交接。</Notice>:data.permissions.includes('settlement')?<Notice>接受後保留你的其他職責，並移除前任結算人的結算權限。</Notice>:<Notice>接受後以這份邀請的職責取代你的原協辦權限。</Notice>}</>}

@@ -211,7 +211,7 @@ export function createApp(options: AppOptions) {
         if(/(?:^|\/)(?:sw\.js|manifest\.webmanifest|manifest\.json)$/.test(path))response.header('Cache-Control','no-store');
       } });
       app.setNotFoundHandler((request, reply) => {
-        if (!['GET','HEAD'].includes(request.method) || request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || (request.url.split('?')[0]!.includes('.')&&!['/music/index.html','/music/admin.html','/privacy.html','/music/privacy.html','/contact.html'].includes(request.url.split('?')[0]!))) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
+        if (!['GET','HEAD'].includes(request.method) || request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || (request.url.split('?')[0]!.includes('.')&&!['/music/index.html','/music/admin.html','/privacy.html','/music/privacy.html','/contact.html','/guide.html'].includes(request.url.split('?')[0]!))) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
         return sendShell(request,reply);
       });
     }

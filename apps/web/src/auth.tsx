@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -37,7 +38,7 @@ export function Login() {
       if (session.data.authenticated && session.data.qq.needsReauth) stampQQReminder(session.data.scope);
       const result = await api('/auth/qq/start', QQStartResult, { method: 'POST', headers: authHeaders(session.data), body: JSON.stringify({ mode, confirm: true, returnTo, acceptPrivacy: accepted, privacyVersion: session.data.privacyVersion }) });
       window.location.assign(result.authorizeUrl);
-    } catch (failure) { setError(failure instanceof Error ? failure.message : '無法開始授權'); setBusy(false); }
+    } catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("無法開始授權")); setBusy(false); }
   }
   return <><PageIntro title={mode === 'bind' ? '綁定 QQ' : '登入'} />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : <Surface className="detail auth-panel">
     {session.data.qqEnabled ? <>
@@ -70,7 +71,7 @@ export function AuthConfirm() {
     } catch (failure) {
       const unknown = !(failure instanceof ApiError) || failure.status >= 500;
       setUncertain(unknown);
-      setError(unknown ? '尚未確認登入結果，請先核對目前帳號。' : failure.message);
+      setError(unknown ? uiText("尚未確認登入結果，請先核對目前帳號。") : errorText(failure));
       setBusy(false);
     }
   }
@@ -80,9 +81,9 @@ export function AuthConfirm() {
     try {
       const done = await api('/auth/qq/cancel', z.object({ returnTo: z.string() }), { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true }) });
       await changed(done.returnTo);
-    } catch (failure) { setError(failure instanceof Error ? failure.message : '取消失敗'); setBusy(false); }
+    } catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("取消失敗")); setBusy(false); }
   }
-  const statusText = { expired: '授權已過期，請重新登入。', pending: 'QQ 授權尚未完成。', exchanging: '正在確認 QQ 授權，請稍後重新讀取。', failed: 'QQ 授權未完成或已取消，請重新登入。', used: '此授權已使用，請查看目前帳號。' };
+  const statusText = { expired: uiText("授權已過期，請重新登入。"), pending: uiText("QQ 授權尚未完成。"), exchanging: uiText("正在確認 QQ 授權，請稍後重新讀取。"), failed: uiText("QQ 授權未完成或已取消，請重新登入。"), used: uiText("此授權已使用，請查看目前帳號。") };
   return <><PageIntro title="確認 QQ 授權" />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : params.has('status') ? <Notice>授權已失效或瀏覽器帳號已變更，請重新登入。</Notice> : !viewer?.qqEnabled ? <Notice>QQ 登入尚未配置。</Notice> : status.isPending ? <Notice>正在讀取授權結果…</Notice> : status.error ? <Failure error={status.error} retry={() => void status.refetch()} /> : !result ? <Notice>正在讀取授權結果…</Notice> : <Surface className="detail auth-panel">
     {result.status === 'verified' ? <>
       <dl><dt>QQ 暱稱</dt><dd>{result.qqNickname}</dd><dt>操作</dt><dd>{result.mode === 'bind' ? `綁定目前帳號「${result.currentNickname}」` : result.existingAccount ? `登入既有帳號「${result.targetNickname}」` : '建立帳號並登入'}</dd></dl>
@@ -109,7 +110,7 @@ export function Accounts() {
   async function switchTo(scope: string) {
     if (!viewer) return; setBusy(true); setError('');
     try { await api('/me/accounts/switch', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ scope, confirm: true }) }); await changed('/me/accounts'); }
-    catch (failure) { setError(failure instanceof Error ? failure.message : '切換失敗'); } finally { setBusy(false); }
+    catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("切換失敗")); } finally { setBusy(false); }
   }
   async function logout() {
     if (!viewer) return; setBusy(true); setError('');
@@ -120,8 +121,8 @@ export function Accounts() {
       try { await clearDeviceDrafts(); cleaned = true; } finally { announceAccountChange(true); }
       await changed('/me', true);
     } catch (failure) {
-      if (committed) { setCleanup(!cleaned); setError(cleaned ? '此裝置已登出，但無法讀取目前帳號。請重新載入頁面。' : '此裝置已登出，但本機原稿清除失敗。請重試清除。'); void client.invalidateQueries({ queryKey: ['session'] }); }
-      else setError(failure instanceof Error ? failure.message : '登出失敗');
+      if (committed) { setCleanup(!cleaned); setError(cleaned ? uiText("此裝置已登出，但無法讀取目前帳號。請重新載入頁面。") : uiText("此裝置已登出，但本機原稿清除失敗。請重試清除。")); void client.invalidateQueries({ queryKey: ['session'] }); }
+      else setError(failure instanceof Error ? errorText(failure) : uiText("登出失敗"));
     } finally { setBusy(false); }
   }
   return <><PageIntro title="帳號" />{params.has('returnTo') && <Link className="back" to={localReturn(params.get('returnTo'))}>回到原任務</Link>}{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink(localReturn(params.get('returnTo')) === '/' ? '/me/accounts' : localReturn(params.get('returnTo')))}>登入</Link> : <>
@@ -137,7 +138,7 @@ export function Accounts() {
     <Surface className="detail auth-panel"><Text>登出會撤銷此裝置的所有帳號授權並清除本機原稿；其他裝置不受影響。</Text><Button variant="secondary" disabled={busy || cleanup} onClick={() => void logout()}>登出此裝置</Button></Surface>
   </>}
     {cleanup && <Button loading={busy} onClick={() => {
-      setBusy(true); void clearDeviceDrafts().then(async () => { setCleanup(false); await changed('/me', true); }).catch(() => setError('仍無法清除本機原稿，請檢查瀏覽器儲存設定。')).finally(() => setBusy(false));
+      setBusy(true); void clearDeviceDrafts().then(async () => { setCleanup(false); await changed('/me', true); }).catch(() => setError(uiText("仍無法清除本機原稿，請檢查瀏覽器儲存設定。"))).finally(() => setBusy(false));
     }}>重試清除本機原稿</Button>}
     {error && <Text role="alert">{error}</Text>}
   </>;

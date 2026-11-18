@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { z } from 'zod';
@@ -50,7 +51,7 @@ export function useReviewedDraft<T, S, F>(options: {
       const saved = raw === null ? { value: options.blank(options.initial), dirty: false } : parse(raw);
       setDraft(saved); setNeedsRestore(saved.dirty && !saved.pending); setReadError(''); setConflict(false);
       setEpoch(n => n + 1);
-    } catch { setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
+    } catch { setReadError(uiText("無法讀取原稿，請先保全原稿再繼續。")); }
   }
   useEffect(() => {
     active.current = true; let cancelled = false;
@@ -60,12 +61,12 @@ export function useReviewedDraft<T, S, F>(options: {
         if (cancelled) return;
         handle.current = saved.handle; halted.current = false; applyRaw(saved.raw);
         await loadVersions();
-      } catch { if (!cancelled) setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
+      } catch { if (!cancelled) setReadError(uiText("無法讀取原稿，請先保全原稿再繼續。")); }
       finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; active.current = false; };
   }, [key, viewer.scope]);
-  function persist(next: Draft, preserve = false, failureText = '無法保存原稿及操作編號，尚未送出。') {
+  function persist(next: Draft, preserve = false, failureText = uiText("無法保存原稿及操作編號，尚未送出。")) {
     const raw = JSON.stringify(next.pending ? { dirty: next.dirty, pending: next.pending } : next);
     setSaving(n => n + 1);
     const work = queue.current.then(async () => {
@@ -80,7 +81,7 @@ export function useReviewedDraft<T, S, F>(options: {
           halted.current = true;
           if (error instanceof DraftExpired) revoked.current = true;
           if (active.current) {
-            setReadError(error.message); setConflict(error instanceof DraftConflict); setExpired(error instanceof DraftExpired);
+            setReadError(errorText(error)); setConflict(error instanceof DraftConflict); setExpired(error instanceof DraftExpired);
             await loadVersions().catch(() => {});
           }
         } else if (active.current) setStorageError(failureText);
@@ -111,8 +112,8 @@ export function useReviewedDraft<T, S, F>(options: {
       const next = { ...draft, value: rebase(draft.value, fresh) };
       if (!await persist(next)) return;
       setData(fresh); setDraft(next); setEpoch(n => n + 1);
-      setMessage('已讀取最新版，原輸入保留；請重新預覽核對。'); options.afterRefresh?.(fresh);
-    } catch (e) { if (active.current) setMessage(e instanceof Error ? e.message : '讀取失敗'); }
+      setMessage(uiText("已讀取最新版，原輸入保留；請重新預覽核對。")); options.afterRefresh?.(fresh);
+    } catch (e) { if (active.current) setMessage(e instanceof Error ? errorText(e) : uiText("讀取失敗")); }
     finally { if (active.current) setBusy(false); }
   }
   async function submit(input?: S) {
@@ -125,7 +126,7 @@ export function useReviewedDraft<T, S, F>(options: {
     try {
       if (!draft.pending && options.beforeSubmit) {
         try { await options.beforeSubmit(); }
-        catch (error) { if (active.current) setMessage(error instanceof Error ? error.message : '尚未送出，請先核對原紀錄。'); return false; }
+        catch (error) { if (active.current) setMessage(error instanceof Error ? errorText(error) : uiText("尚未送出，請先核對原紀錄。")); return false; }
       }
       // Archive the editable record atomically before compacting the pending payload.
       // This retains dormant inputs without duplicating active image bytes in pending.
@@ -140,16 +141,16 @@ export function useReviewedDraft<T, S, F>(options: {
       const fresh = await options.latest(result);
       if (!active.current) return false;
       const cleared = { value: options.blank(fresh), dirty: false };
-      if (!await persist(cleared, false, '操作已送出，但無法保存確認狀態；請保留原操作並核對結果。')) throw Error('storage');
-      setDraft(cleared); setData(fresh); setEpoch(n => n + 1); setMessage('已保存。');
+      if (!await persist(cleared, false, uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。"))) throw Error('storage');
+      setDraft(cleared); setData(fresh); setEpoch(n => n + 1); setMessage(uiText("已保存。"));
       options.after?.(fresh, result); return true;
     } catch (e) {
       if (!active.current) return false;
       if (!accepted && e instanceof ApiError && e.status < 500 && e.status !== 429) {
         const fresh = { ...next, pending: undefined };
-        if (await persist(fresh, false, '無法保存拒絕結果；原操作仍保留，請重新核對。')) setDraft(fresh);
-        setEpoch(n => n + 1); setMessage(e.message);
-      } else setMessage('尚未確認操作結果。原操作已保留，請確認原操作結果。');
+        if (await persist(fresh, false, uiText("無法保存拒絕結果；原操作仍保留，請重新核對。"))) setDraft(fresh);
+        setEpoch(n => n + 1); setMessage(errorText(e));
+      } else setMessage(uiText("尚未確認操作結果。原操作已保留，請確認原操作結果。"));
       return false;
     } finally { submitting.current = false; if (active.current) setBusy(false); }
   }
@@ -169,18 +170,18 @@ export function useReviewedDraft<T, S, F>(options: {
         applyRaw(JSON.stringify(blank));
       }
       await loadVersions();
-    } catch { setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。'); }
+    } catch { setStorageError(uiText("仍無法保全原稿，請檢查瀏覽器儲存設定。")); }
     finally { if (active.current) setBusy(false); }
   }
   async function restoreVersion(id: string) {
     if (busy || loading || readError) return;
     const version = versions.find(row => row.id === id); if (!version) return;
     let next: Draft;
-    try { next = parse(version.raw); } catch { setMessage('這份原稿格式無法讀取，請下載保全檔。'); return; }
+    try { next = parse(version.raw); } catch { setMessage(uiText("這份原稿格式無法讀取，請下載保全檔。")); return; }
     setBusy(true);
     try {
       if (!await persist(next, true)) return;
-      setDraft(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage('已載入保全版本；請核對原操作與最新資料。');
+      setDraft(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage(uiText("已載入保全版本；請核對原操作與最新資料。"));
       await loadVersions();
     } finally { if (active.current) setBusy(false); }
   }

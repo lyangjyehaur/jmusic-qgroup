@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -33,20 +34,20 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
     setMessage('');let accepted=false;
     const operation=pending??{key:crypto.randomUUID(),input:{revision:view.data!.revision,confirm:true as const}};
     try{
-      if(!await persist(operation,false,'無法保存邀請操作編號，尚未送出授權。')||!active.current)return;
+      if(!await persist(operation,false,uiText("無法保存邀請操作編號，尚未送出授權。"))||!active.current)return;
       replace(operation);
       const result=await api(path+'/accept',ActivityAccessResult,{method:'POST',headers:{...authHeaders(viewer),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input),signal:cancel.current.signal});accepted=true;
       if(!active.current)return;
       if(result.id!==id)throw Error('原邀請回執的活動不符，請保全紀錄後核對。');
-      if(!await persist(null,false,'已取得查看權限，但無法保存本機確認狀態；請保留原操作並核對結果。')||!active.current)return;
+      if(!await persist(null,false,uiText("已取得查看權限，但無法保存本機確認狀態；請保留原操作並核對結果。"))||!active.current)return;
       replace(null);setConfirmed(false);setDone(true);void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',id]});
     }catch(error){
       if(!active.current)return;
       if(error instanceof ApiError&&([401,403].includes(error.status)||error.code==='ACCOUNT_CHANGED')){setAuthorityLost(true);return;}
       if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){
-        if(await persist(null,false,'無法保存拒絕結果；原邀請操作仍保留，請重新核對。')&&active.current)replace(null);
-        setConfirmed(false);setMessage(error.message);void view.refetch();
-      }else setMessage(error instanceof Error&&error.message==='原邀請回執的活動不符，請保全紀錄後核對。'?error.message:'尚未確認邀請結果，原操作已保留，請確認原邀請操作結果。');
+        if(await persist(null,false,uiText("無法保存拒絕結果；原邀請操作仍保留，請重新核對。"))&&active.current)replace(null);
+        setConfirmed(false);setMessage(errorText(error));void view.refetch();
+      }else setMessage(error instanceof Error&&error.message==='原邀請回執的活動不符，請保全紀錄後核對。'?errorText(error):uiText("尚未確認邀請結果，原操作已保留，請確認原邀請操作結果。"));
     }finally{if(active.current)setBusy(false);}
   }
   if(denied)return <Notice>目前帳號或邀請權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;

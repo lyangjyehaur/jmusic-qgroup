@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -47,24 +48,24 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
   async function rebase(){
     if(locked||!start())return;
     try{const fresh=await catalog.refetch();if(fresh.error)throw fresh.error;if(!active.current||!fresh.data)return;
-      const next={...draft,value:{...draft.value,revision:fresh.data.revision},dirty:true};if(!await persist(next))return;setDraft(next);setConfirmed(false);setMessage('已讀取目前影響範圍，原輸入保留；請重新確認。');
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'無法讀取最新詞庫');}
+      const next={...draft,value:{...draft.value,revision:fresh.data.revision},dirty:true};if(!await persist(next))return;setDraft(next);setConfirmed(false);setMessage(uiText("已讀取目前影響範圍，原輸入保留；請重新確認。"));
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法讀取最新詞庫"));}
     finally{if(active.current)setBusy(false);}
   }
   async function send(){
     if(busy||unavailable||!draft.pending&&(!confirmed||!catalog.data||catalog.error||draft.value.revision!==catalog.data.revision))return;
     let operation=draft.pending;
-    try{operation??={key:crypto.randomUUID(),input:input(draft.value)};}catch{setMessage('請核對名稱、來源與目標詞條。');return;}
+    try{operation??={key:crypto.randomUUID(),input:input(draft.value)};}catch{setMessage(uiText("請核對名稱、來源與目標詞條。"));return;}
     const pending={...draft,pending:operation};if(!start())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api('/admin/music-entries',AdminMusicEntryResult,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      if(!active.current)return;const clean=blank();if(!await persist(clean,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;
-      setDraft(clean);setConfirmed(false);setMessage((result.command==='merge'?'已合併詞條':result.command==='delete'?'已刪除詞條':result.command==='create'?'已建立詞條':'已保存詞條')+(result.affectedProfiles?'，更新 '+result.affectedProfiles+' 份成分。':'。'));
+      if(!active.current)return;const clean=blank();if(!await persist(clean,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;
+      setDraft(clean);setConfirmed(false);setMessage((result.command==='merge'?uiText("已合併詞條"):result.command==='delete'?uiText("已刪除詞條"):result.command==='create'?uiText("已建立詞條"):uiText("已保存詞條"))+(result.affectedProfiles?uiText("，更新 ")+result.affectedProfiles+uiText(" 份成分。"):'。'));
       void client.invalidateQueries({queryKey:['music-catalog']});void client.invalidateQueries({queryKey:['catalog']});void client.invalidateQueries({queryKey:['music-trend']});void client.invalidateQueries({queryKey:['private',viewer.scope]});announceAccountChange();
     }catch(error){if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(error.message);void catalog.refetch();if([401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
-      else setMessage('尚未確認詞庫操作結果。原稿與操作編號已保留，請確認原操作結果。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(errorText(error));void catalog.refetch();if([401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
+      else setMessage(uiText("尚未確認詞庫操作結果。原稿與操作編號已保留，請確認原操作結果。"));
     }finally{if(active.current)setBusy(false);}
   }
   const value=draft.value,source=catalog.data?.entries.find(e=>e.id===value.id),target=catalog.data?.entries.find(e=>e.id===value.toId),stale=!!catalog.data&&value.revision!==catalog.data.revision;

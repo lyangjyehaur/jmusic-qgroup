@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,8 +17,8 @@ function displayTime(value: string) {
   return Number.isFinite(date.getTime()) ? date.toLocaleString('zh-TW', { hour12: false }) : '時間未記錄';
 }
 const actionLabels: Record<string, string> = {
-  qq_login: 'QQ 登入', qq_bound: '綁定 QQ', name_registered: '建立帳號', nickname_changed: '修改站內稱呼', account_switched: '切換帳號', music_claimed: '找回原成分',
-  device_link_issued: '產生裝置連結', device_link_accepted: '接受裝置授權', device_revoked: '撤銷裝置授權', device_links_revoked: '撤銷未使用連結',
+  qq_login: uiText("QQ 登入"), qq_bound: uiText("綁定 QQ"), name_registered: uiText("建立帳號"), nickname_changed: uiText("修改站內稱呼"), account_switched: uiText("切換帳號"), music_claimed: uiText("找回原成分"),
+  device_link_issued: uiText("產生裝置連結"), device_link_accepted: uiText("接受裝置授權"), device_revoked: uiText("撤銷裝置授權"), device_links_revoked: uiText("撤銷未使用連結"),
 };
 export function Devices() {
   const session = useQuery(sessionQuery);
@@ -56,7 +57,7 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
       await record.save({token:result.token,capturedAt,expiresAt:Math.min(Date.parse(result.expiresAt),capturedAt+600000)});
       setAuthorize(false);await refresh();
     } catch(error) {
-      if(active.current)setMessage(sent?'尚未確認產生結果。請先撤銷未使用連結，再重新產生。':'無法保存或核對裝置操作，尚未產生連結。'+(error instanceof Error?' '+error.message:''));
+      if(active.current)setMessage(sent?uiText("尚未確認產生結果。請先撤銷未使用連結，再重新產生。"):uiText("無法保存或核對裝置操作，尚未產生連結。")+(error instanceof Error?' '+errorText(error):''));
     } finally {record.end();if(active.current)setBusy(false);}
   }
   async function revoke(deviceId?:string) {
@@ -65,18 +66,18 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
       const fresh=await current();if(!active.current)return;
       await api(deviceId?'/me/devices/revoke':'/me/devices/revoke-link',Ok,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify({confirm:true,...deviceId?{deviceId}:{}})});
       if(!active.current)return;
-      await record.save(null);setSelected(null);setAuthorize(false);setMessage(deviceId?'已撤銷該裝置的此帳號授權；其他帳號保留。':'已撤銷此帳號的未使用連結。');await refresh();
-    } catch(error) {if(active.current)setMessage(error instanceof ApiError&&error.status<500?error.message:'尚未確認撤銷結果，請重新讀取裝置與紀錄再核對。');}
+      await record.save(null);setSelected(null);setAuthorize(false);setMessage(deviceId?uiText("已撤銷該裝置的此帳號授權；其他帳號保留。"):uiText("已撤銷此帳號的未使用連結。"));await refresh();
+    } catch(error) {if(active.current)setMessage(error instanceof ApiError&&error.status<500?errorText(error):uiText("尚未確認撤銷結果，請重新讀取裝置與紀錄再核對。"));}
     finally {record.end();if(active.current)setBusy(false);}
   }
   async function copy(){
     if(!issued||busy)return;
-    try{await current();if(!active.current)return;if(!navigator.clipboard)throw Error();await navigator.clipboard.writeText(link);if(active.current)setMessage('已複製裝置連結。');}
-    catch{if(active.current)setMessage('無法複製，請重新核對有效連結；可選取上方連結手動複製。');}
+    try{await current();if(!active.current)return;if(!navigator.clipboard)throw Error();await navigator.clipboard.writeText(link);if(active.current)setMessage(uiText("已複製裝置連結。"));}
+    catch{if(active.current)setMessage(uiText("無法複製，請重新核對有效連結；可選取上方連結手動複製。"));}
   }
   const link = issued ? location.origin + '/me/devices/accept#token=' + issued.token : '';
   return <>
-    {record.error&&<Notice>{record.error}<Button variant="secondary" onClick={()=>void record.refresh()}>重新讀取裝置連結</Button>{record.damaged&&<Button variant="secondary" onClick={()=>void record.save(null).catch(()=>setMessage('無法清除本機連結，請重新讀取。'))}>清除損壞的本機連結</Button>}</Notice>}
+    {record.error&&<Notice>{record.error}<Button variant="secondary" onClick={()=>void record.refresh()}>重新讀取裝置連結</Button>{record.damaged&&<Button variant="secondary" onClick={()=>void record.save(null).catch(()=>setMessage(uiText("無法清除本機連結，請重新讀取。")))}>清除損壞的本機連結</Button>}</Notice>}
     {record.value&&!issued&&<Notice>產生結果尚未確認，請先撤銷未使用連結，再重新產生。</Notice>}
     {record.expired&&<Notice>本機連結已到期，請重新產生。</Notice>}
     <Surface className="detail auth-panel"><Heading level={2}>連接自己的另一台裝置</Heading><Text>「{viewer.nickname}」的連結有效 10 分鐘、僅用一次。持有者可管理此帳號與帳務，只能傳給自己的裝置；產生新連結會撤銷舊連結。</Text>
@@ -112,9 +113,9 @@ function DeviceAcceptance() {
   useEffect(()=>{const changed=()=>{const token=new URLSearchParams(location.hash.slice(1)).get('token');if(token!==null){setFragment(token);setMessage('');}};window.addEventListener('hashchange',changed);return()=>window.removeEventListener('hashchange',changed);},[]);
   useEffect(()=>{
     if(!record.ready||record.error||incoming===null||record.busy)return;
-    if(!deviceToken(incoming)){setMessage('裝置連結不完整，請在原裝置重新產生。');return;}
+    if(!deviceToken(incoming)){setMessage(uiText("裝置連結不完整，請在原裝置重新產生。"));return;}
     if(record.value){
-      if(record.value.token===incoming){if(fragment!==null){window.history.replaceState(window.history.state,'',location.pathname+location.search);setFragment(null);}if(legacy!==null){try{sessionStorage.removeItem(pendingLinkKey);setLegacy(null);}catch{setMessage('無法清除舊分頁連結，請檢查儲存設定。');}}}
+      if(record.value.token===incoming){if(fragment!==null){window.history.replaceState(window.history.state,'',location.pathname+location.search);setFragment(null);}if(legacy!==null){try{sessionStorage.removeItem(pendingLinkKey);setLegacy(null);}catch{setMessage(uiText("無法清除舊分頁連結，請檢查儲存設定。"));}}}
       return;
     }
     if(!record.begin())return;const capturedAt=Date.now();
@@ -122,20 +123,20 @@ function DeviceAcceptance() {
       if(!record.active.current)return;
       if(fragment!==null){window.history.replaceState(window.history.state,'',location.pathname+location.search);setFragment(null);}
       if(legacy!==null){sessionStorage.removeItem(pendingLinkKey);setLegacy(null);}
-    }).catch(()=>{if(record.active.current)setMessage('無法暫存裝置連結，請允許本站儲存後重新開啟連結；尚未送出授權。');}).finally(record.end);
+    }).catch(()=>{if(record.active.current)setMessage(uiText("無法暫存裝置連結，請允許本站儲存後重新開啟連結；尚未送出授權。"));}).finally(record.end);
   },[record.ready,record.value,incoming,record.error,attempt]);
   async function cancel(){
     try{await record.save(null);sessionStorage.removeItem(pendingLinkKey);if(record.active.current)navigate('/me/accounts',{replace:true});}
-    catch{setMessage('無法清除本機連結，請重新讀取後重試；尚未授權。');}
+    catch{setMessage(uiText("無法清除本機連結，請重新讀取後重試；尚未授權。"));}
   }
   async function replace(){
     if(!deviceToken(fragment)||!record.begin())return;
     try{const capturedAt=Date.now();await record.save({token:fragment,capturedAt,expiresAt:capturedAt+600000});if(record.active.current){window.history.replaceState(window.history.state,'',location.pathname+location.search);setFragment(null);setMessage('');}}
-    catch{setMessage('無法替換本機連結；原連結仍保留。');}finally{record.end();}
+    catch{setMessage(uiText("無法替換本機連結；原連結仍保留。"));}finally{record.end();}
   }
   const collision=deviceToken(fragment)&&!!record.value&&fragment!==record.value.token;
   return <><PageIntro title="接受裝置授權"/>
-    {record.error?<Notice>{record.error}<Button variant="secondary" onClick={()=>void record.refresh()}>重新讀取裝置連結</Button>{record.damaged&&<Button variant="secondary" onClick={()=>void record.save(null).catch(()=>setMessage('無法清除本機連結，請重試。'))}>清除損壞的本機連結</Button>}</Notice>:!record.ready?<Notice>正在讀取本機裝置連結…</Notice>:collision?<Notice>此裝置已有另一條未到期連結。請明確選擇目前開啟的連結；不會自動授權。<Button disabled={record.busy} onClick={()=>void replace()}>改用目前開啟的連結</Button></Notice>:record.value?.token&&!message?(session.isPending?<Notice>正在確認帳號…</Notice>:session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:<AcceptContent key={session.data.scope+':'+record.value.token} viewer={session.data} record={record}/>):!message?<Notice>{record.expired?'裝置連結已過期，請在原裝置重新產生。':'裝置連結不完整，請在原裝置重新產生。'}</Notice>:null}
+    {record.error?<Notice>{record.error}<Button variant="secondary" onClick={()=>void record.refresh()}>重新讀取裝置連結</Button>{record.damaged&&<Button variant="secondary" onClick={()=>void record.save(null).catch(()=>setMessage(uiText("無法清除本機連結，請重試。")))}>清除損壞的本機連結</Button>}</Notice>:!record.ready?<Notice>正在讀取本機裝置連結…</Notice>:collision?<Notice>此裝置已有另一條未到期連結。請明確選擇目前開啟的連結；不會自動授權。<Button disabled={record.busy} onClick={()=>void replace()}>改用目前開啟的連結</Button></Notice>:record.value?.token&&!message?(session.isPending?<Notice>正在確認帳號…</Notice>:session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:<AcceptContent key={session.data.scope+':'+record.value.token} viewer={session.data} record={record}/>):!message?<Notice>{record.expired?'裝置連結已過期，請在原裝置重新產生。':'裝置連結不完整，請在原裝置重新產生。'}</Notice>:null}
     {message&&<Notice>{message}<Button variant="secondary" onClick={()=>{setMessage('');setAttempt(value=>value+1);void record.refresh();}}>重新讀取裝置連結</Button></Notice>}
     <Button variant="secondary" disabled={!record.ready||record.busy} onClick={()=>void cancel()}>取消並返回帳號</Button></>;
 }
@@ -150,7 +151,7 @@ function AcceptContent({viewer,record}:{viewer:Viewer;record:ReturnType<typeof u
   useEffect(()=>{
     if(!view.data||!record.value)return;const expiresAt=Math.min(Date.parse(view.data.expiresAt),record.value.expiresAt);
     if(expiresAt>=record.value.expiresAt)return;
-    void record.save({...record.value,expiresAt}).catch(()=>{if(active.current)setMessage('無法保存原連結的期限，請重新讀取後核對；尚未授權。');});
+    void record.save({...record.value,expiresAt}).catch(()=>{if(active.current)setMessage(uiText("無法保存原連結的期限，請重新讀取後核對；尚未授權。"));});
   },[view.data?.expiresAt]);
   async function accept(){
     if(!accepted||busy||uncertain||!record.begin())return;setBusy(true);setMessage('');let sent=false;
@@ -161,7 +162,7 @@ function AcceptContent({viewer,record}:{viewer:Viewer;record:ReturnType<typeof u
       await record.check();if(!active.current)return;sent=true;
       await api('/device-links/accept',Ok,{method:'POST',headers:authHeaders(current),body:JSON.stringify({token,confirm:true,acceptAccess:true})});
       if(!active.current)return;announceAccountChange();await queryClient.invalidateQueries({queryKey:['private',viewer.scope,'accounts']});await view.refetch();
-    }catch(error){if(active.current){const unknown=sent&&(!(error instanceof ApiError)||error.status>=500);setUncertain(unknown);setAccepted(false);setMessage(unknown?'尚未確認授權結果，請先核對授權。':error instanceof Error?error.message:'無法確認授權，請重新讀取。');}}
+    }catch(error){if(active.current){const unknown=sent&&(!(error instanceof ApiError)||error.status>=500);setUncertain(unknown);setAccepted(false);setMessage(unknown?uiText("尚未確認授權結果，請先核對授權。"):error instanceof Error?errorText(error):uiText("無法確認授權，請重新讀取。"));}}
     finally{record.end();if(active.current)setBusy(false);}
   }
   return view.isPending?<Notice>正在讀取裝置連結…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<Surface className="detail auth-panel">

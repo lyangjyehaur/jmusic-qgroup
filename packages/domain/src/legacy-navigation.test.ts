@@ -30,4 +30,8 @@ print(json.dumps({key:event_url('listen',action=value[0]) for key,value in LINK_
     expect(resolve('/music/privacy.html')).toEqual({kind:'redirect',to:'/privacy'});expect(resolve('/contact.html')).toEqual({kind:'redirect',to:'/contact'});
     expect(resolve('/unrecognised.html')).toBeNull();expect(resolve('/music/#delete')).toEqual({kind:'invalid'});
   });
+  it('preserves all legacy handbook chapters and drops unrelated queries and unrecognized fragments',()=>{
+    for(let chapter=1;chapter<=11;chapter++)expect(resolve('/guide.html?event=PRIVATE&token=SECRET#section-'+chapter)).toEqual({kind:'redirect',to:'/guide#section-'+chapter});
+    expect(resolve('/guide.html#unknown')).toEqual({kind:'redirect',to:'/guide'});expect(resolve('/guide#music')).toBeNull();
+  });
 });

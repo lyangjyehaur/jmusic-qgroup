@@ -49,7 +49,7 @@ async function transaction<T>(mode: IDBTransactionMode, work: (tx: IDBTransactio
 }
 const isMusic = (key: string) => key.startsWith('qgroup:rebuild:music:');
 const isAdmin = (key: string) => key.startsWith('qgroup:rebuild:admin-');
-const expiredMessage = (key:string) => isAdmin(key) ? '此管理原稿已因登出或權限變更失效，請重新載入頁面。' : '此原稿已因登出或資料刪除失效，請重新載入頁面。';
+const expiredError = (key:string) => isAdmin(key) ? new DraftExpired('此管理原稿已因登出或權限變更失效，請重新載入頁面。') : new DraftExpired('此原稿已因登出或資料刪除失效，請重新載入頁面。');
 function validate(key: string, scope: string) {
   // Explicit allowlist: never import PIN, OAuth, device or privacy receipt secrets.
   const prefix = 'qgroup:rebuild:';
@@ -140,7 +140,7 @@ export async function saveDraft(handle: DraftHandle, raw: string, preserve = fal
     store.put(next);
     return { handle: { ...handle, revision: next.revision } };
   });
-  if ('expired' in result) throw new DraftExpired(expiredMessage(handle.key));
+  if ('expired' in result) throw expiredError(handle.key);
   if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
   return result.handle;
 }
@@ -204,7 +204,7 @@ export async function retireDraft(handle: DraftHandle, sourceRaw: string, target
     store.put({...row,revision,raw:null,at:Date.now()});
     return {handle:{...handle,revision}};
   });
-  if ('expired' in result) throw new DraftExpired(expiredMessage(handle.key));
+  if ('expired' in result) throw expiredError(handle.key);
   if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
   return result.handle;
 }

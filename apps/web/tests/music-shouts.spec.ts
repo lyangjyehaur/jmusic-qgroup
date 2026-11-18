@@ -82,7 +82,7 @@ test('late responses do not cross account changes and cross-tab erasure removes 
   await page.route('**/api/v2/music/shouts?*', async route => { if (!hold) return route.continue(); hold = false; const response = await route.fetch(); arrived(); await pending; await route.fulfill({ response }).catch(() => {}); });
   await page.goto('/people/shouts'); await captured; await login(context, 'auth-owner'); await refresh(page); await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible(); release(); await expect(list(page)).toHaveCount(0);
   await login(context); await refresh(page); await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('跨分頁刪除的草稿');
-  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
+  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible(); await expect(list(page)).toHaveCount(0);
   await expect.poll(() => page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:music:shout:')))).toEqual([]); expect((await durableRows(page)).filter(row=>row.key.includes(':shout:'))).toEqual([]); await privacy.close();
 });

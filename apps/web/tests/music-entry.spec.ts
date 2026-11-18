@@ -170,7 +170,7 @@ test('removes selector access on music erasure in another tab, isolates an accou
   await expect(members.getByRole('listitem')).toHaveCount(3);
   const privacy = await context.newPage(); await privacy.goto('/me/privacy');
   await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check();
-  await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check();
+  await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check();
   await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(members).toContainText('請先保存成分，再查看選取者。');
   await expect(members.getByRole('listitem')).toHaveCount(0);

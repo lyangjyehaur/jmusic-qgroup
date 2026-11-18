@@ -385,7 +385,7 @@ test('music erasure removes room drafts and recovery copies across tabs before a
   const privacy = await context.newPage();
   await privacy.goto('/me/privacy');
   await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check();
-  await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check();
+  await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check();
   await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible();
   await expect(rooms(page)).toHaveCount(0);

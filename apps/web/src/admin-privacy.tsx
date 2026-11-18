@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -29,7 +30,7 @@ function ReviewLoader({ id, viewer, access }: { id: string; viewer: Viewer; acce
   return request.isPending ? <Notice>正在讀取申請…</Notice> : request.error ? <Failure error={request.error} retry={() => void request.refetch()} /> : <ReviewForm initial={request.data} viewer={viewer} access={access} />;
 }
 const Draft = z.object({ note: z.string(), revision: z.string(), pending: z.object({ key: z.string().uuid(), input: SavePrivacyReview }).strict().optional() }).strict();
-const labels: Record<string, string> = { events: '活動', registrations: '舊報名', roster_parties: '同行組', attendees: '名冊', event_audit: '活動歷史', attendee_consents: '條件確認', event_roles: '活動權限', management_invitations: '管理邀請', settlement_history: '結算歷史', finance_reports: '帳務回報', finance_report_actions: '回報處理', finance_entries: '帳務明細', attendee_claims: '名冊認領', attendee_payment_origins: '付款責任', time_polls: '時間投票', time_poll_history: '投票歷史', account_audit: '帳號歷史', admin_role_history: '角色歷史', music_profile_audit: '成分歷史', music_contact_history: '聯絡 QQ 歷史', bot_outbox: 'bot 私人通知紀錄', music_ownership_history: '成分關聯歷史', music_pin_history: '口令重設歷史', music_field_history: '成分資料歷史' };
+const labels: Record<string, string> = { events: uiText("活動"), registrations: uiText("舊報名"), roster_parties: uiText("同行組"), attendees: uiText("名冊"), event_audit: uiText("活動歷史"), attendee_consents: uiText("條件確認"), event_roles: uiText("活動權限"), management_invitations: uiText("管理邀請"), settlement_history: uiText("結算歷史"), finance_reports: uiText("帳務回報"), finance_report_actions: uiText("回報處理"), finance_entries: uiText("帳務明細"), attendee_claims: uiText("名冊認領"), attendee_payment_origins: uiText("付款責任"), time_polls: uiText("時間投票"), time_poll_history: uiText("投票歷史"), account_audit: uiText("帳號歷史"), admin_role_history: uiText("角色歷史"), music_profile_audit: uiText("成分歷史"), music_contact_history: uiText("聯絡 QQ 歷史"), bot_outbox: uiText("bot 私人通知紀錄"), music_ownership_history: uiText("成分關聯歷史"), music_pin_history: uiText("口令重設歷史"), music_field_history: uiText("成分資料歷史") };
 function ReviewForm({ initial, viewer, access }: { initial: Request; viewer: Viewer; access: Access }) {
   const client = useQueryClient(); const path = '/admin/privacy/' + encodeURIComponent(initial.id);
   const storageKey = 'qgroup:rebuild:admin-privacy:v1:' + viewer.scope + ':' + access.scope + ':' + initial.id;
@@ -49,22 +50,22 @@ function ReviewForm({ initial, viewer, access }: { initial: Request; viewer: Vie
     try{
       await api(path+'/review',Ok,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
       const latest=await api(path,AdminPrivacyRequest,{headers:{'X-Account-Scope':viewer.scope}}),next={note:latest.note,revision:latest.revision};
-      if(!active.current)return;if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');
+      if(!active.current)return;if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setDraft(next);setRequest(latest);setConfirmed(false);
       client.setQueryData(['private',viewer.scope,'admin-privacy-request',access.scope,initial.id],latest);announceAccountChange();
-      void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-privacy-queue']});setMessage('處理說明已保存，請核對目前狀態。');
+      void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-privacy-queue']});setMessage(uiText("處理說明已保存，請核對目前狀態。"));
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(error.message);}
-      else setMessage('尚未確認審核結果。原操作已保留，請按「確認審核結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認審核結果。原操作已保留，請按「確認審核結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   async function rebase(){
     if(locked||!begin())return;
     try{
       const latest=await api(path,AdminPrivacyRequest,{headers:{'X-Account-Scope':viewer.scope}}),next={...draft,revision:latest.revision};
-      if(!active.current||!await persist(next))return;setRequest(latest);setDraft(next);setConfirmed(false);setMessage('已取得目前資料，處理說明仍保留；請核對後再保存。');
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+      if(!active.current||!await persist(next))return;setRequest(latest);setDraft(next);setConfirmed(false);setMessage(uiText("已取得目前資料，處理說明仍保留；請核對後再保存。"));
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   return <>
     <Surface className="detail auth-panel"><Heading level={2}>{request.id}</Heading><Text>帳號 ID：{request.userId}</Text><Text>申請時間：{request.createdAt}</Text><Text>更新時間：{request.updatedAt}</Text><Text role="status">申請狀態：{status(request)}</Text>

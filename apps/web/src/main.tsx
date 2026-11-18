@@ -63,6 +63,7 @@ import { AdminMusicDirectory, AdminMusicPage } from './admin-music';
 import 'yahha-ui/style.css';
 import './style.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
+const GuidePage = React.lazy(() => import('./guide').then(module => ({ default: module.GuidePage })));
 function Missing() { return <EmptyState title="這個入口不存在" action={<Link to="/activities">回到活動</Link>} />; }
 const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorElement: <main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main>, children: [
   { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <LegacyLocalGuard><NewTimePollPage /></LegacyLocalGuard> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
@@ -77,7 +78,7 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'inbox', element: <InboxPage /> },
   { path: 'me/local-history', element: <LegacyLocalPage /> },
   { index: true, element: <Activities /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
-  { path: 'contact', element: <ContactPage/> }, { path: 'me/activities', element: <Activities mine/> },
+  { path: 'contact', element: <ContactPage/> }, { path: 'guide', element: <React.Suspense fallback={<p role="status">正在讀取說明…</p>}><GuidePage/></React.Suspense> }, { path: 'me/activities', element: <Activities mine/> },
   { path: 'activities/:id/access/:token', element: <ActivityAccessPage/> }, { path: 'activities/:id/share', element: <ActivitySharePage/> },
   { path: 'activities/new', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'activities/:id/edit', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
   { path: 'activities/:id/arrangements', element: <LegacyLocalGuard><ActivityArrangementPage /></LegacyLocalGuard> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },

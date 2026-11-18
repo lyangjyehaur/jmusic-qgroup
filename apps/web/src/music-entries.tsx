@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +17,7 @@ type Command = z.infer<typeof MusicEntryCommand>['command'];
 const endpoint = '/me/music/entries',
   path = (id: string) => endpoint + '/' + encodeURIComponent(id);
 export const categoryLabel = (value: string) =>
-  ({ 领域: '領域', 乐队: '樂隊', 组合: '組合', 社团: '社團', 企划: '企劃' })[value] ?? value;
+  ({ 领域: uiText("領域"), 乐队: uiText("樂隊"), 组合: uiText("組合"), 社团: uiText("社團"), 企划: uiText("企劃") })[value] ?? value;
 const headers = (viewer: Member) => ({ 'X-Account-Scope': viewer.scope });
 export function MyMusicEntriesPage() {
   return (
@@ -248,7 +249,7 @@ function EntryEditor({
             try {
               void form.submit(inputFor(value));
             } catch {
-              form.setMessage('請填寫詞條名稱、類型與分類，並重新核對。');
+              form.setMessage(uiText("請填寫詞條名稱、類型與分類，並重新核對。"));
             }
           }
         }}

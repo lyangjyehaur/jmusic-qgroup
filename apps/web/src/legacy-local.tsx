@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useRef,useState,type ReactNode } from 'react';
 import { Link,useLocation } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -54,7 +55,7 @@ function visibleData(value:unknown):ReactNode{
 }
 function imageSource(value:string){const source=value.startsWith('data:image/png;base64,')?value.slice(22):value;return /^[A-Za-z0-9+/]+={0,2}$/.test(source)&&source.startsWith('iVBOR')?'data:image/png;base64,'+source:null;}
 function DraftContents({data}:{data:Record<string,unknown>}){
-  const labels:Record<string,string>={fields:'表單內容',dataset:'原稿狀態',slots:'候選時段',rooms:'包廂',people:'結算人員',items:'費用與憑證',custom:'自訂付款人',paymentCodes:'收款碼',qr:'舊收款碼',revision:'原版本',_revision:'原版本',_intent:'原建立識別',client_intent:'原建立識別',_lifecycle:'原活動狀態',capacity_unlimited:'不限人數',exact_time:'精確時間',deadline_date:'截止日期',deadline_time:'截止時間',deadlineTouched:'已修改截止時間',codes:'收款碼',edit:'原款項操作',id:'原編號',name:'名稱',title:'名稱',value:'原值',checked:'原勾選狀態',intent:'原建立識別',lifecycle:'原活動狀態',amount:'金額',receipt:'消費憑證',image:'圖片',kind:'類型',share:'份數',reason:'原因',person_ids:'人員編號',payer_id:'付款人編號',date:'日期',time:'時間',recordId:'原款項編號',command:'原操作',preview:'原預覽',description:'內容',capacity:'人數上限',event_date:'活動日期',start_time:'開始時間',deadline:'截止時間',timezone:'時區',fee_policy:'費用約定',start_day_offset:'開始日期偏移',duration_hours:'時長',location:'地點',minimum_participants:'成團人數',visibility:'可見性',bot_enabled:'群同步',withdrawal_deadline:'退出截止時間'};
+  const labels:Record<string,string>={fields:uiText("表單內容"),dataset:uiText("原稿狀態"),slots:uiText("候選時段"),rooms:uiText("包廂"),people:uiText("結算人員"),items:uiText("費用與憑證"),custom:uiText("自訂付款人"),paymentCodes:uiText("收款碼"),qr:uiText("舊收款碼"),revision:uiText("原版本"),_revision:uiText("原版本"),_intent:uiText("原建立識別"),client_intent:uiText("原建立識別"),_lifecycle:uiText("原活動狀態"),capacity_unlimited:uiText("不限人數"),exact_time:uiText("精確時間"),deadline_date:uiText("截止日期"),deadline_time:uiText("截止時間"),deadlineTouched:uiText("已修改截止時間"),codes:uiText("收款碼"),edit:uiText("原款項操作"),id:uiText("原編號"),name:uiText("名稱"),title:uiText("名稱"),value:uiText("原值"),checked:uiText("原勾選狀態"),intent:uiText("原建立識別"),lifecycle:uiText("原活動狀態"),amount:uiText("金額"),receipt:uiText("消費憑證"),image:uiText("圖片"),kind:uiText("類型"),share:uiText("份數"),reason:uiText("原因"),person_ids:uiText("人員編號"),payer_id:uiText("付款人編號"),date:uiText("日期"),time:uiText("時間"),recordId:uiText("原款項編號"),command:uiText("原操作"),preview:uiText("原預覽"),description:uiText("內容"),capacity:uiText("人數上限"),event_date:uiText("活動日期"),start_time:uiText("開始時間"),deadline:uiText("截止時間"),timezone:uiText("時區"),fee_policy:uiText("費用約定"),start_day_offset:uiText("開始日期偏移"),duration_hours:uiText("時長"),location:uiText("地點"),minimum_participants:uiText("成團人數"),visibility:uiText("可見性"),bot_enabled:uiText("群同步"),withdrawal_deadline:uiText("退出截止時間")};
   const label=(key:string)=>labels[key]??key;
   const image=(value:unknown):ReactNode=>{
     if(typeof value==='string'){const src=imageSource(value);return src?<img src={src} alt="舊草稿圖片" style={{maxWidth:'100%'}}/>:visibleData(value);}
@@ -84,14 +85,14 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     try{
       const fresh=await original();if(!active.current)return;
       const result=await api('/me/legacy-requests/check',LegacyRequestReceipt,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify(description.request)});
-      await original();if(active.current){setReceipt(result);setMessage(result.committed?'原操作已提交。請查看目前資料與權限；不會重送。':'尚未查到原回執。原 payload 與編號保留，不能據此認定未建立。');}
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'無法查詢原結果，請保留原紀錄。');}
+      await original();if(active.current){setReceipt(result);setMessage(result.committed?uiText("原操作已提交。請查看目前資料與權限；不會重送。"):uiText("尚未查到原回執。原 payload 與編號保留，不能據此認定未建立。"));}
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法查詢原結果，請保留原紀錄。"));}
     finally{if(active.current)setBusy(false);}
   }
   async function download(){
     if(busy||description.kind!=='draft'||hasCredentials(row.source))return;setBusy(true);setMessage('');
-    try{await original();if(!active.current)return;const url=URL.createObjectURL(new Blob([row.raw],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='kanban-local-draft-'+row.id.slice(0,12)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);setMessage('已下載原草稿保全檔；包含本機資料與圖片，請自行保管。');}
-    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'無法下載原稿。');}finally{if(active.current)setBusy(false);}
+    try{await original();if(!active.current)return;const url=URL.createObjectURL(new Blob([row.raw],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='kanban-local-draft-'+row.id.slice(0,12)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);setMessage(uiText("已下載原草稿保全檔；包含本機資料與圖片，請自行保管。"));}
+    catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法下載原稿。"));}finally{if(active.current)setBusy(false);}
   }
   return <><Heading level={3}>{description.label}</Heading><Text>原保存時間：{typeof (row.source as {at?:unknown}).at==='number'?new Date((row.source as {at:number}).at).toLocaleString('zh-TW'):'未記錄'}</Text>
     {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text><Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button></>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}

@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState, type SetStateAction } from 'react';
 import { useBlocker, type BlockerFunction } from 'react-router-dom';
 import { DraftConflict, DraftExpired, draftVersions, openDraft, retireDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
@@ -31,7 +32,7 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
       const next = raw === null ? optionsRef.current.seed() : optionsRef.current.parse(raw);
       replace(next); setReadError(''); setDamagedRaw(null); setNeedsRestore(raw !== null && !optionsRef.current.pending(next) && (optionsRef.current.needsRestore?.(raw) ?? optionsRef.current.dirty(next)));
       if(raw === null && optionsRef.current.dirty(next)) void persist(next); setEpoch(n => n + 1);
-    } catch { setDamagedRaw(raw); setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
+    } catch { setDamagedRaw(raw); setReadError(uiText("無法讀取原稿，請先保全原稿再繼續。")); }
   }
   useEffect(() => {
     active.current = true; let cancelled = false;
@@ -40,7 +41,7 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
         const saved = await openDraft(options.key, options.scope);
         if (cancelled) return;
         handle.current = saved.handle; apply(saved.raw); await loadVersions();
-      } catch { if (!cancelled) setReadError('無法讀取原稿，請先保全原稿再繼續。'); }
+      } catch { if (!cancelled) setReadError(uiText("無法讀取原稿，請先保全原稿再繼續。")); }
       finally { if (!cancelled) setLoading(false); }
     })();
     return () => { cancelled = true; active.current = false; };
@@ -48,7 +49,7 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
   async function failure(error: unknown, text: string) {
     if (error instanceof DraftConflict || error instanceof DraftExpired) {
       halted.current = true; if (error instanceof DraftExpired) revoked.current = true;
-      if (active.current) { setReadError(error.message); setConflict(error instanceof DraftConflict); setExpired(error instanceof DraftExpired); await loadVersions().catch(() => {}); }
+      if (active.current) { setReadError(errorText(error)); setConflict(error instanceof DraftConflict); setExpired(error instanceof DraftExpired); await loadVersions().catch(() => {}); }
     } else if (active.current) setStorageError(text);
   }
   function enqueue(work: (loaded: DraftHandle) => Promise<DraftHandle>, text: string) {
@@ -62,7 +63,7 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
     void result.finally(() => { if (active.current) setSaving(n => n - 1); });
     return result;
   }
-  function persist(next: T, preserve = false, text = '無法保存原稿及操作編號，尚未送出。') {
+  function persist(next: T, preserve = false, text = uiText("無法保存原稿及操作編號，尚未送出。")) {
     const raw = encode(next);
     return enqueue(loaded => saveDraft(loaded, raw, preserve), text);
   }
@@ -88,15 +89,15 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
         replace(blank); setReadError(''); setDamagedRaw(null); setNeedsRestore(false); setEpoch(n => n + 1);
       }
       await loadVersions();
-    } catch { setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。'); }
+    } catch { setStorageError(uiText("仍無法保全原稿，請檢查瀏覽器儲存設定。")); }
     finally { if (active.current) setBusy(false); }
   }
   async function restoreVersion(id: string) {
     if (busyRef.current || loading || readError) return;
     const version = versions.find(row => row.id === id); if (!version) return;
-    let next: T; try { next = optionsRef.current.parse(version.raw); } catch { setMessage('這份原稿格式無法讀取，請下載保全檔。'); return; }
+    let next: T; try { next = optionsRef.current.parse(version.raw); } catch { setMessage(uiText("這份原稿格式無法讀取，請下載保全檔。")); return; }
     setBusy(true);
-    try { if (await persist(next, true)) { replace(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage('已載入保全版本；請核對原操作與最新資料。'); await loadVersions(); } }
+    try { if (await persist(next, true)) { replace(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage(uiText("已載入保全版本；請核對原操作與最新資料。")); await loadVersions(); } }
     finally { if (active.current) setBusy(false); }
   }
   async function canLeave() {

@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Outlet, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -45,28 +46,28 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   function toggle(entry:CatalogEntry){
     if(locked)return;
     if(selected.has(entry.id))edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entry.id)});
-    else if((entry.kind==='main'&&mainCount>=5)||(entry.kind==='sub'&&subCount>=15)||selected.size>=20)setMessage('領域最多 5 項、細分最多 15 項，合計最多 20 項。');
+    else if((entry.kind==='main'&&mainCount>=5)||(entry.kind==='sub'&&subCount>=15)||selected.size>=20)setMessage(uiText("領域最多 5 項、細分最多 15 項，合計最多 20 項。"));
     else edit({...draft,selections:[...draft.selections,{entryId:entry.id,level:3}]});
   }
   async function save(){
     if(unavailable||sending)return;
     const parsed=SaveProfile.safeParse({profileId:draft.profileId,musicEpoch:draft.musicEpoch,revision:draft.revision,selections:draft.selections});
-    if(!parsed.success){setMessage('請至少選擇一個詞條，再保存。');return;}
+    if(!parsed.success){setMessage(uiText("請至少選擇一個詞條，再保存。"));return;}
     const pending={...draft,requestKey:draft.requestKey??crypto.randomUUID()};
     if(!begin())return;if(!await persist(pending)||!mounted.current){if(mounted.current)setSending(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api('/me/music',Profile.unwrap(),{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'X-Account-Scope':viewer.scope,'Idempotency-Key':pending.requestKey},body:JSON.stringify(parsed.data)});accepted=true;
       await queryClient.cancelQueries({queryKey:['private',viewer.scope,'music',draft.musicEpoch]});
       const latest=await api('/me/music',Profile.unwrap(),{headers:{'X-Account-Scope':viewer.scope}});
-      if(!mounted.current)return;const next=fallback(latest);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');
+      if(!mounted.current)return;const next=fallback(latest);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setSaved(latest);setDraft(next);queryClient.setQueryData(['private',viewer.scope,'music',draft.musicEpoch],latest);
       for(const key of ['music-catalog','music-trend'])void queryClient.invalidateQueries({queryKey:[key]});
       for(const key of ['music-trend-members','music-entries','music-entry-members','member-music','music-matches','music-circles','music-comparison','music-share'])void queryClient.invalidateQueries({queryKey:['private',viewer.scope,key]});
-      announceAccountChange();setMessage(latest.revision===result.revision?'已保存。':'原操作已保存，成分已再次變更；請核對目前選擇。');
+      announceAccountChange();setMessage(latest.revision===result.revision?uiText("已保存。"):uiText("原操作已保存，成分已再次變更；請核對目前選擇。"));
     }catch(error){
       if(!mounted.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,requestKey:undefined};if(await persist(next))setDraft(next);setMessage(error.message);}
-      else setMessage('尚未確認保存結果。操作編號已保留，請按「確認保存結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,requestKey:undefined};if(await persist(next))setDraft(next);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認保存結果。操作編號已保留，請按「確認保存結果」安全重試。"));
     }finally{if(mounted.current)setSending(false);}
   }
   async function rebase(){
@@ -76,8 +77,8 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
       if(!mounted.current)return;if(!session.authenticated||session.scope!==viewer.scope)throw Error('目前帳號已變更，請重新整理');
       if(session.musicEpoch!==draft.musicEpoch||draft.profileId!==null&&(latest?.id??null)!==draft.profileId)throw Error('目前成分已改變，請保全原稿後重新開啟目前成分。');
       const next={...draft,profileId:latest?.id??null,revision:latest?.revision??0};if(!await persist(next))return;
-      queryClient.setQueryData(['private',viewer.scope,'music',session.musicEpoch],latest);setSaved(latest);setDraft(next);setMessage('已取得最新版本；你的選擇仍保留，請核對後再保存。');
-    }catch(error){if(mounted.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(mounted.current)setSending(false);}
+      queryClient.setQueryData(['private',viewer.scope,'music',session.musicEpoch],latest);setSaved(latest);setDraft(next);setMessage(uiText("已取得最新版本；你的選擇仍保留，請核對後再保存。"));
+    }catch(error){if(mounted.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(mounted.current)setSending(false);}
   }
   function level(entryId:string,value:number){if(!locked)edit({...draft,selections:draft.selections.map(s=>s.entryId===entryId?{...s,level:value}:s)});}
   function remove(entryId:string){if(!locked)edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entryId)});}

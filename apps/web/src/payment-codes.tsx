@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useState } from 'react';
@@ -11,7 +12,7 @@ import { authHeaders, loginLink } from './auth';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 import { PaymentAssetImage, preparePaymentImage } from './payment-image';
 
-export const paymentKindLabels = { wechat: '微信', alipay: '支付寶', other: '其他' };
+export const paymentKindLabels = { wechat: uiText("微信"), alipay: uiText("支付寶"), other: uiText("其他") };
 const Form = z.object({ kind: PaymentKind, name: z.string().max(160), image: z.string().max(2800000), source: PaymentCodeSource.optional() }).strict();
 const Operation = z.discriminatedUnion('command', [
   z.object({ command: z.literal('create'), data: CreatePaymentCode }).strict(),
@@ -47,12 +48,12 @@ function Library({ viewer }: { viewer: Viewer }) {
   async function upload(file: File) {
     if (blocked) return; setBusy(true); setError('');
     try { const image = await preparePaymentImage(file); if (active.current) { setBusy(false); change({ ...draft.form, image, source: undefined }); } }
-    catch (failure) { if (active.current) setError(failure instanceof Error ? failure.message : '圖片無法讀取'); }
+    catch (failure) { if (active.current) setError(failure instanceof Error ? errorText(failure) : uiText("圖片無法讀取")); }
     finally { if (active.current) setBusy(false); }
   }
   async function send(operation?: z.infer<typeof Operation>) {
     if (busy || record.unavailable) return;
-    const parsed = Operation.safeParse(operation ?? draft.pending?.input); if (!parsed.success) { setError('請選擇圖片，名稱最多 40 字。'); return; }
+    const parsed = Operation.safeParse(operation ?? draft.pending?.input); if (!parsed.success) { setError(uiText("請選擇圖片，名稱最多 40 字。")); return; }
     const pending = draft.pending ?? { key: crypto.randomUUID(), input: parsed.data }, next = { ...draft, pending };
     if (!record.begin()) return;
     if (!await record.persist(next) || !active.current) { if (active.current) setBusy(false); return; }
@@ -64,14 +65,14 @@ function Library({ viewer }: { viewer: Viewer }) {
       accepted=true;
       if (!active.current) return;
       const cleared = input.command === 'create' ? blank() : { form: draft.form };
-      if (!await record.persist(cleared,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。')) throw Error('storage'); setDraft(cleared);
+      if (!await record.persist(cleared,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。"))) throw Error('storage'); setDraft(cleared);
       if ('id' in result) queryClient.setQueryData(queryKey, (previous: z.infer<typeof PaymentCodeLibrary> | undefined) => previous ? { codes: [result, ...previous.codes.filter(code => code.id !== result.id)] } : undefined);
       else if (input.command === 'archive') queryClient.setQueryData(queryKey, (previous: z.infer<typeof PaymentCodeLibrary> | undefined) => previous ? { codes: previous.codes.filter(code => code.id !== input.id) } : undefined);
-      void queryClient.invalidateQueries({ queryKey }); setMessage(input.command === 'create' ? '收款碼已保存。' : '已從我的收款碼移除。');
+      void queryClient.invalidateQueries({ queryKey }); setMessage(input.command === 'create' ? uiText("收款碼已保存。") : uiText("已從我的收款碼移除。"));
     } catch (failure) {
       if (!active.current) return;
-      if (!accepted && failure instanceof ApiError && failure.status < 500 && failure.status !== 429) { const cleared={form:draft.form}; if(await record.persist(cleared)) setDraft(cleared); setError(failure.message); }
-      else setError('尚未確認操作結果。原圖與操作編號已保留，請按「確認操作結果」安全重試。');
+      if (!accepted && failure instanceof ApiError && failure.status < 500 && failure.status !== 429) { const cleared={form:draft.form}; if(await record.persist(cleared)) setDraft(cleared); setError(errorText(failure)); }
+      else setError(uiText("尚未確認操作結果。原圖與操作編號已保留，請按「確認操作結果」安全重試。"));
     } finally { if (active.current) setBusy(false); }
   }
   return <>

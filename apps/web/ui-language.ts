@@ -8,6 +8,7 @@ const hant = (text: string) => traditional(text).replaceAll('賬', '帳');
 const han = /[\u3400-\u9fff]/;
 const attributes = new Set(['title', 'description', 'label', 'placeholder', 'aria-label', 'alt']);
 const alias = '__qgroupDisplay';
+const errorAlias = '__qgroupError';
 // 台北 is valid in both scripts; retain the existing form's geographic label.
 const preserved = (text: string, convert: (text: string) => string) => text.split(/(台北|[\u3400-\u9fff]ICP备\d+号(?:-\d+)?)/).map(part => part === '台北' || /^[\u3400-\u9fff]ICP备\d+号(?:-\d+)?$/.test(part) ? part : convert(part)).join('');
 function jsxText(text: string) {
@@ -65,13 +66,21 @@ export function transformUILanguage(source: string, filename: string) {
       if (node.arguments.length !== 1 || !argument || !ts.isStringLiteral(argument)) throw Error(`${filename}: uiText accepts one static literal; user data must remain original`);
       edits.push({ start: node.getStart(tree), end: node.end, value: pair(argument.text) });
     }
+    if (!skip && (ts.isCallExpression(node) || ts.isNewExpression(node)) && ts.isIdentifier(node.expression) && ['Error','DraftConflict','DraftExpired'].includes(node.expression.text)) {
+      const argument = node.arguments?.[0];
+      if (argument && ts.isStringLiteral(argument) && han.test(argument.text)) edits.push({start:node.getStart(tree),end:node.end,value:`${errorAlias}(${node.getText(tree)},${JSON.stringify(preserved(argument.text,hans))},${JSON.stringify(preserved(argument.text,hant))})`});
+    }
     ts.forEachChild(node, child => visit(child, skip));
   }
   visit(tree);
   if (!edits.length) return source;
-  if (source.includes(alias)) throw Error(`${filename}: reserved language compiler binding`);
-  for (const edit of edits.sort((a, b) => b.start - a.start)) source = source.slice(0, edit.start) + edit.value + source.slice(edit.end);
-  return `import { displayText as ${alias} } from './language';\n` + source;
+  if (source.includes(alias) || source.includes(errorAlias)) throw Error(`${filename}: reserved language compiler binding`);
+  const ordered = edits.sort((a, b) => b.start - a.start);
+  for (const [index, edit] of ordered.entries()) {
+    if (index && edit.end > ordered[index - 1]!.start) throw Error(`${filename}: overlapping language boundaries; declare the inner error separately`);
+    source = source.slice(0, edit.start) + edit.value + source.slice(edit.end);
+  }
+  return `import { displayText as ${alias}, withErrorText as ${errorAlias} } from './language';\n` + source;
 }
 export function uiLanguage(): Plugin {
   const sourceRoot = fileURLToPath(new URL('./src/', import.meta.url));

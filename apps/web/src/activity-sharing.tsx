@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Button, Text } from 'yahha-ui';
 
@@ -16,10 +17,10 @@ export function CopyActivityText({ text, label, button }: { text: string; label:
     try {
       if (!navigator.clipboard?.writeText) throw Error('Clipboard unavailable');
       await navigator.clipboard.writeText(text);
-      if (current === operation.current) setMessage('已複製' + label + '。');
+      if (current === operation.current) setMessage(uiText("已複製") + label + '。');
     } catch {
       if (current !== operation.current) return;
-      field.current?.focus(); field.current?.select(); setMessage('請選取' + label + '手動複製。');
+      field.current?.focus(); field.current?.select(); setMessage(uiText("請選取") + label + uiText("手動複製。"));
     } finally { if (current === operation.current) setBusy(false); }
   }
   return <div className="activity-copy-field"><div className="device-link-field"><label htmlFor={id}>{label}</label><textarea ref={field} id={id} readOnly value={text} rows={label === '活動連結' ? 3 : 10} onFocus={event => event.target.select()} /></div><Button loading={busy} disabled={busy} onClick={() => void copy()}>{button}</Button>{message && <Text role="status">{message}</Text>}</div>;

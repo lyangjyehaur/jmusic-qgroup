@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -41,8 +42,8 @@ function RescueLogin({ viewer, reload }: { viewer: Viewer; reload: () => Promise
   const [key, setKey] = useState(''); const [busy, setBusy] = useState(false); const [unknown, setUnknown] = useState(false); const [message, setMessage] = useState('');
   async function login() {
     setBusy(true); setMessage('');
-    try { await api('/admin/login', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ key, confirm: true }) }); if (!await reload()) { setUnknown(true); setMessage('尚未確認登入結果，請先重新確認管理狀態。'); } announceAccountChange(); }
-    catch (error) { setUnknown(!(error instanceof ApiError) || error.status >= 500); setMessage(error instanceof ApiError ? error.message : '尚未確認登入結果，請先重新確認管理狀態。'); }
+    try { await api('/admin/login', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ key, confirm: true }) }); if (!await reload()) { setUnknown(true); setMessage(uiText("尚未確認登入結果，請先重新確認管理狀態。")); } announceAccountChange(); }
+    catch (error) { setUnknown(!(error instanceof ApiError) || error.status >= 500); setMessage(error instanceof ApiError ? errorText(error) : uiText("尚未確認登入結果，請先重新確認管理狀態。")); }
     finally { setKey(''); setBusy(false); }
   }
   return <Surface className="detail auth-panel"><Text>目前帳號沒有管理權限。可登入已授權的會員帳號，或使用獨立管理救援憑證。</Text><Link to="/login?returnTo=%2Fadmin">會員登入</Link><form onSubmit={event => { event.preventDefault(); void login(); }}><label className="account-field">管理救援憑證<input type="password" autoComplete="off" value={key} disabled={busy || unknown} onChange={event => setKey(event.target.value)} /></label><Button type="submit" loading={busy} disabled={unknown || Array.from(key).length < 32 || Array.from(key).length > 256}>使用救援憑證登入</Button></form>{message && <Text role="alert">{message}</Text>}<Button variant="secondary" disabled={busy} onClick={() => { setBusy(true); void reload().then(known => { if (known) setUnknown(false); }).finally(() => setBusy(false)); }}>重新確認管理狀態</Button></Surface>;
@@ -50,7 +51,7 @@ function RescueLogin({ viewer, reload }: { viewer: Viewer; reload: () => Promise
 export function AdminHome() {
   const [cleanup, setCleanup] = useState(false), [busy, setBusy] = useState(false), [error, setError] = useState('');
   return <><PageIntro title="管理後台" />{cleanup && <Notice>此裝置已登出，但本機原稿清除失敗。請重試清除。
-    <Button loading={busy} onClick={() => { setBusy(true); void clearDeviceDrafts().then(() => { setCleanup(false); setError(''); }).catch(() => setError('仍無法清除本機原稿，請檢查瀏覽器儲存設定。')).finally(() => setBusy(false)); }}>重試清除本機原稿</Button>
+    <Button loading={busy} onClick={() => { setBusy(true); void clearDeviceDrafts().then(() => { setCleanup(false); setError(''); }).catch(() => setError(uiText("仍無法清除本機原稿，請檢查瀏覽器儲存設定。"))).finally(() => setBusy(false)); }}>重試清除本機原稿</Button>
     {error && <Text role="alert">{error}</Text>}
   </Notice>}<AdminGate>{(viewer, access) => <AdminMenu key={access.scope} viewer={viewer} access={access} onCleanupFailure={() => setCleanup(true)} />}</AdminGate></>;
 }
@@ -62,7 +63,7 @@ function AdminMenu({ viewer, access, onCleanupFailure }: { viewer: Viewer; acces
       await client.fetchQuery({ ...sessionQuery, staleTime: 0 });
       await client.resetQueries({ queryKey: ['private', viewer.scope, 'admin-session'], exact: true });
       setBlocked(false); setConfirmed(false); setError('');
-    } catch { setError('仍無法確認管理狀態，請稍後重新確認。'); }
+    } catch { setError(uiText("仍無法確認管理狀態，請稍後重新確認。")); }
     finally { setBusy(false); }
   }
   async function logout() {
@@ -76,7 +77,7 @@ function AdminMenu({ viewer, access, onCleanupFailure }: { viewer: Viewer; acces
       const next = await client.fetchQuery({ ...sessionQuery, staleTime: 0 });
       client.removeQueries({ queryKey: ['private'], predicate: query => query.queryKey[1] !== next.scope || query.queryKey[2] !== 'admin-session' });
       if (next.scope === viewer.scope) await client.resetQueries({ queryKey: ['private', viewer.scope, 'admin-session'], exact: true });
-    } catch (failure) { setBlocked(true); setError(accountLoggedOut ? '此裝置已登出，請重新確認管理狀態及本機原稿清除結果。' : failure instanceof ApiError && failure.status < 500 ? failure.message : '尚未確認登出結果，請重新確認管理狀態。'); }
+    } catch (failure) { setBlocked(true); setError(accountLoggedOut ? uiText("此裝置已登出，請重新確認管理狀態及本機原稿清除結果。") : failure instanceof ApiError && failure.status < 500 ? errorText(failure) : uiText("尚未確認登出結果，請重新確認管理狀態。")); }
     finally { setBusy(false); }
   }
   return <><Surface className="detail auth-panel"><Text>管理授權：{access.authMethod === 'account' ? '會員角色' : '救援憑證（1 小時）'}</Text><div className="page-actions"><Link to="/admin/backups">成分匯出與歷史備份</Link><Link to="/admin/appearance">壁紙管理</Link><Link to="/admin/bot">bot 設定</Link><Link to="/admin/bot/deliveries">bot 投遞紀錄</Link><Link to="/admin/users">使用者管理</Link><Link to="/admin/music">成分關聯</Link><Link to="/admin/music-entries">音樂詞庫管理</Link><Link to="/admin/shouts">找搭子管理</Link><Link to="/admin/music-reset">重置成分與詞庫</Link><Link to="/admin/registration">註冊設定</Link><Link to="/admin/privacy">刪除申請</Link></div></Surface><Surface className="detail auth-panel"><label className="consent"><input type="checkbox" checked={confirmed} onChange={event => setConfirmed(event.target.checked)} disabled={busy || blocked} /><span>{access.authMethod === 'account' ? '確認登出此裝置的全部帳號與管理授權，其他裝置不受影響' : '確認登出救援管理，保留目前會員登入'}</span></label><Button variant="secondary" disabled={!confirmed || blocked} loading={busy} onClick={() => void logout()}>登出管理</Button>{error && <Text role="alert">{error}</Text>}{blocked && <Button variant="secondary" disabled={busy} onClick={() => void checkState()}>重新確認管理狀態</Button>}</Surface></>;

@@ -1,9 +1,10 @@
+import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { Heading, Text } from 'yahha-ui';
 import type { z } from 'zod';
 import type { MusicMatchStats, MusicComparePick, MusicSharedPick } from '@qgroup/contracts';
 import { musicEntryPath } from './music-entry';
-const levelName = (level: number) => ({ 1: '只聽過幾首', 2: '聽過一些', 3: '常聽', 4: '本命' }[level] ?? '');
+const levelName = (level: number) => ({ 1: uiText("只聽過幾首"), 2: uiText("聽過一些"), 3: uiText("常聽"), 4: uiText("本命") }[level] ?? '');
 export function MatchStats({ stats }: { stats: z.infer<typeof MusicMatchStats> }) {
   return <div className="match-stats">
     <Text><strong>{stats.label} · 匹配度 {stats.matchPercent}%</strong></Text>

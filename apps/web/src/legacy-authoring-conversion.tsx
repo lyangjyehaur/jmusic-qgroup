@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useId,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button,Text } from 'yahha-ui';
@@ -16,17 +17,17 @@ export function LegacyAuthoringConversion({viewer,inventory,row,validate,refresh
   async function prepare(){
     if(busy)return;setBusy(true);setMessage('');setPlan(null);setConfirm(false);setPreserve(false);
     try{const fresh=await validate();if(!active.current)return;const next=await prepareAuthoring(fresh,inventory,row,zone);await validate();if(active.current)setPlan(next);}
-    catch(failure){if(active.current)setMessage(failure instanceof Error?failure.message:'轉換檢查失敗，原稿保留。');}finally{if(active.current)setBusy(false);}
+    catch(failure){if(active.current)setMessage(failure instanceof Error?errorText(failure):uiText("轉換檢查失敗，原稿保留。"));}finally{if(active.current)setBusy(false);}
   }
   async function adopt(){
     if(!plan||busy||!confirm)return;setBusy(true);setMessage('');
-    try{const path=await adoptAuthoring(plan,viewer.scope,inventory.epoch,preserve,async()=>{await validate();},()=>active.current);if(!active.current)return;setDestination(path);setMessage('目的原稿與轉換紀錄已保存，尚未送出網站操作。');await refresh();}
-    catch(failure){if(active.current)setMessage(failure instanceof Error?failure.message:'轉換尚未確認，原稿保留。');}finally{if(active.current)setBusy(false);}
+    try{const path=await adoptAuthoring(plan,viewer.scope,inventory.epoch,preserve,async()=>{await validate();},()=>active.current);if(!active.current)return;setDestination(path);setMessage(uiText("目的原稿與轉換紀錄已保存，尚未送出網站操作。"));await refresh();}
+    catch(failure){if(active.current)setMessage(failure instanceof Error?errorText(failure):uiText("轉換尚未確認，原稿保留。"));}finally{if(active.current)setBusy(false);}
   }
   async function reconcile(){
     if(!mapped||busy)return;setBusy(true);setMessage('');
-    try{const count=await reconcileAuthoringRequests(row,mapped,inventory.epoch,async()=>{await validate();},()=>active.current);if(active.current){setMessage(count?'已保全同一建立識別的後續請求，原請求未重送。':'沒有未核對的同一建立請求。');await refresh();}}
-    catch(failure){if(active.current)setMessage(failure instanceof Error?failure.message:'核對失敗，原紀錄保留。');}finally{if(active.current)setBusy(false);}
+    try{const count=await reconcileAuthoringRequests(row,mapped,inventory.epoch,async()=>{await validate();},()=>active.current);if(active.current){setMessage(count?uiText("已保全同一建立識別的後續請求，原請求未重送。"):uiText("沒有未核對的同一建立請求。"));await refresh();}}
+    catch(failure){if(active.current)setMessage(failure instanceof Error?errorText(failure):uiText("核對失敗，原紀錄保留。"));}finally{if(active.current)setBusy(false);}
   }
   const mapped=inventory.mappings.find(m=>m.id===row.id);
   if(mapped)return <Notice>{mapped.sourceId===row.id?'此原稿已轉換。':'此版本已保全，採用同一原稿的目前版本。'}<Link to={mapped.path}>開啟目的原稿</Link>{mapped.sourceId===row.id&&decoded?.creation&&<Button variant="secondary" disabled={busy} onClick={()=>void reconcile()}>核對後續原建立請求</Button>}{message&&<Text>{message}</Text>}</Notice>;

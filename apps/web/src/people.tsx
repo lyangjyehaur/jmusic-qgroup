@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -22,7 +23,7 @@ function Lookup({ viewer }: { viewer: Member }) {
         : (await api('/music/profiles/lookup', MemberMusicProfile, init)).id;
       navigate('/people/' + id + (compare ? '/compare' : ''));
     }
-    catch (failure) { setError(failure instanceof Error ? failure.message : '查詢失敗'); } finally { setBusy(false); }
+    catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("查詢失敗")); } finally { setBusy(false); }
   }
   return <Surface className="detail auth-panel"><form onSubmit={event => { event.preventDefault(); void find(); }}><TextField label="固定成分 ID 或聯絡 QQ" value={query} maxLength={80} onChange={event => setQuery(event.target.value)} /><Button type="submit" loading={busy} disabled={!query.trim()}>查詢成分</Button><Button type="button" variant="secondary" disabled={busy || !query.trim()} onClick={() => void find(true)}>比較成分</Button>{error && <Text role="alert">{error}</Text>}</form><Link to="/me/music">我的成分</Link></Surface>;
 }

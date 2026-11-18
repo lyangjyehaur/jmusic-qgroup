@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -20,7 +21,7 @@ function Versions({ viewer, id }: { viewer: Viewer; id: string }) {
   const all = [...(versions.data?.versions ?? []), ...extra.filter(row => !versions.data?.versions.some(initial => initial.version === row.version))], cursor = next === undefined ? versions.data?.next_before : next;
   const requested = search.get('version'), version = requested ? Number(requested) : all[0]?.version;
   const valid = version !== undefined && Number.isSafeInteger(version) && version > 0;
-  async function more() { if (!cursor || loading) return; setLoading(true); setError(''); try { const page = await api(base + '/asset-versions?before=' + cursor, SettlementAssetVersions, { headers }); setExtra(rows => [...rows, ...page.versions.filter(row => !rows.some(old => old.version === row.version))]); setNext(page.next_before); } catch (failure) { setError(failure instanceof Error ? failure.message : '版本讀取失敗'); } finally { setLoading(false); } }
+  async function more() { if (!cursor || loading) return; setLoading(true); setError(''); try { const page = await api(base + '/asset-versions?before=' + cursor, SettlementAssetVersions, { headers }); setExtra(rows => [...rows, ...page.versions.filter(row => !rows.some(old => old.version === row.version))]); setNext(page.next_before); } catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("版本讀取失敗")); } finally { setLoading(false); } }
   if (versions.isPending) return <Notice>正在讀取結算版本…</Notice>;
   if (versions.error) return <Failure error={versions.error} retry={() => void versions.refetch()} />;
   if (!all.length) return <Notice>尚未發布結算，沒有可查看的原圖。</Notice>;

@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -173,7 +174,7 @@ function Editor({
           : {}),
     });
     if (!parsed.success) {
-      setMessage('請選擇 2–40 位成員；房數／容量為 1–40，自訂至少兩間。');
+      setMessage(uiText("請選擇 2–40 位成員；房數／容量為 1–40，自訂至少兩間。"));
       return;
     }
     if(locked||stale||!begin())return;
@@ -199,10 +200,10 @@ function Editor({
       if(value.sourceVersion!==parsed.data.sourceVersion||JSON.stringify(value.selected)!==JSON.stringify(parsed.data.selected))throw Error('試算回應與原名單不符，原安排仍保留。');
       if(command==='recalc'&&JSON.stringify(value.rooms.map(({id,capacity,members})=>({id,capacity,members})))!==JSON.stringify(draft.rooms))throw Error('試算回應與原包間不符，原安排仍保留。');
       const next={...draft,result:value,rooms:command==='analyze'?draft.rooms:value.rooms.map(({id,capacity,members})=>({id,capacity,members}))};
-      if(await persist(next,false,'試算已完成，但無法保存結果；原安排仍保留，請重新計分。')&&active.current&&generation.current===attempt)setDraft(next);
+      if(await persist(next,false,uiText("試算已完成，但無法保存結果；原安排仍保留，請重新計分。"))&&active.current&&generation.current===attempt)setDraft(next);
     } catch (error) {
       if (active.current && generation.current === attempt) { failed(error);
-        setMessage(error instanceof Error ? error.message : '試算失敗，原安排仍保留。'); }
+        setMessage(error instanceof Error ? errorText(error) : uiText("試算失敗，原安排仍保留。")); }
     } finally {
       if (active.current && generation.current === attempt) setBusy(false);
     }
@@ -230,14 +231,14 @@ function Editor({
       if (!active.current || generation.current !== attempt) return;
       const member = source.members.find((person) => person.profileId === profile.id);
       if (!member) {
-        setMessage('這份成分不在目前分房來源，請先核對最新來源。');
+        setMessage(uiText("這份成分不在目前分房來源，請先核對最新來源。"));
         return;
       }
       setSearch(member.id);
       setPage(1);
     } catch (error) {
       if (active.current && generation.current === attempt) { failed(error);
-        setMessage(error instanceof Error ? error.message : '查詢失敗'); }
+        setMessage(error instanceof Error ? errorText(error) : uiText("查詢失敗")); }
     } finally {
       if (active.current && generation.current === attempt) setBusy(false);
     }
@@ -247,11 +248,11 @@ function Editor({
     try{
       if(!await persist(draft)||!active.current||generation.current!==expected)return;
       const result=await refresh();if(!active.current||generation.current!==expected)return;
-      if(result.error||!result.data){failed(result.error);setMessage('來源讀取失敗，原試算仍保留；目前不能重新計分或採用。');return;}
+      if(result.error||!result.data){failed(result.error);setMessage(uiText("來源讀取失敗，原試算仍保留；目前不能重新計分或採用。"));return;}
       const next=result.data,valid=new Set(next.members.filter(m=>m.profileId).map(m=>m.id)),removed=draft.selected.filter(id=>!valid.has(id));
       const value={...draft,source:next,selected:draft.selected.filter(id=>valid.has(id)),result:null};
-      if(await persist(value,true)&&active.current&&generation.current===expected){setDraft(value);await form.refreshVersions();setMessage(removed.length?removed.length+' 位成員已移除或沒有成分，請核對保留的包間安排後重新計分。':'已核對最新來源；包間輸入保留，請重新計分。');}
-    }catch(error){if(active.current){failed(error);setMessage(error instanceof Error?error.message:'無法核對來源');}}
+      if(await persist(value,true)&&active.current&&generation.current===expected){setDraft(value);await form.refreshVersions();setMessage(removed.length?removed.length+uiText(" 位成員已移除或沒有成分，請核對保留的包間安排後重新計分。"):uiText("已核對最新來源；包間輸入保留，請重新計分。"));}
+    }catch(error){if(active.current){failed(error);setMessage(error instanceof Error?errorText(error):uiText("無法核對來源"));}}
     finally{checking.current=false;if(active.current&&generation.current===expected)setBusy(false);}
   }
   async function beforeShare(){const attempt=generation.current;return !locked&&scored&&await persist(draft)&&active.current&&generation.current===attempt;}
@@ -259,7 +260,7 @@ function Editor({
   async function leave(){generation.current++;controller.current?.abort();setBusy(false);await form.leave();}
   function toggle(id: string, on: boolean) {
     if (on && selected.size >= 40) {
-      setMessage('每次最多選擇 40 位成員。');
+      setMessage(uiText("每次最多選擇 40 位成員。"));
       return;
     }
     if (!source.eventId && id === source.selfId) {
@@ -275,12 +276,12 @@ function Editor({
   }
   function move(id: string, to: string) {
     if (to && known.get(id)?.profileId && !selected.has(id)) {
-      setMessage('請先將這位成員加入本次試算，再安排包間。');
+      setMessage(uiText("請先將這位成員加入本次試算，再安排包間。"));
       return;
     }
     const target = draft.rooms.find((room) => room.id === to);
     if (target && target.members.length >= target.capacity) {
-      setMessage('目標包間已滿，請先調整容量。');
+      setMessage(uiText("目標包間已滿，請先調整容量。"));
       return;
     }
     edit({

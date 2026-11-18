@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -225,7 +226,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
           else if (confirmed && !stale && form.data.can_manage) {
             const parsed = SaveRoomPlan.safeParse({ ...roomPlanInput(value), confirm: true });
             if (parsed.success) void form.submit(parsed.data);
-            else form.setMessage('請填寫包間名稱、付款人並核對人員。');
+            else form.setMessage(uiText("請填寫包間名稱、付款人並核對人員。"));
           }
         }}
       >

@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useBlocker,useParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -28,7 +29,7 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
   useEffect(()=>{if(!dirty)return;const leave=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',leave);return()=>window.removeEventListener('beforeunload',leave);},[dirty]);
   useEffect(()=>{if(preview.error instanceof ApiError&&[401,403].includes(preview.error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});setWord('');setConsent(false);},[preview.data?.revision,preview.error,client,viewer.scope]);
   function failed(error:unknown){
-    if(!active.current)return;setMessage(error instanceof ApiError?error.message:'尚未確認刪除結果。操作編號已保留，請先查詢結果。');
+    if(!active.current)return;setMessage(error instanceof ApiError?errorText(error):uiText("尚未確認刪除結果。操作編號已保留，請先查詢結果。"));
     if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});
   }
   async function completed(result:z.infer<typeof AdminMusicErasureResult>,original:AdminErasureValue){
@@ -63,7 +64,7 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
         try{await record.save(null);}catch{/* Preserve original proof on transaction failure. */}
         setWord('');setConsent(false);void preview.refetch();
       }
-      if(!sent&&active.current)setMessage('無法保存或核對刪除操作編號及回執憑證，尚未送出。'+(error instanceof Error?' '+error.message:''));else failed(error);
+      if(!sent&&active.current)setMessage(uiText("無法保存或核對刪除操作編號及回執憑證，尚未送出。")+(error instanceof Error?' '+errorText(error):''));else failed(error);
     }finally{record.end();}
   }
   async function check(){
@@ -71,12 +72,12 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
     try{
       const headers=await authority(pending,false);if(!active.current)return;
       await completed(await api('/admin/music-erasure/receipt',AdminMusicErasureResult,{method:'POST',headers,body:JSON.stringify({requestId:pending.input.requestId,secret:pending.input.secret})}),pending);
-    }catch(error){if(active.current&&error instanceof ApiError&&error.status===404){setNotFound(true);setMessage('尚未找到完成紀錄。可稍後再查，或以原操作編號重新提交；資料有變更時會拒絕刪除。');}else if(active.current){failed(error);if(error instanceof z.ZodError)setMessage('刪除回執不符原操作；原紀錄仍保留，請重新查詢。');else if(error instanceof Error&&!(error instanceof ApiError))setMessage(error.message);}}finally{record.end();}
+    }catch(error){if(active.current&&error instanceof ApiError&&error.status===404){setNotFound(true);setMessage(uiText("尚未找到完成紀錄。可稍後再查，或以原操作編號重新提交；資料有變更時會拒絕刪除。"));}else if(active.current){failed(error);if(error instanceof z.ZodError)setMessage(uiText("刪除回執不符原操作；原紀錄仍保留，請重新查詢。"));else if(error instanceof Error&&!(error instanceof ApiError))setMessage(errorText(error));}}finally{record.end();}
   }
   async function dismiss(){
     if(!record.begin())return;
     try{await record.save(null);setWord('');setConsent(false);setMessage('');void preview.refetch();}
-    catch{setMessage('無法清除操作紀錄，原回執仍保留。');}finally{record.end();}
+    catch{setMessage(uiText("無法清除操作紀錄，原回執仍保留。"));}finally{record.end();}
   }
   return <>
     {blocker.state==='blocked'&&<Surface role="alert"><Text>仍有刪除確認或待確認操作。離開後可用原操作紀錄查詢結果。</Text><Button onClick={()=>blocker.reset()}>留在此頁</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留操作紀錄並離開</Button></Surface>}

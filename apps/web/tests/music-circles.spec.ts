@@ -79,7 +79,7 @@ test('cross-tab saved selections and name changes refresh circles; erasure revok
   await expect(circles(page).getByRole('link', { name: '圈子新稱呼', exact: true })).toBeVisible(); await expect(circles(page).getByRole('link', { name: '鏈首', exact: true })).toHaveCount(0);
   await editor.goto('/me/music'); await editor.getByRole('button', { name: '移除圈子詞 chain-b', exact: true }).click(); await editor.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(editor.getByText('已保存。', { exact: true })).toBeVisible(); await expect(singles(page).getByRole('link', { name: '圈子新稱呼', exact: true })).toBeVisible();
-  await editor.goto('/me/privacy'); await editor.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await editor.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await editor.getByRole('button', { name: '確認刪除成分', exact: true }).click();
+  await editor.goto('/me/privacy'); await editor.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await editor.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await editor.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible(); await expect(circles(page)).toHaveCount(0); await expect(singles(page)).toHaveCount(0); await editor.close();
 });
 test('empty data and unmatched thresholds provide useful guidance; URL thresholds and return paths are bounded', async ({ page, context }) => {

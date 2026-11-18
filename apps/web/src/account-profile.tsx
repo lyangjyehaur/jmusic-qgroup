@@ -1,4 +1,4 @@
-import { uiText } from './language';
+import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -52,7 +52,7 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       if(!active.current)return;
       if (!accepted && failure instanceof ApiError && failure.status < 500 && failure.status !== 429) {
         const next={ nickname: pending.nickname, revision: pending.revision };if(await persist(next))setDraft(next);
-        setMessage(failure.message);
+        setMessage(errorText(failure));
       } else setMessage(uiText("尚未確認修改結果。操作編號已保留，請按「確認修改結果」安全重試。"));
     } finally { if(active.current)setSending(false); }
   }
@@ -63,7 +63,7 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       const next = { nickname: draft.nickname, revision: latest.revision };
       if(!active.current||!await persist(next))return;
       setSaved(latest); setDraft(next); setMessage(uiText("已取得目前稱呼；你的輸入仍保留，請核對後再保存。"));
-    } catch (failure) { if(active.current)setMessage(failure instanceof Error ? failure.message : uiText("讀取失敗")); }
+    } catch (failure) { if(active.current)setMessage(failure instanceof Error ? errorText(failure) : uiText("讀取失敗")); }
     finally { if(active.current)setSending(false); }
   }
   return <>

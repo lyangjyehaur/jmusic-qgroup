@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Surface, Text } from 'yahha-ui';
 import { parseErasure, type ErasureValue } from './erasure-record';
@@ -12,12 +13,12 @@ export function useErasureLocal<T extends ErasureValue>(key: string, legacyKey: 
       if (!active.current || run !== generation.current) return;
       rawRef.current = raw;
       try { setValue(raw === null ? null : parseErasure(key, raw) as T); setDamaged(null); setError(''); }
-      catch { setValue(null); setDamaged({ raw: raw!, legacy: false }); setError('刪除紀錄無法辨識。請下載原紀錄，再明確清除；不會自動提交刪除。'); }
+      catch { setValue(null); setDamaged({ raw: raw!, legacy: false }); setError(uiText("刪除紀錄無法辨識。請下載原紀錄，再明確清除；不會自動提交刪除。")); }
     } catch {
       if (!active.current || run !== generation.current) return;
       let source: string | null = null;
       try { source = sessionStorage.getItem(legacyKey); } catch { /* Storage unavailable. */ }
-      setError('無法讀取刪除操作紀錄，請檢查瀏覽器儲存設定後重新讀取。');
+      setError(uiText("無法讀取刪除操作紀錄，請檢查瀏覽器儲存設定後重新讀取。"));
       if (source !== null) setDamaged({ raw: source, legacy: true });
     } finally { if (active.current && run === generation.current) setReady(true); }
   }
@@ -39,7 +40,7 @@ export function useErasureLocal<T extends ErasureValue>(key: string, legacyKey: 
       if (damaged.legacy) { if (sessionStorage.getItem(legacyKey) !== damaged.raw) throw Error(); sessionStorage.removeItem(legacyKey); }
       else await replaceRaw(key, damaged.raw, null);
       await refresh();
-    } catch { setError('無法清除原紀錄；原文仍保留，請重新讀取。'); }
+    } catch { setError(uiText("無法清除原紀錄；原文仍保留，請重新讀取。")); }
   }
   return { value, ready, error, damaged, busy, active, begin, end, save, assertCurrent, refresh, clearDamaged };
 }

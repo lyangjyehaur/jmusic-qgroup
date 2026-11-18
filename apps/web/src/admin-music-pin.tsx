@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
@@ -43,40 +44,40 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
     return latest;
   }
   async function completed() {
-    const latest=await refreshProfile();if(!active.current||!await persist(null,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;setPending(null);setNotFound(false);setReason('');setConfirm(false);
-    setMessage(latest ? '口令重設已完成，該成分的舊找回授權已失效。' : '原口令重設已完成；成分目前不存在或已刪除。');
+    const latest=await refreshProfile();if(!active.current||!await persist(null,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;setPending(null);setNotFound(false);setReason('');setConfirm(false);
+    setMessage(latest ? uiText("口令重設已完成，該成分的舊找回授權已失效。") : uiText("原口令重設已完成；成分目前不存在或已刪除。"));
   }
   async function save() {
     if(!profile||disabled||locked)return;
     const parsed=ResetMusicPin.safeParse({pin,revision:profile.revision,reason,confirm});if(!parsed.success||!begin())return;
     const operation={requestId:crypto.randomUUID()};
-    if(!await persist(operation,false,'無法保存口令操作編號，尚未送出口令。')||!active.current){if(active.current)setBusy(false);return;}
+    if(!await persist(operation,false,uiText("無法保存口令操作編號，尚未送出口令。"))||!active.current){if(active.current)setBusy(false);return;}
     setPending(operation);setMessage('');setPin('');setConfirm(false);let accepted=false;
     try{
       await api(path+'/pin',Ok,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.requestId},body:JSON.stringify(parsed.data)});accepted=true;
       if(active.current)await completed();
     }catch(error){if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){if(await persist(null))setPending(null);setMessage(error.message);}
-      else setMessage('尚未確認口令重設結果。口令未保存，請先查詢操作結果。');failed(error);
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){if(await persist(null))setPending(null);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認口令重設結果。口令未保存，請先查詢操作結果。"));failed(error);
     }finally{if(active.current)setBusy(false);}
   }
   async function check() {
     if(legacyInvalid!==null||!pending||!begin())return;setMessage('');setNotFound(false);
     try{
       const result=await api(path+'/pin-result',MusicPinResult,{method:'POST',headers:adminHeaders(viewer,access),body:JSON.stringify(pending)});if(!active.current)return;
-      if(result.status==='completed')await completed();else{setNotFound(true);setMessage(profile ? '尚未查到完成紀錄。可稍後再查，或核對目前版本後重新輸入口令。' : '尚未查到完成紀錄。可稍後再查，或保全操作編號後結束核對。');}
-    }catch(error){if(active.current){setMessage(error instanceof Error?error.message:'仍無法確認口令重設結果，請稍後再查。');failed(error);}}finally{if(active.current)setBusy(false);}
+      if(result.status==='completed')await completed();else{setNotFound(true);setMessage(profile ? uiText("尚未查到完成紀錄。可稍後再查，或核對目前版本後重新輸入口令。") : uiText("尚未查到完成紀錄。可稍後再查，或保全操作編號後結束核對。"));}
+    }catch(error){if(active.current){setMessage(error instanceof Error?errorText(error):uiText("仍無法確認口令重設結果，請稍後再查。"));failed(error);}}finally{if(active.current)setBusy(false);}
   }
   async function restart() {
     if(!profile||legacyInvalid!==null||!notFound||!begin())return;
-    try{const latest=await refreshProfile();if(!active.current)return;if(!latest){setMessage('成分不存在或已刪除，請保全操作編號後結束核對。');return;}if(!await persist(null))return;setPending(null);setNotFound(false);setConfirm(false);setMessage('請重新輸入口令並確認；若原操作稍後完成，版本檢查會阻止覆蓋。');}
-    catch(error){if(active.current){setMessage(error instanceof Error?error.message:'無法核對目前版本，請稍後再查。');failed(error);}}finally{if(active.current)setBusy(false);}
+    try{const latest=await refreshProfile();if(!active.current)return;if(!latest){setMessage(uiText("成分不存在或已刪除，請保全操作編號後結束核對。"));return;}if(!await persist(null))return;setPending(null);setNotFound(false);setConfirm(false);setMessage(uiText("請重新輸入口令並確認；若原操作稍後完成，版本檢查會阻止覆蓋。"));}
+    catch(error){if(active.current){setMessage(error instanceof Error?errorText(error):uiText("無法核對目前版本，請稍後再查。"));failed(error);}}finally{if(active.current)setBusy(false);}
   }
-  async function refresh(){if(!profile||disabled||locked||!begin())return;try{const latest=await refreshProfile();if(active.current){setConfirm(false);setMessage(latest ? '已核對目前版本，請重新確認。' : '成分不存在或已刪除，無法重設口令。');}}catch(error){if(active.current){setMessage(error instanceof Error?error.message:'無法核對版本');failed(error);}}finally{if(active.current)setBusy(false);}}
+  async function refresh(){if(!profile||disabled||locked||!begin())return;try{const latest=await refreshProfile();if(active.current){setConfirm(false);setMessage(latest ? uiText("已核對目前版本，請重新確認。") : uiText("成分不存在或已刪除，無法重設口令。"));}}catch(error){if(active.current){setMessage(error instanceof Error?errorText(error):uiText("無法核對版本"));failed(error);}}finally{if(active.current)setBusy(false);}}
   async function finishMissing(){
     if(profile||!pending||!notFound||legacyInvalid!==null||!begin())return;
-    try{if(!await persist(null,true))return;setPending(null);setNotFound(false);setMessage('操作編號已保全，可由本機保全版本下載；未重新送出口令。');await record.refreshVersions();}
-    catch{setMessage('操作編號已保全；無法讀取本機保全版本，請重新載入頁面。');}
+    try{if(!await persist(null,true))return;setPending(null);setNotFound(false);setMessage(uiText("操作編號已保全，可由本機保全版本下載；未重新送出口令。"));await record.refreshVersions();}
+    catch{setMessage(uiText("操作編號已保全；無法讀取本機保全版本，請重新載入頁面。"));}
     finally{if(active.current)setBusy(false);}
   }
   if(!profile&&!pending&&!record.loading&&!record.readError&&damaged===null&&!record.versions.length&&!message)return null;
@@ -102,7 +103,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
     <DraftFeedback form={damaged!==null&&!record.conflict&&!record.expired?{...record,readError:''}:record} navigation={false}/>
     {damaged!==null&&<div role="alert"><Text>口令操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原始內容不會複製到保全版本。</Text>
       <Button disabled={busy||record.loading||record.expired} onClick={()=>{const url=URL.createObjectURL(new Blob([damaged],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='qgroup-pin-operation-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setDownloaded(true);}}>下載舊操作紀錄</Button>
-      <Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void (async()=>{try{if(legacyInvalid!==null){if(sessionStorage.getItem(storageKey)!==legacyInvalid)throw Error('舊紀錄已有變更，請重新載入後核對。');sessionStorage.removeItem(storageKey);setLegacyInvalid(null);}else{if(!await persist(null))return;await record.recover();}}catch(error){setMessage(error instanceof Error?error.message:'無法清除操作紀錄。');}})()}>清除已下載的舊紀錄</Button>
+      <Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void (async()=>{try{if(legacyInvalid!==null){if(sessionStorage.getItem(storageKey)!==legacyInvalid)throw Error('舊紀錄已有變更，請重新載入後核對。');sessionStorage.removeItem(storageKey);setLegacyInvalid(null);}else{if(!await persist(null))return;await record.recover();}}catch(error){setMessage(error instanceof Error?errorText(error):uiText("無法清除操作紀錄。"));}})()}>清除已下載的舊紀錄</Button>
     </div>}
     {profile && <><Heading level={3}>口令重設紀錄</Heading>{history.isPending ? <Notice>正在讀取紀錄…</Notice> : history.error ? <Failure error={history.error} retry={() => void history.refetch()} /> : <>
       {history.data.pages.flatMap(page => page.history).map(row => <div key={row.id}><Text>{row.createdAt} · {row.actor}</Text><Text className="preserve-lines">{row.reason}</Text></div>)}

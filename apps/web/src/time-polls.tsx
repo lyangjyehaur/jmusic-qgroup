@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -27,8 +28,8 @@ import { EditablePollDefinition as EditableDefinition,pollCreateInput as createI
 type Poll = z.infer<typeof TimePoll>;
 const base = (id: string) => '/time-polls/' + encodeURIComponent(id),
   scoped = (v: Viewer) => ({ 'X-Account-Scope': v.scope });
-const choices = { yes: '可以', maybe: '勉強可以', no: '不行' } as const;
-const states = { open: '投票中', closed: '已截止', cancelled: '已取消', finalized: '已定案', deleted: '已移除' };
+const choices = { yes: uiText("可以"), maybe: uiText("勉強可以"), no: uiText("不行") } as const;
+const states = { open: uiText("投票中"), closed: uiText("已截止"), cancelled: uiText("已取消"), finalized: uiText("已定案"), deleted: uiText("已移除") };
 const label = (o: Poll['options'][number], p: Poll) =>
   o.starts_at
     ? new Intl.DateTimeFormat('zh-TW', { timeZone: p.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(
@@ -184,7 +185,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
             try {
               void form.submit(createInput(v));
             } catch {
-              form.setMessage('請填寫活動安排、截止時間及至少兩個候選。');
+              form.setMessage(uiText("請填寫活動安排、截止時間及至少兩個候選。"));
             }
         }}
       >
@@ -660,7 +661,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             try {
               void form.submit(managerInput(v, p));
             } catch {
-              form.setMessage('請核對操作、候選、原因及時間欄位。');
+              form.setMessage(uiText("請核對操作、候選、原因及時間欄位。"));
             }
         }}
       >

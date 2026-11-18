@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
@@ -12,8 +13,8 @@ import { Failure, Notice, PageIntro } from './shared';
 type Context=z.infer<typeof RegistrationContext>;
 type Person=Context['people'][number];
 type Action=z.infer<typeof RegistrationAction>;
-const statusLabels:Record<string,string>={confirmed:'正式',waiting:'候補',tentative:'待確認',invited:'受邀待接受',withdrawn:'已退出'};
-const labels:Record<Action,string>={edit:'修改報名資料',confirm:'確認參加',split:'改為分開排隊',withdraw:'退出報名',approve:'同意退出申請',reject:'拒絕退出申請'};
+const statusLabels:Record<string,string>={confirmed:uiText("正式"),waiting:uiText("候補"),tentative:uiText("待確認"),invited:uiText("受邀待接受"),withdrawn:uiText("已退出")};
+const labels:Record<Action,string>={edit:uiText("修改報名資料"),confirm:uiText("確認參加"),split:uiText("改為分開排隊"),withdraw:uiText("退出報名"),approve:uiText("同意退出申請"),reject:uiText("拒絕退出申請")};
 const Pending=z.discriminatedUnion('kind',[
   z.object({kind:z.literal('signup'),key:z.string().uuid(),input:SubmitRegistration}).strict(),
   z.object({kind:z.literal('person'),key:z.string().uuid(),personId:z.string().min(1),input:ChangeRegistration}).strict(),
@@ -62,14 +63,14 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
   function update(fresh:Context){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-registration',data.id],fresh);}
   async function rebase(){
     if(locked||!record.begin())return;
-    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage('已取得最新名單與安排；輸入仍保留，請重新預覽或核對後確認。');}
-    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(uiText("已取得最新名單與安排；輸入仍保留，請重新預覽或核對後確認。"));}
+    catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   async function makePreview(){
-    if(locked||stale)return;const values=RegistrationValues.safeParse(draft.values);if(!values.success){setMessage('請填寫 1–20 位參加者；稱呼最多 24 字、備註最多 100 字，本人只能一位。');return;}
+    if(locked||stale)return;const values=RegistrationValues.safeParse(draft.values);if(!values.success){setMessage(uiText("請填寫 1–20 位參加者；稱呼最多 24 字、備註最多 100 字，本人只能一位。"));return;}
     if(!record.begin())return;if(!await persist(draft)||!active.current){if(active.current)setBusy(false);return;}setConfirm(false);setPartial(false);setPreview(null);setMessage('');
     try{const result=await api('/activities/'+encodeURIComponent(data.id)+'/registration/preview',RegistrationPreview,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf},body:JSON.stringify({...values.data,revision:draft.revision})});if(active.current)setPreview(result);}
-    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'預覽失敗');}finally{if(active.current)setBusy(false);}
+    catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("預覽失敗"));}finally{if(active.current)setBusy(false);}
   }
   async function submit(){
     if(busy||record.unavailable)return;let operation=draft.pending;
@@ -78,13 +79,13 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
       if(manage){
         if(!selected)return;
         const input=ChangeRegistration.safeParse({revision:draft.revision,action:draft.action,name:draft.name,note:draft.note,payerKind:draft.payerKind,reason:draft.reason,confirm:true});
-        if(!input.success){setMessage('請檢查稱呼、備註與原因的長度。');return;}
-        if(reasonRequired&&!input.data.reason){setMessage('此操作必須填寫原因。');return;}
+        if(!input.success){setMessage(uiText("請檢查稱呼、備註與原因的長度。"));return;}
+        if(reasonRequired&&!input.data.reason){setMessage(uiText("此操作必須填寫原因。"));return;}
         operation={kind:'person',key:crypto.randomUUID(),personId:selected.id,input:input.data};
       }else{
         if(!preview||(mixed&&!partial))return;
         const input=SubmitRegistration.safeParse({...draft.values,revision:draft.revision,previewToken:preview.token,conditionsVersion:preview.conditionsVersion,acceptConditions:true,acceptPartial:partial,confirm:true});
-        if(!input.success){setMessage('報名資料不完整，請重新預覽。');return;}
+        if(!input.success){setMessage(uiText("報名資料不完整，請重新預覽。"));return;}
         operation={kind:'signup',key:crypto.randomUUID(),input:input.data};
       }
     }
@@ -92,12 +93,12 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
     try{
       const path=operation.kind==='signup'?'/registration':'/attendees/'+encodeURIComponent(operation.personId)+'/registration';
       await api('/activities/'+encodeURIComponent(data.id)+path,ActivityDraftResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?'報名已保存。':'報名操作已保存。');
+      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?uiText("報名已保存。"):uiText("報名操作已保存。"));
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-lifecycle','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(error.message);}
-      else setMessage('尚未確認操作結果。原操作已保留，請按「確認報名操作結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認報名操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   const consent=manage?'已核對此人的報名，確認'+labels[draft.action]:'已核對第 '+data.conditionsVersion+' 版安排、費用與逐人分配，代表本人及代報者接受安排';

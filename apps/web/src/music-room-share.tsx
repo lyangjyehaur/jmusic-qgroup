@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Button, Text } from 'yahha-ui';
 import { musicShareLines } from '@qgroup/domain';
@@ -116,10 +117,10 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
           });
         })
         .catch(() => {
-          if (live) setError('圖片產生失敗，可重試或複製分房清單。');
+          if (live) setError(uiText("圖片產生失敗，可重試或複製分房清單。"));
         });
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : '圖片產生失敗。');
+      setError(failure instanceof Error ? errorText(failure) : uiText("圖片產生失敗。"));
     }
     return () => {
       live = false;
@@ -146,12 +147,12 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
       if (navigator.share && navigator.canShare?.({ files: [ready.file] })) {
         await navigator.share({ files: [ready.file], title: value.title });
       } else if(!await download())return;
-      if (active.current && latest.current === expected) setMessage('圖片分享已完成；不支援原生分享時已改為下載。');
+      if (active.current && latest.current === expected) setMessage(uiText("圖片分享已完成；不支援原生分享時已改為下載。"));
     } catch (failure) {
       if (!active.current || latest.current !== expected) return;
-      if (failure instanceof Error && failure.name === 'AbortError') setMessage('已取消分享。');
+      if (failure instanceof Error && failure.name === 'AbortError') setMessage(uiText("已取消分享。"));
       else {
-        if(await download())setMessage('分享失敗，已改為下載。');
+        if(await download())setMessage(uiText("分享失敗，已改為下載。"));
       }
     }
   }
@@ -201,11 +202,11 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
                   await navigator.clipboard.writeText(text);return true;
                 })
                 .then(copied => {
-                  if (copied && active.current && latest.current === signature) setMessage('已複製分房清單。');
+                  if (copied && active.current && latest.current === signature) setMessage(uiText("已複製分房清單。"));
                 })
                 .catch(() => {
                   if (active.current && latest.current === signature)
-                    setMessage('無法自動複製，請選取分房清單手動複製。');
+                    setMessage(uiText("無法自動複製，請選取分房清單手動複製。"));
                 });
             }}
           >

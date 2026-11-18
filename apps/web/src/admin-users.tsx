@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -56,23 +57,23 @@ function UserEditor({ viewer, access, initial }: { viewer: Viewer; access: Acces
       await api(path+'/'+operation.kind,Ok,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
       const latest=await api(path,AdminUser,{headers:{'X-Account-Scope':viewer.scope}});
       const updated=operation.kind==='metadata'?{note:latest.note,manualQQ:latest.manualQQ,revision:latest.metadataRevision}:{...draft,pending:undefined};
-      if(!active.current)return;if(!await persist(updated,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');
+      if(!active.current)return;if(!await persist(updated,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setDraft(updated);setUser(latest);setConfirmed(false);
       client.setQueryData(['private',viewer.scope,'admin-user',access.scope,initial.id],latest);
       void history.refetch();announceAccountChange();void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-users']});
-      setMessage(operation.kind==='role'?'管理權限已保存，請核對目前狀態。':'備註已保存，請核對目前資料。');
+      setMessage(operation.kind==='role'?uiText("管理權限已保存，請核對目前狀態。"):uiText("備註已保存，請核對目前資料。"));
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(error.message);}
-      else setMessage('尚未確認修改結果。原操作已保留，請按「確認修改結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認修改結果。原操作已保留，請按「確認修改結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   async function rebase(){
     if(locked||!begin())return;
     try{
       const latest=await api(path,AdminUser,{headers:{'X-Account-Scope':viewer.scope}}),next={...draft,revision:latest.metadataRevision};
-      if(!active.current||!await persist(next))return;setUser(latest);setDraft(next);setConfirmed(false);setMessage('已取得目前資料，你的備註輸入仍保留；請核對後再保存。');
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+      if(!active.current||!await persist(next))return;setUser(latest);setDraft(next);setConfirmed(false);setMessage(uiText("已取得目前資料，你的備註輸入仍保留；請核對後再保存。"));
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   return <>
     <Surface className="detail auth-panel"><Heading level={2}>{user.nickname || '未設定稱呼'}</Heading><Text>帳號 ID：{user.id}</Text><Text>建立時間：{user.createdAt}</Text><Text role="status">管理權限：{user.isAdmin ? '管理員' : '一般會員'} · 版本 {user.revision}</Text>{user.identities.map((identity, index) => <Text key={index}>{identity.provider}：{identity.displayName} · {identity.unionidBound ? '已取得 UnionID' : '缺少 UnionID'}</Text>)}

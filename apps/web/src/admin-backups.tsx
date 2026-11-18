@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -39,8 +40,8 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
       anchor.href = url; anchor.download = 'music-data-' + (id ?? new Date().toISOString().slice(0, 19).replace(/[-:]/g, '').replace('T', '-')) + '.json';
       document.body.append(anchor); anchor.click(); anchor.remove();
       urls.current.set(url, setTimeout(() => { URL.revokeObjectURL(url); urls.current.delete(url); }, 1000));
-      setMessage('已開始下載成分 JSON。');
-    } catch (error) { if (!active.current || request.signal.aborted) return; setMessage(error instanceof Error ? error.message : '下載失敗，請重試'); denied(error); }
+      setMessage(uiText("已開始下載成分 JSON。"));
+    } catch (error) { if (!active.current || request.signal.aborted) return; setMessage(error instanceof Error ? errorText(error) : uiText("下載失敗，請重試")); denied(error); }
     finally { if (active.current) { setBusy(false); controller.current = undefined; } }
   }
   return <><Surface className="detail auth-panel"><Text>JSON 含私人留言、聯絡號與成分口令雜湊，請妥善保存。歷史下載套用最新刪除、關聯與聯絡號；這份 JSON 不能完整恢復系統。</Text>

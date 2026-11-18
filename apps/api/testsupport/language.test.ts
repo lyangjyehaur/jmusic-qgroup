@@ -1,14 +1,14 @@
 import { afterEach, it, expect, vi } from 'vitest';
 import ts from 'typescript';
 import { createRequire } from 'node:module';
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { displayLanguage } from '@qgroup/contracts';
+import { displayLanguage, BOT_KINDS } from '@qgroup/contracts';
 import { openDatabase } from '@qgroup/database';
 import { createApp } from '../src/app';
-import { displayText, uiText } from '../../web/src/language';
+import { displayText, uiText, withErrorText, errorText } from '../../web/src/language';
 import { offlinePage } from '../../web/src/pwa/offline';
 import { transformUILanguage } from '../../web/ui-language';
 const require = createRequire(import.meta.url);
@@ -17,7 +17,7 @@ function render(source: string, language: string, original = false) {
   vi.stubGlobal('document', { documentElement: { lang: language } });
   const code = ts.transpileModule(original ? source : transformUILanguage(source, '/src/example.tsx'), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const output = { Sample: undefined as unknown as () => React.ReactNode };
-  new Function('require', 'exports', code)((name: string) => name === './language' ? { displayText, uiText } : require(name), output);
+  new Function('require', 'exports', code)((name: string) => name === './language' ? { displayText, uiText, withErrorText, errorText } : require(name), output);
   return renderToStaticMarkup(output.Sample());
 }
 it('preserves the legacy highest-quality and first-header language strategy', () => {
@@ -51,18 +51,52 @@ it('translates explicitly declared system chunks without converting interpolated
   expect(() => transformUILanguage('const raw="user";uiText(raw)', '/src/example.ts')).toThrow('static literal');
   expect(() => transformUILanguage('const x=<option>運動</option>', '/src/example.tsx')).toThrow('explicit value');
 });
+it('compiles local error displays while retaining exception identity, class, cause and canonical message comparisons', () => {
+  const source = `import {errorText} from './language';
+    class DraftExpired extends Error {}
+    export function Sample(){const cause=new Error('original cause'),error=new DraftExpired('此原稿已因登出或資料刪除失效，請重新載入頁面。',{cause});
+    if(!(error instanceof DraftExpired)||error.cause!==cause||error.message!=='此原稿已因登出或資料刪除失效，請重新載入頁面。')throw Error('contract changed');
+    return <p>{errorText(error)}</p>}`;
+  expect(render(source, 'zh-Hans')).toBe('<p>此原稿已因登出或资料删除失效，请重新载入页面。</p>');
+  expect(render(source, 'zh-Hant')).toBe('<p>此原稿已因登出或資料刪除失效，請重新載入頁面。</p>');
+  const error = new Error('canonical message'), stack = error.stack;
+  expect(withErrorText(error, '帐号', '帳號')).toBe(error);expect(error.message).toBe('canonical message');expect(error.stack).toBe(stack);
+  vi.stubGlobal('document', { documentElement: { lang: 'zh-Hans' } });expect(errorText(error)).toBe('帐号');
+  vi.stubGlobal('document', { documentElement: { lang: 'zh-Hant' } });expect(errorText(error)).toBe('帳號');
+});
+it('leaves API, interpolated and untagged error messages original and rejects overlapping compile boundaries', () => {
+  const raw='后台發 · 帐号後臺';
+  const source=`import {errorText} from './language';export function Sample(){const raw=${JSON.stringify(raw)},error=new Error('帳號：'+raw);return <p>{errorText(error)}</p>}`;
+  for(const language of ['zh-Hans','zh-Hant'])expect(render(source,language)).toBe('<p>帳號：'+raw+'</p>');
+  expect(errorText(new Error(raw))).toBe(raw);expect(errorText({message:raw})).toBe(raw);
+  expect(() => transformUILanguage("new Error('後臺',{cause:new Error('帳號')})", '/src/example.ts')).toThrow('overlapping language boundaries');
+});
+it('localizes all frontend bot event labels while preserving the shared keys and canonical bot text', () => {
+  const canonical=JSON.stringify(BOT_KINDS),source=readFileSync(new URL('../../web/src/bot-kind-labels.ts',import.meta.url),'utf8');
+  for(const language of ['zh-Hans','zh-Hant']){
+    vi.stubGlobal('document',{documentElement:{lang:language}});
+    const code=ts.transpileModule(transformUILanguage(source,'/src/bot-kind-labels.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+    const output={botKindLabels:{} as Record<string,string>};
+    new Function('require','exports',code)((name:string)=>name==='./language'?{displayText,uiText,withErrorText,errorText}:require(name),output);
+    expect(Object.keys(output.botKindLabels)).toEqual(Object.keys(BOT_KINDS));
+    expect(output.botKindLabels.activity_published).toBe(language==='zh-Hans'?'活动发起':'活動發起');
+    expect(output.botKindLabels.finance_closed).toBe(language==='zh-Hans'?'账务已结清':'帳務已結清');
+    expect(JSON.stringify(BOT_KINDS)).toBe(canonical);
+  }
+});
 it('serves language-specific public shells including HEAD without accounts or cookies and keeps APIs canonical', async () => {
   const directory = mkdtempSync(join(tmpdir(), 'qgroup-language-')), db = openDatabase(':memory:');
   writeFileSync(join(directory, 'index.html'), '<!doctype html><html lang="zh-Hant"><div id="root"></div></html>');
   writeFileSync(join(directory, 'static.js'), 'const value="wire";');
   const app = createApp({ db, origin: 'http://localhost:5080', staticRoot: directory });
   try {
-    for (const header of ['zh-CN', 'zh-Hant-CN', 'en-US,zh-CN;q=0.9']) for (const path of ['/', '/index.html', '/activities', '/privacy', '/music/index.html']) for (const method of ['GET', 'HEAD'] as const) {
+    for (const header of ['zh-CN', 'zh-Hant-CN', 'en-US,zh-CN;q=0.9']) for (const path of ['/', '/index.html', '/activities', '/privacy', '/music/index.html','/guide','/guide.html']) for (const method of ['GET', 'HEAD'] as const) {
       const response = await app.inject({ method, url: path, headers: { 'accept-language': header } });
       expect(response.statusCode).toBe(200);expect(response.headers['content-language']).toBe(displayLanguage(header));expect(response.headers.vary).toBe('Accept-Language');expect(response.headers['cache-control']).toBe('no-store');expect(response.headers['set-cookie']).toBeUndefined();expect(response.body).toBe(method === 'HEAD' ? '' : `<!doctype html><html lang="${displayLanguage(header)}"><div id="root"></div></html>`);
     }
     const js = await app.inject({ url: '/static.js', headers: { 'accept-language': 'zh-CN' } });expect(js.body).toBe('const value="wire";');expect(js.headers['content-language']).toBeUndefined();
     const api = await app.inject({ url: '/api/v2/activities/PRIVATE', headers: { 'accept-language': 'zh-CN' } });expect(api.statusCode).toBe(404);expect(api.json().message).toBe('找不到活動或尚未公開');expect(api.headers.vary).toBe('Cookie');
+    expect((await app.inject({method:'POST',url:'/guide.html'})).statusCode).toBe(404);
     expect(db.prepare('SELECT count(*) AS n FROM users').get()).toEqual({ n: 0 });expect(db.prepare('SELECT count(*) AS n FROM visitor_sessions').get()).toEqual({ n: 0 });
   } finally { await app.close();db.close();rmSync(directory, { recursive: true, force: true }); }
 });

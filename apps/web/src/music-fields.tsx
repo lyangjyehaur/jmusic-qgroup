@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -37,15 +38,15 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
   function edit(patch: Partial<DraftValue>) { record.change({ ...draft, ...patch }); setMessage(''); }
   async function save() {
     if (busy || unavailable) return;
-    const input = SaveMusicFields.safeParse(valueOf(draft)); if (!input.success) { setMessage('請檢查欄位內容。'); return; }
-    if (!draft.pending && draft.genderChoice === 'custom' && !draft.genderCustom.trim()) { setMessage('請輸入自訂性別，或選擇不填。'); return; }
+    const input = SaveMusicFields.safeParse(valueOf(draft)); if (!input.success) { setMessage(uiText("請檢查欄位內容。")); return; }
+    if (!draft.pending && draft.genderChoice === 'custom' && !draft.genderCustom.trim()) { setMessage(uiText("請輸入自訂性別，或選擇不填。")); return; }
     const operation = draft.pending ?? { key: crypto.randomUUID(), input: input.data }; const pending = { ...draft, pending: operation };
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try {
       const result = await api('/me/music/fields', MusicFields, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': operation.key }, body: JSON.stringify(operation.input) }); accepted = true;
       const latest = await api('/me/music/fields', MusicFields, { headers: { 'X-Account-Scope': viewer.scope } });
-      const next = draftFor(latest, viewer.musicEpoch);if(!active.current)return;if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage'); setDraft(next); setSaved(latest); setComparison(false);
+      const next = draftFor(latest, viewer.musicEpoch);if(!active.current)return;if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage'); setDraft(next); setSaved(latest); setComparison(false);
       client.setQueryData(['private', viewer.scope, 'music-fields', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
@@ -56,11 +57,11 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] });
       void client.invalidateQueries({ queryKey: ['music-catalog'] }); announceAccountChange();
-      setMessage(result.revision === latest.revision ? '成分資料已保存。' : '原操作已保存，資料已再次變更；請核對目前內容。');
+      setMessage(result.revision === latest.revision ? uiText("成分資料已保存。") : uiText("原操作已保存，資料已再次變更；請核對目前內容。"));
     } catch (error) {
       if(!active.current)return;
-      if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) { const next={...pending,pending:undefined};if(await persist(next))setDraft(next); setMessage(error.message); }
-      else setMessage('尚未確認成分資料保存結果。原操作已保留，請按「確認成分資料結果」安全重試。');
+      if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) { const next={...pending,pending:undefined};if(await persist(next))setDraft(next); setMessage(errorText(error)); }
+      else setMessage(uiText("尚未確認成分資料保存結果。原操作已保留，請按「確認成分資料結果」安全重試。"));
     } finally { if(active.current)setBusy(false); }
   }
   async function rebase() {
@@ -68,8 +69,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
     try {
       const latest = await api('/me/music/fields', MusicFields, { headers: { 'X-Account-Scope': viewer.scope } });
       if (latest.profileId !== draft.profileId) throw new Error('目前成分已改變，請保留原稿後重新開啟目前成分。');
-      const next = { ...draft, revision: latest.revision }; if(!active.current||!await persist(next))return;setDraft(next); setSaved(latest); setComparison(true); setMessage('已取得目前資料；輸入仍保留，請核對後再保存。');
-    } catch (error) { if(active.current)setMessage(error instanceof Error ? error.message : '讀取失敗'); } finally { if(active.current)setBusy(false); }
+      const next = { ...draft, revision: latest.revision }; if(!active.current||!await persist(next))return;setDraft(next); setSaved(latest); setComparison(true); setMessage(uiText("已取得目前資料；輸入仍保留，請核對後再保存。"));
+    } catch (error) { if(active.current)setMessage(error instanceof Error ? errorText(error) : uiText("讀取失敗")); } finally { if(active.current)setBusy(false); }
   }
   return <>
     {comparison && <Surface aria-label="目前已保存的成分資料"><h2>目前已保存的成分資料</h2><dl><dt>成分稱呼</dt><dd>{saved.name}</dd><dt>性別</dt><dd>{saved.gender === 'female' ? '女' : saved.gender === 'male' ? '男' : saved.gender || '不填'} · {saved.genderPublic ? '公開' : '不公開'}</dd><dt>私人留言</dt><dd>{saved.note || '未填寫'}</dd></dl></Surface>}

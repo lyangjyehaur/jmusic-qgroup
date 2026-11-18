@@ -9,7 +9,7 @@ async function saveMusic(page: Page) {
 }
 async function confirm(page: Page, label: string, button: string) {
   await page.getByRole('radio', { name: label, exact: true }).check();
-  await page.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check();
+  await page.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check();
   await page.getByRole('button', { name: button, exact: true }).click();
 }
 test('music erasure clears stale drafts in other tabs, retains the account and explicitly creates a fresh profile', async ({ page, context }) => {

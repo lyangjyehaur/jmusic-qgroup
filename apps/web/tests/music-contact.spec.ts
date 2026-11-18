@@ -83,7 +83,7 @@ test('editing a contact preserves an unfinished selection draft and requires a f
 test('music erasure clears another tab contact draft and a rebuilt profile begins with no contact', async ({ page, context }) => {
   await seed(context); await page.goto('/me/music/contact'); await input(page).fill('123456');
   const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check();
-  await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
+  await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(input(page)).toHaveCount(0); await expect(page.getByText('請先保存成分，再設定聯絡 QQ', { exact: true })).toBeVisible();
   expect((await durableRows(page)).filter(row=>row.key.includes('qgroup:rebuild:music:'))).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await page.getByRole('button', { name: 'Aimer', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();

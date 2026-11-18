@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { openDraft } from './draft-store';
@@ -16,7 +17,7 @@ import { Failure, Notice, PageIntro } from './shared';
 
 type Saved = z.infer<typeof ActivityDraft> & {assisted?:boolean};
 type Values = z.infer<typeof ActivityArrangementInput>;
-const categories=[['约K','約 K'],['聚餐','聚餐'],['运动','運動'],['出游','出遊'],['游戏','遊戲'],['其他','其他']];
+const categories=[['约K',uiText("約 K")],['聚餐',uiText("聚餐")],['运动',uiText("運動")],['出游',uiText("出遊")],['游戏',uiText("遊戲")],['其他',uiText("其他")]];
 type FormValue = z.infer<typeof Form>;
 type DraftValue = z.infer<typeof Draft>;
 // Editing uses an explicit fixed offset, independent of the browser / event display zone.
@@ -68,8 +69,8 @@ function PendingResult({viewer,id,published=false}:{viewer:Member;id:string;publ
       if(!active.current)return;
       if(result.state==='completed'&&result.result.id===id&&result.result.removed){if(!await record.retire())return;void navigate('/me/activities/drafts',{replace:true});}
       else if(result.state==='completed'&&result.result.id===id&&pending.kind==='publish'){if(!await record.retire())return;void navigate('/activities/'+encodeURIComponent(id),{replace:true});}
-      else {setCompleted(result.state==='completed'&&result.result.id===id);setMessage(result.state==='not_found'?'尚無操作結果；原稿與操作編號已保留。請恢復活動存取後重試。':'原操作已保存；活動目前無法以草稿開啟，原稿已保留。');}
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+      else {setCompleted(result.state==='completed'&&result.result.id===id);setMessage(result.state==='not_found'?uiText("尚無操作結果；原稿與操作編號已保留。請恢復活動存取後重試。"):uiText("原操作已保存；活動目前無法以草稿開啟，原稿已保留。"));}
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   return <Surface><DraftFeedback form={record}/><Button loading={busy} onClick={()=>void check()}>{published?'確認安排操作結果':'確認草稿操作結果'}</Button>{message&&<Text role="status">{message}</Text>}{completed&&<Link to={'/activities/'+encodeURIComponent(id)}>開啟活動，原稿仍保留</Link>}</Surface>;
 }
@@ -91,7 +92,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   function edit(patch:Partial<FormValue>){if(locked)return;if(published&&saved?.assisted&&patch.deadline&&draft.form.withdrawalDeadline===draft.form.deadline)patch.withdrawalDeadline=patch.deadline;record.change({...draft,form:{...draft.form,...patch}});setMessage('');setConfirmRemove(false);setConfirmPublish(false);}
   async function submit(kind:'save'|'remove'|'publish'='save'){
     if(busy||record.unavailable||(!draft.pending&&saved?.canEdit===false))return;
-    if(draft.legacySource?.reviewRequired){setMessage('請先核對目前安排與原稿，再保存或發布。');return;}
+    if(draft.legacySource?.reviewRequired){setMessage(uiText("請先核對目前安排與原稿，再保存或發布。"));return;}
     let operation=draft.pending;
     if(!operation){
       if(kind==='remove'){
@@ -102,11 +103,11 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
         operation={kind:'publish',key:crypto.randomUUID(),input:{revision:draft.revision,confirm:true,acceptConditions:true}};
       }else{
         try{const values=inputValues(draft.form);operation=saved?{kind:'save',key:crypto.randomUUID(),input:{revision:draft.revision,values,reason:draft.reason}}:{kind:'create',key:crypto.randomUUID(),input:{values,clientIntent:draft.clientIntent??crypto.randomUUID()}};}
-        catch{setMessage('請檢查必填欄位、時間與人數範圍。');return;}
+        catch{setMessage(uiText("請檢查必填欄位、時間與人數範圍。"));return;}
       }
     }
     const pending={...draft,...(operation.kind==='create'&&operation.input.clientIntent?{clientIntent:operation.input.clientIntent}:{}),pending:operation};if(!record.begin())return;
-    if(!draft.pending){try{await requireLegacyAvailable(viewer.scope,saved?'/activities/'+encodeURIComponent(saved.id)+(published?'/arrangements':'/edit'):'/activities/new');}catch(error){if(active.current){setMessage(error instanceof Error?error.message:'尚未送出，請先核對原紀錄。');setBusy(false);}return;}}
+    if(!draft.pending){try{await requireLegacyAvailable(viewer.scope,saved?'/activities/'+encodeURIComponent(saved.id)+(published?'/arrangements':'/edit'):'/activities/new');}catch(error){if(active.current){setMessage(error instanceof Error?errorText(error):uiText("尚未送出，請先核對原紀錄。"));setBusy(false);}return;}}
     if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api(operation.kind==='remove'?path+'/remove':operation.kind==='publish'?path+'/publish':path,ActivityDraftResult,{method:operation.kind==='save'?'PUT':'POST',headers:{'Content-Type':'application/json','X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
@@ -118,16 +119,16 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
         try{latest=await api('/activities/'+encodeURIComponent(result.id)+(published?'/arrangements':'/draft'),published?ActivityArrangements:ActivityDraft,{headers:{'X-Account-Scope':viewer.scope}});}
         catch(error){
           if(!active.current)return;
-          if(error instanceof ApiError&&[404,409].includes(error.status)){setCompletedId(result.id);setMessage('原操作已保存；活動目前無法以草稿開啟，原稿與操作編號已保留。');return;}
+          if(error instanceof ApiError&&[404,409].includes(error.status)){setCompletedId(result.id);setMessage(uiText("原操作已保存；活動目前無法以草稿開啟，原稿與操作編號已保留。"));return;}
           throw error;
         }
         if(!active.current)return;
         if(operation.kind==='create'){
           const targetKey='qgroup:rebuild:activity-draft:v1:'+viewer.scope+':'+result.id;if(!await record.retire({key:targetKey,value:original(latest)}))throw Error('storage');setDestination('/activities/'+encodeURIComponent(result.id)+'/edit');
         }else{
-          const next=original(latest);if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(next);setSaved(latest);setComparison(false);setConfirmRemove(false);setConfirmPublish(false);
+          const next=original(latest);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);setSaved(latest);setComparison(false);setConfirmRemove(false);setConfirmPublish(false);
           client.setQueryData(['private',viewer.scope,published?'activity-arrangements':'activity-draft',result.id],latest);
-          setMessage(result.revision===latest.revision?(published?'活動安排已保存。':'活動草稿已保存。'):(published?'原操作已保存，安排已再次變更；請核對目前安排。':'原操作已保存，草稿已再次變更；請核對目前安排。'));
+          setMessage(result.revision===latest.revision?(published?uiText("活動安排已保存。"):uiText("活動草稿已保存。")):(published?uiText("原操作已保存，安排已再次變更；請核對目前安排。"):uiText("原操作已保存，草稿已再次變更；請核對目前安排。")));
         }
       }
       void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-drafts']});
@@ -135,14 +136,14 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
       if(published){void client.invalidateQueries({queryKey:['activities']});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-conditions',result.id]});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-roster',result.id]});}
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setMessage(error.message);}
-      else setMessage(published?'尚未確認活動安排保存結果。原操作已保留，請按「確認安排操作結果」安全重試。':'尚未確認活動草稿操作結果。原操作已保留，請按「確認草稿操作結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setMessage(errorText(error));}
+      else setMessage(published?uiText("尚未確認活動安排保存結果。原操作已保留，請按「確認安排操作結果」安全重試。"):uiText("尚未確認活動草稿操作結果。原操作已保留，請按「確認草稿操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   async function rebase(){
     if(!saved||draft.pending||readError||busy)return;setBusy(true);
-    try{const latest=await api(path,published?ActivityArrangements:ActivityDraft,{headers:{'X-Account-Scope':viewer.scope}});if(!active.current)return;const next={...draft,revision:latest.revision,...(draft.legacySource?{legacySource:{...draft.legacySource,reviewRequired:false}}:{})};if(!await persist(next))return;setDraft(next);setSaved(latest);setComparison(true);setConfirmRemove(false);setConfirmPublish(false);setMessage('已取得目前安排；輸入仍保留，請核對後再保存。');}
-    catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
+    try{const latest=await api(path,published?ActivityArrangements:ActivityDraft,{headers:{'X-Account-Scope':viewer.scope}});if(!active.current)return;const next={...draft,revision:latest.revision,...(draft.legacySource?{legacySource:{...draft.legacySource,reviewRequired:false}}:{})};if(!await persist(next))return;setDraft(next);setSaved(latest);setComparison(true);setConfirmRemove(false);setConfirmPublish(false);setMessage(uiText("已取得目前安排；輸入仍保留，請核對後再保存。"));}
+    catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   const f=draft.form;const owner=saved?.isOwner??true;
   return <>{blocker.state==='blocked'&&<Surface role="alert"><Text>仍有活動草稿或待確認操作。</Text><Button onClick={()=>blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={()=>void record.leave()}>保留草稿並離開</Button></Surface>}

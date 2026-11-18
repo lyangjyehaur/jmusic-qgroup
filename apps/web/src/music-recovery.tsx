@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -36,7 +37,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
   function failed(error:unknown){if(error instanceof ApiError&&(error.status===401||error.code==='ACCOUNT_CHANGED')){setDenied(true);void client.invalidateQueries({queryKey:['session']});}}
   function update(result:z.infer<typeof MusicClaimStatus>,id?:string){client.setQueryData(['private',viewer.scope,'music-claim',id??'current'],result);}
   async function complete(result:z.infer<typeof MusicClaimStatus>){
-    if(!active.current||!await persist(null,false,'結果已確認，但無法保存本機確認狀態；原找回操作仍保留。')||!active.current)return false;
+    if(!active.current||!await persist(null,false,uiText("結果已確認，但無法保存本機確認狀態；原找回操作仍保留。"))||!active.current)return false;
     update(result);setPending(null);setConfirm(false);setUncertain(false);setPin('');
     if(result.status==='completed'){announceAccountChange();void client.invalidateQueries({queryKey:['session']});void client.invalidateQueries({queryKey:['private',viewer.scope,'music']});}
     return true;
@@ -47,25 +48,25 @@ function Recovery({ viewer }: { viewer: Viewer }) {
       if(!await persist(pending)||!active.current)return;
       const result=await api('/music/claim'+(pending?'?'+new URLSearchParams({requestId:pending.requestId}):''),MusicClaimStatus,{headers:{'X-Account-Scope':viewer.scope},signal:cancel.current.signal});
       if(!active.current)return;if(pending)check(result,pending);update(result,pending?.requestId);
-      if(pending&&(result.status==='completed'||pending.action==='cancel'&&result.status==='none')){if(await complete(result))setMessage(result.status==='completed'?'已關聯原成分。':'已取消找回，原成分與目前帳號均保留。');}
-      else{setUncertain(false);setMessage('已重新核對找回狀態；尚未建立關聯時可輸入原口令安全重試。');}
-    }catch(error){if(active.current){failed(error);setUncertain(true);setMessage(error instanceof Error?error.message:'無法確認結果');}}finally{if(active.current)setBusy(false);}
+      if(pending&&(result.status==='completed'||pending.action==='cancel'&&result.status==='none')){if(await complete(result))setMessage(result.status==='completed'?uiText("已關聯原成分。"):uiText("已取消找回，原成分與目前帳號均保留。"));}
+      else{setUncertain(false);setMessage(uiText("已重新核對找回狀態；尚未建立關聯時可輸入原口令安全重試。"));}
+    }catch(error){if(active.current){failed(error);setUncertain(true);setMessage(error instanceof Error?errorText(error):uiText("無法確認結果"));}}finally{if(active.current)setBusy(false);}
   }
   async function start(){
     if(blocked||denied||uncertain||pending?.action||status?.status!=='none')return;
     const operation=pending??{requestId:crypto.randomUUID(),legacyQQ:legacyQQ.trim()};
     const parsed=StartMusicClaim.safeParse({...operation,legacyQQ:operation.legacyQQ,pin,consent});
-    if(!parsed.success){setMessage('請輸入舊 QQ 與原來的 4–6 位數字口令，並確認資料用途。');return;}
+    if(!parsed.success){setMessage(uiText("請輸入舊 QQ 與原來的 4–6 位數字口令，並確認資料用途。"));return;}
     if(!begin())return;setMessage('');let accepted=false;
     try{
-      if(!await persist(operation,false,'無法保存找回操作編號，尚未送出口令。')||!active.current)return;
+      if(!await persist(operation,false,uiText("無法保存找回操作編號，尚未送出口令。"))||!active.current)return;
       setPending(operation);
       const result=await api('/music/claim/start',MusicClaimStatus,{method:'POST',headers:authHeaders(viewer),body:JSON.stringify(parsed.data),signal:cancel.current.signal});accepted=true;
       if(!active.current)return;check(result,operation);if(result.status==='none')throw Error('missing claim');update(result,operation.requestId);setPin('');setConsent(false);setUncertain(false);
     }catch(error){if(!active.current)return;setPin('');setConsent(false);failed(error);
       if(!accepted&&error instanceof ApiError&&error.status<500&&![401,429].includes(error.status)&&error.code!=='ACCOUNT_CHANGED'){
-        if(await persist(null,false,'無法保存拒絕結果；原找回操作仍保留，請重新核對。')&&active.current)setPending(null);setMessage(error.message);
-      }else{setUncertain(true);setMessage('尚未確認口令驗證結果。口令未保存，請先核對找回狀態。');}
+        if(await persist(null,false,uiText("無法保存拒絕結果；原找回操作仍保留，請重新核對。"))&&active.current)setPending(null);setMessage(errorText(error));
+      }else{setUncertain(true);setMessage(uiText("尚未確認口令驗證結果。口令未保存，請先核對找回狀態。"));}
     }finally{if(active.current)setBusy(false);}
   }
   async function authorize(){
@@ -76,7 +77,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
       if(!await persist(operation)||!active.current)return;setPending(operation);
       const result=await api('/auth/qq/start',QQStartResult,{method:'POST',headers:authHeaders(viewer),body:JSON.stringify({mode:viewer.authenticated?'bind':'login',confirm:true,musicClaimId:operation.requestId,returnTo:'/me/music/recover',acceptPrivacy:privacy,privacyVersion:viewer.privacyVersion}),signal:cancel.current.signal});
       if(active.current)window.location.assign(result.authorizeUrl);
-    }catch(error){if(active.current){failed(error);setMessage(error instanceof Error?error.message:'無法開始 QQ 授權');}}finally{if(active.current)setBusy(false);}
+    }catch(error){if(active.current){failed(error);setMessage(error instanceof Error?errorText(error):uiText("無法開始 QQ 授權"));}}finally{if(active.current)setBusy(false);}
   }
   async function act(action:'finish'|'cancel'){
     if(blocked||denied||uncertain||!status||status.status==='none'||pending?.action&&pending.action!==action||!begin())return;setMessage('');
@@ -87,12 +88,12 @@ function Recovery({ viewer }: { viewer: Viewer }) {
       const result=await api('/music/claim/'+action,MusicClaimStatus,{method:'POST',headers:authHeaders(viewer),body:JSON.stringify({claimId:operation.requestId,confirm:true}),signal:cancel.current.signal});
       if(!active.current)return;check(result,operation);
       if(action==='finish'&&result.status!=='completed'||action==='cancel'&&result.status!=='none'&&result.status!=='completed')throw Error('unexpected claim result');
-      if(await complete(result))setMessage(result.status==='completed'?'已關聯原成分。':'已取消找回，原成分與目前帳號均保留。');
-    }catch(error){if(active.current){failed(error);setUncertain(true);setMessage(error instanceof ApiError&&error.status<500&&error.status!==429?error.message:'尚未確認操作結果，請先核對找回狀態。');}}finally{if(active.current)setBusy(false);}
+      if(await complete(result))setMessage(result.status==='completed'?uiText("已關聯原成分。"):uiText("已取消找回，原成分與目前帳號均保留。"));
+    }catch(error){if(active.current){failed(error);setUncertain(true);setMessage(error instanceof ApiError&&error.status<500&&error.status!==429?errorText(error):uiText("尚未確認操作結果，請先核對找回狀態。"));}}finally{if(active.current)setBusy(false);}
   }
   if(denied)return <Notice>目前帳號已變更。<Button onClick={()=>window.location.reload()}>重新確認帳號</Button></Notice>;
-  return <><DraftFeedback form={damaged!==null&&!record.conflict&&!record.expired?{...record,readError:''}:record} navigation={false}/>{damaged!==null&&<Surface role="alert"><Text>找回操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原文不會複製到保全版本。</Text><Button disabled={busy||record.loading||record.expired} onClick={()=>{const url=URL.createObjectURL(new Blob([damaged],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='qgroup-claim-operation-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setDownloaded(true);}}>下載舊操作紀錄</Button><Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void(async()=>{if(busy||record.loading||record.conflict||record.expired)return;setBusy(true);try{if(legacyInvalid!==null){if(sessionStorage.getItem(key)!==legacyInvalid)throw Error('原紀錄已有變更，請重新載入核對。');sessionStorage.removeItem(key);}else if(!await persist(null))return;window.location.reload();}catch(error){setMessage(error instanceof Error?error.message:'無法清除紀錄');}finally{if(active.current)setBusy(false);}})()}>清除已下載的舊紀錄</Button></Surface>}{blocked?null:claim.isPending ? <Notice>正在讀取找回狀態…</Notice> : claim.error ? <Failure error={claim.error} retry={() => void refresh()} /> : <Surface className="detail auth-panel">
-    {status?.status === 'none' && pending?.action ? <Notice>原找回請求已不存在，請先核對我的成分。<Button disabled={busy||uncertain} onClick={()=>void(async()=>{if(!begin())return;try{if(await complete({status:'none'}))setMessage('已結束原操作核對；可重新找回。');}finally{if(active.current)setBusy(false);}})()}>結束失效的原操作</Button></Notice> : status?.status === 'none' ? <form onSubmit={event => { event.preventDefault(); void start(); }}>
+  return <><DraftFeedback form={damaged!==null&&!record.conflict&&!record.expired?{...record,readError:''}:record} navigation={false}/>{damaged!==null&&<Surface role="alert"><Text>找回操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原文不會複製到保全版本。</Text><Button disabled={busy||record.loading||record.expired} onClick={()=>{const url=URL.createObjectURL(new Blob([damaged],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='qgroup-claim-operation-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setDownloaded(true);}}>下載舊操作紀錄</Button><Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void(async()=>{if(busy||record.loading||record.conflict||record.expired)return;setBusy(true);try{if(legacyInvalid!==null){if(sessionStorage.getItem(key)!==legacyInvalid)throw Error('原紀錄已有變更，請重新載入核對。');sessionStorage.removeItem(key);}else if(!await persist(null))return;window.location.reload();}catch(error){setMessage(error instanceof Error?errorText(error):uiText("無法清除紀錄"));}finally{if(active.current)setBusy(false);}})()}>清除已下載的舊紀錄</Button></Surface>}{blocked?null:claim.isPending ? <Notice>正在讀取找回狀態…</Notice> : claim.error ? <Failure error={claim.error} retry={() => void refresh()} /> : <Surface className="detail auth-panel">
+    {status?.status === 'none' && pending?.action ? <Notice>原找回請求已不存在，請先核對我的成分。<Button disabled={busy||uncertain} onClick={()=>void(async()=>{if(!begin())return;try{if(await complete({status:'none'}))setMessage(uiText("已結束原操作核對；可重新找回。"));}finally{if(active.current)setBusy(false);}})()}>結束失效的原操作</Button></Notice> : status?.status === 'none' ? <form onSubmit={event => { event.preventDefault(); void start(); }}>
       <Text>PIN 只用於找回舊成分；關聯須完成本次 QQ 授權，不會覆蓋目前帳號已有的成分。</Text>
       <label className="account-field">舊 QQ<input inputMode="numeric" autoComplete="off" value={legacyQQ} maxLength={12} disabled={busy || uncertain || !!readError || !!pending} onChange={event => setQQ(event.target.value)} /></label>
       <label className="account-field">原口令<input type="password" inputMode="numeric" autoComplete="off" value={pin} maxLength={6} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setPin(event.target.value)} /></label>

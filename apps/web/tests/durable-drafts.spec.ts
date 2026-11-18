@@ -137,7 +137,7 @@ for (const kind of ['logout','music-erasure'] as const) test('fences a stale tab
     await expect(page.getByRole('heading',{name:'尚未登入',exact:true})).toBeVisible();
   }else{
     await page.goto('/me/privacy'); await page.getByRole('radio',{name:'只刪除成分',exact:true}).check();
-    await page.getByRole('checkbox',{name:'我已確認範圍，了解此操作無法復原',exact:true}).check();
+    await page.getByRole('checkbox',{name:'我已確認範圍，瞭解此操作無法復原',exact:true}).check();
     await page.getByRole('button',{name:'確認刪除成分',exact:true}).click();
     await expect(page.getByRole('heading',{name:'成分已刪除',exact:true})).toBeVisible();
   }
@@ -195,7 +195,7 @@ for(const kind of ['logout','admin-logout','music-erasure'] as const)test('retri
     await page.getByRole('checkbox',{name:'確認登出此裝置的全部帳號與管理授權，其他裝置不受影響',exact:true}).check();
     await page.getByRole('button',{name:'登出管理',exact:true}).click();
   }else{
-    await page.getByRole('checkbox',{name:'我已確認範圍，了解此操作無法復原',exact:true}).check();
+    await page.getByRole('checkbox',{name:'我已確認範圍，瞭解此操作無法復原',exact:true}).check();
     await page.getByRole('button',{name:'確認刪除成分',exact:true}).click();
     await expect(page.getByRole('heading',{name:'成分已刪除',exact:true})).toBeVisible();
     await expect(page.getByRole('button',{name:'完成',exact:true})).toBeDisabled();

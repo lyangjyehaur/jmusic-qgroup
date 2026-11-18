@@ -1,7 +1,8 @@
+import { uiText } from './language';
 import type { z } from 'zod';
 import type { FinanceKind,FinancePayload } from '@qgroup/contracts';
-export const financeKinds:Record<z.infer<typeof FinanceKind>,string>={collection:'收款',refund:'退還參加者',reimbursement:'償還墊付',expense:'支付店家',merchant_refund:'店家退差價',deposit:'支付訂金／押金',deposit_return:'退回訂金／押金',deposit_apply:'訂金抵消費／押金轉損失',credit_transfer:'更正款項歸屬',cash_transfer:'移交代收資金'};
-export const financeMethods:Record<string,string>={wechat:'微信',alipay:'支付寶',qq:'QQ',cash:'現金',other:'其他'};
+export const financeKinds:Record<z.infer<typeof FinanceKind>,string>={collection:uiText("收款"),refund:uiText("退還參加者"),reimbursement:uiText("償還墊付"),expense:uiText("支付店家"),merchant_refund:uiText("店家退差價"),deposit:uiText("支付訂金／押金"),deposit_return:uiText("退回訂金／押金"),deposit_apply:uiText("訂金抵消費／押金轉損失"),credit_transfer:uiText("更正款項歸屬"),cash_transfer:uiText("移交代收資金")};
+export const financeMethods:Record<string,string>={wechat:uiText("微信"),alipay:uiText("支付寶"),qq:'QQ',cash:uiText("現金"),other:uiText("其他")};
 export const financeMoney=(value:number|null)=>value===null?'未發布':'¥'+(value/100).toFixed(2);
 export const financeLocalTime=(value:string)=>{const date=new Date(value);return Number.isFinite(date.getTime())?new Date(date.getTime()+8*3600000).toISOString().slice(0,19):value;};
 export function FinanceDetails({payload:p,entryPath='' }:{payload:z.infer<typeof FinancePayload>;entryPath?:string}){

@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Surface, Text } from 'yahha-ui';
@@ -39,7 +40,7 @@ function usePWA() {
                 if (cancelled || !active.current) return;
                 if (['installed', 'activating', 'activated'].includes(worker.state)) installed = true;
                 if (!old && !installed && worker.state === 'redundant') {
-                    setError('更新下載失敗，原版本仍保留。請稍後重試。');
+                    setError(uiText("更新下載失敗，原版本仍保留。請稍後重試。"));
                 }
                 changed();
             };
@@ -108,7 +109,7 @@ function usePWA() {
             navigator.serviceWorker.addEventListener('message', reply);
             window.addEventListener('focus', changed);
             void check().catch(() => { if (!cancelled && active.current)
-                setError('無法檢查離線元件；請恢復連線後重試。'); });
+                setError(uiText("無法檢查離線元件；請恢復連線後重試。")); });
         }
         return () => { cancelled = true; active.current = false; checks.current = null; registration.current = null; for (const dispose of disposers)
             dispose(); window.removeEventListener('beforeinstallprompt', offer); window.removeEventListener('appinstalled', installed); window.removeEventListener('online', connection); window.removeEventListener('offline', connection); media.removeEventListener('change', display); if (supported) {
@@ -121,11 +122,11 @@ function usePWA() {
         return; setBusy(true); setError(''); setMessage(''); try {
         await checks.current?.();
         if (active.current)
-            setMessage('已檢查更新；下載完成後會顯示可用版本。');
+            setMessage(uiText("已檢查更新；下載完成後會顯示可用版本。"));
     }
     catch {
         if (active.current)
-            setError('無法檢查離線元件；請恢復連線後重試。');
+            setError(uiText("無法檢查離線元件；請恢復連線後重試。"));
     }
     finally {
         if (active.current)
@@ -151,7 +152,7 @@ function usePWA() {
         }
         catch {
             if (active.current)
-                setError('無法啟用下載版本，請重新檢查更新。');
+                setError(uiText("無法啟用下載版本，請重新檢查更新。"));
         }
         finally {
             if (active.current)
@@ -164,12 +165,12 @@ function usePWA() {
         const result = await prompt.userChoice;
         if (active.current) {
             setPrompt(null);
-            setMessage(result.outcome === 'accepted' ? '已送出安裝要求。' : '已取消安裝。');
+            setMessage(result.outcome === 'accepted' ? uiText("已送出安裝要求。") : uiText("已取消安裝。"));
         }
     }
     catch {
         if (active.current)
-            setError('無法開啟安裝提示，請從瀏覽器選單加入主畫面。');
+            setError(uiText("無法開啟安裝提示，請從瀏覽器選單加入主畫面。"));
     }
     finally {
         if (active.current)

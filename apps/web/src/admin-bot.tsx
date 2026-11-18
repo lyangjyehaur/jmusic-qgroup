@@ -1,10 +1,11 @@
+import { botKindLabels } from './bot-kind-labels';
+import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import {
-  BOT_KINDS,
   BotPolicy,
   BotPolicyCommand,
   BotPolicyResult,
@@ -20,41 +21,41 @@ import { Field } from './settlement-controls';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 const policyLabels: Record<keyof BotPolicy, string> = {
-  enabled: '主動通知',
-  replies_enabled: '群內回覆',
-  dry_run: '發送模式',
-  broadcast_kinds: '通知類型',
-  schedule_enabled: '排程提醒',
-  deadline_hours: '截止提醒',
-  estimated_over_delay_minutes: '結束提醒',
-  quiet_enabled: '勿擾開關',
-  quiet_start: '勿擾開始',
-  quiet_end: '勿擾結束',
-  timezone: '勿擾時區',
-  min_interval_seconds: '發送間隔',
-  templates: '消息模板',
-  groups: '群政策',
+  enabled: uiText("主動通知"),
+  replies_enabled: uiText("群內回覆"),
+  dry_run: uiText("發送模式"),
+  broadcast_kinds: uiText("通知類型"),
+  schedule_enabled: uiText("排程提醒"),
+  deadline_hours: uiText("截止提醒"),
+  estimated_over_delay_minutes: uiText("結束提醒"),
+  quiet_enabled: uiText("勿擾開關"),
+  quiet_start: uiText("勿擾開始"),
+  quiet_end: uiText("勿擾結束"),
+  timezone: uiText("勿擾時區"),
+  min_interval_seconds: uiText("發送間隔"),
+  templates: uiText("消息模板"),
+  groups: uiText("群政策"),
 };
 const stateLabels: Record<string, string> = {
-  joined: '已加入',
-  removed: '已退出',
-  seen: '曾收到事件',
-  unknown: '尚未回報',
-  group_not_allowed: '群未獲授權',
-  replies_disabled: '已停用群回覆',
-  dry_run: '模擬模式',
-  bot_author: '忽略機器人訊息',
-  duplicate: '重複事件',
-  save: '保存',
-  revert: '恢復前版',
-  baseline: '基線',
+  joined: uiText("已加入"),
+  removed: uiText("已退出"),
+  seen: uiText("曾收到事件"),
+  unknown: uiText("尚未回報"),
+  group_not_allowed: uiText("群未獲授權"),
+  replies_disabled: uiText("已停用群回覆"),
+  dry_run: uiText("模擬模式"),
+  bot_author: uiText("忽略機器人訊息"),
+  duplicate: uiText("重複事件"),
+  save: uiText("保存"),
+  revert: uiText("恢復前版"),
+  baseline: uiText("基線"),
 };
 function policyValue(key: keyof BotPolicy, value: BotPolicy[keyof BotPolicy]) {
-  if (key === 'dry_run') return value === null ? '沿用部署設定' : value ? '模擬' : '實際發送';
-  if (typeof value === 'boolean') return value ? '啟用' : '停用';
+  if (key === 'dry_run') return value === null ? uiText('沿用部署設定') : value ? uiText('模擬') : uiText('實際發送');
+  if (typeof value === 'boolean') return value ? uiText('啟用') : uiText('停用');
   if (key === 'broadcast_kinds')
-    return (value as BotKind[]).map((kind) => BOT_KINDS[kind]).join('、') || '無';
-  if (key === 'groups' && value === null) return '沿用部署目標群';
+    return (value as BotKind[]).map((kind) => botKindLabels[kind]).join('、') || uiText('無');
+  if (key === 'groups' && value === null) return uiText('沿用部署目標群');
   return typeof value === 'object' ? JSON.stringify(value) : String(value);
 }
 const Value = z
@@ -210,9 +211,9 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
       if (!active.current || !await persist(next)) return;
       setDraft(next); client.setQueryData(['private', viewer.scope, 'admin-bot', access.scope], latest);
       setConfirmed(false); setPreview(null);
-      setMessage('已讀取最新版，原輸入保留；請核對差異後重新確認。');
+      setMessage(uiText("已讀取最新版，原輸入保留；請核對差異後重新確認。"));
     } catch (error) {
-      if (active.current) { setMessage(error instanceof Error ? error.message : '無法讀取設定'); failed(error); }
+      if (active.current) { setMessage(error instanceof Error ? errorText(error) : uiText("無法讀取設定")); failed(error); }
     } finally { if (active.current) setBusy(false); }
   }
   async function send() {
@@ -220,7 +221,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     let operation = draft.pending;
     try { operation ??= { key: crypto.randomUUID(), input: commandOf(draft) }; }
     catch (error) {
-      setMessage(error instanceof z.ZodError ? '請檢查時間、時區、群標識、唯一通知群及模板欄位。' : error instanceof Error ? error.message : '設定格式不符');
+      setMessage(error instanceof z.ZodError ? uiText("請檢查時間、時區、群標識、唯一通知群及模板欄位。") : error instanceof Error ? errorText(error) : uiText("設定格式不符"));
       return;
     }
     if (!begin()) return;
@@ -238,18 +239,18 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
       const latest = await api('/admin/bot', BotPolicyView, { headers: { 'X-Account-Scope': viewer.scope } });
       if (!active.current) return;
       const next = blank(latest);
-      if (!await persist(next, false, '設定已保存，但無法保存本機確認狀態；請保留原操作並核對結果。')) return;
+      if (!await persist(next, false, uiText("設定已保存，但無法保存本機確認狀態；請保留原操作並核對結果。"))) return;
       setDraft(next); setConfirmed(false); setPreview(null);
       client.setQueryData(['private', viewer.scope, 'admin-bot', access.scope], latest);
-      setMessage('bot 設定已保存。');
+      setMessage(uiText("bot 設定已保存。"));
     } catch (error) {
       if (!active.current) return;
       if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) {
         const next = { ...pending, pending: undefined };
-        if (await persist(next, false, '無法保存拒絕結果；原操作仍保留，請重新核對。')) setDraft(next);
-        setConfirmed(false); setPreview(null); setMessage(error.message);
+        if (await persist(next, false, uiText("無法保存拒絕結果；原操作仍保留，請重新核對。"))) setDraft(next);
+        setConfirmed(false); setPreview(null); setMessage(errorText(error));
         void catalog.refetch();
-      } else setMessage('尚未確認 bot 設定結果，原稿與操作編號已保留，請確認原操作結果。');
+      } else setMessage(uiText("尚未確認 bot 設定結果，原稿與操作編號已保留，請確認原操作結果。"));
       failed(error);
     } finally { if (active.current) setBusy(false); }
   }
@@ -285,10 +286,10 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
       if (active.current)
         setMessage(
           error instanceof z.ZodError
-            ? '請先檢查設定欄位。'
+            ? uiText("請先檢查設定欄位。")
             : error instanceof Error
-              ? error.message
-              : '無法預覽',
+              ? errorText(error)
+              : uiText("無法預覽"),
         );
       failed(error);
     } finally {
@@ -364,7 +365,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
             </Field>
             <Text>模擬紀錄不算已送出；切換為實際發送不重播舊模擬紀錄。</Text>
             <Heading level={2}>通知類型</Heading>
-            {Object.entries(BOT_KINDS).map(([key, label]) => (
+            {Object.entries(botKindLabels).map(([key, label]) => (
               <label className="consent" key={key}>
                 <input
                   type="checkbox"
@@ -560,7 +561,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
                   setPreview(null);
                 }}
               >
-                {Object.entries(BOT_KINDS).map(([key, label]) => (
+                {Object.entries(botKindLabels).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
                   </option>

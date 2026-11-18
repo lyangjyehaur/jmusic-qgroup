@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +17,7 @@ type Profile = z.infer<typeof AdminMusicProfile>;
 function useAdminFailure(error: unknown, viewer: Viewer) {
   const client=useQueryClient();useEffect(()=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[error,client,viewer.scope]);
 }
-const statusLabels = { oauth: 'QQ 授權關聯', prelinked: '預先關聯', unlinked: '未關聯', account: '帳號成分' };
+const statusLabels = { oauth: uiText("QQ 授權關聯"), prelinked: uiText("預先關聯"), unlinked: uiText("未關聯"), account: uiText("帳號成分") };
 const ownerLabel = (owner: Profile['owner']) => owner ? `${owner.nickname}（${owner.id}）` : '未關聯';
 export function AdminMusicDirectory() {
   return <><PageIntro title="成分關聯" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <Directory key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
@@ -64,7 +65,7 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
       if(!await persist(draft)||!active.current)return;
       const result = await api(path + '/link-preview', AdminMusicLinkPreview, { method: 'POST', headers: adminHeaders(viewer, access), body: JSON.stringify({ targetUserId: draft.target.trim() || null }) });
       if(active.current){setCurrent(result.profile);setPreview(result);}
-    }catch(error){if(active.current){setMessage(error instanceof Error ? error.message : '無法取得預覽');failed(error);}}finally{if(active.current)setBusy(false);}
+    }catch(error){if(active.current){setMessage(error instanceof Error ? errorText(error) : uiText("無法取得預覽"));failed(error);}}finally{if(active.current)setBusy(false);}
   }
   async function save() {
     if (busy || pinDirty || unavailable) return;
@@ -77,14 +78,14 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
       await api(path + '/link', Ok, { method: 'POST', headers: { ...adminHeaders(viewer, access), 'Idempotency-Key': operation.key }, body: JSON.stringify(operation.input) });accepted=true;
       if(!active.current)return;
       const latest = await readAdminMusicProfile(path, viewer);if(!active.current)return;
-      const next = { target: latest?.owner?.id ?? '', reason: '' };if(!await persist(next,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;
+      const next = { target: latest?.owner?.id ?? '', reason: '' };if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;
       setDraft(next);setCurrent(latest);setPreview(null);setConfirmed(false);
       client.setQueryData(['private', viewer.scope, 'admin-music-profile', access.scope, id], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'admin-music'] });void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'admin-music-history'] });
-      void client.invalidateQueries({ queryKey: ['session'] });void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });announceAccountChange();setMessage(latest ? '關聯操作已完成，請核對目前成分與帳號。' : '原關聯操作已完成；成分目前不存在或已刪除。');
+      void client.invalidateQueries({ queryKey: ['session'] });void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });announceAccountChange();setMessage(latest ? uiText("關聯操作已完成，請核對目前成分與帳號。") : uiText("原關聯操作已完成；成分目前不存在或已刪除。"));
     }catch(error){if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setPreview(null);setConfirmed(false);setMessage(error.message);}
-      else setMessage('尚未確認關聯結果。原操作已保留，請按「確認關聯結果」安全重試。');failed(error);
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setPreview(null);setConfirmed(false);setMessage(errorText(error));}
+      else setMessage(uiText("尚未確認關聯結果。原操作已保留，請按「確認關聯結果」安全重試。"));failed(error);
     }finally{if(active.current)setBusy(false);}
   }
   function edit(patch: Partial<z.infer<typeof Draft>>) { if(!current||locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }

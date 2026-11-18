@@ -1,9 +1,11 @@
+import { botKindLabels } from './bot-kind-labels';
+import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
-import { BOT_KINDS,BotDeliveries,BotDeliveryReceipt,BotDeliveryResult,BotDeliveryReview,type Viewer } from '@qgroup/contracts';
+import { BotDeliveries,BotDeliveryReceipt,BotDeliveryResult,BotDeliveryReview,type Viewer } from '@qgroup/contracts';
 import { AdminGate,type Access } from './admin';
 import { MemberAccess } from './member-access';
 import { authHeaders } from './auth';
@@ -12,8 +14,8 @@ import { Failure,Notice,PageIntro } from './shared';
 import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { PendingBotDelivery as Pending } from './bot-delivery-record';
-const states={pending:'待送',sending:'投遞中／待核對',sent:'已送出',failed:'失敗',skipped:'已略過'};
-const modes={inherit:'沿用部署設定',simulate:'模擬',live:'實際發送'};
+const states={pending:uiText("待送"),sending:uiText("投遞中／待核對"),sent:uiText("已送出"),failed:uiText("失敗"),skipped:uiText("已略過")};
+const modes={inherit:uiText("沿用部署設定"),simulate:uiText("模擬"),live:uiText("實際發送")};
 type Context={entity:'activity'|'poll';id:string};
 type DeliveryRecord=ReturnType<typeof useDurableValue<Pending|null>>;
 const entityPath=(entity:'activity'|'poll',id:string)=>(entity==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(id);
@@ -48,9 +50,9 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
     if(!active.current||!record||!context)return;
     if(result.originalId!==work.id||result.entity!==context.entity||result.entityId!==context.id)
       throw Error('原重送回執的通知或活動不符，請保全紀錄後核對。');
-    if(!await record.persist(null,false,'已建立待送工作，但無法保存本機確認狀態；請保留原操作並查回結果。')||!active.current)return;
+    if(!await record.persist(null,false,uiText("已建立待送工作，但無法保存本機確認狀態；請保留原操作並查回結果。"))||!active.current)return;
     record.replace(null);
-    setCanResend(false);setConfirmed(false);setMessage('已建立待送工作 #'+result.queuedId+'；原通知紀錄保留。');
+    setCanResend(false);setConfirmed(false);setMessage(uiText("已建立待送工作 #")+result.queuedId+uiText("；原通知紀錄保留。"));
     await client.invalidateQueries({queryKey:cache});
   }
   async function post(work:Pending){
@@ -58,17 +60,17 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
   }
   async function rejected(error:ApiError){
     if(!record)return;
-    if(await record.persist(null,false,'無法保存拒絕結果；原重送操作仍保留，請重新核對。')&&active.current)record.replace(null);
-    setCanResend(false);setConfirmed(false);setMessage(error.message);void review.refetch();
+    if(await record.persist(null,false,uiText("無法保存拒絕結果；原重送操作仍保留，請重新核對。"))&&active.current)record.replace(null);
+    setCanResend(false);setConfirmed(false);setMessage(errorText(error));void review.refetch();
   }
   async function submit(){
     if(denied||!record||!context||!review.data||review.isFetching||!confirmed||pending||!review.data.reviewToken||!record.begin())return;
     const work={id:selected,key:crypto.randomUUID(),input:{reviewToken:review.data.reviewToken,confirm:true as const}};
     setMessage('');let accepted=false;
     try{
-      if(!await record.persist(work,false,'無法保存重送操作編號，請先修復瀏覽器儲存後再操作。')||!active.current)return;
+      if(!await record.persist(work,false,uiText("無法保存重送操作編號，請先修復瀏覽器儲存後再操作。"))||!active.current)return;
       record.replace(work);const result=await post(work);accepted=true;await completed(work,result);
-    }catch(error){if(active.current){loseAuthority(error);if(!accepted&&error instanceof ApiError&&[400,404,409,422].includes(error.status))await rejected(error);else setMessage('尚未確認重送結果；請先查回原操作，避免重複建立工作。');}}
+    }catch(error){if(active.current){loseAuthority(error);if(!accepted&&error instanceof ApiError&&[400,404,409,422].includes(error.status))await rejected(error);else setMessage(uiText("尚未確認重送結果；請先查回原操作，避免重複建立工作。"));}}
     finally{if(active.current)record.setBusy(false);}
   }
   async function recover(resend=false){
@@ -79,8 +81,8 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
       if(!active.current)return;
       if(receipt.state==='completed')await completed(pending,receipt.result);
       else if(resend){resubmitted=true;const result=await post(pending);accepted=true;await completed(pending,result);}
-      else{setCanResend(true);setMessage('尚未查到原操作，可使用原編號重送；伺服器會再次核對狀態與權限。');}
-    }catch(error){if(active.current){loseAuthority(error);setMessage(error instanceof ApiError?error.message:error instanceof Error&&error.message==='原重送回執的通知或活動不符，請保全紀錄後核對。'?error.message:'仍無法確認原操作結果。');if(resubmitted&&!accepted&&error instanceof ApiError&&[400,404,409,422].includes(error.status))await rejected(error);}}
+      else{setCanResend(true);setMessage(uiText("尚未查到原操作，可使用原編號重送；伺服器會再次核對狀態與權限。"));}
+    }catch(error){if(active.current){loseAuthority(error);setMessage(error instanceof ApiError?errorText(error):error instanceof Error&&error.message==='原重送回執的通知或活動不符，請保全紀錄後核對。'?errorText(error):uiText("仍無法確認原操作結果。"));if(resubmitted&&!accepted&&error instanceof ApiError&&[400,404,409,422].includes(error.status))await rejected(error);}}
     finally{if(active.current)record.setBusy(false);}
   }
   const locked=record?.locked??false;
@@ -88,8 +90,8 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
   return <>
     {message&&<Notice>{message}</Notice>}
     {record&&<DraftFeedback form={record} navigation={false}/>}
-    <Surface className="detail auth-panel"><div className="activity-fields"><label className="account-field">投遞狀態<select disabled={locked} value={status} onChange={event=>change({status:event.target.value,before:''})}><option value="">全部狀態</option>{Object.entries(states).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><label className="account-field">通知類型<select disabled={locked} value={kind} onChange={event=>change({kind:event.target.value,before:''})}><option value="">全部類型</option>{Object.entries(BOT_KINDS).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label></div><Button variant="secondary" disabled={busy} onClick={()=>{void list.refetch();if(selected)void review.refetch();}}>更新投遞狀態</Button></Surface>
-    {list.isPending?<Notice>正在讀取投遞紀錄…</Notice>:list.error?<Failure error={list.error} retry={()=>void list.refetch()}/>:<><Text>目前發送模式：{modes[list.data.mode]}</Text>{!list.data.entries.length?<Notice>沒有符合條件的群通知紀錄。</Notice>:<ul className="invitation-list">{list.data.entries.map(row=><li key={row.id}><Text>#{row.id} · {BOT_KINDS[row.kind as keyof typeof BOT_KINDS]??row.kind} · {row.simulatedAt?'模擬（未送出）':states[row.status]}</Text><Link to={entityPath(row.entity,row.entityId)}>{row.title||row.entityId}</Link><Text>建立：{row.createdAt} · 失敗次數：{row.attempts}</Text>{row.lastError&&<Text className="preserve-lines">{row.lastError}</Text>}<Button variant="secondary" disabled={locked} onClick={()=>change({delivery:row.id})}>核對通知 #{row.id}</Button></li>)}</ul>}<div className="pagination">{before&&<Button disabled={locked} onClick={()=>change({before:''})}>回到最新紀錄</Button>}{list.data.nextBefore&&<Button disabled={locked} onClick={()=>change({before:list.data.nextBefore!})}>較早紀錄</Button>}</div></>}
+    <Surface className="detail auth-panel"><div className="activity-fields"><label className="account-field">投遞狀態<select disabled={locked} value={status} onChange={event=>change({status:event.target.value,before:''})}><option value="">全部狀態</option>{Object.entries(states).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label><label className="account-field">通知類型<select disabled={locked} value={kind} onChange={event=>change({kind:event.target.value,before:''})}><option value="">全部類型</option>{Object.entries(botKindLabels).map(([key,label])=><option key={key} value={key}>{label}</option>)}</select></label></div><Button variant="secondary" disabled={busy} onClick={()=>{void list.refetch();if(selected)void review.refetch();}}>更新投遞狀態</Button></Surface>
+    {list.isPending?<Notice>正在讀取投遞紀錄…</Notice>:list.error?<Failure error={list.error} retry={()=>void list.refetch()}/>:<><Text>目前發送模式：{modes[list.data.mode]}</Text>{!list.data.entries.length?<Notice>沒有符合條件的群通知紀錄。</Notice>:<ul className="invitation-list">{list.data.entries.map(row=><li key={row.id}><Text>#{row.id} · {botKindLabels[row.kind as keyof typeof botKindLabels]??row.kind} · {row.simulatedAt?'模擬（未送出）':states[row.status]}</Text><Link to={entityPath(row.entity,row.entityId)}>{row.title||row.entityId}</Link><Text>建立：{row.createdAt} · 失敗次數：{row.attempts}</Text>{row.lastError&&<Text className="preserve-lines">{row.lastError}</Text>}<Button variant="secondary" disabled={locked} onClick={()=>change({delivery:row.id})}>核對通知 #{row.id}</Button></li>)}</ul>}<div className="pagination">{before&&<Button disabled={locked} onClick={()=>change({before:''})}>回到最新紀錄</Button>}{list.data.nextBefore&&<Button disabled={locked} onClick={()=>change({before:list.data.nextBefore!})}>較早紀錄</Button>}</div></>}
     {selected&&!denied&&(review.isPending?<Notice>正在核對通知…</Notice>:review.error?<Failure error={review.error} retry={()=>void review.refetch()}/>:review.data&&<Surface className="detail auth-panel" role="region" aria-label={'通知核對 #'+selected}>
       <Heading level={2}>通知 #{selected}</Heading><Text>{review.data.delivery.title} · {review.data.delivery.simulatedAt?'模擬（未送出）':states[review.data.delivery.status]}</Text>
       <dl><dt>原目標群</dt><dd>{review.data.delivery.target||'沿用部署群'}</dd><dt>本次目標群</dt><dd>{review.data.target||'尚未設定'}</dd><dt>本次發送模式</dt><dd>{modes[review.data.mode]}</dd><dt>預定發送</dt><dd>{review.data.delivery.dueAt??'立即排入待送'}</dd><dt>重試時間</dt><dd>{review.data.delivery.retryAt??'無'}</dd><dt>確認送出</dt><dd>{review.data.delivery.sentAt??'尚未確認'}</dd>{review.data.imageName&&<><dt>結算附圖</dt><dd>{review.data.imageName}</dd></>}</dl>

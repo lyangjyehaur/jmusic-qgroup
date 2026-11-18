@@ -67,7 +67,7 @@ test('late new-member reads cannot cross an account change, logout or loss of th
 test('cross-tab erasure removes the member identity and totals, refreshes the live point and keeps previously anonymous history', async ({ page, context }) => {
   await login(context); await page.goto('/music/trends'); await expect(recentMembers(page).getByRole('link', { name: '我的成分', exact: true })).toBeVisible();
   const before = await (await context.request.get('/api/v2/music/trend')).json();
-  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，了解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
+  const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(recentMembers(page).getByRole('link', { name: '保存成分', exact: true })).toBeVisible(); await expect(page.getByRole('definition').filter({ hasText: '22 詞條 · 12 成分' })).toHaveCount(1);
   const after = await (await context.request.get('/api/v2/music/trend')).json(); expect(after.points.slice(0, -1)).toEqual(before.points.slice(0, -1)); await privacy.close();
 });

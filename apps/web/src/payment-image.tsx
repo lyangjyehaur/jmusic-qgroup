@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { Button, Text } from 'yahha-ui';
 import { ApiFailure } from '@qgroup/contracts';
@@ -37,13 +38,13 @@ export function PaymentAssetImage({ url, scope, label, filename = 'payment-code.
         if (!response.ok) { const parsed = ApiFailure.safeParse(await response.json()); throw new ApiError(response.status, parsed.success ? parsed.data.code : 'IMAGE_READ', parsed.success ? parsed.data.message : '圖片暫時無法讀取'); }
         if (!response.headers.get('Content-Type')?.startsWith('image/png')) throw new Error('圖片回應格式不正確，請重試');
         const data = await dataURL(await response.blob()); if (active) setImage({ url, scope, data });
-      } catch (failure) { if (active) setError(failure instanceof Error ? failure.message : '圖片無法讀取'); }
+      } catch (failure) { if (active) setError(failure instanceof Error ? errorText(failure) : uiText("圖片無法讀取")); }
     })();
     return () => { active = false; controller.abort(); };
   }, [url, scope, attempt]);
   const data = image?.url === url && image.scope === scope ? image.data : undefined;
   return <div className="payment-asset">{error ? <div role="alert"><Text>{error}</Text><Button variant="secondary" onClick={() => setAttempt(value => value + 1)}>重試圖片</Button></div> : data ? <>
-    <img className={expanded ? 'payment-asset-original' : 'payment-asset-thumb'} src={data} alt={label} onError={() => setError('圖片無法顯示，請重試')} />
+    <img className={expanded ? 'payment-asset-original' : 'payment-asset-thumb'} src={data} alt={label} onError={() => setError(uiText("圖片無法顯示，請重試"))} />
     <div className="page-actions"><Button variant="secondary" onClick={() => setExpanded(value => !value)}>{expanded ? '收起原圖' : '查看原圖'}</Button><a href={data} download={filename}>下載原圖</a></div>
   </> : <Text role="status">正在讀取圖片…</Text>}</div>;
 }

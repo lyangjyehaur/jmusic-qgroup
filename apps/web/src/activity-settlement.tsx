@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { DraftFeedback } from './draft-feedback';
 export { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
@@ -32,13 +33,13 @@ const base = (id: string) => '/activities/' + encodeURIComponent(id),
 type Context = z.infer<typeof SettlementContext>;
 type Invoice = z.infer<typeof SettlementSnapshot>;
 const modeLabels = {
-    shares: '共同份數',
-    equal: '人數均分',
-    weights: '指定比例',
-    fixed: '固定金額',
-    duration: '參與時長',
+    shares: uiText("共同份數"),
+    equal: uiText("人數均分"),
+    weights: uiText("指定比例"),
+    fixed: uiText("固定金額"),
+    duration: uiText("參與時長"),
   },
-  kindLabels = { expense: '消費', refund: '店家退款', discount: '減免' };
+  kindLabels = { expense: uiText("消費"), refund: uiText("店家退款"), discount: uiText("減免") };
 export function SettlementSnapshotView({ snapshot: s }: { snapshot: Invoice }) {
   const { id = '' } = useParams();
   return (
@@ -223,7 +224,7 @@ function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
       setNext(page.next_before);
       setError('');
     } catch (e) {
-      setError(e instanceof Error ? e.message : '讀取失敗');
+      setError(e instanceof Error ? errorText(e) : uiText("讀取失敗"));
     } finally {
       setBusy(false);
     }
@@ -459,12 +460,12 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
   async function check() {
     if (form.locked || stale || !allowed) return;
     if (value.rooms !== undefined && !value.rooms.length) {
-      form.setMessage('請新增實際包間，或改用費用項目結算。');
+      form.setMessage(uiText("請新增實際包間，或改用費用項目結算。"));
       return;
     }
     const parsed = SettlementInput.safeParse(calculation(value));
     if (!parsed.success) {
-      form.setMessage('請核對名單、金額、付款人及分攤依據；金額最多七位整數、兩位小數。');
+      form.setMessage(uiText("請核對名單、金額、付款人及分攤依據；金額最多七位整數、兩位小數。"));
       return;
     }
     form.setBusy(true);
@@ -481,7 +482,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
         form.setMessage('');
       }
     } catch (e) {
-      if (form.active.current) form.setMessage(e instanceof Error ? e.message : '預覽失敗');
+      if (form.active.current) form.setMessage(e instanceof Error ? errorText(e) : uiText("預覽失敗"));
     } finally {
       if (form.active.current) form.setBusy(false);
     }
@@ -493,7 +494,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
       const result = await preparePaymentImage(file);
       if (form.active.current) apply(result);
     } catch (e) {
-      if (form.active.current) form.setMessage(e instanceof Error ? e.message : '圖片讀取失敗');
+      if (form.active.current) form.setMessage(e instanceof Error ? errorText(e) : uiText("圖片讀取失敗"));
     } finally {
       if (form.active.current) form.setBusy(false);
     }

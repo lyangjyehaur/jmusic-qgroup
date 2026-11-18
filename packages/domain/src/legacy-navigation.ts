@@ -42,6 +42,7 @@ export function legacyNavigation(pathname:string,search:string,hash:string):Lega
     }
   }
   if(['/privacy.html','/music/privacy.html'].includes(pathname))return redirect('/privacy');
+  if(pathname==='/guide.html')return redirect('/guide'+(/^#section-(?:[1-9]|10|11)$/.test(hash)?hash:''));
   if(['/contact.html'].includes(pathname))return redirect('/contact');
   if(['/music/admin','/music/admin.html'].includes(pathname))return redirect('/admin');
   if(pathname==='/admin'&&hash==='#music-links-section')return redirect('/admin/music');

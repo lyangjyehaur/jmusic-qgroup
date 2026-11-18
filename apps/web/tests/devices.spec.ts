@@ -16,9 +16,9 @@ async function login(page: Page, code: string, destination = '/me/accounts') {
 }
 async function issue(page: Page) {
   await page.goto('/me/devices');
-  await expect(page.getByRole('checkbox',{name:'只授權自己的另一台裝置',exact:true})).toBeVisible();
+  await expect(page.getByRole('checkbox',{name:'只授權自己的另一臺裝置',exact:true})).toBeVisible();
   if(await page.getByRole('textbox',{name:'裝置連結（可手動複製）'}).count())await page.getByRole('button',{name:'撤銷未使用連結',exact:true}).click();
-  await page.getByRole('checkbox', { name: '只授權自己的另一台裝置' }).check();
+  await page.getByRole('checkbox', { name: '只授權自己的另一臺裝置' }).check();
   await page.getByRole('button', { name: '產生限時連結', exact: true }).click();
   const field = page.getByRole('textbox', { name: '裝置連結（可手動複製）' });
   await expect(field).toBeVisible();

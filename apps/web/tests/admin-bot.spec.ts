@@ -155,7 +155,7 @@ test('storage failure blocks submission and broken drafts are preserved before r
   await page.getByLabel('主動發送最小間隔（秒）', { exact: true }).fill('61');
   await expect(page.getByRole('alert')).toContainText('無法保存原稿及操作編號');
   await expect(page.getByRole('button', { name: '確認 bot 設定', exact: true })).toBeDisabled();
-  await page.getByRole('link', { name: '管理後台', exact: true }).click();
+  await page.getByRole('link', { name: '管理後臺', exact: true }).click();
   await expect(page.getByText('仍有 bot 設定原稿或待確認操作。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '繼續核對', exact: true }).click();
   page.on('dialog', (dialog) => void dialog.accept());

@@ -89,5 +89,5 @@ for(const action of ['preview','rebase'] as const)test(action+' refreshes manage
   }finally{await manager.close();}
 });
 test('leaving after a failed draft write waits for storage recovery and keeps the original policy input',async({page,context})=>{
-  await prepare(page,context);await denyDraftWrites(page,'admin-bot:');await page.getByLabel(interval,{exact:true}).fill('88');await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'管理後台',exact:true}).click();await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();expect(new URL(page.url()).pathname).toBe('/admin/bot');await expect(page.getByLabel(interval,{exact:true})).toHaveValue('88');
+  await prepare(page,context);await denyDraftWrites(page,'admin-bot:');await page.getByLabel(interval,{exact:true}).fill('88');await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'管理後臺',exact:true}).click();await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();expect(new URL(page.url()).pathname).toBe('/admin/bot');await expect(page.getByLabel(interval,{exact:true})).toHaveValue('88');
 });

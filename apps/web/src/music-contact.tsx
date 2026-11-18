@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -31,7 +32,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
   async function save() {
     if (busy || unavailable || saved.source === 'legacy') return;
     const input = SaveMusicContact.safeParse({ profileId: draft.profileId, musicEpoch: draft.musicEpoch, revision: draft.revision, contactQQ: draft.contactQQ });
-    if (!input.success) { setMessage('QQ 號須為 4–12 位數字，或留空清除。'); return; }
+    if (!input.success) { setMessage(uiText("QQ 號須為 4–12 位數字，或留空清除。")); return; }
     const pending = { ...input.data, requestKey: draft.requestKey ?? crypto.randomUUID() };
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
@@ -39,7 +40,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
       const result = await api('/me/music/contact', MusicContact, { method: 'PUT', headers: { 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': pending.requestKey }, body: JSON.stringify(input.data) });accepted=true;
       const latest = await api('/me/music/contact', MusicContact, { headers: { 'X-Account-Scope': viewer.scope } });
       const next = { ...latest, musicEpoch: viewer.musicEpoch }; const nextDraft = SaveMusicContact.parse({ profileId: next.profileId, musicEpoch: next.musicEpoch, revision: next.revision, contactQQ: next.contactQQ });
-      if(!active.current)return;if(!await persist(nextDraft,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');setDraft(nextDraft); setSaved(latest);
+      if(!active.current)return;if(!await persist(nextDraft,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(nextDraft); setSaved(latest);
       client.setQueryData(['private', viewer.scope, 'music-contact', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'member-music'] });
@@ -47,11 +48,11 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-comparison'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-share'] });
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-entry-members'] }); announceAccountChange();
-      setMessage(latest.revision === result.revision ? '已保存聯絡 QQ。' : '原操作已保存，聯絡 QQ 已再次變更；請核對目前資料。');
+      setMessage(latest.revision === result.revision ? uiText("已保存聯絡 QQ。") : uiText("原操作已保存，聯絡 QQ 已再次變更；請核對目前資料。"));
     } catch (error) {
       if(!active.current)return;
-      if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) { const next={...pending,requestKey:undefined};if(await persist(next))setDraft(next); setMessage(error.message); }
-      else setMessage('尚未確認保存結果。操作編號已保留，請按「確認聯絡 QQ 結果」安全重試。');
+      if (!accepted && error instanceof ApiError && error.status < 500 && error.status !== 429) { const next={...pending,requestKey:undefined};if(await persist(next))setDraft(next); setMessage(errorText(error)); }
+      else setMessage(uiText("尚未確認保存結果。操作編號已保留，請按「確認聯絡 QQ 結果」安全重試。"));
     } finally { if(active.current)setBusy(false); }
   }
   async function rebase() {
@@ -60,8 +61,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
       const latest = await api('/me/music/contact', MusicContact, { headers: { 'X-Account-Scope': viewer.scope } });
       if(latest.profileId!==draft.profileId)throw Error('目前成分已改變，請保全原稿後重新開啟目前成分。');
       const next={...draft,revision:latest.revision};if(!active.current||!await persist(next))return;setSaved(latest);setDraft(next);
-      setMessage('已取得目前聯絡 QQ；輸入仍保留，請核對後再保存。');
-    } catch (error) { if(active.current)setMessage(error instanceof Error ? error.message : '讀取失敗'); } finally { if(active.current)setBusy(false); }
+      setMessage(uiText("已取得目前聯絡 QQ；輸入仍保留，請核對後再保存。"));
+    } catch (error) { if(active.current)setMessage(error instanceof Error ? errorText(error) : uiText("讀取失敗")); } finally { if(active.current)setBusy(false); }
   }
   return <>
     <Surface className="detail auth-panel"><Heading level={2}>目前聯絡 QQ</Heading><ContactValue key={saved.contactQQ} number={saved.contactQQ} source={saved.contactQQ ? saved.source : ''} />

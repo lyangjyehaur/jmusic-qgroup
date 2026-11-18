@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useState } from 'react';
 import { Link,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -32,11 +33,11 @@ function Shouts({viewer,access}:{viewer:Viewer;access:Access}){
     setDraft(pending);setMessage('');let accepted=false;
     try{
       await api('/admin/shouts/'+encodeURIComponent(draft.id)+'/delete',Ok,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      if(!active.current)return;const clear={id:''};if(!await persist(clear,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;setDraft(clear);setConfirmed(false);setMessage('已刪除找搭子內容。');
+      if(!active.current)return;const clear={id:''};if(!await persist(clear,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;setDraft(clear);setConfirmed(false);setMessage(uiText("已刪除找搭子內容。"));
       void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-shouts']});void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shouts']});void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shout']});announceAccountChange();
     }catch(error){if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(error.message);void target.refetch();if([401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
-      else setMessage('尚未確認刪除結果。操作編號已保留，請按「確認刪除結果」安全重試。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(errorText(error));void target.refetch();if([401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
+      else setMessage(uiText("尚未確認刪除結果。操作編號已保留，請按「確認刪除結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   return <>

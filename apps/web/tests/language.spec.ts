@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
+import { denyDraftWrites, durableRows } from './draft-helpers';
 async function languageHeader(context: BrowserContext, language: string) {
   // Chrome's locale overrides extraHTTPHeaders for Accept-Language. Send the
   // requested header at the transport boundary, through the real fixture API.
@@ -50,5 +51,43 @@ test('a simplified activity form preserves the original category protocol and mi
   await languageHeader(context, 'zh-CN');await context.addCookies([{ name: 'kanban_session', value: 'fixture-alice', url: 'http://127.0.0.1:5082', httpOnly: true, sameSite: 'Lax' }]);
   await page.goto('/activities/new');const field = page.getByLabel('活动名称', { exact: true });await field.fill('后台發 · 帐号後臺');
   await page.getByLabel('活动类型', { exact: true }).selectOption('运动');expect(await page.getByLabel('活动类型', { exact: true }).inputValue()).toBe('运动');
-  await expect(page.getByText('正在保存本機原稿…', { exact: true })).toHaveCount(0);await page.reload();await expect(field).toHaveValue('后台發 · 帐号後臺');await expect(page.getByLabel('活动类型', { exact: true })).toHaveValue('运动');
+  await expect(page.getByLabel('活动类型', { exact: true }).locator('option[value="运动"]')).toHaveText('运动');
+  await expect(page.getByText('正在保存本机原稿…', { exact: true })).toHaveCount(0);await page.reload();await expect(field).toHaveValue('后台發 · 帐号後臺');await expect(page.getByLabel('活动类型', { exact: true })).toHaveValue('运动');
+  await page.getByRole('button',{name:'恢复本机原稿',exact:true}).click();
+  await page.getByLabel('地点',{exact:true}).fill('后台發');await page.getByLabel('开始时间（台北）',{exact:true}).fill('2099-12-12T14:30:25');await page.getByLabel('报名截止（台北）',{exact:true}).fill('2099-12-11T14:30:00');
+  const sent=page.waitForRequest(request=>request.url().endsWith('/api/v2/activities/drafts')&&request.method()==='POST');
+  await page.getByRole('button',{name:'建立活动草稿',exact:true}).click();expect((await sent).postDataJSON().values).toMatchObject({category:'运动',title:'后台發 · 帐号後臺',location:'后台發'});
+  await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);await expect(field).toHaveValue('后台發 · 帐号後臺');
+});
+test('simplified persistence failure prevents writes and keeps the original nickname draft',async({page,context})=>{
+  await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+  await page.goto('/me/profile');await page.getByLabel('站内称呼',{exact:true}).fill('后台發 · 帐号後臺');await expect(page.getByText('正在保存本机原稿…',{exact:true})).toHaveCount(0);
+  const original=(await durableRows(page)).find(row=>row.key.includes('account-profile:'))!;let writes=0;page.on('request',request=>{if(request.method()==='PUT'&&request.url().endsWith('/me/profile'))writes++;});
+  await denyDraftWrites(page,'account-profile:');await page.getByRole('button',{name:'保存称呼',exact:true}).click();
+  await expect(page.getByText('无法保存原稿及操作编号，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);expect((await durableRows(page)).find(row=>row.key===original.key)?.raw).toBe(original.raw);
+});
+test('simplified history interprets only state fields and preserves user text that matches protocol words',async({page,context})=>{
+  await languageHeader(context,'zh-CN');const raw='后台發 · 帐号後臺';
+  await page.route('**/api/v2/activities/listen/history',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,entries:[{id:'999',version:1,actorName:raw,action:'event_updated',before:{title:'confirmed',nickname:'waiting',fee_policy:raw,status:'waiting'},after:{title:'accepted',nickname:'pending',fee_policy:raw+' next',status:'confirmed'},reason:raw,createdAt:'2026-11-18T08:00:00Z'}],nextBefore:null}});});
+  await page.goto('/activities/listen/history');await page.locator('.history-entry summary').click();
+  await expect(page.getByText('confirmed → accepted',{exact:true})).toBeVisible();await expect(page.getByText('waiting → pending',{exact:true})).toBeVisible();await expect(page.getByText(raw+' → '+raw+' next',{exact:true})).toBeVisible();
+  await expect(page.getByText('候补 → 正式／已确认',{exact:true})).toBeVisible();await expect(page.locator('.history-entry summary')).toContainText(raw);
+});
+test.describe('simplified bot delivery recovery',()=>{
+  test.use({botDeliveryExamples:true});
+  test('mismatched receipts localize the error and preserve the command without another queue',async({page,context})=>{
+    await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+    await page.goto('/activities/listen/bot-deliveries?delivery=1');await expect(page.getByRole('combobox',{name:'投递状态',exact:true}).locator('option[value="failed"]')).toHaveText('失败');await expect(page.getByRole('combobox',{name:'通知类型',exact:true}).locator('option[value="settlement_updated"]')).toHaveText('结算发布');
+    let writes=0;await page.route('**/api/v2/activities/listen/bot-deliveries/1/retry',route=>{writes++;return route.abort();});
+    await page.getByRole('checkbox',{name:'我已核对目标群、发送模式与重送内容',exact:true}).check();await page.getByRole('button',{name:'建立重送工作',exact:true}).click();const recover=page.getByRole('button',{name:'查回原重送结果',exact:true});await expect(recover).toBeVisible();
+    const original=(await durableRows(page)).find(row=>row.key.includes('bot-delivery:')&&row.raw!=='null')!;
+    await page.route('**/api/v2/bot-delivery-results/*',route=>route.fulfill({json:{state:'completed',result:{originalId:'1',queuedId:'7',entity:'activity',entityId:'other'}}}));await recover.click();
+    await expect(page.getByText('原重送回执的通知或活动不符，请保全纪录后核对。',{exact:true})).toBeVisible();expect((await durableRows(page)).find(row=>row.key===original.key)?.raw).toBe(original.raw);expect(writes).toBe(1);await expect(page.getByRole('button',{name:'以原操作编号重送',exact:true})).toHaveCount(0);
+  });
+  test('a localized cross-tab conflict preserves both originals and sends only one command',async({page,context})=>{
+    await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+    await page.goto('/activities/listen/bot-deliveries?delivery=1');const other=await context.newPage();await other.goto('/activities/listen/bot-deliveries?delivery=1');let writes=0;await context.route('**/api/v2/activities/listen/bot-deliveries/1/retry',route=>{writes++;return route.abort();});
+    for(const tab of [page,other]){await tab.getByRole('checkbox',{name:'我已核对目标群、发送模式与重送内容',exact:true}).check();await tab.getByRole('button',{name:'建立重送工作',exact:true}).click();}
+    await expect(other.getByRole('status')).toContainText('其他分页已更新原稿。这个分页的内容已保全，请先读取已保存版本。');expect(writes).toBe(1);expect((await durableRows(other,'versions')).filter(row=>row.key.includes('bot-delivery:')).length).toBeGreaterThan(0);
+  });
 });

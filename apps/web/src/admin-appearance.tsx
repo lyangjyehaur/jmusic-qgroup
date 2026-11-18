@@ -1,3 +1,4 @@
+import { errorText, uiText } from './language';
 import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -41,30 +42,30 @@ function Manager({viewer,access}:{viewer:Viewer;access:Access}){
       if(!['image/png','image/jpeg','image/webp'].includes(file.type)||!file.size||file.size>2*1024*1024)throw Error('只支援 PNG、JPG、WebP，單張最多 2 MiB。');
       const bytes=new Uint8Array(await file.arrayBuffer());let binary='';for(let i=0;i<bytes.length;i+=8192)binary+=String.fromCharCode(...bytes.subarray(i,i+8192));
       if(active.current){const next={...draft,value:{...draft.value,data:btoa(binary),mime:file.type as Value['mime']},dirty:true};setDraft(next);setConfirmed(false);await persist(next);}
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'無法讀取圖片');}finally{if(active.current)setBusy(false);}
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法讀取圖片"));}finally{if(active.current)setBusy(false);}
   }
   async function rebase(){
     if(locked||!start())return;
     try{const fresh=await catalog.refetch();if(fresh.error)throw fresh.error;if(!active.current||!fresh.data)return;
-      const next={...draft,value:{...draft.value,revision:fresh.data.revision}};if(!await persist(next))return;setDraft(next);setConfirmed(false);setMessage('已讀取最新設定，原輸入保留；請重新確認。');
-    }catch(error){if(active.current)setMessage(error instanceof Error?error.message:'無法讀取設定');}finally{if(active.current)setBusy(false);}
+      const next={...draft,value:{...draft.value,revision:fresh.data.revision}};if(!await persist(next))return;setDraft(next);setConfirmed(false);setMessage(uiText("已讀取最新設定，原輸入保留；請重新確認。"));
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法讀取設定"));}finally{if(active.current)setBusy(false);}
   }
   async function send(){
     if(busy||unavailable||!draft.pending&&(!confirmed||stale||!catalog.data||catalog.error))return;
-    let operation=draft.pending;try{operation??={key:crypto.randomUUID(),input:input(draft.value)};}catch{setMessage('請選擇圖片並核對設定；輪播間隔必須是 8–600 秒的整數。');return;}
+    let operation=draft.pending;try{operation??={key:crypto.randomUUID(),input:input(draft.value)};}catch{setMessage(uiText("請選擇圖片並核對設定；輪播間隔必須是 8–600 秒的整數。"));return;}
     const pending={...draft,pending:operation};if(!start())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try{
       await api('/admin/appearance',AppearanceResult,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
-      if(!active.current)return;const clean=blank();if(!await persist(clean,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))return;
-      setDraft(clean);setConfirmed(false);setMessage('壁紙設定已保存。');void catalog.refetch();void client.invalidateQueries({queryKey:['appearance']});
+      if(!active.current)return;const clean=blank();if(!await persist(clean,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;
+      setDraft(clean);setConfirmed(false);setMessage(uiText("壁紙設定已保存。"));void catalog.refetch();void client.invalidateQueries({queryKey:['appearance']});
       try{const channel=new BroadcastChannel('qgroup:appearance');channel.postMessage('refresh');channel.close();}catch{/* Focus refetch remains available. */}
     }catch(error){if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(error.message);void catalog.refetch();if([401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
-      else setMessage('尚未確認壁紙操作結果。原圖與操作編號已保留，請確認原操作結果。');
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirmed(false);setMessage(errorText(error));void catalog.refetch();if([401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});}
+      else setMessage(uiText("尚未確認壁紙操作結果。原圖與操作編號已保留，請確認原操作結果。"));
     }finally{if(active.current)setBusy(false);}
   }
-  const value=draft.value,item=catalog.data?.items.find(x=>x.id===value.id),labels={upload:'上傳壁紙',config:'設定輪播間隔',toggle:value.enabled?'啟用壁紙':'停用壁紙',move:value.direction===-1?'上移壁紙':'下移壁紙',delete:'刪除壁紙'};
+  const value=draft.value,item=catalog.data?.items.find(x=>x.id===value.id),labels={upload:uiText("上傳壁紙"),config:uiText("設定輪播間隔"),toggle:value.enabled?'啟用壁紙':'停用壁紙',move:value.direction===-1?'上移壁紙':'下移壁紙',delete:uiText("刪除壁紙")};
   return <>
     {message&&<Notice>{message}</Notice>}<DraftFeedback form={record}/>
     {!!record.storageError&&<Button disabled={busy||unavailable} onClick={()=>void persist(draft)}>重試保存原稿</Button>}

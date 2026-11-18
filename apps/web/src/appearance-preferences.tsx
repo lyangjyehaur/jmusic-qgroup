@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { createContext,useContext,useEffect,useState,type ReactNode } from 'react';
 import { ThemeProvider } from 'yahha-ui';
 import { z } from 'zod';
@@ -20,7 +21,7 @@ export function AppearanceProvider({children}:{children:ReactNode}){
   useEffect(()=>{const media=matchMedia('(prefers-color-scheme: dark)'),change=()=>setSystem(media.matches?'dark':'light');media.addEventListener('change',change);return()=>media.removeEventListener('change',change);},[]);
   useEffect(()=>{document.documentElement.dataset.theme=resolved;document.querySelector('meta[name="theme-color"]')?.setAttribute('content',resolved==='dark'?'#14212b':'#f7f5ef');},[resolved]);
   useEffect(()=>{const changed=(event:StorageEvent)=>{if(event.key!==null&&![key,'jpm.theme','jpm.wall'].includes(event.key))return;const next=read();if(next.error){setReadError(true);setError(next.error);}else{setValue(next.value);setReadError(false);setError('');}};window.addEventListener('storage',changed);return()=>window.removeEventListener('storage',changed);},[]);
-  function save(next:Preferences){if(readError)return;try{localStorage.setItem(key,JSON.stringify(next));setError('');}catch{setError('無法保存外觀偏好；本次變更仍有效，重新開啟時可能還原。');}}
-  function repair(){try{const raw=localStorage.getItem(key);if(raw!==null)localStorage.setItem(key+':recovery:'+Date.now(),raw);localStorage.setItem(key,JSON.stringify(value));setReadError(false);setError('');}catch{setError('仍無法保全外觀偏好，請檢查瀏覽器儲存設定。');}}
+  function save(next:Preferences){if(readError)return;try{localStorage.setItem(key,JSON.stringify(next));setError('');}catch{setError(uiText("無法保存外觀偏好；本次變更仍有效，重新開啟時可能還原。"));}}
+  function repair(){try{const raw=localStorage.getItem(key);if(raw!==null)localStorage.setItem(key+':recovery:'+Date.now(),raw);localStorage.setItem(key,JSON.stringify(value));setReadError(false);setError('');}catch{setError(uiText("仍無法保全外觀偏好，請檢查瀏覽器儲存設定。"));}}
   return <Context.Provider value={{value,effective:resolved,error,change:patch=>{const next={...value,...patch};setValue(next);save(next);},retry:()=>save(value),repair}}><ThemeProvider theme="blue" tokens={tokens} className="app-theme">{children}</ThemeProvider></Context.Provider>;
 }
