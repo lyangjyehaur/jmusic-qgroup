@@ -13,6 +13,7 @@ import { createBrowserRouter, Link, RouterProvider } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { EmptyState } from 'yahha-ui';
 import { InboxPage } from './inbox';
+import { LegacyLocalGuard,LegacyLocalPage } from './legacy-local';
 import { Activities, ActivityDetail } from './activities';
 import { ActivityDraftPage, ActivityDraftsPage, ActivityArrangementPage } from './activity-drafts';
 import { ActivityConditionsPage } from './activity-conditions';
@@ -64,7 +65,7 @@ import './style.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 function Missing() { return <EmptyState title="這個入口不存在" action={<Link to="/activities">回到活動</Link>} />; }
 const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorElement: <main className="main"><EmptyState title="暫時無法顯示頁面" description="請重新整理；已保存的分頁草稿會保留。" action={<a href="/activities">回到活動</a>} /></main>, children: [
-  { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <NewTimePollPage /> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
+  { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <LegacyLocalGuard><NewTimePollPage /></LegacyLocalGuard> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
   { path: 'admin/bot', element: <AdminBotPage /> },
   { path: 'admin/bot/deliveries', element: <AdminBotDeliveriesPage /> },
   { path: 'activities/:id/bot-deliveries', element: <BotDeliveriesPage entity="activity" /> },
@@ -74,15 +75,16 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'me/app', element: <AppSettingsPage /> },
   { path: 'me/appearance', element: <AppearancePage /> },
   { path: 'inbox', element: <InboxPage /> },
+  { path: 'me/local-history', element: <LegacyLocalPage /> },
   { index: true, element: <Activities /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
   { path: 'contact', element: <ContactPage/> }, { path: 'me/activities', element: <Activities mine/> },
   { path: 'activities/:id/access/:token', element: <ActivityAccessPage/> }, { path: 'activities/:id/share', element: <ActivitySharePage/> },
-  { path: 'activities/new', element: <ActivityDraftPage /> }, { path: 'activities/:id/edit', element: <ActivityDraftPage /> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
-  { path: 'activities/:id/arrangements', element: <ActivityArrangementPage /> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
+  { path: 'activities/new', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'activities/:id/edit', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
+  { path: 'activities/:id/arrangements', element: <LegacyLocalGuard><ActivityArrangementPage /></LegacyLocalGuard> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
   { path: 'activities/:id/settlement', element: <ActivitySettlementPage /> },
-  { path: 'activities/:id/settlement/edit', element: <ActivitySettlementEditor /> },
-  { path: 'activities/:id/rooms', element: <ActivityRoomsPage /> }, { path: 'activities/:id/rooms/history', element: <RoomPlanHistoryPage /> },
-  { path: 'activities/:id/finance', element: <ActivityFinancePage /> },
+  { path: 'activities/:id/settlement/edit', element: <LegacyLocalGuard><ActivitySettlementEditor /></LegacyLocalGuard> },
+  { path: 'activities/:id/rooms', element: <LegacyLocalGuard><ActivityRoomsPage /></LegacyLocalGuard> }, { path: 'activities/:id/rooms/history', element: <RoomPlanHistoryPage /> },
+  { path: 'activities/:id/finance', element: <LegacyLocalGuard><ActivityFinancePage /></LegacyLocalGuard> },
   { path: 'activities/:id/settlement/images', element: <SettlementImagesPage /> },
   { path: 'activities/:id/history', element: <ActivityHistoryPage /> },
   { path: 'activities/:id/attendance', element: <ActivityAttendancePage /> },

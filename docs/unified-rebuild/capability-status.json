@@ -780,22 +780,35 @@
       "implementation": [
         "apps/api/src/activity-access.ts",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-access.ts"
+        "packages/contracts/src/activity-access.ts",
+        "apps/web/src/legacy-local-record.ts",
+        "apps/web/src/legacy-local-store.ts",
+        "apps/web/src/legacy-local.tsx",
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-local.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-access.test.ts"
+        "apps/api/src/activity-access.test.ts",
+        "apps/api/src/legacy-local.test.ts",
+        "apps/api/testsupport/legacy-local-record.test.ts",
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-access.test.ts"
+        "apps/api/src/activity-access.test.ts",
+        "apps/web/tests/legacy-local.spec.ts",
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-access.test.ts"
+        "apps/api/src/activity-access.test.ts",
+        "apps/api/src/legacy-local.test.ts",
+        "apps/web/tests/legacy-local.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/legacy-navigation.spec.ts"
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "apps/web/tests/legacy-local.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
+      "remaining": "原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、create intent 綁定、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
     },
     {
       "capability_id": "E05",
@@ -1572,22 +1585,35 @@
         "apps/api/src/time-poll-context.ts",
         "apps/api/src/time-poll-bot.ts",
         "apps/web/src/time-polls.tsx",
-        "apps/web/src/poll-calendar.tsx"
+        "apps/web/src/poll-calendar.tsx",
+        "apps/web/src/legacy-local-record.ts",
+        "apps/web/src/legacy-local-store.ts",
+        "apps/web/src/legacy-local.tsx",
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-local.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/api/src/legacy-local.test.ts",
+        "apps/api/testsupport/legacy-local-record.test.ts",
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/web/tests/legacy-local.spec.ts",
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/api/src/legacy-local.test.ts",
+        "apps/web/tests/legacy-local.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "apps/web/tests/legacy-local.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "remaining": "原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、create intent 綁定、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T02",
@@ -5817,7 +5843,12 @@
         "apps/web/src/music-recovery.tsx",
         "apps/web/src/music-recovery-record.ts",
         "apps/web/src/music-room-record.ts",
-        "apps/web/src/music-rooms.tsx"
+        "apps/web/src/music-rooms.tsx",
+        "apps/web/src/legacy-local-record.ts",
+        "apps/web/src/legacy-local-store.ts",
+        "apps/web/src/legacy-local.tsx",
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-local.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5848,7 +5879,10 @@
         "apps/web/tests/durable-music-shouts.spec.ts",
         "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
         "apps/api/src/music-claim.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "apps/api/src/legacy-local.test.ts",
+        "apps/api/testsupport/legacy-local-record.test.ts",
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5876,7 +5910,9 @@
         "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
         "apps/api/src/music-claim.test.ts",
         "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "apps/web/tests/legacy-local.spec.ts",
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5900,7 +5936,9 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "apps/web/tests/durable-music-shouts.spec.ts",
         "apps/web/tests/durable-music-recovery.spec.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "apps/api/src/legacy-local.test.ts",
+        "apps/web/tests/legacy-local.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
@@ -5941,10 +5979,11 @@
         "apps/web/tests/durable-music-recovery.spec.ts",
         "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "apps/web/tests/legacy-local.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
+      "remaining": "原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、create intent 綁定、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
     },
     {
       "capability_id": "O05",

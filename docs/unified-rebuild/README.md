@@ -100,9 +100,10 @@
 | [自由／活動分房原稿持久化檢查點](80-durable-music-rooms-checkpoint.md) | 名單／設定／人工安排／結果、來源快照、交易確認、分頁競爭與無訊號清除隔離 |
 | [隱私／管理刪除回執持久化檢查點](81-durable-erasure-recovery-checkpoint.md) | 獨立憑證庫、原回執／精確重送、關頁／分頁競爭、清除恢復與秘密匯出隔離 |
 | [短效裝置連結與恢復檢查點](82-short-lived-device-links-checkpoint.md) | 原連結／十分鐘期限、雙端確認、交易／分頁竞争、登出世代與關頁恢復 |
+| [舊看板本機紀錄保全檢查點](83-legacy-local-preservation-checkpoint.md) | 原 scope／草稿／图片／請求、來源保留、Python 原回執查詢、競爭保全與重複操作阻擋 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
-## 現況結論
+## 原系統盤點結論
 
 1. 看板主畫面與管理頁已有直接 TSX；成分站只有選取區與工具列是直接 TSX，其他畫面和管理頁仍以舊 JavaScript／DOM 控制器轉接。兩者不是同一種完成度。
 2. 看板 SQLite、成分 JSON、成分身分 SQLite、兩套刪除紀錄與圖片／壁紙各有生命週期。HTTP 入口共用不等於交易、身分和備份已合併。

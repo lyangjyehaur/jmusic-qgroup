@@ -12,6 +12,7 @@ import { erasureInventory } from './erasure-store';
 import { listDurableDrafts, listDurableVersions } from './draft-store';
 import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { LegacyLocalLink } from './legacy-local';
 const ReadOperation=z.object({key:z.string().uuid(),input:MarkNotificationsRead}).strict();
 const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:'確認變更後的安排',claims:'核對報名認領',withdrawal:'處理退出申請',formation:'決定是否成團',finish:'確認活動結束／延長',settlement:'核對並發布結算',reports:'款項申報待核對',payment:'我的款項待補',refund:'我的退款／墊付待收回',reconcile:'核對收退款與結清'};
@@ -24,7 +25,7 @@ export function InboxLink({viewer}:{viewer:Member}){
   const query=useQuery({queryKey:['private',viewer.scope,'notification-count'],queryFn:()=>api('/me/notifications/count',NotificationCount,{headers:scope(viewer)}),refetchInterval:30000});
   return <Link to="/inbox">收件匣{query.error?'（讀取失敗）':query.data?.unreadCount?'（'+query.data.unreadCount+' 未讀）':''}</Link>;
 }
-export function InboxPage(){return <><PageIntro title="收件匣"/><MemberAccess>{viewer=><Inbox key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
+export function InboxPage(){return <><PageIntro title="收件匣"/><LegacyLocalLink/><MemberAccess>{viewer=><Inbox key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function PendingOperations({viewer}:{viewer:Member}){
   const [inventory,setInventory]=useState<{rows:PendingOperation[];error:string}>({rows:[],error:''}),[results,setResults]=useState<Record<string,string>>({}),[busy,setBusy]=useState('');const active=useRef(true);
   async function read(){

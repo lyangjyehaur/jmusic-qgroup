@@ -1,4 +1,5 @@
 import { clearDeviceLinks } from './device-link-store';
+import { clearLegacyLocal } from './legacy-local-store';
 import { clearDurableDrafts } from './draft-store';
 const channelName = 'qgroup:rebuild:session';
 function clearMusicSessionDrafts(scope: string) {
@@ -24,6 +25,7 @@ function clearDeviceSessionDrafts() {
 export async function clearDeviceDrafts() {
   clearDeviceSessionDrafts();
   await clearDeviceLinks();
+  await clearLegacyLocal();
   await clearDurableDrafts();
 }
 export function announceAccountChange(logout = false) {
