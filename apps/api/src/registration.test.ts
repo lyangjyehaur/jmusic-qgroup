@@ -60,7 +60,7 @@ describe('name registration and account administrator settings', () => {
     const member = await s.read(String(result.headers['set-cookie']).split(';')[0]);
     expect(member.viewer).toMatchObject({ authenticated: true, nickname: '😀'.repeat(24), administrator: false, privacyAccepted: true, qq: { bound: false } });
     expect(member.viewer.scope).not.toBe(s.guest.viewer.scope);
-    expect(s.db.prepare('SELECT count(*) n FROM privacy_consents WHERE version=?').get(PRIVACY_VERSION)).toEqual({ n: 1 });
+    expect(s.db.prepare('SELECT count(*) n FROM unified_privacy_consents WHERE version=?').get(PRIVACY_VERSION)).toEqual({ n: 1 });
     expect(s.db.prepare("SELECT count(*) n FROM account_audit WHERE action='name_registered'").get()).toEqual({ n: 1 });
     expect(s.db.prepare('SELECT count(*) n FROM browser_accounts').get()).toEqual({ n: 1 });
     expect(s.db.prepare('SELECT status FROM login_attempts').get()).toEqual({ status: 'failed' });
@@ -105,7 +105,7 @@ describe('name registration and account administrator settings', () => {
     const failed = await s.post(s.guest, '/auth/register-name', payload);
     expect(failed.statusCode).toBe(500); expect(failed.headers['set-cookie']).toBeUndefined();
     expect(s.db.prepare('SELECT count(*) n FROM users').get()).toEqual({ n: 2 });
-    expect(s.db.prepare('SELECT count(*) n FROM privacy_consents').get()).toEqual({ n: 0 });
+    for (const table of ['privacy_consents','unified_privacy_consents','unified_privacy_receipts']) expect(s.db.prepare('SELECT count(*) n FROM ' + table).get()).toEqual({ n: 0 });
     expect((await s.read(s.guest.cookie)).viewer.authenticated).toBe(false);
   });
   it('rechecks a newly closed setting and rate limits repeated creation attempts', async () => {

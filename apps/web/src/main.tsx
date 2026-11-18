@@ -54,6 +54,7 @@ import { AdminHome } from './admin';
 import { AdminPrivacy, AdminPrivacyReview } from './admin-privacy';
 import { AdminDirectory, AdminUserPage } from './admin-users';
 import { MyPrivacy } from './my-privacy';
+import { PrivacyConsentPage } from './privacy-consent';
 import { MusicContactPage } from './music-contact';
 import { MusicComparisonPage } from './music-matches';
 import { People, PersonMusic } from './people';
@@ -109,6 +110,7 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'me/profile', element: <AccountProfilePage /> },
   { path: 'me/payment-codes', element: <PaymentCodesPage /> },
   { path: 'me/privacy', element: <MyPrivacy /> },
+  { path: 'me/privacy/consent', element: <PrivacyConsentPage /> },
   { path: 'admin', element: <AdminHome /> }, { path: 'admin/privacy', element: <AdminPrivacy /> }, { path: 'admin/privacy/:id', element: <AdminPrivacyReview /> }, { path: 'admin/users', element: <AdminDirectory /> }, { path: 'admin/users/:id', element: <AdminUserPage /> },
 ] }]);
 bootstrapAppearance();

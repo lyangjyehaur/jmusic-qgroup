@@ -8,6 +8,7 @@ import { QQIdentity, safeAvatar, safeUnionId, type QQProvider } from './qq-provi
 import { administratorRevision, nameRegistration } from './registration-settings';
 import { clearMusicClaimAuthorization, clearMusicClaims } from './music-claim-state';
 import type { MusicClaims } from './music-claim';
+import { consentState, recordConsent } from './privacy-consent';
 
 interface Attempt { id: string; token_hash: string; user_id: string | null; app_id: string; mode: 'bind' | 'login'; status: string; expires_at: string; openid: string; nickname: string; return_path: string; privacy_version: string; avatar_url: string; union_id: string }
 interface External { user_id: string; subject: string; nickname: string }
@@ -26,7 +27,7 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
   const stamp = () => now().toISOString();
   const uid = (device: Device) => device.kind === 'member' ? device.id : null;
   function requiredProvider() { if (!provider) throw new DomainError('QQ_NOT_CONFIGURED', 'QQ 登入尚未配置', 503); return provider; }
-  function accepted(device: Device) { return device.kind === 'member' && !!db.prepare('SELECT 1 FROM privacy_consents WHERE user_id=? AND version=?').get(device.id, PRIVACY_VERSION); }
+  function accepted(device: Device) { return device.kind === 'member' && consentState(db, device.id).accepted; }
   function audit(userId: string, action: string, details: object) {
     db.prepare('INSERT INTO account_audit(user_id,action,details_json,created_at) VALUES(?,?,?,?)').run(userId, action, JSON.stringify(details), stamp());
   }
@@ -67,7 +68,7 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
       const returnTo = safeReturnTo(data.returnTo);
       const userId = randomBytes(16).toString('hex');
       db.prepare('INSERT INTO users VALUES(?,?,?,?)').run(userId, randomBytes(32).toString('hex'), data.nickname, stamp());
-      db.prepare('INSERT INTO privacy_consents VALUES(?,?,?)').run(userId, PRIVACY_VERSION, stamp());
+      recordConsent(db, userId, stamp(), 'name');
       const token = rotate(device, userId);
       audit(userId, 'name_registered', {});
       return { token, response: { returnTo, switched: true, newAccount: true } };
@@ -78,7 +79,8 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
   app.post('/api/v2/auth/qq/start', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const device = security.write(request); const qq = requiredProvider(); const data = QQStart.parse(request.body);
     if (data.mode === 'bind' && device.kind !== 'member') throw new DomainError('LOGIN_REQUIRED', '請先登入後再綁定 QQ', 401);
-    if (!accepted(device) && (!data.acceptPrivacy || data.privacyVersion !== PRIVACY_VERSION)) throw new DomainError('PRIVACY_REQUIRED', '請閱讀並同意隱私政策');
+    // A login may target a different account; never transfer the current account's consent.
+    if (data.privacyVersion !== PRIVACY_VERSION || ((data.mode === 'login' || !accepted(device)) && !data.acceptPrivacy)) throw new DomainError('PRIVACY_REQUIRED', '請閱讀並同意隱私政策');
     const returnTo = data.musicClaimId ? '/me/music/recover' : safeReturnTo(data.returnTo); const state = randomBytes(32).toString('base64url');
     db.prepare('DELETE FROM login_attempts WHERE expires_at<=?').run(stamp());
     invalidate(device.tokenHash);
@@ -147,7 +149,7 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
       db.prepare("INSERT OR REPLACE INTO external_profiles VALUES('qq',?,?,?)").run(row.app_id, userId, safeAvatar(row.avatar_url));
       const unionId = safeUnionId(row.union_id);
       if (unionId) db.prepare("INSERT OR IGNORE INTO external_unionids VALUES('qq',?,?,?,?)").run(row.app_id, row.openid, unionId, stamp());
-      db.prepare('INSERT OR REPLACE INTO privacy_consents VALUES(?,?,?)').run(userId, PRIVACY_VERSION, stamp());
+      recordConsent(db, userId, stamp(), 'qq');
       const token = rotate(device, userId, claim?.id);
       if (claim) musicClaims.authorize(claim, hash(token), userId, row.app_id, row.openid);
       db.prepare("UPDATE login_attempts SET status='used',union_id='' WHERE id=?").run(row.id);

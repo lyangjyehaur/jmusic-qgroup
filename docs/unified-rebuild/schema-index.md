@@ -84,3 +84,14 @@
 | `used_oauth` | `attempt`、`created` |
 
 完整性：`ok`；外鍵違規：0。
+
+## 重構 schema 15 新增的同意紀錄
+
+以上為凍結舊系統索引。重構庫目前有 96 張表（59 相容＋37 重構／遷移），本次在 schema 14 加入兩張表，保留舊 `privacy_consents`，不推定或移轉新同意。詳見[檢查點 95](95-unified-privacy-checkpoint.md)。
+
+| 表 | 欄位與用途 |
+| --- | --- |
+| `unified_privacy_consents` | `user_id`、`version` 組合主鍵；`accepted_at` 首次時間、`source` 明確確認／名稱註冊／QQ |
+| `unified_privacy_receipts` | `user_id`、`request_key` 組合主鍵；`version`、`signature`，關聯原同意版本，供原操作查回 |
+
+關閉帳號時由 `privacy_requests` 新增 trigger 清除這兩張表的該帳號紀錄；TypeScript 與舊 Python 刪除流程均有合成驗證。服務啟動不自動升級，舊 schema 14 TypeScript 映像也不接受 schema 15 庫。

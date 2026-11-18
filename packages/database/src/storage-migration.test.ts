@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { openDatabase } from './index';
 import { fixture } from '../../../apps/api/testsupport/fixture';
-const drop = 'DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=13';
+const drop = 'DROP TRIGGER unified_privacy_erasure; DROP TABLE unified_privacy_receipts; DROP TABLE unified_privacy_consents; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=13';
 describe('schema 13 → storage lineage and recovery gate', () => {
   it('preserves all existing data, DDL, sequences and Python bot reads with stable independent lineage', () => {
     const root=mkdtempSync(join(tmpdir(),'qgroup-storage-')),path=join(root,'state.sqlite3');

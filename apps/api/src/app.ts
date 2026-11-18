@@ -33,6 +33,7 @@ import { registerAccountDevices } from './account-devices';
 import { registerRegistrationSettings } from './registration-settings';
 import { registerAccountProfile } from './account-profile';
 import { createPrivacy, registerPrivacy } from './privacy';
+import { registerPrivacyConsent } from './privacy-consent';
 import type { ErasureJournal } from './erasure-journal';
 import { createAdminSecurity } from './admin-security';
 import { registerAdminUsers } from './admin-users';
@@ -136,6 +137,7 @@ export function createApp(options: AppOptions) {
     registerAdminMusicErasure(app, db, admin, now, privacy);
     registerAccountProfile(app, db, security, now, options.botEnabledDefault);
     registerPrivacy(app, db, security, now, privacy);
+    registerPrivacyConsent(app, db, security, now);
     registerMusicContact(app, db, security, now);
     registerMusicMatches(app, db, security);
     registerMusicRooms(app, db, security);

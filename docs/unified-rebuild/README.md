@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-18（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[固定顯示片段與原文插值檢查點](94-display-fragments-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
+日期：2026-11-18（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[統一政策與獨立同意紀錄檢查點](95-unified-privacy-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
 
 後續已完成[統一 PWA](62-pwa-checkpoint.md)、[bot 並行寫入修正](63-bot-sqlite-locking-checkpoint.md)、[共用表單 IndexedDB 原稿](64-durable-drafts-checkpoint.md)、[活動與帳務原稿持久化](65-durable-authoring-checkpoint.md)、[活動參與原稿持久化](66-durable-participation-checkpoint.md)、[邀請與分工原稿持久化](67-durable-invitations-checkpoint.md)、[帳號與成分原稿持久化](68-durable-identity-checkpoint.md)、[管理原稿與權限失效保全](69-durable-admin-checkpoint.md)、[管理內容原稿持久化](70-durable-admin-content-checkpoint.md)、[成分關聯與 PIN 回執持久化](71-durable-admin-ownership-checkpoint.md)、[成分刪除後原操作核對](72-erased-music-acknowledgements-checkpoint.md)、[bot 設定原稿持久化](73-durable-bot-policy-checkpoint.md)、[收件匣管理回執隔離](74-admin-operation-receipts-checkpoint.md)、[通知已讀操作持久化](75-durable-notifications-checkpoint.md)、[群通知原重送操作持久化](76-durable-bot-deliveries-checkpoint.md)、[活動查看邀請操作持久化](77-durable-activity-access-checkpoint.md)、[找搭子原稿與發布操作持久化](78-durable-music-shouts-checkpoint.md)、[舊成分找回操作持久化](79-durable-music-recovery-checkpoint.md)及[自由／活動分房原稿持久化](80-durable-music-rooms-checkpoint.md)的隔離實作；另已完成[隱私刪除回執保全](81-durable-erasure-recovery-checkpoint.md)、[短效裝置連結](82-short-lived-device-links-checkpoint.md)、[舊本機紀錄保全](83-legacy-local-preservation-checkpoint.md)、[持久建立識別](84-create-intents-checkpoint.md)、[舊活動／投票草稿轉換](85-legacy-authoring-conversion-checkpoint.md)與[舊包間／收支原稿轉換](86-legacy-money-conversion-checkpoint.md)；全站遷移與正式切換驗收仍未完成。
 
@@ -112,6 +112,7 @@
 | [簡繁顯示與原文邊界檢查點](92-display-language-checkpoint.md) | 最高優先語言協商、建置期靜態顯示、原文／提交值保全與 offline／PWA 回歸 |
 | [動態提示與統一手冊檢查點](93-dynamic-language-guide-checkpoint.md) | 系統標籤／原例外／歷史原文、16 章共用手冊與 guide 舊入口、跨領域回歸 |
 | [固定顯示片段與原文插值檢查點](94-display-fragments-checkpoint.md) | 選單／驗證／分享的固定片段、原生插值語意、ApiError 原文與複製欄位 |
+| [統一政策與獨立同意紀錄檢查點](95-unified-privacy-checkpoint.md) | 完整用途說明、schema 15、舊同意保全、既有帳號確認、原回執與恢復 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 原系統盤點結論

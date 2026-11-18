@@ -47,7 +47,11 @@ export const AttendeeMusic = z.discriminatedUnion('state',[
   z.object({state:z.literal('viewer_unlinked')}),
   z.object({state:z.literal('ready'),profileId:z.string(),name:z.string(),isSelf:z.boolean(),picks:z.array(Selection.extend({name:z.string(),kind:z.enum(['main','sub']),shared:z.boolean()}))}),
 ]);
-export const PRIVACY_VERSION = '2026-11-10';
+// Unreleased unified policy; the legacy Python policy/version remains independent.
+export const PRIVACY_VERSION = 'unified-2026-11-18';
+export const AcceptPrivacy = z.object({ acceptPrivacy: z.literal(true), privacyVersion: z.string().min(1).max(80) }).strict();
+export const PrivacyConsent = z.object({ version: z.string(), accepted: z.boolean(), acceptedAt: z.string().nullable() });
+export const PrivacyConsentReceipt = z.object({ requestKey: z.string().uuid(), version: z.string(), acceptedAt: z.string() });
 const sessionSecurity = { scope: z.string(), csrf: z.string(), qqEnabled: z.boolean(), privacyVersion: z.string(), privacyAccepted: z.boolean(), nameRegistrationEnabled: z.boolean() };
 export const QQSummary = z.object({ bound: z.boolean(), nickname: z.string(), avatarUrl: z.string(), unionidBound: z.boolean(), needsReauth: z.boolean() });
 export const Session = z.discriminatedUnion('authenticated', [

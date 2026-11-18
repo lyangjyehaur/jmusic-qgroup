@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { openDatabase } from './index';
 function versionFour(path: string) {
   const db = openDatabase(path);
-  db.exec("DROP TABLE music_field_history; DROP TABLE music_profile_fields; DROP TABLE music_pin_history; DROP TABLE music_ownership_history; DROP TABLE music_claim_intents; DROP TABLE music_claim_attempts; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=4; INSERT INTO users VALUES('member','unused','原稱呼','before'); INSERT INTO music_profiles VALUES('profile','member',7,'before',NULL)");
+  db.exec("DROP TABLE music_field_history; DROP TABLE music_profile_fields; DROP TABLE music_pin_history; DROP TABLE music_ownership_history; DROP TABLE music_claim_intents; DROP TABLE music_claim_attempts; DROP TRIGGER unified_privacy_erasure; DROP TABLE unified_privacy_receipts; DROP TABLE unified_privacy_consents; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=4; INSERT INTO users VALUES('member','unused','原稱呼','before'); INSERT INTO music_profiles VALUES('profile','member',7,'before',NULL)");
   db.prepare("INSERT INTO music_legacy_identity VALUES('login_attempts',0,?)").run(JSON.stringify({bucket:'qq:'+'a'.repeat(64),created:1794902400.25}));
   return db;
 }
@@ -18,7 +18,7 @@ describe('schema 4 → persistent PIN recovery', () => {
       const before=tables.map(({name})=>old.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all()); old.close();
       const next=openDatabase(path);expect(tables.map(({name})=>next.prepare('SELECT * FROM "'+name+'" ORDER BY rowid').all())).toEqual(before);
       expect(next.prepare('SELECT * FROM music_claim_attempts').all()).toEqual([{bucket:'qq:'+'a'.repeat(64),created:1794902400.25}]); expect(next.pragma('foreign_key_check')).toEqual([]);next.close();
-      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:14});expect(reopened.prepare('SELECT * FROM music_claim_attempts').all()).toHaveLength(1);reopened.close();
+      const reopened=openDatabase(path);expect(reopened.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:15});expect(reopened.prepare('SELECT * FROM music_claim_attempts').all()).toHaveLength(1);reopened.close();
     }finally{rmSync(folder,{recursive:true,force:true});}
   });
   it('rolls back DDL, marker and projections when a private source rate bucket is malformed',()=>{

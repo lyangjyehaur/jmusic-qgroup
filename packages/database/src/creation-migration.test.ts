@@ -10,7 +10,7 @@ import { nicknameFixture } from '../../../apps/api/testsupport/nickname-fixture'
 function versionNine(path: string) {
   const db = openDatabase(path); fixture(db); nicknameFixture(db);
   db.exec(`DROP TRIGGER music_creation_insert; DROP TRIGGER music_creation_legacy; DROP TRIGGER music_creation_erasure;
-    DROP TABLE music_profile_creation; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=9;
+    DROP TABLE music_profile_creation; DROP TRIGGER unified_privacy_erasure; DROP TABLE unified_privacy_receipts; DROP TABLE unified_privacy_consents; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=9;
     INSERT INTO music_profiles VALUES('audited','alice',2,'2026-11-17',NULL),('unknown',NULL,4,'2026-11-17',NULL),
       ('legacy',NULL,0,'2026-11-17',NULL),('erased',NULL,1,'2026-11-17','2026-11-17');
     INSERT INTO music_legacy_profiles VALUES('legacy','10001','舊成分',1,'private','10001','{"createdAt":1}','[]','unlinked');
@@ -29,7 +29,7 @@ describe('schema 9 → immutable native music creation provenance', () => {
       const probe = () => JSON.parse(execFileSync('python3', ['tools/rebuild/probe-auth-bot.py', path], { encoding: 'utf8' }));
       const bot = probe(); old.close();
       const db = openDatabase(path);
-      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 14 });
+      expect(db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({ version: 15 });
       expect(tables.map(({ name }) => db.prepare('SELECT * FROM "' + name + '" ORDER BY rowid').all())).toEqual(snapshot);
       for (const row of ddl) expect(db.prepare('SELECT name,sql FROM sqlite_master WHERE name=?').get(row.name)).toEqual(row);
       expect(db.prepare('SELECT * FROM music_profile_creation ORDER BY profile_id').all()).toEqual([

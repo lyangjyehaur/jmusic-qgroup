@@ -4,6 +4,7 @@ import { musicShoutDraftTarget } from './music-shout-record';
 import { MusicPinResultRequest } from '@qgroup/contracts';
 import { activityAccessDraftRoute } from './activity-access-record';
 import { botDeliveryDraftRoute } from './bot-delivery-record';
+import { parsePrivacyConsent } from './privacy-consent-record';
 // Only reviewed form payloads and scoped operation routes belong in this database; never login credentials.
 const databaseName = 'qgroup-reviewed-drafts-v1';
 const stores = ['drafts', 'versions', 'epochs'] as const;
@@ -61,6 +62,7 @@ function validate(key: string, scope: string) {
     key.startsWith(prefix + 'music:entries:v1:' + scope + ':') ||
     key === prefix + 'payment-codes:v1:' + scope ||
     key === prefix + 'account-profile:v1:' + scope ||
+    key === prefix + 'privacy-consent:v1:' + scope ||
     key === prefix + 'notifications-read:v1:' + scope ||
     !!botDeliveryDraftRoute(key, scope) ||
     !!activityAccessDraftRoute(key, scope) ||
@@ -91,6 +93,7 @@ export function deviceDraftEpoch() {
   });
 }
 function validateRaw(key: string, raw: string) {
+  if(key.startsWith('qgroup:rebuild:privacy-consent:v1:'))parsePrivacyConsent(raw,key.slice('qgroup:rebuild:privacy-consent:v1:'.length));
   // PIN commands and reasons never enter the durable store, including legacy import or archives.
   if(key.startsWith('qgroup:rebuild:music:claim:'))MusicRecoveryRecord.nullable().parse(JSON.parse(raw));
   if (key.startsWith('qgroup:rebuild:admin-music-pin:')) MusicPinResultRequest.nullable().parse(JSON.parse(raw));

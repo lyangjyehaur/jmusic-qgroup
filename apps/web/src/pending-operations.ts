@@ -4,6 +4,7 @@ import { MusicRecoveryRecord } from './music-recovery-record';
 import { musicShoutDraftTarget,parseMusicShoutDraft } from './music-shout-record';
 import { activityAccessDraftRoute, PendingActivityAccess } from './activity-access-record';
 import { botDeliveryDraftRoute, PendingBotDelivery } from './bot-delivery-record';
+import { parsePrivacyConsent } from './privacy-consent-record';
 export type PendingOperation={id:string;label:string;to:string;damaged:boolean;requestKey?:string;adminScope?:string};
 const root='qgroup:rebuild:';
 const uuid=z.string().uuid(),token=/^[A-Za-z0-9_-]{32}$/;
@@ -13,6 +14,11 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
   const rows:PendingOperation[]=[];
   for(let i=0;i<storage.length;i++){
     const key=storage.key(i);if(!key||!key.startsWith(root)||key.includes(':recovery:'))continue;
+    if(key===root+'privacy-consent:v1:'+scope){
+      try{const pending=parsePrivacyConsent(storage.getItem(key)??'null',scope);if(pending)rows.push({id:key,label:uiText('政策同意'),to:'/me/privacy/consent',damaged:false,requestKey:pending.key});}
+      catch{rows.push({id:key,label:uiText('政策同意'),to:'/me/privacy/consent',damaged:true});}
+      continue;
+    }
     if(key===root+'music:claim:v1:'+scope){
       try{const pending=MusicRecoveryRecord.nullable().parse(JSON.parse(storage.getItem(key)??'null'));if(pending)rows.push({id:key,label:uiText("找回舊成分"),to:'/me/music/recover',damaged:false});}
       catch{rows.push({id:key,label:uiText("找回舊成分"),to:'/me/music/recover',damaged:true});}

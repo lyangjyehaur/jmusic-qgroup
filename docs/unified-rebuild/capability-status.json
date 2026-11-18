@@ -19,7 +19,9 @@
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
@@ -42,20 +44,28 @@
       "implementation": [
         "apps/api/src/auth.ts",
         "apps/api/src/security.ts",
-        "apps/web/src/auth.tsx"
+        "apps/web/src/auth.tsx",
+        "apps/api/src/privacy-consent.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "apps/web/tests/privacy-consent.spec.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已實作登入／綁定／回調確認、原裝置與時限、衝突與失效競態；真 QQ、正式資料及完整錯誤恢復驗收待完成。"
@@ -144,26 +154,38 @@
         "apps/api/src/security.ts",
         "apps/web/src/auth.tsx",
         "apps/api/src/registration-settings.ts",
-        "apps/web/src/registration.tsx"
+        "apps/web/src/registration.tsx",
+        "apps/api/src/privacy-consent.ts",
+        "apps/web/src/privacy-consent.tsx",
+        "packages/database/src/schema-v15.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "packages/database/src/consent-migration.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/registration.test.ts"
+        "apps/api/src/registration.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
-        "apps/web/tests/registration.spec.ts"
+        "apps/web/tests/registration.spec.ts",
+        "apps/web/tests/privacy-consent.spec.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "已實作預設關閉的名稱註冊、管理開關、版本化同意、並行與未知結果核對；更新政策／重同意、完整遷移及瀏覽器恢復驗收待完成。"
+      "remaining": "名稱註冊開關、獨立政策版本、既有帳號明確確認及回應／儲存失敗、原帳號、版本漂移與跨頁恢復已隔離驗證（檢查點 95）。正式政策版本／公告、完整資料遷移、實體裝置及實際候選 web／bot 組合仍待驗收。"
     },
     {
       "capability_id": "I06",
@@ -234,12 +256,16 @@
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/account-devices.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/devices.spec.ts",
-        "apps/web/tests/account-profile.spec.ts"
+        "apps/web/tests/account-profile.spec.ts",
+        "apps/web/tests/privacy-consent.spec.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "帳號 grant、切換、撤銷後替代帳號與跨分頁 scope／草稿隔離已測；完整離線／背景、多瀏覽器、真實遷移與舊入口驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。"
@@ -532,7 +558,10 @@
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "apps/api/src/offline-restore.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -547,10 +576,12 @@
         "docs/unified-rebuild/14-import-checkpoint.md",
         "apps/web/tests/music-contact.spec.ts",
         "apps/web/tests/durable-erasures.spec.ts",
-        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
+        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
+        "apps/web/tests/privacy-consent.spec.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、合併隱私政策、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。"
+      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。"
     },
     {
       "capability_id": "I15",
@@ -597,7 +628,9 @@
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-contact.test.ts",
         "apps/api/src/admin-music-erasure.test.ts",
-        "docs/unified-rebuild/46-admin-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/46-admin-music-erasure-checkpoint.md",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -668,7 +701,9 @@
         "apps/web/tests/account-profile.spec.ts",
         "apps/web/tests/music-contact.spec.ts",
         "apps/web/tests/durable-device-links.spec.ts",
-        "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md"
+        "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
+        "apps/web/tests/privacy-consent.spec.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
@@ -5143,7 +5178,9 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "packages/domain/src/bot-rendering.test.ts",
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "packages/database/src/consent-migration.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/replies.test.ts",
@@ -5665,7 +5702,10 @@
         "apps/bot/src/runtime.test.ts",
         "apps/bot/src/ownership.test.ts",
         "apps/api/src/bot-deliveries.test.ts",
-        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
+        "packages/database/src/consent-migration.test.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -6879,31 +6919,41 @@
         "apps/web/src/account.tsx",
         "apps/api/src/app.ts",
         "packages/domain/src/legacy-navigation.ts",
-        "apps/web/src/contact.tsx"
+        "apps/web/src/contact.tsx",
+        "apps/web/src/privacy-consent.tsx",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "behavior_evidence": [
         "docs/unified-rebuild/08-identity-checkpoint.md",
         "apps/api/testsupport/language.test.ts",
         "packages/domain/src/legacy-navigation.test.ts",
-        "apps/web/tests/guide.spec.ts"
+        "apps/web/tests/guide.spec.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/testsupport/language.test.ts",
-        "apps/web/tests/guide.spec.ts"
+        "apps/web/tests/guide.spec.ts",
+        "packages/database/src/consent-migration.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/testsupport/language.test.ts",
-        "apps/web/tests/guide.spec.ts"
+        "apps/web/tests/guide.spec.ts",
+        "apps/api/src/privacy-consent.test.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/language.spec.ts",
         "docs/unified-rebuild/92-display-language-checkpoint.md",
         "apps/web/tests/guide.spec.ts",
-        "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md"
+        "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md",
+        "apps/web/tests/privacy-consent.spec.ts",
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "React／TSX 統一手冊的 16 章與 31 實際路由、guide.html 原章節、簡繁／指令原文／ICP、匿名與 session 失敗入口、零業務寫入及 360px 表格已補驗（檢查點 93）。既有版本政策及聯絡頁保留；統一成分處理用途、同意與版本銜接、回調說明和完整候選組合驗收仍待完成。"
+      "remaining": "統一 TSX 手冊、聯絡、既有回調與成分／活動／bot 用途政策已實作；獨立同意、原紀錄／歷史回執／恢復及不推定同意已隔離驗證（檢查點 95）。正式政策版本／公告、完整來源資料與候選組合、實體裝置及 QQ WebView 尚未验收。"
     },
     {
       "capability_id": "O10",

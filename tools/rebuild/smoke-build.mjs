@@ -103,7 +103,7 @@ try {
   assert.equal(syntheticPreview.status,200);assert((await syntheticPreview.json()).text.includes('周末聚餐'));
   const unchangedPolicy=await(await fetch(base+'/api/v2/admin/bot',{headers:readHeaders})).json();assert.deepEqual(unchangedPolicy,policy);
   const id=backups.backups[0].id;
-  const proof=JSON.parse(readFileSync(join(directory,'paired-backups',id,'manifest.json'),'utf8'));assert.equal(proof.restoreEligible,false);assert.equal(proof.version,2);assert.equal(proof.schema,14);assert.match(proof.lineageId,/^[a-f0-9]{32}$/);assert(proof.files.some(file=>file.path==='state.sqlite3'));
+  const proof=JSON.parse(readFileSync(join(directory,'paired-backups',id,'manifest.json'),'utf8'));assert.equal(proof.restoreEligible,false);assert.equal(proof.version,2);assert.equal(proof.schema,15);assert.match(proof.lineageId,/^[a-f0-9]{32}$/);assert(proof.files.some(file=>file.path==='state.sqlite3'));
   for(const path of ['/api/v2/admin/music-export','/api/v2/admin/music-export?backup='+id]){const exported=await fetch(base+path,{headers:readHeaders});assert.equal(exported.status,200);assert.equal(exported.headers.get('cache-control'),'no-store');const data=await exported.json();assert.deepEqual({...data,trend:[]},{entries:{},members:{},settings:{},shouts:[],shoutHistory:[],trend:[]});assert.equal(data.trend.length,1);assert.deepEqual(data.trend[0].counts,{});assert(Number.isSafeInteger(data.trend[0].t));}
   const callback = await fetch(base + '/auth/qq/callback?state=invalid&code=synthetic', { redirect: 'manual' });
   assert.equal(callback.status, 303); assert.equal(callback.headers.get('location'), '/auth/confirm?status=invalid');

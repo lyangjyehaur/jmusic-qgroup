@@ -141,7 +141,7 @@ describe('shared account and explicit QQ authorization', () => {
     s.db.exec("CREATE TRIGGER reject_auth_audit BEFORE INSERT ON account_audit BEGIN SELECT RAISE(ABORT,'synthetic failure'); END");
     const failed = await s.finish(guest, verified.attemptId); expect(failed.statusCode).toBe(500);
     expect(failed.body).not.toContain('synthetic'); expect(failed.headers['set-cookie']).toBeUndefined();
-    for (const table of ['external_identities', 'external_profiles', 'external_unionids', 'privacy_consents', 'browser_accounts']) expect(s.db.prepare('SELECT count(*) n FROM ' + table).get()).toEqual({ n: 0 });
+    for (const table of ['external_identities', 'external_profiles', 'external_unionids', 'privacy_consents', 'unified_privacy_consents', 'unified_privacy_receipts', 'browser_accounts']) expect(s.db.prepare('SELECT count(*) n FROM ' + table).get()).toEqual({ n: 0 });
     expect(s.db.prepare('SELECT count(*) n FROM users').get()).toEqual({ n: 2 });
     expect((await s.status(guest)).status).toBe('verified');
     s.db.exec('DROP TRIGGER reject_auth_audit'); expect((await s.finish(guest, verified.attemptId)).statusCode).toBe(200);

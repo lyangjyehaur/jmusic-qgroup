@@ -50,7 +50,7 @@ describe('offline paired recovery candidates',()=>{
     const wall=Buffer.from('wall');s.db.prepare("INSERT INTO wallpaper_assets VALUES(?,'image/png',?,?)").run(digest(wall),wall,wall.length);
     s.db.exec("INSERT INTO admin_sessions VALUES('admin-proof','credential','future','before'); INSERT INTO music_legacy_identity VALUES('sessions',9,'{\"token_hash\":\"private-old\"}'); INSERT INTO request_results VALUES('alice','business-request','signature','{}',200,'before')");
     s.input.backup=s.input.checkpoint=s.capture();const prior={backup:walk(s.input.backup),ledger:readFileSync(s.input.latestLedger),evidence:walk(s.evidence)};
-    const result=restorePairedBackup(s.input);expect(result).toEqual({status:'candidate_created',schema:14,recoveryRequired:true,releaseEligible:false});
+    const result=restorePairedBackup(s.input);expect(result).toEqual({status:'candidate_created',schema:15,recoveryRequired:true,releaseEligible:false});
     expect(walk(s.input.backup)).toEqual(prior.backup);expect(readFileSync(s.input.latestLedger)).toEqual(prior.ledger);expect(walk(s.evidence)).toEqual(prior.evidence);
     const db=candidate(s.input.destination);try{
       expect(db.prepare('SELECT count(*) n FROM browser_sessions').get()).toEqual({n:0});expect(db.prepare('SELECT count(*) n FROM admin_sessions').get()).toEqual({n:0});expect(db.prepare("SELECT count(*) n FROM music_legacy_identity WHERE table_name='sessions'").get()).toEqual({n:0});
@@ -95,9 +95,28 @@ print('authorization-blocks-preserved')`,join(s.input.destination,'bot-logs')],{
   it.each(['events','roster','finance','music','settings'] as const)('refuses a selected backup that would lose newer %s data',kind=>{
     const s=setup();const commands={events:"UPDATE events SET title='new-title' WHERE id='listen'",roster:"INSERT INTO roster_parties(id,event_id,manager_id,queue_mode,created_at) VALUES('new-party','listen','bob','individual','now')",finance:"INSERT INTO settlements(event_id,total_cents,headcount,updated_at) VALUES('listen',50,1,'now')",music:"UPDATE music_entries SET name='new-name' WHERE id='main-0'",settings:"UPDATE site_settings SET revision=revision+1"};s.db.exec(commands[kind]);s.input.checkpoint=s.capture();const before=walk(s.input.checkpoint);expect(()=>restorePairedBackup(s.input)).toThrow('newer business data');expect(existsSync(s.input.destination)).toBe(false);expect(walk(s.input.checkpoint)).toEqual(before);expect(readdirSync(s.root).filter(name=>name.startsWith('.qgroup-recovery-'))).toEqual([]);
   });
+  it('refuses losing newer policy consent and preserves exact receipts in a blocked recovery candidate',()=>{
+    const s=setup();
+    s.db.exec("INSERT INTO unified_privacy_consents VALUES('bob','historical-policy','original-time','explicit'); INSERT INTO unified_privacy_receipts VALUES('bob','00000000-0000-4000-8000-000000000123','historical-policy','original-signature')");
+    s.input.checkpoint=s.capture();
+    expect(()=>restorePairedBackup(s.input)).toThrow('newer business data'); expect(existsSync(s.input.destination)).toBe(false);
+    s.input.backup=s.input.checkpoint; restorePairedBackup(s.input); const db=candidate(s.input.destination);
+    try {
+      expect(db.prepare('SELECT * FROM unified_privacy_consents').all()).toEqual(s.db.prepare('SELECT * FROM unified_privacy_consents').all());
+      expect(db.prepare('SELECT * FROM unified_privacy_receipts').all()).toEqual(s.db.prepare('SELECT * FROM unified_privacy_receipts').all());
+      expect(db.prepare('SELECT recovery_required FROM rebuild_storage').get()).toEqual({recovery_required:1});
+    }finally{db.close();}
+  });
+  it('replays account erasure against a consent-bearing backup without restoring consent or receipts',()=>{
+    const s=setup();
+    s.db.exec("INSERT INTO unified_privacy_consents VALUES('bob','historical-policy','original-time','explicit'); INSERT INTO unified_privacy_receipts VALUES('bob','00000000-0000-4000-8000-000000000123','historical-policy','original-signature')");
+    s.input.backup=s.input.checkpoint=s.capture(); appendErasure(s,'account',true); restorePairedBackup(s.input); const db=candidate(s.input.destination);
+    try { expect(db.prepare('SELECT * FROM unified_privacy_consents').all()).toEqual([]); expect(db.prepare('SELECT * FROM unified_privacy_receipts').all()).toEqual([]); expect(db.pragma('foreign_key_check')).toEqual([]); }
+    finally{db.close();}
+  });
   it('continues reading v1 archives for historical export, but refuses their unprovable recovery lineage',()=>{
-    const s=setup();rewrite(s.input.backup,db=>db.exec('DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=13'),true);
-    const legacy=openPairedBackup(s.input.backup);try{expect(legacy.manifest.version).toBe(1);expect(legacy.db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:14});}finally{legacy.db.close();}
+    const s=setup();rewrite(s.input.backup,db=>db.exec('DROP TRIGGER unified_privacy_erasure; DROP TABLE unified_privacy_receipts; DROP TABLE unified_privacy_consents; DROP TRIGGER rebuild_storage_no_insert; DROP TRIGGER rebuild_storage_no_update; DROP TRIGGER rebuild_storage_no_delete; DROP TABLE rebuild_storage; UPDATE rebuild_schema SET version=13'),true);
+    const legacy=openPairedBackup(s.input.backup);try{expect(legacy.manifest.version).toBe(1);expect(legacy.db.prepare('SELECT version FROM rebuild_schema').get()).toEqual({version:15});}finally{legacy.db.close();}
     expect(()=>restorePairedBackup(s.input)).toThrow('version 2 storage lineage');expect(existsSync(s.input.destination)).toBe(false);
   });
   it('rejects a different storage lineage or checkpoint order without publishing',()=>{
@@ -117,6 +136,6 @@ print('authorization-blocks-preserved')`,join(s.input.destination,'bot-logs')],{
     const s=setup(),now=new Date(stamp);vi.spyOn(now,'toISOString').mockImplementation(()=>{if(kind==='archive')writeFileSync(join(s.input.backup,'manifest.json'),readFileSync(join(s.input.backup,'manifest.json'),'utf8')+' ');if(kind==='ledger')writeFileSync(s.input.latestLedger,'\n');if(kind==='evidence')writeFileSync(join(s.evidence,'bot-events.jsonl'),'changed');return stamp;});expect(()=>restorePairedBackup(s.input,now)).toThrow('changed');expect(existsSync(s.input.destination)).toBe(false);expect(readdirSync(s.root).filter(name=>name.startsWith('.qgroup-recovery-'))).toEqual([]);
   });
   it('exposes the CLI without printing source records or secrets',()=>{
-    const s=setup(),result=execFileSync(process.execPath,['--import','tsx','tools/rebuild/restore-backup.ts',s.input.backup,s.input.checkpoint,s.input.latestLedger,s.input.botEvidence,s.input.destination,'--quiescent-copy'],{encoding:'utf8'});expect(JSON.parse(result)).toEqual({status:'candidate_created',schema:14,recoveryRequired:true,releaseEligible:false});expect(result).not.toMatch(/alice|bob|claim|private/);
+    const s=setup(),result=execFileSync(process.execPath,['--import','tsx','tools/rebuild/restore-backup.ts',s.input.backup,s.input.checkpoint,s.input.latestLedger,s.input.botEvidence,s.input.destination,'--quiescent-copy'],{encoding:'utf8'});expect(JSON.parse(result)).toEqual({status:'candidate_created',schema:15,recoveryRequired:true,releaseEligible:false});expect(result).not.toMatch(/alice|bob|claim|private/);
   });
 });

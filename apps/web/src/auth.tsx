@@ -26,10 +26,12 @@ export function useAccountChange() {
 export function Login() {
   const session = useQuery(sessionQuery);
   const [params] = useSearchParams();
-  const [accepted, setAccepted] = useState(false);
+  const [acceptedFor, setAcceptedFor] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const mode = params.get('mode') === 'bind' ? 'bind' : 'login';
+  const consentTarget = session.data ? session.data.scope + ':' + session.data.privacyVersion + ':' + mode : '';
+  const accepted = !!consentTarget && acceptedFor === consentTarget;
   const returnTo = localReturn(params.get('returnTo'));
   async function start() {
     if (!session.data) return;
@@ -43,8 +45,8 @@ export function Login() {
   return <><PageIntro title={mode === 'bind' ? '綁定 QQ' : '登入'} />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : <Surface className="detail auth-panel">
     {session.data.qqEnabled ? <>
       <Text>{mode === 'bind' ? `${uiText("綁定目前帳號「")}${session.data.authenticated ? session.data.nickname : ''}${uiText("」，不搬移報名或款項。")}` : 'QQ 授權後仍需確認帳號；首次登入會在確認後建立帳號。'}</Text>
-      {!session.data.privacyAccepted && <label className="consent"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} />我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></label>}
-      <Button loading={busy} disabled={(!session.data.privacyAccepted && !accepted) || (mode === 'bind' && !session.data.authenticated)} onClick={() => void start()}>{mode === 'bind' ? '前往 QQ 授權綁定' : '前往 QQ 登入'}</Button>
+      {(mode === 'login' || !session.data.privacyAccepted) && <label className="consent"><input type="checkbox" checked={accepted} disabled={busy} onChange={event => setAcceptedFor(event.target.checked ? consentTarget : null)} />我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></label>}
+      <Button loading={busy} disabled={((mode === 'login' || !session.data.privacyAccepted) && !accepted) || (mode === 'bind' && !session.data.authenticated)} onClick={() => void start()}>{mode === 'bind' ? '前往 QQ 授權綁定' : '前往 QQ 登入'}</Button>
       {mode === 'bind' && !session.data.authenticated && <Notice>請先登入後再綁定 QQ。</Notice>}
     </> : <Notice>QQ 登入尚未配置。</Notice>}
     {mode === 'login' && !session.data.authenticated && session.data.nameRegistrationEnabled && <Link className="back" to={'/register?returnTo=' + encodeURIComponent(returnTo)}>使用名稱註冊</Link>}
@@ -134,6 +136,7 @@ export function Accounts() {
     <Link className="back" to="/me/payment-codes">我的收款碼</Link>
     <Link className="back" to="/me/devices">裝置與帳號紀錄</Link>
     <Link className="back" to="/me/privacy">隱私與資料刪除</Link>
+    <Link className="back" to="/me/privacy/consent">{viewer.privacyAccepted ? '查看政策同意紀錄' : '確認統一隱私政策'}</Link>
     {viewer.administrator && <Link className="back" to="/admin/registration">註冊設定</Link>}
     <Surface className="detail auth-panel"><Text>登出會撤銷此裝置的所有帳號授權並清除本機原稿；其他裝置不受影響。</Text><Button variant="secondary" disabled={busy || cleanup} onClick={() => void logout()}>登出此裝置</Button></Surface>
   </>}
