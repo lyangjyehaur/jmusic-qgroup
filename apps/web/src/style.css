@@ -283,3 +283,8 @@ select { max-width: 100%; border: 1px solid var(--app-line); border-radius: 6px;
 .room-lab-members > li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: .5rem 1rem; }
 .room-lab-members > li > span { flex: 1 1 10rem; min-width: 0; }
 .room-lab-members > li > label { display: inline-flex; align-items: center; gap: .5rem; }
+
+.activity-copy-field { display: grid; gap: 12px; margin-block: 24px; }
+.activity-copy-field .device-link-field { margin-top: 0; }
+.activity-copy-field > button { justify-self: start; }
+.activity-summary-kind { display: grid; gap: 8px; justify-items: start; }

@@ -9,6 +9,7 @@ import { ActivityArrangements, ActivityConditions, ActivityDraftResult, RespondA
 import { api, ApiError } from './api';
 import { type Member } from './member-access';
 import { Failure, Notice, PageIntro, useSession } from './shared';
+import { ActivityLocation } from './activity-sharing';
 type Conditions=z.infer<typeof ActivityConditions>;
 const choices={accepted:'接受',declined:'暫不同意',pending:'待確認'};
 const Pending=z.object({key:z.string().uuid(),personId:z.string().min(1),input:RespondActivityConditions}).strict();
@@ -21,7 +22,7 @@ function dateLabel(value:string,zone:string|null){
 }
 function Version({value,heading}:{value:z.infer<typeof ConditionVersion>;heading:string}){
   const a=value.arrangement;
-  return <Surface role="region" aria-label={heading} className="detail"><Heading level={2}>{heading} · 第 {value.version} 版</Heading><Text>{value.summary}</Text>{value.actorName&&<Text tone="muted">{value.actorName} · {dateLabel(value.createdAt,'Asia/Taipei')}（台北）</Text>}<dl><dt>類型</dt><dd>{a.category}</dd><dt>時間</dt><dd>{dateLabel(a.starts_at,a.timezone)}（{a.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{a.location}</dd><dt>退出期限</dt><dd>{dateLabel(a.withdrawal_deadline,a.timezone)}</dd>{a.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{a.fee_policy}</dd></>}{a.description&&<><dt>注意事項</dt><dd className="preserve-lines">{a.description}</dd></>}</dl></Surface>;
+  return <Surface role="region" aria-label={heading} className="detail"><Heading level={2}>{heading} · 第 {value.version} 版</Heading><Text>{value.summary}</Text>{value.actorName&&<Text tone="muted">{value.actorName} · {dateLabel(value.createdAt,'Asia/Taipei')}（台北）</Text>}<dl><dt>類型</dt><dd>{a.category}</dd><dt>時間</dt><dd>{dateLabel(a.starts_at,a.timezone)}（{a.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd><ActivityLocation value={a.location}/></dd><dt>退出期限</dt><dd>{dateLabel(a.withdrawal_deadline,a.timezone)}</dd>{a.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{a.fee_policy}</dd></>}{a.description&&<><dt>注意事項</dt><dd className="preserve-lines">{a.description}</dd></>}</dl></Surface>;
 }
 export function ActivityManagementLink({eventId,viewer}:{eventId:string;viewer:Member}){
   const query=useQuery({queryKey:['private',viewer.scope,'activity-arrangements',eventId],queryFn:()=>api('/activities/'+encodeURIComponent(eventId)+'/arrangements',ActivityArrangements,{headers:{'X-Account-Scope':viewer.scope}})});
@@ -29,7 +30,7 @@ export function ActivityManagementLink({eventId,viewer}:{eventId:string;viewer:M
 }
 export function ActivityConditionsPage(){
   const {id=''}=useParams(),session=useSession();
-  return <><PageIntro title="安排版本與確認"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link></div>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:!session.data?<Notice>正在確認帳號…</Notice>:<ConditionsContent key={session.data.scope+':'+id} viewer={session.data} id={id}/>}</>;
+  return <><PageIntro title="安排版本與確認"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+'/share?kind=conditions'}>分享目前安排</Link></div>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:!session.data?<Notice>正在確認帳號…</Notice>:<ConditionsContent key={session.data.scope+':'+id} viewer={session.data} id={id}/>}</>;
 }
 function ConditionsContent({viewer,id}:{viewer:Viewer;id:string}){
   const client=useQueryClient();

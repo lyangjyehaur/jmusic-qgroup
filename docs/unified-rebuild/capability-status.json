@@ -1252,13 +1252,31 @@
       "new_entry": "活動分享／地點",
       "required_behavior": "剪貼簿失敗可選文；導航由點擊開啟、不請求定位",
       "legacy_evidence_group": "恢復、前端",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "剪貼簿失敗可選文；導航由點擊開啟、不請求定位"
+      "implementation": [
+        "apps/web/src/activity-summary.ts",
+        "apps/web/src/activity-sharing.tsx",
+        "apps/web/src/activity-access.tsx",
+        "apps/web/src/activities.tsx",
+        "apps/web/src/activity-conditions.tsx"
+      ],
+      "behavior_evidence": [
+        "apps/api/testsupport/activity-sharing.test.ts",
+        "apps/web/tests/activity-sharing.spec.ts"
+      ],
+      "data_evidence": [
+        "apps/api/testsupport/activity-sharing.test.ts",
+        "docs/unified-rebuild/90-activity-sharing-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/web/tests/activity-sharing.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/activity-sharing.spec.ts",
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "apps/web/tests/activity-conditions.spec.ts"
+      ],
+      "state": "in_progress",
+      "remaining": "原生活動／目前安排摘要、完整選文退路、原時區／DST／跨日與目前／歷史高德導航已隔離驗證；實機 clipboard／地圖／QQ WebView、正式來源、完整遷移及候選版本組合尚待驗收。"
     },
     {
       "capability_id": "R01",
@@ -6118,7 +6136,8 @@
         "apps/web/src/pwa.tsx",
         "apps/web/src/pwa/retire-music-worker.ts",
         "apps/web/src/activity-access-record.ts",
-        "apps/web/src/draft-store.ts"
+        "apps/web/src/draft-store.ts",
+        "apps/web/src/activity-sharing.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
@@ -6148,7 +6167,8 @@
         "apps/web/tests/activity-invitations.spec.ts",
         "docs/unified-rebuild/62-pwa-checkpoint.md",
         "apps/web/tests/durable-activity-access.spec.ts",
-        "docs/unified-rebuild/77-durable-activity-access-checkpoint.md"
+        "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
+        "apps/web/tests/activity-sharing.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。已補全部既有 bot action 的明確原生目標、四類活動 token、poll／裝置 fragment／QQ return、音樂八類 hash、管理／隱私／聯絡入口與 replace 返回；party／tentative／report／onsite 預設保留舊稿，無 URL 自動業務提交。Python bot 實際產生連結有交叉測試；完整使用手冊、舊已安裝 PWA、真實 QQ 回調與切換後實際版本組合仍待驗收。"

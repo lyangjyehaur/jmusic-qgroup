@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
-import { ActivityAccessPreview, ActivityAccessResult, ActivityShare, type Viewer } from '@qgroup/contracts';
+import { Activity, ActivityAccessPreview, ActivityAccessResult, ActivityShare, type Viewer } from '@qgroup/contracts';
 import { api, ApiError } from './api';
 import { authHeaders } from './auth';
 import { MemberAccess, type Member } from './member-access';
@@ -10,6 +10,8 @@ import { Failure, Notice, PageIntro, useSession } from './shared';
 import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { PendingActivityAccess as Pending } from './activity-access-record';
+import { activityShareURL, activitySummary } from './activity-summary';
+import { CopyActivityText } from './activity-sharing';
 const base=(id:string)=>'/activities/'+encodeURIComponent(id);
 export function ActivityAccessPage(){
   const {id='',token=''}=useParams();
@@ -57,7 +59,12 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
 }
 export function ActivitySharePage(){const {id=''}=useParams(),session=useSession();return <><PageIntro title="分享活動"/>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:session.data?<Share key={session.data.scope+':'+id} viewer={session.data} id={id}/>:<Notice>正在確認帳號…</Notice>}</>;}
 function Share({viewer,id}:{viewer:Viewer;id:string}){
-  const [message,setMessage]=useState(''),view=useQuery({queryKey:['private',viewer.scope,'activity-share',id],queryFn:()=>api(base(id)+'/share',ActivityShare,{headers:{'X-Account-Scope':viewer.scope}}),gcTime:0});
-  const link=view.data?location.origin+view.data.path:'';
-  return <><Link to={base(id)}>回到活動</Link>{view.isPending?<Notice>正在讀取分享連結…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<Surface className="detail">{view.data.invitation&&<Notice>持有者登入並確認後可查看活動，請只傳給預期參加者。</Notice>}<div className="device-link-field"><label htmlFor="activity-share-link">活動連結</label><textarea id="activity-share-link" readOnly value={link} rows={3} onFocus={event=>event.target.select()}/></div><Button onClick={()=>{if(!navigator.clipboard){setMessage('請選取連結手動複製。');return;}void navigator.clipboard.writeText(link).then(()=>setMessage('已複製活動連結。'),()=>setMessage('請選取連結手動複製。'));}}>複製活動連結</Button>{message&&<Text role="status">{message}</Text>}</Surface>}</>;
+  const [search,setSearch]=useSearchParams(),kind=search.get('kind')==='conditions'?'conditions':'activity';
+  const view=useQuery({queryKey:['private',viewer.scope,'activity-share',id],queryFn:async({signal})=>{
+    const headers={'X-Account-Scope':viewer.scope},share=await api(base(id)+'/share',ActivityShare,{headers,signal});
+    const event=await api(base(id),Activity,{headers,signal}),link=activityShareURL(location.origin,id,share);
+    if(event.id!==id)throw Error('活動摘要不符，請重新讀取。');
+    return {...share,event,link};
+  },gcTime:0});
+  return <><Link to={base(id)}>回到活動</Link>{view.isPending?<Notice>正在讀取分享連結…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<Surface className="detail">{view.data.invitation&&<Notice>持有者登入並確認後可查看活動，請只傳給預期參加者。</Notice>}<CopyActivityText text={view.data.link} label="活動連結" button="複製活動連結"/><div className="activity-summary-kind"><label htmlFor="activity-summary-kind">摘要內容</label><select id="activity-summary-kind" value={kind} onChange={event=>setSearch(event.target.value==='conditions'?{kind:'conditions'}:{})}><option value="activity">活動資訊</option><option value="conditions">目前安排</option></select></div><CopyActivityText key={kind} text={activitySummary(view.data.event,view.data.link,kind)} label={kind==='conditions'?'安排摘要':'活動摘要'} button={kind==='conditions'?'複製安排摘要':'複製活動摘要'}/></Surface>}</>;
 }
