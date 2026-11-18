@@ -26,19 +26,21 @@ export function describeLegacy(source:unknown,scope:string):LegacyDescription{
   const suffix=key.slice(('draft:'+scope+':').length),data=object.safeParse(row.data.data);
   if(!data.success)return {kind:'unknown',label:'無法辨識的舊草稿'};
   const value=data.data,fields=LegacyFields.safeParse(value.fields);
-  const react=z.object({react:z.literal(1),value:object,revision:z.number().int().nonnegative().optional()}).strict().safeParse(value);
+  const react=z.object({react:z.literal(1),value:object,revision:z.number().int().min(-1).optional(),warning:z.string().optional()}).strict().safeParse(value);
   const record={kind:'draft' as const,data:value};
   if(suffix==='event:new'||new RegExp('^(event|copy):'+id+'$').test(suffix)){
     if(react.success){
       const v=z.object({id:z.string(),title:z.string(),_intent:z.string(),_revision:z.union([z.string(),z.number()]),_lifecycle:z.string()}).safeParse(react.data.value);
       if(!v.success||v.data.id&&!new RegExp('^'+id+'$').test(v.data.id))return {kind:'unknown',label:'無法辨識的舊活動草稿'};
       // A form key and its embedded identity must agree; never route a damaged edit to a new create.
-      if(suffix.startsWith('event:')&&suffix!=='event:new'&&v.data.id!==suffix.slice(6)||suffix==='event:new'&&v.data.id||suffix.startsWith('copy:')&&v.data.id)return {kind:'unknown',label:'原活動草稿編號不符'};
+      const recovered=v.data.id&&CreateIntent.safeParse(v.data._intent).success&&(v.data._revision===-1||v.data._revision==='-1'||suffix==='event:new'||suffix.startsWith('copy:'));
+      if(suffix.startsWith('event:')&&suffix!=='event:new'&&v.data.id!==suffix.slice(6)&&!recovered||(suffix==='event:new'||suffix.startsWith('copy:'))&&v.data.id&&!recovered)return {kind:'unknown',label:'原活動草稿編號不符'};
       return {...record,label:'舊活動草稿',route:v.data.id?'/activities/'+encodeURIComponent(v.data.id):'/activities/new'};
     }
     if(!fields.success||!object.safeParse(value.dataset).success)return {kind:'unknown',label:'無法辨識的舊活動草稿'};
     const event=fields.data.find(f=>f.name==='id')?.value;
-    if(suffix.startsWith('event:')&&suffix!=='event:new'&&event!==suffix.slice(6)||suffix==='event:new'&&event||suffix.startsWith('copy:')&&event)return {kind:'unknown',label:'原活動草稿編號不符'};
+    const dataset=object.parse(value.dataset),recovered=event&&CreateIntent.safeParse(dataset.intent).success&&(dataset.revision===-1||dataset.revision==='-1'||suffix==='event:new'||suffix.startsWith('copy:'));
+    if(suffix.startsWith('event:')&&suffix!=='event:new'&&event!==suffix.slice(6)&&!recovered||(suffix==='event:new'||suffix.startsWith('copy:'))&&event&&!recovered)return {kind:'unknown',label:'原活動草稿編號不符'};
     return {...record,label:'舊活動草稿',route:event&&new RegExp('^'+id+'$').test(event)?'/activities/'+encodeURIComponent(event):'/activities/new'};
   }
   if(suffix==='time-poll:new'&&(fields.success||react.success&&z.object({title:z.string(),client_intent:z.string(),slots:z.array(z.object({key:z.string(),date:z.string(),time:z.string()}))}).safeParse(react.data.value).success))return {...record,label:'舊時間投票草稿',route:'/time-polls/new'};

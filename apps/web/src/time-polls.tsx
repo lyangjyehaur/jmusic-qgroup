@@ -18,10 +18,12 @@ import { api } from './api';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
+import { requireLegacyAvailable } from './legacy-local-availability';
 import { DraftFeedback } from './activity-settlement';
 import { Field } from './settlement-controls';
 import { PollCalendar } from './poll-calendar';
 import { CreateIntentLookup } from './create-intents';
+import { EditablePollDefinition as EditableDefinition,pollCreateInput as createInput } from './poll-create-record';
 type Poll = z.infer<typeof TimePoll>;
 const base = (id: string) => '/time-polls/' + encodeURIComponent(id),
   scoped = (v: Viewer) => ({ 'X-Account-Scope': v.scope });
@@ -103,23 +105,7 @@ export function TimePollsPage() {
     </>
   );
 }
-const EditableDefinition = z.object({
-  client_intent: z.string().uuid().optional(),
-  title: z.string(),
-  category: ActivityCategory,
-  location: z.string(),
-  description: z.string(),
-  timezone: z.string(),
-  capacity: z.number(),
-  minimum_participants: z.number(),
-  fee_policy: z.string(),
-  deadline: z.string(),
-  bot_enabled: z.boolean(),
-  time_mode: z.enum(['date', 'exact']),
-  duration_hours: z.number(),
-  options: z.array(z.string()),
-});
-const emptyDefinition = () => ({
+const emptyDefinition = ():z.infer<typeof EditableDefinition> => ({
   client_intent: crypto.randomUUID(),
   title: '',
   category: '约K' as const,
@@ -135,15 +121,6 @@ const emptyDefinition = () => ({
   duration_hours: 3,
   options: ['', ''],
 });
-function createInput(v: z.infer<typeof EditableDefinition>) {
-  const { duration_hours, ...rest } = v;
-  return CreateTimePoll.parse({
-    ...rest,
-    visibility: 'public',
-    ...(v.time_mode === 'exact' ? { duration_hours } : {}),
-    options: v.options.map((value) => (v.time_mode === 'date' ? { date: value } : { starts_at: value })),
-  });
-}
 export function NewTimePollPage() {
   return (
     <>
@@ -165,6 +142,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
     saveSchema: CreateTimePoll,
     resultSchema: TimePollResult,
     endpoint: '/time-polls',
+    beforeSubmit: () => requireLegacyAvailable(viewer.scope,'/time-polls/new'),
     latest: async (result) => ({ id: result ? TimePollResult.parse(result).id : null }),
     fromPending: (input) => ({
       ...input,
@@ -191,13 +169,16 @@ function CreatePoll({ viewer }: { viewer: Member }) {
   }, [form.locked, form.draft.value.client_intent]);
   const v = form.draft.value,
     edit = (patch: Partial<typeof v>) => form.edit({ ...v, ...patch });
+  const alreadyCreated=!!v.legacySource?.resolvedId;
   return (
     <Surface className="detail activity-editor">
       <Notice>投票公開可見，請勿填寫私人資訊。投票不占名額，定案後須另行報名。</Notice>
+      {v.legacySource&&<Notice>{alreadyCreated?'原投票已建立，此後續草稿保留，不能另建投票。':'已帶入舊稿，候選順序保留。'}{v.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}{alreadyCreated&&<Link to={'/time-polls/'+encodeURIComponent(v.legacySource.resolvedId!)}>查看原投票</Link>}</Notice>}
       <form
         noValidate
         onSubmit={(e) => {
           e.preventDefault();
+          if(alreadyCreated)return;
           if (form.draft.pending) void form.submit();
           else
             try {
@@ -207,7 +188,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
             }
         }}
       >
-        <fieldset disabled={form.locked}>
+        <fieldset disabled={form.locked||alreadyCreated}>
           <legend>預計安排</legend>
           <Field label="投票名稱">
             <input maxLength={60} value={v.title} onChange={(e) => edit({ title: e.target.value })} />
@@ -231,7 +212,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
               min="0"
               max="500"
               value={v.capacity}
-              onChange={(e) => edit({ capacity: Number(e.target.value) })}
+              onChange={(e) => edit({ capacity: e.target.value })}
             />
           </Field>
           <Field label="最低成團人數">
@@ -240,7 +221,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
               min="0"
               max="500"
               value={v.minimum_participants}
-              onChange={(e) => edit({ minimum_participants: Number(e.target.value) })}
+              onChange={(e) => edit({ minimum_participants: e.target.value })}
             />
           </Field>
           <Field label="費用規則">
@@ -268,7 +249,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
                 min="1"
                 max="24"
                 value={v.duration_hours}
-                onChange={(e) => edit({ duration_hours: Number(e.target.value) })}
+                onChange={(e) => edit({ duration_hours: e.target.value })}
               />
             </Field>
           )}
@@ -309,7 +290,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
             <span>同步到 QQ 群（仍依管理員群政策）</span>
           </label>
         </fieldset>
-        <Button type="submit" disabled={!!form.readError} loading={form.busy}>
+        <Button type="submit" disabled={!!form.readError||alreadyCreated} loading={form.busy}>
           {form.draft.pending ? '確認原投票建立結果' : '建立時間投票'}
         </Button>
       </form>

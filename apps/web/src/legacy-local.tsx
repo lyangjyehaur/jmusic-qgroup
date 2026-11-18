@@ -9,9 +9,11 @@ import { MemberAccess,type Member } from './member-access';
 import { Failure,Notice,PageIntro,sessionQuery,useSession } from './shared';
 import { describeLegacy,legacyBlocks,legacyCreateIntent } from './legacy-local-record';
 import { CreateIntentLookup } from './create-intents';
+import { LegacyAuthoringConversion } from './legacy-authoring-conversion';
+import { deviceDraftEpoch } from './draft-store';
 import { checkLegacySnapshot,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
-function useOriginals(viewer:Member){return useQuery({queryKey:['private',viewer.scope,'legacy-local'],queryFn:()=>preserveLegacy(viewer.scope),refetchOnWindowFocus:'always',staleTime:0});}
+function useOriginals(viewer:Member){return useQuery({queryKey:['private',viewer.scope,'legacy-local'],queryFn:async()=>{const inventory=await preserveLegacy(viewer.scope),epoch=await deviceDraftEpoch();return {...inventory,mappings:inventory.mappings.filter(m=>m.deviceEpoch===epoch)};},refetchOnWindowFocus:'always',staleTime:0});}
 export function LegacyLocalLink(){return <Link to={endpoint}>舊看板本機紀錄</Link>;}
 /** A legacy snapshot must be reconciled before its related new editor can create a second action. */
 export function LegacyLocalGuard({children}:{children:ReactNode}){
@@ -25,13 +27,14 @@ function Guard({viewer,path,children}:{viewer:Member;path:string;children:ReactN
   const query=useOriginals(viewer);
   if(query.isPending||query.isFetching)return <Notice>正在核對舊本機紀錄…</Notice>;
   if(query.error)return <Failure error={query.error} retry={()=>void query.refetch()}/>;
-  if(query.data.rows.some(row=>legacyBlocks(describeLegacy(row.source,viewer.scope),path)))return <Notice>此操作仍有舊看板原稿或原請求。請先核對原結果；目前不會轉成另一筆新版操作。<LegacyLocalLink/></Notice>;
+  const mapped=new Set(query.data.mappings.map(m=>m.id));
+  if(query.data.rows.some(row=>!mapped.has(row.id)&&legacyBlocks(describeLegacy(row.source,viewer.scope),path)))return <Notice>此操作仍有舊看板原稿或原請求。請先核對原結果；目前不會轉成另一筆新版操作。<LegacyLocalLink/></Notice>;
   return children;
 }
 export function LegacyLocalPage(){return <><PageIntro title="舊看板本機紀錄"/><MemberAccess>{viewer=><Inventory key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function Inventory({viewer}:{viewer:Member}){
   const query=useOriginals(viewer);
-  return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。先查原結果；目前尚未開放轉換與重送。</Notice>
+  return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。活動／投票先核對結果與時區，再明確帶入新版表單；原請求不會重送。</Notice>
     {query.isPending?<Notice>正在讀取舊紀錄…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
       {query.data.disabled?<Notice>已登出清除這台裝置的舊紀錄，舊分頁不能自動寫回。</Notice>:!query.data.rows.length?<Text>此帳號在這個瀏覽器沒有舊看板紀錄。</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
       <Button variant="secondary" disabled={query.isFetching} onClick={()=>void query.refetch()}>重新讀取舊紀錄</Button>
@@ -91,5 +94,6 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text><Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button></>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {intent&&!hasCredentials(row.source)&&<CreateIntentLookup key={row.id} viewer={viewer} {...intent} disabled={busy} validate={async()=>{await original();}}/>}
+    {description.kind==='draft'&&['舊活動草稿','舊時間投票草稿'].includes(description.label)&&!hasCredentials(row.source)&&<LegacyAuthoringConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
   </>;
 }

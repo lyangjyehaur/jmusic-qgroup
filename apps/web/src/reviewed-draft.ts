@@ -12,6 +12,7 @@ export function useReviewedDraft<T, S, F>(options: {
   endpoint: string; latest: (result?: unknown) => Promise<F>;
   matches: (value: T, input: S) => boolean; fromPending: (input: S) => T;
   after?: (fresh: F, result?: unknown) => void; afterRefresh?: (fresh: F) => void;
+  beforeSubmit?: () => Promise<void>;
 }) {
   const { key, viewer } = options,
     active = useRef(true), handle = useRef<DraftHandle | null>(null), queue = useRef(Promise.resolve()),
@@ -121,6 +122,10 @@ export function useReviewedDraft<T, S, F>(options: {
     submitting.current = true; setBusy(true); setMessage('');
     let accepted = false;
     try {
+      if (!draft.pending && options.beforeSubmit) {
+        try { await options.beforeSubmit(); }
+        catch (error) { if (active.current) setMessage(error instanceof Error ? error.message : '尚未送出，請先核對原紀錄。'); return false; }
+      }
       if (!await persist(next) || !active.current) return false;
       setDraft(next);
       const result = await api(options.endpoint, options.resultSchema, {

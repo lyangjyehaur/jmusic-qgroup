@@ -1,13 +1,15 @@
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { openDraft } from './draft-store';
+import { requireLegacyAvailable } from './legacy-local-availability';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { ActivityCopy, ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult, CreateActivityDraft, CreateIntent, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
+import { ActivityCopy, ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult } from '@qgroup/contracts';
 import { CreateIntentLookup } from './create-intents';
+import { ActivityEditorForm as Form,ActivityEditorDraft as Draft } from './activity-draft-record';
 import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -15,15 +17,7 @@ import { Failure, Notice, PageIntro } from './shared';
 type Saved = z.infer<typeof ActivityDraft> & {assisted?:boolean};
 type Values = z.infer<typeof ActivityArrangementInput>;
 const categories=[['约K','約 K'],['聚餐','聚餐'],['运动','運動'],['出游','出遊'],['游戏','遊戲'],['其他','其他']];
-const Form = z.object({title:z.string(),category:z.string(),location:z.string(),startsAt:z.string(),deadline:z.string(),capacity:z.string(),description:z.string(),durationHours:z.string(),withdrawalDeadline:z.string(),visibility:z.enum(['public','invitation']),timezone:z.string(),minimumParticipants:z.string(),feePolicy:z.string(),botEnabled:z.boolean(),joinOwner:z.boolean()}).strict();
 type FormValue = z.infer<typeof Form>;
-const Pending = z.discriminatedUnion('kind',[
-  z.object({kind:z.literal('create'),key:z.string().uuid(),input:CreateActivityDraft}).strict(),
-  z.object({kind:z.literal('save'),key:z.string().uuid(),input:SaveActivityDraft}).strict(),
-  z.object({kind:z.literal('remove'),key:z.string().uuid(),input:RemoveActivityDraft}).strict(),
-  z.object({kind:z.literal('publish'),key:z.string().uuid(),input:PublishActivityDraft}).strict(),
-]);
-const Draft = z.object({id:z.string().nullable(),revision:z.number().int().min(0),form:Form,reason:z.string().default(''),clientIntent:CreateIntent.optional(),pending:Pending.optional()}).strict();
 type DraftValue = z.infer<typeof Draft>;
 // Editing uses an explicit fixed offset, independent of the browser / event display zone.
 const localTime=(value:string|null)=>value?new Date(Date.parse(value)+8*3600000).toISOString().slice(0,19):'';
@@ -97,6 +91,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   function edit(patch:Partial<FormValue>){if(locked)return;if(published&&saved?.assisted&&patch.deadline&&draft.form.withdrawalDeadline===draft.form.deadline)patch.withdrawalDeadline=patch.deadline;record.change({...draft,form:{...draft.form,...patch}});setMessage('');setConfirmRemove(false);setConfirmPublish(false);}
   async function submit(kind:'save'|'remove'|'publish'='save'){
     if(busy||record.unavailable||(!draft.pending&&saved?.canEdit===false))return;
+    if(draft.legacySource?.reviewRequired){setMessage('請先核對目前安排與原稿，再保存或發布。');return;}
     let operation=draft.pending;
     if(!operation){
       if(kind==='remove'){
@@ -110,7 +105,9 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
         catch{setMessage('請檢查必填欄位、時間與人數範圍。');return;}
       }
     }
-    const pending={...draft,...(operation.kind==='create'&&operation.input.clientIntent?{clientIntent:operation.input.clientIntent}:{}),pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
+    const pending={...draft,...(operation.kind==='create'&&operation.input.clientIntent?{clientIntent:operation.input.clientIntent}:{}),pending:operation};if(!record.begin())return;
+    if(!draft.pending){try{await requireLegacyAvailable(viewer.scope,saved?'/activities/'+encodeURIComponent(saved.id)+(published?'/arrangements':'/edit'):'/activities/new');}catch(error){if(active.current){setMessage(error instanceof Error?error.message:'尚未送出，請先核對原紀錄。');setBusy(false);}return;}}
+    if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api(operation.kind==='remove'?path+'/remove':operation.kind==='publish'?path+'/publish':path,ActivityDraftResult,{method:operation.kind==='save'?'PUT':'POST',headers:{'Content-Type':'application/json','X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
       if(!active.current)return;
@@ -144,13 +141,14 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   }
   async function rebase(){
     if(!saved||draft.pending||readError||busy)return;setBusy(true);
-    try{const latest=await api(path,published?ActivityArrangements:ActivityDraft,{headers:{'X-Account-Scope':viewer.scope}});if(!active.current)return;const next={...draft,revision:latest.revision};if(!await persist(next))return;setDraft(next);setSaved(latest);setComparison(true);setConfirmRemove(false);setConfirmPublish(false);setMessage('已取得目前安排；輸入仍保留，請核對後再保存。');}
+    try{const latest=await api(path,published?ActivityArrangements:ActivityDraft,{headers:{'X-Account-Scope':viewer.scope}});if(!active.current)return;const next={...draft,revision:latest.revision,...(draft.legacySource?{legacySource:{...draft.legacySource,reviewRequired:false}}:{})};if(!await persist(next))return;setDraft(next);setSaved(latest);setComparison(true);setConfirmRemove(false);setConfirmPublish(false);setMessage('已取得目前安排；輸入仍保留，請核對後再保存。');}
     catch(error){if(active.current)setMessage(error instanceof Error?error.message:'讀取失敗');}finally{if(active.current)setBusy(false);}
   }
   const f=draft.form;const owner=saved?.isOwner??true;
   return <>{blocker.state==='blocked'&&<Surface role="alert"><Text>仍有活動草稿或待確認操作。</Text><Button onClick={()=>blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={()=>void record.leave()}>保留草稿並離開</Button></Surface>}
     {saved&&<div className="page-actions"><Link to={'/activities/'+encodeURIComponent(saved.id)+'/delegation'}>管理分工</Link></div>}
     {comparison&&saved&&<Comparison saved={saved}/>}
+    {draft.legacySource&&<Notice>已帶入舊稿；原保存版本：{draft.legacySource.baseRevision??'未記錄'}。{draft.legacySource.reviewRequired?'請先核對目前安排，輸入仍保留。':''}{draft.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}</Notice>}
     {published&&saved?.assisted&&<Notice>以管理員身分協助修改，必須填寫原因；不授予名單或帳務權限。原退出期限若連動報名截止，會一併連動。</Notice>}
     {published&&saved?.canEdit===false&&<Notice>目前不能修改活動安排；請核對活動狀態與管理權限。</Notice>}
     <Surface className="detail activity-editor"><form noValidate onSubmit={event=>{event.preventDefault();void submit();}}>
@@ -168,9 +166,9 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
         <div className="account-field"><label htmlFor="activity-description">活動說明</label><textarea id="activity-description" rows={5} value={f.description} maxLength={6000} onChange={e=>edit({description:e.target.value})}/></div>
         {saved&&<label className="account-field">{published?'修改原因（重要安排或管理員協助必填）':'修改原因（選填）'}<input value={draft.reason} maxLength={400} onChange={e=>record.change({...draft,reason:e.target.value})}/></label>}
       </fieldset>
-      <Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button>
+      <Button type="submit" loading={busy} disabled={!!draft.legacySource?.reviewRequired||!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button>
     </form>{saved&&saved.canEdit&&!draft.pending&&<Button variant="secondary" disabled={busy||!!readError} onClick={()=>void rebase()}>核對目前安排，保留輸入</Button>}
-    {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
+    {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!!draft.legacySource?.reviewRequired||!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!!draft.legacySource?.reviewRequired||!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
     {message&&<Text role="status">{message}</Text>}{completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
     {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy}/>}
     <DraftFeedback form={record} navigation={false}/>
