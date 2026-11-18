@@ -6834,7 +6834,12 @@
         "apps/web/src/bot-kind-labels.ts",
         "apps/web/src/activity-history.tsx",
         "apps/web/src/durable-record.ts",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/activity-summary.ts",
+        "apps/web/src/activity-sharing.tsx",
+        "apps/web/src/music-share-canvas.ts",
+        "apps/web/src/music-room-share.tsx",
+        "apps/web/src/api.ts"
       ],
       "behavior_evidence": [
         "apps/api/testsupport/language.test.ts",
@@ -6851,10 +6856,13 @@
       "ux_evidence": [
         "apps/web/tests/language.spec.ts",
         "docs/unified-rebuild/92-display-language-checkpoint.md",
-        "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md"
+        "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md",
+        "apps/web/tests/activity-sharing.spec.ts",
+        "apps/web/tests/music-share.spec.ts",
+        "docs/unified-rebuild/94-display-fragments-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、建置期静態及動態固定片段、原例外保全與統一手冊已實作；106 檔／3,906 顯示邊界／162 固定本機錯誤、分類與 user text／原稿／回執、雙分頁、bot 事件鍵及未知錯誤原文已補驗（檢查點 93）。其餘純顯示 arrays／helper／驗證片段、API 通知／安排／結算／錯誤与使用者插值、統一政策／同意、完整候選 web／bot 組合與實體裝置驗收待完成；禁止全文轉換使用者資料。"
+      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定顯示／本機錯誤與手冊已實作；107 檔／4,092 邊界／165 固定本機錯誤，補驗選單、原生 template 插值／string hint、雙語摘要原文／行高、成分 level／Canvas／原稿及管理分類原協議值（檢查點 94）。固定 subclass／驗證錯誤、持久舊稿系統 notes 的呈現、API 通知／安排／結算／錯誤、統一政策／同意、候選 web／bot 組合與實體裝置驗收仍待完成；不全文轉換使用者或持久資料。"
     },
     {
       "capability_id": "O09",

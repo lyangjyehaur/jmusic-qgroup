@@ -43,7 +43,7 @@ test.describe('persistent paired backups', () => {
     await open(page, context); await page.getByRole('checkbox', { name: confirm, exact: true }).check();
     let release!: () => void, arrived!: () => void; const gate = new Promise<void>(resolve => { release = resolve; }), started = new Promise<void>(resolve => { arrived = resolve; }); let files = 0; page.on('download', () => { files++; });
     await page.route('**/api/v2/admin/music-export', async route => { const response = await route.fetch(); arrived(); await gate; try { await route.fulfill({ response }); } catch { /* The navigation aborts this request. */ } });
-    await page.getByRole('button', { name: '下載目前成分 JSON', exact: true }).click(); await started; await page.getByRole('link', { name: '管理後台', exact: true }).click(); release(); await expect(page.getByRole('heading', { name: '管理後台', exact: true })).toBeVisible(); expect(files).toBe(0);
+    await page.getByRole('button', { name: '下載目前成分 JSON', exact: true }).click(); await started; await page.getByRole('link', { name: '管理後臺', exact: true }).click(); release(); await expect(page.getByRole('heading', { name: '管理後臺', exact: true })).toBeVisible(); expect(files).toBe(0);
     await page.unroute('**/api/v2/admin/music-export'); await login(context, 'bob'); await page.goto('/admin/backups'); await page.getByLabel('管理救援憑證', { exact: true }).fill('synthetic-admin-rescue-' + 'x'.repeat(32)); await page.getByRole('button', { name: '使用救援憑證登入', exact: true }).click();
     await page.getByRole('checkbox', { name: confirm, exact: true }).check(); expect(Object.keys((await download(page)).members)).toContain('10001');
   });
