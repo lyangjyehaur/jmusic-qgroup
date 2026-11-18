@@ -1,0 +1,26 @@
+# A Dockerfile-specific allowlist; the legacy Python context is unchanged.
+**
+!package.json
+!package-lock.json
+!tsconfig.rebuild.json
+!release-source.json
+!apps/
+!apps/**
+!packages/
+!packages/**
+!tools/
+!tools/rebuild/
+!tools/rebuild/build-api.mjs
+!deploy/
+!deploy/unified.Dockerfile
+!deploy/unified.Dockerfile.dockerignore
+**/*.test.ts
+**/testsupport/
+**/tests/
+**/node_modules/
+**/.env*
+**/*.sqlite*
+**/*.db
+**/*.pem
+**/*.key
+**/*.log

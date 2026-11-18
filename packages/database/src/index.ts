@@ -97,6 +97,16 @@ export function openDatabase(path: string): DB {
   catch (error) { db.close(); throw error; }
 }
 
+/** Runtime services never initialize, import or upgrade storage implicitly. */
+export function openServiceDatabase(path:string):DB{
+  const db=new Database(path,{fileMustExist:true});
+  try{
+    const versions=db.prepare('SELECT version,baseline FROM rebuild_schema').all() as {version:number;baseline:string}[];
+    if(versions.length!==1||versions[0]?.version!==REBUILD_SCHEMA_VERSION||versions[0].baseline!=='8da877857f163853c449474e168534e2e493121b')throw Error('Storage requires explicit offline migration before service startup');
+    assertDatabaseUsable(db);db.pragma('foreign_keys = ON');db.pragma('busy_timeout = 5000');db.pragma('journal_mode = WAL');return db;
+  }catch(error){db.close();throw error;}
+}
+
 export { eraseLegacyProfile, detachLegacyAccount, retireLegacyProfileProofs } from './legacy-erasure';
 export { legacyMusicFields, seedMusicFields, type StoredMusicFields } from './music-fields';
 export { seedMusicShouts, removeMusicShout } from './music-shouts';

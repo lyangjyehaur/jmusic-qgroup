@@ -1,3 +1,5 @@
+import { runtimeInfo } from '@qgroup/runtime';
+import { clientAddress } from './client-address';
 import { registerActivityAccess } from './activity-access';
 import { registerAdminBot } from './admin-bot';
 import { registerAdminOperations } from './admin-operations';
@@ -64,7 +66,7 @@ import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
 import { registerPublicAPI } from './public-api';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; runtimeInfo?:ReturnType<typeof runtimeInfo> }
 export function createApp(options: AppOptions) {
   const { db } = options;
   assertDatabaseUsable(db);
@@ -81,10 +83,10 @@ export function createApp(options: AppOptions) {
     catch { throw new DomainError('BACKUP_REQUIRED', '操作尚未執行：無法完成配對備份，請維運人員檢查儲存空間、圖片與刪除紀錄', 503); }
   });
   const musicClaims = createMusicClaims(db, now);
-  const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: request.ip }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
+  const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: clientAddress(request) }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
-  app.register(rateLimit, { max: 180, timeWindow: '1 minute' });
+  app.register(rateLimit, { max: 180, timeWindow: '1 minute',keyGenerator:clientAddress });
   // Independent of browser sessions, write recovery hooks and browser errors.
   registerPublicAPI(app, db, now, options.publicAPIKeys ?? (() => process.env.KANBAN_PUBLIC_API_KEYS ?? ''), privacy.assertReadable);
   if (backups && options.pairedBackupScheduling !== false) {
@@ -111,7 +113,9 @@ export function createApp(options: AppOptions) {
       request.log.error(error);
       return reply.code(500).send({ code: 'INTERNAL_ERROR', message: '暫時無法完成操作，請保留選擇後重試' });
     });
-    app.get('/api/v2/health', async () => ({ ok: true, project: 'qgroup-unified-rebuild', schema: REBUILD_SCHEMA_VERSION }));
+    const health=async()=>{try{if(!(db.prepare('SELECT 1 AS alive').get() as {alive:number}).alive)throw Error();return {ok:true,project:'qgroup-unified-rebuild',schema:REBUILD_SCHEMA_VERSION};}catch{throw new DomainError('HEALTH_UNAVAILABLE','資料庫無法讀取',503);}};
+    app.get('/api/v2/health',health);app.get('/api/health',health);
+    app.get('/api/v2/version',async()=>options.runtimeInfo??runtimeInfo('web',{}));
     registerAuth(app, db, security, now, options.qq, musicClaims);
     registerMusicClaims(app, db, security, musicClaims);
     registerAccountDevices(app, db, security, now);

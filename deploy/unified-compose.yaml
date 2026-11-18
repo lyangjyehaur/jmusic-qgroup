@@ -1,0 +1,58 @@
+# Candidate runtime configuration. No build or automatic deployment.
+# Validate immutable images and limits with check-runtime-compose.ts first.
+name: qgroup-unified
+x-common: &common
+  network_mode: host
+  user: "${QGROUP_UID:-994}:${QGROUP_GID:-992}"
+  volumes:
+    - ${QGROUP_DATA_DIR:?Set an explicit isolated or approved data directory}:/var/lib/qgroup
+  init: true
+  restart: unless-stopped
+  stop_grace_period: 15s
+  read_only: true
+  tmpfs:
+    - /tmp:rw,nosuid,nodev,noexec,size=64m
+  cap_drop: [ALL]
+  security_opt: ["no-new-privileges:true"]
+  mem_limit: 512m
+  memswap_limit: 512m
+  cpus: 1
+  pids_limit: 128
+  logging:
+    driver: json-file
+    options: {max-size: "10m", max-file: "5"}
+services:
+  web:
+    <<: *common
+    image: ${QGROUP_WEB_IMAGE:?Set the verified immutable web image reference}
+    env_file:
+      - path: ${QGROUP_WEB_ENV_FILE:?Set the private web environment file}
+        required: true
+    environment:
+      REBUILD_DB: /var/lib/qgroup/kanban.sqlite3
+      REBUILD_HOST: 127.0.0.1
+      REBUILD_PORT: "${QGROUP_WEB_PORT:-8791}"
+      REBUILD_ORIGIN: ${QGROUP_ORIGIN:?Set the approved public origin}
+    command: [node, .rebuild-dist/api/start.mjs]
+    healthcheck:
+      test: [CMD, node, -e, "fetch('http://127.0.0.1:'+process.env.REBUILD_PORT+'/api/v2/health',{signal:AbortSignal.timeout(3000)}).then(async r=>{if(!r.ok||(await r.json()).ok!==true)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+  bot:
+    <<: *common
+    image: ${QGROUP_BOT_IMAGE:?Set the verified immutable bot image reference}
+    env_file:
+      - path: ${QGROUP_BOT_ENV_FILE:?Set the private bot environment file}
+        required: true
+    environment:
+      KANBAN_DB: /var/lib/qgroup/kanban.sqlite3
+      KANBAN_BOT_LOG_DIR: /var/lib/qgroup/bot-logs
+    command: [node, .rebuild-dist/bot/start.mjs]
+    healthcheck:
+      test: [CMD, node, .rebuild-dist/bot/start.mjs, --check-health]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 90s

@@ -7,6 +7,7 @@ const result = await build({ entryPoints: ['apps/api/src/start.ts'], outfile: '.
 for (const path of Object.keys(result.metafile.inputs)) {
   if (path.includes('/testsupport/') || path.endsWith('.test.ts')) throw new Error(`Test-only code in runtime bundle: ${path}`);
 }
+await build({entryPoints:['packages/database/src/index.ts'],outfile:'.rebuild-dist/api/database.mjs',bundle:true,platform:'node',format:'esm',external:Object.keys(pkg.dependencies),logLevel:'info'});
 
 await build({ entryPoints: ['apps/api/src/music-room-task.ts'], outfile: '.rebuild-dist/api/music-room-worker.mjs',
   bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), logLevel: 'info' });
