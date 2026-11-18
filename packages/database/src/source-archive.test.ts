@@ -22,6 +22,19 @@ describe('inactive music source archive privacy',()=>{
       expect(JSON.parse(row.payload_json)).toEqual({entryId:'entry',entry:{...entry,createdBy:''}});
     }finally{db.close();}
   });
+  it('uses the retained migration mapping to erase legacy-key sources and proofs after the legacy projection is absent',()=>{
+    const db=openDatabase(':memory:');
+    try{
+      db.prepare("INSERT INTO migration_map VALUES('music','profile','10000','erased','','original','preserved')").run();
+      db.prepare('INSERT INTO music_documents VALUES(?,?,?)').run('entry_source',0,JSON.stringify({entryId:'entry',entry:{createdBy:'10000',text:'retain'}}));
+      db.prepare('INSERT INTO music_legacy_identity VALUES(?,?,?)').run('sessions',0,JSON.stringify({qq:'10000',token_hash:'inactive-but-private'}));
+      eraseLegacyProfile(db,'erased','stamp');
+      expect(db.prepare("SELECT json_extract(payload_json,'$.entry.createdBy') AS creator FROM music_documents WHERE kind='entry_source'").get()).toEqual({creator:''});
+      expect(db.prepare('SELECT * FROM music_legacy_identity').all()).toEqual([]);
+      expect(db.prepare("SELECT status FROM migration_map WHERE source='music'").get()).toEqual({status:'erased'});
+      expect(db.prepare('SELECT erased_at_json FROM music_legacy_erasures WHERE legacy_key=?').get('10000')).toEqual({erased_at_json:'"stamp"'});
+    }finally{db.close();}
+  });
   it('clears closed-account references from source evidence without deleting separate music or inactive PIN fields',()=>{
     const db=openDatabase(':memory:');
     try{

@@ -1,6 +1,6 @@
 # 第九十二批實作：成分來源封存與獨立對帳
 
-日期：2026-11-18（Asia/Taipei）。分支 `codex/unified-rebuild`。變更範圍 **`both`**：離線匯入與共用資料刪除邊界一起調整，仍須驗證候選 web／實際保留 Python 或 TS bot 的組合。實際發布 **`none`**；沒有合入 main、部署、正式資料／憑證／群設定／真實待送操作。
+日期：2026-11-18–19（Asia/Taipei）。分支 `codex/unified-rebuild`。變更範圍 **`both`**：離線匯入與共用資料刪除邊界一起調整，仍須驗證候選 web／實際保留 Python 或 TS bot 的組合。實際發布 **`none`**；沒有合入 main、部署、正式資料／憑證／群設定／真實待送操作。
 
 ## 來源封存
 
@@ -12,7 +12,7 @@
 
 ## 刪除與帳號關閉
 
-- 成分刪除移除 `profile_source`，即使前一次 replay 已移除 legacy projection 也能依穩定 profile ID 清理，不因缺少舊 row 提早返回而保留私人證據。
+- 成分刪除移除 `profile_source`，即使前一次 replay 已移除 legacy projection 也能依穩定 profile ID 清理，不因缺少舊 row 提早返回而保留私人證據。原 key 也從保留的 migration_map 取回，清除同一成分的 legacy-key 建立者、session／identity 原稿及刪除去向；不依稱呼或 QQ 猜測關聯。
 - 刪除意圖所涉及的原 legacy key 或穩定 profile ID，都會清除詞條投影及 `entry_source` 的 createdBy，保留詞條及其他人的選擇。來源 members 未包含該 profile 的新版 ledger 也有效；原先僅依 legacy key 遮蔽建立者的缺口已補上。
 - 帳號關閉清除來源會員及 native recovery 的 boardUserId，移除相關 session／entry_intent／link 證明；分離的成分原稿、PIN 及聯絡空值仍保留，不因關閉看板帳號而刪除另一份成分。
 - 管理 reset 按 ledger 捕捉的 entry IDs 移除相應 `entry_source`，同時維持原詞條／選擇／找搭子／trend 清除範圍；不留下可重建已刪資料的私人原稿。
@@ -32,13 +32,25 @@ identity reader 現在以 safeIntegers 讀取 INTEGER，先檢查安全範圍才
 ## 隔離驗證
 
 - Strict TypeScript 與 production React／API／bot build 通過。主 JS **1,482.05 kB／gzip 432.87 kB**，效能警告仍在。
-- 針對性 **73 項／2 檔通過**：匯入 70 項與來源隱私 3 項。新增 JSON／native 完整原稿、原雜湊、原選擇、聯絡清空、Unicode JSON 關閉帳號改寫、數字 native recovery 排序、缺席 snapshot 的穩定 ID 建立者、重播後無 legacy row 的來源刪除，以及 BLOB／大 INTEGER／REAL 拒絕；重跑保留新寫入。
+- 針對性 **74 項／2 檔通過**：匯入 70 項與來源隱私 4 項。新增 JSON／native 完整原稿、原雜湊、原選擇、聯絡清空、Unicode JSON 關閉帳號改寫、數字 native recovery 排序、缺席 snapshot 的穩定 ID 建立者、重播後無 legacy row 的來源刪除，原 projection 不在而映射仍在時的原 key／憑證清除，以及 BLOB／大 INTEGER／REAL 拒絕；重跑保留新寫入。
 - **23 類成分候選損壞**均阻止發布：選擇等級／順序、ownership、contact、created／note／alias／時間、會員／詞條來源漏失或重複項被改、已刪內容復活、native proof、used OAuth 原列、舊憑證變新版 claim、停用管理憑證狀態、trend、喊話名字／作者、tombstone、來源／身份映射及 erasure timestamp。逐例核對來源不變、目的不存在、staging 清除。
-- 完整單工 **1,022 項／116 檔通過**，包含看板 59 表對帳、Python bot／outbox／gateway／財務／授權／備份／恢復差分。release source rejection 是既有負向測試，沒有發布操作。
+- 最終完整單工 **1,023 項／116 檔通過**，包含看板 59 表對帳、Python bot／outbox／gateway／財務／授權／備份／恢復差分。release source rejection 是既有負向測試，沒有發布操作。
 - compiled smoke 的 API／SQLite／sharp、配對備份／歷史匯出、blocked recovery、bounded room worker、bot 本機 HTTP／WebSocket／ACK／Resume／未知投遞／simulation／CLI／SIGTERM 通過。未啟動正式 worker 或真 QQ。
-- 未改 TSX；本批未重跑完整瀏覽器。新的固定映像建置與 archive 隱私 probe 待本批執行後補記。
+- 未改 TSX；本批未重跑完整瀏覽器。第一份固定映像已通過，恢復邊界補修後的最終固定映像仍須另外驗證。
 
-記錄：`/tmp/qgroup-music-reconcile-targeted-first.log`、`/tmp/qgroup-music-reconcile-targeted.log`、`/tmp/qgroup-music-reconcile-typecheck.log`、`/tmp/qgroup-music-reconcile-native.log`、`/tmp/qgroup-music-reconcile-build.log`、`/tmp/qgroup-music-reconcile-smoke.log`。
+記錄：`/tmp/qgroup-music-reconcile-targeted-first.log`、`/tmp/qgroup-music-reconcile-targeted.log`、`/tmp/qgroup-music-reconcile-typecheck.log`、`/tmp/qgroup-music-reconcile-native.log`、`/tmp/qgroup-music-reconcile-build.log`、`/tmp/qgroup-music-reconcile-smoke.log`。補修檢查：`/tmp/qgroup-music-reconcile-orphan-before.log`（原 key 保留的失敗證據）、`/tmp/qgroup-music-reconcile-targeted-final.log`、`/tmp/qgroup-music-reconcile-native-final.log`、`/tmp/qgroup-music-reconcile-typecheck-final.log`、`/tmp/qgroup-music-reconcile-build-final.log`、`/tmp/qgroup-music-reconcile-smoke-final.log`。
+
+## 固定來源映像
+
+核心實作來源 `7b3a44a604002921a1e2add803d39e919d272b3a`。首輪乾淨 archive 的映像建置，在 better-sqlite3 的 node-gyp 從 nodejs.org 下載 Node v22.22.3 headers 時遇到 ECONNRESET／socket hang up，未成功產生候選映像。
+
+隔離 Node 基底 probe 已確認 `v22.22.3`／x64 及 `/usr/local/include/node` 的 node.h／config.gypi／common.gypi 存在。`deploy/unified.Dockerfile` 現在以 `npm_config_nodedir=/usr/local` 使用同一基底內的標頭編譯，減少額外下載；不改套件版本或原生功能。實際編譯與載入仍須通過，沒有用略過 native 模組解決失敗。
+
+新映像來源 **`b093a6009570a0c32d3b0fbde50ee0de36781d01`**、tree **`5033ebd59dbf61757edc8c83a136018b58c323bd`**。`prepare-image.ts` 已從乾淨工作目錄封存這個完整 SHA 到 `/tmp/qgroup-image-b093a60-music-reconcile/context`；purpose 是 rehearsal，未走正式發布或 registry push。來源工具的 2 項隔離測試也通過，包括未合 main 的正式來源拒絕。
+
+第一份固定映像 `sha256:d126d0034ee26e9753a69f0a8db84ca0dcae43c4e0149e14a3edeeaff5b46666`、config `sha256:c92ed007b05dfb2829f03761a586a9ece3c3e8ac3d1be66b26ab1abc4b8c0233` 已通過 schema 15、24 shell／4 error／3 archive probe、非 root／512 MiB／network none／SIGTERM；容器與 volume 已清除。
+
+之後新增原 projection 已缺席、mapping 尚在的恢復案例，初次驗證保留了原 key 的 creator，確認舊分支提早 return 的缺口；以映射取回原 key 修正，針對性 74 項通過。這份早期映像不包含補修，不能算作最終候選或已核准回退。補修後完整回歸 1,023 項、strict／build／compiled smoke 均通過；含 4 項 archive probe 的最終固定映像待本批完成後補記。首輪及新建置紀錄：`/tmp/qgroup-music-reconcile-image-build.log`、`/tmp/qgroup-music-reconcile-image-build-final.log`、`/tmp/qgroup-music-reconcile-image-source-final.log`、`/tmp/qgroup-music-reconcile-image-source-test.log`。
 
 ## 尚未放行的項目
 
