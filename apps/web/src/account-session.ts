@@ -1,3 +1,4 @@
+import { clearDeviceLinks } from './device-link-store';
 import { clearDurableDrafts } from './draft-store';
 const channelName = 'qgroup:rebuild:session';
 function clearMusicSessionDrafts(scope: string) {
@@ -22,6 +23,7 @@ function clearDeviceSessionDrafts() {
 }
 export async function clearDeviceDrafts() {
   clearDeviceSessionDrafts();
+  await clearDeviceLinks();
   await clearDurableDrafts();
 }
 export function announceAccountChange(logout = false) {

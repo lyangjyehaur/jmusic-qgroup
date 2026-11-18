@@ -16,6 +16,8 @@ async function login(page: Page, code: string, destination = '/me/accounts') {
 }
 async function issue(page: Page) {
   await page.goto('/me/devices');
+  await expect(page.getByRole('checkbox',{name:'只授權自己的另一台裝置',exact:true})).toBeVisible();
+  if(await page.getByRole('textbox',{name:'裝置連結（可手動複製）'}).count())await page.getByRole('button',{name:'撤銷未使用連結',exact:true}).click();
   await page.getByRole('checkbox', { name: '只授權自己的另一台裝置' }).check();
   await page.getByRole('button', { name: '產生限時連結', exact: true }).click();
   const field = page.getByRole('textbox', { name: '裝置連結（可手動複製）' });
@@ -77,12 +79,12 @@ test('guest retains the link through login, can cancel without consuming, and se
     const source = await sourceContext.newPage(); const guest = await guestContext.newPage();
     await login(source, 'device-guest-source'); const first = await issue(source);
     await guest.goto(first); await expect(guest.getByRole('link', { name: '登入後確認授權', exact: true })).toBeVisible();
-    await guest.getByRole('button', { name: '取消並返回帳號', exact: true }).click();
+    await guest.getByRole('button', { name: '取消並返回帳號', exact: true }).click();await expect(guest).toHaveURL(baseURL+'/me/accounts');
     expect((await (await guestContext.request.get('/api/v2/session')).json()).authenticated).toBe(false);
     await guest.goto(first); await expect(guest.getByRole('heading', { name: '授權帳號：測試帳號 device-guest-source', exact: true })).toBeVisible();
     const second = await issue(source);
     await guest.reload(); await expect(guest.getByText('連結已過期、使用或撤銷，請重新產生', { exact: true })).toBeVisible();
-    await guest.goto(second); await guest.getByRole('link', { name: '登入後確認授權', exact: true }).click();
+    await guest.goto(second); if(await guest.getByRole('button',{name:'改用目前開啟的連結',exact:true}).count())await guest.getByRole('button',{name:'改用目前開啟的連結',exact:true}).click(); await guest.getByRole('link', { name: '登入後確認授權', exact: true }).click();
     await expect(guest).toHaveURL(/\/login\?returnTo=%2Fme%2Fdevices%2Faccept$/);
     await login(guest, 'device-guest-member', '/me/devices/accept');
     await expect(guest.getByRole('heading', { name: '授權帳號：測試帳號 device-guest-source', exact: true })).toBeVisible();
@@ -112,7 +114,7 @@ test('storage failure keeps the link visible for recovery and blocks sending aut
   try {
     const source = await sourceContext.newPage(); const target = await targetContext.newPage();
     await login(source, 'device-storage-source'); const link = await issue(source);
-    await target.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('synthetic blocked storage', 'SecurityError'); }; });
+    await target.addInitScript(() => {const original=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){const r=original.call(this,value,key);if(this.name==='links'){const tx=this.transaction;r.addEventListener('success',()=>tx.abort());}return r;};});
     let writes = 0; target.on('request', r => { if (r.method() === 'POST' && r.url().includes('/device-links/')) writes++; });
     await target.goto(link);
     await expect(target.getByText('無法暫存裝置連結', { exact: false })).toBeVisible();
