@@ -62,7 +62,7 @@ test('checks real missing receipts with original payload and key, retains done r
 });
 test('shows an explicitly checked committed target and recovers a lost read response without changing the original operation',async({page,context})=>{
   await login(context);await seed(page,[operation()]);let checks=0;await page.route('**/api/v2/me/legacy-requests/check',async route=>{checks++;if(checks===1)await route.abort('failed');else await route.fulfill({json:{committed:true,target:{kind:'activity',id:'listen'}}});});
-  await page.goto('/me/local-history');await loaded(page);await page.getByRole('button',{name:'核對原請求結果',exact:true}).click();await expect(page.getByText(/Failed to fetch/)).toBeVisible();
+  await page.goto('/me/local-history');await loaded(page);await page.getByRole('button',{name:'核對原請求結果',exact:true}).click();await expect(page.getByText('連線未完成，請先核對結果後重試。',{exact:true})).toBeVisible();
   await page.reload();await loaded(page);expect(checks).toBe(1);await page.getByRole('button',{name:'核對原請求結果',exact:true}).click();await expect(page.getByRole('link',{name:'查看原活動',exact:true})).toHaveAttribute('href','/activities/listen');expect(checks).toBe(2);expect((await rows(page,true))[0]).toEqual(operation());
 });
 test('preserves competing old versions and prevents querying a superseded source snapshot',async({page,context})=>{

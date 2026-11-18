@@ -6914,7 +6914,7 @@
         "docs/unified-rebuild/96-system-error-displays-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定與動態顯示片段、原生 template／原文、手冊／統一政策及同意已隔離實作。API／domain 361 個固定標記、例外身份／cause／stack／Zod issues、可選顯示欄位及舊回應相容、圖片／下載／原 UUID／payload／雙分頁刪除已補驗（檢查點 96）；原生完整 963 項與新增雙語瀏覽器 14 場景通過。全套瀏覽器回歸進行中；未標記固定 helper／驗證訊息、持久系統 notes、API 通知／安排／結算顯示、實際候選 web／bot 組合、實體裝置與 QQ WebView 仍待完成，不轉換使用者或持久原文。"
+      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定與動態顯示片段、原生 template／原文、手冊／統一政策及同意已隔離實作。API／domain 361 個固定標記、例外身份／cause／stack／Zod issues、可選顯示欄位及舊回應相容、圖片／下載／原 UUID／payload／雙分頁刪除已補驗（檢查點 96）；原生完整 963 項與新增雙語瀏覽器 14 場景通過。全套 829 場景首輪＋修正後覆蓋通過，固定映像 runtime／24 shell／4 API 錯誤契約通過；未標記固定 helper／驗證訊息、持久系統 notes、API 通知／安排／結算顯示、實際候選 web／bot 組合、實體裝置與 QQ WebView 仍待完成，不轉換使用者或持久原文。"
     },
     {
       "capability_id": "O09",

@@ -29,10 +29,20 @@ OpenCC 只在建置時生成顯示對。API 顯示表留在後端；共用 domai
 - 首輪完整命令漏了 npm 的 `--`，單工參數未傳給 Vitest，出現 20 個逾時／相關失敗及 1 個 worker 啟動錯誤；該輪 934 通過不算驗收。修正命令後完整單工通過，未放寬測試期限、減少資料或略過 bot 案例。發布來源拒絕訊息屬既有負向測試，沒有發起發布。
 - 新增雙語瀏覽器 **14 場景全數通過**：實際 API 找不到與 scope 拒絕、實際稱呼 revision 衝突、malformed schema 的原稿保全、未標記的原文、刪除雙分頁衝突／原憑證保全、已提交但回應不符的原 UUID／payload 恢復、管理下載確認及零檔案釋出、圖片錯誤／重試及其他原圖保留。首輪使用舊前端產物、錯誤備份 ID 格式／scope 提示預期及沒有圖片的 fixture 入口，另遇瀏覽器啟動逾時；重建並修正案例準備後通過，未移除保全斷言。
 - compiled smoke 通過空合成庫的 API／SQLite／sharp、配對備份與歷史匯出、blocked recovery、bounded room worker；原生 bot mock HTTP／WebSocket／ACK／Resume／未知投遞／simulation／CLI／SIGTERM 均通過。沒有真 QQ 連線或投遞。
-- 全套瀏覽器回歸 **829 場景／77 檔**已開始，結果待完成；不能以 14 個新場景代表全站操作驗收。
+- 全套瀏覽器 **829 場景／77 檔**完成：首輪 815 通過、14 失敗。12 個裝置場景仍以「台裝置」定位轉換後的「臺裝置」；管理刪除場景關頁早於第一個 HTTP 送出，原憑證雖已保存但原任務被卸載取消，測試補上送出一次的等待；舊本機恢復場景仍預期英文網路例外，改驗短恢復提示。修正後相關三檔 **45 場景全部通過**，保留原憑證、原稿、UUID／payload、零重送與不擴權斷言。整體採首輪＋修正後覆蓋計算，829 個场景均有通過證據；没有宣稱單次全套全綠或實體裝置驗收。
 
-暫存記錄：`/tmp/qgroup-error-displays-native-single.log`、`/tmp/qgroup-error-displays-build.log`、`/tmp/qgroup-error-displays-browser-new2.log`、`/tmp/qgroup-error-displays-browser-full.log`、`/tmp/qgroup-error-displays-smoke.log`。AST 比對腳本為 `/tmp/qgroup-audit-error-wrappers.mjs`。這些是本機驗證紀錄，不是正式發布證據。
+暫存記錄：`/tmp/qgroup-error-displays-native-single.log`、`/tmp/qgroup-error-displays-build.log`、`/tmp/qgroup-error-displays-browser-new2.log`、`/tmp/qgroup-error-displays-browser-full.log`、`/tmp/qgroup-error-displays-browser-repair.log`、`/tmp/qgroup-error-displays-smoke.log`。AST 比對腳本為 `/tmp/qgroup-audit-error-wrappers.mjs`。這些是本機驗證紀錄，不是正式發布證據。
+
+## 固定來源映像
+
+runtime 來源 **`15dfb7b6d52be0ec1f9f22d3c7dcd39d1549b488`**，tree **`9f75c0f040c875a802547b197dc747a0dfbc2b53`**。以乾淨工作目錄封存該完整 SHA，rehearsal context 為 `/tmp/qgroup-image-15dfb7b-error-displays/context`；沒有上傳未提交工作目錄。後續測試定位及驗證工具／文件修改不改變此 runtime 來源。
+
+本機 OrbStack arm64 engine 模擬 linux/amd64，tag `qgroup-unified:rehearsal-15dfb7b`，實際 Docker image ID **`sha256:e51004df99b934c2983b565f7d17277688b3b0ee14126190138cccbd4167112b`**，config digest `sha256:05ef237a6a885797384823c61b5d93685ad9ad24a5dfd8ac786fc05ed1acb7b7`。建置成功。首次 runtime probe 非零退出而未輸出內層原因；未修改映像或略過斷言，補診斷後重試及原指令重試均通過。原因未確定，不歸因為已證明的資源問題；驗證工具現在打印合成 probe 的內層錯誤，後續失敗可查原因。
+
+最終同映像驗證：schema **15**、零 users／consents／receipts、原生 SQLite／sharp、UID/GID **994:992**、readonly／cap-drop／no-new-privileges／network none、**512 MiB／無額外 swap／1 CPU／128 PIDs**、SIGTERM exit 0。公開 shell **24 檢查**通過；額外 **4 個 API 錯誤契約檢查**在兩種語言 header 下驗 404／400、原 code／message、兩種顯示與無 Cookie。映像內 bot 僅版本及合成健康，完整 mock runtime 另由 compiled smoke 驗證。建立的容器與 volume 已移除，結束後再核對為空；未推 registry 或部署正式服務。
+
+記錄：`/tmp/qgroup-error-displays-image-build.log`、`/tmp/qgroup-error-displays-image-verify.log`（首次失敗）、`/tmp/qgroup-error-displays-image-diagnostic.log`、`/tmp/qgroup-error-displays-image-verify-retry.log`、`/tmp/qgroup-error-displays-image-verify-final.log`。
 
 ## 待完成
 
-保留 **166 IDs、166 in_progress、0 planned、0 完整驗收，release_eligible=false**。未標記的固定 helper／驗證訊息、API 通知／安排／結算及持久舊稿系統 notes 顯示仍須逐項處理；不能全文轉換使用者或持久資料。全站瀏覽器回歸、來源對帳／遷移／新寫入回退、完整 B01–B15、實際候選 web／Python 或 TS bot 組合、效能、實體裝置與 QQ WebView 持續處理。現有 Python bot 保留，本批不代表重構完成，依使用者要求先不部署。
+保留 **166 IDs、166 in_progress、0 planned、0 完整驗收，release_eligible=false**。未標記的固定 helper／驗證訊息、API 通知／安排／結算及持久舊稿系統 notes 顯示仍須逐項處理；不能全文轉換使用者或持久資料。來源對帳／遷移／新寫入回退、完整 B01–B15、實際候選 web／Python 或 TS bot 組合、效能、實體裝置與 QQ WebView 持續處理。現有 Python bot 保留，本批不代表重構完成，依使用者要求先不部署。

@@ -11,7 +11,7 @@ for(const kind of ['member','admin'] as const)test(kind+' original proof survive
   await login(context,kind==='member'?'bob':'registration-admin');const url=kind==='member'?'/me/privacy':'/admin/music/'+bob+'/erase', endpoint=kind==='member'?'/me/privacy/erase':'/admin/music/'+bob+'/erase';let writes=0;
   await context.route('**/api/v2'+endpoint,async route=>{if(route.request().method()!=='POST')return route.continue();writes++;const response=await route.fetch();await route.fulfill({response,body:'{'});});
   await page.goto(url);if(kind==='member')await memberConfirm(page);else await adminConfirm(page);
-  const button=kind==='member'?'確認刪除結果':'查詢刪除結果';await expect(page.getByRole('button',{name:button,exact:true})).toBeVisible();const saved=await rows(page);expect(saved).toHaveLength(1);await page.close();
+  const button=kind==='member'?'確認刪除結果':'查詢刪除結果';await expect(page.getByRole('button',{name:button,exact:true})).toBeVisible();await expect.poll(()=>writes).toBe(1);const saved=await rows(page);expect(saved).toHaveLength(1);await page.close();
   const reopened=await context.newPage();await reopened.goto(url);await expect(reopened.getByRole('button',{name:button,exact:true})).toBeVisible();expect(await rows(reopened)).toEqual(saved);expect(writes).toBe(1);
   await reopened.getByRole('button',{name:button,exact:true}).click();await expect(reopened.getByRole('button',{name:'完成',exact:true})).toBeEnabled();expect(writes).toBe(1);
   await reopened.reload();await expect(reopened.getByRole('button',{name:'完成',exact:true})).toBeEnabled();await reopened.getByRole('button',{name:'完成',exact:true}).click();expect(await rows(reopened)).toEqual([]);
