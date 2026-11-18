@@ -6,17 +6,11 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import {
-  ActualRoomInput,
   SaveSettlement,
-  SettlementAllocation,
   SettlementBill,
   SettlementContext,
   SettlementHistory,
   SettlementInput,
-  SettlementItemInput,
-  SettlementPaymentInput,
-  SettlementPersonInput,
-  SettlementMerchantPayment,
   SettlementPreview,
   SettlementResult,
   SettlementSnapshot,
@@ -28,6 +22,8 @@ import { api } from './api';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
+import { SettlementEditorValue as Editable,settlementCalculation as calculation,settlementPersonValue,updateSettlementPerson,includeSettlementPerson,settlementMode,type SettlementEditorInput as EditableInput } from './settlement-editor-record';
+import { requireLegacyAvailable } from './legacy-local-availability';
 import { Field, money, newSettlementId, PayerSelect, RoomFields, type Payer } from './settlement-controls';
 import { PaymentAssetImage, preparePaymentImage } from './payment-image';
 import { paymentKindLabels } from './payment-codes';
@@ -287,85 +283,6 @@ function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
     </>
   );
 }
-const Editable = SettlementInput.extend({
-  merchant_payment: SettlementMerchantPayment.extend({
-    amount: z.string().optional(),
-    payer_id: z.string().optional(),
-  }).optional(),
-  reviewed_roster: z.boolean(),
-  people: z
-    .array(
-      SettlementPersonInput.extend({
-        share: z.string(),
-        payments: z
-          .array(
-            SettlementPaymentInput.extend({
-              payer_id: z.string(),
-              share: z.string().optional(),
-              amount: z.string().optional(),
-            }),
-          )
-          .max(20)
-          .optional(),
-      }),
-    )
-    .max(500),
-  items: z
-    .array(
-      SettlementItemInput.extend({
-        name: z.string(),
-        amount: z.string(),
-        allocations: z
-          .array(SettlementAllocation.extend({ amount: z.string().optional(), weight: z.string().optional() }))
-          .max(500),
-      }),
-    )
-    .max(50),
-  custom_payers: z.array(z.object({ id: z.string().regex(/^custom:[a-f0-9]{16}$/), name: z.string() })).max(50),
-  rooms: z
-    .array(
-      ActualRoomInput.extend({
-        name: z.string(),
-        payer_id: z.string(),
-        amount: z.string(),
-        paid_amount: z.string().optional(),
-      }),
-    )
-    .max(50)
-    .optional(),
-});
-type EditableInput = z.infer<typeof Editable>;
-const calculation = (value: EditableInput) => ({
-  ...value,
-  people: value.people.map((p) => ({
-    ...p,
-    payments: p.payments?.map((v) => ({
-      payer_id: v.payer_id,
-      ...(p.payment_mode === 'fixed' ? { amount: v.amount } : { share: v.share ?? '1' }),
-    })),
-  })),
-  items: value.rooms?.length
-    ? []
-    : value.items.map((i) => ({
-        ...i,
-        allocations: i.allocations.map((a) => ({
-          person_id: a.person_id,
-          ...(i.mode === 'fixed'
-            ? { amount: a.amount }
-            : i.mode === 'weights'
-              ? { weight: a.weight }
-              : i.mode === 'duration'
-                ? { minutes: a.minutes }
-                : {}),
-        })),
-      })),
-  merchant_payment:
-    value.merchant_payment?.mode === 'paid'
-      ? value.merchant_payment
-      : value.merchant_payment
-        ? { mode: value.merchant_payment.mode, method: 'other', merchant: '', note: '', reason: '' }
-        : undefined,
-});
 function blank(ctx: Context): EditableInput {
   const prior = ctx.bill?.detail,
     version = ctx.bill?.version ?? 0,
@@ -488,8 +405,10 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
       saveSchema: SaveSettlement,
       resultSchema: SettlementResult,
       endpoint,
+      beforeSubmit:()=>requireLegacyAvailable(viewer.scope,endpoint+'/edit'),
+      preserveBeforeSubmit:true,
       latest: () => api(endpoint + '/context', SettlementContext, { headers: scoped(viewer) }),
-      fromPending: ({ preview_token, confirm, ...value }) => {
+      fromPending: ({ preview_token, confirm, ...value }):EditableInput => {
         void preview_token;
         void confirm;
         return value;
@@ -534,7 +453,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
       ...ctx.payers.filter((p) => !value.custom_payers.some((c) => c.id === p.id)),
       ...value.custom_payers.map((p, i) => ({ ...p, label: p.name || '額外付款人 ' + (i + 1) })),
     ],
-    stale = value.revision !== ctx.revision || value.base_version !== (ctx.bill?.version ?? 0),
+    stale = value.revision !== ctx.revision || value.base_version !== (ctx.bill?.version ?? 0)||!!value.legacySource?.reviewRequired,
     allowed = ['ended', 'cancelled'].includes(ctx.lifecycle),
     included = ctx.people.filter((p) => value.people.some((v) => v.id === p.id));
   async function check() {
@@ -580,11 +499,12 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
     }
   }
   function person(id: string, patch: Partial<EditableInput['people'][number]>) {
-    edit({ people: value.people.map((p) => (p.id === id ? { ...p, ...patch } : p)) });
+    const source=ctx.people.find(p=>p.id===id);if(source)edit(updateSettlementPerson(value,source,patch));
   }
   return (
     <Surface className="detail activity-editor">
       <Heading level={2}>{ctx.title}</Heading>
+      {value.legacySource&&<Notice>已帶入舊結算原稿；原名冊版本 {value.legacySource.baseRevision??'未記錄'}、原結算版本 {value.legacySource.baseVersion??'未記錄'}。{value.legacySource.reviewRequired?'請先核對最新名冊與帳本，原輸入保留。':''}{value.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}</Text>)}</Notice>}
       {!allowed && <Notice>實際結束或取消活動後才能發布結算；目前可保留核對原稿。</Notice>}
       <Notice>結算分攤與實際付款分別核對；發布不會自動轉帳。結算名單、付款歸屬及附圖會對有權查看活動的人公開。</Notice>
       <form
@@ -601,7 +521,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
         <fieldset disabled={form.locked}>
           <legend>逐人核對</legend>
           {ctx.people.map((p) => {
-            const current = value.people.find((v) => v.id === p.id);
+            const selected=value.people.some(v=>v.id===p.id),current = settlementPersonValue(value,p);
             return (
               <details key={p.id} className="settlement-person">
                 <summary>
@@ -620,23 +540,10 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                 <label className="consent">
                   <input
                     type="checkbox"
-                    checked={!!current}
-                    disabled={p.status === 'confirmed'}
+                    checked={selected}
+                    disabled={p.status === 'confirmed'&&selected}
                     onChange={(e) =>
-                      edit({
-                        people: e.target.checked
-                          ? [
-                              ...value.people,
-                              {
-                                id: p.id,
-                                share: '1',
-                                reason: '',
-                                payment_mode: 'shares',
-                                payments: [{ payer_id: p.payer_id, share: '1' }],
-                              },
-                            ]
-                          : value.people.filter((v) => v.id !== p.id),
-                      })
+                      edit(includeSettlementPerson(value,p,e.target.checked))
                     }
                   />
                   <span>列入本版結算</span>
@@ -654,6 +561,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                     </Text>
                   </details>
                 )}
+                {!selected&&<Notice>未列入本版；以下份數與付款設定只保留於原稿，勾選後才採用。</Notice>}
                 {current && (
                   <>
                     <Field label="共同份數（0 表示免 A）">
@@ -780,18 +688,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
               value={value.rooms !== undefined ? 'rooms' : 'items'}
               onChange={(e) =>
                 edit(
-                  e.target.value === 'rooms'
-                    ? { rooms: [], merchant_payment: undefined, payment_codes: [] }
-                    : {
-                        rooms: undefined,
-                        merchant_payment: {
-                          mode: ctx.has_merchant_records ? 'recorded' : 'unpaid',
-                          method: 'other',
-                          merchant: '',
-                          note: '',
-                          reason: '',
-                        },
-                      },
+                  settlementMode(value,e.target.value==='rooms',{mode:ctx.has_merchant_records?'recorded':'unpaid',method:'other',merchant:'',note:'',reason:''})
                 )
               }
             >
@@ -845,6 +742,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                     })
                   }
                 >
+                  {value.merchant_payment?.mode===''&&<option value="">請核對款項狀態</option>}
                   <option value="unpaid">尚未付款</option>
                   <option value="paid">已付款，這次登記</option>
                   <option value="recorded">已登記到帳本</option>
@@ -968,6 +866,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
             revision: fresh.revision,
             base_version: fresh.bill?.version ?? 0,
             reviewed_roster: false,
+            ...(old.legacySource?{legacySource:{...old.legacySource,reviewRequired:false}}:{}),
           }))
         }
       >

@@ -13,6 +13,7 @@ export function useReviewedDraft<T, S, F>(options: {
   matches: (value: T, input: S) => boolean; fromPending: (input: S) => T;
   after?: (fresh: F, result?: unknown) => void; afterRefresh?: (fresh: F) => void;
   beforeSubmit?: () => Promise<void>;
+  preserveBeforeSubmit?: boolean;
 }) {
   const { key, viewer } = options,
     active = useRef(true), handle = useRef<DraftHandle | null>(null), queue = useRef(Promise.resolve()),
@@ -126,7 +127,9 @@ export function useReviewedDraft<T, S, F>(options: {
         try { await options.beforeSubmit(); }
         catch (error) { if (active.current) setMessage(error instanceof Error ? error.message : '尚未送出，請先核對原紀錄。'); return false; }
       }
-      if (!await persist(next) || !active.current) return false;
+      // Archive the editable record atomically before compacting the pending payload.
+      // This retains dormant inputs without duplicating active image bytes in pending.
+      if (!await persist(next, !draft.pending && !!options.preserveBeforeSubmit) || !active.current) return false;
       setDraft(next);
       const result = await api(options.endpoint, options.resultSchema, {
         method: 'POST',

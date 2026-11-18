@@ -11,6 +11,7 @@ import { describeLegacy,legacyBlocks,legacyCreateIntent } from './legacy-local-r
 import { CreateIntentLookup } from './create-intents';
 import { LegacyAuthoringConversion } from './legacy-authoring-conversion';
 import { LegacyMoneyConversion } from './legacy-money-conversion';
+import { LegacySettlementConversion } from './legacy-settlement-conversion';
 import { deviceDraftEpoch } from './draft-store';
 import { checkLegacySnapshot,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
@@ -35,7 +36,7 @@ function Guard({viewer,path,children}:{viewer:Member;path:string;children:ReactN
 export function LegacyLocalPage(){return <><PageIntro title="舊看板本機紀錄"/><MemberAccess>{viewer=><Inventory key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function Inventory({viewer}:{viewer:Member}){
   const query=useOriginals(viewer);
-  return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。活動／投票／包間／款項先核對結果與時間，再明確帶入新版表單；原請求不會重送。</Notice>
+  return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。活動／投票／包間／款項／結算先核對結果與時間，再明確帶入新版表單；原請求不會重送。</Notice>
     {query.isPending?<Notice>正在讀取舊紀錄…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
       {query.data.disabled?<Notice>已登出清除這台裝置的舊紀錄，舊分頁不能自動寫回。</Notice>:!query.data.rows.length?<Text>此帳號在這個瀏覽器沒有舊看板紀錄。</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
       <Button variant="secondary" disabled={query.isFetching} onClick={()=>void query.refetch()}>重新讀取舊紀錄</Button>
@@ -96,6 +97,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {intent&&!hasCredentials(row.source)&&<CreateIntentLookup key={row.id} viewer={viewer} {...intent} disabled={busy} validate={async()=>{await original();}}/>}
     {description.kind==='draft'&&['舊包廂草稿','舊款項草稿'].includes(description.label)&&!hasCredentials(row.source)&&<LegacyMoneyConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
+    {description.kind==='draft'&&description.label==='舊結算草稿'&&!hasCredentials(row.source)&&<LegacySettlementConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
     {description.kind==='draft'&&['舊活動草稿','舊時間投票草稿'].includes(description.label)&&!hasCredentials(row.source)&&<LegacyAuthoringConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
   </>;
 }

@@ -2368,10 +2368,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2381,10 +2387,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S03",
@@ -2399,10 +2406,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2412,10 +2425,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S04",
@@ -2430,10 +2444,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2443,10 +2463,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S05",
@@ -2492,10 +2513,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2505,10 +2532,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S07",
@@ -2525,11 +2553,17 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
         "packages/domain/src/domain.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2539,10 +2573,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S08",
@@ -2557,10 +2592,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2570,10 +2611,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S09",
@@ -2588,10 +2630,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2601,10 +2649,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S10",
@@ -2625,11 +2674,17 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/payment-codes.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/payment-codes.test.ts",
@@ -2642,10 +2697,11 @@
       "ux_evidence": [
         "apps/web/tests/payment-codes.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S11",
@@ -2666,11 +2722,17 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/payment-codes.test.ts",
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/payment-codes.test.ts",
@@ -2683,10 +2745,11 @@
       "ux_evidence": [
         "apps/web/tests/payment-codes.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S12",
@@ -2708,13 +2771,19 @@
         "apps/web/src/room-editor-record.ts",
         "apps/web/src/finance-editor-record.ts",
         "apps/api/src/finance.ts",
-        "packages/contracts/src/finance-origin.ts"
+        "packages/contracts/src/finance-origin.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/api/src/finance.test.ts",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
@@ -2730,10 +2799,11 @@
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S13",
@@ -2748,10 +2818,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2761,10 +2837,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "S14",
@@ -2779,10 +2856,16 @@
         "apps/api/src/settlements.ts",
         "apps/web/src/activity-settlement.tsx",
         "apps/web/src/activity-rooms.tsx",
-        "apps/web/src/reviewed-draft.ts"
+        "apps/web/src/reviewed-draft.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts"
@@ -2792,10 +2875,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
     },
     {
       "capability_id": "F01",
@@ -6056,7 +6140,12 @@
         "apps/web/src/legacy-money-conversion.tsx",
         "apps/web/src/room-editor-record.ts",
         "apps/web/src/finance-editor-record.ts",
-        "packages/contracts/src/finance-origin.ts"
+        "packages/contracts/src/finance-origin.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -6094,7 +6183,8 @@
         "apps/api/testsupport/legacy-authoring.test.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "apps/api/testsupport/legacy-money.test.ts",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -6203,10 +6293,11 @@
         "apps/web/tests/legacy-authoring.spec.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。其他領域無損轉換、非建立原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。其他領域無損轉換、非建立原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
     },
     {
       "capability_id": "O05",
@@ -6281,7 +6372,12 @@
         "apps/web/src/legacy-money-conversion.tsx",
         "apps/web/src/room-editor-record.ts",
         "apps/web/src/finance-editor-record.ts",
-        "packages/contracts/src/finance-origin.ts"
+        "packages/contracts/src/finance-origin.ts",
+        "apps/web/src/settlement-editor-record.ts",
+        "apps/web/src/legacy-settlement.ts",
+        "apps/web/src/legacy-settlement-time.ts",
+        "apps/web/src/legacy-settlement-migration.ts",
+        "apps/web/src/legacy-settlement-conversion.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -6321,7 +6417,8 @@
         "apps/api/testsupport/legacy-authoring.test.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "apps/api/testsupport/legacy-money.test.ts",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "apps/api/testsupport/legacy-settlement.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -6436,10 +6533,11 @@
         "apps/web/tests/legacy-authoring.spec.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "apps/web/tests/legacy-settlement.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、其他領域的伺服器跨裝置意圖、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
+      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、其他領域的伺服器跨裝置意圖、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
     },
     {
       "capability_id": "O06",
