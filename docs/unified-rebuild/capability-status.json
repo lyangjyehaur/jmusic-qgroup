@@ -6980,13 +6980,27 @@
       "new_entry": "發布工具／manifest",
       "required_behavior": "合遠端 main、完整 SHA、核准 archive、兩遠端 SHA；按相容性選 web／bot／both",
       "legacy_evidence_group": "發布",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "implementation": [
+        "deploy/unified.Dockerfile",
+        "deploy/unified-compose.yaml",
+        "tools/rebuild/prepare-image.ts",
+        "tools/rebuild/check-runtime-compose.ts",
+        "packages/runtime/src/index.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/testsupport/image-source.test.ts",
+        "apps/api/testsupport/runtime-compose.test.ts",
+        "packages/runtime/src/runtime.test.ts"
+      ],
+      "data_evidence": [
+        "docs/unified-rebuild/89-unified-runtime-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/testsupport/image-source.test.ts"
+      ],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "合遠端 main、完整 SHA、核准 archive、兩遠端 SHA；按相容性選 web／bot／both"
+      "state": "in_progress",
+      "remaining": "完整 SHA／clean archive／release origin-main check、baked version 與獨立映像 config 已隔離驗證；功能來源仍為 rehearsal，實際候選版本組合、main 整合及完整發布／回退流程未驗收。"
     },
     {
       "capability_id": "O15",
@@ -6994,13 +7008,34 @@
       "new_entry": "API／worker／部署",
       "required_behavior": "非 root、唯讀 rootfs、機密外置、健康與版本分開、驗證限資源",
       "legacy_evidence_group": "發布、bot 維運",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "implementation": [
+        "deploy/unified.Dockerfile",
+        "deploy/unified-compose.yaml",
+        "tools/rebuild/verify-image.mjs",
+        "tools/rebuild/check-runtime-compose.ts",
+        "apps/api/src/start.ts",
+        "apps/api/src/app.ts",
+        "apps/api/src/client-address.ts",
+        "apps/bot/src/bot-start.ts",
+        "packages/database/src/index.ts",
+        "packages/runtime/src/index.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/runtime.test.ts",
+        "packages/database/src/service-startup.test.ts",
+        "packages/runtime/src/runtime.test.ts",
+        "apps/api/testsupport/runtime-compose.test.ts"
+      ],
+      "data_evidence": [
+        "docs/unified-rebuild/89-unified-runtime-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/runtime.test.ts",
+        "tools/rebuild/verify-image.mjs"
+      ],
       "ux_evidence": [],
-      "state": "planned",
-      "remaining": "非 root、唯讀 rootfs、機密外置、健康與版本分開、驗證限資源"
+      "state": "in_progress",
+      "remaining": "非 root／readonly／限資源 amd64 image、SQLite／sharp、明確 production storage、source／health 分離已隔離驗證；bot image 為版本與合成 health，真實 QQ、正式規模、實際 web-bot 組合與完整部署驗收未完成。"
     }
   ]
 }

@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-18（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[舊款項原請求恢復檢查點](88-legacy-finance-request-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
+日期：2026-11-18（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[統一映像與啟動檢查點](89-unified-runtime-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
 
 後續已完成[統一 PWA](62-pwa-checkpoint.md)、[bot 並行寫入修正](63-bot-sqlite-locking-checkpoint.md)、[共用表單 IndexedDB 原稿](64-durable-drafts-checkpoint.md)、[活動與帳務原稿持久化](65-durable-authoring-checkpoint.md)、[活動參與原稿持久化](66-durable-participation-checkpoint.md)、[邀請與分工原稿持久化](67-durable-invitations-checkpoint.md)、[帳號與成分原稿持久化](68-durable-identity-checkpoint.md)、[管理原稿與權限失效保全](69-durable-admin-checkpoint.md)、[管理內容原稿持久化](70-durable-admin-content-checkpoint.md)、[成分關聯與 PIN 回執持久化](71-durable-admin-ownership-checkpoint.md)、[成分刪除後原操作核對](72-erased-music-acknowledgements-checkpoint.md)、[bot 設定原稿持久化](73-durable-bot-policy-checkpoint.md)、[收件匣管理回執隔離](74-admin-operation-receipts-checkpoint.md)、[通知已讀操作持久化](75-durable-notifications-checkpoint.md)、[群通知原重送操作持久化](76-durable-bot-deliveries-checkpoint.md)、[活動查看邀請操作持久化](77-durable-activity-access-checkpoint.md)、[找搭子原稿與發布操作持久化](78-durable-music-shouts-checkpoint.md)、[舊成分找回操作持久化](79-durable-music-recovery-checkpoint.md)及[自由／活動分房原稿持久化](80-durable-music-rooms-checkpoint.md)的隔離實作；另已完成[隱私刪除回執保全](81-durable-erasure-recovery-checkpoint.md)、[短效裝置連結](82-short-lived-device-links-checkpoint.md)、[舊本機紀錄保全](83-legacy-local-preservation-checkpoint.md)、[持久建立識別](84-create-intents-checkpoint.md)、[舊活動／投票草稿轉換](85-legacy-authoring-conversion-checkpoint.md)與[舊包間／收支原稿轉換](86-legacy-money-conversion-checkpoint.md)；全站遷移與正式切換驗收仍未完成。
 
@@ -105,7 +105,8 @@
 | [舊活動／投票草稿轉換檢查點](85-legacy-authoring-conversion-checkpoint.md) | 原欄位／時區／版本與意圖、目的 strict commit、來源映射、延遲請求與競爭保全 |
 | [舊包間／收支原稿轉換檢查點](86-legacy-money-conversion-checkpoint.md) | 原房間／款項 ID、停用欄位保全、原款項唯讀查詢、目的 CAS／pending 與時間核對 |
 | [舊結算原稿轉換與封存檢查點](87-legacy-settlement-conversion-checkpoint.md) | 未選人員／休眠模式、原圖／歷史引用、原裝置時間、目的 CAS 與送出前交易封存 |
-| [舊款項原請求恢復檢查點](88-legacy-finance-request-checkpoint.md) | 原隨機 key／本機指紋、Python 簽名／預覽、原子回執、明確重試與 durable 核對 |
+| [統一映像與啟動檢查點](89-unified-runtime-checkpoint.md) | 原隨機 key／本機指紋、Python 簽名／預覽、原子回執、明確重試與 durable 核對 |
+| [統一映像與啟動檢查點](89-unified-runtime-checkpoint.md) | 乾淨來源 archive、原生 amd64 image、非 root／限資源、明確 production storage、source／health 與候選獨立映像 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 原系統盤點結論

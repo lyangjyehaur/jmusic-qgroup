@@ -12,7 +12,10 @@ const limits=['--network','none','--read-only','--cap-drop','ALL','--security-op
 let madeVolume=false,started=false;
 try{
  docker('volume','create','--label','qgroup.rehearsal=true',volume);madeVolume=true;
- docker('run','--rm',...limits,'--user','0','-v',volume+':/var/lib/qgroup','--entrypoint','node',image,'--input-type=module','-e',"import {openDatabase} from '/app/.rebuild-dist/api/database.mjs';import fs from 'node:fs';const db=openDatabase('/var/lib/qgroup/isolated.sqlite3');db.close();for(const p of ['/var/lib/qgroup','/var/lib/qgroup/isolated.sqlite3'])fs.chownSync(p,994,992);fs.chmodSync('/var/lib/qgroup',0o700)");
+ // Docker populates this new volume from the image's service-owned data
+ // directory. Initialize the fixture as that same user; no root or CHOWN
+ // capability is needed, and every database sidecar keeps service ownership.
+ docker('run','--rm',...limits,'-v',volume+':/var/lib/qgroup','--entrypoint','node',image,'--input-type=module','-e',"import {openDatabase} from '/app/.rebuild-dist/api/database.mjs';import fs from 'node:fs';if(process.getuid()!==994||process.getgid()!==992)throw Error('Unexpected fixture user');fs.chmodSync('/var/lib/qgroup',0o700);const db=openDatabase('/var/lib/qgroup/isolated.sqlite3');db.close()");
  docker('run','-d','--name',name,'--label','qgroup.rehearsal=true','--init','--stop-timeout','15',...limits,'-v',volume+':/var/lib/qgroup','-e','REBUILD_DB=/var/lib/qgroup/isolated.sqlite3','-e','REBUILD_PORT=8791','-e','REBUILD_ORIGIN=http://127.0.0.1:8791',image);started=true;
  const command=(script,...rest)=>docker('exec',name,'node','-e',script,...rest);
  let ready=false;for(let n=0;n<60;n++){
@@ -25,7 +28,8 @@ try{
  const health=()=>spawnSync('docker',['exec',name,'node','.rebuild-dist/bot/start.mjs','--check-health'],{timeout:10000,stdio:'ignore'}).status;
  assert.equal(health(),1);command("const fs=require('fs'),dir='/var/lib/qgroup/bot-logs',now=Date.now()/1000;fs.mkdirSync(dir,{mode:0o700});fs.writeFileSync(dir+'/bot-health.json',JSON.stringify({runtime_state:'running',gateway_connected:true,policy_resolved:true,updated_at:now,last_poll:now,last_ack:now,last_ready:now}),{mode:0o600})");assert.equal(health(),0);
  command("const fs=require('fs'),p='/var/lib/qgroup/bot-logs/bot-health.json',h=JSON.parse(fs.readFileSync(p));h.last_poll-=120;fs.writeFileSync(p,JSON.stringify(h))");assert.equal(health(),1);
- const running=JSON.parse(docker('inspect',name))[0];assert(running.HostConfig.ReadonlyRootfs);assert.equal(running.HostConfig.Memory,512*1024*1024);assert.equal(running.HostConfig.MemorySwap,running.HostConfig.Memory);assert.equal(running.HostConfig.PidsLimit,128);assert.equal(running.HostConfig.NetworkMode,'none');
+ const running=JSON.parse(docker('inspect',name))[0];assert(running.HostConfig.ReadonlyRootfs);assert.equal(running.HostConfig.Memory,512*1024*1024);assert.equal(running.HostConfig.MemorySwap,running.HostConfig.Memory);assert.equal(running.HostConfig.NanoCpus,1e9);assert.equal(running.HostConfig.PidsLimit,128);assert.equal(running.HostConfig.NetworkMode,'none');assert.deepEqual(running.HostConfig.CapDrop,['ALL']);assert(running.HostConfig.SecurityOpt.includes('no-new-privileges:true'));
+ assert.equal(command("console.log(['/usr/bin/python3','/app/node_modules/tsx','/app/node_modules/typescript'].some(p=>require('fs').existsSync(p)))"),'false');
  docker('stop','--time','15',name);const stopped=JSON.parse(docker('inspect',name))[0];assert.equal(stopped.State.ExitCode,0);assert(!stopped.State.OOMKilled);
  process.stdout.write(JSON.stringify({image,commit,architecture:spec.Architecture,web:'native-runtime-passed',bot:'version-and-synthetic-health-passed',network:'none',memoryMiB:512,swapMiB:0,pids:128,rootfs:'read-only',uid:994,gracefulStop:true,releaseEligible:false})+'\n');
 }finally{
