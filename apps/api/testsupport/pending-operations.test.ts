@@ -1,3 +1,4 @@
+import { MusicRecoveryRecord } from '../../web/src/music-recovery-record';
 import { describe, expect, it } from 'vitest';
 import { musicShoutDraftTarget,parseMusicShoutDraft } from '../../web/src/music-shout-record';
 import { activityAccessDraftRoute } from '../../web/src/activity-access-record';
@@ -35,7 +36,7 @@ describe('scoped pending operation inventory',()=>{
  });
  it('keeps recipient token navigation on the original form, escapes event IDs and ignores stored URLs',()=>{const token='x'.repeat(32);const rows=Object.fromEntries(['claims:request','delegation:accept','invitations:accept'].map(kind=>{const [family,mode]=kind.split(':');return [root+'activity-draft:'+family+':v1:'+current+':../activity:'+mode+':'+token,JSON.stringify({url:'https://evil.example',pending:{key,input:{}}})];}));const result=pendingOperations(storage(rows),current);expect(result.map(row=>row.to)).toEqual(['claims','delegation','invitations'].map(kind=>'/activities/..%2Factivity/'+kind+'/'+token));});
  it('excludes other accounts, preserved damaged copies, device authorizations and ordinary unsent drafts',()=>{const result=pendingOperations(storage({[root+'music:v1:'+other]:pending,[root+'activity-draft:v1:'+other+':new']:pending,[root+'music:v1:'+current+':recovery:123']:pending,[root+'device-link']:JSON.stringify({token:'PRIVATE_TOKEN'}),[root+'music:v1:'+current]:JSON.stringify({selections:[],revision:0}),[root+'activity-draft:lifecycle:v1:'+current+':e']:JSON.stringify({action:'start'})}),current);expect(result).toEqual([]);});
- it('retains damaged drafts as actionable entries and keeps standalone privacy, PIN and music recovery operations private',()=>{const rows={[root+'music:v1:'+current]:'broken raw private text',[root+'activity-draft:attendance:v1:'+current+':e']:JSON.stringify({pending:{key}}),[root+'privacy-pending:v1']:JSON.stringify({scope:current,input:{secret:'PRIVATE_SECRET'}}),[root+'admin-music-pin:v1:'+current+':'+authority+':p']:JSON.stringify({requestId:key}),[root+'music:claim:v1:'+current]:JSON.stringify({requestId:key,legacyQQ:'PRIVATE_QQ'})};const result=pendingOperations(storage(rows),current);expect(result).toHaveLength(5);expect(result.filter(row=>row.damaged)).toHaveLength(2);expect(JSON.stringify(result)).not.toMatch(/PRIVATE_|private text/);expect(pendingOperations(storage({[root+'privacy-pending:v1']:JSON.stringify({scope:other,input:{}})}),current)).toEqual([]);expect(pendingOperations(storage({[root+'privacy-pending:v1']:'damaged PRIVATE_PRIVACY'}),current)).toEqual([{id:root+'privacy-pending:v1',label:'無法辨識帳號的刪除紀錄',to:'/me/privacy',damaged:true}]);});
+ it('retains damaged drafts as actionable entries and keeps standalone privacy, PIN and music recovery operations private',()=>{const rows={[root+'music:v1:'+current]:'broken raw private text',[root+'activity-draft:attendance:v1:'+current+':e']:JSON.stringify({pending:{key}}),[root+'privacy-pending:v1']:JSON.stringify({scope:current,input:{secret:'PRIVATE_SECRET'}}),[root+'admin-music-pin:v1:'+current+':'+authority+':p']:JSON.stringify({requestId:key}),[root+'music:claim:v1:'+current]:JSON.stringify({requestId:key,legacyQQ:'10001'})};const result=pendingOperations(storage(rows),current);expect(result).toHaveLength(5);expect(result.filter(row=>row.damaged)).toHaveLength(2);expect(JSON.stringify(result)).not.toMatch(/PRIVATE_|private text/);expect(pendingOperations(storage({[root+'privacy-pending:v1']:JSON.stringify({scope:other,input:{}})}),current)).toEqual([]);expect(pendingOperations(storage({[root+'privacy-pending:v1']:'damaged PRIVATE_PRIVACY'}),current)).toEqual([{id:root+'privacy-pending:v1',label:'無法辨識帳號的刪除紀錄',to:'/me/privacy',damaged:true}]);});
  it('accepts original requestKey drafts without treating invalid keys as successfully recoverable',()=>{const result=pendingOperations(storage({[root+'music:v1:'+current]:JSON.stringify({requestKey:key}),[root+'account-profile:v1:'+current]:JSON.stringify({requestKey:'bad'})}),current);expect(result[0]).toMatchObject({requestKey:key,damaged:false});expect(result[1]).toMatchObject({damaged:true});});
 });
 
@@ -106,6 +107,27 @@ describe('scoped shout recovery inventory',()=>{
    const value=JSON.parse(raw);Object.assign(value.pending.input,patch);
    expect(()=>parseMusicShoutDraft(JSON.stringify(value),{musicEpoch:2,profileId:'profile'})).toThrow();
    expect(pendingOperations(storage({[name]:JSON.stringify(value)}),current)[0]?.damaged).toBe(true);
+  }
+ });
+});
+
+
+describe('safe music claim recovery pointers',()=>{
+ const name=root+'music:claim:v1:'+current;
+ it('retains the original claim and explicit action at a fixed route without generic receipts or QQ exposure',()=>{
+  for(const action of [undefined,'finish','cancel']){
+   const raw=JSON.stringify({requestId:key,legacyQQ:'10001',...(action?{action}:{})});
+   expect(MusicRecoveryRecord.parse(JSON.parse(raw)).requestId).toBe(key);
+   const result=pendingOperations(storage({[name]:raw}),current);
+   expect(result).toEqual([{id:name,label:'找回舊成分',to:'/me/music/recover',damaged:false}]);
+   expect(JSON.stringify(result)).not.toContain('10001');expect(pendingOperations(storage({[name]:raw}),other)).toEqual([]);
+  }
+  expect(pendingOperations(storage({[name]:'null'}),current)).toEqual([]);
+ });
+ it('rejects credentials and malformed pointers instead of restoring or exposing them',()=>{
+  for(const patch of [{pin:'123456'},{digest:'PRIVATE_DIGEST'},{token:'PRIVATE_TOKEN'},{action:'start'},{requestId:'bad'},{legacyQQ:'123'}]){
+   const value={requestId:key,legacyQQ:'10001',...patch};expect(MusicRecoveryRecord.safeParse(value).success).toBe(false);
+   expect(pendingOperations(storage({[name]:JSON.stringify(value)}),current)).toEqual([{id:name,label:'找回舊成分',to:'/me/music/recover',damaged:true}]);
   }
  });
 });

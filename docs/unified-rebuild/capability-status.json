@@ -361,7 +361,10 @@
         "packages/database/src/schema-v3.ts",
         "packages/database/src/legacy-erasure.ts",
         "apps/api/src/music-claim.ts",
-        "apps/api/src/admin-music.ts"
+        "apps/api/src/admin-music.ts",
+        "apps/web/src/music-recovery.tsx",
+        "apps/web/src/music-recovery-record.ts",
+        "apps/web/src/draft-store.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
@@ -370,26 +373,32 @@
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-claim.test.ts",
-        "apps/api/src/admin-music.test.ts"
+        "apps/api/src/admin-music.test.ts",
+        "apps/api/testsupport/pending-operations.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/api/src/music-claim.test.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "packages/database/src/import-migration.test.ts"
+        "packages/database/src/import-migration.test.ts",
+        "apps/web/tests/durable-music-recovery.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "docs/unified-rebuild/14-import-checkpoint.md",
         "apps/web/tests/music-recovery.spec.ts",
-        "apps/web/tests/admin-music.spec.ts"
+        "apps/web/tests/admin-music.spec.ts",
+        "apps/web/tests/durable-music-recovery.spec.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "共用 session、已關聯匯入、PIN／本次 OAuth 找回及管理關聯已實作並以合成資料驗證；完整欄位、原 session／intent adapter、正式版本組合及副本演練待驗收。"
+      "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。共用 session、已關聯匯入、PIN／本次 OAuth 找回及管理關聯已實作並以合成資料驗證；完整欄位、原 session／intent adapter、正式版本組合及副本演練待驗收。"
     },
     {
       "capability_id": "I12",
@@ -402,25 +411,32 @@
         "apps/api/src/music-claim-state.ts",
         "apps/api/src/auth.ts",
         "apps/web/src/music-recovery.tsx",
-        "packages/database/src/schema-v5.ts"
+        "packages/database/src/schema-v5.ts",
+        "apps/web/src/music-recovery-record.ts",
+        "apps/web/src/draft-store.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-claim.test.ts"
+        "apps/api/src/music-claim.test.ts",
+        "apps/api/testsupport/pending-operations.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-claim.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/claim-migration.test.ts",
-        "docs/unified-rebuild/16-recovery-checkpoint.md"
+        "docs/unified-rebuild/16-recovery-checkpoint.md",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-claim.test.ts"
+        "apps/api/src/music-claim.test.ts",
+        "apps/web/tests/durable-music-recovery.spec.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/music-recovery.spec.ts"
+        "apps/web/tests/music-recovery.spec.ts",
+        "apps/web/tests/durable-music-recovery.spec.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "PIN 4–6 位、持久 QQ／IP 限流、原 session 十分鐘 intent、本次 QQ 授權與明確關聯、取消／未知結果恢復均有合成驗證；真 QQ、舊 session／intent 協議與正式版本組合待驗收。"
+      "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。PIN 4–6 位、持久 QQ／IP 限流、原 session 十分鐘 intent、本次 QQ 授權與明確關聯、取消／未知結果恢復均有合成驗證；真 QQ、舊 session／intent 協議與正式版本組合待驗收。"
     },
     {
       "capability_id": "I13",
@@ -5719,7 +5735,9 @@
         "apps/web/src/activity-access-record.ts",
         "apps/web/src/activity-access.tsx",
         "apps/web/src/music-shout-record.ts",
-        "apps/web/src/music-shouts.tsx"
+        "apps/web/src/music-shouts.tsx",
+        "apps/web/src/music-recovery.tsx",
+        "apps/web/src/music-recovery-record.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5748,7 +5766,8 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/api/src/music-claim.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5773,7 +5792,9 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/api/src/music-claim.test.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -5795,7 +5816,8 @@
         "apps/web/tests/durable-notifications.spec.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "apps/web/tests/durable-activity-access.spec.ts",
-        "apps/web/tests/durable-music-shouts.spec.ts"
+        "apps/web/tests/durable-music-shouts.spec.ts",
+        "apps/web/tests/durable-music-recovery.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
@@ -5832,10 +5854,12 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/web/tests/durable-music-recovery.spec.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
+      "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
     },
     {
       "capability_id": "O05",
@@ -5895,7 +5919,9 @@
         "apps/web/src/activity-access-record.ts",
         "apps/web/src/activity-access.tsx",
         "apps/web/src/music-shout-record.ts",
-        "apps/web/src/music-shouts.tsx"
+        "apps/web/src/music-shouts.tsx",
+        "apps/web/src/music-recovery.tsx",
+        "apps/web/src/music-recovery-record.ts"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -5929,7 +5955,8 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/api/src/music-claim.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -5957,7 +5984,9 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/api/src/music-claim.test.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -5983,7 +6012,8 @@
         "apps/web/tests/durable-notifications.spec.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "apps/web/tests/durable-activity-access.spec.ts",
-        "apps/web/tests/durable-music-shouts.spec.ts"
+        "apps/web/tests/durable-music-shouts.spec.ts",
+        "apps/web/tests/durable-music-recovery.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -6024,10 +6054,12 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/web/tests/durable-music-recovery.spec.ts",
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、伺服器跨裝置 create intent、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
+      "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、伺服器跨裝置 create intent、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
     },
     {
       "capability_id": "O06",

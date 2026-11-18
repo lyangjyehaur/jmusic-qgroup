@@ -1,3 +1,4 @@
+import { denyDraftWrites,durableRows } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin='http://127.0.0.1:5082';
@@ -29,7 +30,7 @@ test('an existing account binds QQ, keeps its name and reopens the original sele
 });
 test('an unreadable PIN response is checked from the server and never resends or stores the PIN automatically',async({page})=>{
   let requests=0;await page.route('**/api/v2/music/claim/start',async route=>{requests++;const response=await route.fetch();await route.fulfill({response,body:'{'});});
-  await page.goto('/me/music/recover');await pin(page);await expect(page.getByText('尚未確認口令驗證結果。口令未保存，請先核對找回狀態。',{exact:true})).toBeVisible();await expect(page.getByLabel('原口令',{exact:true})).toHaveValue('');
+  await page.goto('/me/music/recover');await pin(page);await expect(page.getByText('尚未確認口令驗證結果。口令未保存，請先核對找回狀態。',{exact:true})).toBeVisible();await expect.poll(()=>page.getByLabel('原口令',{exact:true}).evaluateAll(inputs=>inputs.some(input=>(input as HTMLInputElement).value!==''))).toBe(false);
   await page.reload();await expect(page.getByRole('heading',{name:'舊成分 10001',exact:true})).toBeVisible();expect(requests).toBe(1);expect(await page.evaluate(()=>JSON.stringify({...sessionStorage}))).not.toContain('123456');
 });
 test('lost login and linking results are recovered from the same browser without duplicate claims',async({page,context})=>{
@@ -49,10 +50,10 @@ test('QQ cancellation preserves the PIN intent and explicit cancellation leaves 
 });
 test('storage failure blocks sending PINs, and damaged operation records are preserved before recovery',async({page,context})=>{
   let writes=0;page.on('request',request=>{if(request.url().endsWith('/music/claim/start'))writes++;});
-  await page.addInitScript(()=>{const original=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.startsWith('qgroup:rebuild:music:claim:'))throw new DOMException('synthetic failure');original.call(this,key,value);};});
-  await page.goto('/me/music/recover');await pin(page);await expect(page.getByText('無法保存找回操作編號，尚未送出口令。',{exact:true})).toBeVisible();expect(writes).toBe(0);
-  const clean=await context.newPage();await clean.goto('/me/music/recover');const viewer=await(await context.request.get('/api/v2/session')).json();await clean.evaluate(scope=>sessionStorage.setItem('qgroup:rebuild:music:claim:v1:'+scope,'damaged synthetic operation'),viewer.scope);await clean.reload();await expect(clean.getByText('無法讀取找回操作編號，原始內容已保留。請先保全原稿。',{exact:true})).toBeVisible();await expect(clean.getByLabel('原口令',{exact:true})).toBeDisabled();
-  await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect(await clean.evaluate(()=>Object.keys(sessionStorage).filter(key=>key.includes(':recovery:')).map(key=>sessionStorage.getItem(key)))).toContain('damaged synthetic operation');await clean.close();
+  await page.goto('/me/music/recover');await expect(page.getByLabel('舊 QQ',{exact:true})).toBeEnabled();await denyDraftWrites(page,':claim:');
+  await pin(page);await expect(page.getByText('無法保存找回操作編號，尚未送出口令。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  const clean=await context.newPage();await clean.goto('/me/music/recover');const viewer=await(await context.request.get('/api/v2/session')).json();await clean.evaluate(scope=>sessionStorage.setItem('qgroup:rebuild:music:claim:v1:'+scope,'damaged synthetic operation'),viewer.scope);await clean.reload();await expect(clean.getByText('找回操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原文不會複製到保全版本。',{exact:true})).toBeVisible();await expect(clean.getByLabel('原口令',{exact:true})).toHaveCount(0);
+  const download=clean.waitForEvent('download');await clean.getByRole('button',{name:'下載舊操作紀錄',exact:true}).click();await download;await clean.getByRole('button',{name:'清除已下載的舊紀錄',exact:true}).click();await expect(clean.getByLabel('舊 QQ',{exact:true})).toBeEnabled();expect((await durableRows(clean,'versions')).map(row=>row.raw)).not.toContain('damaged synthetic operation');await clean.close();
 });
 test('an already populated account cannot replace its selections with a PIN claim',async({page,context})=>{
   await login(context);await page.goto('/me/music');await page.getByRole('button',{name:'YOASOBI',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();

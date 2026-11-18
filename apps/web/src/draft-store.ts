@@ -1,3 +1,4 @@
+import { MusicRecoveryRecord } from './music-recovery-record';
 import { musicShoutDraftTarget } from './music-shout-record';
 import { MusicPinResultRequest } from '@qgroup/contracts';
 import { activityAccessDraftRoute } from './activity-access-record';
@@ -66,6 +67,7 @@ function validate(key: string, scope: string) {
     new RegExp('^qgroup:rebuild:admin-(?:bot|catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
     new RegExp('^qgroup:rebuild:admin-(?:user|privacy|music|music-pin):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
+    key === prefix + 'music:claim:v1:' + scope ||
     new RegExp('^qgroup:rebuild:music:(?:fields|contact):v1:' + scope + ':[0-9]+:[^:]{1,80}$').test(key) ||
     key.startsWith(prefix + 'activity-draft:v1:' + scope + ':') ||
     scopedRoute ||
@@ -80,6 +82,7 @@ async function epochs(tx: IDBTransaction, scope: string) {
 }
 function validateRaw(key: string, raw: string) {
   // PIN commands and reasons never enter the durable store, including legacy import or archives.
+  if(key.startsWith('qgroup:rebuild:music:claim:'))MusicRecoveryRecord.nullable().parse(JSON.parse(raw));
   if (key.startsWith('qgroup:rebuild:admin-music-pin:')) MusicPinResultRequest.nullable().parse(JSON.parse(raw));
 }
 function archive(tx: IDBTransaction, key: string, scope: string, raw: string, reason: string) {

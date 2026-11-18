@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MusicRecoveryRecord } from './music-recovery-record';
 import { musicShoutDraftTarget,parseMusicShoutDraft } from './music-shout-record';
 import { activityAccessDraftRoute, PendingActivityAccess } from './activity-access-record';
 import { botDeliveryDraftRoute, PendingBotDelivery } from './bot-delivery-record';
@@ -11,6 +12,11 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
   const rows:PendingOperation[]=[];
   for(let i=0;i<storage.length;i++){
     const key=storage.key(i);if(!key||!key.startsWith(root)||key.includes(':recovery:'))continue;
+    if(key===root+'music:claim:v1:'+scope){
+      try{const pending=MusicRecoveryRecord.nullable().parse(JSON.parse(storage.getItem(key)??'null'));if(pending)rows.push({id:key,label:'找回舊成分',to:'/me/music/recover',damaged:false});}
+      catch{rows.push({id:key,label:'找回舊成分',to:'/me/music/recover',damaged:true});}
+      continue;
+    }
     const shout=musicShoutDraftTarget(key,scope);
     if(shout){
       try{
@@ -43,7 +49,6 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
     else if(key===root+'music:v1:'+scope){label='成分選擇';to='/me/music';}
     else if(key===root+'account-profile:v1:'+scope){label='帳號稱呼';to='/me/profile';}
     else if(key===root+'payment-codes:v1:'+scope){label='我的收款碼';to='/me/payment-codes';}
-    else if(key===root+'music:claim:v1:'+scope){label='找回舊成分';to='/me/music/recover';standalone=true;}
     else if(key.startsWith(root+'music:fields:v1:'+scope+':')){label='成分資料';to='/me/music/details';}
     else if(key.startsWith(root+'music:contact:v1:'+scope+':')){label='聯絡 QQ';to='/me/music/contact';}
     else if(key.startsWith(root+'music:entries:v1:'+scope+':')){const target=key.slice((root+'music:entries:v1:'+scope+':').length);if(target==='new'){label='建立詞條';to='/me/music/entries/new';}else{const match=/^([^:]{1,80}):(update|delete)$/.exec(target);if(!match)continue;label=match[2]==='delete'?'刪除詞條':'編輯詞條';to='/me/music/entries/'+segment(match[1]!)+(match[2]==='delete'?'/delete':'/edit');}}

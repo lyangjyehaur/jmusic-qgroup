@@ -42,6 +42,27 @@ async function setup(path = ':memory:') {
   return { db, app, browser, headers, post, start, status, finish, cancel, authorize, close, advance: (ms: number) => { time = new Date(time.getTime() + ms); } };
 }
 describe('legacy PIN and fresh QQ music claims', () => {
+  it('reads only the original claim ID with device and account isolation and no business or bot writes',async()=>{
+    const s=await setup(),b=await s.browser('kanban_session=fixture-bob');
+    const first=(await s.start(b)).json(),second=(await s.start(b,'10002')).json();
+    const get=(browser:typeof b,query:string)=>s.app.inject({url:'/api/v2/music/claim?'+query,headers:s.headers(browser)});
+    const tables=['music_claim_intents','music_claim_attempts','music_profiles','music_selections','bot_settings','bot_outbox','account_audit'];
+    const before=tables.map(table=>s.db.prepare('SELECT * FROM '+table).all());
+    expect((await get(b,'requestId='+first.claimId)).json()).toEqual({status:'none'});
+    expect((await get(b,'requestId='+second.claimId)).json()).toEqual(second);
+    expect(await s.status(b)).toEqual(second);
+    const guest=await s.browser(),alice=await s.browser('kanban_session=fixture-alice');
+    s.db.prepare("INSERT INTO browser_sessions VALUES(?,'bob','other device')").run(hash('other-claim-device'));
+    const other=await s.browser('kanban_session=other-claim-device');
+    for(const browser of [guest,alice,other])expect((await get(browser,'requestId='+second.claimId)).json()).toEqual({status:'none'});
+    expect((await s.app.inject({url:'/api/v2/music/claim?requestId='+second.claimId,headers:{...s.headers(b),'x-account-scope':alice.viewer.scope}})).statusCode).toBe(409);
+    for(const query of ['requestId=bad','requestId=','requestId='+second.claimId+'&requestId='+first.claimId,'unexpected=value'])expect((await get(b,query)).statusCode).toBe(400);
+    expect(tables.map(table=>s.db.prepare('SELECT * FROM '+table).all())).toEqual(before);
+    const auth=await s.authorize(b,second.claimId);expect((await get(auth.next,'requestId='+second.claimId)).json().status).toBe('authorized');
+    await s.finish(auth.next,second.claimId);expect((await get(auth.next,'requestId='+second.claimId)).json().status).toBe('completed');
+    expect((await s.cancel(auth.next,second.claimId)).json().status).toBe('completed');
+  });
+
   it('finds an original profile, requires fresh QQ plus explicit final confirmation, and preserves music and bot data', async () => {
     const s = await setup(); const guest = await s.browser();
     const tables = ['events','attendees','roster_parties','finance_entries','settlements','bot_settings','bot_outbox','music_selections','music_profile_contacts','music_entry_details'];
@@ -62,6 +83,19 @@ describe('legacy PIN and fresh QQ music claims', () => {
     expect((await s.browser(member.cookie)).viewer.musicEpoch).toBe(1);
     const other = await s.browser(); expect((await s.start(other)).json().code).toBe('PROFILE_LINKED');
     expect(s.db.pragma('foreign_key_check')).toEqual([]);
+  });
+  it('preserves actual Python bot reads and all delivery states across targeted recovery, QQ authorization and linking',async()=>{
+    const folder=mkdtempSync(join(tmpdir(),'qgroup-claim-bot-')),path=join(folder,'synthetic.db');
+    try{
+      const s=await setup(path),b=await s.browser('kanban_session=fixture-bob');
+      for(const [i,status] of ['pending','sending','sent','failed','skipped'].entries())s.db.prepare(`INSERT INTO bot_outbox(event_id,kind,dedupe_key,target,payload_json,status,attempts,claim_token,retry_at,simulated_at,created_at) VALUES('listen','synthetic',?,'synthetic','{}',?,2,?,'retry-time','simulated','before')`).run('claim-key-'+i,status,'claim-'+i);
+      const probe=()=>JSON.parse(execFileSync('python3',['tools/rebuild/probe-auth-bot.py',path],{encoding:'utf8'}));
+      const tables=['events','attendees','roster_parties','finance_entries','settlements','bot_settings','bot_outbox'],snapshot=()=>tables.map(table=>s.db.prepare('SELECT * FROM '+table).all()),before=snapshot(),bot=probe();
+      const claim=(await s.start(b)).json(),auth=await s.authorize(b,claim.claimId);
+      expect((await s.app.inject({url:'/api/v2/music/claim?requestId='+claim.claimId,headers:s.headers(auth.next)})).json().status).toBe('authorized');
+      expect((await s.finish(auth.next,claim.claimId)).json().status).toBe('completed');expect((await s.cancel(auth.next,claim.claimId)).json().status).toBe('completed');
+      expect(probe()).toEqual(bot);expect(snapshot()).toEqual(before);await s.close();
+    }finally{rmSync(folder,{recursive:true,force:true});}
   });
   it('reuses a name-only account and its stable nickname without merging another account or replacing its QQ', async () => {
     const s = await setup(); const alice = await s.browser('kanban_session=fixture-alice'); const original = (await s.start(alice)).json();

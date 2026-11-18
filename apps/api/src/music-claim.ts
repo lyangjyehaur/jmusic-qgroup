@@ -113,7 +113,7 @@ export function createMusicClaims(db: DB, now: () => Date) {
 }
 export type MusicClaims = ReturnType<typeof createMusicClaims>;
 export function registerMusicClaims(app: FastifyInstance, db: DB, security: Security, claims: MusicClaims) {
-  app.get('/api/v2/music/claim', async request => claims.status(security.scoped(request)));
+  app.get('/api/v2/music/claim', async request => {const device=security.scoped(request),query=z.object({requestId:z.string().uuid().optional()}).strict().parse(request.query);return claims.status(device,query.requestId);});
   app.post('/api/v2/music/claim/start', { config: { rateLimit: { max: 40, timeWindow: '1 minute' } } }, async request => {
     security.write(request); const input = StartMusicClaim.parse(request.body); claims.charge(input.legacyQQ, request.ip);
     return claims.start(security.write(request), input);
