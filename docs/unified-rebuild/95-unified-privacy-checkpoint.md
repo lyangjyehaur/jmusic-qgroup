@@ -44,6 +44,16 @@ session 的 `privacyAccepted` 僅查當前統一版本。註冊在原帳號建�
 
 本機記錄：`/tmp/qgroup-consent-native-final.log`、`/tmp/qgroup-consent-browser-final.log`、`/tmp/qgroup-consent-build-final.log`、`/tmp/qgroup-consent-typecheck-final.log`、`/tmp/qgroup-consent-smoke.log`。它們是暫存驗證紀錄，不是正式發布證據。
 
+## 固定來源映像
+
+來源提交 **`c8f610c85b8a6c14341f9869f5b409c3988b55cc`**，tree **`4f906a0b281d96fd5d913b4dd98c3e950ead0741`**。乾淨工作目錄以 rehearsal 模式封存至 `/tmp/qgroup-image-c8f610c85b8a6c14341f9869f5b409c3988b55cc/context`，使用 archive 內 Dockerfile 與完整 commit build arg 建置；後續文件更新不改變此 runtime 來源。
+
+本機 OrbStack arm64 engine 模擬 linux/amd64，實際 image ID **`sha256:f3002dff34a0645bab658d6499b2df6a355a55c6cbf1c229a41a73fce6f1109d`**，tag `qgroup-unified:rehearsal-c8f610c`，Node base **`node:22.22.3-bookworm-slim@sha256:e21fc383b50d5347dc7a9f1cae45b8f4e2f0d39f7ade28e4eef7d2934522b752`**。首次 Docker Hub frontend token 連線 EOF，在建置層前失敗；原指令重試後成功，沒有改動 source guard、Dockerfile 或略過驗證。
+
+`verify-image.mjs` 通過來源／版本、schema 15、零會員／零統一同意／零回執、原生 SQLite／sharp、無舊 Python server、UID/GID 994:992、readonly／移除 capabilities／no-new-privileges／network none、512 MiB／無額外 swap／1 CPU／128 PIDs 及 SIGTERM exit 0。活動／guide／guide.html／privacy × 三語言設定 × GET／HEAD 共 **24** 個公開 shell 檢查通過：200、正確語言、HEAD 空 body、no-store／Vary、無 Cookie；handbook chunk 存在。這些是 shell／runtime 驗證，政策内容與操作另外由瀏覽器場景驗證。
+
+映像內 bot 驗證僅版本及合成健康；完整 mock runtime 另由 compiled smoke 驗證，均不代表真 QQ 或正式候選版本組合。驗證建立的容器及 volume 已移除並再次核對不存在。未推送 registry、未啟動正式服務。記錄在 `/tmp/qgroup-consent-image-build-retry.log`、`/tmp/qgroup-consent-image-verify.log`。
+
 ## 待完成
 
 166 IDs 全部保留，**166 in_progress、0 planned、0 完整驗收，release_eligible=false**。統一政策與重同意已具備隔離實作及恢復證據，仍須正式適用版本／公告與完整候選組合驗收。其餘固定驗證／API 顯示邊界、持久系統 notes、來源資料對帳、遷移及回退、完整 B01–B15、實際候選 web／Python 或 TS bot 組合、效能、實體裝置與 QQ WebView 持續處理。現有 Python bot 保留；此檢查點不等於重構完成，依使用者要求先不部署。
