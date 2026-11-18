@@ -1,5 +1,6 @@
 import { ErasureProof } from './erasure-proof';
 export * from './legacy-local';
+export * from './create-intents';
 export { OperationReceipt } from './operations';
 export { ErasureProof } from './erasure-proof';
 import { z } from 'zod';

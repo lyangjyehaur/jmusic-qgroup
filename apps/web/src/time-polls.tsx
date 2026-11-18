@@ -21,6 +21,7 @@ import { useReviewedDraft } from './reviewed-draft';
 import { DraftFeedback } from './activity-settlement';
 import { Field } from './settlement-controls';
 import { PollCalendar } from './poll-calendar';
+import { CreateIntentLookup } from './create-intents';
 type Poll = z.infer<typeof TimePoll>;
 const base = (id: string) => '/time-polls/' + encodeURIComponent(id),
   scoped = (v: Viewer) => ({ 'X-Account-Scope': v.scope });
@@ -103,6 +104,7 @@ export function TimePollsPage() {
   );
 }
 const EditableDefinition = z.object({
+  client_intent: z.string().uuid().optional(),
   title: z.string(),
   category: ActivityCategory,
   location: z.string(),
@@ -118,6 +120,7 @@ const EditableDefinition = z.object({
   options: z.array(z.string()),
 });
 const emptyDefinition = () => ({
+  client_intent: crypto.randomUUID(),
   title: '',
   category: '约K' as const,
   location: '',
@@ -182,6 +185,10 @@ function CreatePoll({ viewer }: { viewer: Member }) {
   useEffect(() => {
     if (form.data.id && !form.dirty) navigate(base(form.data.id));
   }, [form.data.id, form.dirty]);
+  useEffect(() => {
+    if (!form.locked && !form.draft.value.client_intent)
+      form.edit({ ...form.draft.value, client_intent: crypto.randomUUID() });
+  }, [form.locked, form.draft.value.client_intent]);
   const v = form.draft.value,
     edit = (patch: Partial<typeof v>) => form.edit({ ...v, ...patch });
   return (
@@ -307,6 +314,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
         </Button>
       </form>
       <DraftFeedback form={form} />
+      {v.client_intent&&!form.loading&&!form.readError&&<CreateIntentLookup key={viewer.scope+':'+v.client_intent+':'+form.epoch} viewer={viewer} kind="poll" intent={v.client_intent} disabled={form.busy}/>}
     </Surface>
   );
 }

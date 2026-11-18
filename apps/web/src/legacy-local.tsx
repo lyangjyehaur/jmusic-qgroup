@@ -7,7 +7,8 @@ import { api } from './api';
 import { authHeaders } from './auth';
 import { MemberAccess,type Member } from './member-access';
 import { Failure,Notice,PageIntro,sessionQuery,useSession } from './shared';
-import { describeLegacy,legacyBlocks } from './legacy-local-record';
+import { describeLegacy,legacyBlocks,legacyCreateIntent } from './legacy-local-record';
+import { CreateIntentLookup } from './create-intents';
 import { checkLegacySnapshot,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
 function useOriginals(viewer:Member){return useQuery({queryKey:['private',viewer.scope,'legacy-local'],queryFn:()=>preserveLegacy(viewer.scope),refetchOnWindowFocus:'always',staleTime:0});}
@@ -47,7 +48,7 @@ function visibleData(value:unknown):ReactNode{
 }
 function imageSource(value:string){const source=value.startsWith('data:image/png;base64,')?value.slice(22):value;return /^[A-Za-z0-9+/]+={0,2}$/.test(source)&&source.startsWith('iVBOR')?'data:image/png;base64,'+source:null;}
 function DraftContents({data}:{data:Record<string,unknown>}){
-  const labels:Record<string,string>={fields:'表單內容',dataset:'原稿狀態',slots:'候選時段',rooms:'包廂',people:'結算人員',items:'費用與憑證',custom:'自訂付款人',paymentCodes:'收款碼',qr:'舊收款碼',revision:'原版本',edit:'原款項操作',id:'原編號',name:'名稱',title:'名稱',value:'原值',checked:'原勾選狀態',intent:'原建立識別',lifecycle:'原活動狀態',amount:'金額',receipt:'消費憑證',image:'圖片',kind:'類型',share:'份數',reason:'原因',person_ids:'人員編號',payer_id:'付款人編號',date:'日期',time:'時間',recordId:'原款項編號',command:'原操作',preview:'原預覽',description:'內容',capacity:'人數上限',event_date:'活動日期',start_time:'開始時間',deadline:'截止時間',timezone:'時區',fee_policy:'費用約定',start_day_offset:'開始日期偏移',duration_hours:'時長',location:'地點',minimum_participants:'成團人數',visibility:'可見性',bot_enabled:'群同步',withdrawal_deadline:'退出截止時間'};
+  const labels:Record<string,string>={fields:'表單內容',dataset:'原稿狀態',slots:'候選時段',rooms:'包廂',people:'結算人員',items:'費用與憑證',custom:'自訂付款人',paymentCodes:'收款碼',qr:'舊收款碼',revision:'原版本',_revision:'原版本',_intent:'原建立識別',client_intent:'原建立識別',_lifecycle:'原活動狀態',capacity_unlimited:'不限人數',exact_time:'精確時間',deadline_date:'截止日期',deadline_time:'截止時間',deadlineTouched:'已修改截止時間',codes:'收款碼',edit:'原款項操作',id:'原編號',name:'名稱',title:'名稱',value:'原值',checked:'原勾選狀態',intent:'原建立識別',lifecycle:'原活動狀態',amount:'金額',receipt:'消費憑證',image:'圖片',kind:'類型',share:'份數',reason:'原因',person_ids:'人員編號',payer_id:'付款人編號',date:'日期',time:'時間',recordId:'原款項編號',command:'原操作',preview:'原預覽',description:'內容',capacity:'人數上限',event_date:'活動日期',start_time:'開始時間',deadline:'截止時間',timezone:'時區',fee_policy:'費用約定',start_day_offset:'開始日期偏移',duration_hours:'時長',location:'地點',minimum_participants:'成團人數',visibility:'可見性',bot_enabled:'群同步',withdrawal_deadline:'退出截止時間'};
   const label=(key:string)=>labels[key]??key;
   const image=(value:unknown):ReactNode=>{
     if(typeof value==='string'){const src=imageSource(value);return src?<img src={src} alt="舊草稿圖片" style={{maxWidth:'100%'}}/>:visibleData(value);}
@@ -55,7 +56,7 @@ function DraftContents({data}:{data:Record<string,unknown>}){
     if(value&&typeof value==='object')return <dl>{Object.entries(value).filter(([key])=>!/token|pin|csrf|cookie|secret|oauth|authorization/i.test(key)).map(([key,item])=><div key={key}><dt>{label(key)}</dt><dd>{key==='name'&&'value' in value&&typeof item==='string'?label(item):image(item)}</dd></div>)}</dl>;
     return visibleData(value);
   };
-  return <div className="legacy-local-data">{['fields','dataset','slots','rooms','people','items','custom','paymentCodes','qr','revision','edit'].filter(key=>data[key]!==undefined).map(key=><details key={key}><summary>{label(key)}</summary>{image(data[key])}</details>)}</div>;
+  return <div className="legacy-local-data">{['fields','value','dataset','slots','rooms','people','items','custom','paymentCodes','qr','revision','edit'].filter(key=>data[key]!==undefined).map(key=><details key={key}><summary>{key==='value'&&data.react===1?'表單內容':label(key)}</summary>{image(data[key])}</details>)}</div>;
 }
 function hasCredentials(value:unknown):boolean{
   if(!value||typeof value!=='object')return false;
@@ -65,7 +66,7 @@ function hasCredentials(value:unknown):boolean{
   return Object.entries(value).some(([key,item])=>credential(key)||hasCredentials(item));
 }
 function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventory;row:LegacySnapshot}){
-  const description=describeLegacy(row.source,viewer.scope),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[receipt,setReceipt]=useState<ReturnType<typeof LegacyRequestReceipt.parse>|null>(null),active=useRef(false),client=useQueryClient();
+  const description=describeLegacy(row.source,viewer.scope),intent=legacyCreateIntent(description),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[receipt,setReceipt]=useState<ReturnType<typeof LegacyRequestReceipt.parse>|null>(null),active=useRef(false),client=useQueryClient();
   useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   async function original(){
     const fresh=await client.fetchQuery({...sessionQuery,staleTime:0});
@@ -89,5 +90,6 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
   return <><Heading level={3}>{description.label}</Heading><Text>原保存時間：{typeof (row.source as {at?:unknown}).at==='number'?new Date((row.source as {at:number}).at).toLocaleString('zh-TW'):'未記錄'}</Text>
     {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text><Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button></>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
+    {intent&&!hasCredentials(row.source)&&<CreateIntentLookup key={row.id} viewer={viewer} {...intent} disabled={busy} validate={async()=>{await original();}}/>}
   </>;
 }

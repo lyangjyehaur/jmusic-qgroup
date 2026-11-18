@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { CreateIntent } from './create-intents';
 
 // Values are part of the existing SQLite / Python bot protocol.
 export const ActivityCategory = z.enum(['约K', '聚餐', '运动', '出游', '游戏', '其他']);
@@ -17,7 +18,7 @@ export const ActivityDraft = z.object({
   canEdit: z.boolean(), canRemove: z.boolean(), removalBlocker: z.string(),
   values: ActivityArrangementInput,
 });
-export const CreateActivityDraft = z.object({ values: ActivityArrangementInput }).strict();
+export const CreateActivityDraft = z.object({ values: ActivityArrangementInput,clientIntent:CreateIntent.optional() }).strict();
 export const SaveActivityDraft = z.object({ revision: z.number().int().min(0), values: ActivityArrangementInput, reason: text(200).default('') }).strict();
 export const RemoveActivityDraft = z.object({ revision: z.number().int().min(0), confirm: z.literal(true) }).strict();
 export const PublishActivityDraft = z.object({ revision: z.number().int().min(0), confirm: z.literal(true), acceptConditions: z.literal(true) }).strict();

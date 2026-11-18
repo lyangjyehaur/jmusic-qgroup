@@ -158,7 +158,7 @@ export function useReviewedDraft<T, S, F>(options: {
         if (!handle.current) handle.current = (await openDraft(key, viewer.scope)).handle;
         const blank: Draft = { value: options.blank(data), dirty: false };
         if (!await persist(blank, true)) return;
-        applyRaw(null);
+        applyRaw(JSON.stringify(blank));
       }
       await loadVersions();
     } catch { setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。'); }

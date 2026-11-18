@@ -5,6 +5,7 @@ import { registerBotDeliveries } from './bot-deliveries';
 import { registerMusicRooms } from './music-rooms';
 import { registerAppearance } from './appearance';
 import { registerLegacyLocal } from './legacy-local';
+import { registerCreateIntents } from './create-intents';
 import { registerAdminBackups } from './admin-backups';
 import { createPairedBackups } from './paired-backups';
 import { erasureJournal as defaultErasureJournal } from './erasure-journal';
@@ -151,6 +152,7 @@ export function createApp(options: AppOptions) {
     registerAdminMusicCatalog(app, db, admin, now);
     registerInbox(app, db, security, now);
     registerLegacyLocal(app, db, security);
+    registerCreateIntents(app, db, security);
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/me/activities', async request => {

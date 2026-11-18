@@ -25,6 +25,7 @@ import { allocateActivity } from './activity-publish';
 import { hash, type Security } from './security';
 import { announcePoll, pollShareable } from './time-poll-bot';
 import { deliveryRetryBlocker } from './bot-delivery-rules';
+import { priorCreateIntent,recordCreateIntent } from './create-intents';
 import {
   pollAvailable,
   pollDate,
@@ -234,7 +235,9 @@ export function registerTimePolls(
             request.log.error({ pollId: id }, 'Poll bot hook failed; required business preserved');
           }
         };
-        const target = run(user, hook),
+        const intent=!id&&input&&typeof input==='object'&&'client_intent' in input&&typeof input.client_intent==='string'?input.client_intent:undefined;
+        const oldIntent=priorCreateIntent<z.infer<typeof TimePollResult>>(db,user.id,'poll',intent,input);
+        const target = oldIntent?.id??run(user, hook),
           poll = pollRow(db, target, true),
           result = TimePollResult.parse({
             id: target,
@@ -243,6 +246,7 @@ export function registerTimePolls(
             event_id: poll.event_id,
             removed: poll.status === 'deleted',
           });
+        if(!oldIntent)recordCreateIntent(db,user.id,'poll',intent,input,result,legacyStamp(now()));
         db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(
           user.id,
           key,

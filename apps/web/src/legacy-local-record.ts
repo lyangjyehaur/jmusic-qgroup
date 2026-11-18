@@ -1,9 +1,17 @@
 import { z } from 'zod';
-import { LegacyRequestCheck } from '@qgroup/contracts';
+import { CreateIntent,LegacyRequestCheck } from '@qgroup/contracts';
 export const legacyScope=(scope:string)=>z.string().regex(/^[a-f0-9]{64}$/).parse(scope);
 const object=z.record(z.string(),z.unknown());
 export const LegacyFields=z.array(z.object({name:z.string(),value:z.string(),checked:z.boolean().optional()}).strict());
 export type LegacyDescription={kind:'draft'|'request'|'unknown';label:string;route?:string;request?:z.infer<typeof LegacyRequestCheck>;data?:Record<string,unknown>};
+export function legacyCreateIntent(description:LegacyDescription):{kind:'activity'|'poll';intent:string}|null{
+  if(description.kind!=='draft'||!description.data)return null;
+  const kind=description.route==='/activities/new'?'activity':description.route==='/time-polls/new'?'poll':null;if(!kind)return null;
+  const data=description.data,reactValue=object.safeParse(data.value);if(data.react===1&&!reactValue.success)return null;
+  const v=data.react===1?reactValue.data!:data;
+  const raw=data.react===1?v[kind==='activity'?'_intent':'client_intent']:kind==='activity'?object.safeParse(data.dataset).data?.intent:data.intent;
+  const intent=CreateIntent.safeParse(raw);return intent.success?{kind,intent:intent.data}:null;
+}
 const id='[A-Za-z0-9_-]{1,80}';
 export function describeLegacy(source:unknown,scope:string):LegacyDescription{
   legacyScope(scope);const row=object.safeParse(source);
@@ -18,16 +26,30 @@ export function describeLegacy(source:unknown,scope:string):LegacyDescription{
   const suffix=key.slice(('draft:'+scope+':').length),data=object.safeParse(row.data.data);
   if(!data.success)return {kind:'unknown',label:'無法辨識的舊草稿'};
   const value=data.data,fields=LegacyFields.safeParse(value.fields);
+  const react=z.object({react:z.literal(1),value:object,revision:z.number().int().nonnegative().optional()}).strict().safeParse(value);
   const record={kind:'draft' as const,data:value};
   if(suffix==='event:new'||new RegExp('^(event|copy):'+id+'$').test(suffix)){
+    if(react.success){
+      const v=z.object({id:z.string(),title:z.string(),_intent:z.string(),_revision:z.union([z.string(),z.number()]),_lifecycle:z.string()}).safeParse(react.data.value);
+      if(!v.success||v.data.id&&!new RegExp('^'+id+'$').test(v.data.id))return {kind:'unknown',label:'無法辨識的舊活動草稿'};
+      // A form key and its embedded identity must agree; never route a damaged edit to a new create.
+      if(suffix.startsWith('event:')&&suffix!=='event:new'&&v.data.id!==suffix.slice(6)||suffix==='event:new'&&v.data.id||suffix.startsWith('copy:')&&v.data.id)return {kind:'unknown',label:'原活動草稿編號不符'};
+      return {...record,label:'舊活動草稿',route:v.data.id?'/activities/'+encodeURIComponent(v.data.id):'/activities/new'};
+    }
     if(!fields.success||!object.safeParse(value.dataset).success)return {kind:'unknown',label:'無法辨識的舊活動草稿'};
     const event=fields.data.find(f=>f.name==='id')?.value;
+    if(suffix.startsWith('event:')&&suffix!=='event:new'&&event!==suffix.slice(6)||suffix==='event:new'&&event||suffix.startsWith('copy:')&&event)return {kind:'unknown',label:'原活動草稿編號不符'};
     return {...record,label:'舊活動草稿',route:event&&new RegExp('^'+id+'$').test(event)?'/activities/'+encodeURIComponent(event):'/activities/new'};
   }
-  if(suffix==='time-poll:new'&&fields.success)return {...record,label:'舊時間投票草稿',route:'/time-polls/new'};
+  if(suffix==='time-poll:new'&&(fields.success||react.success&&z.object({title:z.string(),client_intent:z.string(),slots:z.array(z.object({key:z.string(),date:z.string(),time:z.string()}))}).safeParse(react.data.value).success))return {...record,label:'舊時間投票草稿',route:'/time-polls/new'};
   const route=new RegExp('^(rooms|invoice|finance):('+id+')(?:[:].*)?$').exec(suffix);
   if(route){
     const labels={rooms:'舊包廂草稿',invoice:'舊結算草稿',finance:'舊款項草稿'},part=route[1] as keyof typeof labels;
+    if(react.success){
+      const v=react.data.value;
+      if(part==='rooms'&&!Array.isArray(v.rooms)||part==='invoice'&&(!Array.isArray(v.people)||!Array.isArray(v.items)||!Array.isArray(v.codes))||part==='finance'&&(typeof v.recordId!=='string'||typeof v.kind!=='string'))return {kind:'unknown',label:'無法辨識的'+labels[part].slice(1)};
+      return {...record,label:labels[part],route:'/activities/'+encodeURIComponent(route[2]!)+(part==='rooms'?'/rooms':part==='invoice'?'/settlement/edit':'/finance')};
+    }
     if(part==='rooms'&&!Array.isArray(value.rooms)||part==='invoice'&&(!fields.success||!Array.isArray(value.people)||!Array.isArray(value.items))||part==='finance'&&(!fields.success||!object.safeParse(value.edit).success))return {kind:'unknown',label:'無法辨識的'+labels[part].slice(1)};
     return {...record,label:labels[part],route:'/activities/'+encodeURIComponent(route[2]!)+(part==='rooms'?'/rooms':part==='invoice'?'/settlement/edit':'/finance')};
   }

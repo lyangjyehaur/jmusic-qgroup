@@ -6,7 +6,8 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { ActivityCopy, ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult, CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
+import { ActivityCopy, ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult, CreateActivityDraft, CreateIntent, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
+import { CreateIntentLookup } from './create-intents';
 import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -22,13 +23,13 @@ const Pending = z.discriminatedUnion('kind',[
   z.object({kind:z.literal('remove'),key:z.string().uuid(),input:RemoveActivityDraft}).strict(),
   z.object({kind:z.literal('publish'),key:z.string().uuid(),input:PublishActivityDraft}).strict(),
 ]);
-const Draft = z.object({id:z.string().nullable(),revision:z.number().int().min(0),form:Form,reason:z.string().default(''),pending:Pending.optional()}).strict();
+const Draft = z.object({id:z.string().nullable(),revision:z.number().int().min(0),form:Form,reason:z.string().default(''),clientIntent:CreateIntent.optional(),pending:Pending.optional()}).strict();
 type DraftValue = z.infer<typeof Draft>;
 // Editing uses an explicit fixed offset, independent of the browser / event display zone.
 const localTime=(value:string|null)=>value?new Date(Date.parse(value)+8*3600000).toISOString().slice(0,19):'';
 const fromValues=(v:Values):FormValue=>({...v,startsAt:localTime(v.startsAt),deadline:localTime(v.deadline),withdrawalDeadline:localTime(v.withdrawalDeadline),capacity:String(v.capacity),minimumParticipants:String(v.minimumParticipants),durationHours:String(v.durationHours),timezone:v.timezone??''});
 const empty=():FormValue=>({title:'',category:'约K',location:'',startsAt:'',deadline:'',capacity:'0',description:'',durationHours:'3',withdrawalDeadline:'',visibility:'public',timezone:'Asia/Taipei',minimumParticipants:'0',feePolicy:'',botEnabled:false,joinOwner:true});
-const original=(saved:Saved|null):DraftValue=>({id:saved?.id??null,revision:saved?.revision??0,form:saved?fromValues(saved.values):empty(),reason:''});
+const original=(saved:Saved|null):DraftValue=>({id:saved?.id??null,revision:saved?.revision??0,form:saved?fromValues(saved.values):empty(),reason:'',...(!saved?{clientIntent:crypto.randomUUID()}:{})});
 function inputValues(form:FormValue){
   const integer=(value:string)=>/^\d+$/.test(value)?Number(value):NaN;
   return ActivityArrangementInput.parse({...form,startsAt:form.startsAt+'+08:00',deadline:form.deadline+'+08:00',withdrawalDeadline:form.withdrawalDeadline?form.withdrawalDeadline+'+08:00':null,timezone:form.timezone.trim()||null,capacity:integer(form.capacity),minimumParticipants:integer(form.minimumParticipants),durationHours:integer(form.durationHours)});
@@ -105,11 +106,11 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
         if(!saved?.isOwner||!confirmPublish||dirty)return;
         operation={kind:'publish',key:crypto.randomUUID(),input:{revision:draft.revision,confirm:true,acceptConditions:true}};
       }else{
-        try{const values=inputValues(draft.form);operation=saved?{kind:'save',key:crypto.randomUUID(),input:{revision:draft.revision,values,reason:draft.reason}}:{kind:'create',key:crypto.randomUUID(),input:{values}};}
+        try{const values=inputValues(draft.form);operation=saved?{kind:'save',key:crypto.randomUUID(),input:{revision:draft.revision,values,reason:draft.reason}}:{kind:'create',key:crypto.randomUUID(),input:{values,clientIntent:draft.clientIntent??crypto.randomUUID()}};}
         catch{setMessage('請檢查必填欄位、時間與人數範圍。');return;}
       }
     }
-    const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
+    const pending={...draft,...(operation.kind==='create'&&operation.input.clientIntent?{clientIntent:operation.input.clientIntent}:{}),pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await api(operation.kind==='remove'?path+'/remove':operation.kind==='publish'?path+'/publish':path,ActivityDraftResult,{method:operation.kind==='save'?'PUT':'POST',headers:{'Content-Type':'application/json','X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
       if(!active.current)return;
@@ -171,6 +172,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
     </form>{saved&&saved.canEdit&&!draft.pending&&<Button variant="secondary" disabled={busy||!!readError} onClick={()=>void rebase()}>核對目前安排，保留輸入</Button>}
     {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
     {message&&<Text role="status">{message}</Text>}{completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
+    {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy}/>}
     <DraftFeedback form={record} navigation={false}/>
     </Surface></>;
 }

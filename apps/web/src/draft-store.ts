@@ -82,6 +82,14 @@ async function epochs(tx: IDBTransaction, scope: string) {
   const [device, music, admin] = await Promise.all([request(store.get('device')), request(store.get('music:' + scope)), request(store.get('admin:' + scope))]);
   return { deviceEpoch: (device ?? 0) as number, musicEpoch: (music ?? 0) as number, adminEpoch: (admin ?? 0) as number };
 }
+/** Read-only fence for delayed results that must not survive local logout cleanup. */
+export function deviceDraftEpoch() {
+  return transaction('readonly', async tx => {
+    const epoch:unknown=await request(tx.objectStore('epochs').get('device'))??0;
+    if(typeof epoch!=='number'||!Number.isSafeInteger(epoch)||epoch<0)throw Error('無法核對本機原稿世代；請重新載入頁面。');
+    return epoch;
+  });
+}
 function validateRaw(key: string, raw: string) {
   // PIN commands and reasons never enter the durable store, including legacy import or archives.
   if(key.startsWith('qgroup:rebuild:music:claim:'))MusicRecoveryRecord.nullable().parse(JSON.parse(raw));

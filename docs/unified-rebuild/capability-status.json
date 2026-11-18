@@ -713,30 +713,43 @@
         "apps/api/src/activity-publish.ts",
         "apps/api/src/activity-bot.ts",
         "apps/api/src/activity-management.ts",
-        "apps/web/src/activity-conditions.tsx"
+        "apps/web/src/activity-conditions.tsx",
+        "apps/api/src/create-intents.ts",
+        "packages/contracts/src/create-intents.ts",
+        "apps/web/src/create-intents.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/create-intents.test.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "apps/web/tests/legacy-local.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "草稿及已發布安排已可在同一 TSX 表單編輯，原欄位、UTC 秒驗證、revision／比較、scope／owner 限制與狀態／結算鎖已測；完整時區輸入、日期防誤、舊入口與全部場景驗收仍待完成。"
+      "remaining": "原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。逐欄位轉換、目的原稿與來源映射的 strict commit／競爭處理及實際版本組合仍待完成。 草稿及已發布安排已可在同一 TSX 表單編輯，原欄位、UTC 秒驗證、revision／比較、scope／owner 限制與狀態／結算鎖已測；完整時區輸入、日期防誤、舊入口與全部場景驗收仍待完成。"
     },
     {
       "capability_id": "E03",
@@ -785,30 +798,42 @@
         "apps/web/src/legacy-local-store.ts",
         "apps/web/src/legacy-local.tsx",
         "apps/api/src/legacy-local.ts",
-        "packages/contracts/src/legacy-local.ts"
+        "packages/contracts/src/legacy-local.ts",
+        "apps/api/src/create-intents.ts",
+        "packages/contracts/src/create-intents.ts",
+        "apps/web/src/create-intents.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-access.test.ts",
         "apps/api/src/legacy-local.test.ts",
         "apps/api/testsupport/legacy-local-record.test.ts",
-        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md",
+        "apps/api/src/create-intents.test.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-access.test.ts",
         "apps/web/tests/legacy-local.spec.ts",
-        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-access.test.ts",
         "apps/api/src/legacy-local.test.ts",
-        "apps/web/tests/legacy-local.spec.ts"
+        "apps/web/tests/legacy-local.spec.ts",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/legacy-navigation.spec.ts",
-        "apps/web/tests/legacy-local.spec.ts"
+        "apps/web/tests/legacy-local.spec.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、create intent 綁定、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
+      "remaining": "原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。逐欄位轉換、目的原稿與來源映射的 strict commit／競爭處理及實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、建立結果與目的稿的轉換確認、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
     },
     {
       "capability_id": "E05",
@@ -1590,30 +1615,42 @@
         "apps/web/src/legacy-local-store.ts",
         "apps/web/src/legacy-local.tsx",
         "apps/api/src/legacy-local.ts",
-        "packages/contracts/src/legacy-local.ts"
+        "packages/contracts/src/legacy-local.ts",
+        "apps/api/src/create-intents.ts",
+        "packages/contracts/src/create-intents.ts",
+        "apps/web/src/create-intents.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/time-polls.test.ts",
         "apps/api/src/legacy-local.test.ts",
         "apps/api/testsupport/legacy-local-record.test.ts",
-        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md",
+        "apps/api/src/create-intents.test.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/time-polls.test.ts",
         "apps/web/tests/legacy-local.spec.ts",
-        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md"
+        "docs/unified-rebuild/83-legacy-local-preservation-checkpoint.md",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/time-polls.test.ts",
         "apps/api/src/legacy-local.test.ts",
-        "apps/web/tests/legacy-local.spec.ts"
+        "apps/web/tests/legacy-local.spec.ts",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "apps/web/tests/legacy-local.spec.ts"
+        "apps/web/tests/legacy-local.spec.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、create intent 綁定、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "remaining": "原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。逐欄位轉換、目的原稿與來源映射的 strict commit／競爭處理及實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、建立結果與目的稿的轉換確認、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
     },
     {
       "capability_id": "T02",
@@ -6216,7 +6253,10 @@
         "apps/web/src/inbox.tsx",
         "apps/web/src/pending-operations.ts",
         "apps/api/src/finance.ts",
-        "apps/web/src/activity-finance.tsx"
+        "apps/web/src/activity-finance.tsx",
+        "apps/api/src/create-intents.ts",
+        "packages/contracts/src/create-intents.ts",
+        "apps/web/src/create-intents.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
@@ -6226,19 +6266,26 @@
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/inbox.test.ts",
         "docs/unified-rebuild/30-inbox-history-checkpoint.md",
-        "apps/api/src/finance.test.ts"
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/create-intents.test.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/create-intents.test.ts",
+        "apps/web/tests/create-intents.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -6246,10 +6293,13 @@
         "apps/web/tests/activity-publish.spec.ts",
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/inbox-history.spec.ts",
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "apps/web/tests/create-intents.spec.ts",
+        "apps/web/tests/legacy-local.spec.ts",
+        "docs/unified-rebuild/84-create-intents-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
+      "remaining": "原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。逐欄位轉換、目的原稿與來源映射的 strict commit／競爭處理及實際版本組合仍待完成。 音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
     },
     {
       "capability_id": "O07",

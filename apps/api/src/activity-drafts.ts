@@ -9,6 +9,7 @@ import { requireActivityAccess } from './activity-access';
 import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventScopes, eventSnapshot, legacyStamp, removalBlocker, requireEventRevision, storedArrangement } from './activity-arrangements';
 import { publishActivityDraft } from './activity-publish';
 import { activityBotPolicy, type ActivityBotDefaults } from './activity-bot';
+import { priorCreateIntent,recordCreateIntent } from './create-intents';
 
 const params=z.object({id:z.string().min(1).max(80)});
 function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allowDeleted=false,allowPublished=false){
@@ -80,6 +81,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
   app.post('/api/v2/activities/drafts',routeOptions,async request=>{
     const input=CreateActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/drafts',input,(user,stamp)=>{
+      const previous=priorCreateIntent<{id:string;revision:number;removed:boolean}>(db,user.id,'activity',input.clientIntent,input);if(previous)return previous;
       const v=arrangementValues(input.values,now(),true);const id=randomBytes(8).toString('hex');
       db.prepare(`INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,duration_hours,created_at,withdrawal_deadline,visibility,invite_token,lifecycle,registration_open,status,timezone,minimum_participants,fee_policy,draft_join_owner,bot_enabled)
         VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'draft',0,'closed',?,?,?,?,?)`).run(id,user.id,v.title,v.category,v.location,v.startsAt,v.deadline,v.capacity,v.description,v.durationHours,stamp,v.withdrawalDeadline,v.visibility,randomBytes(24).toString('base64url'),v.timezone,v.minimumParticipants,v.feePolicy,Number(v.joinOwner),Number(v.botEnabled));
@@ -87,7 +89,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
       const event=eventRow(db,id)!;
       appendEventAudit(db,event,user,'event_created',{},eventSnapshot(event),'',stamp);
       // Drafts never publish conditions, register attendees, or enqueue bot messages.
-      return {id,revision:eventRow(db,id)!.revision,removed:false};
+      const result={id,revision:eventRow(db,id)!.revision,removed:false};recordCreateIntent(db,user.id,'activity',input.clientIntent,input,result,stamp);return result;
     });
   });
   app.put('/api/v2/activities/:id/draft',routeOptions,async request=>{

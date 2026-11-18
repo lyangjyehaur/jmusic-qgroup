@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { ActivityCategory } from './activity-arrangements';
+import { CreateIntent } from './create-intents';
 const text = (max: number, required = false) =>
   z
     .string()
@@ -21,6 +22,7 @@ export const PollDefinition = z.object({
   deadline: text(40, true),
   bot_enabled: z.boolean().default(true),
   visibility: z.literal('public').default('public'),
+  client_intent: CreateIntent.optional(),
 });
 export const CreateTimePoll = z.discriminatedUnion('time_mode', [
   PollDefinition.extend({
