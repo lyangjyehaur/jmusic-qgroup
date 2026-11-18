@@ -7,9 +7,12 @@ import { Notice, sessionQuery } from './shared';
 import { observeAccountChange } from './account-session';
 import { InboxLink } from './inbox';
 import { QQReauthReminder } from './qq-profile';
+import { analyticsPage, startAnalytics } from './analytics';
 export function Layout() {
   const session = useQuery(sessionQuery);
   const location = useLocation();
+  useEffect(() => startAnalytics(), []);
+  useEffect(() => { analyticsPage(location.pathname); }, [location.pathname]);
   const heading = useRef<HTMLElement>(null);
   const queryClient = useQueryClient();
   const previousScope = useRef<string | undefined>(undefined);

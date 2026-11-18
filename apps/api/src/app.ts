@@ -16,6 +16,7 @@ import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
+import { ANALYTICS_HOST, ANALYTICS_ORIGIN } from '@qgroup/contracts';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
 import { z } from 'zod';
@@ -85,7 +86,8 @@ export function createApp(options: AppOptions) {
   const musicClaims = createMusicClaims(db, now);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: clientAddress(request) }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
   app.register(cookie);
-  app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'"], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'"], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
+  const analyticsHosts=origin===ANALYTICS_ORIGIN?[ANALYTICS_HOST]:[];
+  app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'",...analyticsHosts], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'",...analyticsHosts], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute',keyGenerator:clientAddress });
   // Independent of browser sessions, write recovery hooks and browser errors.
   registerPublicAPI(app, db, now, options.publicAPIKeys ?? (() => process.env.KANBAN_PUBLIC_API_KEYS ?? ''), privacy.assertReadable);

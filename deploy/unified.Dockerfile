@@ -7,6 +7,7 @@ COPY package.json package-lock.json tsconfig.rebuild.json ./
 COPY apps/ ./apps/
 COPY packages/ ./packages/
 COPY tools/rebuild/build-api.mjs ./tools/rebuild/build-api.mjs
+COPY tools/rebuild/build-analytics-manifest.ts ./tools/rebuild/build-analytics-manifest.ts
 RUN npm ci --no-audit --no-fund && npm run build:rebuild && npm prune --omit=dev --no-audit --no-fund
 
 FROM node:22.22.3-bookworm-slim

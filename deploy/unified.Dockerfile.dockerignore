@@ -11,6 +11,7 @@
 !tools/
 !tools/rebuild/
 !tools/rebuild/build-api.mjs
+!tools/rebuild/build-analytics-manifest.ts
 !deploy/
 !deploy/unified.Dockerfile
 !deploy/unified.Dockerfile.dockerignore
