@@ -6858,13 +6858,33 @@
       "new_entry": "共用統計服務",
       "required_behavior": "僅正式 origin；無輸入／名字／金額／ID／token，失敗不阻功能",
       "legacy_evidence_group": "統計",
-      "implementation": [],
-      "behavior_evidence": [],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
-      "state": "planned",
-      "remaining": "僅正式 origin；無輸入／名字／金額／ID／token，失敗不阻功能"
+      "implementation": [
+        "apps/web/src/analytics.ts",
+        "apps/web/src/analytics-manifest.ts",
+        "apps/web/src/api.ts",
+        "apps/web/src/layout.tsx",
+        "apps/api/src/app.ts",
+        "packages/contracts/src/analytics-policy.ts",
+        "tools/rebuild/build-analytics-manifest.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/testsupport/analytics.test.ts",
+        "apps/web/tests/analytics.spec.ts"
+      ],
+      "data_evidence": [
+        "apps/api/testsupport/analytics.test.ts",
+        "apps/web/tests/analytics.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/testsupport/analytics.test.ts",
+        "apps/web/tests/analytics.spec.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/analytics.spec.ts",
+        "docs/unified-rebuild/91-analytics-checkpoint.md"
+      ],
+      "state": "in_progress",
+      "remaining": "原生路由／互動／寫入結果白名單與完整 production origin、payload 重建、密碼／hidden 原文排除及 bounded buffer 已測；攔截公開客戶端 transport、blocked／throw／插入失敗及既有 auth／分享／bot 舊入口回歸通過（檢查點 91）。全站簡繁、完整候選版本組合與實體裝置／QQ WebView／效能驗收待完成；統計客戶端更新須重新驗證。"
     },
     {
       "capability_id": "O11",
