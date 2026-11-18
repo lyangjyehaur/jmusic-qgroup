@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { FinancePayload, FinancePreview, FinancePreviewInput, FinanceSaveInput, FinanceResult, type FinanceCommand, type FinancePrepared, type FinanceTransaction } from '@qgroup/contracts';
+import { FinancePayload, FinancePreview, FinancePreviewInput, FinanceSaveInput, FinanceResult, ViewFinanceOrigin, FinanceOriginResult, type FinanceCommand, type FinancePrepared, type FinanceTransaction } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
@@ -71,6 +71,18 @@ export function registerFinance(app:FastifyInstance,db:DB,security:Security,now:
   const params=z.object({id:z.string().min(1).max(80)}),cursor=z.string().regex(/^[1-9][0-9]{0,17}$/).transform(BigInt),bot=createActivityBot(db,now,defaults),limits={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function access(id:string,userId:string|null){requireActivityAccess(db,id,userId);return eventRow(db,id)!;}
   app.get('/api/v2/activities/:id/finance',async request=>db.transaction(()=>{const {id}=params.parse(request.params),query=z.object({before:cursor.optional(),before_report:cursor.optional()}).strict().parse(request.query),device=security.read(request);if(request.headers['x-account-scope']||device)security.scoped(request);return financeView(db,access(id,device?.kind==='member'?device.id:null),device?.kind==='member'?device.id:null,query.before,query.before_report);})());
+  app.post('/api/v2/activities/:id/finance/origin',limits,async request=>db.transaction(()=>{
+    const {id}=params.parse(request.params),user=security.memberWrite(request),event=access(id,user.id),input=ViewFinanceOrigin.parse(request.body),manager=eventScopes(db,event,user.id).has('settlement');
+    if(event.lifecycle==='draft'||event.status==='deleted')fail('找不到可核對的活動帳本',404);
+    if(input.kind==='record'&&!manager)fail('沒有款項管理權限',403);
+    const entry=db.prepare('SELECT event_id,source_report_id,kind FROM finance_entries WHERE id=?').get(input.id) as {event_id:string;source_report_id:string|null;kind:string}|undefined;
+    const report=db.prepare('SELECT event_id,reporter_id FROM finance_reports WHERE id=?').get(input.id) as {event_id:string;reporter_id:string}|undefined;
+    if(entry&&entry.event_id!==id||report&&report.event_id!==id||input.kind==='record'&&(report||entry&&!financeKinds.has(entry.kind))||input.kind==='report'&&entry&&(!report||entry.source_report_id!==input.id))fail('原款項編號已用於不同活動或操作，不能重建',409);
+    if(report&&!manager&&report.reporter_id!==user.id)fail('不能核對其他人的原申報',403);
+    if(!entry&&!report){if(input.kind==='report'&&!financeSummary(db,event,user.id).can_report)fail('目前不能申報本人款項',403);return FinanceOriginResult.parse({state:'missing'});}
+    const decision=report?(db.prepare('SELECT decision FROM finance_report_actions WHERE report_id=?').get(input.id) as {decision:string}|undefined)?.decision:null;
+    return FinanceOriginResult.parse({state:'existing',id:input.id,kind:input.kind,status:input.kind==='record'?'recorded':decision??'pending'});
+  })());
   app.post('/api/v2/activities/:id/finance/preview',limits,async request=>db.transaction(()=>{const {id}=params.parse(request.params),input=FinancePreviewInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id);requireEventRevision(event,input.revision);return previewFinance(db,event,user,input.operation,now());})());
   app.post('/api/v2/activities/:id/finance',limits,async request=>db.transaction(()=>{
     const {id}=params.parse(request.params),input=FinanceSaveInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='finance:'+encodeURIComponent(id)+':'+hash(JSON.stringify(input));

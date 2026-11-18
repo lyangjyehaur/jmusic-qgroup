@@ -99,3 +99,22 @@ print(json.dumps(dict(first=first,second=second,calls=api.post.call_count,rows=[
   const s=await setup(),invoice=bill(s);s.db.exec('DROP TRIGGER settlement_details_no_update');s.db.prepare("UPDATE settlement_details SET snapshot_json=? WHERE event_id='listen'").run(JSON.stringify({...invoice,items:[{id:'1111111111111111',amount_cents:1200,breakdown:[]},{id:'2222222222222222',amount_cents:-200,breakdown:[]}]}));expect((await s.view()).summary).toMatchObject({total_due_cents:1000,outstanding_cents:1000});
  });
 });
+describe('read-only original finance identities',()=>{
+ it('distinguishes missing, recorded and every report decision, including the shared accepted entry ID, without writing or queuing bot work',async()=>{
+  const s=await setup(),read=(kind:string,id:string,h=s.alice)=>s.app.inject({method:'POST',url:'/api/v2/activities/listen/finance/origin',headers:h,payload:{kind,id}});
+  const missing=uid();expect((await read('record',missing)).json()).toEqual({state:'missing'});
+  const entry=await s.record('expense');expect((await read('record',entry)).json()).toEqual({state:'existing',id:entry,kind:'record',status:'recorded'});
+  for(const action of ['accept','reject','withdraw']){const id=uid();expect((await s.write({command:'report',id,transaction:s.tx('expense',{payer_id:b,note:'PRIVATE_ORIGIN'})},s.bob)).statusCode).toBe(200);expect((await read('report',id,s.bob)).json()).toEqual({state:'existing',id,kind:'report',status:'pending'});expect((await s.write({command:action,report_id:id,reason:'核對'},action==='withdraw'?s.bob:s.alice)).statusCode).toBe(200);const before=s.db.serialize();for(const h of [s.alice,s.bob]){const r=await read('report',id,h);expect(r.statusCode,r.body).toBe(200);expect(r.json()).toEqual({state:'existing',id,kind:'report',status:{accept:'accepted',reject:'rejected',withdraw:'withdrawn'}[action]});expect(r.body).not.toContain('PRIVATE_ORIGIN');}expect(s.db.serialize()).toEqual(before);expect((await read('record',id)).statusCode).toBe(409);}
+ });
+ it('requires current scope, origin, CSRF, visibility and owner or manager permissions for both missing and existing identities',async()=>{
+  const s=await setup(),read=(h:Record<string,string>,kind='record',id=uid(),event='listen')=>s.app.inject({method:'POST',url:'/api/v2/activities/'+event+'/finance/origin',headers:h,payload:{kind,id}});
+  for(const h of [{...s.alice,origin:'https://foreign.example'},{...s.alice,'x-csrf-token':'bad'}])expect((await read(h)).statusCode).toBe(403);expect((await read({...s.alice,'x-account-scope':s.bob['x-account-scope']})).statusCode).toBe(409);expect((await read(s.bob)).statusCode).toBe(403);
+  const id=uid();expect((await s.write({command:'report',id,transaction:s.tx('expense')})).statusCode).toBe(200);expect((await read(s.bob,'report',id)).statusCode).toBe(403);
+  expect((await read(s.bob,'report',uid(),'invite')).statusCode).toBe(404);expect((await read(s.alice,'record',uid(),'draft')).statusCode).toBe(404);expect((await read(s.alice,'record',uid(),'deleted')).statusCode).toBe(404);
+  s.db.exec("DELETE FROM event_roles WHERE event_id='listen' AND user_id='bob'; DELETE FROM attendees WHERE event_id='listen' AND user_id='bob'");expect((await read(s.bob,'report')).statusCode).toBe(403);
+ });
+ it('rejects globally reused IDs from other activities or operation kinds rather than classifying them as missing',async()=>{
+  const s=await setup(),id=await s.record('expense'),read=(kind:string,event='listen')=>s.app.inject({method:'POST',url:'/api/v2/activities/'+event+'/finance/origin',headers:s.alice,payload:{kind,id}});
+  expect((await read('report')).statusCode).toBe(409);expect((await read('record','karaoke')).statusCode).toBe(409);expect((await read('report','karaoke')).statusCode).toBe(409);
+ });
+});

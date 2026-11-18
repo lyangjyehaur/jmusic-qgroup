@@ -114,7 +114,7 @@ export function RoomFields<T extends Room>({
                 </label>
               ))}
               {room.person_ids.filter((id) => !people.some((p) => p.id === id)).length > 0 && (
-                <Text role="alert">原包間含未列入本版的人員，請移除或重新納入結算。</Text>
+                <div><Text role="alert">原包間含未列入本版的人員，請移除或重新納入結算。</Text>{room.person_ids.filter(id=>!people.some(p=>p.id===id)).map(id=><label key={id} className="consent"><input type="checkbox" checked onChange={()=>edit(room.id,{person_ids:room.person_ids.filter(person=>person!==id)} as Partial<T>)}/><span>原人員 {id}（本版未列入，取消勾選可移除）</span></label>)}</div>
               )}
             </details>
             <Button variant="ghost" onClick={() => change(rooms.filter((r) => r.id !== room.id))}>

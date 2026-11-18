@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface } from 'yahha-ui';
 import { z } from 'zod';
 import {
-  RoomPlanInput,
   RoomPlanView,
   SaveRoomPlan,
   SettlementResult,
@@ -15,19 +14,10 @@ import { api } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { useReviewedDraft } from './reviewed-draft';
+import { RoomEditorValue as Editable,roomPlanInput } from './room-editor-record';
+import { requireLegacyAvailable } from './legacy-local-availability';
 import { DraftFeedback } from './activity-settlement';
 import { Field, newSettlementId, RoomFields } from './settlement-controls';
-const Editable = z
-  .object({
-    revision: z.number().int().nonnegative(),
-    rooms: z.array(RoomPlanInput.extend({ name: z.string(), payer_id: z.string() })).max(50),
-    reason: z.string(),
-    music_source_version: z
-      .string()
-      .regex(/^[a-f0-9]{64}$/)
-      .optional(),
-  })
-  .strict();
 const base = (id: string) => '/activities/' + encodeURIComponent(id);
 export function ActivityRoomsPage() {
   const { id = '' } = useParams();
@@ -104,18 +94,19 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       saveSchema: SaveRoomPlan,
       resultSchema: SettlementResult,
       endpoint,
+      beforeSubmit:()=>requireLegacyAvailable(viewer.scope,endpoint),
       latest: () =>
         api(endpoint, RoomPlanView, {
           headers: { 'X-Account-Scope': viewer.scope },
         }),
-      fromPending: ({ confirm, ...value }) => {
+      fromPending: ({ confirm, ...value }): z.infer<typeof Editable> => {
         void confirm;
         return value;
       },
       matches: (value, input) => {
         const { confirm, ...rest } = input;
         void confirm;
-        return JSON.stringify(value) === JSON.stringify(rest);
+        return JSON.stringify(roomPlanInput(value)) === JSON.stringify(rest);
       },
       after: (fresh) => {
         client.setQueryData(['private', viewer.scope, 'room-plan', initial.id], fresh);
@@ -133,7 +124,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       },
     }),
     value = form.draft.value,
-    stale = value.revision !== form.data.revision;
+    stale = value.revision !== form.data.revision||!!value.legacySource?.reviewRequired;
   const edit = (patch: Partial<typeof value>) => {
     form.edit({ ...value, ...patch });
     setConfirmed(false);
@@ -144,6 +135,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
         {form.data.title} · 預分第 {form.data.version} 版
       </Heading>
       <Notice>預分包間不會登記付款；實際包間與費用在逐人結算時再次核對。每位人員最多分配一個包間。</Notice>
+      {value.legacySource&&<Notice>已帶入舊包間原稿；原保存版本：{value.legacySource.baseRevision??'未記錄'}。{value.legacySource.reviewRequired?'請先核對最新名冊，原輸入保留。':''}{value.legacySource.notes.map((note,i)=><div key={i}>{note.field}：{note.original}。{note.message}</div>)}</Notice>}
       {form.data.blocked_reason && <Notice>{form.data.blocked_reason}</Notice>}
       {suggestion && !imported && (
         <section aria-label="採用分房建議">
@@ -231,7 +223,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
           e.preventDefault();
           if (form.draft.pending) void form.submit();
           else if (confirmed && !stale && form.data.can_manage) {
-            const parsed = SaveRoomPlan.safeParse({ ...value, confirm: true });
+            const parsed = SaveRoomPlan.safeParse({ ...roomPlanInput(value), confirm: true });
             if (parsed.success) void form.submit(parsed.data);
             else form.setMessage('請填寫包間名稱、付款人並核對人員。');
           }
@@ -276,6 +268,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
           void form.refresh((old, fresh) => ({
             ...old,
             revision: fresh.revision,
+            ...(old.legacySource?{legacySource:{...old.legacySource,reviewRequired:false}}:{}),
           }));
         }}
       >
