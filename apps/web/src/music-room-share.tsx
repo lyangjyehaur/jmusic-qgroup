@@ -55,8 +55,8 @@ export function drawRoomShare(canvas: HTMLCanvasElement, input: RoomShare) {
   }
   return rows.map((row) => row.text);
 }
-export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: boolean }) {
-  const [confirmed, setConfirmed] = useState(false),
+export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShare; enabled: boolean;beforeShare?:()=>Promise<boolean> }) {
+  const [confirmed, setConfirmed] = useState(false),[approved,setApproved]=useState(false),
     [message, setMessage] = useState(''),
     [attempt, setAttempt] = useState(0),
     [image, setImage] = useState<{
@@ -69,7 +69,7 @@ export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: 
     active = useRef(true),
     signature = JSON.stringify(value),
     latest = useRef('');
-  latest.current = enabled && confirmed ? signature : '';
+  latest.current = enabled && confirmed && approved ? signature : '';
   const text =
     value.title +
     '\n分房試算\n\n' +
@@ -94,7 +94,7 @@ export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: 
     };
   }, []);
   useEffect(() => {
-    setConfirmed(false);
+    setConfirmed(false);setApproved(false);
     setMessage('');
   }, [signature, enabled]);
   useEffect(() => {
@@ -102,12 +102,12 @@ export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: 
       url: string | undefined;
     setImage(undefined);
     setError('');
-    if (!confirmed || !enabled || !canvas.current) return;
+    if (!confirmed || !approved || !enabled || !canvas.current) return;
     try {
       drawRoomShare(canvas.current, value);
       void musicShareBlob(canvas.current)
-        .then((blob) => {
-          if (!live) return;
+        .then(async (blob) => {
+          if (!live || beforeShare && !await beforeShare() || !live) return;
           url = URL.createObjectURL(blob);
           setImage({
             url,
@@ -129,29 +129,29 @@ export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: 
         canvas.current.height = 0;
       }
     };
-  }, [signature, confirmed, enabled, attempt]);
-  const ready = enabled && confirmed && image?.signature === signature ? image : undefined;
-  const download = () => {
-    if (!ready || latest.current !== signature) return;
+  }, [signature, confirmed,approved, enabled, attempt]);
+  const ready = enabled && confirmed && approved && image?.signature === signature ? image : undefined;
+  const download = async () => {
+    if(beforeShare&&!await beforeShare())return false;
+    if (!ready || latest.current !== signature) return false;
     const link = document.createElement('a');
     link.href = ready.url;
     link.download = '分房試算.png';
-    link.click();
+    link.click();return true;
   };
   async function share() {
-    if (!ready) return;
+    if (!ready||beforeShare&&!await beforeShare()||latest.current!==signature) return;
     const expected = signature;
     try {
       if (navigator.share && navigator.canShare?.({ files: [ready.file] })) {
         await navigator.share({ files: [ready.file], title: value.title });
-      } else download();
+      } else if(!await download())return;
       if (active.current && latest.current === expected) setMessage('圖片分享已完成；不支援原生分享時已改為下載。');
     } catch (failure) {
       if (!active.current || latest.current !== expected) return;
       if (failure instanceof Error && failure.name === 'AbortError') setMessage('已取消分享。');
       else {
-        download();
-        setMessage('分享失敗，已改為下載。');
+        if(await download())setMessage('分享失敗，已改為下載。');
       }
     }
   }
@@ -162,23 +162,23 @@ export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: 
           type="checkbox"
           checked={confirmed}
           disabled={!enabled}
-          onChange={(event) => setConfirmed(event.target.checked)}
+          onChange={(event) => {const on=event.target.checked;setConfirmed(on);setApproved(false);if(!on)return;void(async()=>{const allowed=!beforeShare||await beforeShare();if(active.current){setApproved(allowed);if(!allowed)setConfirmed(false);}})();}}
         />
         <span>圖片包含活動／包間名稱、人名及分數，已核對分享範圍。</span>
       </label>
-      {confirmed && enabled && (
+      {confirmed && approved && enabled && (
         <>
           <canvas ref={canvas} hidden aria-hidden="true" />
           {error ? (
             <div role="alert">
               <Text>{error}</Text>
-              <Button onClick={() => setAttempt((n) => n + 1)}>重新產生圖片</Button>
+              <Button onClick={() => void(async()=>{if((!beforeShare||await beforeShare())&&active.current&&latest.current===signature)setAttempt(n=>n+1);})()}>重新產生圖片</Button>
             </div>
           ) : ready ? (
             <>
               <img src={ready.url} alt="分房試算；完整人員與分數見分房清單" />
               <div className="page-actions">
-                <Button onClick={download}>下載分房圖片</Button>
+                <Button onClick={()=>void download()}>下載分房圖片</Button>
                 <Button variant="secondary" onClick={() => void share()}>
                   分享分房圖片
                 </Button>
@@ -195,12 +195,13 @@ export function MusicRoomShare({ value, enabled }: { value: RoomShare; enabled: 
             variant="secondary"
             onClick={() => {
               void Promise.resolve()
-                .then(() => {
+                .then(async () => {
+                  if(beforeShare&&!await beforeShare()||latest.current!==signature)return false;
                   if (!navigator.clipboard?.writeText) throw new Error('clipboard unavailable');
-                  return navigator.clipboard.writeText(text);
+                  await navigator.clipboard.writeText(text);return true;
                 })
-                .then(() => {
-                  if (active.current && latest.current === signature) setMessage('已複製分房清單。');
+                .then(copied => {
+                  if (copied && active.current && latest.current === signature) setMessage('已複製分房清單。');
                 })
                 .catch(() => {
                   if (active.current && latest.current === signature)

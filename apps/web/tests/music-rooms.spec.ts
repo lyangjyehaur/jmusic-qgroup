@@ -1,3 +1,4 @@
+import { durableRows,damageDraft } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = 'http://127.0.0.1:5082',
@@ -54,6 +55,7 @@ test('free rooms analyze, split in three modes, preserve manual moves, lookup an
   await expect(rooms(page)).toContainText('包間輸入有變更');
   await button(page, '重新計分').click();
   await page.reload();
+  await button(page,'恢復本機原稿').click();
   await expect(rooms(page).locator('.room-lab-room')).toHaveCount(2);
   await expect(rooms(page)).toContainText('待人工安排 · 1 人');
   await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('10002');
@@ -155,23 +157,13 @@ test('corrupt drafts are preserved before rebuilding and private room results di
   await login(context);
   await page.goto('/tools/room-lab');
   await expect(page.getByRole('group', { name: /參與成員/ })).toBeVisible();
-  const key = await page.evaluate(
-    () => Object.keys(sessionStorage).find((key) => key.startsWith('qgroup:rebuild:room-lab:v1:'))!,
-  );
-  await page.evaluate((key) => sessionStorage.setItem(key, '{broken'), key);
-  await page.reload();
-  await expect(page.getByRole('alert')).toContainText('原分房草稿無法讀取');
-  expect(await page.evaluate((key) => sessionStorage.getItem(key), key)).toBe('{broken');
-  await button(page, '另存原稿並建立新試算').click();
-  expect(
-    await page.evaluate(
-      (key) =>
-        Object.keys(sessionStorage).some(
-          (candidate) => candidate.startsWith(key + ':recovery:') && sessionStorage.getItem(candidate) === '{broken',
-        ),
-      key,
-    ),
-  ).toBe(true);
+  await page.getByRole('checkbox',{name:/詞庫bob/}).check();
+  await expect.poll(async()=>(await durableRows(page)).some(row=>row.key.includes(':room-lab:'))).toBe(true);
+  await damageDraft(page,':room-lab:','{broken');
+  page.on('dialog',dialog=>void dialog.accept());await page.reload();
+  await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();
+  await button(page,'保全原稿後繼續').click();
+  expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain('{broken');
   await page.getByRole('checkbox', { name: /詞庫bob|非常長的合成會員名稱/ }).check();
   await button(page, '產生分房建議').click();
   await expect(rooms(page)).toBeVisible();
@@ -388,10 +380,8 @@ test('music erasure removes room drafts and recovery copies across tabs before a
 }) => {
   await login(context);
   await split(page);
-  await page.evaluate(() => {
-    const key = Object.keys(sessionStorage).find((key) => key.startsWith('qgroup:rebuild:room-lab:'))!;
-    sessionStorage.setItem(key + ':recovery:synthetic', sessionStorage.getItem(key)!);
-  });
+  const original=(await durableRows(page)).find(row=>row.key.includes(':room-lab:'))!;
+  await page.evaluate(row=>sessionStorage.setItem('qgroup:rebuild:room-lab:v1:'+row.key.split(':')[5]+':free:recovery:synthetic',row.raw),original);
   const privacy = await context.newPage();
   await privacy.goto('/me/privacy');
   await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check();
@@ -402,5 +392,6 @@ test('music erasure removes room drafts and recovery copies across tabs before a
   expect(
     await page.evaluate(() => Object.keys(sessionStorage).some((key) => key.startsWith('qgroup:rebuild:room-lab:'))),
   ).toBe(false);
+  expect((await durableRows(privacy)).filter(row=>row.key.includes(':room-lab:'))).toEqual([]);expect((await durableRows(privacy,'versions')).filter(row=>row.key.includes(':room-lab:'))).toEqual([]);
   await privacy.close();
 });

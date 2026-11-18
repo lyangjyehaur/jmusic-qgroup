@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link, useBlocker, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
@@ -11,23 +11,13 @@ import {
   RoomLabRoomInput,
   RoomLabSource,
 } from '@qgroup/contracts';
-import { api } from './api';
+import { api,ApiError } from './api';
+import { useDurableRecord } from './durable-record';
+import { DraftFeedback } from './draft-feedback';
+import { musicRoomDraftKey,parseMusicRoomDraft,MusicRoomDraft as Draft } from './music-room-record';
 import { MusicMemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicRoomShare } from './music-room-share';
-const Draft = z
-  .object({
-    source: RoomLabSource,
-    selected: z.array(z.string()).max(40),
-    rooms: z.array(RoomLabRoomInput).max(40),
-    result: RoomLabResult.nullable(),
-    mode: z.enum(['rooms', 'capacity', 'sizes']),
-    value: z.string().max(10),
-    sizes: z.string().max(200),
-    sameGender: z.boolean(),
-  })
-  .strict();
-type Draft = z.infer<typeof Draft>;
 type Source = z.infer<typeof RoomLabSource>;
 const empty = (source: Source, includeMe = true): Draft => ({
   source,
@@ -76,16 +66,20 @@ function Loader({ viewer, eventId }: { viewer: Member; eventId: string }) {
   const suffix = eventId ? '?' + new URLSearchParams({ eventId }) : '',
     query = useQuery({
       queryKey: ['private', viewer.scope, 'room-lab-source', eventId, viewer.musicEpoch],
-      queryFn: ({ signal }) =>
-        api('/music/rooms/source' + suffix, RoomLabSource, {
+      queryFn: async ({ signal }) => {
+        const source=await api('/music/rooms/source' + suffix, RoomLabSource, {
           signal,
           headers: { 'X-Account-Scope': viewer.scope },
-        }),
+        });
+        if(source.eventId!==(eventId||null))throw Error('分房來源與目前活動不符，請重新核對。');
+        return source;
+      },
       staleTime: 0,
       refetchOnMount: 'always',
       refetchOnWindowFocus: 'always',
       refetchInterval: 10000,
     });
+  if(query.error instanceof ApiError&&[401,403,404,409].includes(query.error.status))return <Failure error={query.error} retry={()=>void query.refetch()}/>;
   if (!query.data || !query.isFetchedAfterMount)
     return query.error ? (
       <Failure error={query.error} retry={() => void query.refetch()} />
@@ -115,7 +109,7 @@ function Editor({
   refresh: () => Promise<{ data?: Source; error: Error | null }>;
   suffix: string;
 }) {
-  const storageKey = 'qgroup:rebuild:room-lab:v1:' + viewer.scope + ':' + (fresh.eventId ?? 'free'),
+  const storageKey = musicRoomDraftKey(viewer.scope,viewer.musicEpoch,fresh.eventId),
     navigate = useNavigate();
   const preferenceKey = 'qgroup:rebuild:room-include-self:' + viewer.scope;
   const newDraft = () => {
@@ -127,80 +121,23 @@ function Editor({
     }
     return empty(fresh, includeMe);
   };
-  const [loaded] = useState(() => {
-    try {
-      const raw = sessionStorage.getItem(storageKey),
-        draft = raw ? Draft.parse(JSON.parse(raw)) : newDraft();
-      if (draft.source.eventId !== fresh.eventId) throw new Error();
-      return { draft, error: '' };
-    } catch {
-      return {
-        draft: newDraft(),
-        error: '原分房草稿無法讀取，請先保全原稿。',
-      };
-    }
-  });
-  const [draft, setDraft] = useState<Draft>(loaded.draft),
-    [storageError, setStorageError] = useState(loaded.error),
-    [recovered, setRecovered] = useState(!loaded.error),
-    [message, setMessage] = useState(''),
-    [busy, setBusy] = useState(false),
-    [search, setSearch] = useState(''),
-    [page, setPage] = useState(1),
-    [lookup, setLookup] = useState(''),
-    [shuffle, setShuffle] = useState(() => Math.random());
-  const active = useRef(true),
-    generation = useRef(0),
-    controller = useRef<AbortController | undefined>(undefined),
-    source = draft.source;
-  const stale = !!readError || source.sourceVersion !== fresh.sourceVersion,
-    blocker = useBlocker(draft.selected.length > 1 || draft.rooms.length > 0);
-  useEffect(() => {
-    active.current = true;
-    return () => {
-      active.current = false;
-      generation.current++;
-      controller.current?.abort();
-    };
-  }, []);
-  useEffect(() => {
-    if (stale) {
-      generation.current++;
-      controller.current?.abort();
-      setBusy(false);
-    }
-  }, [stale]);
-  useEffect(() => {
-    if (!recovered) return;
-    try {
-      sessionStorage.setItem(storageKey, JSON.stringify(draft));
-      setStorageError('');
-    } catch {
-      setStorageError('無法保存分房草稿，請保全目前分房清單後再離開。');
-    }
-  }, [draft, storageKey, recovered]);
-  useEffect(() => {
-    if (draft.selected.length < 2 && !draft.rooms.length) return;
-    const leave = (event: BeforeUnloadEvent) => {
-      event.preventDefault();
-      event.returnValue = '';
-    };
-    window.addEventListener('beforeunload', leave);
-    return () => window.removeEventListener('beforeunload', leave);
-  }, [draft.selected.length, draft.rooms.length]);
-  function edit(patch: Partial<Draft>) {
-    generation.current++;
-    controller.current?.abort();
-    setBusy(false);
-    setDraft((value) => ({ ...value, ...patch }));
-    setMessage('');
-  }
+  const form=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:newDraft,parse:raw=>parseMusicRoomDraft(raw,fresh.eventId),dirty:d=>d.selected.length>1||!!d.rooms.length||!!d.result||d.mode!=='rooms'||d.value!=='2'||!!d.sizes||d.sameGender,pending:()=>false});
+  const {value:draft,replace:setDraft,busy,setBusy,active,persist,begin,blocker}=form;
+  const [message,setMessage]=useState(''),[denied,setDenied]=useState(false),
+    [search,setSearch]=useState(''),[page,setPage]=useState(1),[lookup,setLookup]=useState(''),[shuffle,setShuffle]=useState(()=>Math.random());
+  const checking=useRef(false),generation=useRef(0),controller=useRef<AbortController|undefined>(undefined),source=draft.source;
+  const stale=!!readError||source.sourceVersion!==fresh.sourceVersion,locked=form.unavailable||form.busy;
+  useEffect(()=>()=>{generation.current++;controller.current?.abort();},[]);
+  useEffect(()=>{generation.current++;controller.current?.abort();setBusy(false);setMessage('');setSearch('');setLookup('');setPage(1);},[form.epoch]);
+  useEffect(()=>{if(stale&&!checking.current){generation.current++;controller.current?.abort();setBusy(false);}},[stale]);
+  function edit(patch:Partial<Draft>){if(locked)return;generation.current++;controller.current?.abort();form.change({...draft,...patch});setMessage('');}
+  function failed(error:unknown){if(error instanceof ApiError&&([401,403].includes(error.status)||error.code==='ACCOUNT_CHANGED'))setDenied(true);}
   const known = new Map(source.members.map((member) => [member.id, member])),
     selected = new Set(draft.selected);
   const result = draft.result,
     validResult =
       !!result &&
-      !stale &&
+      !stale && !form.unavailable &&
       result.sourceVersion === source.sourceVersion &&
       JSON.stringify(result.selected) === JSON.stringify(draft.selected),
     scored =
@@ -213,7 +150,7 @@ function Editor({
           members,
         })),
       ) === JSON.stringify(draft.rooms);
-  const canRun = !busy && !stale && !storageError && draft.selected.length >= 2;
+  const canRun = !locked && !stale && !form.storageError && draft.selected.length >= 2;
   async function calculate(command: 'analyze' | 'split' | 'recalc') {
     const config =
       draft.mode === 'sizes'
@@ -239,6 +176,7 @@ function Editor({
       setMessage('請選擇 2–40 位成員；房數／容量為 1–40，自訂至少兩間。');
       return;
     }
+    if(locked||stale||!begin())return;
     const attempt = ++generation.current;
     controller.current?.abort();
     const abort = new AbortController();
@@ -246,6 +184,7 @@ function Editor({
     setBusy(true);
     setMessage('');
     try {
+      if(!await persist(draft)||!active.current||generation.current!==attempt)return;
       const value = await api('/music/rooms/calculate' + suffix, RoomLabResult, {
         signal: abort.signal,
         method: 'POST',
@@ -256,27 +195,20 @@ function Editor({
         },
         body: JSON.stringify(parsed.data),
       });
-      if (active.current && generation.current === attempt)
-        setDraft((old) => ({
-          ...old,
-          result: value,
-          rooms:
-            command === 'analyze'
-              ? old.rooms
-              : value.rooms.map(({ id, capacity, members }) => ({
-                  id,
-                  capacity,
-                  members,
-                })),
-        }));
+      if(!active.current||generation.current!==attempt)return;
+      if(value.sourceVersion!==parsed.data.sourceVersion||JSON.stringify(value.selected)!==JSON.stringify(parsed.data.selected))throw Error('試算回應與原名單不符，原安排仍保留。');
+      if(command==='recalc'&&JSON.stringify(value.rooms.map(({id,capacity,members})=>({id,capacity,members})))!==JSON.stringify(draft.rooms))throw Error('試算回應與原包間不符，原安排仍保留。');
+      const next={...draft,result:value,rooms:command==='analyze'?draft.rooms:value.rooms.map(({id,capacity,members})=>({id,capacity,members}))};
+      if(await persist(next,false,'試算已完成，但無法保存結果；原安排仍保留，請重新計分。')&&active.current&&generation.current===attempt)setDraft(next);
     } catch (error) {
-      if (active.current && generation.current === attempt)
-        setMessage(error instanceof Error ? error.message : '試算失敗，原安排仍保留。');
+      if (active.current && generation.current === attempt) { failed(error);
+        setMessage(error instanceof Error ? error.message : '試算失敗，原安排仍保留。'); }
     } finally {
       if (active.current && generation.current === attempt) setBusy(false);
     }
   }
   async function findMember() {
+    if(locked||stale||!begin())return;
     const attempt = ++generation.current;
     controller.current?.abort();
     const abort = new AbortController();
@@ -284,6 +216,7 @@ function Editor({
     setBusy(true);
     setMessage('');
     try {
+      if(!await persist(draft)||!active.current||generation.current!==attempt)return;
       const profile = await api('/music/profiles/lookup', MemberMusicProfile, {
         signal: abort.signal,
         method: 'POST',
@@ -303,38 +236,27 @@ function Editor({
       setSearch(member.id);
       setPage(1);
     } catch (error) {
-      if (active.current && generation.current === attempt)
-        setMessage(error instanceof Error ? error.message : '查詢失敗');
+      if (active.current && generation.current === attempt) { failed(error);
+        setMessage(error instanceof Error ? error.message : '查詢失敗'); }
     } finally {
       if (active.current && generation.current === attempt) setBusy(false);
     }
   }
-  async function recheck() {
-    const expected = ++generation.current;
-    controller.current?.abort();
-    setBusy(true);
-    const result = await refresh();
-    if (!active.current || generation.current !== expected) return;
-    setBusy(false);
-    if (result.error || !result.data) {
-      setMessage('來源讀取失敗，原試算仍保留；目前不能重新計分或採用。');
-      return;
-    }
-    const next = result.data,
-      valid = new Set(next.members.filter((m) => m.profileId).map((m) => m.id)),
-      removed = draft.selected.filter((id) => !valid.has(id));
-    setDraft((old) => ({
-      ...old,
-      source: next,
-      selected: old.selected.filter((id) => valid.has(id)),
-      result: null,
-    }));
-    setMessage(
-      removed.length
-        ? removed.length + ' 位成員已移除或沒有成分，請核對保留的包間安排後重新計分。'
-        : '已核對最新來源；包間輸入保留，請重新計分。',
-    );
+  async function recheck(){
+    if(!begin())return;checking.current=true;const expected=++generation.current;controller.current?.abort();setMessage('');
+    try{
+      if(!await persist(draft)||!active.current||generation.current!==expected)return;
+      const result=await refresh();if(!active.current||generation.current!==expected)return;
+      if(result.error||!result.data){failed(result.error);setMessage('來源讀取失敗，原試算仍保留；目前不能重新計分或採用。');return;}
+      const next=result.data,valid=new Set(next.members.filter(m=>m.profileId).map(m=>m.id)),removed=draft.selected.filter(id=>!valid.has(id));
+      const value={...draft,source:next,selected:draft.selected.filter(id=>valid.has(id)),result:null};
+      if(await persist(value,true)&&active.current&&generation.current===expected){setDraft(value);await form.refreshVersions();setMessage(removed.length?removed.length+' 位成員已移除或沒有成分，請核對保留的包間安排後重新計分。':'已核對最新來源；包間輸入保留，請重新計分。');}
+    }catch(error){if(active.current){failed(error);setMessage(error instanceof Error?error.message:'無法核對來源');}}
+    finally{checking.current=false;if(active.current&&generation.current===expected)setBusy(false);}
   }
+  async function beforeShare(){const attempt=generation.current;return !locked&&scored&&await persist(draft)&&active.current&&generation.current===attempt;}
+  async function adopt(){if(!scored||!source.eventId||!fresh.canAdopt||!begin())return;try{if(!await persist(draft)||!active.current)return;navigate('/activities/'+encodeURIComponent(source.eventId)+'/rooms',{state:{roomSuggestion:{scope:viewer.scope,eventId:source.eventId,sourceVersion:source.sourceVersion,revision:source.revision,rooms:draft.rooms.map(room=>room.members)}}});}finally{if(active.current)setBusy(false);}}
+  async function leave(){generation.current++;controller.current?.abort();setBusy(false);await form.leave();}
   function toggle(id: string, on: boolean) {
     if (on && selected.size >= 40) {
       setMessage('每次最多選擇 40 位成員。');
@@ -409,39 +331,19 @@ function Editor({
       (member) => (source.eventId || selected.has(member.id)) && !assigned.has(member.id),
     ).length,
   };
+  if(denied||form.expired)return <><DraftFeedback form={form} navigation={false}/><Notice>目前帳號或成分權限已變更。</Notice></>;
   return (
     <>
       {source.eventId && <Heading level={2}>{source.title}</Heading>}
       {readError && <Failure error={readError} retry={() => void recheck()} />}{' '}
       {stale && <Notice>名單、成分或來源狀態已變更。原試算已失效，請核對最新來源再重新計分。</Notice>}
-      {storageError && (
-        <>
-          <Text role="alert">{storageError}</Text>
-          {!recovered && (
-            <Button
-              onClick={() => {
-                try {
-                  const raw = sessionStorage.getItem(storageKey);
-                  if (raw !== null) sessionStorage.setItem(storageKey + ':recovery:' + Date.now(), raw);
-                  setRecovered(true);
-                  setStorageError('');
-                  setMessage('已另存無法讀取的原稿，現在可重新建立試算。');
-                } catch {
-                  setStorageError('仍無法保全原稿，請檢查瀏覽器儲存設定。');
-                }
-              }}
-            >
-              另存原稿並建立新試算
-            </Button>
-          )}
-        </>
-      )}
+      <DraftFeedback form={form} navigation={false}/>
       {message && <Text role="status">{message}</Text>}
-      <Button variant="secondary" disabled={busy} onClick={() => void recheck()}>
+      <Button variant="secondary" disabled={locked} onClick={() => void recheck()}>
         核對最新來源，保留包間輸入
       </Button>
       <Surface className="detail room-lab-options">
-        <fieldset disabled={busy || !recovered}>
+        <fieldset disabled={locked}>
           <legend>參與成員 · 已選 {draft.selected.length}／40 人</legend>
           {!source.eventId && source.selfId && (
             <label className="consent">
@@ -531,7 +433,7 @@ function Editor({
             </Button>
           </div>
         </fieldset>
-        <fieldset disabled={busy || !recovered}>
+        <fieldset disabled={locked}>
           <legend>分房方式</legend>
           <label className="account-field">
             分房依據
@@ -591,7 +493,7 @@ function Editor({
                   min={1}
                   max={40}
                   value={room.capacity}
-                  disabled={busy}
+                  disabled={locked}
                   onChange={(event) =>
                     edit({
                       rooms: draft.rooms.map((value) =>
@@ -610,7 +512,7 @@ function Editor({
                         value={room.id}
                         rooms={draft.rooms}
                         name={name(id)}
-                        disabled={busy}
+                        disabled={locked}
                         change={(to) => move(id, to)}
                       />
                     </li>
@@ -624,7 +526,7 @@ function Editor({
               {!room.members.length && (
                 <Button
                   variant="secondary"
-                  disabled={busy}
+                  disabled={locked}
                   onClick={() =>
                     edit({
                       rooms: draft.rooms.filter((value) => value.id !== room.id),
@@ -649,7 +551,7 @@ function Editor({
                     name={member.name}
                     rooms={draft.rooms}
                     value=""
-                    disabled={busy}
+                    disabled={locked}
                     change={(to) => move(member.id, to)}
                   />
                 </li>
@@ -659,7 +561,7 @@ function Editor({
           <div className="page-actions">
             <Button
               variant="secondary"
-              disabled={busy || draft.rooms.length >= 40}
+              disabled={locked || draft.rooms.length >= 40}
               onClick={() =>
                 edit({
                   rooms: [...draft.rooms, { id: crypto.randomUUID(), capacity: 4, members: [] }],
@@ -672,25 +574,13 @@ function Editor({
               重新計分
             </Button>
           </div>
-          <MusicRoomShare value={share} enabled={scored} />
+          <MusicRoomShare value={share} enabled={scored && !locked} beforeShare={beforeShare} />
           {source.eventId && source.canAdopt && (
             <>
               <Notice>採用後仍須核對正式包間名稱、付款人與名冊，再確認保存；不會自動記帳。</Notice>
               <Button
-                disabled={!scored || busy || !fresh.canAdopt}
-                onClick={() =>
-                  navigate('/activities/' + encodeURIComponent(source.eventId!) + '/rooms', {
-                    state: {
-                      roomSuggestion: {
-                        scope: viewer.scope,
-                        eventId: source.eventId,
-                        sourceVersion: source.sourceVersion,
-                        revision: source.revision,
-                        rooms: draft.rooms.map((room) => room.members),
-                      },
-                    },
-                  })
-                }
+                disabled={!scored || locked || !fresh.canAdopt}
+                onClick={()=>void adopt()}
               >
                 核對並採用為正式分房
               </Button>
@@ -702,7 +592,7 @@ function Editor({
         <Surface role="alert" className="leave-prompt">
           <Text>仍有分房草稿。</Text>
           <Button onClick={() => blocker.reset?.()}>繼續核對</Button>
-          <Button variant="secondary" disabled={!!storageError} onClick={() => blocker.proceed?.()}>
+          <Button variant="secondary" disabled={form.loading} onClick={() => void leave()}>
             保留分房草稿並離開
           </Button>
         </Surface>

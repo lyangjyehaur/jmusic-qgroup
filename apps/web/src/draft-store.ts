@@ -1,3 +1,4 @@
+import { musicRoomDraftTarget,musicRoomLegacyKey,musicRoomLegacyMatches } from './music-room-record';
 import { MusicRecoveryRecord } from './music-recovery-record';
 import { musicShoutDraftTarget } from './music-shout-record';
 import { MusicPinResultRequest } from '@qgroup/contracts';
@@ -64,6 +65,7 @@ function validate(key: string, scope: string) {
     !!botDeliveryDraftRoute(key, scope) ||
     !!activityAccessDraftRoute(key, scope) ||
     !!musicShoutDraftTarget(key, scope) ||
+    !!musicRoomDraftTarget(key, scope) ||
     new RegExp('^qgroup:rebuild:admin-(?:bot|catalog|appearance|shouts):v1:' + scope + ':[a-f0-9]{64}$').test(key) ||
     new RegExp('^qgroup:rebuild:admin-(?:user|privacy|music|music-pin):v1:' + scope + ':[a-f0-9]{64}:[^:]{1,128}$').test(key) ||
     key === prefix + 'music:v1:' + scope ||
@@ -92,7 +94,8 @@ function archive(tx: IDBTransaction, key: string, scope: string, raw: string, re
 export async function openDraft(key: string, scope: string) {
   validate(key, scope);
   // Retain the session source until the IDB transaction has committed.
-  const legacy = sessionStorage.getItem(key);
+  const legacyKey=musicRoomLegacyKey(key,scope)??key,sourceLegacy=sessionStorage.getItem(legacyKey),roomTarget=musicRoomDraftTarget(key,scope);
+  const legacy=sourceLegacy!==null&&roomTarget&&!musicRoomLegacyMatches(sourceLegacy,roomTarget.eventId)?null:sourceLegacy;
   let importableLegacy=true;
   try { if(legacy!==null)validateRaw(key,legacy); } catch { importableLegacy=false; }
   const result = await transaction('readwrite', async tx => {
@@ -107,7 +110,7 @@ export async function openDraft(key: string, scope: string) {
     }
     return { handle: { key, scope, revision: row?.revision ?? 0, ...currentEpochs }, raw: row?.raw ?? null };
   });
-  if (legacy !== null && importableLegacy && sessionStorage.getItem(key) === legacy) sessionStorage.removeItem(key);
+  if (legacy !== null && importableLegacy && sessionStorage.getItem(legacyKey) === legacy) sessionStorage.removeItem(legacyKey);
   return result;
 }
 /** A committed CAS failure preserves the competing payload; it never overwrites another tab. */
