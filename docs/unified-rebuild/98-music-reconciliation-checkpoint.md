@@ -36,7 +36,7 @@ identity reader 現在以 safeIntegers 讀取 INTEGER，先檢查安全範圍才
 - **23 類成分候選損壞**均阻止發布：選擇等級／順序、ownership、contact、created／note／alias／時間、會員／詞條來源漏失或重複項被改、已刪內容復活、native proof、used OAuth 原列、舊憑證變新版 claim、停用管理憑證狀態、trend、喊話名字／作者、tombstone、來源／身份映射及 erasure timestamp。逐例核對來源不變、目的不存在、staging 清除。
 - 最終完整單工 **1,023 項／116 檔通過**，包含看板 59 表對帳、Python bot／outbox／gateway／財務／授權／備份／恢復差分。release source rejection 是既有負向測試，沒有發布操作。
 - compiled smoke 的 API／SQLite／sharp、配對備份／歷史匯出、blocked recovery、bounded room worker、bot 本機 HTTP／WebSocket／ACK／Resume／未知投遞／simulation／CLI／SIGTERM 通過。未啟動正式 worker 或真 QQ。
-- 未改 TSX；本批未重跑完整瀏覽器。第一份固定映像已通過，恢復邊界補修後的最終固定映像仍須另外驗證。
+- 未改 TSX；本批未重跑完整瀏覽器。第一份及恢復邊界補修後的固定映像均已驗證；最終證據使用包含補修的 source／image ID。
 
 記錄：`/tmp/qgroup-music-reconcile-targeted-first.log`、`/tmp/qgroup-music-reconcile-targeted.log`、`/tmp/qgroup-music-reconcile-typecheck.log`、`/tmp/qgroup-music-reconcile-native.log`、`/tmp/qgroup-music-reconcile-build.log`、`/tmp/qgroup-music-reconcile-smoke.log`。補修檢查：`/tmp/qgroup-music-reconcile-orphan-before.log`（原 key 保留的失敗證據）、`/tmp/qgroup-music-reconcile-targeted-final.log`、`/tmp/qgroup-music-reconcile-native-final.log`、`/tmp/qgroup-music-reconcile-typecheck-final.log`、`/tmp/qgroup-music-reconcile-build-final.log`、`/tmp/qgroup-music-reconcile-smoke-final.log`。
 
@@ -50,7 +50,17 @@ identity reader 現在以 safeIntegers 讀取 INTEGER，先檢查安全範圍才
 
 第一份固定映像 `sha256:d126d0034ee26e9753a69f0a8db84ca0dcae43c4e0149e14a3edeeaff5b46666`、config `sha256:c92ed007b05dfb2829f03761a586a9ece3c3e8ac3d1be66b26ab1abc4b8c0233` 已通過 schema 15、24 shell／4 error／3 archive probe、非 root／512 MiB／network none／SIGTERM；容器與 volume 已清除。
 
-之後新增原 projection 已缺席、mapping 尚在的恢復案例，初次驗證保留了原 key 的 creator，確認舊分支提早 return 的缺口；以映射取回原 key 修正，針對性 74 項通過。這份早期映像不包含補修，不能算作最終候選或已核准回退。補修後完整回歸 1,023 項、strict／build／compiled smoke 均通過；含 4 項 archive probe 的最終固定映像待本批完成後補記。首輪及新建置紀錄：`/tmp/qgroup-music-reconcile-image-build.log`、`/tmp/qgroup-music-reconcile-image-build-final.log`、`/tmp/qgroup-music-reconcile-image-source-final.log`、`/tmp/qgroup-music-reconcile-image-source-test.log`。
+之後新增原 projection 已缺席、mapping 尚在的恢復案例，初次驗證保留了原 key 的 creator，確認舊分支提早 return 的缺口；以映射取回原 key 修正，針對性 74 項通過。這份早期映像不包含補修，不能算作最終候選或已核准回退。補修後完整回歸 1,023 項、strict／build／compiled smoke 均通過；最終固定映像已完成以下驗證。首輪及新建置紀錄：`/tmp/qgroup-music-reconcile-image-build.log`、`/tmp/qgroup-music-reconcile-image-build-final.log`、`/tmp/qgroup-music-reconcile-image-source-final.log`、`/tmp/qgroup-music-reconcile-image-source-test.log`。
+
+### 最終固定來源與驗證
+
+最終來源 **`666436093189eacafad83e36e566d9cdbd166c1b`**、tree **`3165b3ddf0c611cb0b772c107c16c778876bed01`**。乾淨 archive context `/tmp/qgroup-image-6664360-music-reconcile/context`，tag `qgroup-unified:rehearsal-6664360`。實際 Docker image ID **`sha256:a6774a8b96780be98e7453ee348c376d8d0733d2dfbe5a7da14a1456f5b2cc8c`**、config digest **`sha256:8ba8e28d310026bfe3403aee5047d8433bc6803293b2b24fc8e51d054845312b`**；建置成功，包含同版 Node 標頭與映射補修。後續此文件修訂不改變已建置 runtime 來源。
+
+本機 OrbStack arm64 模擬 linux/amd64，不視為 server2 實測。相同固定 image 驗證通過：schema 15、零 users／統一同意／回執、SQLite／sharp、公開 shell 24 項及錯誤契約 4 項。新增 archive probe 4 項涵蓋原 projection 缺席時的會員來源清除、保留分離音樂的帳號關閉、stable-ID 建立者遮蔽，以及依原 mapping 清除 legacy-key 建立者／私人 proof／刪除狀態。
+
+UID/GID 994:992、readonly／cap-drop／no-new-privileges／network none、512 MiB／無額外 swap／1 CPU／128 PIDs、SIGTERM exit 0 通過。probe 使用額外的記憶體合成庫，主驗證庫始終零會員；沒有啟動真 QQ。映像內 bot 僅版本／合成健康，完整 mock runtime 另由 compiled smoke 驗證，不能代替實際候選組合。
+
+驗證容器及 volume 已移除，結束後再次核對 rehearsal 標籤清單為空。沒有 registry push、正式服務操作或 main 整合。最終記錄：`/tmp/qgroup-music-reconcile-image-source-complete.log`、`/tmp/qgroup-music-reconcile-image-build-complete.log`、`/tmp/qgroup-music-reconcile-image-verify-complete.log`。
 
 ## 尚未放行的項目
 
