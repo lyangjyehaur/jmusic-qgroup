@@ -122,6 +122,18 @@ describe('administrative music exports and native paired backups', () => {
       s.db.transaction(() => backups.capture()).deferred(); expect(s.backups.list()).toHaveLength(1);
     } finally { rival.close(); }
   });
+  it('keeps current and historical exports coherent with a competing erasure writer throughout latest-ledger verification', async () => {
+    const s=source(),item=s.backups.capture(),rival=openDatabase(s.db.name);rival.pragma('busy_timeout=0');let probing=false,checks=0;
+    const app=createApp({db:s.db,origin,pairedBackupScheduling:false,erasureJournal:{
+      read(){if(probing){checks++;expect(()=>rival.prepare("UPDATE users SET nickname='concurrent erasure' WHERE id='bob'").run()).toThrow(/locked/);}return s.journal.read();},
+      append:entry=>s.journal.append(entry),
+    }});
+    try {
+      await app.ready();const cookie='kanban_session=fixture-alice',viewer=(await app.inject({url:'/api/v2/session',headers:{cookie}})).json();probing=true;
+      for(const suffix of ['', '?backup='+item.id]){const response=await app.inject({url:'/api/v2/admin/music-export'+suffix,headers:{cookie,'x-account-scope':viewer.scope}});expect(response.statusCode,response.body).toBe(200);}
+      expect(checks).toBe(2);expect(s.db.prepare("SELECT nickname FROM users WHERE id='bob'").get()).toEqual({nickname:'小白'});
+    } finally {await app.close();rival.close();}
+  });
   it('downloads historical data with latest ownership, explicit empty contact and PIN state while preserving historical fields and all originals', async () => {
     const s = await setup(); s.db.prepare("INSERT INTO music_profile_contacts VALUES(?,'10002','legacy',0,'before')").run(catalogProfiles.bob);
     const item = s.backups.capture(), original = readFileSync(join(s.root, 'paired-backups', item.id, 'state.sqlite3'));

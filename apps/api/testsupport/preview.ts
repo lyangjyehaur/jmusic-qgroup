@@ -18,10 +18,12 @@ import { settlementFixture } from './settlement-fixture';
 import { timePollFixture } from './time-poll-fixture';
 import { paymentFixture } from './payment-fixture';
 import { botDeliveryFixture } from './bot-delivery-fixture';
+import { legacyHistoryFixture } from './legacy-history-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const paymentRoot = (process.env.REBUILD_TEST_BACKUPS === '1'||process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
-const db = openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memory:'); fixture(db);
+const legacyHistory=process.env.REBUILD_TEST_LEGACY_HISTORY==='1'?await legacyHistoryFixture():undefined;
+const db = legacyHistory?.db ?? openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memory:'); if(!legacyHistory)fixture(db);
 if (process.env.REBUILD_TEST_BACKUPS === '1') {
   const id='m_'+'d'.repeat(32);
   db.prepare("INSERT INTO music_profiles VALUES(?,'alice',0,'2026-11-17T00:00:00.000Z',NULL)").run(id);
@@ -32,7 +34,7 @@ if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
 if (process.env.REBUILD_TEST_BOT_DELIVERIES === '1') botDeliveryFixture(db);
-if (process.env.REBUILD_TEST_ADMIN_CATALOG !== '1') musicClaimFixture(db);
+if (process.env.REBUILD_TEST_ADMIN_CATALOG !== '1'&&!legacyHistory) musicClaimFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_SHOUTS === '1') musicShoutFixture(db);
 if (process.env.REBUILD_TEST_ADMIN_CATALOG === '1') adminCatalogFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_CIRCLES === '1') musicCircleFixture(db);
@@ -55,7 +57,7 @@ db.prepare("INSERT INTO external_identities VALUES('qq','synthetic-qq',?,'auth-o
 db.prepare("INSERT INTO users VALUES('registration-admin',?,'註冊管理員','synthetic')").run(hash('fixture-registration-admin'));
 db.prepare("INSERT INTO browser_sessions VALUES(?,'registration-admin','synthetic')").run(hash('fixture-registration-admin'));
 db.prepare("INSERT INTO user_admin_roles VALUES('registration-admin',1,1,'synthetic')").run();
-const app = createApp({ db, origin, adminCredentialHash: () => hash('synthetic-admin-rescue-' + 'x'.repeat(32)), staticRoot: resolve('.rebuild-dist/web'), qq: {
+const app = createApp({ db, origin, legacyHistory:legacyHistory?.config, adminCredentialHash: () => hash('synthetic-admin-rescue-' + 'x'.repeat(32)), staticRoot: resolve('.rebuild-dist/web'), qq: {
   clientId: 'synthetic-qq',
   authorize: state => origin + '/__test/qq?state=' + state,
   exchange: async code => ({ subject: hash(code === 'auth-original-no-union' ? 'auth-original' : code).slice(0, 32).toUpperCase(), nickname: '測試帳號 ' + code, avatarUrl: code === 'avatar-source' ? 'https://q1.qlogo.cn/synthetic-avatar.png' : '', unionId: code === 'auth-original-no-union' ? '' : 'synthetic-' + code }),
@@ -67,6 +69,6 @@ app.get('/__test/qq', async (request, reply) => {
 });
 await app.listen({ host: '127.0.0.1', port });
 process.send?.('ready');
-async function stop() { await app.close(); db.close(); if (paymentRoot) rmSync(paymentRoot, { recursive: true, force: true }); }
+async function stop() { await app.close(); if(legacyHistory)legacyHistory.close();else db.close(); if (paymentRoot) rmSync(paymentRoot, { recursive: true, force: true }); }
 process.once('SIGTERM', () => { void stop(); });
 process.once('SIGINT', () => { void stop(); });

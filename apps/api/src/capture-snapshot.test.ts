@@ -11,6 +11,7 @@ import { acquireMusicLock } from '../../../tools/migration/capture-lock';
 import { importSnapshot } from '../../../tools/migration/import-snapshot';
 import { digest } from '../../../tools/migration/music-codec';
 import { fixture } from '../testsupport/fixture';
+import { createLegacyMusicHistory } from './legacy-music-history';
 const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
 function setup(){
   const root=realpathSync(mkdtempSync(join(tmpdir(),'qgroup-capture-test-'))),boardRoot=join(root,'board'),music=join(root,'music'),boardBackups=join(root,'backups'),botEvidence=join(boardRoot,'bot-logs'),destination=join(root,'capture');
@@ -47,6 +48,13 @@ it('captures committed WAL, original bot/data/schema rows, independent history, 
   try{expect(unchanged(capturedBoard)).toEqual(unchanged(s.board));expect(unchanged(capturedIdentity)).toEqual(originalIdentity);}finally{capturedBoard.close();capturedIdentity.close();}
   expect(unchanged(s.board).filter(row=>row[0]!=='image_assets')).toEqual(originalBoard.filter(row=>row[0]!=='image_assets'));
   expect((await importSnapshot(join(s.input.destination,'current'),join(s.root,'candidate'))).status).toBe('imported');expect(existsSync(s.input.destination+'.capture-lock')).toBe(false);
+  const candidate=new Database(join(s.root,'candidate/unified.sqlite3'));
+  try {
+    const history=createLegacyMusicHistory(candidate,{root:s.input.destination,manifestSha256:digest(readFileSync(join(s.input.destination,'capture-manifest.json')))});
+    expect(history.list()).toHaveLength(2);
+    expect(history.export('legacy-pair-'+historic,[]).members).toHaveProperty('10004');
+    expect(history.export('legacy-json-'+historic,[]).members).toHaveProperty('10001');
+  } finally { candidate.close(); }
 });
 it('holds both real SQLite writer locks through final service inspection and leaves both sources writable after release',async()=>{
   const s=setup(),board=new Database(s.board.name,{timeout:0}),identity=new Database(s.identity.name,{timeout:0});

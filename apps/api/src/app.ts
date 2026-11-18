@@ -12,6 +12,7 @@ import { registerLegacyFinance } from './legacy-finance';
 import { registerCreateIntents } from './create-intents';
 import { registerAdminBackups } from './admin-backups';
 import { createPairedBackups } from './paired-backups';
+import { createLegacyMusicHistory, type LegacyHistoryConfig } from './legacy-music-history';
 import { erasureJournal as defaultErasureJournal } from './erasure-journal';
 import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
@@ -72,7 +73,7 @@ import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
 import { registerPublicAPI } from './public-api';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; runtimeInfo?:ReturnType<typeof runtimeInfo> }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
 export function createApp(options: AppOptions) {
   const { db } = options;
   assertDatabaseUsable(db);
@@ -82,6 +83,7 @@ export function createApp(options: AppOptions) {
   const journal = options.erasureJournal ?? defaultErasureJournal(db);
   const privacy = createPrivacy(db, journal);
   const backups = createPairedBackups(db, journal, now);
+  const history = options.legacyHistory && createLegacyMusicHistory(db, options.legacyHistory);
   const backedUp = new WeakSet<object>();
   const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash, request => {
     if (!backups || backedUp.has(request)) return;
@@ -132,7 +134,7 @@ export function createApp(options: AppOptions) {
     registerAppearance(app, db, admin, now);
     registerAdminBot(app, db, admin, now, { enabled: options.botEnabledDefault, ...options.activityBot });
     registerBotDeliveries(app, db, security, admin, now, { enabled: options.botEnabledDefault, ...options.activityBot });
-    registerAdminBackups(app, db, admin, journal, backups, now);
+    registerAdminBackups(app, db, admin, journal, backups, now, history);
     registerAdminPrivacy(app, db, admin, now);
     registerAdminMusic(app, db, admin, now);
     registerAdminMusicPins(app, db, admin, now);
