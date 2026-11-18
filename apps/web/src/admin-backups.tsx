@@ -29,7 +29,7 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
     setBusy(true); setMessage(''); const request = new AbortController(); controller.current = request;
     try {
       const response = await fetch('/api/v2/admin/music-export' + (id ? '?backup=' + encodeURIComponent(id) : ''), { credentials: 'same-origin', headers, signal: request.signal });
-      if (!response.ok) { const failure = ApiFailure.safeParse(await response.json()); throw new ApiError(response.status, failure.success ? failure.data.code : 'DOWNLOAD_FAILED', failure.success ? failure.data.message : '下載失敗，請重試'); }
+      if (!response.ok) { const failure = ApiFailure.safeParse(await response.json()); if (failure.success) throw new ApiError(response.status, failure.data.code, failure.data.message); throw new ApiError(response.status, 'DOWNLOAD_FAILED', '下載失敗，請重試'); }
       if (!response.headers.get('content-type')?.startsWith('application/json')) throw new Error('下載格式不符，請稍後重試。');
       const blob = await response.blob();
       // A late download must not survive an account switch or revoked authority.

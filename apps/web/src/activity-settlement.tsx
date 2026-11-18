@@ -452,7 +452,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
     },
     payers: Payer[] = [
       ...ctx.payers.filter((p) => !value.custom_payers.some((c) => c.id === p.id)),
-      ...value.custom_payers.map((p, i) => ({ ...p, label: p.name || '額外付款人 ' + (i + 1) })),
+      ...value.custom_payers.map((p, i) => ({ ...p, label: p.name || uiText('額外付款人 ') + (i + 1) })),
     ],
     stale = value.revision !== ctx.revision || value.base_version !== (ctx.bill?.version ?? 0)||!!value.legacySource?.reviewRequired,
     allowed = ['ended', 'cancelled'].includes(ctx.lifecycle),
@@ -653,7 +653,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
             <summary>額外付款人 · {value.custom_payers.length}</summary>
             {value.custom_payers.map((p, index) => (
               <div key={p.id}>
-                <Field label={'額外付款人 ' + (index + 1) + ' 稱呼'}>
+                <Field label={uiText('額外付款人 ') + (index + 1) + ' 稱呼'}>
                   <input
                     value={p.name}
                     onChange={(e) =>
@@ -1079,7 +1079,7 @@ function MerchantDetails({ payment, change }: { payment: PaymentDetails; change:
           value={payment.method}
           onChange={(e) => change({ ...payment, method: e.target.value as PaymentDetails['method'] })}
         >
-          {Object.entries({ wechat: '微信', alipay: '支付寶', qq: 'QQ', cash: '現金', other: '其他' }).map(
+          {Object.entries({ wechat: uiText('微信'), alipay: uiText('支付寶'), qq: 'QQ', cash: uiText('現金'), other: uiText('其他') }).map(
             ([id, label]) => (
               <option key={id} value={id}>
                 {label}

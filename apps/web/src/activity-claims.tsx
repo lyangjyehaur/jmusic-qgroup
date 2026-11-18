@@ -46,7 +46,7 @@ function ClaimLoader({viewer,id}:{viewer:Member;id:string}){
 function ClaimManager({viewer,initial}:{viewer:Member;initial:z.infer<typeof AttendeeClaimContext>}){
   const [search]=useSearchParams(),preset=initial.people.find(person=>person.id===search.get('person'));
   const [data,setData]=useState(initial),s=useClaimDraft(viewer,initial.id,'manage',initial.revision,preset?'person:'+preset.id:''),client=useQueryClient(),path='/activities/'+encodeURIComponent(data.id)+'/claims',stale=s.draft.revision!==data.revision;
-  const person=data.people.find(person=>'person:'+person.id===s.draft.target),claim=data.claims.find(claim=>'claim:'+claim.id===s.draft.target),choices=claim?[...(claim.canDecide?['approve' as const,'reject' as const]:[]),...(claim.canRevoke?['revoke' as const]:[])]:[],available=person?!person.blocker:choices.includes(s.draft.decision),reasonLabel='認領原因';
+  const person=data.people.find(person=>'person:'+person.id===s.draft.target),claim=data.claims.find(claim=>'claim:'+claim.id===s.draft.target),choices=claim?[...(claim.canDecide?['approve' as const,'reject' as const]:[]),...(claim.canRevoke?['revoke' as const]:[])]:[],available=person?!person.blocker:choices.includes(s.draft.decision),reasonLabel=uiText('認領原因');
   function choose(target:string){const next=data.claims.find(claim=>'claim:'+claim.id===target);s.edit({target,decision:next?.canDecide?'approve':'revoke',reason:''});}
   const latest=()=>api(path,AttendeeClaimContext,{headers:scope(viewer)});
   function update(fresh:typeof data){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-claims',data.id],fresh);}

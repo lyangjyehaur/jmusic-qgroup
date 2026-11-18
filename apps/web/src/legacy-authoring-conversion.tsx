@@ -13,7 +13,7 @@ export function LegacyAuthoringConversion({viewer,inventory,row,validate,refresh
   const zoneHelp=useId();
   const active=useRef(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[zone,setZone]=useState(''),[plan,setPlan]=useState<AuthoringPlan|null>(null),[confirm,setConfirm]=useState(false),[preserve,setPreserve]=useState(false),[destination,setDestination]=useState('');
   useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
-  let decoded:ReturnType<typeof decodeAuthoring>|null=null,error='';try{decoded=decodeAuthoring(row,viewer.scope);}catch(failure){error=failure instanceof Error?failure.message:'原欄位尚未完成映射。';}
+  let decoded:ReturnType<typeof decodeAuthoring>|null=null,error='';try{decoded=decodeAuthoring(row,viewer.scope);}catch(failure){error=failure instanceof Error?errorText(failure):uiText('原欄位尚未完成映射。');}
   async function prepare(){
     if(busy)return;setBusy(true);setMessage('');setPlan(null);setConfirm(false);setPreserve(false);
     try{const fresh=await validate();if(!active.current)return;const next=await prepareAuthoring(fresh,inventory,row,zone);await validate();if(active.current)setPlan(next);}
@@ -42,11 +42,11 @@ function ConversionPreview({plan}:{plan:AuthoringPlan}){
   const parsed=JSON.parse(plan.raw),activity=plan.source.kind==='activity'?ActivityEditorDraft.parse(parsed):null,poll=plan.source.kind==='poll'?PollCreateRecord.parse(parsed).value:null;
   const metadata=activity?.legacySource??poll?.legacySource;
   const times:[string,string,string][]=plan.source.kind==='activity'&&activity?[
-    ['開始時間',plan.source.value.event_date+' '+plan.source.value.start_time+'（凌晨日期偏移 '+(plan.source.value.start_day_offset||'未選')+'）',activity.form.startsAt],
-    ['報名截止',plan.source.value.deadline,activity.form.deadline],['退出期限',plan.source.value.withdrawal_deadline,activity.form.withdrawalDeadline],
+    [uiText('開始時間'),plan.source.value.event_date+' '+plan.source.value.start_time+uiText('（凌晨日期偏移 ')+(plan.source.value.start_day_offset||uiText('未選'))+'）',activity.form.startsAt],
+    [uiText('報名截止'),plan.source.value.deadline,activity.form.deadline],[uiText('退出期限'),plan.source.value.withdrawal_deadline,activity.form.withdrawalDeadline],
   ]:plan.source.kind==='poll'&&poll?[
-    ['投票截止',plan.source.value.deadline_date+' '+(plan.source.value.exact_time?plan.source.value.deadline_time:'23:59'),poll.deadline],
-    ...plan.source.value.slots.map((slot,i)=>['候選 '+(i+1),slot.date+(plan.source.kind==='poll'&&plan.source.value.exact_time?' '+slot.time:''),poll.options[i]??''] as [string,string,string]),
+    [uiText('投票截止'),plan.source.value.deadline_date+' '+(plan.source.value.exact_time?plan.source.value.deadline_time:'23:59'),poll.deadline],
+    ...plan.source.value.slots.map((slot,i)=>[uiText('候選 ')+(i+1),slot.date+(plan.source.kind==='poll'&&plan.source.value.exact_time?' '+slot.time:''),poll.options[i]??''] as [string,string,string]),
   ]:[];
   return <div className="legacy-local-data" aria-label="轉換時間核對"><Text>原時間時區：{plan.source.value.timezone||activity?.form.timezone||poll?.timezone||'未記錄'}；{activity?'目的時間以台北 UTC+08:00 輸入。':'目的時間保留明確 UTC 或候選日期。'}</Text><dl>{times.map(([label,old,value])=><div key={label}><dt>{label}</dt><dd>原值：{old||'未填'}</dd><dd>帶入：{value||'未填，需補齊'}</dd></div>)}</dl>{metadata?.notes.map((note,i)=><Text key={i}>{note.field}：{note.message}；原值已保全。</Text>)}</div>;
 }

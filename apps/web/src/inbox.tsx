@@ -36,19 +36,19 @@ function PendingOperations({viewer}:{viewer:Member}){
       for(const version of versions){
         const recovered=pendingOperations({length:1,key:()=>version.key,getItem:()=>version.raw},viewer.scope)[0];
         if(recovered&&!durable.some(row=>row.to===recovered.to&&row.requestKey&&row.requestKey===recovered.requestKey))
-          durable.push({...recovered,id:version.id,label:recovered.label+'（保全版本）'});
+          durable.push({...recovered,id:version.id,label:recovered.label+uiText('（保全版本）')});
       }
       const session=pendingOperations(sessionStorage,viewer.scope).filter(row=>!values.has(row.id));
       if(active.current)setInventory({rows:[...session,...durable,...erasures],error:''});
-    }catch{if(active.current)setInventory({rows:[],error:'無法讀取本機保存的操作，請檢查瀏覽器儲存設定後重試。'});}
+    }catch{if(active.current)setInventory({rows:[],error:uiText('無法讀取本機保存的操作，請檢查瀏覽器儲存設定後重試。')});}
   }
   useEffect(()=>{active.current=true;const refresh=()=>{void read();};refresh();window.addEventListener('focus',refresh);return()=>{active.current=false;window.removeEventListener('focus',refresh);};},[viewer.scope]);
   async function check(row:PendingOperation){
     if(!row.requestKey||busy)return;setBusy(row.id);setResults(prior=>({...prior,[row.id]:''}));
     try{
       const receipt=await api((row.adminScope?'/admin':'/me')+'/operations/'+encodeURIComponent(row.requestKey),OperationReceipt,{headers:{...scope(viewer),...row.adminScope?{'X-Admin-Scope':row.adminScope}:{}}});
-      if(active.current)setResults(prior=>({...prior,[row.id]:receipt.committed?'此操作編號已有回執，請回原頁核對內容及目前權限。':'尚未查到此操作編號的回執，請回原頁確認原操作結果。'}));
-    }catch(error){if(active.current)setResults(prior=>({...prior,[row.id]:error instanceof ApiError?error.message:'無法讀取操作回執，請稍後重試。'}));}
+      if(active.current)setResults(prior=>({...prior,[row.id]:receipt.committed?uiText('此操作編號已有回執，請回原頁核對內容及目前權限。'):uiText('尚未查到此操作編號的回執，請回原頁確認原操作結果。')}));
+    }catch(error){if(active.current)setResults(prior=>({...prior,[row.id]:error instanceof ApiError?errorText(error):uiText('無法讀取操作回執，請稍後重試。')}));}
     finally{if(active.current)setBusy('');}
   }
   if(!inventory.error&&!inventory.rows.length)return <div className="page-actions"><Button variant="secondary" onClick={()=>void read()}>重新檢查本機操作</Button></div>;

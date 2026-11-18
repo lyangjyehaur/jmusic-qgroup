@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import type { ActivityView } from '@qgroup/contracts';
 
 const instant = (value: string) => /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
@@ -9,12 +10,12 @@ function formatter(zone: string | null) {
 }
 export function activityDate(value: string, zone: string | null) {
   const format = formatter(zone);
-  return `${format && instant(value) ? format.format(new Date(value)) : value.replace('T', ' ')}（${zone || '未指定時區'}）`;
+  return `${format && instant(value) ? format.format(new Date(value)) : value.replace('T', ' ')}（${zone || uiText('未指定時區')}）`;
 }
 export function activityTimeRange(event: Pick<ActivityView, 'startsAt' | 'durationHours' | 'timezone'>) {
   const start = activityDate(event.startsAt, event.timezone), hours = event.durationHours;
-  if (hours === null) return start + ' · 時長未定';
-  if (!Number.isFinite(hours) || hours <= 0 || !formatter(event.timezone) || !instant(event.startsAt)) return start + ` · 持續 ${hours} 小時`;
+  if (hours === null) return start + uiText(' · 時長未定');
+  if (!Number.isFinite(hours) || hours <= 0 || !formatter(event.timezone) || !instant(event.startsAt)) return start + `${uiText(" · 持續 ")}${hours}${uiText(" 小時")}`;
   return start + ' — ' + activityDate(new Date(Date.parse(event.startsAt) + hours * 3600000).toISOString(), event.timezone);
 }
 export function activityShareURL(origin: string, id: string, share: { id: string; path: string; invitation: boolean }) {
@@ -26,14 +27,14 @@ export function activityShareURL(origin: string, id: string, share: { id: string
 export function activitySummary(event: ActivityView, link: string, kind: 'activity' | 'conditions') {
   return [event.title,
     ...(kind === 'conditions' && event.changeSummary ? [event.changeSummary] : []),
-    activityTimeRange(event), '地點：' + event.location,
+    activityTimeRange(event), uiText('地點：') + event.location,
     ...(event.description ? [event.description] : []),
-    ...(event.feePolicy ? ['費用規則：' + event.feePolicy] : []),
-    '報名截止：' + activityDate(event.deadline, event.timezone),
-    ...(event.withdrawalDeadline && event.withdrawalDeadline !== event.deadline ? ['退出期限：' + activityDate(event.withdrawalDeadline, event.timezone)] : []),
-    '安排版本：' + event.conditionsVersion,
-    ...(kind === 'activity' && event.changeSummary ? ['本版變更：' + event.changeSummary] : []),
-    ...(kind === 'conditions' ? ['請開啟活動核對安排；原報名與原約定保留，變更需要逐人確認。'] : []),
+    ...(event.feePolicy ? [uiText('費用規則：') + event.feePolicy] : []),
+    uiText('報名截止：') + activityDate(event.deadline, event.timezone),
+    ...(event.withdrawalDeadline && event.withdrawalDeadline !== event.deadline ? [uiText('退出期限：') + activityDate(event.withdrawalDeadline, event.timezone)] : []),
+    uiText('安排版本：') + event.conditionsVersion,
+    ...(kind === 'activity' && event.changeSummary ? [uiText('本版變更：') + event.changeSummary] : []),
+    ...(kind === 'conditions' ? [uiText('請開啟活動核對安排；原報名與原約定保留，變更需要逐人確認。')] : []),
     link,
   ].join('\n');
 }

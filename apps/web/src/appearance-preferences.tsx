@@ -8,7 +8,7 @@ const key='qgroup:appearance:v1',defaults:Preferences={theme:'system',wallpapers
 function read(){try{const raw=localStorage.getItem(key);if(raw)return{value:schema.parse(JSON.parse(raw)),error:''};
   const legacyTheme=localStorage.getItem('jpm.theme'),legacyWall=localStorage.getItem('jpm.wall');
   return{value:{theme:legacyTheme==='dark'||legacyTheme==='light'?legacyTheme:'system',wallpapers:legacyWall!=='off'} as Preferences,error:''};
-}catch{return{value:defaults,error:'無法讀取外觀偏好；原始內容保留，請先保全後再保存。'};}}
+}catch{return{value:defaults,error:uiText('無法讀取外觀偏好；原始內容保留，請先保全後再保存。')};}}
 const initial=read();
 const effective=(theme:Preferences['theme'])=>theme==='system'?(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):theme;
 export function bootstrapAppearance(){document.documentElement.dataset.theme=effective(initial.value.theme);}

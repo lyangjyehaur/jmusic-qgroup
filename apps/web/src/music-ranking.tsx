@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button, Heading, Text } from 'yahha-ui';
@@ -12,7 +13,7 @@ export function MusicRanking({ entries, kind, complete, params, update, selected
   entries: Entry[]; kind: 'main' | 'sub'; complete: boolean; params: URLSearchParams;
   update: (key: string, value: string) => void; selected: ReadonlyMap<string, number> | null;
 }) {
-  const name = kind === 'main' ? '領域' : '細分', sorted = rankMusic(entries);
+  const name = kind === 'main' ? uiText('領域') : uiText('細分'), sorted = rankMusic(entries);
   const expanded = params.get(kind + 'Expanded') === '1', bubbles = params.get(kind + 'View') === 'bubbles';
   const limit = musicRankLimit(kind, expanded, complete);
   return <section aria-label={name + '排行'} className="music-rank-group">

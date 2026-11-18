@@ -12,7 +12,7 @@ import { DraftFeedback } from './draft-feedback';
 import { Failure, Notice, PageIntro } from './shared';
 import { announceAccountChange } from './account-session';
 type Request = z.infer<typeof AdminPrivacyRequest>;
-const status = (request: Request) => request.status === 'completed' ? '已完成' : '共享紀錄待審';
+const status = (request: Request) => request.status === 'completed' ? uiText('已完成') : uiText('共享紀錄待審');
 export function AdminPrivacy() {
   return <><PageIntro title="刪除申請" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <Queue key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
 }

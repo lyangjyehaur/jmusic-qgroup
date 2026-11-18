@@ -51,6 +51,27 @@ it('translates explicitly declared system chunks without converting interpolated
   expect(() => transformUILanguage('const raw="user";uiText(raw)', '/src/example.ts')).toThrow('static literal');
   expect(() => transformUILanguage('const x=<option>運動</option>', '/src/example.tsx')).toThrow('explicit value');
 });
+it('localizes explicit template chunks while preserving native content, coercion and evaluation order', () => {
+  const source = "import {uiText} from './language';export function Sample(){const order:string[]=[],value={ [Symbol.toPrimitive](hint:string){order.push(hint);return '后台發 · 帐号後臺';} };const first=()=>{order.push('first');return value;},second=()=>{order.push('second');return 0;};const text=`${uiText('帳號：')}${first()} · ${second()}${uiText(' 人候補 · ')}${uiText('未確認')}\\n${null}/${undefined}`;if(order.join(',')!=='first,string,second')throw Error('evaluation changed');return <p>{text}</p>}";
+  for (const original of [true, false]) expect(render(source, 'zh-Hant', original)).toBe('<p>帳號：后台發 · 帐号後臺 · 0 人候補 · 未確認\nnull/undefined</p>');
+  expect(render(source, 'zh-Hans')).toBe('<p>帐号：后台發 · 帐号後臺 · 0 人候补 · 未确认\nnull/undefined</p>');
+  const symbol = "import {uiText} from './language';export function Sample(){return <p>{`${uiText('帳號：')}${Symbol('original')}`}</p>}";
+  expect(() => render(symbol, 'zh-Hans')).toThrow(TypeError);expect(() => render(symbol, 'zh-Hans', true)).toThrow(TypeError);
+});
+it('preserves unmarked templates and foreign tags alongside explicit nested display chunks', () => {
+  const source="import {uiText} from './language';export function Sample(){const raw='后台發',tag=(v:TemplateStringsArray)=>v[0];return <><p>{`帳號：${raw}`}</p><p>{tag`後臺`}</p><p>{`${uiText('帳號：')}${`${uiText('後臺：')}${raw}`}`}</p></>}";
+  expect(render(source, 'zh-Hans')).toBe('<p>帳號：后台發</p><p>後臺</p><p>帐号：后台：后台發</p>');
+  const skipped="import {uiText} from './language';export function Sample(){const raw='后台發';return <p translate=\"no\">{`${uiText('帳號：')}${raw}`}</p>}";
+  expect(render(skipped,'zh-Hans')).toBe(render(skipped,'zh-Hans',true));
+});
+it('localizes fixed local ApiError fallbacks while preserving server messages, codes and status', () => {
+  const source=`import {errorText} from './language';class ApiError extends Error{constructor(public status:number,public code:string,message:string){super(message);}}
+    export function Sample(){const error=new ApiError(503,'UNKNOWN_ERROR','暫時無法讀取資料');
+    if(!(error instanceof ApiError)||error.status!==503||error.code!=='UNKNOWN_ERROR'||error.message!=='暫時無法讀取資料')throw Error('contract changed');
+    const raw='后台發 · 帐号後臺',server=new ApiError(422,'VALIDATION',raw);return <p>{errorText(error)}／{errorText(server)}</p>}`;
+  expect(render(source,'zh-Hans')).toBe('<p>暂时无法读取资料／后台發 · 帐号後臺</p>');
+  expect(render(source,'zh-Hant')).toBe('<p>暫時無法讀取資料／后台發 · 帐号後臺</p>');
+});
 it('compiles local error displays while retaining exception identity, class, cause and canonical message comparisons', () => {
   const source = `import {errorText} from './language';
     class DraftExpired extends Error {}

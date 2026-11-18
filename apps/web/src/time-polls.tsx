@@ -235,7 +235,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
             <select
               value={v.time_mode}
               onChange={(e) => {
-                if (v.options.some(Boolean) && !window.confirm('切換模式會清除已填候選，確定切換？')) return;
+                if (v.options.some(Boolean) && !window.confirm(uiText('切換模式會清除已填候選，確定切換？'))) return;
                 edit({ time_mode: e.target.value as 'date' | 'exact', options: ['', ''] });
               }}
             >
@@ -379,9 +379,9 @@ function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; 
         <Button
           variant="secondary"
           onClick={() =>
-            void navigator.clipboard.writeText(p.title + '\n一起選擇活動時間：\n' + location.origin + base(p.id)).then(
-              () => setShare('已複製投票連結。'),
-              () => setShare('無法複製，請複製瀏覽器網址。'),
+            void navigator.clipboard.writeText(p.title + uiText('\n一起選擇活動時間：\n') + location.origin + base(p.id)).then(
+              () => setShare(uiText('已複製投票連結。')),
+              () => setShare(uiText('無法複製，請複製瀏覽器網址。')),
             )
           }
         >
@@ -673,13 +673,13 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
               onChange={(e) => edit({ action: ManagerEditable.shape.action.parse(e.target.value) })}
             >
               {[
-                ['close', '提前截止'],
-                ['extend', '調整截止並開放'],
-                ['cancel', '取消投票'],
-                ['finalize', '定案並建立活動'],
-                ['bot_sync', '設定群同步'],
-                ...(v.action==='bot_retry'?[['bot_retry','核對舊重送草稿']]:[]),
-                ['remove', '移除投票'],
+                ['close', uiText('提前截止')],
+                ['extend', uiText('調整截止並開放')],
+                ['cancel', uiText('取消投票')],
+                ['finalize', uiText('定案並建立活動')],
+                ['bot_sync', uiText('設定群同步')],
+                ...(v.action==='bot_retry'?[['bot_retry',uiText('核對舊重送草稿')]]:[]),
+                ['remove', uiText('移除投票')],
               ]
                 .filter(([action]) => p.can_manage || action === 'remove')
                 .map(([action, text]) => (
@@ -832,14 +832,14 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           <Text key={i}>
             {h.created_at} ·{' '}
             {{
-              created: '建立',
-              close: '提前截止',
-              extend: '調整截止',
-              cancel: '取消',
-              remove: '移除',
-              finalize: '定案',
-              bot_sync: '設定群同步',
-              bot_retry: '重送通知',
+              created: uiText('建立'),
+              close: uiText('提前截止'),
+              extend: uiText('調整截止'),
+              cancel: uiText('取消'),
+              remove: uiText('移除'),
+              finalize: uiText('定案'),
+              bot_sync: uiText('設定群同步'),
+              bot_retry: uiText('重送通知'),
             }[h.action] ?? h.action}
             {h.details.reason ? ' · ' + h.details.reason : ''}
             {h.details.deadline ? ' · ' + h.details.deadline : ''}

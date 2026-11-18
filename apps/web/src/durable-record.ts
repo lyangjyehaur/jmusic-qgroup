@@ -75,7 +75,7 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
   function begin() { if (busyRef.current || unavailableRef.current || halted.current) return false; setBusy(true); return true; }
   async function retire(target?: { key: string; value: T }) {
     const sourceRaw = encode(current.current), destination = target ? {key:target.key,raw:encode(target.value)} : undefined;
-    return enqueue(loaded => retireDraft(loaded, sourceRaw, destination), '操作已完成，但無法保存本機確認狀態；原操作仍保留。');
+    return enqueue(loaded => retireDraft(loaded, sourceRaw, destination), uiText('操作已完成，但無法保存本機確認狀態；原操作仍保留。'));
   }
   async function recover() {
     if (busyRef.current || loading) return; setBusy(true);

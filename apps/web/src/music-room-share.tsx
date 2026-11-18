@@ -31,16 +31,16 @@ export function drawRoomShare(canvas: HTMLCanvasElement, input: RoomShare) {
     }
   };
   add(input.title, 32, true);
-  add('分房試算 · ' + input.rooms.length + ' 間', 24);
+  add(uiText('分房試算 · ') + input.rooms.length + uiText(' 間'), 24);
   y += 16;
   for (const room of input.rooms) {
-    add(room.name + ' · ' + room.members.length + ' 人', 28, true);
+    add(room.name + ' · ' + room.members.length + uiText(' 人'), 28, true);
     for (const name of room.members) add(name, 24, false, 3);
-    add('平均 ' + room.avg + ' · 最低 ' + room.min, 21);
-    if (room.common.length) add('共同：' + room.common.join('、'), 21, false, 2);
+    add(uiText('平均 ') + room.avg + uiText(' · 最低 ') + room.min, 21);
+    if (room.common.length) add(uiText('共同：') + room.common.join('、'), 21, false, 2);
     y += 22;
   }
-  if (input.unassigned) add('尚未安排：' + input.unassigned + ' 人', 22);
+  if (input.unassigned) add(uiText('尚未安排：') + input.unassigned + uiText(' 人'), 22);
   const height = Math.ceil(y + 28);
   if (height > 8000) throw new Error('圖片內容太長，請減少包間或改用分房清單。');
   canvas.width = width * 2;
@@ -73,21 +73,21 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
   latest.current = enabled && confirmed && approved ? signature : '';
   const text =
     value.title +
-    '\n分房試算\n\n' +
+    uiText('\n分房試算\n\n') +
     value.rooms
       .map(
         (room) =>
           room.name +
           '\n' +
           room.members.join('、') +
-          '\n平均 ' +
+          uiText('\n平均 ') +
           room.avg +
-          ' · 最低 ' +
+          uiText(' · 最低 ') +
           room.min +
-          (room.common.length ? '\n共同：' + room.common.join('、') : ''),
+          (room.common.length ? uiText('\n共同：') + room.common.join('、') : ''),
       )
       .join('\n\n') +
-    (value.unassigned ? '\n\n尚未安排：' + value.unassigned + ' 人' : '');
+    (value.unassigned ? uiText('\n\n尚未安排：') + value.unassigned + uiText(' 人') : '');
   useEffect(() => {
     active.current = true;
     return () => {
@@ -112,7 +112,7 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
           url = URL.createObjectURL(blob);
           setImage({
             url,
-            file: new File([blob], '分房試算.png', { type: 'image/png' }),
+            file: new File([blob], uiText('分房試算.png'), { type: 'image/png' }),
             signature,
           });
         })
@@ -137,7 +137,7 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
     if (!ready || latest.current !== signature) return false;
     const link = document.createElement('a');
     link.href = ready.url;
-    link.download = '分房試算.png';
+    link.download = uiText('分房試算.png');
     link.click();return true;
   };
   async function share() {

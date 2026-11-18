@@ -14,7 +14,7 @@ import { deviceSlot,deviceToken } from './device-link-record';
 const pendingLinkKey = 'qgroup:rebuild:device-link';
 function displayTime(value: string) {
   const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toLocaleString('zh-TW', { hour12: false }) : '時間未記錄';
+  return Number.isFinite(date.getTime()) ? date.toLocaleString('zh-TW', { hour12: false }) : uiText('時間未記錄');
 }
 const actionLabels: Record<string, string> = {
   qq_login: uiText("QQ 登入"), qq_bound: uiText("綁定 QQ"), name_registered: uiText("建立帳號"), nickname_changed: uiText("修改站內稱呼"), account_switched: uiText("切換帳號"), music_claimed: uiText("找回原成分"),
@@ -88,7 +88,7 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
     </Surface>
     <Surface className="detail auth-panel"><Heading level={2}>「{viewer.nickname}」已授權的裝置</Heading><Text>只撤銷此帳號；該裝置上的其他帳號保留。目前裝置請到帳號頁登出。</Text>
       {devices.isPending ? <Notice>正在讀取裝置…</Notice> : devices.error ? <Failure error={devices.error} retry={() => void devices.refetch()} /> : <ul className="device-list">{devices.data.devices.map((device, index) => <li key={device.id}>
-        <Text>{device.current ? '目前裝置' : `其他裝置 ${index}`}</Text><Text>授權於 {displayTime(device.createdAt)}</Text>
+        <Text>{device.current ? '目前裝置' : `${uiText("其他裝置 ")}${index}`}</Text><Text>授權於 {displayTime(device.createdAt)}</Text>
         {!device.current && (selected === device.id ? <div className="device-confirm" role="group" aria-label="確認撤銷裝置"><Text>確認撤銷這台裝置的「{viewer.nickname}」授權？</Text><Button disabled={busy} onClick={() => void revoke(device.id)}>確認撤銷</Button><Button variant="secondary" disabled={busy} onClick={() => setSelected(null)}>保留授權</Button></div> : <Button variant="secondary" disabled={busy} onClick={() => { setSelected(device.id); setMessage(''); }}>撤銷其他裝置 {index}</Button>)}
       </li>)}</ul>}
       <Button variant="secondary" disabled={busy || devices.isFetching || history.isFetching} onClick={() => void refresh()}>重新讀取裝置與紀錄</Button>

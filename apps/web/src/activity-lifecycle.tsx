@@ -33,7 +33,7 @@ function Loader({viewer,id}:{viewer:Member;id:string}){
   const query=useQuery({queryKey:['private',viewer.scope,'activity-lifecycle',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/lifecycle',ActivityLifecycle,{headers:headers(viewer)}),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取活動狀態…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Editor viewer={viewer} initial={query.data}/>;
 }
-function time(value:string|null){return value?new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Taipei'}).format(new Date(value))+'（台北）':'尚未記錄';}
+function time(value:string|null){return value?new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Taipei'}).format(new Date(value))+'（台北）':uiText('尚未記錄');}
 function Editor({viewer,initial}:{viewer:Member;initial:State}){
   const client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:lifecycle:v1:'+viewer.scope+':'+initial.id;
   const [data,setData]=useState(initial),[message,setMessage]=useState(''),[confirm,setConfirm]=useState(false);

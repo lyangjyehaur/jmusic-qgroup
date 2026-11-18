@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +14,7 @@ export function MemberAccess({ children }: { children: (viewer: Member) => React
   if (!session.data.authenticated) return <Notice>請先<Link to={loginLink(location.pathname + location.search)}>登入</Link>。</Notice>;
   return children(session.data);
 }
-export function MusicMemberAccess({ children, purpose = '查看同好成分' }: { children: (viewer: Member) => ReactNode; purpose?: string }) {
+export function MusicMemberAccess({ children, purpose = uiText('查看同好成分') }: { children: (viewer: Member) => ReactNode; purpose?: string }) {
   return <MemberAccess>{viewer => <MusicGate key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} purpose={purpose}>{children}</MusicGate>}</MemberAccess>;
 }
 function MusicGate({ viewer, children, purpose }: { viewer: Member; children: (viewer: Member) => ReactNode; purpose: string }) {

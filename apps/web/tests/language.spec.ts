@@ -91,3 +91,49 @@ test.describe('simplified bot delivery recovery',()=>{
     await expect(other.getByRole('status')).toContainText('其他分页已更新原稿。这个分页的内容已保全，请先读取已保存版本。');expect(writes).toBe(1);expect((await durableRows(other,'versions')).filter(row=>row.key.includes('bot-delivery:')).length).toBeGreaterThan(0);
   });
 });
+for(const language of ['zh-CN','zh-TW']) test(language+' localized summary chunks keep original content and copy-field layout',async({page,context})=>{
+  await languageHeader(context,language);const simplified=language==='zh-CN',raw='后台發 · 帐号後臺';
+  await page.route('**/api/v2/activities/listen',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,title:raw,location:raw+' place',description:raw+' description',feePolicy:raw+' fee'}});});
+  await page.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(text:string)=>{(window as unknown as {copied:string}).copied=text;}}});});
+  let writes=0;page.on('request',request=>{if(['POST','PUT','DELETE'].includes(request.method()))writes++;});
+  await page.goto('/activities/listen/share');const link=page.getByLabel(simplified?'活动连结':'活動連結',{exact:true}),summary=page.getByLabel(simplified?'活动摘要':'活動摘要',{exact:true});
+  await expect(link).toHaveAttribute('rows','3');await expect(summary).toHaveAttribute('rows','10');
+  const text=await summary.inputValue();for(const part of [raw,raw+' place',raw+' description',raw+' fee'])expect(text).toContain(part);
+  expect(text).toContain(simplified?'地点：':'地點：');expect(text).toContain(simplified?'报名截止：':'報名截止：');expect(text).toContain(simplified?'安排版本：':'安排版本：');
+  await page.getByRole('button',{name:simplified?'复制活动摘要':'複製活動摘要',exact:true}).click();expect(await page.evaluate(()=>(window as unknown as {copied:string}).copied)).toBe(text);
+  await expect(page.getByText(simplified?'已复制活动摘要。':'已複製活動摘要。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+});
+test('simplified filters and count fragments retain event titles and wire query values',async({page,context})=>{
+  await languageHeader(context,'zh-CN');await page.route('**/api/v2/activities?*',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,events:body.events.map((event:Record<string,unknown>)=>({...event,title:'后台發 · 帐号後臺',waiting:2}))}});});
+  await page.goto('/activities');await expect(page.getByRole('button',{name:'近期活动',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'往期与归档',exact:true})).toBeVisible();
+  await expect(page.locator('.event-card').first()).toContainText('后台發 · 帐号後臺');await expect(page.locator('.event-card').first()).toContainText('2 人候补');
+  await page.getByRole('button',{name:'往期与归档',exact:true}).click();await expect(page).toHaveURL(/period=history/);
+});
+test('simplified QQ binding instructions preserve the original nickname and do not start authorization',async({page,context})=>{
+  await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+  await page.route('**/api/v2/session',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,nickname:'后台發 · 帐号後臺',qqEnabled:true}});});
+  let writes=0;page.on('request',request=>{if(request.method()==='POST')writes++;});await page.goto('/login?mode=bind');
+  await expect(page.getByText('绑定目前帐号「后台發 · 帐号後臺」，不搬移报名或款项。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+});
+test.describe('simplified music display fragments',()=>{
+  test.use({musicMatches:true});
+  test('familiarity choices and canvas labels keep entry names, numeric levels and unsaved draft contents',async({page,context})=>{
+    await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+    await page.addInitScript(()=>{const original=CanvasRenderingContext2D.prototype.fillText,clear=CanvasRenderingContext2D.prototype.fillRect;const state=window as unknown as {lines:string[]};state.lines=[];CanvasRenderingContext2D.prototype.fillRect=function(...args){state.lines=[];return clear.apply(this,args);};CanvasRenderingContext2D.prototype.fillText=function(text,...args){state.lines.push(text);return original.call(this,text,...args);};});
+    let writes=0;page.on('request',request=>{if(['PUT','POST','DELETE'].includes(request.method()))writes++;});await page.goto('/me/music');await page.getByRole('button',{name:'米津玄師',exact:true}).click();
+    const level=page.getByLabel('米津玄師喜欢程度',{exact:true});await expect(level.locator('option[value="1"]')).toHaveText('只听过几首');await expect(level.locator('option[value="3"]')).toHaveText('常听');await level.selectOption('1');await expect(level).toHaveValue('1');
+    await expect(page.getByText('正在保存本机原稿…',{exact:true})).toHaveCount(0);const before=(await durableRows(page)).find(row=>row.key.includes(':music:v1:'));expect(before).toBeDefined();
+    await page.getByRole('link',{name:'分享成分',exact:true}).click();await expect(page.getByRole('img',{name:'音乐成分分享图片；完整词条可见下方清单',exact:true})).toBeVisible();
+    const lines=await page.evaluate(()=>(window as unknown as {lines:string[]}).lines);expect(lines).toContain('音乐成分');expect(lines).toContain('米津玄師');expect(lines).toContain('领域 · 2 项');expect(lines.some(line=>line.includes('只听过几首'))).toBe(true);expect(lines.some(line=>line.includes('目前草稿'))).toBe(true);
+    expect((await durableRows(page)).find(row=>row.key===before!.key)?.raw).toBe(before!.raw);expect(writes).toBe(0);
+  });
+});
+test.describe('simplified management display fragments',()=>{
+  test.use({adminCatalog:true});
+  test('catalog action labels preserve names and category wire values while keeping review unsent',async({page,context})=>{
+    await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-registration-admin',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+    let writes=0;page.on('request',request=>{if(['PUT','POST','DELETE'].includes(request.method()))writes++;});await page.goto('/admin/music-entries');await page.getByRole('button',{name:'编辑 YOASOBI',exact:true}).click();
+    await expect(page.getByRole('region',{name:'词条操作核对',exact:true}).getByRole('heading',{name:'编辑词条',exact:true})).toBeVisible();await expect(page.getByLabel('词条名称',{exact:true})).toHaveValue('YOASOBI');
+    await page.getByLabel('词条分类',{exact:true}).selectOption('领域');await expect(page.getByLabel('词条分类',{exact:true})).toHaveValue('领域');await expect(page.getByLabel('词条分类',{exact:true}).locator('option[value="领域"]')).toHaveText('领域');expect(writes).toBe(0);
+  });
+});

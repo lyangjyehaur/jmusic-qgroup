@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -15,7 +16,7 @@ import { categoryLabel } from './music-entries';
 type Trend = z.infer<typeof MusicTrend>;
 const colors = [1,2,3,4,5].map(index=>'var(--app-chart-'+index+')');
 const validDate = (t: number) => Number.isFinite(new Date(t * 1000).getTime());
-const date = (t: number) => validDate(t) ? new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(t * 1000) : '時間無法顯示';
+const date = (t: number) => validDate(t) ? new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(t * 1000) : uiText('時間無法顯示');
 function Created({ time }: { time: number | null }) {
   return time && validDate(time) ? <time dateTime={new Date(time * 1000).toISOString()}>{date(time)}</time> : <>時間未記錄</>;
 }
@@ -27,7 +28,7 @@ export function MusicTrendPage() {
   return <><PageIntro title="音樂趨勢" /><Link className="back" to={back}>回到音樂詞庫</Link>
     <div className={selection ? 'content-columns music-editor' : undefined}><section>
       {query.isPending ? <Notice>正在讀取趨勢…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
-        <dl className="music-stats" aria-label="趨勢統計">{([['24 小時新增', query.data.recent24h], ['7 天新增', query.data.new7d], ['總計', query.data.totals]] as const).map(([label, counts]) => <div key={label}><dt>{label}</dt><dd>{counts.entries} 詞條 · {counts.members} 成分</dd></div>)}</dl>
+        <dl className="music-stats" aria-label="趨勢統計">{([[uiText('24 小時新增'), query.data.recent24h], [uiText('7 天新增'), query.data.new7d], [uiText('總計'), query.data.totals]] as const).map(([label, counts]) => <div key={label}><dt>{label}</dt><dd>{counts.entries} 詞條 · {counts.members} 成分</dd></div>)}</dl>
         <TrendChart trend={query.data} entryPath={entryPath} />
         <Surface className="detail music-trend-recent"><Heading level={2}>最近新增詞條</Heading>
           {query.data.recentEntries.length ? <ul>{query.data.recentEntries.map(entry => <li key={entry.id}><Link to={entryPath(entry.id)}>{entry.name}</Link>
@@ -35,7 +36,7 @@ export function MusicTrendPage() {
         </Surface>
       </>}
       <section className="music-trend-recent" aria-label="最近新增同好"><Heading level={2}>最近新增同好</Heading>
-        <MusicMemberAccess purpose="查看新增同好">{viewer => <RecentMembers key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess>
+        <MusicMemberAccess purpose={uiText("查看新增同好")}>{viewer => <RecentMembers key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess>
       </section>
     </section>{selection && <SelectionPanel selection={selection} />}</div>
   </>;

@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { categoryLabel } from './music-entries';
@@ -12,11 +13,11 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
     <Text>領域 {form.mainCount}／5 · 細分 {form.subCount}／15</Text>
     {form.draft.selections.length ? <ul className="selected-list">{form.draft.selections.map(selected => {
       const entry = form.entries.find(entry => entry.id === selected.entryId);
-      const name = entry?.name ?? '已移除的詞條';
+      const name = entry?.name ?? uiText('已移除的詞條');
       return <li key={selected.entryId}><label><span>{name}</span>{entry?.kind === 'sub' &&
         <select aria-label={name + '喜歡程度'} value={selected.level} disabled={form.locked}
           onChange={event => form.level(selected.entryId, Number(event.target.value))}>
-          {[[4, '本命'], [3, '常聽'], [2, '聽過一些'], [1, '只聽過幾首']].map(([value, label]) =>
+          {[[4, uiText('本命')], [3, uiText('常聽')], [2, uiText('聽過一些')], [1, uiText('只聽過幾首')]].map(([value, label]) =>
             <option key={value} value={value}>{label}</option>)}
         </select>}</label><Button variant="ghost" size="sm" aria-label={'移除' + name}
           disabled={form.locked} onClick={() => form.remove(selected.entryId)}>移除</Button></li>;

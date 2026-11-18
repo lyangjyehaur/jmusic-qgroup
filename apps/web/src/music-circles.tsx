@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
@@ -10,7 +11,7 @@ import { musicEntryPath } from './music-entry';
 type Circle = z.infer<typeof MusicCircles>['clusters'][number];
 export function MusicCirclesPage() {
   return <><PageIntro title="同好圈子" /><Link className="back" to="/people">回到同好</Link>
-    <MusicMemberAccess purpose="查看同好圈子">{viewer => <Circles key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
+    <MusicMemberAccess purpose={uiText("查看同好圈子")}>{viewer => <Circles key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
 }
 function Circles({ viewer }: { viewer: Member }) {
   const [params, setParams] = useSearchParams(), raw = params.get('minLink');

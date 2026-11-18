@@ -21,7 +21,7 @@ function draftFor(fields: Fields, epoch: number): DraftValue {
 }
 const valueOf = (draft: DraftValue) => ({ profileId: draft.profileId, musicEpoch: draft.musicEpoch, revision: draft.revision, name: draft.name, note: draft.note, gender: draft.genderChoice === 'custom' ? draft.genderCustom : draft.genderChoice, genderPublic: draft.genderPublic });
 export function MusicFieldsPage() {
-  return <><PageIntro title="成分資料" /><div className="page-actions"><Link to="/me/music">回到我的成分</Link><Link to="/me/music/contact">聯絡 QQ</Link></div><MusicMemberAccess purpose="編輯成分資料">{viewer => <Loader key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
+  return <><PageIntro title="成分資料" /><div className="page-actions"><Link to="/me/music">回到我的成分</Link><Link to="/me/music/contact">聯絡 QQ</Link></div><MusicMemberAccess purpose={uiText("編輯成分資料")}>{viewer => <Loader key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
 }
 function Loader({ viewer }: { viewer: Member }) {
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-fields', viewer.musicEpoch], queryFn: () => api('/me/music/fields', MusicFields, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: false });

@@ -147,7 +147,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
               <li key={index}>
                 包間 {index + 1}：
                 {members
-                  .map((id) => form.data.people.find((person) => person.id === id)?.name ?? '來源已移除')
+                  .map((id) => form.data.people.find((person) => person.id === id)?.name ?? uiText('來源已移除'))
                   .join('、') || '空包間'}
               </li>
             ))}

@@ -101,7 +101,7 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
       else setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認報名操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
-  const consent=manage?'已核對此人的報名，確認'+labels[draft.action]:'已核對第 '+data.conditionsVersion+' 版安排、費用與逐人分配，代表本人及代報者接受安排';
+  const consent=manage?uiText('已核對此人的報名，確認')+labels[draft.action]:uiText('已核對第 ')+data.conditionsVersion+uiText(' 版安排、費用與逐人分配，代表本人及代報者接受安排');
   return <><Surface className="detail"><Heading level={2}>{data.title}</Heading><dl><dt>目前安排</dt><dd>第 {data.conditionsVersion} 版</dd><dt>時間</dt><dd>{when(data.arrangement.starts_at,data.arrangement.timezone)}（{data.arrangement.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{data.arrangement.duration_hours===null?'未設定':data.arrangement.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{data.arrangement.location}</dd><dt>退出期限</dt><dd>{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}</dd>{data.arrangement.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{data.arrangement.fee_policy}</dd></>}{data.arrangement.description&&<><dt>注意事項</dt><dd className="preserve-lines">{data.arrangement.description}</dd></>}</dl><Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看完整安排與版本</Link></Surface>
     <Surface className="detail activity-editor"><Heading level={2}>{manage?'現有報名':'本人與同行'}</Heading>
       {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新資料。</Notice>}

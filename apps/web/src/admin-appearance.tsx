@@ -65,7 +65,7 @@ function Manager({viewer,access}:{viewer:Viewer;access:Access}){
       else setMessage(uiText("尚未確認壁紙操作結果。原圖與操作編號已保留，請確認原操作結果。"));
     }finally{if(active.current)setBusy(false);}
   }
-  const value=draft.value,item=catalog.data?.items.find(x=>x.id===value.id),labels={upload:uiText("上傳壁紙"),config:uiText("設定輪播間隔"),toggle:value.enabled?'啟用壁紙':'停用壁紙',move:value.direction===-1?'上移壁紙':'下移壁紙',delete:uiText("刪除壁紙")};
+  const value=draft.value,item=catalog.data?.items.find(x=>x.id===value.id),labels={upload:uiText("上傳壁紙"),config:uiText("設定輪播間隔"),toggle:value.enabled?uiText('啟用壁紙'):uiText('停用壁紙'),move:value.direction===-1?uiText('上移壁紙'):uiText('下移壁紙'),delete:uiText("刪除壁紙")};
   return <>
     {message&&<Notice>{message}</Notice>}<DraftFeedback form={record}/>
     {!!record.storageError&&<Button disabled={busy||unavailable} onClick={()=>void persist(draft)}>重試保存原稿</Button>}

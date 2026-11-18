@@ -66,8 +66,8 @@ export function transformUILanguage(source: string, filename: string) {
       if (node.arguments.length !== 1 || !argument || !ts.isStringLiteral(argument)) throw Error(`${filename}: uiText accepts one static literal; user data must remain original`);
       edits.push({ start: node.getStart(tree), end: node.end, value: pair(argument.text) });
     }
-    if (!skip && (ts.isCallExpression(node) || ts.isNewExpression(node)) && ts.isIdentifier(node.expression) && ['Error','DraftConflict','DraftExpired'].includes(node.expression.text)) {
-      const argument = node.arguments?.[0];
+    if (!skip && (ts.isCallExpression(node) || ts.isNewExpression(node)) && ts.isIdentifier(node.expression) && ['Error','DraftConflict','DraftExpired','ApiError'].includes(node.expression.text)) {
+      const argument = node.arguments?.[node.expression.text === 'ApiError' ? 2 : 0];
       if (argument && ts.isStringLiteral(argument) && han.test(argument.text)) edits.push({start:node.getStart(tree),end:node.end,value:`${errorAlias}(${node.getText(tree)},${JSON.stringify(preserved(argument.text,hans))},${JSON.stringify(preserved(argument.text,hant))})`});
     }
     ts.forEachChild(node, child => visit(child, skip));

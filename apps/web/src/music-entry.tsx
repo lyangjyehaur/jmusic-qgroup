@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
@@ -45,7 +46,7 @@ export function MusicEntryDetails({ entry, close }: {
     </div>
     {workspace.state !== 'error' && <section aria-label="誰選了">
       <Heading level={3}>誰選了</Heading>
-      {workspace.state === 'pending' ? <Notice>正在確認成分…</Notice> : <MusicMemberAccess purpose="查看選取者">{viewer => <EntryMembers
+      {workspace.state === 'pending' ? <Notice>正在確認成分…</Notice> : <MusicMemberAccess purpose={uiText("查看選取者")}>{viewer => <EntryMembers
         key={viewer.scope + ':' + viewer.musicEpoch + ':' + entry.id} viewer={viewer} id={entry.id} returnTo={detailPath} />}</MusicMemberAccess>
       }
     </section>}

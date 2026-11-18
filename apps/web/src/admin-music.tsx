@@ -18,7 +18,7 @@ function useAdminFailure(error: unknown, viewer: Viewer) {
   const client=useQueryClient();useEffect(()=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[error,client,viewer.scope]);
 }
 const statusLabels = { oauth: uiText("QQ 授權關聯"), prelinked: uiText("預先關聯"), unlinked: uiText("未關聯"), account: uiText("帳號成分") };
-const ownerLabel = (owner: Profile['owner']) => owner ? `${owner.nickname}（${owner.id}）` : '未關聯';
+const ownerLabel = (owner: Profile['owner']) => owner ? `${owner.nickname}（${owner.id}）` : uiText('未關聯');
 export function AdminMusicDirectory() {
   return <><PageIntro title="成分關聯" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <Directory key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
 }
@@ -91,7 +91,7 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
   function edit(patch: Partial<z.infer<typeof Draft>>) { if(!current||locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }
   return <><DraftFeedback form={record} navigation={false}/>{blocker.state === 'blocked' && <Surface role="alert"><Text>{pinDirty ? '仍有未送出的口令或待確認操作；離開後口令不會保存。' : '仍有未保存的關聯草稿或待確認操作。'}</Text><Button onClick={() => blocker.reset()}>繼續編輯</Button><Button variant="secondary" disabled={busy||record.loading||pinBusy} onClick={() => void record.leave()}>{pinDirty ? '保留操作編號並離開' : '保留草稿並離開'}</Button></Surface>}
     <Surface className="detail auth-panel">{current ? <><Heading level={2}>{current.name}</Heading><Text>成分 ID：{current.id}</Text>{current.legacyKey && <Text>舊成分查詢標識：{current.legacyKey}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
-      <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? ` · 程度 ${selection.level}` : ''}</li>)}</ul>
+      <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? `${uiText(" · 程度 ")}${selection.level}` : ''}</li>)}</ul>
       <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice><Text>成分 ID：{id}</Text></>}
       {current && <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>}
       {(current || ownershipDirty) && <><label className="account-field">目標帳號 ID<input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></label>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
@@ -109,7 +109,7 @@ function History({ id, viewer, access }: { id: string; viewer: Viewer; access: A
     queryFn: ({ pageParam,signal }) => api('/admin/music/' + id + '/history?before=' + pageParam, AdminMusicHistory, { signal, headers: { 'X-Account-Scope': viewer.scope } }), getNextPageParam: page => page.nextCursor ?? undefined });
   useAdminFailure(history.error,viewer);
   return <Surface className="detail auth-panel"><Heading level={2}>關聯變更紀錄</Heading>{history.isPending ? <Notice>正在讀取紀錄…</Notice> : history.error ? <Failure error={history.error} retry={() => void history.refetch()} /> : <>
-    {history.data.pages.flatMap(page => page.history).map(row => <div key={row.id}><Text>{row.createdAt} · {row.actor}</Text><Text>{row.beforeUserId ?? '未關聯'} → {row.afterUserId ?? '未關聯'}</Text><Text>{row.source === 'legacy' ? `原關聯紀錄 #${row.legacyId}` : `成分版本 ${row.revision}`}</Text>{row.reason && <Text className="preserve-lines">{row.reason}</Text>}</div>)}
+    {history.data.pages.flatMap(page => page.history).map(row => <div key={row.id}><Text>{row.createdAt} · {row.actor}</Text><Text>{row.beforeUserId ?? uiText('未關聯')} → {row.afterUserId ?? uiText('未關聯')}</Text><Text>{row.source === 'legacy' ? `${uiText("原關聯紀錄 #")}${row.legacyId}` : `${uiText("成分版本 ")}${row.revision}`}</Text>{row.reason && <Text className="preserve-lines">{row.reason}</Text>}</div>)}
     {!history.data.pages[0]?.history.length && <Notice>目前沒有關聯變更紀錄。</Notice>}{history.hasNextPage && <Button variant="secondary" loading={history.isFetchingNextPage} onClick={() => void history.fetchNextPage()}>載入更多紀錄</Button>}
   </>}</Surface>;
 }

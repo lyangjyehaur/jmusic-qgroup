@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from 'yahha-ui';
@@ -22,7 +23,7 @@ export function useMusicSearch<T extends { id: string; name: string; aliases?: r
   };
   return { search, category, kind, filtered, params, update };
 }
-export function MusicSearch({ filters, categories, label = '搜尋音樂詞條' }: {
+export function MusicSearch({ filters, categories, label = uiText('搜尋音樂詞條') }: {
   filters: ReturnType<typeof useMusicSearch>; categories: readonly string[]; label?: string;
 }) {
   const input = useRef<HTMLInputElement>(null);

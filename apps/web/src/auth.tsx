@@ -42,7 +42,7 @@ export function Login() {
   }
   return <><PageIntro title={mode === 'bind' ? '綁定 QQ' : '登入'} />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : <Surface className="detail auth-panel">
     {session.data.qqEnabled ? <>
-      <Text>{mode === 'bind' ? `綁定目前帳號「${session.data.authenticated ? session.data.nickname : ''}」，不搬移報名或款項。` : 'QQ 授權後仍需確認帳號；首次登入會在確認後建立帳號。'}</Text>
+      <Text>{mode === 'bind' ? `${uiText("綁定目前帳號「")}${session.data.authenticated ? session.data.nickname : ''}${uiText("」，不搬移報名或款項。")}` : 'QQ 授權後仍需確認帳號；首次登入會在確認後建立帳號。'}</Text>
       {!session.data.privacyAccepted && <label className="consent"><input type="checkbox" checked={accepted} onChange={event => setAccepted(event.target.checked)} />我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></label>}
       <Button loading={busy} disabled={(!session.data.privacyAccepted && !accepted) || (mode === 'bind' && !session.data.authenticated)} onClick={() => void start()}>{mode === 'bind' ? '前往 QQ 授權綁定' : '前往 QQ 登入'}</Button>
       {mode === 'bind' && !session.data.authenticated && <Notice>請先登入後再綁定 QQ。</Notice>}
@@ -66,7 +66,7 @@ export function AuthConfirm() {
     setBusy(true); setError('');
     try {
       const done = await api('/auth/qq/finish', AuthResult, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true, attemptId: result.attemptId }) });
-      const message = result.mode === 'bind' && viewer.authenticated && viewer.qq.needsReauth ? done.qqUnionidBound ? 'QQ 資料已更新；bot 個人功能仍依實際開放狀態。' : '尚未取得 UnionID；原帳號已保留，可在帳號頁重新授權。' : undefined;
+      const message = result.mode === 'bind' && viewer.authenticated && viewer.qq.needsReauth ? done.qqUnionidBound ? uiText('QQ 資料已更新；bot 個人功能仍依實際開放狀態。') : uiText('尚未取得 UnionID；原帳號已保留，可在帳號頁重新授權。') : undefined;
       await changed(done.returnTo, false, message);
     } catch (failure) {
       const unknown = !(failure instanceof ApiError) || failure.status >= 500;
@@ -86,7 +86,7 @@ export function AuthConfirm() {
   const statusText = { expired: uiText("授權已過期，請重新登入。"), pending: uiText("QQ 授權尚未完成。"), exchanging: uiText("正在確認 QQ 授權，請稍後重新讀取。"), failed: uiText("QQ 授權未完成或已取消，請重新登入。"), used: uiText("此授權已使用，請查看目前帳號。") };
   return <><PageIntro title="確認 QQ 授權" />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : params.has('status') ? <Notice>授權已失效或瀏覽器帳號已變更，請重新登入。</Notice> : !viewer?.qqEnabled ? <Notice>QQ 登入尚未配置。</Notice> : status.isPending ? <Notice>正在讀取授權結果…</Notice> : status.error ? <Failure error={status.error} retry={() => void status.refetch()} /> : !result ? <Notice>正在讀取授權結果…</Notice> : <Surface className="detail auth-panel">
     {result.status === 'verified' ? <>
-      <dl><dt>QQ 暱稱</dt><dd>{result.qqNickname}</dd><dt>操作</dt><dd>{result.mode === 'bind' ? `綁定目前帳號「${result.currentNickname}」` : result.existingAccount ? `登入既有帳號「${result.targetNickname}」` : '建立帳號並登入'}</dd></dl>
+      <dl><dt>QQ 暱稱</dt><dd>{result.qqNickname}</dd><dt>操作</dt><dd>{result.mode === 'bind' ? `${uiText("綁定目前帳號「")}${result.currentNickname}${uiText("」")}` : result.existingAccount ? `${uiText("登入既有帳號「")}${result.targetNickname}${uiText("」")}` : '建立帳號並登入'}</dd></dl>
       {result.mode === 'login' && result.currentNickname && <Text>目前帳號「{result.currentNickname}」的授權會保留，報名與款項分開。</Text>}
       {result.conflict ? <Notice>目前帳號已綁定另一個 QQ，或此 QQ 已綁定其他帳號；不能直接替換或合併。</Notice> : <Button loading={busy} disabled={uncertain} onClick={() => void finish()}>{result.mode === 'bind' ? '確認綁定' : '確認登入'}</Button>}
       {result.conflict && (result.returnTo === '/me/music/recover' ? <Link to={result.returnTo}>返回找回流程</Link> : <Link to={loginLink(result.returnTo)}>改用 QQ 登入</Link>)}
@@ -126,7 +126,7 @@ export function Accounts() {
     } finally { setBusy(false); }
   }
   return <><PageIntro title="帳號" />{params.has('returnTo') && <Link className="back" to={localReturn(params.get('returnTo'))}>回到原任務</Link>}{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink(localReturn(params.get('returnTo')) === '/' ? '/me/accounts' : localReturn(params.get('returnTo')))}>登入</Link> : <>
-    <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><Link to="/me/profile">修改站內稱呼</Link>{viewer.qq.bound && <QQAvatar url={viewer.qq.avatarUrl} nickname={viewer.qq.nickname} />}<Text>{viewer.qq.bound ? `已綁定 QQ：${viewer.qq.nickname}` : '尚未綁定 QQ'}</Text>
+    <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><Link to="/me/profile">修改站內稱呼</Link>{viewer.qq.bound && <QQAvatar url={viewer.qq.avatarUrl} nickname={viewer.qq.nickname} />}<Text>{viewer.qq.bound ? `${uiText("已綁定 QQ：")}${viewer.qq.nickname}` : '尚未綁定 QQ'}</Text>
       {viewer.qqEnabled && <Link to="/login?mode=bind&returnTo=%2Fme%2Faccounts">{viewer.qq.needsReauth ? '重新授權原 QQ' : viewer.qq.bound ? '核對 QQ 綁定' : '綁定 QQ'}</Link>}
       {viewer.qq.needsReauth && <Text>尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</Text>}
     </Surface>

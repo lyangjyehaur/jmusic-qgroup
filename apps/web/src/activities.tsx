@@ -18,7 +18,7 @@ function ActivityCard({ event, rooms=false }: { event: ActivityView;rooms?:boole
   return <Surface className="event-card"><div className="event-meta"><span className="pill">{event.category}</span><span>{event.archived ? '已歸檔' : phaseLabel[event.phase] ?? event.phase}</span></div>
     <Heading level={2}><Link to={destination}>{event.title}</Link></Heading>
     <Text>{activityDate(event.startsAt,event.timezone)}</Text><Text tone="muted">{event.location}</Text>
-    <div className="event-bottom"><span>{event.confirmed} / {event.capacity||'不限'} 人{event.waiting > 0 ? ` · ${event.waiting} 人候補` : ''}</span><Link to={destination}>{rooms?'分析活動成分':'查看活動'} <span aria-hidden="true">↗</span></Link></div>
+    <div className="event-bottom"><span>{event.confirmed} / {event.capacity||'不限'} 人{event.waiting > 0 ? `${uiText(" · ")}${event.waiting}${uiText(" 人候補")}` : ''}</span><Link to={destination}>{rooms?'分析活動成分':'查看活動'} <span aria-hidden="true">↗</span></Link></div>
   </Surface>;
 }
 export function Activities({mine=false}:{mine?:boolean}) {
@@ -32,7 +32,7 @@ function ActivityListing({viewer}:{viewer?:Member}) {
   const query = useQuery({ queryKey: mine?['private',viewer.scope,'my-activities',page]:['activities', period, page], queryFn: () => api(mine?`/me/activities?page=${page}`:`/activities?period=${period}&page=${page}`, ActivityList,viewer?{headers:{'X-Account-Scope':viewer.scope}}:undefined) });
   const change=(params:Record<string,string>)=>setSearch({...params,...(rooms?{task:'rooms'}:{})});
   return <><PageIntro title={mine?'我的活動':rooms?'選擇活動分析成分':'活動'} /><div className="page-actions"><Link to={mine?'/activities':'/me/activities'}>{mine?'所有活動':'我的活動'}</Link><Link to="/activities/new">新增活動草稿</Link><Link to="/time-polls">時間投票</Link><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link></div>
-    <section aria-label="活動列表">{!mine&&<div className="tabs" aria-label="活動篩選">{[['upcoming', '近期活動'], ['history', '往期與歸檔']].map(([key, label]) => <Button key={key} variant={period === key ? 'primary' : 'ghost'} aria-pressed={period === key} onClick={() => change({ period: key! })}>{label}</Button>)}</div>}
+    <section aria-label="活動列表">{!mine&&<div className="tabs" aria-label="活動篩選">{[['upcoming', uiText('近期活動')], ['history', uiText('往期與歸檔')]].map(([key, label]) => <Button key={key} variant={period === key ? 'primary' : 'ghost'} aria-pressed={period === key} onClick={() => change({ period: key! })}>{label}</Button>)}</div>}
       {query.isPending ? <Notice>正在讀取活動…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : query.data.events.length ? <div className="event-grid">{query.data.events.map(event => <ActivityCard key={event.id} event={event} rooms={rooms} />)}</div> : <Surface><EmptyState motif="paper" title={mine?'沒有與你相關的活動':'這裡還沒有公開活動'} description={mine?'包含發起、協辦、有效報名與仍有結算義務的活動。':'邀請限定的活動不會出現在公開列表。'} /></Surface>}
       {query.data && <div className="pagination">{page > 1 && <Button variant="secondary" onClick={() => change({ period, page: String(page - 1) })}>上一頁</Button>}{query.data.hasMore && <Button variant="secondary" onClick={() => change({ period, page: String(page + 1) })}>下一頁</Button>}</div>}
     </section></>;

@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
@@ -38,7 +39,7 @@ function MatchCard({ row }: { row: z.infer<typeof MusicMatches>['matches'][numbe
   const [params] = useSearchParams(), from = '/people' + (params.size ? '?' + params : '');
   const member = row.member;
   return <Surface className="match-card"><Heading level={3}><Link to={'/people/' + member.id + '?' + new URLSearchParams({ from })}>{member.name}</Link></Heading>
-    {member.gender && <Text>性別：{({ female: '女', male: '男' } as Record<string, string>)[member.gender] ?? member.gender}</Text>}
+    {member.gender && <Text>性別：{({ female: uiText('女'), male: uiText('男') } as Record<string, string>)[member.gender] ?? member.gender}</Text>}
     <MatchStats stats={row.stats} />
     <ComparedPicks title="共同喜歡" picks={row.shared} shared />
     <ComparedPicks title="對方獨有" picks={row.onlyTheirs} fold />

@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { musicShareLines, type SharePick } from '@qgroup/domain';
 import type { z } from 'zod';
 import type { MusicShareContext } from '@qgroup/contracts';
@@ -16,27 +17,27 @@ export function drawMusicShare(canvas: HTMLCanvasElement, input: ShareCard) {
     const lines = musicShareLines(value, width - padding * 2, maxLines, value => ctx.measureText(value).width);
     for (const line of lines) { rows.push({ text: line, x: padding, y, size, bold, muted }); y += Math.ceil(size * 1.45); }
   };
-  text('音樂成分', 26, true); y += 12;
+  text(uiText('音樂成分'), 26, true); y += 12;
   text(input.context.name, 36, true);
-  if (input.context.profileId) text('成分 ID：' + input.context.profileId, 18, false, true);
-  if (input.contact && input.context.contactQQ) text('聯絡 QQ：' + input.context.contactQQ + '（未經騰訊驗證）', 19, false, true);
-  text(`${input.picks.length} 項${input.draft ? ' · 目前草稿' : ' · 已保存成分'}`, 21, false, true); y += 20;
+  if (input.context.profileId) text(uiText('成分 ID：') + input.context.profileId, 18, false, true);
+  if (input.contact && input.context.contactQQ) text(uiText('聯絡 QQ：') + input.context.contactQQ + uiText('（未經騰訊驗證）'), 19, false, true);
+  text(`${input.picks.length}${uiText(" 項")}${input.draft ? uiText(' · 目前草稿') : uiText(' · 已保存成分')}`, 21, false, true); y += 20;
   for (const kind of ['main', 'sub'] as const) {
     const picks = input.picks.filter(pick => pick.kind === kind); if (!picks.length) continue;
-    text((kind === 'main' ? '領域' : '細分') + ' · ' + picks.length + ' 項', 25, true); y += 8;
+    text((kind === 'main' ? uiText('領域') : uiText('細分')) + ' · ' + picks.length + uiText(' 項'), 25, true); y += 8;
     for (const pick of picks) {
       text(pick.name, kind === 'main' ? 30 : 26, true, false, 3);
-      text((kind === 'sub' ? ({ 1: '只聽過幾首', 2: '聽過一些', 3: '常聽', 4: '本命' }[pick.level] ?? '') + ' · ' : '') + pick.count + ' 人選用', 20, false, true);
+      text((kind === 'sub' ? ({ 1: uiText('只聽過幾首'), 2: uiText('聽過一些'), 3: uiText('常聽'), 4: uiText('本命') }[pick.level] ?? '') + ' · ' : '') + pick.count + uiText(' 人選用'), 20, false, true);
       y += 14;
     }
     y += 12;
   }
   const top = input.topMatch ? input.context.topMatch : null;
   if (top) {
-    y += 8; text('推薦同好 · ' + (input.context.sort === 'familiar' ? '我的熟悉度優先' : '共同項／冷門優先'), 21, false, true);
-    text(top.name, 28, true); text('成分 ID：' + top.id, 18, false, true);
-    if (input.topContact && top.contactQQ) text('聯絡 QQ：' + top.contactQQ + '（未經騰訊驗證）', 19, false, true);
-    text(`匹配度 ${top.matchPercent}% · ${top.sharedCount} 個共同詞條`, 22); y += 16;
+    y += 8; text(uiText('推薦同好 · ') + (input.context.sort === 'familiar' ? uiText('我的熟悉度優先') : uiText('共同項／冷門優先')), 21, false, true);
+    text(top.name, 28, true); text(uiText('成分 ID：') + top.id, 18, false, true);
+    if (input.topContact && top.contactQQ) text(uiText('聯絡 QQ：') + top.contactQQ + uiText('（未經騰訊驗證）'), 19, false, true);
+    text(`${uiText("匹配度 ")}${top.matchPercent}${uiText("% · ")}${top.sharedCount}${uiText(" 個共同詞條")}`, 22); y += 16;
   }
   text(new URL('/music', input.origin).href, 19, false, true);
   const height = Math.ceil(y + 32);

@@ -18,10 +18,10 @@ import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { parseMusicShoutDraft,type MusicShoutDraft as Draft } from './music-shout-record';
 export type Shout=z.infer<typeof MusicShout>;
-export function shoutDate(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?'時間未記錄':date.toLocaleString('zh-TW',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+export function shoutDate(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?uiText('時間未記錄'):date.toLocaleString('zh-TW',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 export function MusicShoutsPage({history=false}:{history?:boolean}){
   return <><PageIntro title={history?'找搭子歷史':'找搭子'}/><div className="page-actions"><Link to="/people">回到同好</Link><Link to={history?'/people/shouts':'/people/shouts/history'}>{history?'目前找搭子':'找搭子歷史'}</Link></div>
-    <MusicMemberAccess purpose="使用找搭子">{viewer=><Shouts key={viewer.scope+':'+viewer.musicEpoch} viewer={viewer} history={history}/>}</MusicMemberAccess></>;
+    <MusicMemberAccess purpose={uiText("使用找搭子")}>{viewer=><Shouts key={viewer.scope+':'+viewer.musicEpoch} viewer={viewer} history={history}/>}</MusicMemberAccess></>;
 }
 function Shouts({viewer,history}:{viewer:Member;history:boolean}){
   const location=useLocation(),[params,setParams]=useSearchParams(),raw=params.get('offset'),[denied,setDenied]=useState(false);
@@ -85,7 +85,7 @@ function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Me
 }
 export function MusicShoutPage(){
   const {id=''}=useParams(),[params]=useSearchParams(),back=musicShoutReturn(params.get('from'))??'/people/shouts';
-  return <><PageIntro title="找搭子詳情"/><Link className="back" to={back}>{back.startsWith('/people/shouts/history')?'回到找搭子歷史':'回到找搭子'}</Link><MusicMemberAccess purpose="查看找搭子">{viewer=><ShoutDetail key={viewer.scope+':'+viewer.musicEpoch+':'+id} viewer={viewer} id={id}/>}</MusicMemberAccess></>;
+  return <><PageIntro title="找搭子詳情"/><Link className="back" to={back}>{back.startsWith('/people/shouts/history')?'回到找搭子歷史':'回到找搭子'}</Link><MusicMemberAccess purpose={uiText("查看找搭子")}>{viewer=><ShoutDetail key={viewer.scope+':'+viewer.musicEpoch+':'+id} viewer={viewer} id={id}/>}</MusicMemberAccess></>;
 }
 function ShoutDetail({viewer,id}:{viewer:Member;id:string}){
   const location=useLocation(),query=useQuery({queryKey:['private',viewer.scope,'music-shout',viewer.musicEpoch,id],queryFn:({signal})=>api('/music/shouts/'+encodeURIComponent(id),MusicShout,{signal,headers:{'X-Account-Scope':viewer.scope}}),refetchOnMount:'always',refetchInterval:30000});

@@ -11,7 +11,7 @@ import { Failure, Notice, PageIntro } from './shared';
 import { loginLink } from './auth';
 import { useMusicWorkspace, type MusicSelection } from './music-selection';
 import { drawMusicShare, musicShareBlob, type ShareCard } from './music-share-canvas';
-const filename = '我的音樂成分.png';
+const filename = uiText('我的音樂成分.png');
 export function MusicSharePage() {
   const workspace = useMusicWorkspace(), location = useLocation();
   return <><PageIntro title="分享成分" /><Link className="back" to={'/me/music' + location.search}>回到我的成分</Link>
@@ -84,7 +84,7 @@ function ShareImage({ signature }: { signature: string }) {
     try {
       // File conversion already completed: preserve the click's native-share activation.
       if (navigator.canShare?.({ files: [image.file] }) && navigator.share) {
-        await navigator.share({ files: [image.file], title: '我的音樂成分' }); if (valid()) setMessage(uiText("已完成圖片分享。"));
+        await navigator.share({ files: [image.file], title: uiText('我的音樂成分') }); if (valid()) setMessage(uiText("已完成圖片分享。"));
       } else if (valid()) { download(image.url); setMessage(uiText("此瀏覽器不支援圖片分享，已改為下載。")); }
     } catch (failure) {
       if (!valid()) return;

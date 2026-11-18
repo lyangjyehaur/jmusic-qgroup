@@ -51,7 +51,7 @@ export function MusicRoomsPage() {
         {eventId && <Link to={'/activities/' + encodeURIComponent(eventId) + '/rooms'}>正式預分包間</Link>}
         {eventId && <Link to="/tools/room-lab">自由分房</Link>}
       </div>
-      <MusicMemberAccess purpose="使用分房試算">
+      <MusicMemberAccess purpose={uiText("使用分房試算")}>
         {(viewer) => (
           <Loader
             key={viewer.scope + ':' + viewer.musicEpoch + ':' + eventId + ':' + location.key}
@@ -314,7 +314,7 @@ function Editor({
             .filter((member) => !recommendedIds.has(member.id))
             .sort((a, b) => randomOrder(a.id) - randomOrder(b.id)),
         ];
-  const name = (id: string) => known.get(id)?.name ?? '來源已移除（' + id + '）',
+  const name = (id: string) => known.get(id)?.name ?? uiText('來源已移除（') + id + '）',
     assigned = new Set(draft.rooms.flatMap((room) => room.members)),
     unassigned = source.members.filter(
       (member) => (selected.has(member.id) || !!source.eventId) && !assigned.has(member.id),
@@ -391,9 +391,9 @@ function Editor({
                   {source.eventId
                     ? ' · ' +
                       ({
-                        confirmed: '正式',
-                        waiting: '候補',
-                        tentative: '待確認',
+                        confirmed: uiText('正式'),
+                        waiting: uiText('候補'),
+                        tentative: uiText('待確認'),
                       }[member.status] ?? member.status)
                     : ''}
                 </span>

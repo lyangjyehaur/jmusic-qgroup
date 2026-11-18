@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { parseErasure, erasureKey, type ErasureValue } from './erasure-record';
 // Receipt capabilities live here only: never in generic drafts, versions or exports.
 const database = 'qgroup-erasure-receipts-v1', channelName = 'qgroup:erasure-receipts';
@@ -68,7 +69,7 @@ export async function erasureInventory(scope: string) {
     const tx = db.transaction('operations', 'readonly'), rows: { id: string; label: string; to: string; damaged: boolean }[] = [];
     const request = tx.objectStore('operations').openCursor();
     request.onsuccess = () => { const cursor = request.result; if (!cursor) return;
-      try { const value = parseErasure(String(cursor.key), cursor.value); if (value.scope === scope) rows.push({ id: 'erasure:' + cursor.key, label: '資料刪除', to: value.kind === 'member' ? '/me/privacy' : value.path, damaged: false }); } catch { /* No raw payload or secret enters inventory. */ }
+      try { const value = parseErasure(String(cursor.key), cursor.value); if (value.scope === scope) rows.push({ id: 'erasure:' + cursor.key, label: uiText('資料刪除'), to: value.kind === 'member' ? '/me/privacy' : value.path, damaged: false }); } catch { /* No raw payload or secret enters inventory. */ }
       cursor.continue();
     };
     tx.oncomplete = () => resolve(rows); tx.onabort = () => reject(tx.error);

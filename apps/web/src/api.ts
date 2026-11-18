@@ -14,7 +14,8 @@ export async function api<T>(path: string, schema: z.ZodType<T>, init?: RequestI
   if (!response.ok) {
     const failure = ApiFailure.safeParse(body);
     analyticsRequest(fullPath,method,response.status,'rejected');
-    throw new ApiError(response.status, failure.success ? failure.data.code : 'UNKNOWN_ERROR', failure.success ? failure.data.message : '暫時無法讀取資料');
+    if (failure.success) throw new ApiError(response.status, failure.data.code, failure.data.message);
+    throw new ApiError(response.status, 'UNKNOWN_ERROR', '暫時無法讀取資料');
   }
   try { const result=schema.parse(body);analyticsRequest(fullPath,method,response.status,'success');return result; }
   catch(error) { analyticsRequest(fullPath,method,response.status,'parse_error');throw error; }

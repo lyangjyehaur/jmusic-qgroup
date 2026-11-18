@@ -22,7 +22,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
   const record=useDurableValue<z.infer<typeof Draft>|null>({key,scope:viewer.scope,seed:()=>null,parse:raw=>Draft.nullable().parse(JSON.parse(raw)),dirty:value=>!!value,pending:value=>!!value});
   const {value:pending,replace:setPending,busy,setBusy,active,persist,begin}=record;
   const [downloaded,setDownloaded]=useState(false),damaged=legacyInvalid??record.damagedRaw;
-  const readError=record.readError||legacyInvalid!==null?'無法讀取找回操作紀錄。':'',blocked=record.unavailable||legacyInvalid!==null;
+  const readError=record.readError||legacyInvalid!==null?uiText('無法讀取找回操作紀錄。'):'',blocked=record.unavailable||legacyInvalid!==null;
   const [legacyQQ,setQQ]=useState(''),[pin,setPin]=useState(''),[consent,setConsent]=useState(false),[privacy,setPrivacy]=useState(false),[confirm,setConfirm]=useState(false);
   const [uncertain,setUncertain]=useState(false),[message,setMessage]=useState(''),[denied,setDenied]=useState(false);
   const cancel=useRef(new AbortController());useEffect(()=>{cancel.current=new AbortController();return()=>cancel.current.abort();},[]);
@@ -105,7 +105,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
       {status.status === 'completed' ? <><Notice>已關聯原成分。</Notice><Link to="/me/music">編輯原成分</Link></> : status.status === 'unavailable' ? <Notice>找回已過期、成分已變更或已有關聯。取消後可重新找回；如有衝突請聯絡管理員。</Notice> : <>
         <Text>有效至 {new Date(status.expiresAt).toLocaleString('zh-TW')}。</Text>
         {status.status === 'pending' ? <>
-          <Text>{viewer.authenticated ? `接著授權目前帳號「${viewer.nickname}」的 QQ，不切換或合併帳號。` : '接著授權 QQ，確認登入帳號後再核對成分關聯。'}</Text>
+          <Text>{viewer.authenticated ? `${uiText("接著授權目前帳號「")}${viewer.nickname}${uiText("」的 QQ，不切換或合併帳號。")}` : '接著授權 QQ，確認登入帳號後再核對成分關聯。'}</Text>
           {!viewer.privacyAccepted && <label className="consent"><input type="checkbox" checked={privacy} onChange={event => setPrivacy(event.target.checked)} /><span>我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></span></label>}
           <Button loading={busy} disabled={busy || !!pending?.action || !viewer.qqEnabled || (!viewer.privacyAccepted && !privacy) || uncertain || !!readError} onClick={() => void authorize()}>前往 QQ 授權找回</Button>{!viewer.qqEnabled && <Notice>QQ 登入尚未配置，請聯絡管理員。</Notice>}
         </> : <>
