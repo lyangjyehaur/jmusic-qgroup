@@ -9,7 +9,8 @@ COPY packages/ ./packages/
 COPY tools/rebuild/build-api.mjs ./tools/rebuild/build-api.mjs
 COPY tools/rebuild/build-analytics-manifest.ts ./tools/rebuild/build-analytics-manifest.ts
 COPY tools/rebuild/build-error-displays.ts ./tools/rebuild/build-error-displays.ts
-RUN npm ci --no-audit --no-fund && npm run build:rebuild && npm prune --omit=dev --no-audit --no-fund
+# Use the headers shipped with this exact Node base for native module builds.
+RUN npm_config_nodedir=/usr/local npm ci --no-audit --no-fund && npm run build:rebuild && npm prune --omit=dev --no-audit --no-fund
 
 FROM node:22.22.3-bookworm-slim
 ARG QGROUP_UID=994
