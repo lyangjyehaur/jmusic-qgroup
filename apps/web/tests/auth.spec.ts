@@ -96,7 +96,7 @@ test('binding conflict prevents replacement and allows an explicit return to the
 test('privacy consent opens the existing versioned policy and retains the unfinished login', async ({ page, context }) => {
   await page.goto('/login?returnTo=%2Fme%2Fmusic');
   const popup = context.waitForEvent('page'); await page.getByRole('link', { name: '隱私政策', exact: true }).click();
-  const policy = await popup; await expect(policy.getByRole('heading', { name: '隐私政策', exact: true })).toBeVisible();
+  const policy = await popup; await expect(policy.getByRole('heading', { name: '隱私政策', exact: true })).toBeVisible();
   await expect(policy.getByText('2026-11-10', { exact: false })).toBeVisible(); await policy.close();
   await expect(page.getByRole('checkbox')).not.toBeChecked();
   await expect(page.getByRole('button', { name: '前往 QQ 登入' })).toBeDisabled();

@@ -1,10 +1,11 @@
 import { pwaBuild } from './pwa-build.ts';
+import { uiLanguage } from './ui-language.ts';
 import { defineConfig } from 'vite';
 import { fileURLToPath } from 'node:url';
 const legacyDirectories = ['../../ui/', '../../music_site/', '../../public/'].map(path => fileURLToPath(new URL(path, import.meta.url)));
 export default defineConfig({
   root: fileURLToPath(new URL('.', import.meta.url)),
-  plugins: [pwaBuild(),{ name: 'reject-legacy-ui-runtime', generateBundle() {
+  plugins: [uiLanguage(),pwaBuild(),{ name: 'reject-legacy-ui-runtime', generateBundle() {
     for (const id of this.getModuleIds()) {
       if (legacyDirectories.some(directory => id.startsWith(directory)) || id.includes('/html-react-parser/')) this.error(`Legacy runtime import is forbidden in the unified app: ${id}`);
     }

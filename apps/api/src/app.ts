@@ -16,7 +16,9 @@ import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
-import { ANALYTICS_HOST, ANALYTICS_ORIGIN } from '@qgroup/contracts';
+import { ANALYTICS_HOST, ANALYTICS_ORIGIN, displayLanguage } from '@qgroup/contracts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
 import { z } from 'zod';
@@ -199,12 +201,18 @@ export function createApp(options: AppOptions) {
       }).immediate();
     });
     if (options.staticRoot) {
-      app.register(staticFiles, { root: options.staticRoot, wildcard: false, setHeaders(response,path) {
+      const shell=readFileSync(join(options.staticRoot,'index.html'),'utf8');
+      const sendShell=(request:import('fastify').FastifyRequest,reply:import('fastify').FastifyReply)=>{
+        const language=displayLanguage(request.headers['accept-language']);
+        return reply.header('Content-Language',language).header('Vary','Accept-Language').header('Cache-Control','no-store').type('text/html').send(shell.replace(/<html lang="[^"]*"/,`<html lang="${language}"`));
+      };
+      app.get('/',sendShell);app.get('/index.html',sendShell);
+      app.register(staticFiles, { root: options.staticRoot, wildcard: false, globIgnore:['index.html'], setHeaders(response,path) {
         if(/(?:^|\/)(?:sw\.js|manifest\.webmanifest|manifest\.json)$/.test(path))response.header('Cache-Control','no-store');
       } });
       app.setNotFoundHandler((request, reply) => {
-        if (request.method !== 'GET' || request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || (request.url.split('?')[0]!.includes('.')&&!['/music/index.html','/music/admin.html','/privacy.html','/music/privacy.html','/contact.html'].includes(request.url.split('?')[0]!))) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
-        return reply.type('text/html').sendFile('index.html', { maxAge: 0 });
+        if (!['GET','HEAD'].includes(request.method) || request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || (request.url.split('?')[0]!.includes('.')&&!['/music/index.html','/music/admin.html','/privacy.html','/music/privacy.html','/contact.html'].includes(request.url.split('?')[0]!))) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });
+        return sendShell(request,reply);
       });
     }
   });

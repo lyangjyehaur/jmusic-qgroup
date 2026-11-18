@@ -1,6 +1,8 @@
 /// <reference lib="webworker" />
 /** Compiled independently of React. Never cache a document or a server response. */
 export {};
+import { displayLanguage } from '@qgroup/contracts/language';
+import { offlinePage } from './offline';
 declare const __PWA_BUILD_ID__: string;
 declare const __PWA_ASSETS__: string[];
 const scope = globalThis as unknown as ServiceWorkerGlobalScope;
@@ -9,7 +11,6 @@ const currentClients = new Map<string, string>();
 const ownedCache = (name: string) => /^qgroup-unified-shell-[a-f0-9]{64}$/.test(name);
 const hashedAsset = (path: string) => /^\/assets\/[\w.-]+-[\w-]{8,}\.(?:js|css|woff2?|png|svg|webp|avif)$/.test(path);
 const retirementRecord = new URL('/.qgroup-worker-retirements', scope.location.origin).href;
-const offline = '<!doctype html><html lang="zh-Hant"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>無法連線 · 群聚</title><main><h1>暫時無法連線</h1><p>請恢復網路後重新載入。此頁不提供離線帳號或活動資料。</p><a href="/activities">重新開啟活動</a></main></html>';
 async function cleanup() {
     const clients = await scope.clients.matchAll({ type: 'window' }), ids = new Set(clients.map(client => client.id));
     for (const id of currentClients.keys())
@@ -63,7 +64,10 @@ scope.addEventListener('fetch', event => {
     if (request.method !== 'GET' || url.origin !== scope.location.origin || url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/') || /^\/music\/api(?:\/|$)/.test(url.pathname))
         return;
     if (request.mode === 'navigate') {
-        event.respondWith(fetch(request).catch(() => new Response(offline, { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" } })));
+        event.respondWith(fetch(request).catch(() => {
+            const language = displayLanguage(request.headers.get('accept-language') ?? scope.navigator.languages.join(','));
+            return new Response(offlinePage(language), { status: 503, headers: { 'Content-Type': 'text/html; charset=utf-8', 'Content-Language': language, 'Vary': 'Accept-Language', 'Cache-Control': 'no-store', 'Content-Security-Policy': "default-src 'none'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'" } });
+        }));
         return;
     }
     if ((!assets.has(url.pathname) && !hashedAsset(url.pathname)) || url.search || request.cache === 'no-store')

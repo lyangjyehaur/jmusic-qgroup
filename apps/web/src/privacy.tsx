@@ -1,6 +1,6 @@
-// Existing 2026-11-10 policy text; direct TSX, without legacy scripts or analytics.
+// Versioned 2026-11-10 policy content; system literals follow the unified display language.
 export function Privacy() {
-  return <article className="detail policy" lang="zh-Hans">
+  return <article className="detail policy">
 <h1>{"隐私政策"}</h1>
 <p className="field-help">{"版本：2026-11-10 · 生效日期：2026 年 11 月 10 日"}</p>
 <p>{"群聚看板是由个人运营的群组活动工具。本文说明网站如何处理账号、活动和费用记录。隐私问题、个人信息权利申请及内容投诉统一联系："}<a href="mailto:203008876@qq.com">{"203008876@qq.com"}</a>{"（群聚看板运营者）。"}</p>

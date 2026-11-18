@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useState } from 'react';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -31,14 +32,14 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
   async function save() {
     if (sending || unavailable) return;
     const parsed = SaveNickname.safeParse({ nickname: draft.nickname, revision: draft.revision });
-    if (!parsed.success) { setMessage('稱呼須為 1–24 字，不能包含控制字元。'); return; }
+    if (!parsed.success) { setMessage(uiText("稱呼須為 1–24 字，不能包含控制字元。")); return; }
     const pending = { ...parsed.data, requestKey: draft.requestKey ?? crypto.randomUUID() };
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setSending(false);return;}
     setDraft(pending); setMessage('');let accepted=false;
     try {
       const result = await api('/me/profile', AccountProfile, { method: 'PUT', headers: { ...authHeaders(viewer), 'Idempotency-Key': pending.requestKey }, body: JSON.stringify(parsed.data) });accepted=true;
       const latest = await api('/me/profile', AccountProfile, { headers: { 'X-Account-Scope': viewer.scope } });
-      if(!active.current)return;if(!await persist(latest,false,'操作已送出，但無法保存確認狀態；請保留原操作並核對結果。'))throw Error('storage');
+      if(!active.current)return;if(!await persist(latest,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setSaved(latest); setDraft(latest);
       queryClient.setQueryData(['private', viewer.scope, 'account-profile'], latest);
       announceAccountChange();
@@ -46,13 +47,13 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-trend-members'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'music-circles'] });
       void queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'accounts'] });
-      setMessage(latest.revision === result.revision ? '已保存稱呼。' : '原操作已保存，目前稱呼已再次變更；請核對目前資料。');
+      setMessage(latest.revision === result.revision ? uiText("已保存稱呼。") : uiText("原操作已保存，目前稱呼已再次變更；請核對目前資料。"));
     } catch (failure) {
       if(!active.current)return;
       if (!accepted && failure instanceof ApiError && failure.status < 500 && failure.status !== 429) {
         const next={ nickname: pending.nickname, revision: pending.revision };if(await persist(next))setDraft(next);
         setMessage(failure.message);
-      } else setMessage('尚未確認修改結果。操作編號已保留，請按「確認修改結果」安全重試。');
+      } else setMessage(uiText("尚未確認修改結果。操作編號已保留，請按「確認修改結果」安全重試。"));
     } finally { if(active.current)setSending(false); }
   }
   async function rebase() {
@@ -61,8 +62,8 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       const latest = await api('/me/profile', AccountProfile, { headers: { 'X-Account-Scope': viewer.scope } });
       const next = { nickname: draft.nickname, revision: latest.revision };
       if(!active.current||!await persist(next))return;
-      setSaved(latest); setDraft(next); setMessage('已取得目前稱呼；你的輸入仍保留，請核對後再保存。');
-    } catch (failure) { if(active.current)setMessage(failure instanceof Error ? failure.message : '讀取失敗'); }
+      setSaved(latest); setDraft(next); setMessage(uiText("已取得目前稱呼；你的輸入仍保留，請核對後再保存。"));
+    } catch (failure) { if(active.current)setMessage(failure instanceof Error ? failure.message : uiText("讀取失敗")); }
     finally { if(active.current)setSending(false); }
   }
   return <>

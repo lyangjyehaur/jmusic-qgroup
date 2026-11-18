@@ -133,6 +133,7 @@ export * from './activity-attendance';
 
 export * from './activity-history';
 export * from './analytics-policy';
+export * from './language';
 export * from './inbox';
 export * from './finance';
 export * from './music-matching';
