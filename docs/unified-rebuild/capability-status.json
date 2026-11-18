@@ -6830,7 +6830,11 @@
         "apps/web/vite.config.ts",
         "apps/api/src/app.ts",
         "apps/web/src/pwa/offline.ts",
-        "apps/web/src/pwa/worker.ts"
+        "apps/web/src/pwa/worker.ts",
+        "apps/web/src/bot-kind-labels.ts",
+        "apps/web/src/activity-history.tsx",
+        "apps/web/src/durable-record.ts",
+        "apps/web/src/reviewed-draft.ts"
       ],
       "behavior_evidence": [
         "apps/api/testsupport/language.test.ts",
@@ -6846,10 +6850,11 @@
       ],
       "ux_evidence": [
         "apps/web/tests/language.spec.ts",
-        "docs/unified-rebuild/92-display-language-checkpoint.md"
+        "docs/unified-rebuild/92-display-language-checkpoint.md",
+        "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "首批最高優先 Accept-Language、公開 shell／HEAD、建置期靜態 JSX／顯示屬性／固定分支、明確 uiText 與 offline 語言已實作；82 檔／2,868 顯示邊界、原文／表單協議值／ICP／translate=no、兩語稱呼保存與草稿、PWA 與 bot 舊入口已驗（檢查點 92）。其餘 enum／object labels、hooks／系統訊息、API 通知／安排／結算／錯誤及 user interpolation 邊界、統一手冊／政策、完整候選版本組合與實體裝置驗收待完成；禁止全文轉換使用者資料。"
+      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、建置期静態及動態固定片段、原例外保全與統一手冊已實作；106 檔／3,906 顯示邊界／162 固定本機錯誤、分類與 user text／原稿／回執、雙分頁、bot 事件鍵及未知錯誤原文已補驗（檢查點 93）。其餘純顯示 arrays／helper／驗證片段、API 通知／安排／結算／錯誤与使用者插值、統一政策／同意、完整候選 web／bot 組合與實體裝置驗收待完成；禁止全文轉換使用者資料。"
     },
     {
       "capability_id": "O09",
@@ -6860,20 +6865,37 @@
       "implementation": [
         "apps/web/src/privacy.tsx",
         "apps/web/src/auth.tsx",
-        "apps/web/ui-language.ts"
+        "apps/web/ui-language.ts",
+        "apps/web/src/guide.tsx",
+        "apps/web/src/main.tsx",
+        "apps/web/src/account.tsx",
+        "apps/api/src/app.ts",
+        "packages/domain/src/legacy-navigation.ts",
+        "apps/web/src/contact.tsx"
       ],
       "behavior_evidence": [
-        "docs/unified-rebuild/08-identity-checkpoint.md"
+        "docs/unified-rebuild/08-identity-checkpoint.md",
+        "apps/api/testsupport/language.test.ts",
+        "packages/domain/src/legacy-navigation.test.ts",
+        "apps/web/tests/guide.spec.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/guide.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/guide.spec.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/language.spec.ts",
-        "docs/unified-rebuild/92-display-language-checkpoint.md"
+        "docs/unified-rebuild/92-display-language-checkpoint.md",
+        "apps/web/tests/guide.spec.ts",
+        "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "既有版本政策直接 TSX 鏡像、聯絡與 ICP、登入同意入口已實作；政策顯示跟隨新簡繁協商且原版本／ICP 保留（檢查點 92）。統一成分用途政策、新手冊與 guide 原 URL、回調說明及全域文案仍待完成。"
+      "remaining": "React／TSX 統一手冊的 16 章與 31 實際路由、guide.html 原章節、簡繁／指令原文／ICP、匿名與 session 失敗入口、零業務寫入及 360px 表格已補驗（檢查點 93）。既有版本政策及聯絡頁保留；統一成分處理用途、同意與版本銜接、回調說明和完整候選組合驗收仍待完成。"
     },
     {
       "capability_id": "O10",
