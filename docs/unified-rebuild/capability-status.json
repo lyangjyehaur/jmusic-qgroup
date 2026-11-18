@@ -501,14 +501,18 @@
         "apps/api/src/music-contact.ts",
         "apps/web/src/music-contact.tsx",
         "apps/web/src/people.tsx",
-        "apps/web/src/member-access.tsx"
+        "apps/web/src/member-access.tsx",
+        "apps/web/src/erasure-record.ts",
+        "apps/web/src/erasure-store.ts",
+        "apps/web/src/erasure-local.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "apps/api/testsupport/erasure-record.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -529,10 +533,12 @@
         "apps/web/tests/privacy.spec.ts",
         "apps/web/tests/admin-privacy.spec.ts",
         "docs/unified-rebuild/14-import-checkpoint.md",
-        "apps/web/tests/music-contact.spec.ts"
+        "apps/web/tests/music-contact.spec.ts",
+        "apps/web/tests/durable-erasures.spec.ts",
+        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、合併隱私政策、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。"
+      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、合併隱私政策、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。"
     },
     {
       "capability_id": "I15",
@@ -557,7 +563,10 @@
         "apps/web/src/people.tsx",
         "apps/web/src/member-access.tsx",
         "apps/api/src/admin-music-erasure.ts",
-        "apps/web/src/admin-music-erasure.tsx"
+        "apps/web/src/admin-music-erasure.tsx",
+        "apps/web/src/erasure-record.ts",
+        "apps/web/src/erasure-store.ts",
+        "apps/web/src/erasure-local.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -565,7 +574,8 @@
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-contact.test.ts",
-        "apps/api/src/admin-music-erasure.test.ts"
+        "apps/api/src/admin-music-erasure.test.ts",
+        "apps/api/testsupport/erasure-record.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -590,10 +600,12 @@
         "apps/web/tests/admin-privacy.spec.ts",
         "docs/unified-rebuild/14-import-checkpoint.md",
         "apps/web/tests/music-contact.spec.ts",
-        "apps/web/tests/admin-music-erasure.spec.ts"
+        "apps/web/tests/admin-music-erasure.spec.ts",
+        "apps/web/tests/durable-erasures.spec.ts",
+        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。"
+      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。"
     },
     {
       "capability_id": "I16",
@@ -4411,10 +4423,14 @@
         "apps/api/src/erasure-journal.ts",
         "apps/web/src/admin-music-erasure.tsx",
         "packages/contracts/src/admin-music-erasure.ts",
-        "tools/migration/import-snapshot.ts"
+        "tools/migration/import-snapshot.ts",
+        "apps/web/src/erasure-record.ts",
+        "apps/web/src/erasure-store.ts",
+        "apps/web/src/erasure-local.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-music-erasure.test.ts"
+        "apps/api/src/admin-music-erasure.test.ts",
+        "apps/api/testsupport/erasure-record.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/admin-music-erasure.test.ts",
@@ -4425,10 +4441,12 @@
         "apps/api/src/admin-music-erasure.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-music-erasure.spec.ts"
+        "apps/web/tests/admin-music-erasure.spec.ts",
+        "apps/web/tests/durable-erasures.spec.ts",
+        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生管理成分刪除／重置、詞條保留與建立者清除、私人投影與找回證據清除、持久版本 2 意圖、SQL 故障恢復、回執核對、舊副本／成套匯入防復活與 bot 讀取差分已合成驗證；重置前成套備份、配對資產／歷史濾除、回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。 已直接差分有效 administration.erase：RESET 同時清空全部找搭子與趨勢，重播不清除後續新資料。"
+      "remaining": "原生管理成分刪除／重置、詞條保留與建立者清除、私人投影與找回證據清除、持久版本 2 意圖、SQL 故障恢復、回執核對、舊副本／成套匯入防復活與 bot 讀取差分已合成驗證；重置前成套備份、配對資產／歷史濾除、回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。 已直接差分有效 administration.erase：RESET 同時清空全部找搭子與趨勢，重播不清除後續新資料。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。"
     },
     {
       "capability_id": "A12",

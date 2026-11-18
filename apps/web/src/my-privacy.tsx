@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
@@ -8,76 +8,88 @@ import { api, ApiError } from './api';
 import { authHeaders, loginLink } from './auth';
 import { announceAccountChange, announceMusicErasure, clearDeviceDrafts } from './account-session';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
-
-const storageKey = 'qgroup:rebuild:privacy-pending:v1';
+import { MemberErasure, type MemberErasureValue } from './erasure-record';
+import { ErasureConflict } from './erasure-store';
+import { ErasureStorageFeedback, useErasureLocal } from './erasure-local';
 const Pending = z.object({ scope: z.string().regex(/^[a-f0-9]{64}$/), input: EraseData }).strict();
 type PendingValue = z.infer<typeof Pending>;
 type Result = z.infer<typeof ErasureResult>;
 export function MyPrivacy() {
-  const viewer = useQuery(sessionQuery);
-  const client = useQueryClient();
-  const [loaded] = useState(() => {
-    try { const raw = sessionStorage.getItem(storageKey); return { value: raw ? Pending.parse(JSON.parse(raw)) : null, error: '' }; }
-    catch { return { value: null, error: '此分頁的刪除操作紀錄無法讀取；原始內容已保留，請先保全紀錄。' }; }
-  });
-  const [pending, setPending] = useState<PendingValue | null>(loaded.value);
-  const [readError, setReadError] = useState(loaded.error);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [result, setResult] = useState<Result | null>(null);
-  const [cleanup, setCleanup] = useState<PendingValue | null>(null);
+  const viewer = useQuery(sessionQuery), client = useQueryClient();
+  const record = useErasureLocal<MemberErasureValue>('member', 'qgroup:rebuild:privacy-pending:v1', raw => MemberErasure.parse({ ...Pending.parse(JSON.parse(raw)), kind: 'member', result: null, cleaned: false }));
+  const [error, setError] = useState(''), [notFound, setNotFound] = useState(false), [observed, setObserved] = useState<MemberErasureValue | null>(null);
+  const operation = observed ?? record.value, result = operation?.result, busy = record.busy;
+  const prior = useRef(record.value?.input.requestId);
+  useEffect(() => { if (prior.current !== record.value?.input.requestId) { setObserved(null); setNotFound(false); prior.current = record.value?.input.requestId; } }, [record.value?.input.requestId]);
   useEffect(() => {
-    if (!pending || result) return;
+    if (!operation || result) return;
     const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', leave); return () => window.removeEventListener('beforeunload', leave);
-  }, [pending, result]);
-  async function finished(done: Result, operation: PendingValue) {
-    setResult(done); setError('');
-    setCleanup(operation);
+  }, [operation, result]);
+  async function finished(done: Result, original: MemberErasureValue) {
+    if (!record.active.current) return;
+    let completed = MemberErasure.parse({ ...original, result: done, cleaned: false }), saved = false;
+    try { await record.save(completed); saved = true; } catch (failure) { if (failure instanceof ErasureConflict) { setError(failure.message); return; } /* Still clear erased local data; retain original proof for receipt recovery. */ }
+    if (!record.active.current) return;
+    setObserved(completed); setNotFound(false); setError('');
     try {
-      if (done.target === 'music') await announceMusicErasure(operation.scope);
+      if (done.target === 'music') await announceMusicErasure(original.scope);
       else { try { await clearDeviceDrafts(); } finally { announceAccountChange(true); } }
-      setCleanup(null);
+      completed = { ...completed, cleaned: true }; setObserved(completed);
+      if (saved) { try { await record.save(completed); } catch { saved = false; } }
+      if (!saved) setError('伺服器刪除已完成，但無法保存本機確認狀態。請重新讀取原操作並查詢回執。');
     } catch { setError('伺服器刪除已完成，但本機原稿清除失敗。請重試清除。'); }
     client.removeQueries({ queryKey: ['private'] });
-    await client.invalidateQueries({ queryKey: ['music-catalog'] });
-    await client.invalidateQueries({ queryKey: ['music-trend'] });
-    await client.invalidateQueries({ queryKey: ['session'] });
+    for (const key of ['music-catalog', 'music-trend', 'session']) void client.invalidateQueries({ queryKey: [key] });
   }
-  async function submit(operation: PendingValue, recovering = false) {
-    if (busy) return;
-    setBusy(true); setError('');
+  async function submit(input: PendingValue, replay = false) {
+    if (replay ? !record.value || !!record.value.result || !notFound : !!record.value) return;
+    if (!record.begin()) return;
+    setError(''); let sent = false;
+    const original = replay ? record.value! : MemberErasure.parse({ ...input, kind: 'member', result: null, cleaned: false });
     try {
-      // Persistence must succeed before the first destructive request.
-      sessionStorage.setItem(storageKey, JSON.stringify(operation)); setPending(operation);
-      if (recovering) {
-        try {
-          const done = await api('/privacy/receipt', ErasureResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: operation.input.requestId, secret: operation.input.secret }) });
-          await finished(done, operation); return;
-        } catch (failure) { if (!(failure instanceof ApiError) || failure.status !== 404) throw failure; }
-      }
+      await record.save(original);
       const current = await client.fetchQuery({ ...sessionQuery, staleTime: 0 });
-      if (!current.authenticated || current.scope !== operation.scope) throw new Error('尚未找到結果。請先登入原帳號，再回此頁確認；不會使用目前帳號提交刪除。');
-      const done = await api('/me/privacy/erase', ErasureResult, { method: 'POST', headers: authHeaders(current), body: JSON.stringify(operation.input) });
-      await finished(done, operation);
+      if (!record.active.current) return;
+      if (!current.authenticated || current.scope !== original.scope) throw Error('請先登入原帳號；不會使用目前帳號提交刪除。');
+      await record.assertCurrent();
+      if (!record.active.current) return;
+      sent = true;
+      const done = await api('/me/privacy/erase', ErasureResult, { method: 'POST', headers: authHeaders(current), body: JSON.stringify(original.input) });
+      await finished(done, original);
     } catch (failure) {
-      if (failure instanceof ApiError && failure.status < 500 && failure.status !== 429) {
-        try { sessionStorage.removeItem(storageKey); setPending(null); } catch { /* Keep the original operation recoverable. */ }
-        void client.invalidateQueries({ queryKey: ['private', operation.scope, 'privacy'] });
-        setError(failure.message);
-      } else setError(failure instanceof DOMException ? '瀏覽器無法保存操作紀錄，尚未提交刪除。請允許本站儲存後重試。' : '尚未確認刪除結果。請保留此分頁，按「確認刪除結果」查詢或安全重試。' + (failure instanceof Error && recovering ? ' ' + failure.message : ''));
-    } finally { setBusy(false); }
+      if (!record.active.current) return;
+      if (sent && failure instanceof ApiError && failure.status < 500 && ![401, 403, 429].includes(failure.status)) {
+        try { await record.save(null); setObserved(null); } catch { /* Keep original proof. */ }
+        void client.invalidateQueries({ queryKey: ['private', original.scope, 'privacy'] }); setError(failure.message);
+      } else setError(sent ? '尚未確認刪除結果。請以原操作查詢回執。' : '無法保存或核對原刪除紀錄，尚未提交刪除。' + (failure instanceof Error ? ' ' + failure.message : ''));
+    } finally { record.end(); }
   }
-  function dismiss() {
-    try { sessionStorage.removeItem(storageKey); setPending(null); setResult(null); setError(''); }
-    catch { setError('無法清除此分頁的操作紀錄，請檢查瀏覽器儲存設定。'); }
+  async function check() {
+    if (!record.value || !record.begin()) return;
+    const original = record.value; setError(''); setNotFound(false);
+    try {
+      await record.assertCurrent();
+      if (!record.active.current) return;
+      const done = await api('/privacy/receipt', ErasureResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: original.input.requestId, secret: original.input.secret }) });
+      await finished(done, original);
+    } catch (failure) {
+      if (!record.active.current) return;
+      if (failure instanceof ApiError && failure.status === 404) { setNotFound(true); setError('尚未找到完成紀錄。可稍後再查，或登入原帳號重新提交原刪除；不會使用目前帳號提交刪除。'); }
+      else setError('尚未確認刪除結果。請重新讀取原操作後查詢。');
+    } finally { record.end(); }
   }
+  async function dismiss() {
+    if (!record.begin()) return;
+    try { await record.save(null); setObserved(null); setError(''); setNotFound(false); }
+    catch { setError('無法清除操作紀錄，原回執仍保留。請重新讀取後重試。'); }
+    finally { record.end(); }
+  }
+  const acknowledged = !!result && !!operation?.cleaned && record.value?.result?.requestId === result.requestId && record.value.cleaned;
   return <><PageIntro title="隱私與資料刪除" /><div className="page-actions"><Link to="/me/accounts">回到帳號</Link><Link to="/privacy">隱私政策</Link></div>
-    {readError ? <Surface role="alert"><Text>{readError}</Text><Button onClick={() => {
-      try { const raw = sessionStorage.getItem(storageKey); if (raw !== null) sessionStorage.setItem(storageKey + ':recovery:' + Date.now(), raw); sessionStorage.removeItem(storageKey); setReadError(''); }
-      catch { setError('仍無法保全紀錄，請檢查瀏覽器儲存設定。'); }
-    }}>保全原紀錄後繼續</Button></Surface> : result ? <Surface className="detail auth-panel"><Heading level={2}>{result.target === 'music' ? '成分已刪除' : '帳號已關閉'}</Heading><Text>{result.status === 'shared_review' ? '身份與登入授權已移除；共享活動、帳務或歷史紀錄仍待人工審核，尚未全部刪除。' : result.target === 'music' ? '原成分 ID 已停用；重新建立會使用全新 ID。' : result.target === 'both' ? '帳號私人資料與成分已移除。' : '帳號私人資料已移除。'}</Text>{result.target === 'account' && <Text>原成分及其歷史仍保留，已解除帳號關聯。</Text>}<Button variant="secondary" disabled={!!cleanup} onClick={dismiss}>完成</Button>{cleanup && <Button loading={busy} onClick={() => { setBusy(true); void finished(result, cleanup).finally(() => setBusy(false)); }}>重試清除本機原稿</Button>}</Surface> : pending ? <Surface className="detail auth-panel"><Text>此分頁有待確認的刪除操作。確認結果會使用原操作編號；不會刪除目前其他帳號的資料。</Text><Button loading={busy} onClick={() => void submit(pending, true)}>確認刪除結果</Button></Surface> : viewer.isPending ? <Notice>正在確認帳號…</Notice> : viewer.error ? <Failure error={viewer.error} retry={() => void viewer.refetch()} /> : !viewer.data.authenticated ? <Link to={loginLink('/me/privacy')}>登入</Link> : <PrivacyOptions key={viewer.data.scope} viewer={viewer.data} busy={busy} submit={operation => void submit(operation)} />}
-    {error && <Text role="alert">{error}</Text>}
+    <ErasureStorageFeedback record={record} />
+    {!record.ready ? <Notice>正在讀取刪除紀錄…</Notice> : record.error ? null : result ? <Surface className="detail auth-panel"><Heading level={2}>{result.target === 'music' ? '成分已刪除' : '帳號已關閉'}</Heading><Text>{result.status === 'shared_review' ? '身份與登入授權已移除；共享活動、帳務或歷史紀錄仍待人工審核，尚未全部刪除。' : result.target === 'music' ? '原成分 ID 已停用；重新建立會使用全新 ID。' : result.target === 'both' ? '帳號私人資料與成分已移除。' : '帳號私人資料已移除。'}</Text>{result.target === 'account' && <Text>原成分及其歷史仍保留，已解除帳號關聯。</Text>}<Button variant="secondary" disabled={!acknowledged || busy} onClick={() => void dismiss()}>完成</Button>{!acknowledged && <Button loading={busy} onClick={() => { if (record.begin()) void finished(result, operation!).finally(record.end); }}>重試清除本機原稿</Button>}</Surface> : record.value ? <Surface className="detail auth-panel"><Text>此裝置有待確認的刪除操作。查詢使用原操作編號；不會自動重新提交刪除。</Text><Button loading={busy} onClick={() => void check()}>確認刪除結果</Button>{notFound && <Button variant="secondary" disabled={busy} onClick={() => void submit(record.value!, true)}>重新提交原刪除</Button>}</Surface> : viewer.isPending ? <Notice>正在確認帳號…</Notice> : viewer.error ? <Failure error={viewer.error} retry={() => void viewer.refetch()} /> : !viewer.data.authenticated ? <Link to={loginLink('/me/privacy')}>登入</Link> : <PrivacyOptions key={viewer.data.scope} viewer={viewer.data} busy={busy} submit={input => void submit(input)} />}
+    {error && <><Text role="alert">{error}</Text><Button variant="secondary" disabled={busy} onClick={() => { setObserved(null); void record.refresh(); }}>重新讀取原操作</Button></>}
   </>;
 }
 function PrivacyOptions({ viewer, busy, submit }: { viewer: Extract<Viewer, { authenticated: true }>; busy: boolean; submit: (value: PendingValue) => void }) {

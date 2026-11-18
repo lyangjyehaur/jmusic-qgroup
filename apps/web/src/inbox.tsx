@@ -8,6 +8,7 @@ import { api, ApiError } from './api';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { pendingOperations, type PendingOperation } from './pending-operations';
+import { erasureInventory } from './erasure-store';
 import { listDurableDrafts, listDurableVersions } from './draft-store';
 import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -28,7 +29,7 @@ function PendingOperations({viewer}:{viewer:Member}){
   const [inventory,setInventory]=useState<{rows:PendingOperation[];error:string}>({rows:[],error:''}),[results,setResults]=useState<Record<string,string>>({}),[busy,setBusy]=useState('');const active=useRef(true);
   async function read(){
     try {
-      const [saved,versions]=await Promise.all([listDurableDrafts(viewer.scope),listDurableVersions(viewer.scope)]), values=new Map(saved.map(row=>[row.key,row.raw]));
+      const [saved,versions,erasures]=await Promise.all([listDurableDrafts(viewer.scope),listDurableVersions(viewer.scope),erasureInventory(viewer.scope)]), values=new Map(saved.map(row=>[row.key,row.raw]));
       const keys=[...values.keys()], durable=pendingOperations({length:keys.length,key:i=>keys[i]??null,getItem:key=>values.get(key)??null},viewer.scope);
       for(const version of versions){
         const recovered=pendingOperations({length:1,key:()=>version.key,getItem:()=>version.raw},viewer.scope)[0];
@@ -36,7 +37,7 @@ function PendingOperations({viewer}:{viewer:Member}){
           durable.push({...recovered,id:version.id,label:recovered.label+'（保全版本）'});
       }
       const session=pendingOperations(sessionStorage,viewer.scope).filter(row=>!values.has(row.id));
-      if(active.current)setInventory({rows:[...session,...durable],error:''});
+      if(active.current)setInventory({rows:[...session,...durable,...erasures],error:''});
     }catch{if(active.current)setInventory({rows:[],error:'無法讀取本機保存的操作，請檢查瀏覽器儲存設定後重試。'});}
   }
   useEffect(()=>{active.current=true;const refresh=()=>{void read();};refresh();window.addEventListener('focus',refresh);return()=>{active.current=false;window.removeEventListener('focus',refresh);};},[viewer.scope]);

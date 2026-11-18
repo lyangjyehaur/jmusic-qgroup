@@ -17,7 +17,7 @@ export async function announceMusicErasure(scope: string) {
 }
 function clearDeviceSessionDrafts() {
   try {
-    for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:music:') || key.startsWith('qgroup:rebuild:room-lab:') || key.startsWith('qgroup:rebuild:payment-codes:') || key.startsWith('qgroup:rebuild:notifications-read:') || key.startsWith('qgroup:rebuild:account-profile:') || key.startsWith('qgroup:rebuild:activity-draft:') || key.startsWith('qgroup:rebuild:admin-') || key === 'qgroup:rebuild:device-link') sessionStorage.removeItem(key);
+    for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:music:') || key.startsWith('qgroup:rebuild:room-lab:') || key.startsWith('qgroup:rebuild:payment-codes:') || key.startsWith('qgroup:rebuild:notifications-read:') || key.startsWith('qgroup:rebuild:account-profile:') || key.startsWith('qgroup:rebuild:activity-draft:') || (key.startsWith('qgroup:rebuild:admin-') && !key.startsWith('qgroup:rebuild:admin-music-erasure:v1:')) || key === 'qgroup:rebuild:device-link') sessionStorage.removeItem(key);
   } catch { /* A revoked session remains revoked even when browser storage is unavailable. */ }
 }
 export async function clearDeviceDrafts() {

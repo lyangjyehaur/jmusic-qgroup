@@ -1,4 +1,5 @@
 import { test,expect } from './fixtures';
+import { denyWrite } from './erasure-test-helpers';
 import type { BrowserContext,Page } from '@playwright/test';
 const origin='http://127.0.0.1:5082',bob='m_'+'b'.repeat(32),orphan='m_'+'c'.repeat(32);
 test.use({adminCatalog:true});
@@ -30,12 +31,12 @@ test('an undelivered reset can only retry its exact original request and cannot 
   await page.getByRole('button',{name:'重新提交原刪除',exact:true}).click();await expect(page.getByText('成分、詞庫或相關資料已有變更，請重新核對刪除範圍',{exact:true})).toBeVisible();expect(writes).toHaveLength(2);expect(writes[0]).toEqual(writes[1]);await expect(review(page)).toContainText('23 個詞條將刪除');await expect(page.getByRole('button',{name:'重置成分與詞庫',exact:true})).toBeDisabled();await other.close();
 });
 test('storage failure blocks deletion; corrupt records are backed up; route changes protect unsubmitted confirmation',async({page,context})=>{
-  await login(context);await page.goto('/admin/music/'+orphan+'/erase');await page.evaluate(()=>{const original=Storage.prototype.setItem;Storage.prototype.setItem=function(key,value){if(key.includes('admin-music-erasure'))throw Error('synthetic storage failure');return original.call(this,key,value);};});let writes=0;page.on('request',request=>{if(request.url().endsWith('/erase')&&request.method()==='POST')writes++;});
-  await confirm(page);await expect(page.getByText('無法保存刪除操作編號及回執憑證，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
+  await login(context);await page.goto('/admin/music/'+orphan+'/erase');await expect(review(page)).toBeVisible();await denyWrite(page);let writes=0;page.on('request',request=>{if(request.url().endsWith('/erase')&&request.method()==='POST')writes++;});
+  await confirm(page);await expect(page.getByText('無法保存或核對刪除操作編號及回執憑證，尚未送出。',{exact:false})).toBeVisible();expect(writes).toBe(0);
   await page.getByRole('link',{name:'管理後台',exact:true}).click();await expect(page.getByText('仍有刪除確認或待確認操作。',{exact:false})).toBeVisible();await page.getByRole('button',{name:'留在此頁',exact:true}).click();
   page.on('dialog',dialog=>void dialog.accept());await page.reload();const key=await page.evaluate(async()=>{const viewer=await(await fetch('/api/v2/session')).json(),admin=await(await fetch('/api/v2/admin/session',{headers:{'X-Account-Scope':viewer.scope}})).json();const key='qgroup:rebuild:admin-music-erasure:v1:'+viewer.scope+':'+admin.scope+':'+location.pathname;sessionStorage.setItem(key,'{damaged');return key;});
-  await page.reload();await expect(page.getByText('無法讀取刪除操作紀錄，請先保全原稿再繼續。',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'確認刪除成分',exact:true})).toBeDisabled();await page.getByRole('button',{name:'保全操作紀錄後繼續',exact:true}).click();
-  expect(await page.evaluate(key=>Object.keys(sessionStorage).filter(k=>k.startsWith(key+':recovery:')).map(k=>sessionStorage.getItem(k)),key)).toEqual(['{damaged']);
+  await page.reload();await expect(page.getByText('無法讀取刪除操作紀錄，請檢查瀏覽器儲存設定後重新讀取。',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'確認刪除成分',exact:true})).toBeDisabled();const download=page.waitForEvent('download');await page.getByRole('button',{name:'下載原刪除紀錄',exact:true}).click();await download;await page.getByRole('button',{name:'已保全，清除原紀錄',exact:true}).click();
+  expect(await page.evaluate(key=>Object.keys(sessionStorage).filter(k=>k.startsWith(key+':recovery:')).map(k=>sessionStorage.getItem(k)),key)).toEqual([]);
 });
 test('non-admins cannot read previews and late private data cannot restore revoked authority',async({page,context})=>{
   await page.goto('/admin/music-reset');await expect(page.getByLabel('管理救援憑證',{exact:true})).toBeVisible();await expect(review(page)).toHaveCount(0);await login(context);

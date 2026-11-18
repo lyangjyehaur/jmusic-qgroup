@@ -1,4 +1,5 @@
 import { test, expect } from './fixtures';
+import { denyWrite } from './erasure-test-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = 'http://127.0.0.1:5082';
 async function login(context: BrowserContext, user = 'bob') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
@@ -56,16 +57,17 @@ test('active activity ownership blocks account closure while music deletion rema
 });
 test('storage failure blocks destructive requests and damaged operation records are preserved', async ({ page, context }) => {
   await login(context); let erasures = 0;
-  await page.addInitScript(() => { Storage.prototype.setItem = () => { throw new DOMException('Synthetic quota failure', 'QuotaExceededError'); }; });
+
   page.on('request', request => { if (request.url().endsWith('/api/v2/me/privacy/erase')) erasures++; });
-  await page.goto('/me/privacy'); await confirm(page, '只關閉帳號', '確認關閉帳號');
-  await expect(page.getByText('瀏覽器無法保存操作紀錄，尚未提交刪除。', { exact: false })).toBeVisible(); expect(erasures).toBe(0);
+  await page.goto('/me/privacy'); await expect(page.getByRole('radio').first()).toBeVisible(); await denyWrite(page); await confirm(page, '只關閉帳號', '確認關閉帳號');
+  await expect(page.getByText('無法保存或核對原刪除紀錄，尚未提交刪除。', { exact: false })).toBeVisible(); expect(erasures).toBe(0);
   const clean = await context.newPage(); await clean.goto('/me/privacy');
   await clean.evaluate(() => sessionStorage.setItem('qgroup:rebuild:privacy-pending:v1', 'damaged synthetic intent'));
-  await clean.reload(); await expect(clean.getByText('此分頁的刪除操作紀錄無法讀取', { exact: false })).toBeVisible();
+  await clean.reload(); await expect(clean.getByText('無法讀取刪除操作紀錄', { exact: false })).toBeVisible();
   await expect(clean.getByRole('button', { name: '確認關閉帳號', exact: true })).toHaveCount(0);
-  await clean.getByRole('button', { name: '保全原紀錄後繼續', exact: true }).click();
-  expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes('privacy-pending:v1:recovery:')).map(key => sessionStorage.getItem(key)))).toContain('damaged synthetic intent');
+  const downloaded = clean.waitForEvent('download'); await clean.getByRole('button', { name: '下載原刪除紀錄', exact: true }).click(); await downloaded;
+  await clean.getByRole('button', { name: '已保全，清除原紀錄', exact: true }).click();
+  expect(await clean.evaluate(() => Object.keys(sessionStorage).filter(key => key.includes('privacy-pending:v1:recovery:')))).toEqual([]);
   await clean.close();
 });
 test('a pending unsent deletion never switches to another account during recovery', async ({ page, context }) => {

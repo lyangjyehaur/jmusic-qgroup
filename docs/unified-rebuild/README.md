@@ -98,6 +98,7 @@
 | [找搭子原稿與發布操作持久化檢查點](78-durable-music-shouts-checkpoint.md) | 原文字／UUID／成分身份、關頁恢復、交易確認、分頁衝突與刪除隔離 |
 | [舊成分找回操作持久化檢查點](79-durable-music-recovery-checkpoint.md) | 原 UUID／QQ／action、PIN 隔離、精確查詢、關頁核對、交易／分頁保全與秘密原文下載 |
 | [自由／活動分房原稿持久化檢查點](80-durable-music-rooms-checkpoint.md) | 名單／設定／人工安排／結果、來源快照、交易確認、分頁競爭與無訊號清除隔離 |
+| [隱私／管理刪除回執持久化檢查點](81-durable-erasure-recovery-checkpoint.md) | 獨立憑證庫、原回執／精確重送、關頁／分頁競爭、清除恢復與秘密匯出隔離 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 現況結論

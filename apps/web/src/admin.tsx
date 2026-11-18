@@ -13,7 +13,7 @@ export type Access = z.infer<typeof AdminSession>;
 export const adminHeaders = (viewer: Viewer, access: Access) => ({ ...authHeaders(viewer), 'X-Admin-CSRF': access.adminCsrf });
 export async function clearAdminDrafts(scope: string) {
   let sessionFailed=false;
-  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:admin-') && key.includes(':' + scope + ':')) sessionStorage.removeItem(key); }
+  try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:admin-') && !key.startsWith('qgroup:rebuild:admin-music-erasure:v1:') && key.includes(':' + scope + ':')) sessionStorage.removeItem(key); }
   catch { sessionFailed=true; }
   await clearDurableAdminDrafts(scope);
   if(sessionFailed)throw Error('無法清除分頁管理原稿');
