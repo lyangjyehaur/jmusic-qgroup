@@ -67,6 +67,31 @@ export function prepareFinance(db:DB,event:EventRow,user:User,input:z.infer<type
   return result;
 }
 export function previewFinance(db:DB,event:EventRow,user:User,input:z.infer<typeof FinanceCommand>,now:Date){const command=prepareFinance(db,event,user,input,now),entries=financeEntries(db,event.id);if(['record','accept','reverse'].includes(command.command))entries.push({id:command.id??'preview',kind:command.command==='reverse'?'reversal':command.transaction!.kind!,seq:BigInt(entries.at(-1)?.seq??0)+1n,payload:command.transaction??{},reversal_of:command.entry_id??null,actor_name:user.nickname,occurred_at:legacyStamp(now),created_at:legacyStamp(now),source_report_id:null});const state=projectJournal(entries);return FinancePreview.parse({command,preview_token:financeToken(event,command),projection:{cost_cents:state.cost,held_cents:state.held,deposit_cents:state.deposit,credit:Object.fromEntries(state.credit)}});}
+export function requireFinanceAuthority(db:DB,event:EventRow,user:User,operation:z.infer<typeof FinanceCommand>){
+ if(!['report','withdraw'].includes(operation.command)&&!eventScopes(db,event,user.id).has('settlement'))fail('沒有款項管理權限',403);
+ if(operation.command==='withdraw'){const claim=financeReports(db,event.id).find(r=>r.id===operation.report_id);if(!claim||claim.reporter_id!==user.id)fail('只能撤回自己的申報',403);}
+}
+/** Both native writes and original-request recovery use the same append/audit/bot transaction. */
+export function executeFinance(db:DB,event:EventRow,user:User,input:{revision:number;operation:z.infer<typeof FinanceCommand>;preview_token:string},at:Date,bot:ReturnType<typeof createActivityBot>,onHookError:()=>void){
+ const id=event.id;
+    requireEventRevision(event,input.revision);const command=prepareFinance(db,event,user,input.operation,at);if(input.preview_token!==financeToken(event,command))fail('款項內容已有變動，請重新核對預覽',409);
+    const stamp=legacyStamp(at),before=financeSummary(db,event,user.id),action=command.command;
+    const append=(uid:string,kind:string,payload:z.infer<typeof FinancePayload>|z.infer<typeof FinancePrepared>,source:string|null=null,reversal:string|null=null)=>db.prepare('INSERT INTO finance_entries(id,event_id,kind,payload_json,occurred_at,actor_id,actor_name,created_at,source_report_id,reversal_of) VALUES(?,?,?,?,?,?,?,?,?,?)').run(uid,id,kind,canonical({...payload,...('last_seq' in payload&&payload.last_seq!==undefined?{last_seq:BigInt(payload.last_seq)}:{})}),'occurred_at' in payload?payload.occurred_at??stamp:stamp,user.id,user.nickname,stamp,source,reversal);
+    if(action==='report')db.prepare('INSERT INTO finance_reports(id,event_id,reporter_id,reporter_name,payload_json,created_at) VALUES(?,?,?,?,?,?)').run(command.id!,id,user.id,user.nickname,JSON.stringify(command.transaction),stamp);
+    else if(action==='accept'||action==='reject'||action==='withdraw'){
+      db.prepare('INSERT INTO finance_report_actions(event_id,report_id,decision,actor_id,actor_name,reason,created_at) VALUES(?,?,?,?,?,?,?)').run(id,command.report_id!,{accept:'accepted',reject:'rejected',withdraw:'withdrawn'}[action]!,user.id,user.nickname,command.reason!,stamp);
+      if(action==='accept')append(command.id!,command.transaction!.kind!,command.transaction!,command.report_id);
+    }else if(action==='record')append(command.id!,command.transaction!.kind!,command.transaction!);
+    else append(randomBytes(8).toString('hex'),{reverse:'reversal',close:'close',reopen:'reopen'}[action]!,command,null,command.entry_id??null);
+    const after=financeSummary(db,event,user.id),privateAction=['report','reject','withdraw'].includes(action),operation=privateAction?Object.fromEntries(Object.entries(command).filter(([key])=>!['transaction','reason'].includes(key))):command;
+    appendEventAudit(db,event,user,'finance_'+action,{state:before.state},{operation,state:after.state},privateAction?'':command.reason??command.transaction?.reason??'',stamp);
+    const recipients=new Set([event.owner_id,...(db.prepare('SELECT user_id FROM event_roles WHERE event_id=?').all(id) as {user_id:string}[]).filter(r=>eventScopes(db,event,r.user_id).has('settlement')).map(r=>r.user_id)]),{users}=financeParties(db,event,user.id);
+    for(const p of command.transaction?.parties??[]){if(users.has(p.id))recipients.add(users.get(p.id)!);else if(p.id.startsWith('person:')){const row=db.prepare('SELECT manager_id FROM attendees WHERE event_id=? AND id=?').get(id,p.id.slice(7)) as {manager_id:string}|undefined;if(row)recipients.add(row.manager_id);}}
+    if(command.report_id)recipients.add((db.prepare('SELECT reporter_id FROM finance_reports WHERE id=?').get(command.report_id) as {reporter_id:string}).reporter_id);
+    for(const recipient of recipients)if(recipient!==user.id)db.prepare("INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,'finance_updated',?,?)").run(recipient,id,event.title+' 的款项记录有更新，请查看收付款账本',stamp);
+    try{db.transaction(()=>{if(action==='close')bot.broadcast(eventRow(db,id)!,'finance_closed');else if(action==='reopen'||(before.state==='closed'&&after.state!=='closed'))bot.broadcast(eventRow(db,id)!,'finance_reopened');for(const recipient of recipients)if(recipient!==user.id)bot.personal(id,recipient,'finance_updated');}) ();}catch{onHookError();}
+ return {id,revision:eventRow(db,id)!.revision};
+}
 export function registerFinance(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
   const params=z.object({id:z.string().min(1).max(80)}),cursor=z.string().regex(/^[1-9][0-9]{0,17}$/).transform(BigInt),bot=createActivityBot(db,now,defaults),limits={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function access(id:string,userId:string|null){requireActivityAccess(db,id,userId);return eventRow(db,id)!;}
@@ -87,25 +112,9 @@ export function registerFinance(app:FastifyInstance,db:DB,security:Security,now:
   app.post('/api/v2/activities/:id/finance',limits,async request=>db.transaction(()=>{
     const {id}=params.parse(request.params),input=FinanceSaveInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='finance:'+encodeURIComponent(id)+':'+hash(JSON.stringify(input));
     // Current command authority is checked before returning an old receipt; revisions are checked for new writes.
-    if(!['report','withdraw'].includes(input.operation.command)&&!eventScopes(db,event,user.id).has('settlement'))fail('沒有款項管理權限',403);
-    if(input.operation.command==='withdraw'){const claim=financeReports(db,id).find(r=>r.id===('report_id' in input.operation?input.operation.report_id:''));if(!claim||claim.reporter_id!==user.id)fail('只能撤回自己的申報',403);}
+    requireFinanceAuthority(db,event,user,input.operation);
     const old=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;if(old){if(old.signature!==signature)fail('這個操作編號已用於另一份內容',409);return FinanceResult.parse(JSON.parse(old.response_json));}
-    requireEventRevision(event,input.revision);const command=prepareFinance(db,event,user,input.operation,now());if(input.preview_token!==financeToken(event,command))fail('款項內容已有變動，請重新核對預覽',409);
-    const stamp=legacyStamp(now()),before=financeSummary(db,event,user.id),action=command.command;
-    const append=(uid:string,kind:string,payload:z.infer<typeof FinancePayload>|z.infer<typeof FinancePrepared>,source:string|null=null,reversal:string|null=null)=>db.prepare('INSERT INTO finance_entries(id,event_id,kind,payload_json,occurred_at,actor_id,actor_name,created_at,source_report_id,reversal_of) VALUES(?,?,?,?,?,?,?,?,?,?)').run(uid,id,kind,canonical({...payload,...('last_seq' in payload&&payload.last_seq!==undefined?{last_seq:BigInt(payload.last_seq)}:{})}),'occurred_at' in payload?payload.occurred_at??stamp:stamp,user.id,user.nickname,stamp,source,reversal);
-    if(action==='report')db.prepare('INSERT INTO finance_reports(id,event_id,reporter_id,reporter_name,payload_json,created_at) VALUES(?,?,?,?,?,?)').run(command.id!,id,user.id,user.nickname,JSON.stringify(command.transaction),stamp);
-    else if(action==='accept'||action==='reject'||action==='withdraw'){
-      db.prepare('INSERT INTO finance_report_actions(event_id,report_id,decision,actor_id,actor_name,reason,created_at) VALUES(?,?,?,?,?,?,?)').run(id,command.report_id!,{accept:'accepted',reject:'rejected',withdraw:'withdrawn'}[action]!,user.id,user.nickname,command.reason!,stamp);
-      if(action==='accept')append(command.id!,command.transaction!.kind!,command.transaction!,command.report_id);
-    }else if(action==='record')append(command.id!,command.transaction!.kind!,command.transaction!);
-    else append(randomBytes(8).toString('hex'),{reverse:'reversal',close:'close',reopen:'reopen'}[action]!,command,null,command.entry_id??null);
-    const after=financeSummary(db,event,user.id),privateAction=['report','reject','withdraw'].includes(action),operation=privateAction?Object.fromEntries(Object.entries(command).filter(([key])=>!['transaction','reason'].includes(key))):command;
-    appendEventAudit(db,event,user,'finance_'+action,{state:before.state},{operation,state:after.state},privateAction?'':command.reason??command.transaction?.reason??'',stamp);
-    const recipients=new Set([event.owner_id,...(db.prepare('SELECT user_id FROM event_roles WHERE event_id=?').all(id) as {user_id:string}[]).filter(r=>eventScopes(db,event,r.user_id).has('settlement')).map(r=>r.user_id)]),{users}=financeParties(db,event,user.id);
-    for(const p of command.transaction?.parties??[]){if(users.has(p.id))recipients.add(users.get(p.id)!);else if(p.id.startsWith('person:')){const row=db.prepare('SELECT manager_id FROM attendees WHERE event_id=? AND id=?').get(id,p.id.slice(7)) as {manager_id:string}|undefined;if(row)recipients.add(row.manager_id);}}
-    if(command.report_id)recipients.add((db.prepare('SELECT reporter_id FROM finance_reports WHERE id=?').get(command.report_id) as {reporter_id:string}).reporter_id);
-    for(const recipient of recipients)if(recipient!==user.id)db.prepare("INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,'finance_updated',?,?)").run(recipient,id,event.title+' 的款项记录有更新，请查看收付款账本',stamp);
-    try{db.transaction(()=>{if(action==='close')bot.broadcast(eventRow(db,id)!,'finance_closed');else if(action==='reopen'||(before.state==='closed'&&after.state!=='closed'))bot.broadcast(eventRow(db,id)!,'finance_reopened');for(const recipient of recipients)if(recipient!==user.id)bot.personal(id,recipient,'finance_updated');}) ();}catch{app.log.error({eventId:id},'Finance bot hook failed; business write preserved');}
-    const result={id,revision:eventRow(db,id)!.revision};db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,JSON.stringify(result),200,stamp);return result;
+    const result=executeFinance(db,event,user,input,now(),bot,()=>app.log.error({eventId:id},'Finance bot hook failed; business write preserved'));
+    db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,JSON.stringify(result),200,legacyStamp(now()));return result;
   }).immediate());
 }

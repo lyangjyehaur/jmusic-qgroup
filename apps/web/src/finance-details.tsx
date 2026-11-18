@@ -1,0 +1,10 @@
+import type { z } from 'zod';
+import type { FinanceKind,FinancePayload } from '@qgroup/contracts';
+export const financeKinds:Record<z.infer<typeof FinanceKind>,string>={collection:'收款',refund:'退還參加者',reimbursement:'償還墊付',expense:'支付店家',merchant_refund:'店家退差價',deposit:'支付訂金／押金',deposit_return:'退回訂金／押金',deposit_apply:'訂金抵消費／押金轉損失',credit_transfer:'更正款項歸屬',cash_transfer:'移交代收資金'};
+export const financeMethods:Record<string,string>={wechat:'微信',alipay:'支付寶',qq:'QQ',cash:'現金',other:'其他'};
+export const financeMoney=(value:number|null)=>value===null?'未發布':'¥'+(value/100).toFixed(2);
+export const financeLocalTime=(value:string)=>{const date=new Date(value);return Number.isFinite(date.getTime())?new Date(date.getTime()+8*3600000).toISOString().slice(0,19):value;};
+export function FinanceDetails({payload:p,entryPath='' }:{payload:z.infer<typeof FinancePayload>;entryPath?:string}){
+  const name=(id:string|undefined)=>p.parties?.find(p=>p.id===id)?.label??(id?'原付款人':'');
+  return <dl className="finance-facts">{p.kind&&<><dt>類型</dt><dd>{financeKinds[p.kind]}</dd></>}<dt>金額</dt><dd>{financeMoney(p.amount_cents??0)}</dd>{p.room_name&&<><dt>包間</dt><dd>{p.room_name}</dd></>}{p.payer_id&&<><dt>款項歸屬</dt><dd>{name(p.payer_id)}</dd></>}{p.actual_party_id&&p.actual_party_id!==p.payer_id&&<><dt>實際轉款／收款人</dt><dd>{name(p.actual_party_id)}</dd></>}{p.custodian_id&&<><dt>代收資金保管人</dt><dd>{name(p.custodian_id)}</dd></>}{p.funder_id&&<><dt>墊退／償還出資人</dt><dd>{name(p.funder_id)}</dd></>}{p.from_id&&<><dt>轉出</dt><dd>{name(p.from_id)}</dd><dt>轉入</dt><dd>{name(p.to_id)}</dd></>}{p.funding&&<><dt>資金來源／退回去向</dt><dd>{p.funding==='payer'?'個人款項':'活動代收資金'}</dd></>}{p.merchant&&<><dt>店家</dt><dd>{p.merchant}</dd></>}{p.occurred_at&&<><dt>實際時間（台北）</dt><dd>{financeLocalTime(p.occurred_at).replace('T',' ')}</dd></>}{p.method&&<><dt>付款方式</dt><dd>{financeMethods[p.method]??p.method}</dd></>}{p.reference_id&&<><dt>關聯記錄</dt><dd><a href={entryPath+'#finance-entry-'+p.reference_id}>{p.reference_id}</a></dd></>}{p.note&&<><dt>備註</dt><dd className="preserve-lines">{p.note}</dd></>}{p.reason&&<><dt>依據</dt><dd className="preserve-lines">{p.reason}</dd></>}</dl>;
+}

@@ -1,7 +1,7 @@
 import { describeLegacy,legacyRaw,legacyScope } from './legacy-local-record';
 const name='qgroup-legacy-local-v1';
 export type LegacySnapshot={id:string;scope:string;sourceKey:string;raw:string;source:unknown;savedAt:number};
-export type LegacyMapping={id:string;scope:string;sourceId:string;targetKey:string;path:string;deviceEpoch:number;at:number};
+export type LegacyMapping={id:string;scope:string;sourceId:string;targetKey:string;path:string;deviceEpoch:number;at:number;kind?:'request'};
 export type LegacyInventory={epoch:number;disabled:boolean;rows:LegacySnapshot[];mappings:LegacyMapping[]};
 function request<T>(r:IDBRequest<T>){return new Promise<T>((resolve,reject)=>{r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 async function database(){return new Promise<IDBDatabase>((resolve,reject)=>{
@@ -60,10 +60,10 @@ export async function clearLegacyLocal(){
   try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction('entries','readwrite',{durability:'strict'}),r=tx.objectStore('entries').openCursor();r.onsuccess=()=>{const cursor=r.result;if(!cursor)return;if(/^(draft|request):[a-f0-9]{64}:/.test(String(cursor.key)))cursor.delete();cursor.continue();};tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??Error('舊本機紀錄清除失敗'));});}finally{db.close();}
 }
 /** Only a committed target may be mapped. Source snapshots remain available for inspection/export. */
-export async function mapLegacySources(scope:string,epoch:number,rows:LegacySnapshot[],target:{sourceId:string;key:string;path:string;deviceEpoch:number}){
+export async function mapLegacySources(scope:string,epoch:number,rows:LegacySnapshot[],target:{sourceId:string;key:string;path:string;deviceEpoch:number;kind?:'request'}){
   legacyScope(scope);return transaction(async tx=>{
     const state=tx.objectStore('state');if(await request(state.get('disabled'))||(await request(state.get('epoch'))??0)!==epoch)throw Error('原紀錄已因登出清除，不能完成轉換。');
     const maps=tx.objectStore('mappings');
-    for(const row of rows){const saved=await request(tx.objectStore('snapshots').get(row.id)) as LegacySnapshot|undefined;if(saved?.scope!==scope||saved.raw!==row.raw)throw Error('來源快照已改變，不能確認轉換。');const old=await request(maps.get(row.id)) as LegacyMapping|undefined;if(old&&(old.targetKey!==target.key||old.sourceId!==target.sourceId))throw Error('此原稿已有不同轉換目的，請先核對。');maps.put({id:row.id,scope,sourceId:target.sourceId,targetKey:target.key,path:target.path,deviceEpoch:target.deviceEpoch,at:Date.now()} satisfies LegacyMapping);}
+    for(const row of rows){const saved=await request(tx.objectStore('snapshots').get(row.id)) as LegacySnapshot|undefined;if(saved?.scope!==scope||saved.raw!==row.raw)throw Error('來源快照已改變，不能確認轉換。');const old=await request(maps.get(row.id)) as LegacyMapping|undefined;if(old&&(old.targetKey!==target.key||old.sourceId!==target.sourceId))throw Error('此原稿已有不同轉換目的，請先核對。');maps.put({id:row.id,scope,sourceId:target.sourceId,targetKey:target.key,path:target.path,deviceEpoch:target.deviceEpoch,at:Date.now(),...(target.kind?{kind:target.kind}:{})} satisfies LegacyMapping);}
   });
 }

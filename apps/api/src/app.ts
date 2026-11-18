@@ -5,6 +5,7 @@ import { registerBotDeliveries } from './bot-deliveries';
 import { registerMusicRooms } from './music-rooms';
 import { registerAppearance } from './appearance';
 import { registerLegacyLocal } from './legacy-local';
+import { registerLegacyFinance } from './legacy-finance';
 import { registerCreateIntents } from './create-intents';
 import { registerAdminBackups } from './admin-backups';
 import { createPairedBackups } from './paired-backups';
@@ -152,6 +153,7 @@ export function createApp(options: AppOptions) {
     registerAdminMusicCatalog(app, db, admin, now);
     registerInbox(app, db, security, now);
     registerLegacyLocal(app, db, security);
+    registerLegacyFinance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerCreateIntents(app, db, security);
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
