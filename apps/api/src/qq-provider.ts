@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 
@@ -34,7 +35,7 @@ export function qqProvider(origin: string, environment: NodeJS.ProcessEnv = proc
       const body: unknown = JSON.parse(Buffer.concat(chunks).toString('utf8'));
       if (!body || typeof body !== 'object' || Array.isArray(body) || 'error' in body || ('ret' in body && body.ret !== 0)) throw new Error();
       return body as Record<string, unknown>;
-    } catch { throw new DomainError('QQ_UNAVAILABLE', 'QQ 授權暫時無法完成，請稍後重新登入', 502); }
+    } catch { throw withApiError(new DomainError('QQ_UNAVAILABLE', 'QQ 授權暫時無法完成，請稍後重新登入', 502)); }
   }
   return {
     clientId,
@@ -42,14 +43,14 @@ export function qqProvider(origin: string, environment: NodeJS.ProcessEnv = proc
     async exchange(code) {
       const token = await graph('/oauth2.0/token', { grant_type: 'authorization_code', client_id: clientId, client_secret: key, code, redirect_uri: redirect, fmt: 'json' });
       const access = identifier.safeParse(token.access_token);
-      if (!access.success) throw new DomainError('QQ_INVALID_IDENTITY', 'QQ 授權身份無效，請重新登入', 502);
+      if (!access.success) throw withApiError(new DomainError('QQ_INVALID_IDENTITY', 'QQ 授權身份無效，請重新登入', 502));
       let identity: Record<string, unknown>;
       try { identity = await graph('/oauth2.0/me', { access_token: access.data, fmt: 'json', unionid: '1' }); }
       catch { identity = await graph('/oauth2.0/me', { access_token: access.data, fmt: 'json' }); }
-      if (String(identity.client_id) !== clientId || !identifier.safeParse(identity.openid).success) throw new DomainError('QQ_INVALID_IDENTITY', 'QQ 授權身份不符，請重新登入', 502);
+      if (String(identity.client_id) !== clientId || !identifier.safeParse(identity.openid).success) throw withApiError(new DomainError('QQ_INVALID_IDENTITY', 'QQ 授權身份不符，請重新登入', 502));
       const profile = await graph('/user/get_user_info', { access_token: access.data, oauth_consumer_key: clientId, openid: String(identity.openid) });
       const parsed = QQIdentity.safeParse({ subject: identity.openid, nickname: profile.nickname, avatarUrl: typeof profile.figureurl_qq_2 === 'string' ? safeAvatar(profile.figureurl_qq_2) : typeof profile.figureurl_qq_1 === 'string' ? safeAvatar(profile.figureurl_qq_1) : '', unionId: typeof identity.unionid === 'string' ? safeUnionId(identity.unionid) : '' });
-      if (!parsed.success || profile.ret !== 0) throw new DomainError('QQ_INVALID_PROFILE', 'QQ 資料暫時無法讀取，請重新登入', 502);
+      if (!parsed.success || profile.ret !== 0) throw withApiError(new DomainError('QQ_INVALID_PROFILE', 'QQ 資料暫時無法讀取，請重新登入', 502));
       return parsed.data;
     },
   };

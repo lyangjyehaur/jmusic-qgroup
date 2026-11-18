@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -14,11 +15,11 @@ import { priorCreateIntent,recordCreateIntent } from './create-intents';
 const params=z.object({id:z.string().min(1).max(80)});
 function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allowDeleted=false,allowPublished=false){
   const event=eventRow(db,id);
-  if(!event||(!allowDeleted&&event.status==='deleted'))throw new DomainError('NOT_FOUND','找不到活動草稿',404);
+  if(!event||(!allowDeleted&&event.status==='deleted'))throw withApiError(new DomainError('NOT_FOUND','找不到活動草稿',404));
   const scopes=eventScopes(db,event,userId);
-  if(!scopes.size)throw new DomainError('NOT_FOUND','找不到活動草稿',404);
-  if(!allowPublished&&event.lifecycle!=='draft')throw new DomainError('NOT_A_DRAFT','活動已發布；草稿輸入仍保留，請回到活動核對',409);
-  if(scope&&!scopes.has(scope))throw new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403);
+  if(!scopes.size)throw withApiError(new DomainError('NOT_FOUND','找不到活動草稿',404));
+  if(!allowPublished&&event.lifecycle!=='draft')throw withApiError(new DomainError('NOT_A_DRAFT','活動已發布；草稿輸入仍保留，請回到活動核對',409));
+  if(scope&&!scopes.has(scope))throw withApiError(new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403));
   return event;
 }
 export function activityDraft(db:DB,id:string,userId:string){
@@ -55,7 +56,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     // A global receipt can also belong to another domain. Only expose the minimal draft result.
     const parsed=z.object({id:z.string(),revision:z.number().int(),removed:z.boolean()}).strict().safeParse(JSON.parse(row.response_json));
     if(!parsed.success)return {state:'not_found' as const};
-    const event=eventRow(db,parsed.data.id);if(!event||!eventScopes(db,event,user.id).size)throw new DomainError('NOT_FOUND','找不到這個操作結果',404);
+    const event=eventRow(db,parsed.data.id);if(!event||!eventScopes(db,event,user.id).size)throw withApiError(new DomainError('NOT_FOUND','找不到這個操作結果',404));
     return {state:'completed' as const,result:parsed.data};
   })());
 
@@ -68,7 +69,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
       if(existing)authorize(db,existing.id,user.id,existing.scope,true,true);
       const previous=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
       if(previous){
-        if(previous.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409);
+        if(previous.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409));
         const result=JSON.parse(previous.response_json) as T;
         if(!existing&&typeof result==='object'&&result&&'id' in result&&typeof result.id==='string')authorize(db,result.id,user.id,undefined,true,true);
         return result;
@@ -96,13 +97,13 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     const {id}=params.parse(request.params);const input=SaveActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/'+id+'/draft',input,(user,stamp)=>{
       const event=authorize(db,id,user.id,'schedule');requireEventRevision(event,input.revision);
-      if(event.archived_at||db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(id))throw new DomainError('ACTIVITY_LOCKED','活動已有歸檔或結算記錄，不能重寫安排',409);
+      if(event.archived_at||db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(id))throw withApiError(new DomainError('ACTIVITY_LOCKED','活動已有歸檔或結算記錄，不能重寫安排',409));
       const v=arrangementValues(input.values,now(),true,event);const owner=event.owner_id===user.id;
-      if(!owner&&(v.botEnabled!==!!event.bot_enabled||v.feePolicy!==event.fee_policy||v.visibility!==event.visibility||(v.withdrawalDeadline||v.deadline)!==(event.withdrawal_deadline||event.deadline)))throw new DomainError('OWNER_SETTINGS','群同步、費用規則、退出期限及可見性需由發起者修改',403);
+      if(!owner&&(v.botEnabled!==!!event.bot_enabled||v.feePolicy!==event.fee_policy||v.visibility!==event.visibility||(v.withdrawalDeadline||v.deadline)!==(event.withdrawal_deadline||event.deadline)))throw withApiError(new DomainError('OWNER_SETTINGS','群同步、費用規則、退出期限及可見性需由發起者修改',403));
       const count=(db.prepare("SELECT count(*) AS n FROM attendees WHERE event_id=? AND status='confirmed'").get(id) as {n:number}).n;
-      if(v.capacity&&v.capacity<count)throw new DomainError('CAPACITY_BELOW_ROSTER','人數上限低於正式報名人數，請先處理超額人員',409);
+      if(v.capacity&&v.capacity<count)throw withApiError(new DomainError('CAPACITY_BELOW_ROSTER','人數上限低於正式報名人數，請先處理超額人員',409));
       const proposed={...event,category:v.category,starts_at:v.startsAt,duration_hours:v.durationHours,location:v.location,description:v.description,withdrawal_deadline:v.withdrawalDeadline,deadline:v.deadline,timezone:v.timezone,fee_policy:v.feePolicy};
-      if(JSON.stringify(arrangementSnapshot(event))!==JSON.stringify(arrangementSnapshot(proposed))&&!input.reason&&db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status IN ('confirmed','waiting','tentative') LIMIT 1").get(id))throw new DomainError('ARRANGEMENT_REASON_REQUIRED','重要安排變更請填寫原因，參加者需要重新確認',400);
+      if(JSON.stringify(arrangementSnapshot(event))!==JSON.stringify(arrangementSnapshot(proposed))&&!input.reason&&db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status IN ('confirmed','waiting','tentative') LIMIT 1").get(id))throw withApiError(new DomainError('ARRANGEMENT_REASON_REQUIRED','重要安排變更請填寫原因，參加者需要重新確認',400));
       db.prepare(`UPDATE events SET title=?,category=?,location=?,starts_at=?,deadline=?,capacity=?,description=?,duration_hours=?,withdrawal_deadline=?,visibility=?,timezone=?,minimum_participants=?,fee_policy=?,draft_join_owner=?,bot_enabled=? WHERE id=?`).run(v.title,v.category,v.location,v.startsAt,v.deadline,v.capacity,v.description,v.durationHours,v.withdrawalDeadline,v.visibility,v.timezone,v.minimumParticipants,v.feePolicy,Number(v.joinOwner),Number(v.botEnabled),id);
       const updated=eventRow(db,id)!;
       const changed=appendEventAudit(db,event,user,'event_updated',{event:eventSnapshot(event),participants:[],draft_join_owner:event.draft_join_owner},{event:eventSnapshot(updated),participants:[],draft_join_owner:updated.draft_join_owner},input.reason,stamp);

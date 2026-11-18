@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { DB } from '@qgroup/database';
 import { AdminMusicHistory } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
@@ -20,7 +21,7 @@ export function musicOwnershipHistory(db: DB, profileId: string, before: number)
       LEFT JOIN users u ON json_extract(i.payload_json,'$.actor')='account:'||u.id
     WHERE i.table_name='link_audit' AND l.profile_id=?
   ) WHERE id<? ORDER BY id DESC LIMIT 51`).all(profileId, profileId, before) as (Omit<z.infer<typeof AdminMusicHistory>['history'][number], 'createdAt'> & { createdAt: number | string })[];
-  const invalid = () => new DomainError('MUSIC_HISTORY_INVALID', '原關聯歷史格式異常，請聯絡管理員核對來源；原資料保留', 503);
+  const invalid = () => withApiError(new DomainError('MUSIC_HISTORY_INVALID', '原關聯歷史格式異常，請聯絡管理員核對來源；原資料保留', 503));
   const history = rows.slice(0,50).map(row => {
     if (row.source === 'unified') return row;
     if (typeof row.createdSeconds !== 'number' || !Number.isFinite(row.createdSeconds) || row.createdSeconds < 0 || row.createdSeconds > 8640000000000 || !Number.isSafeInteger(row.legacyId) || row.legacyId! < 1) throw invalid();

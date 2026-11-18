@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -41,7 +42,7 @@ import {
 const identifier = z.object({ id: z.string().min(1).max(80) });
 function changed(poll: PollRow, revision: number) {
   if (poll.revision !== revision)
-    throw new DomainError('POLL_CHANGED', '投票安排已有更新，請保留輸入並核對最新版', 409);
+    throw withApiError(new DomainError('POLL_CHANGED', '投票安排已有更新，請保留輸入並核對最新版', 409));
 }
 function record(
   db: DB,
@@ -197,7 +198,7 @@ export function registerTimePolls(
     db.transaction(() => {
       const user = security.scopedMember(request),
         poll = pollRow(db, identifier.parse(request.params).id, true);
-      if (poll.owner_id !== user.id) throw new DomainError('POLL_PERMISSION', '只有發起者可以管理時間投票', 403);
+      if (poll.owner_id !== user.id) throw withApiError(new DomainError('POLL_PERMISSION', '只有發起者可以管理時間投票', 403));
       return pollView(db, poll, user.id, now(), defaults);
     })(),
   );
@@ -214,7 +215,7 @@ export function registerTimePolls(
         const user = security.memberWrite(request),
           key = z.string().uuid().parse(request.headers['idempotency-key']);
         if (id && owner && pollRow(db, id, true).owner_id !== user.id)
-          throw new DomainError('POLL_PERMISSION', '只有發起者可以管理時間投票', 403);
+          throw withApiError(new DomainError('POLL_PERMISSION', '只有發起者可以管理時間投票', 403));
         const signature =
           'time-poll:' + hash(request.method + ':' + request.url.split('?')[0] + ':' + JSON.stringify(input));
         const previous = db
@@ -222,10 +223,10 @@ export function registerTimePolls(
           .get(user.id, key) as { signature: string; response_json: string } | undefined;
         if (previous) {
           if (previous.signature !== signature)
-            throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+            throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
           const result = TimePollResult.parse(JSON.parse(previous.response_json));
           if (!id && pollRow(db, result.id, true).owner_id !== user.id)
-            throw new DomainError('POLL_NOT_FOUND', '找不到原操作', 404);
+            throw withApiError(new DomainError('POLL_NOT_FOUND', '找不到原操作', 404));
           return result;
         }
         const hook = (work: () => unknown) => {
@@ -292,10 +293,10 @@ export function registerTimePolls(
         now(),
         true,
       );
-      if (new Set(starts).size !== starts.length) throw new DomainError('POLL_DUPLICATE', '候選時段不能重複', 400);
+      if (new Set(starts).size !== starts.length) throw withApiError(new DomainError('POLL_DUPLICATE', '候選時段不能重複', 400));
       const candidates = starts.map((starts_at) => ({ starts_at }));
       if (candidates.some((o) => !pollAvailable(o, definition, now())))
-        throw new DomainError('POLL_EXPIRED', '候選已過期，請選擇尚未失效的日期或時間', 400);
+        throw withApiError(new DomainError('POLL_EXPIRED', '候選已過期，請選擇尚未失效的日期或時間', 400));
       pollDeadline(deadline, candidates, definition, now());
       const id = randomBytes(8).toString('hex'),
         stamp = legacyStamp(now());
@@ -333,17 +334,17 @@ export function registerTimePolls(
       const poll = pollRow(db, id);
       changed(poll, input.revision);
       if (poll.status !== 'open' || Date.parse(poll.deadline) <= now().getTime())
-        throw new DomainError('POLL_CLOSED', '投票已截止，請查看最終安排', 409);
+        throw withApiError(new DomainError('POLL_CLOSED', '投票已截止，請查看最終安排', 409));
       const options = pollOptions(db, id),
         active = new Set(options.filter((o) => pollAvailable(o, poll, now())).map((o) => o.id)),
         submitted = new Set(input.choices.map((c) => c.option_id));
-      if (!active.size) throw new DomainError('POLL_EXPIRED', '候選時段均已過期', 409);
+      if (!active.size) throw withApiError(new DomainError('POLL_EXPIRED', '候選時段均已過期', 409));
       if (
         submitted.size !== input.choices.length ||
         [...active].some((id) => !submitted.has(id)) ||
         [...submitted].some((id) => !options.some((o) => o.id === id))
       )
-        throw new DomainError('POLL_OPTIONS_CHANGED', '請為每個未過期候選填寫選擇，並核對最新版', 409);
+        throw withApiError(new DomainError('POLL_OPTIONS_CHANGED', '請為每個未過期候選填寫選擇，並核對最新版', 409));
       const stamp = legacyStamp(now());
       db.prepare(
         'INSERT INTO time_poll_ballots VALUES(?,?,?) ON CONFLICT(poll_id,user_id) DO UPDATE SET updated_at=excluded.updated_at',
@@ -378,7 +379,7 @@ export function registerTimePolls(
         record(db, id, user.id, action, { previous_status: poll.status }, stamp);
         return id;
       }
-      if (!['open', 'closed'].includes(poll.status)) throw new DomainError('POLL_FINAL', '時間投票已定案或取消', 409);
+      if (!['open', 'closed'].includes(poll.status)) throw withApiError(new DomainError('POLL_FINAL', '時間投票已定案或取消', 409));
       if (action === 'close') db.prepare("UPDATE time_polls SET status='closed' WHERE id=?").run(id);
       else if (action === 'extend') {
         const deadline = activityDate(input.deadline);
@@ -386,7 +387,7 @@ export function registerTimePolls(
         db.prepare("UPDATE time_polls SET deadline=?,status='open' WHERE id=?").run(deadline, id);
         details.deadline = deadline;
       } else if (action === 'cancel') {
-        if (!input.reason) throw new DomainError('POLL_REASON', '請填寫取消投票原因', 400);
+        if (!input.reason) throw withApiError(new DomainError('POLL_REASON', '請填寫取消投票原因', 400));
         db.prepare("UPDATE time_polls SET status='cancelled',reason=?,decided_at=? WHERE id=?").run(
           input.reason,
           stamp,
@@ -398,39 +399,39 @@ export function registerTimePolls(
         if (input.bot_enabled) hook(() => announcePoll(db, pollRow(db, id), now(), defaults, 'sync:' + poll.revision));
         else skip('投票已关闭群同步');
       } else if (action === 'bot_retry') {
-        if (!pollShareable(poll, now())) throw new DomainError('POLL_BOT_RETRY', '目前投票未開放群同步，無法重送', 409);
+        if (!pollShareable(poll, now())) throw withApiError(new DomainError('POLL_BOT_RETRY', '目前投票未開放群同步，無法重送', 409));
         const row = db
           .prepare("SELECT status,sent_at,simulated_at,last_error FROM bot_outbox WHERE id=? AND poll_id=? AND channel='group'")
           .get(input.outbox_id, id) as { status: string; sent_at:string|null; simulated_at: string | null; last_error: string } | undefined;
         const blocked=row?deliveryRetryBlocker(row):'找不到群通知紀錄';
         if (blocked)throw new DomainError('POLL_BOT_RETRY', blocked, 409);
         if (db.prepare("SELECT 1 FROM bot_outbox WHERE poll_id=? AND status IN ('pending','sending')").get(id))
-          throw new DomainError('POLL_BOT_PENDING', '已有通知等待發送', 409);
+          throw withApiError(new DomainError('POLL_BOT_PENDING', '已有通知等待發送', 409));
         if (!announcePoll(db, poll, now(), defaults, 'retry:' + randomUUID().replaceAll('-', '')))
-          throw new DomainError('POLL_BOT_DISABLED', '管理員尚未開啟此類通知或未設定目標群', 409);
+          throw withApiError(new DomainError('POLL_BOT_DISABLED', '管理員尚未開啟此類通知或未設定目標群', 409));
       } else if (action === 'finalize') {
         if (input.base_vote_revision !== poll.vote_revision)
-          throw new DomainError('POLL_VOTES_CHANGED', '票數已有更新，請重新核對後定案', 409);
+          throw withApiError(new DomainError('POLL_VOTES_CHANGED', '票數已有更新，請重新核對後定案', 409));
         const options = pollOptions(db, id),
           selected = options.find((o) => o.id === input.option_id);
-        if (!selected) throw new DomainError('POLL_OPTION', '請選擇本次投票的候選時段', 400);
-        if (!pollAvailable(selected, poll, now())) throw new DomainError('POLL_EXPIRED', '候選時段已過期', 409);
+        if (!selected) throw withApiError(new DomainError('POLL_OPTION', '請選擇本次投票的候選時段', 400));
+        if (!pollAvailable(selected, poll, now())) throw withApiError(new DomainError('POLL_EXPIRED', '候選時段已過期', 409));
         const counts = pollTotals(db, poll),
           support = counts[selected.id]!.yes,
           max = Math.max(0, ...options.filter((o) => pollAvailable(o, poll, now())).map((o) => counts[o.id]!.yes));
         if ((support === 0 || support < poll.minimum_participants || support < max) && !input.reason)
-          throw new DomainError('POLL_REASON', '未選最高票或未達最低人數，請填寫仍決定舉行的原因', 400);
+          throw withApiError(new DomainError('POLL_REASON', '未選最高票或未達最低人數，請填寫仍決定舉行的原因', 400));
         const start = poll.time_mode === 'date' ? activityDate(input.starts_at ?? '') : selected.starts_at,
           duration = poll.time_mode === 'date' ? input.duration_hours : poll.duration_hours;
         if (
           poll.time_mode === 'date' &&
           pollDate({ starts_at: start }, poll.timezone) !== pollDate(selected, poll.timezone)
         )
-          throw new DomainError('POLL_DATE', '開始時間必須在選定的候選日期內', 400);
-        if (!duration) throw new DomainError('POLL_DURATION', '請選擇持續時間（1–24 小時）', 400);
+          throw withApiError(new DomainError('POLL_DATE', '開始時間必須在選定的候選日期內', 400));
+        if (!duration) throw withApiError(new DomainError('POLL_DURATION', '請選擇持續時間（1–24 小時）', 400));
         const deadline = activityDate(input.registration_deadline);
         if (!(now().getTime() < Date.parse(deadline) && deadline <= start))
-          throw new DomainError('POLL_REGISTRATION_DEADLINE', '報名截止須晚於現在，且不能晚於選定的開始時間', 400);
+          throw withApiError(new DomainError('POLL_REGISTRATION_DEADLINE', '報名截止須晚於現在，且不能晚於選定的開始時間', 400));
         const event = finalizedEvent(db, poll, user, start, deadline, duration, now, defaults, hook),
           respondents = (
             db.prepare('SELECT count(*) AS n FROM time_poll_ballots WHERE poll_id=?').get(id) as { n: number }

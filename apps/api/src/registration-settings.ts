@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { UpdateRegistrationSettings } from '@qgroup/contracts';
@@ -16,7 +17,7 @@ export function registerRegistrationSettings(app: FastifyInstance, db: DB, admin
     const adminCsrf = authority(request, true);
     const data = UpdateRegistrationSettings.parse(request.body);
     const current = nameRegistration(db);
-    if (current.revision !== data.revision) throw new DomainError('SETTINGS_CHANGED', '註冊設定已被修改，請重新讀取後確認', 409);
+    if (current.revision !== data.revision) throw withApiError(new DomainError('SETTINGS_CHANGED', '註冊設定已被修改，請重新讀取後確認', 409));
     if (current.enabled !== data.enabled) {
       admin.preserve(request);
       db.prepare('UPDATE site_settings SET allow_name_registration=?,revision=revision+1 WHERE id=1').run(Number(data.enabled));

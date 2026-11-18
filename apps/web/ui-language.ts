@@ -11,6 +11,7 @@ const alias = '__qgroupDisplay';
 const errorAlias = '__qgroupError';
 // 台北 is valid in both scripts; retain the existing form's geographic label.
 const preserved = (text: string, convert: (text: string) => string) => text.split(/(台北|[\u3400-\u9fff]ICP备\d+号(?:-\d+)?)/).map(part => part === '台北' || /^[\u3400-\u9fff]ICP备\d+号(?:-\d+)?$/.test(part) ? part : convert(part)).join('');
+export const compileDisplayPair = (text: string): readonly [string,string] => [preserved(text,hans),preserved(text,hant)];
 function jsxText(text: string) {
   const fragment = parseExpression('<>' + text + '</>', { plugins: ['jsx'] });
   if (fragment.type !== 'JSXFragment' || fragment.children.some(child => child.type !== 'JSXText')) throw Error('Expected static JSX text');
@@ -65,6 +66,21 @@ export function transformUILanguage(source: string, filename: string) {
       const argument = node.arguments[0];
       if (node.arguments.length !== 1 || !argument || !ts.isStringLiteral(argument)) throw Error(`${filename}: uiText accepts one static literal; user data must remain original`);
       edits.push({ start: node.getStart(tree), end: node.end, value: pair(argument.text) });
+    }
+    if (!skip && ts.isCallExpression(node) && ts.isIdentifier(node.expression) && node.expression.text === 'displayError') {
+      const [error, message] = node.arguments;
+      if (node.arguments.length !== 2 || !error || !message || !ts.isStringLiteral(message)) throw Error(`${filename}: displayError needs an original exception and one static display literal`);
+      edits.push({start:node.getStart(tree),end:node.end,value:`${errorAlias}(${error.getText(tree)},${JSON.stringify(preserved(message.text,hans))},${JSON.stringify(preserved(message.text,hant))})`});
+    }
+    // A fixed super message belongs to this Error subclass, not to arbitrary
+    // classes, values or later throw sites. Annotate only after native super.
+    if (!skip && ts.isCallExpression(node) && node.expression.kind === ts.SyntaxKind.SuperKeyword && ts.isExpressionStatement(node.parent)) {
+      const constructor = node.parent.parent.parent;
+      const owner = ts.isConstructorDeclaration(constructor) ? constructor.parent : undefined;
+      if (owner && (ts.isClassDeclaration(owner) || ts.isClassExpression(owner)) && owner.heritageClauses?.some(clause => clause.token === ts.SyntaxKind.ExtendsKeyword && clause.types.some(type => type.expression.getText(tree) === 'Error'))) {
+        const message = node.arguments[0];
+        if (message && ts.isStringLiteral(message) && han.test(message.text)) edits.push({start:node.parent.end,end:node.parent.end,value:`;${errorAlias}(this,${JSON.stringify(preserved(message.text,hans))},${JSON.stringify(preserved(message.text,hant))});`});
+      }
     }
     if (!skip && (ts.isCallExpression(node) || ts.isNewExpression(node)) && ts.isIdentifier(node.expression) && ['Error','DraftConflict','DraftExpired','ApiError'].includes(node.expression.text)) {
       const argument = node.arguments?.[node.expression.text === 'ApiError' ? 2 : 0];

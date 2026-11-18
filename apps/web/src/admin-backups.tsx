@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { AdminSession, ApiFailure, MusicBackups, type Viewer } from '@qgroup/contracts';
 import { AdminGate, type Access } from './admin';
-import { api, ApiError } from './api';
+import { api, ApiError, apiFailureError } from './api';
 import { Failure, Notice, PageIntro } from './shared';
 
 export function AdminBackupsPage() {
@@ -29,7 +29,7 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
     setBusy(true); setMessage(''); const request = new AbortController(); controller.current = request;
     try {
       const response = await fetch('/api/v2/admin/music-export' + (id ? '?backup=' + encodeURIComponent(id) : ''), { credentials: 'same-origin', headers, signal: request.signal });
-      if (!response.ok) { const failure = ApiFailure.safeParse(await response.json()); if (failure.success) throw new ApiError(response.status, failure.data.code, failure.data.message); throw new ApiError(response.status, 'DOWNLOAD_FAILED', '下載失敗，請重試'); }
+      if (!response.ok) { const failure = ApiFailure.safeParse(await response.json()); if (failure.success) throw apiFailureError(response.status, failure.data); throw new ApiError(response.status, 'DOWNLOAD_FAILED', '下載失敗，請重試'); }
       if (!response.headers.get('content-type')?.startsWith('application/json')) throw new Error('下載格式不符，請稍後重試。');
       const blob = await response.blob();
       // A late download must not survive an account switch or revoked authority.

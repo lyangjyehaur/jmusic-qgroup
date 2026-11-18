@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
@@ -30,7 +31,7 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
     // New links store a digest; unexpired legacy links retain their original semantics.
     const row = db.prepare(`SELECT l.id,l.user_id,l.status,l.used_by,l.expires_at,u.nickname FROM device_links l JOIN users u ON u.id=l.user_id
       WHERE l.token IN (?,?) AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=l.user_id)`).get('sha256:' + hash(token), token) as DeviceLink | undefined;
-    if (!row || Date.parse(row.expires_at) <= now().getTime() || !Number.isFinite(Date.parse(row.expires_at))) throw new DomainError('LINK_UNAVAILABLE', '連結已過期、使用或撤銷，請重新產生', 404);
+    if (!row || Date.parse(row.expires_at) <= now().getTime() || !Number.isFinite(Date.parse(row.expires_at))) throw withApiError(new DomainError('LINK_UNAVAILABLE', '連結已過期、使用或撤銷，請重新產生', 404));
     return row;
   }
   app.get('/api/v2/me/devices', async request => {
@@ -59,13 +60,13 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
   app.post('/api/v2/device-links/view', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => {
     const viewer = security.write(request); const { token } = ReadDeviceLink.parse(request.body); const row = lookup(token);
     const allowed = viewer.kind === 'member' && granted(viewer.tokenHash, row.user_id);
-    if (row.status !== 'pending' && !(row.status === 'used' && row.used_by === viewer.tokenHash && allowed)) throw new DomainError('LINK_UNAVAILABLE', '連結已過期、使用或撤銷，請重新產生', 404);
+    if (row.status !== 'pending' && !(row.status === 'used' && row.used_by === viewer.tokenHash && allowed)) throw withApiError(new DomainError('LINK_UNAVAILABLE', '連結已過期、使用或撤銷，請重新產生', 404));
     return { status: row.status === 'used' ? 'accepted' : 'pending', nickname: row.nickname, expiresAt: row.expires_at, alreadyAuthorized: allowed };
   });
   app.post('/api/v2/device-links/accept', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const viewer = security.memberWrite(request); const { token } = AcceptDeviceLink.parse(request.body); const row = lookup(token);
-    if (row.status !== 'pending') throw new DomainError('LINK_UNAVAILABLE', '連結已過期、使用或撤銷，請重新產生', 404);
-    if (granted(viewer.tokenHash, row.user_id)) throw new DomainError('ALREADY_AUTHORIZED', '此裝置已授權該帳號，請到帳號頁切換', 409);
+    if (row.status !== 'pending') throw withApiError(new DomainError('LINK_UNAVAILABLE', '連結已過期、使用或撤銷，請重新產生', 404));
+    if (granted(viewer.tokenHash, row.user_id)) throw withApiError(new DomainError('ALREADY_AUTHORIZED', '此裝置已授權該帳號，請到帳號頁切換', 409));
     db.prepare('INSERT OR IGNORE INTO browser_accounts VALUES(?,?,?)').run(viewer.tokenHash, viewer.id, stamp());
     db.prepare('INSERT INTO browser_accounts VALUES(?,?,?)').run(viewer.tokenHash, row.user_id, stamp());
     db.prepare("UPDATE device_links SET status='used',used_by=? WHERE id=? AND status='pending'").run(viewer.tokenHash, row.id);
@@ -80,8 +81,8 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
   app.post('/api/v2/me/devices/revoke', async request => db.transaction(() => {
     const viewer = security.memberWrite(request); const { deviceId: selected } = RevokeDevice.parse(request.body);
     const target = access(viewer.id).find(row => deviceId(viewer.id, row.token_hash) === selected);
-    if (!target) throw new DomainError('DEVICE_NOT_FOUND', '裝置授權不存在或已撤銷，請重新讀取', 404);
-    if (target.token_hash === viewer.tokenHash) throw new DomainError('CURRENT_DEVICE', '不能在這裡撤銷目前裝置，請使用登出', 400);
+    if (!target) throw withApiError(new DomainError('DEVICE_NOT_FOUND', '裝置授權不存在或已撤銷，請重新讀取', 404));
+    if (target.token_hash === viewer.tokenHash) throw withApiError(new DomainError('CURRENT_DEVICE', '不能在這裡撤銷目前裝置，請使用登出', 400));
     clearMusicClaims(db, target.token_hash);
     db.prepare('DELETE FROM browser_accounts WHERE token_hash=? AND user_id=?').run(target.token_hash, viewer.id);
     const current = db.prepare('SELECT user_id FROM browser_sessions WHERE token_hash=?').get(target.token_hash) as { user_id: string } | undefined;

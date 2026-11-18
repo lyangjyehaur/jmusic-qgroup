@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -38,11 +39,11 @@ export function registerAccountProfile(app: FastifyInstance, db: DB, security: S
     const signature = hash('v2:PUT:/api/v2/me/profile:' + JSON.stringify(input));
     const previous = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(device.id, requestKey) as { signature: string; response_json: string } | undefined;
     if (previous) {
-      if (previous.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+      if (previous.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
       return JSON.parse(previous.response_json) as ReturnType<typeof accountProfile>;
     }
     const before = accountProfile(db, device.id);
-    if (input.revision !== before.revision) throw new DomainError('PROFILE_CHANGED', '稱呼已被修改；請核對目前稱呼後再保存', 409);
+    if (input.revision !== before.revision) throw withApiError(new DomainError('PROFILE_CHANGED', '稱呼已被修改；請核對目前稱呼後再保存', 409));
     const stamp = now().toISOString();
     if (input.nickname !== before.nickname) {
       const affected = db.prepare("SELECT DISTINCT event_id FROM attendees WHERE user_id=? AND status!='withdrawn' ORDER BY event_id").all(device.id) as { event_id: string }[];

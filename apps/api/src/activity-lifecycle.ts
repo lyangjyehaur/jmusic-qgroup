@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { ActivityDraftResult, ActivityLifecycleAction, ChangeActivityLifecycle } from '@qgroup/contracts';
@@ -18,7 +19,7 @@ function authorize(db:DB,id:string,userId:string,action?:Action){
   // A removed activity is visible only to its owner for recovering the removal receipt.
   if(event?.status==='deleted'&&event.owner_id===userId&&(!action||action==='remove'))return event;
   requireActivityAccess(db,id,userId);
-  if(action&&!eventScopes(db,event!,userId).has(ownerActions.has(action)?'owner':'schedule'))throw new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403);
+  if(action&&!eventScopes(db,event!,userId).has(ownerActions.has(action)?'owner':'schedule'))throw withApiError(new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403));
   return event!;
 }
 function blocker(db:DB,event:EventRow,action:Action,now:Date){
@@ -58,11 +59,11 @@ export function registerActivityLifecycle(app:FastifyInstance,db:DB,security:Sec
       const user=security.memberWrite(request),event=authorize(db,id,user.id,input.action),key=z.string().uuid().parse(request.headers['idempotency-key']);
       const signature='activity-lifecycle:'+encodeURIComponent(id)+':'+input.action+':'+hash(JSON.stringify(input));
       const old=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
-      if(old){if(old.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409);return ActivityDraftResult.parse(JSON.parse(old.response_json));}
+      if(old){if(old.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409));return ActivityDraftResult.parse(JSON.parse(old.response_json));}
       requireEventRevision(event,input.revision);
       const {action,reason}=input,blocked=blocker(db,event,action,now());
       if(blocked)throw new DomainError('LIFECYCLE_BLOCKED',blocked,409);
-      if(needsReason(db,event,action)&&!reason)throw new DomainError('LIFECYCLE_REASON',action==='cancel'?'請填寫取消原因；原名單和帳務將保留':'尚未達到最低人數，請填寫仍決定成團的原因',400);
+      if(needsReason(db,event,action)&&!reason)throw withApiError(new DomainError('LIFECYCLE_REASON',action==='cancel'?'請填寫取消原因；原名單和帳務將保留':'尚未達到最低人數，請填寫仍決定成團的原因',400));
       const stamp=legacyStamp(now()),before=eventSnapshot(event),peopleBefore=activityPeopleSnapshot(db,id);
       let notice: {kind:string;message:string}|undefined;
       const noOp=(action==='start'&&event.lifecycle==='ongoing'&&!!event.actual_started_at)||(action==='finish'&&event.lifecycle==='ended')||(action==='cancel'&&event.lifecycle==='cancelled'&&event.cancellation_reason===reason)||(action==='formation'&&event.formation_state==='confirmed');

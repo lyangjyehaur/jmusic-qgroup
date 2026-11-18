@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
@@ -22,7 +23,7 @@ function serialize(db: DB, row: UserRow) {
 }
 function user(db: DB, id: string) {
   const row = db.prepare(projection + ' WHERE u.id=? AND ' + active).get(id) as UserRow | undefined;
-  if (!row) throw new DomainError('USER_NOT_FOUND', '帳號不存在或已關閉', 404);
+  if (!row) throw withApiError(new DomainError('USER_NOT_FOUND', '帳號不存在或已關閉', 404));
   return serialize(db, row);
 }
 export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSecurity, now: () => Date) {
@@ -65,7 +66,7 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
       const access = admin.authority(request, true); const id = UserId.parse((request.params as { id: string }).id);
       const key = z.string().uuid().parse(request.headers['idempotency-key']); const signature = hash('v2:admin:' + path + ':' + id + ':' + JSON.stringify(input));
       const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
-      if (prior) { if (prior.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409); return { ok: true }; }
+      if (prior) { if (prior.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409)); return { ok: true }; }
       user(db, id); admin.preserve(request); action(access, id);
       // Only a minimal acknowledgement is retained; private notes/identities are never copied to retry storage.
       db.prepare('INSERT INTO auth_requests VALUES(?,?,?,?,?)').run(access.receiptScope, key, signature, '{"ok":true}', now().toISOString());
@@ -76,8 +77,8 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
     const input = SaveAdminRole.parse(request.body);
     return mutate(request, 'role', input, (access, id) => {
       const current = user(db, id);
-      if (access.userId === id && !input.isAdmin) throw new DomainError('SELF_REVOCATION', '不能撤銷目前登入帳號的管理權，請由其他管理員操作', 403);
-      if (current.revision !== input.revision) throw new DomainError('ROLE_CHANGED', '此帳號的權限已被修改，請核對目前版本', 409);
+      if (access.userId === id && !input.isAdmin) throw withApiError(new DomainError('SELF_REVOCATION', '不能撤銷目前登入帳號的管理權，請由其他管理員操作', 403));
+      if (current.revision !== input.revision) throw withApiError(new DomainError('ROLE_CHANGED', '此帳號的權限已被修改，請核對目前版本', 409));
       if (current.isAdmin === input.isAdmin) return;
       const stamp = now().toISOString();
       db.prepare(`INSERT INTO user_admin_roles VALUES(?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET is_admin=excluded.is_admin,revision=excluded.revision,updated_at=excluded.updated_at`).run(id, Number(input.isAdmin), input.revision + 1, stamp);
@@ -88,8 +89,8 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
     const input = SaveAdminMetadata.parse(request.body);
     return mutate(request, 'metadata', input, (access, id) => {
       const current = user(db, id);
-      if (current.metadataRevision !== input.revision) throw new DomainError('METADATA_CHANGED', '備註或人工 QQ 已被修改，請核對目前版本', 409);
-      if (input.manualQQ && db.prepare('SELECT 1 FROM admin_user_metadata WHERE manual_qq=? AND user_id!=?').get(input.manualQQ, id)) throw new DomainError('MANUAL_QQ_CONFLICT', '此人工 QQ 已記錄於另一帳號，請先核對並解除原紀錄', 409);
+      if (current.metadataRevision !== input.revision) throw withApiError(new DomainError('METADATA_CHANGED', '備註或人工 QQ 已被修改，請核對目前版本', 409));
+      if (input.manualQQ && db.prepare('SELECT 1 FROM admin_user_metadata WHERE manual_qq=? AND user_id!=?').get(input.manualQQ, id)) throw withApiError(new DomainError('MANUAL_QQ_CONFLICT', '此人工 QQ 已記錄於另一帳號，請先核對並解除原紀錄', 409));
       if (current.note === input.note && current.manualQQ === input.manualQQ) return;
       db.prepare(`INSERT INTO admin_user_metadata VALUES(?,?,?,?,?,?) ON CONFLICT(user_id) DO UPDATE SET note=excluded.note,manual_qq=excluded.manual_qq,
         revision=excluded.revision,updated_at=excluded.updated_at,updated_by=excluded.updated_by`).run(id, input.note, input.manualQQ, input.revision + 1, now().toISOString(), access.actorRef);

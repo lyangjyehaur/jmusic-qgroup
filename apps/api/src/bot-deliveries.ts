@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FastifyInstance,FastifyRequest } from 'fastify';
@@ -29,17 +30,17 @@ function summary(row:Row){return BotDelivery.parse({id:row.id,entity:contextOf(r
 export function registerBotDeliveries(app:FastifyInstance,db:DB,security:Security,admin:AdminSecurity,now:()=>Date,defaults:ActivityBotDefaults={}){
   function load(id:string){
     const row=db.prepare(`SELECT ${columns} FROM ${tables} WHERE o.id=? AND o.channel='group'`).get(BigInt(id)) as Row|undefined;
-    if(!row)throw new DomainError('BOT_DELIVERY_NOT_FOUND','找不到群通知紀錄',404);return row;
+    if(!row)throw withApiError(new DomainError('BOT_DELIVERY_NOT_FOUND','找不到群通知紀錄',404));return row;
   }
   function authorize(context:Context,userId:string,row?:Row){
-    if(row&&(contextOf(row).entity!==context.entity||contextOf(row).id!==context.id))throw new DomainError('BOT_DELIVERY_NOT_FOUND','找不到這場的群通知紀錄',404);
+    if(row&&(contextOf(row).entity!==context.entity||contextOf(row).id!==context.id))throw withApiError(new DomainError('BOT_DELIVERY_NOT_FOUND','找不到這場的群通知紀錄',404));
     if(context.entity==='poll'){
-      if(pollRow(db,context.id,true).owner_id!==userId)throw new DomainError('POLL_PERMISSION','只有發起者可以核對投票通知',403);
+      if(pollRow(db,context.id,true).owner_id!==userId)throw withApiError(new DomainError('POLL_PERMISSION','只有發起者可以核對投票通知',403));
       return false;
     }
     requireActivityAccess(db,context.id,userId);
     const scopes=eventScopes(db,eventRow(db,context.id)!,userId),settlementOnly=!scopes.has('owner');
-    if(settlementOnly&&(!scopes.has('settlement')||(row&&row.kind!=='settlement_updated')))throw new DomainError('BOT_DELIVERY_PERMISSION','只有發起者或本場結算人可以核對對應通知',403);
+    if(settlementOnly&&(!scopes.has('settlement')||(row&&row.kind!=='settlement_updated')))throw withApiError(new DomainError('BOT_DELIVERY_PERMISSION','只有發起者或本場結算人可以核對對應通知',403));
     return settlementOnly;
   }
   function review(row:Row,readOnly=false){
@@ -83,10 +84,10 @@ export function registerBotDeliveries(app:FastifyInstance,db:DB,security:Securit
       const user=security.memberWrite(request),scope=context(request),row=load(params.parse(request.params).deliveryId!);authorize(scope,user.id,row);
       const input=RetryBotDelivery.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='bot-delivery:'+hash(JSON.stringify({scope,id:row.id,input}));
       const previous=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
-      if(previous){if(previous.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409);return BotDeliveryResult.parse(JSON.parse(previous.response_json));}
+      if(previous){if(previous.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return BotDeliveryResult.parse(JSON.parse(previous.response_json));}
       const checked=review(row);
       if(checked.view.blocker)throw new DomainError('BOT_DELIVERY_BLOCKED',checked.view.blocker,409);
-      if(checked.view.reviewToken!==input.reviewToken)throw new DomainError('BOT_DELIVERY_CHANGED','通知、設定或權限已有變更，請重新核對',409);
+      if(checked.view.reviewToken!==input.reviewToken)throw withApiError(new DomainError('BOT_DELIVERY_CHANGED','通知、設定或權限已有變更，請重新核對',409));
       const stamp=legacyStamp(now()),inserted=db.prepare("INSERT INTO bot_outbox(event_id,poll_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at) VALUES(?,?,?,?,'group',?,?,?,'pending',?) RETURNING CAST(id AS TEXT) id").get(row.event_id,row.poll_id,row.kind,'retry:'+randomUUID().replaceAll('-',''),checked.target,row.poll_id?JSON.stringify(checked.prepared):row.payload_json,row.poll_id?null:row.due_at,stamp) as {id:string};
       if(scope.entity==='activity')appendEventAudit(db,eventRow(db,scope.id)!,user,'bot_delivery_retry',{}, {original_id:row.id,outbox_id:inserted.id},'',stamp);
       else{db.prepare('UPDATE time_polls SET revision=revision+1 WHERE id=?').run(scope.id);db.prepare("INSERT INTO time_poll_history(poll_id,actor_id,action,details_json,created_at) VALUES(?,?,'bot_retry',?,?)").run(scope.id,user.id,JSON.stringify({original_id:row.id,outbox_id:inserted.id}),stamp);}

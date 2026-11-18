@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { AdminMusicErasureInput,AdminMusicErasurePreview,AdminMusicErasureResult,ErasureProof } from '@qgroup/contracts';
@@ -31,13 +32,13 @@ export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminS
       const input=AdminMusicErasureInput.parse(request.body);
       db.transaction(()=>{
         const access=admin.authority(request,true),id=reset?undefined:musicAdminProfileId(request.params);
-        if(input.confirm!==(reset?'RESET':'DELETE'))throw new DomainError('ERASURE_CONFIRM','請輸入正確的刪除確認字詞');
+        if(input.confirm!==(reset?'RESET':'DELETE'))throw withApiError(new DomainError('ERASURE_CONFIRM','請輸入正確的刪除確認字詞'));
         const signature=hash('v2:admin-music-erasure:'+access.actorRef+':'+(id??'reset')+':'+JSON.stringify(input));
         const prior=db.prepare('SELECT signature FROM privacy_receipts WHERE request_id=?').get(input.requestId) as {signature:string}|undefined;
-        if(prior){if(prior.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409);return;}
+        if(prior){if(prior.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return;}
         const scope=musicErasureScope(db,id);
-        if(scope.preview.revision!==input.revision)throw new DomainError('MUSIC_ERASURE_CHANGED','成分、詞庫或相關資料已有變更，請重新核對刪除範圍',409);
-        if(!scope.profiles.length&&!scope.entries.length)throw new DomainError('NO_MUSIC_DATA','目前沒有可重置的成分或詞條',409);
+        if(scope.preview.revision!==input.revision)throw withApiError(new DomainError('MUSIC_ERASURE_CHANGED','成分、詞庫或相關資料已有變更，請重新核對刪除範圍',409));
+        if(!scope.profiles.length&&!scope.entries.length)throw withApiError(new DomainError('NO_MUSIC_DATA','目前沒有可重置的成分或詞條',409));
         admin.preserve(request);
         privacy.submit({version:2,kind:'admin_music',command:reset?'reset_music':'delete_profile',actorRef:access.actorRef,profiles:scope.profiles,entries:scope.entries,requestId:input.requestId,secretHash:hash(input.secret),signature,createdAt:now().toISOString()});
       }).immediate();
@@ -47,7 +48,7 @@ export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminS
   app.post('/api/v2/admin/music-erasure/receipt',async request=>{
     admin.authority(request,true);const input=ErasureProof.parse(request.body);
     const result=privacy.receipt(input.requestId,input.secret);
-    if(result.target!=='admin_music')throw new DomainError('RECEIPT_NOT_FOUND','尚未找到此管理操作的結果',404);
+    if(result.target!=='admin_music')throw withApiError(new DomainError('RECEIPT_NOT_FOUND','尚未找到此管理操作的結果',404));
     return AdminMusicErasureResult.parse(result);
   });
 }

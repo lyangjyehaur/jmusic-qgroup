@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { Button, Text } from 'yahha-ui';
 import { ApiFailure } from '@qgroup/contracts';
-import { ApiError } from './api';
+import { ApiError, apiFailureError } from './api';
 
 function dataURL(blob: Blob) {
   return new Promise<string>((resolve, reject) => { const reader = new FileReader(); reader.onload = () => resolve(String(reader.result)); reader.onerror = () => reject(new Error('圖片無法讀取')); reader.readAsDataURL(blob); });
@@ -35,7 +35,7 @@ export function PaymentAssetImage({ url, scope, label, filename = 'payment-code.
     void (async () => {
       try {
         const response = await fetch(url, { credentials: 'same-origin', headers: scope ? { 'X-Account-Scope': scope } : {}, signal: controller.signal });
-        if (!response.ok) { const parsed = ApiFailure.safeParse(await response.json()); if (parsed.success) throw new ApiError(response.status, parsed.data.code, parsed.data.message); throw new ApiError(response.status, 'IMAGE_READ', '圖片暫時無法讀取'); }
+        if (!response.ok) { const parsed = ApiFailure.safeParse(await response.json()); if (parsed.success) throw apiFailureError(response.status, parsed.data); throw new ApiError(response.status, 'IMAGE_READ', '圖片暫時無法讀取'); }
         if (!response.headers.get('Content-Type')?.startsWith('image/png')) throw new Error('圖片回應格式不正確，請重試');
         const data = await dataURL(await response.blob()); if (active) setImage({ url, scope, data });
       } catch (failure) { if (active) setError(failure instanceof Error ? errorText(failure) : uiText("圖片無法讀取")); }

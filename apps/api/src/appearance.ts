@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import sharp from 'sharp';
@@ -14,15 +15,15 @@ export function appearance(db:DB,publicOnly=false){
   return Appearance.parse({revision:hash(JSON.stringify([config,rows])),rotateSeconds:config.rotate_seconds,items:rows.filter(r=>!publicOnly||r.enabled&&r.digest).map(r=>({id:r.id,name:r.name,enabled:!!r.enabled,url:imageURL(r.id),size:r.size??0,missing:!r.digest}))});
 }
 export async function wallpaperImage(data:string,mime:string){
-  if(!data||data.length>2800000||data.length%4||!/^[A-Za-z0-9+/]*={0,2}$/.test(data))throw new DomainError('WALLPAPER_IMAGE','圖片資料損壞，請重新選擇 PNG、JPG 或 WebP');
-  const raw=Buffer.from(data,'base64');if(raw.toString('base64')!==data||raw.length>2*1024*1024)throw new DomainError('WALLPAPER_SIZE','單張壁紙最多 2 MiB');
+  if(!data||data.length>2800000||data.length%4||!/^[A-Za-z0-9+/]*={0,2}$/.test(data))throw withApiError(new DomainError('WALLPAPER_IMAGE','圖片資料損壞，請重新選擇 PNG、JPG 或 WebP'));
+  const raw=Buffer.from(data,'base64');if(raw.toString('base64')!==data||raw.length>2*1024*1024)throw withApiError(new DomainError('WALLPAPER_SIZE','單張壁紙最多 2 MiB'));
   const type=mime==='image/png'?'png':mime==='image/jpeg'?'jpeg':'webp';
   // Check both declared format and the complete raster decode. Never pass SVG/HTML to a browser.
   try{
     const image=sharp(raw,{failOn:'warning',limitInputPixels:40_000_000}),meta=await image.metadata();
     if(meta.format!==type)throw Error('format');
     await image.stats();
-  }catch{throw new DomainError('WALLPAPER_IMAGE','圖片格式或內容不符；只支援 PNG、JPG、WebP，最多 4000 萬像素');}
+  }catch{throw withApiError(new DomainError('WALLPAPER_IMAGE','圖片格式或內容不符；只支援 PNG、JPG、WebP，最多 4000 萬像素'));}
   return raw;
 }
 export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity,now:()=>Date){
@@ -32,17 +33,17 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
     const access=admin.authority(request,true),input=AppearanceCommand.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']);
     const signature=hash('v2:appearance:'+JSON.stringify(input));
     const previous=()=>db.prepare('SELECT signature,response_json FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope,key) as {signature:string;response_json:string}|undefined;
-    const replay=(prior:NonNullable<ReturnType<typeof previous>>)=>{if(prior.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409);return AppearanceResult.parse(JSON.parse(prior.response_json));};
+    const replay=(prior:NonNullable<ReturnType<typeof previous>>)=>{if(prior.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return AppearanceResult.parse(JSON.parse(prior.response_json));};
     const prior=previous();if(prior)return replay(prior);
     const raw=input.command==='upload'?await wallpaperImage(input.data,input.mime):null;
     return db.transaction(()=>{
-      const freshAccess=admin.authority(request,true);if(freshAccess.scope!==access.scope)throw new DomainError('ADMIN_CHANGED','管理權限已有變更，請重新確認',403);
+      const freshAccess=admin.authority(request,true);if(freshAccess.scope!==access.scope)throw withApiError(new DomainError('ADMIN_CHANGED','管理權限已有變更，請重新確認',403));
       const prior=previous();if(prior)return replay(prior);
-      const before=appearance(db);if(input.revision!==before.revision)throw new DomainError('APPEARANCE_CHANGED','外觀設定已有更新，請核對最新版後重新確認',409);
+      const before=appearance(db);if(input.revision!==before.revision)throw withApiError(new DomainError('APPEARANCE_CHANGED','外觀設定已有更新，請核對最新版後重新確認',409));
       admin.preserve(request);
       let id='';
       if(input.command==='upload'){
-        const name=musicText(input.name)||'壁紙';if(Array.from(name).length>40||/[\x00-\x1f\x7f]/.test(name))throw new DomainError('WALLPAPER_NAME','壁紙名稱最多 40 字，不可包含控制字元');
+        const name=musicText(input.name)||'壁紙';if(Array.from(name).length>40||/[\x00-\x1f\x7f]/.test(name))throw withApiError(new DomainError('WALLPAPER_NAME','壁紙名稱最多 40 字，不可包含控制字元'));
         id='w_'+randomBytes(16).toString('hex');const digest=wallpaperDigest(raw!);
         db.prepare('INSERT OR IGNORE INTO wallpaper_assets VALUES(?,?,?,?)').run(digest,input.mime,raw,raw!.length);
         const position=(db.prepare('SELECT COALESCE(max(position),-1)+1 n FROM wallpaper_items').get() as {n:number}).n;
@@ -50,7 +51,7 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
       }else if(input.command==='config')db.prepare('UPDATE wallpaper_config SET rotate_seconds=? WHERE id=1').run(input.rotateSeconds);
       else{
         id=input.id;const item=db.prepare('SELECT position,digest FROM wallpaper_items WHERE id=?').get(id) as {position:number;digest:string|null}|undefined;
-        if(!item)throw new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404);
+        if(!item)throw withApiError(new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404));
         if(input.command==='toggle')db.prepare('UPDATE wallpaper_items SET enabled=? WHERE id=?').run(input.enabled?1:0,id);
         if(input.command==='delete'){
           db.prepare('DELETE FROM wallpaper_items WHERE id=?').run(id);
@@ -74,11 +75,11 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
   });
   const serve=(id:string)=>{
     const asset=db.prepare('SELECT a.mime,a.data,a.digest FROM wallpaper_items i JOIN wallpaper_assets a ON a.digest=i.digest WHERE i.id=?').get(id) as {mime:string;data:Buffer;digest:string}|undefined;
-    if(!asset)throw new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404);
-    if(wallpaperDigest(asset.data)!==asset.digest)throw new DomainError('WALLPAPER_UNAVAILABLE','壁紙暫時無法讀取',503);
+    if(!asset)throw withApiError(new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404));
+    if(wallpaperDigest(asset.data)!==asset.digest)throw withApiError(new DomainError('WALLPAPER_UNAVAILABLE','壁紙暫時無法讀取',503));
     // Imported bytes are retained exactly; reject an incorrect raster signature on the public route.
     const raw=asset.data,valid=asset.mime==='image/png'?raw.subarray(0,8).equals(Buffer.from('89504e470d0a1a0a','hex')):asset.mime==='image/jpeg'?raw[0]===255&&raw[1]===216&&raw[2]===255:raw.toString('ascii',0,4)==='RIFF'&&raw.toString('ascii',8,12)==='WEBP';
-    if(!valid)throw new DomainError('WALLPAPER_UNAVAILABLE','壁紙格式無法讀取，請管理員重新上傳',503);return asset;
+    if(!valid)throw withApiError(new DomainError('WALLPAPER_UNAVAILABLE','壁紙格式無法讀取，請管理員重新上傳',503));return asset;
   };
   app.get('/api/v2/appearance/walls/:id/image',async(request,reply)=>{
     const {id}=z.object({id:z.string().regex(/^w_(?:[a-f0-9]{24}|[a-f0-9]{32})$/)}).parse(request.params),asset=serve(id);
@@ -88,6 +89,6 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
   for(const prefix of ['/walls/','/music/walls/'])app.get(prefix+':file',async(request,reply)=>{
     const {file}=z.object({file:z.string().regex(/^[A-Za-z0-9_-][A-Za-z0-9_.-]*\.(png|jpg|jpeg|webp)$/).refine(x=>!x.includes('..'))}).parse(request.params);
     const row=db.prepare('SELECT id FROM wallpaper_items WHERE source=?').get('/walls/'+file) as {id:string}|undefined;
-    if(!row)throw new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404);const asset=serve(row.id);return reply.type(asset.mime).header('Cache-Control','no-store').send(asset.data);
+    if(!row)throw withApiError(new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404));const asset=serve(row.id);return reply.type(asset.mime).header('Cache-Control','no-store').send(asset.data);
   });
 }

@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { ActivityRoomOverview, RoomPlanHistory, SettlementRoom } from '@qgroup/contracts';
@@ -19,7 +20,7 @@ export function activityRoomOverview(db: DB, id: string, viewer: string | null, 
     const row = db
       .prepare('SELECT snapshot_json,created_at FROM event_room_plans WHERE event_id=? AND version=?')
       .get(id, historical) as { snapshot_json: string; created_at: string } | undefined;
-    if (!row) throw new DomainError('ROOM_PLAN_NOT_FOUND', '找不到這版預分安排', 404);
+    if (!row) throw withApiError(new DomainError('ROOM_PLAN_NOT_FOUND', '找不到這版預分安排', 404));
     rooms = z.array(SettlementRoom).parse(JSON.parse(row.snapshot_json));
     kind = 'plan';
     version = historical;

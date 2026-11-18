@@ -115,7 +115,7 @@ export const Activity = z.object({
 });
 export type ActivityView = z.infer<typeof Activity>;
 export const ActivityList = z.object({ events: z.array(Activity), page: z.number().int(), hasMore: z.boolean() });
-export const ApiFailure = z.object({ code: z.string(), message: z.string() });
+export const ApiFailure = z.object({ code: z.string(), message: z.string(), messageDisplay: z.object({hans:z.string(),hant:z.string()}).strict().optional() });
 
 export const AdminPrivacyRequest = z.object({ id: z.string(), userId: z.string(), status: z.enum(['completed', 'shared_review']), createdAt: z.string(), updatedAt: z.string(), note: z.string(), revision: z.string().regex(/^[a-f0-9]{64}$/), sharedRecords: z.record(z.string(), z.number().int().positive()) });
 export const AdminPrivacyQueue = z.object({ requests: z.array(AdminPrivacyRequest), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });

@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { DB } from '@qgroup/database';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
@@ -25,10 +26,10 @@ export function projectJournal(entries:JournalEntry[]){
   }
   for(const e of active)if(['deposit_return','deposit_apply','merchant_refund'].includes(e.kind)){
     const target=(e.kind==='merchant_refund'?expenses:deposits).get(e.payload.reference_id??'');
-    if(!target||target.seq>=e.seq)throw new DomainError('FINANCE_REFERENCE','關聯支出或訂金已被沖銷，請先核對後續記錄',409);
-    target.remaining=exact(target.remaining-e.payload.amount_cents!);if(target.remaining<0)throw new DomainError('FINANCE_REFERENCE','退回或抵扣超過原支出的剩餘金額',409);
+    if(!target||target.seq>=e.seq)throw withApiError(new DomainError('FINANCE_REFERENCE','關聯支出或訂金已被沖銷，請先核對後續記錄',409));
+    target.remaining=exact(target.remaining-e.payload.amount_cents!);if(target.remaining<0)throw withApiError(new DomainError('FINANCE_REFERENCE','退回或抵扣超過原支出的剩餘金額',409));
   }
-  if([...credit.values(),...cash.values()].some(value=>value<0))throw new DomainError('FINANCE_BALANCE','已確認款項或代收資金不足，請核對關聯記錄',409);
+  if([...credit.values(),...cash.values()].some(value=>value<0))throw withApiError(new DomainError('FINANCE_BALANCE','已確認款項或代收資金不足，請核對關聯記錄',409));
   const deposit=sum([...deposits.values()].map(value=>value.remaining)),held=sum(cash.values());if(sum(credit.values())!==exact(cost+deposit+held))throw Error('Unbalanced cash journal');
   return {credit,cash,cost,deposit,held,reversed,deposits,expenses};
 }

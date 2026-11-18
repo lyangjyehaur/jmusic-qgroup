@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { AcceptPrivacy, PRIVACY_VERSION } from '@qgroup/contracts';
@@ -16,7 +17,7 @@ export function recordConsent(db: DB, userId: string, acceptedAt: string, source
 function receipt(db: DB, userId: string, key: string) {
   const row = db.prepare(`SELECT r.version,c.accepted_at FROM unified_privacy_receipts r JOIN unified_privacy_consents c
     ON c.user_id=r.user_id AND c.version=r.version WHERE r.user_id=? AND r.request_key=?`).get(userId, key) as { version: string; accepted_at: string } | undefined;
-  if (!row) throw new DomainError('CONSENT_RECEIPT_NOT_FOUND', '尚未找到這次同意的完成紀錄', 404);
+  if (!row) throw withApiError(new DomainError('CONSENT_RECEIPT_NOT_FOUND', '尚未找到這次同意的完成紀錄', 404));
   return { requestKey: key, version: row.version, acceptedAt: row.accepted_at };
 }
 export function registerPrivacyConsent(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
@@ -32,10 +33,10 @@ export function registerPrivacyConsent(app: FastifyInstance, db: DB, security: S
     const signature = hash('v2:privacy-consent:' + JSON.stringify(input));
     const previous = db.prepare('SELECT signature FROM unified_privacy_receipts WHERE user_id=? AND request_key=?').get(member.id, key) as { signature: string } | undefined;
     if (previous) {
-      if (signature !== previous.signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份同意內容', 409);
+      if (signature !== previous.signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份同意內容', 409));
       return receipt(db, member.id, key); // Historical receipts remain readable after a policy update.
     }
-    if (input.privacyVersion !== PRIVACY_VERSION) throw new DomainError('PRIVACY_CHANGED', '隱私政策版本已變更，請閱讀目前版本後重新確認', 409);
+    if (input.privacyVersion !== PRIVACY_VERSION) throw withApiError(new DomainError('PRIVACY_CHANGED', '隱私政策版本已變更，請閱讀目前版本後重新確認', 409));
     recordConsent(db, member.id, now().toISOString(), 'explicit');
     db.prepare('INSERT INTO unified_privacy_receipts VALUES(?,?,?,?)').run(member.id, key, PRIVACY_VERSION, signature);
     return receipt(db, member.id, key);

@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { clientAddress } from './client-address';
 import { timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
@@ -12,7 +13,7 @@ import { invalidateMusicOwnership } from './music-ownership';
 
 interface Intent { id: string; current_token_hash: string; target_user_id: string | null; profile_id: string; profile_revision: number; pin_proof: string; input_digest: string; music_epoch: number | null; stage: 'pending' | 'authorized' | 'completed'; attempt_id: string | null; app_id: string; subject: string; expires_at: string; created_at: string }
 interface Legacy { id: string; user_id: string | null; revision: number; name: string; legacy_key: string; pin_hash: string }
-const unavailable = () => new DomainError('CLAIM_UNAVAILABLE', '找回請求已失效、成分已變更或已有關聯；請重新找回或聯絡管理員', 409);
+const unavailable = () => withApiError(new DomainError('CLAIM_UNAVAILABLE', '找回請求已失效、成分已變更或已有關聯；請重新找回或聯絡管理員', 409));
 const uid = (device: Device) => device.kind === 'member' ? device.id : null;
 export function createMusicClaims(db: DB, now: () => Date) {
   const epoch = (id: string) => (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(id) as { epoch: number } | undefined)?.epoch ?? 0;
@@ -36,7 +37,7 @@ export function createMusicClaims(db: DB, now: () => Date) {
       const buckets = [['qq:' + hash(qq), 8, 3600], ['ip:' + hash(ip), 30, 900]] as const;
       for (const [bucket, limit, window] of buckets) {
         const count = (db.prepare('SELECT count(*) n FROM music_claim_attempts WHERE bucket=? AND created>?').get(bucket, seconds - window) as { n: number }).n;
-        if (count >= limit) throw new DomainError('PIN_RATE_LIMIT', '找回嘗試過多，請稍後重試或聯絡管理員', 429);
+        if (count >= limit) throw withApiError(new DomainError('PIN_RATE_LIMIT', '找回嘗試過多，請稍後重試或聯絡管理員', 429));
       }
       for (const [bucket] of buckets) db.prepare('INSERT INTO music_claim_attempts VALUES(?,?)').run(bucket, seconds);
     }).immediate();
@@ -46,15 +47,15 @@ export function createMusicClaims(db: DB, now: () => Date) {
       const signature = hash('music-claim:' + input.legacyQQ + ':' + hash(input.pin));
       const prior = db.prepare('SELECT * FROM music_claim_intents WHERE id=?').get(input.requestId) as Intent | undefined;
       if (prior) {
-        if (prior.current_token_hash !== device.tokenHash || prior.target_user_id !== uid(device) || prior.input_digest !== signature) throw new DomainError('REQUEST_CONFLICT', '這個找回操作編號已用於另一份內容', 409);
+        if (prior.current_token_hash !== device.tokenHash || prior.target_user_id !== uid(device) || prior.input_digest !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個找回操作編號已用於另一份內容', 409));
         if (prior.stage !== 'completed') valid(prior);
         return status(device, prior.id);
       }
       const profile = db.prepare(`SELECT p.id,p.user_id,p.revision,COALESCE(NULLIF(f.name,''),l.name) AS name,l.legacy_key,l.pin_hash FROM music_legacy_profiles l JOIN music_profiles p ON p.id=l.profile_id LEFT JOIN music_profile_fields f ON f.profile_id=p.id WHERE l.legacy_key=? AND p.erased_at IS NULL`).get(input.legacyQQ) as Legacy | undefined;
       const expected = profile?.pin_hash ?? '';
-      if (!/^[a-f0-9]{64}$/.test(expected) || !timingSafeEqual(Buffer.from(hash('jpm-pin|' + input.pin), 'hex'), Buffer.from(expected, 'hex'))) throw new DomainError('PIN_INVALID', '舊帳號或口令不正確；忘記口令請聯絡管理員', 403);
-      if (!profile || profile.user_id) throw new DomainError('PROFILE_LINKED', '此成分已關聯帳號，請使用對應帳號登入；無法登入請聯絡管理員', 409);
-      if (device.kind === 'member' && getProfile(db, device.id)) throw new DomainError('PROFILE_EXISTS', '目前帳號已有成分，請聯絡管理員核對；原資料不會覆蓋', 409);
+      if (!/^[a-f0-9]{64}$/.test(expected) || !timingSafeEqual(Buffer.from(hash('jpm-pin|' + input.pin), 'hex'), Buffer.from(expected, 'hex'))) throw withApiError(new DomainError('PIN_INVALID', '舊帳號或口令不正確；忘記口令請聯絡管理員', 403));
+      if (!profile || profile.user_id) throw withApiError(new DomainError('PROFILE_LINKED', '此成分已關聯帳號，請使用對應帳號登入；無法登入請聯絡管理員', 409));
+      if (device.kind === 'member' && getProfile(db, device.id)) throw withApiError(new DomainError('PROFILE_EXISTS', '目前帳號已有成分，請聯絡管理員核對；原資料不會覆蓋', 409));
       clearMusicClaims(db, device.tokenHash);
       db.prepare(`INSERT INTO music_claim_intents(id,current_token_hash,target_user_id,profile_id,profile_revision,pin_proof,input_digest,music_epoch,stage,expires_at,created_at)
         VALUES(?,?,?,?,?,?,?,?,'pending',?,?)`).run(input.requestId, device.tokenHash, uid(device), profile.id, profile.revision, hash('music-claim-pin:' + expected), signature, device.kind === 'member' ? epoch(device.id) : null, new Date(now().getTime() + 600000).toISOString(), now().toISOString());
@@ -71,7 +72,7 @@ export function createMusicClaims(db: DB, now: () => Date) {
   }
   function attach(device: Device, id: string, attemptId: string, mode: string) {
     const row = current(device, id); if (!row || row.stage === 'completed') throw unavailable(); valid(row);
-    if (mode !== (device.kind === 'member' ? 'bind' : 'login')) throw new DomainError('CLAIM_AUTH_MODE', '請授權目前帳號；找回過程不切換到其他帳號', 409);
+    if (mode !== (device.kind === 'member' ? 'bind' : 'login')) throw withApiError(new DomainError('CLAIM_AUTH_MODE', '請授權目前帳號；找回過程不切換到其他帳號', 409));
     db.prepare("UPDATE music_claim_intents SET stage='pending',attempt_id=?,app_id='',subject='' WHERE id=?").run(attemptId, row.id);
   }
   function forAttempt(device: Device, attemptId: string, userId: string): Intent | undefined {
@@ -90,7 +91,7 @@ export function createMusicClaims(db: DB, now: () => Date) {
     if (row.stage === 'completed') return status(device, id);
     const profile = valid(row);
     if (row.stage !== 'authorized' || !row.attempt_id || !db.prepare(`SELECT 1 FROM login_attempts a JOIN external_identities e ON e.provider='qq' AND e.client_id=a.app_id AND e.subject=a.openid
-      WHERE a.id=? AND a.status='used' AND a.app_id=? AND a.openid=? AND e.user_id=?`).get(row.attempt_id, row.app_id, row.subject, device.id)) throw new DomainError('CLAIM_OAUTH_REQUIRED', '請完成本次 QQ 授權，再確認關聯', 409);
+      WHERE a.id=? AND a.status='used' AND a.app_id=? AND a.openid=? AND e.user_id=?`).get(row.attempt_id, row.app_id, row.subject, device.id)) throw withApiError(new DomainError('CLAIM_OAUTH_REQUIRED', '請完成本次 QQ 授權，再確認關聯', 409));
     const stamp = now().toISOString();
     db.prepare('UPDATE music_profiles SET user_id=?,revision=revision+1,updated_at=? WHERE id=?').run(device.id, stamp, profile.id);
     db.prepare("UPDATE music_legacy_profiles SET ownership_source='oauth' WHERE profile_id=?").run(profile.id);

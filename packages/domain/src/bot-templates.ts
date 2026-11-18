@@ -1,10 +1,11 @@
+import { withDomainError } from './error-display';
 import { DomainError } from './index';
 import { BOT_MAX_CHARS, botLength, botPlainText, botStrip } from './bot-markdown';
 
 export const BOT_TEMPLATE_LIMITS={heading:120,details:2500,url:512,title:40,starts_at:32,previous_starts_at:32,deadline:32,location:120,confirmed:20,waiting:20,fee_policy:120,description:120,version:20,change_summary:120,cancellation_reason:120} as const;
 export const BOT_DEFAULT_TEMPLATE='{heading}\n{details}\n\n{url}';
 type Part={literal:string}|{field:keyof typeof BOT_TEMPLATE_LIMITS};
-const invalid=()=>new DomainError('INVALID_BOT_TEMPLATE','模板只能使用列出的变量，并须保留 {url}；不支持格式表达式',400);
+const invalid=()=>withDomainError(new DomainError('INVALID_BOT_TEMPLATE','模板只能使用列出的变量，并须保留 {url}；不支持格式表达式',400));
 /** Python Formatter's allowed subset, including literal {{ / }} and empty : spec. */
 function parse(value:string):Part[]{
   const parts:Part[]=[];let literal='';
@@ -22,11 +23,11 @@ function parse(value:string):Part[]{
   if(literal)parts.push({literal});return parts;
 }
 export function validateBotTemplate(value:unknown):string {
-  if(typeof value!=='string'||!botStrip(value)||botLength(value)>2000)throw new DomainError('INVALID_BOT_TEMPLATE','消息模板须为 1–2000 字',400);
+  if(typeof value!=='string'||!botStrip(value)||botLength(value)>2000)throw withDomainError(new DomainError('INVALID_BOT_TEMPLATE','消息模板须为 1–2000 字',400));
   const parts=parse(value);let expanded=0,hasURL=false;
   for(const part of parts){if('literal' in part)expanded+=botLength(part.literal);else{expanded+=BOT_TEMPLATE_LIMITS[part.field];if(part.field==='url')hasURL=true;}}
   if(!hasURL)throw invalid();
-  if(expanded>BOT_MAX_CHARS)throw new DomainError('INVALID_BOT_TEMPLATE','模板展开后可能超过 4000 字，请减少重复变量或缩短内容',400);
+  if(expanded>BOT_MAX_CHARS)throw withDomainError(new DomainError('INVALID_BOT_TEMPLATE','模板展开后可能超过 4000 字，请减少重复变量或缩短内容',400));
   return value;
 }
 export function renderBotTemplate(templates:Readonly<Record<string,string>>,kind:string,context:Readonly<Record<string,unknown>>,markdown=false):string|null {
@@ -42,6 +43,6 @@ export function renderBotTemplate(templates:Readonly<Record<string,string>>,kind
     if(!(part.field in fields))throw new Error('Missing frozen bot template field');
     const field=fields[part.field];return field===null?'None':field===true?'True':field===false?'False':String(field);
   }).join('');
-  if(botLength(text)>BOT_MAX_CHARS||!botStrip(text))throw new DomainError('INVALID_BOT_TEMPLATE','消息内容超出 4000 字，请缩短模板',400);
+  if(botLength(text)>BOT_MAX_CHARS||!botStrip(text))throw withDomainError(new DomainError('INVALID_BOT_TEMPLATE','消息内容超出 4000 字，请缩短模板',400));
   return text;
 }

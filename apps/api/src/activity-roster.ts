@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import type { ActivityRoster, AttendeeMusic } from '@qgroup/contracts';
@@ -36,7 +37,7 @@ export function activityRoster(db: DB, id: string, viewerId: string | null, qqCl
 export function attendeeMusic(db: DB, eventId: string, attendeeId: string, viewerId: string): z.infer<typeof AttendeeMusic> {
   requireActivityAccess(db,eventId,viewerId);
   const person = db.prepare("SELECT user_id FROM attendees WHERE id=? AND event_id=? AND status IN ('confirmed','waiting','tentative')").get(attendeeId,eventId) as {user_id:string|null} | undefined;
-  if (!person) throw new DomainError('ATTENDEE_NOT_FOUND', '報名不存在或已退出',404);
+  if (!person) throw withApiError(new DomainError('ATTENDEE_NOT_FOUND', '報名不存在或已退出',404));
   // Never use manager_id, a matching name, contact QQ or an unconfirmed claim.
   if (!person.user_id || db.prepare('SELECT 1 FROM privacy_requests WHERE user_id=?').get(person.user_id)) return {state:'unlinked'};
   const own = getProfile(db,viewerId); if (!own) return {state:'viewer_unlinked'};

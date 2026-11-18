@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { ActivityDraftResult, RespondActivityConditions, SaveActivityDraft } from '@qgroup/contracts';
@@ -15,17 +16,17 @@ const fields=['category','starts_at','duration_hours','location','description','
 const labels={category:'类型',starts_at:'时间',duration_hours:'时长',location:'地点',description:'注意事项',withdrawal_deadline:'退出期限',timezone:'时区',fee_policy:'费用规则'};
 function canAssist(db:DB,event:EventRow,userId:string){return ['scheduled','ongoing'].includes(event.lifecycle)&&!event.archived_at&&!!db.prepare('SELECT 1 FROM user_admin_roles WHERE user_id=? AND is_admin=1 AND NOT EXISTS(SELECT 1 FROM privacy_requests WHERE user_id=?)').get(userId,userId);}
 function requireSchedule(db:DB,event:EventRow,userId:string){
-  if(!eventScopes(db,event,userId).has('schedule')&&!canAssist(db,event,userId))throw new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403);
+  if(!eventScopes(db,event,userId).has('schedule')&&!canAssist(db,event,userId))throw withApiError(new DomainError('ACTIVITY_PERMISSION','沒有這項活動管理權限',403));
 }
 function activePerson(db:DB,eventId:string,personId:string,userId:string){
   const person=db.prepare("SELECT a.*,COALESCE(u.nickname,a.name) AS current_name FROM attendees a LEFT JOIN users u ON u.id=a.user_id WHERE a.id=? AND a.event_id=? AND status IN ('confirmed','waiting','tentative')").get(personId,eventId) as {id:string;manager_id:string;current_name:string;confirmation_state:string;accepted_conditions_version:number|null}|undefined;
-  if(!person)throw new DomainError('ATTENDEE_NOT_FOUND','這位參加者不在有效名單中',404);
-  if(person.manager_id!==userId)throw new DomainError('CONSENT_PERMISSION','只能確認本人或自己代報人員的安排',403);
+  if(!person)throw withApiError(new DomainError('ATTENDEE_NOT_FOUND','這位參加者不在有效名單中',404));
+  if(person.manager_id!==userId)throw withApiError(new DomainError('CONSENT_PERMISSION','只能確認本人或自己代報人員的安排',403));
   return person;
 }
 export function activityArrangements(db:DB,id:string,userId:string){
   requireActivityAccess(db,id,userId);const event=eventRow(db,id)!;
-  if(event.lifecycle==='draft')throw new DomainError('IS_DRAFT','活動尚未發布，請從活動草稿編輯',409);
+  if(event.lifecycle==='draft')throw withApiError(new DomainError('IS_DRAFT','活動尚未發布，請從活動草稿編輯',409));
   const owner=event.owner_id===userId,assisted=!owner&&canAssist(db,event,userId);
   const settled=!!db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(id);
   const canEdit=(eventScopes(db,event,userId).has('schedule')||assisted)&&!['ended','cancelled'].includes(event.lifecycle)&&!event.archived_at&&!settled;
@@ -53,7 +54,7 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
       const user=security.memberWrite(request),event=authorize(id,user.id,kind,personId),key=z.string().uuid().parse(request.headers['idempotency-key']);
       const signature='activity-management:'+kind+':'+encodeURIComponent(id)+':'+(personId?encodeURIComponent(personId)+':':'')+hash(JSON.stringify(input));
       const old=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
-      if(old){if(old.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409);return ActivityDraftResult.parse(JSON.parse(old.response_json));}
+      if(old){if(old.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409));return ActivityDraftResult.parse(JSON.parse(old.response_json));}
       const result=run(event,user,legacyStamp(now()));db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,JSON.stringify(result),200,legacyStamp(now()));return result;
     }).immediate();
   }
@@ -75,18 +76,18 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
     const id=params.parse(request.params).id,input=SaveActivityDraft.parse(request.body);
     return write(request,id,'arrangement',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);
-      if(!activityArrangements(db,id,user.id).canEdit)throw new DomainError('ACTIVITY_LOCKED','活動已結束、取消、歸檔或已有結算，不能重寫安排',409);
+      if(!activityArrangements(db,id,user.id).canEdit)throw withApiError(new DomainError('ACTIVITY_LOCKED','活動已結束、取消、歸檔或已有結算，不能重寫安排',409));
       const assisted=event.owner_id!==user.id&&canAssist(db,event,user.id);
-      if(assisted&&!input.reason)throw new DomainError('ADMIN_REASON_REQUIRED','管理員協助修改活動請填寫原因',400);
+      if(assisted&&!input.reason)throw withApiError(new DomainError('ADMIN_REASON_REQUIRED','管理員協助修改活動請填寫原因',400));
       const v=arrangementValues(input.values,now(),false,event),priorWithdrawal=event.withdrawal_deadline||event.deadline;
       const linkedWithdrawal=assisted&&priorWithdrawal===event.deadline&&(v.withdrawalDeadline||v.deadline)===v.deadline;
-      if(event.owner_id!==user.id&&(v.botEnabled!==!!event.bot_enabled||v.feePolicy!==event.fee_policy||v.visibility!==event.visibility||((v.withdrawalDeadline||v.deadline)!==priorWithdrawal&&!linkedWithdrawal)))throw new DomainError('OWNER_SETTINGS','群同步、費用規則、退出期限及可見性需由發起者修改',403);
+      if(event.owner_id!==user.id&&(v.botEnabled!==!!event.bot_enabled||v.feePolicy!==event.fee_policy||v.visibility!==event.visibility||((v.withdrawalDeadline||v.deadline)!==priorWithdrawal&&!linkedWithdrawal)))throw withApiError(new DomainError('OWNER_SETTINGS','群同步、費用規則、退出期限及可見性需由發起者修改',403));
       const confirmed=(db.prepare("SELECT count(*) AS n FROM attendees WHERE event_id=? AND status='confirmed'").get(id) as {n:number}).n;
-      if(v.capacity&&v.capacity<confirmed)throw new DomainError('CAPACITY_BELOW_ROSTER','人數上限低於正式報名人數，請先處理超額人員',409);
+      if(v.capacity&&v.capacity<confirmed)throw withApiError(new DomainError('CAPACITY_BELOW_ROSTER','人數上限低於正式報名人數，請先處理超額人員',409));
       const before=eventSnapshot(event),peopleBefore=activityPeopleSnapshot(db,id);
       const proposed={...event,category:v.category,starts_at:v.startsAt,duration_hours:v.durationHours,location:v.location,description:v.description,withdrawal_deadline:v.withdrawalDeadline,deadline:v.deadline,timezone:v.timezone,fee_policy:v.feePolicy};
       const prior=arrangementSnapshot(event),next=arrangementSnapshot(proposed),changed=fields.filter(field=>prior[field]!==next[field]);
-      if(changed.length&&!input.reason&&db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status IN ('confirmed','waiting','tentative')").get(id))throw new DomainError('ARRANGEMENT_REASON_REQUIRED','重要安排變更請填寫原因，參加者需要重新確認',400);
+      if(changed.length&&!input.reason&&db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status IN ('confirmed','waiting','tentative')").get(id))throw withApiError(new DomainError('ARRANGEMENT_REASON_REQUIRED','重要安排變更請填寫原因，參加者需要重新確認',400));
       db.prepare('UPDATE events SET title=?,category=?,location=?,starts_at=?,deadline=?,capacity=?,description=?,duration_hours=?,withdrawal_deadline=?,visibility=?,timezone=?,minimum_participants=?,fee_policy=?,draft_join_owner=?,bot_enabled=? WHERE id=?').run(v.title,v.category,v.location,v.startsAt,v.deadline,v.capacity,v.description,v.durationHours,v.withdrawalDeadline,v.visibility,v.timezone,v.minimumParticipants,v.feePolicy,Number(v.joinOwner),Number(v.botEnabled),id);
       if(changed.length){
         const summary=changed.map(field=>labels[field]).join('、')+'已变更',version=event.conditions_version+1;
@@ -111,8 +112,8 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
     const {id,personId}=params.extend({personId:z.string().min(1).max(80)}).parse(request.params),input=RespondActivityConditions.parse(request.body);
     return write(request,id,'consent',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);
-      if(!['scheduled','ongoing'].includes(event.lifecycle)||event.archived_at)throw new DomainError('CONDITIONS_CLOSED','活動已結束、取消或歸檔，不能再確認新安排',409);
-      if(input.conditionsVersion!==event.conditions_version)throw new DomainError('CONDITIONS_CHANGED','安排又有變更，請載入最新安排再確認',409);
+      if(!['scheduled','ongoing'].includes(event.lifecycle)||event.archived_at)throw withApiError(new DomainError('CONDITIONS_CLOSED','活動已結束、取消或歸檔，不能再確認新安排',409));
+      if(input.conditionsVersion!==event.conditions_version)throw withApiError(new DomainError('CONDITIONS_CHANGED','安排又有變更，請載入最新安排再確認',409));
       const person=activePerson(db,id,personId,user.id),decision=input.decision;
       if(person.confirmation_state===decision&&(decision!=='accepted'||person.accepted_conditions_version===event.conditions_version))return {id,revision:event.revision,removed:false};
       const before={person_id:personId,nickname:person.current_name,confirmation:person.confirmation_state,accepted_version:person.accepted_conditions_version};

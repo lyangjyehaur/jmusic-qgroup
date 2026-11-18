@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { musicCreatedIds, type DB } from '@qgroup/database';
@@ -143,7 +144,7 @@ function blankProfile(db: DB, user: { id: string; nickname: string }, stamp: str
       )
       .get(user.id, stamp)
   )
-    throw new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立詞條', 409);
+    throw withApiError(new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立詞條', 409));
   const id = 'm_' + randomUUID().replaceAll('-', '');
   db.prepare('INSERT INTO music_profiles(id,user_id,revision,updated_at) VALUES(?,?,0,?)').run(
     id,
@@ -158,10 +159,10 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
   app.get('/api/v2/music/entries/:id/members', async request => db.transaction(() => {
     const viewer = security.scopedMember(request);
     if (!getProfile(db, viewer.id))
-      throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看選取者', 403);
+      throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看選取者', 403));
     const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
     if (!db.prepare('SELECT 1 FROM music_entries WHERE id=?').get(id))
-      throw new DomainError('ENTRY_NOT_FOUND', '詞條不存在或已刪除', 404);
+      throw withApiError(new DomainError('ENTRY_NOT_FOUND', '詞條不存在或已刪除', 404));
     const members = db.prepare(`SELECT p.id,${musicNameSQL} AS name,
       COALESCE(c.contact_qq,'') AS contactQQ,
       CASE WHEN c.contact_qq!='' THEN c.source ELSE '' END AS contactSource
@@ -194,24 +195,24 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
             { signature: string; response_json: string; response_status: number } | undefined;
           if (old) {
             if (old.signature !== signature)
-              throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+              throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
             reply.code(old.response_status);
             return JSON.parse(old.response_json);
           }
           const { profile, legacy, epoch } = ownership(db, member.id);
           if (input.profileId !== (profile?.id ?? null) || input.musicEpoch !== epoch)
-            throw new DomainError('PROFILE_ERASED', '成分已刪除、重建或移交，請重新核對目前成分', 409);
+            throw withApiError(new DomainError('PROFILE_ERASED', '成分已刪除、重建或移交，請重新核對目前成分', 409));
           const all = rows(db),
             before = input.command === 'create' ? undefined : all.find((e) => e.id === input.id);
           if (input.command !== 'create') {
-            if (!before) throw new DomainError('ENTRY_NOT_FOUND', '詞條不存在或已刪除', 404);
+            if (!before) throw withApiError(new DomainError('ENTRY_NOT_FOUND', '詞條不存在或已刪除', 404));
             if (
               !profile ||
               (before.created_by !== profile.id && (!legacy || before.created_by !== legacy.legacy_key))
             )
-              throw new DomainError('ENTRY_FORBIDDEN', '只能管理自己建立的詞條', 403);
+              throw withApiError(new DomainError('ENTRY_FORBIDDEN', '只能管理自己建立的詞條', 403));
             if (input.revision !== revision(before))
-              throw new DomainError('ENTRY_CHANGED', '詞條已有更新；輸入保留，請核對目前版本後再保存', 409);
+              throw withApiError(new DomainError('ENTRY_CHANGED', '詞條已有更新；輸入保留，請核對目前版本後再保存', 409));
           }
           const stamp = now().toISOString();
           let id = before?.id ?? 'e_' + randomUUID().replaceAll('-', ''),
@@ -219,7 +220,7 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
             profileId = profile?.id;
           if (input.command === 'delete') {
             if (before!.count)
-              throw new DomainError('ENTRY_SELECTED', '已有人選用此詞條，不能刪除；選擇與熟悉度會保留', 409);
+              throw withApiError(new DomainError('ENTRY_SELECTED', '已有人選用此詞條，不能刪除；選擇與熟悉度會保留', 409));
             db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
             db.prepare('DELETE FROM music_entries WHERE id=?').run(id);
             for (const row of db
@@ -235,7 +236,7 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
           } else {
             const name = musicText(input.name);
             if (!musicEntryKey(name) || Array.from(name).length > 24 || /[\x00-\x1f\x7f]/.test(name))
-              throw new DomainError('ENTRY_NAME', '詞條名稱須為 1–24 字，不可包含控制字元');
+              throw withApiError(new DomainError('ENTRY_NAME', '詞條名稱須為 1–24 字，不可包含控制字元'));
             const duplicate = all.find(
               (e) =>
                 e.id !== before?.id &&
@@ -258,10 +259,10 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
             if (input.command === 'create') {
               const mine = myMusicEntries(db, member.id);
               if (mine.createdCounts[input.kind] >= mine.limits[input.kind])
-                throw new DomainError(
+                throw withApiError(new DomainError(
                   'ENTRY_LIMIT',
                   input.kind === 'main' ? '領域最多自建 2 個詞條' : '細分最多自建 8 個詞條',
-                );
+                ));
               if (input.kind === 'main') category = '领域';
               profileId ??= blankProfile(db, member, stamp);
               db.prepare('INSERT INTO music_entries VALUES(?,?,?)').run(id, name, input.kind);

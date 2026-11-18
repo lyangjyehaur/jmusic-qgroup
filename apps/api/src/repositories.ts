@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { eventRow } from './activity-arrangements';
 import { financeSummary } from './finance-context';
 import { randomUUID } from 'node:crypto';
@@ -42,7 +43,7 @@ export function listMyActivities(db:DB,userId:string,page:number,now:Date){
 export function getActivity(db: DB, id: string, now: Date, viewerId: string | null = null) {
   requireActivityAccess(db,id,viewerId);
   const row = db.prepare(eventProjection + ' WHERE e.id=?').get(id) as EventRow | undefined;
-  if (!row) throw new DomainError('NOT_FOUND', '找不到活動或尚未公開', 404);
+  if (!row) throw withApiError(new DomainError('NOT_FOUND', '找不到活動或尚未公開', 404));
   return serializeEvent(row, now);
 }
 export function catalog(db: DB): MusicEntry[] {
@@ -57,10 +58,10 @@ export function getProfile(db: DB, userId: string): MusicProfile {
 /** Called inside the same IMMEDIATE transaction as the request result. */
 export function saveProfile(db: DB, userId: string, input: SaveProfileInput, now: Date): NonNullable<MusicProfile> {
   const before = getProfile(db, userId);
-  if ((before?.id ?? null) !== input.profileId || (before?.revision ?? 0) !== input.revision) throw new DomainError('REVISION_CONFLICT', '成分已有更新；你的選擇仍保留，請核對最新版本', 409);
+  if ((before?.id ?? null) !== input.profileId || (before?.revision ?? 0) !== input.revision) throw withApiError(new DomainError('REVISION_CONFLICT', '成分已有更新；你的選擇仍保留，請核對最新版本', 409));
   const epoch = (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(userId) as { epoch: number } | undefined)?.epoch ?? 0;
-  if (input.musicEpoch !== epoch) throw new DomainError('PROFILE_ERASED', '成分已刪除或重建，請核對目前狀態後再明確保存', 409);
-  if (!before && db.prepare("SELECT 1 FROM music_claim_intents WHERE target_user_id=? AND stage!='completed' AND expires_at>?").get(userId, now.toISOString())) throw new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立新成分', 409);
+  if (input.musicEpoch !== epoch) throw withApiError(new DomainError('PROFILE_ERASED', '成分已刪除或重建，請核對目前狀態後再明確保存', 409));
+  if (!before && db.prepare("SELECT 1 FROM music_claim_intents WHERE target_user_id=? AND stage!='completed' AND expires_at>?").get(userId, now.toISOString())) throw withApiError(new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立新成分', 409));
   validateSelections(input.selections, catalog(db));
   const id = before?.id ?? 'm_' + randomUUID().replaceAll('-', '');
   const updatedAt = now.toISOString();

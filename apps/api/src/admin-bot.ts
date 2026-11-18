@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
 import {
@@ -188,18 +189,18 @@ export function registerAdminBot(
           .get(access.receiptScope, key) as { signature: string; response_json: string } | undefined;
         if (prior) {
           if (prior.signature !== signature)
-            throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409);
+            throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409));
           return BotPolicyResult.parse(JSON.parse(prior.response_json));
         }
         const before = activityBotPolicy(db, defaults);
         if (input.revision !== before.revision)
-          throw new DomainError('BOT_POLICY_CHANGED', 'bot 設定已有更新，請核對最新版後重新確認', 409);
+          throw withApiError(new DomainError('BOT_POLICY_CHANGED', 'bot 設定已有更新，請核對最新版後重新確認', 409));
         let raw: unknown;
         if (input.command === 'revert') {
           const previous = db
             .prepare('SELECT config_json FROM bot_settings_history WHERE revision=?')
             .get(input.revision - 1) as { config_json: string } | undefined;
-          if (!previous) throw new DomainError('BOT_NO_PREVIOUS', '沒有可恢復的上一版設定', 409);
+          if (!previous) throw withApiError(new DomainError('BOT_NO_PREVIOUS', '沒有可恢復的上一版設定', 409));
           raw = JSON.parse(previous.config_json);
           validateBotPolicy({ ...defaultBotPolicy(), ...(raw as object) });
         } else raw = validateBotPolicy(input.config);

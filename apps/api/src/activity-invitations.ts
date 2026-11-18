@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -12,15 +13,15 @@ import { ensureMutable, mutableBlocker } from './activity-registration';
 import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
 
 function eventByToken(db:DB,id:string){
-  const event=eventRow(db,id);if(!event||event.status==='deleted')throw new DomainError('NOT_FOUND','找不到活動或尚未公開',404);return event;
+  const event=eventRow(db,id);if(!event||event.status==='deleted')throw withApiError(new DomainError('NOT_FOUND','找不到活動或尚未公開',404));return event;
 }
 function invitation(db:DB,id:string,token:string){
   const person=activityPeople(db,id).find(person=>person.status==='invited'&&person.invitation_token===token);
-  if(!person)throw new DomainError('INVITATION_NOT_FOUND','邀請不存在、已使用或已撤銷',404);return person;
+  if(!person)throw withApiError(new DomainError('INVITATION_NOT_FOUND','邀請不存在、已使用或已撤銷',404));return person;
 }
 function rosterPermission(db:DB,event:EventRow,userId:string){
   requireActivityAccess(db,event.id,userId);
-  if(!eventScopes(db,event,userId).has('roster'))throw new DomainError('ROSTER_PERMISSION','只有名單管理者可以建立補報名邀請',403);
+  if(!eventScopes(db,event,userId).has('roster'))throw withApiError(new DomainError('ROSTER_PERMISSION','只有名單管理者可以建立補報名邀請',403));
 }
 function allocation(db:DB,event:EventRow,now:Date){
   const people=activityPeople(db,event.id);
@@ -44,11 +45,11 @@ export function registerActivityInvitations(app:FastifyInstance,db:DB,security:S
       const signature='activity-invitation:'+encodeURIComponent(id)+':'+action+':'+hash(token)+':'+hash(JSON.stringify(input));
       const old=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
       if(old){
-        if(old.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409);
+        if(old.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409));
         const result=ActivityInvitationResult.parse(JSON.parse(old.response_json));
         if(action==='accept'){
           requireActivityAccess(db,id,user.id);
-          if(!db.prepare('SELECT 1 FROM attendees WHERE event_id=? AND id=? AND user_id=? AND manager_id=?').get(id,result.attendeeId,user.id,user.id))throw new DomainError('ROSTER_PERMISSION','原報名已不屬於此帳號',403);
+          if(!db.prepare('SELECT 1 FROM attendees WHERE event_id=? AND id=? AND user_id=? AND manager_id=?').get(id,result.attendeeId,user.id,user.id))throw withApiError(new DomainError('ROSTER_PERMISSION','原報名已不屬於此帳號',403));
         }
         return result;
       }
@@ -76,9 +77,9 @@ export function registerActivityInvitations(app:FastifyInstance,db:DB,security:S
     const {id,token}=tokenParams.parse(request.params),input=AcceptActivityInvitation.parse(request.body);
     return write(request,id,'accept',token,input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);ensureMutable(db,event);const person=invitation(db,id,token);
-      if(input.conditionsVersion!==event.conditions_version)throw new DomainError('CONDITIONS_CHANGED','安排已有變更，請重新核對後確認',409);
-      if(db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND user_id=? AND status!='withdrawn'").get(id,user.id))throw new DomainError('ALREADY_REGISTERED','你已有本人報名，請讓名單管理者核對',409);
-      const status=allocation(db,event,now());if(status==='waiting'&&!input.acceptWaiting)throw new DomainError('WAITING_CONFIRM','目前需要候補，請明確接受候補後重試',409);
+      if(input.conditionsVersion!==event.conditions_version)throw withApiError(new DomainError('CONDITIONS_CHANGED','安排已有變更，請重新核對後確認',409));
+      if(db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND user_id=? AND status!='withdrawn'").get(id,user.id))throw withApiError(new DomainError('ALREADY_REGISTERED','你已有本人報名，請讓名單管理者核對',409));
+      const status=allocation(db,event,now());if(status==='waiting'&&!input.acceptWaiting)throw withApiError(new DomainError('WAITING_CONFIRM','目前需要候補，請明確接受候補後重試',409));
       const before=activityPeopleSnapshot(db,id),party=randomBytes(8).toString('hex');
       db.prepare("INSERT INTO roster_parties(id,event_id,manager_id,queue_mode,created_at) VALUES(?,?,?,'individual',?)").run(party,id,user.id,stamp);
       db.prepare("UPDATE attendees SET manager_id=?,user_id=?,name=?,party_id=?,status=?,invitation_token=NULL,updated_at=?,accepted_conditions_version=?,confirmation_state='accepted' WHERE id=?").run(user.id,user.id,user.nickname,party,status,stamp,event.conditions_version,person.id);

@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { runtimeInfo } from '@qgroup/runtime';
 import { clientAddress } from './client-address';
 import { registerActivityAccess } from './activity-access';
@@ -25,6 +26,7 @@ import { z } from 'zod';
 import { assertDatabaseUsable, REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
 import { SaveProfile } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
+import { apiFailure } from './error-response';
 import { catalog, getActivity, getProfile, listActivities, listMyActivities, saveProfile } from './repositories';
 
 import { createSecurity, hash } from './security';
@@ -84,7 +86,7 @@ export function createApp(options: AppOptions) {
   const admin = createAdminSecurity(db, security, origin, now, options.adminCredentialHash, request => {
     if (!backups || backedUp.has(request)) return;
     try { backups.capture(); backups.prune(); backedUp.add(request); }
-    catch { throw new DomainError('BACKUP_REQUIRED', '操作尚未執行：無法完成配對備份，請維運人員檢查儲存空間、圖片與刪除紀錄', 503); }
+    catch { throw withApiError(new DomainError('BACKUP_REQUIRED', '操作尚未執行：無法完成配對備份，請維運人員檢查儲存空間、圖片與刪除紀錄', 503)); }
   });
   const musicClaims = createMusicClaims(db, now);
   const app = Fastify({ logger: options.logger ? { serializers: { req(request) { return { method: request.method, url: redactRequestURL(request.url), remoteAddress: clientAddress(request) }; } }, redact: ['req.headers.cookie', 'req.headers.authorization'] } : false, bodyLimit: 32768, trustProxy: false });
@@ -112,13 +114,13 @@ export function createApp(options: AppOptions) {
       privacy.guard();
     });
     app.setErrorHandler((error, request, reply) => {
-      if (error instanceof DomainError) return reply.code(error.status).send({ code: error.code, message: error.message });
-      if (error instanceof z.ZodError) return reply.code(400).send({ code: 'INVALID_INPUT', message: '輸入格式不符，請檢查欄位與確認項目' });
-      if (error instanceof Error && 'statusCode' in error && typeof error.statusCode === 'number' && error.statusCode < 500) return reply.code(error.statusCode).send({ code: 'INVALID_REQUEST', message: error.statusCode === 429 ? '操作太頻繁，請稍後再試' : '請求格式不符' });
+      if (error instanceof DomainError) return reply.code(error.status).send(apiFailure(error));
+      if (error instanceof z.ZodError) return reply.code(400).send(apiFailure(withApiError(new DomainError('INVALID_INPUT','輸入格式不符，請檢查欄位與確認項目'))));
+      if (error instanceof Error && 'statusCode' in error && typeof error.statusCode === 'number' && error.statusCode < 500) return reply.code(error.statusCode).send(apiFailure(withApiError(new DomainError('INVALID_REQUEST',error.statusCode === 429 ? '操作太頻繁，請稍後再試' : '請求格式不符'))));
       request.log.error(error);
-      return reply.code(500).send({ code: 'INTERNAL_ERROR', message: '暫時無法完成操作，請保留選擇後重試' });
+      return reply.code(500).send(apiFailure(withApiError(new DomainError('INTERNAL_ERROR','暫時無法完成操作，請保留選擇後重試'))));
     });
-    const health=async()=>{try{if(!(db.prepare('SELECT 1 AS alive').get() as {alive:number}).alive)throw Error();return {ok:true,project:'qgroup-unified-rebuild',schema:REBUILD_SCHEMA_VERSION};}catch{throw new DomainError('HEALTH_UNAVAILABLE','資料庫無法讀取',503);}};
+    const health=async()=>{try{if(!(db.prepare('SELECT 1 AS alive').get() as {alive:number}).alive)throw Error();return {ok:true,project:'qgroup-unified-rebuild',schema:REBUILD_SCHEMA_VERSION};}catch{throw withApiError(new DomainError('HEALTH_UNAVAILABLE','資料庫無法讀取',503));}};
     app.get('/api/v2/health',health);app.get('/api/health',health);
     app.get('/api/v2/version',async()=>options.runtimeInfo??runtimeInfo('web',{}));
     registerAuth(app, db, security, now, options.qq, musicClaims);
@@ -189,10 +191,10 @@ export function createApp(options: AppOptions) {
       return db.transaction(() => {
         // Revalidate inside the write transaction; revoked/switched sessions cannot replay results.
         const current = security.memberWrite(request);
-        if (current.id !== viewer.id) throw new DomainError('ACCOUNT_CHANGED', '帳號已變更', 409);
+        if (current.id !== viewer.id) throw withApiError(new DomainError('ACCOUNT_CHANGED', '帳號已變更', 409));
         const previous = db.prepare('SELECT signature,response_json,response_status FROM request_results WHERE user_id=? AND request_key=?').get(viewer.id, requestKey) as { signature: string; response_json: string; response_status: number } | undefined;
         if (previous) {
-          if (previous.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+          if (previous.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
           reply.code(previous.response_status);
           return JSON.parse(previous.response_json) as ReturnType<typeof saveProfile>;
         }

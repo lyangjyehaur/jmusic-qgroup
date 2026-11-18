@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -13,20 +14,20 @@ import { consentState, recordConsent } from './privacy-consent';
 interface Attempt { id: string; token_hash: string; user_id: string | null; app_id: string; mode: 'bind' | 'login'; status: string; expires_at: string; openid: string; nickname: string; return_path: string; privacy_version: string; avatar_url: string; union_id: string }
 interface External { user_id: string; subject: string; nickname: string }
 export function safeReturnTo(value: string): string {
-  if (!value.startsWith('/') || value.startsWith('//') || /[\\\x00-\x20\x7f]/.test(value) || value.length > 4096) throw new DomainError('INVALID_RETURN', '返回地址不正確');
+  if (!value.startsWith('/') || value.startsWith('//') || /[\\\x00-\x20\x7f]/.test(value) || value.length > 4096) throw withApiError(new DomainError('INVALID_RETURN', '返回地址不正確'));
   let decoded: string;
-  try { decoded = decodeURIComponent(value); } catch { throw new DomainError('INVALID_RETURN', '返回地址不正確'); }
-  if (decoded.startsWith('//') || /[\\\x00-\x20\x7f]/.test(decoded)) throw new DomainError('INVALID_RETURN', '返回地址不正確');
+  try { decoded = decodeURIComponent(value); } catch { throw withApiError(new DomainError('INVALID_RETURN', '返回地址不正確')); }
+  if (decoded.startsWith('//') || /[\\\x00-\x20\x7f]/.test(decoded)) throw withApiError(new DomainError('INVALID_RETURN', '返回地址不正確'));
   const url = new URL(value, 'https://local.invalid');
   const decodedUrl = new URL(decoded, 'https://local.invalid');
   // Reject encoded auth loops and nested path escapes before a router can decode them again.
-  if (url.origin !== 'https://local.invalid' || decodedUrl.origin !== url.origin || /%[a-f0-9]{2}/i.test(decodedUrl.pathname) || /^\/(?:api|auth|login)(?:\/|$)/i.test(decodedUrl.pathname)) throw new DomainError('INVALID_RETURN', '返回地址不正確');
+  if (url.origin !== 'https://local.invalid' || decodedUrl.origin !== url.origin || /%[a-f0-9]{2}/i.test(decodedUrl.pathname) || /^\/(?:api|auth|login)(?:\/|$)/i.test(decodedUrl.pathname)) throw withApiError(new DomainError('INVALID_RETURN', '返回地址不正確'));
   return url.pathname + url.search + url.hash;
 }
 export function registerAuth(app: FastifyInstance, db: DB, security: Security, now: () => Date, provider: QQProvider | undefined, musicClaims: MusicClaims) {
   const stamp = () => now().toISOString();
   const uid = (device: Device) => device.kind === 'member' ? device.id : null;
-  function requiredProvider() { if (!provider) throw new DomainError('QQ_NOT_CONFIGURED', 'QQ 登入尚未配置', 503); return provider; }
+  function requiredProvider() { if (!provider) throw withApiError(new DomainError('QQ_NOT_CONFIGURED', 'QQ 登入尚未配置', 503)); return provider; }
   function accepted(device: Device) { return device.kind === 'member' && consentState(db, device.id).accepted; }
   function audit(userId: string, action: string, details: object) {
     db.prepare('INSERT INTO account_audit(user_id,action,details_json,created_at) VALUES(?,?,?,?)').run(userId, action, JSON.stringify(details), stamp());
@@ -62,8 +63,8 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
   app.post('/api/v2/auth/register-name', { config: { rateLimit: { max: 6, timeWindow: '1 minute' } } }, async (request, reply) => {
     const result = db.transaction(() => {
       const device = security.write(request);
-      if (device.kind !== 'visitor') throw new DomainError('ALREADY_LOGGED_IN', '目前已登入；名稱註冊不會建立另一份帳號或合併資料', 409);
-      if (!nameRegistration(db).enabled) throw new DomainError('REGISTRATION_CLOSED', '名稱註冊尚未開放，請使用 QQ 登入', 403);
+      if (device.kind !== 'visitor') throw withApiError(new DomainError('ALREADY_LOGGED_IN', '目前已登入；名稱註冊不會建立另一份帳號或合併資料', 409));
+      if (!nameRegistration(db).enabled) throw withApiError(new DomainError('REGISTRATION_CLOSED', '名稱註冊尚未開放，請使用 QQ 登入', 403));
       const data = RegisterName.parse(request.body);
       const returnTo = safeReturnTo(data.returnTo);
       const userId = randomBytes(16).toString('hex');
@@ -78,9 +79,9 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
   });
   app.post('/api/v2/auth/qq/start', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const device = security.write(request); const qq = requiredProvider(); const data = QQStart.parse(request.body);
-    if (data.mode === 'bind' && device.kind !== 'member') throw new DomainError('LOGIN_REQUIRED', '請先登入後再綁定 QQ', 401);
+    if (data.mode === 'bind' && device.kind !== 'member') throw withApiError(new DomainError('LOGIN_REQUIRED', '請先登入後再綁定 QQ', 401));
     // A login may target a different account; never transfer the current account's consent.
-    if (data.privacyVersion !== PRIVACY_VERSION || ((data.mode === 'login' || !accepted(device)) && !data.acceptPrivacy)) throw new DomainError('PRIVACY_REQUIRED', '請閱讀並同意隱私政策');
+    if (data.privacyVersion !== PRIVACY_VERSION || ((data.mode === 'login' || !accepted(device)) && !data.acceptPrivacy)) throw withApiError(new DomainError('PRIVACY_REQUIRED', '請閱讀並同意隱私政策'));
     const returnTo = data.musicClaimId ? '/me/music/recover' : safeReturnTo(data.returnTo); const state = randomBytes(32).toString('base64url');
     db.prepare('DELETE FROM login_attempts WHERE expires_at<=?').run(stamp());
     invalidate(device.tokenHash);
@@ -129,14 +130,14 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     const result = db.transaction(() => {
       const device = security.write(request); const qq = requiredProvider(); const data = QQFinish.parse(request.body);
       const row = db.prepare("SELECT * FROM login_attempts WHERE id=? AND token_hash=? AND user_id IS ? AND provider='qq' AND app_id=? AND status='verified' AND expires_at>?").get(data.attemptId, device.tokenHash, uid(device), qq.clientId, stamp()) as Attempt | undefined;
-      if (!row || row.privacy_version !== PRIVACY_VERSION) throw new DomainError('AUTH_EXPIRED', 'QQ 授權結果已失效或使用，請重新登入', 409);
+      if (!row || row.privacy_version !== PRIVACY_VERSION) throw withApiError(new DomainError('AUTH_EXPIRED', 'QQ 授權結果已失效或使用，請重新登入', 409));
       const linked = target(row); let userId = linked?.user_id;
-      if (userId && db.prepare('SELECT 1 FROM privacy_requests WHERE user_id=?').get(userId)) throw new DomainError('ACCOUNT_CLOSED', '此帳號已註銷，請聯絡管理員', 409);
+      if (userId && db.prepare('SELECT 1 FROM privacy_requests WHERE user_id=?').get(userId)) throw withApiError(new DomainError('ACCOUNT_CLOSED', '此帳號已註銷，請聯絡管理員', 409));
       if (row.mode === 'bind') {
-        if (device.kind !== 'member') throw new DomainError('LOGIN_REQUIRED', '請先登入', 401);
-        if (userId && userId !== device.id) throw new DomainError('QQ_CONFLICT', '這個 QQ 已綁定其他帳號，請使用 QQ 登入；報名與款項不會合併', 409);
+        if (device.kind !== 'member') throw withApiError(new DomainError('LOGIN_REQUIRED', '請先登入', 401));
+        if (userId && userId !== device.id) throw withApiError(new DomainError('QQ_CONFLICT', '這個 QQ 已綁定其他帳號，請使用 QQ 登入；報名與款項不會合併', 409));
         const bound = db.prepare("SELECT subject FROM external_identities WHERE provider='qq' AND client_id=? AND user_id=?").get(row.app_id, device.id) as { subject: string } | undefined;
-        if (bound && bound.subject !== row.openid) throw new DomainError('QQ_CONFLICT', '目前帳號已綁定另一個 QQ，不能直接替換', 409);
+        if (bound && bound.subject !== row.openid) throw withApiError(new DomainError('QQ_CONFLICT', '目前帳號已綁定另一個 QQ，不能直接替換', 409));
         userId = device.id;
       } else if (!userId) {
         userId = randomBytes(16).toString('hex');
@@ -177,7 +178,7 @@ export function registerAuth(app: FastifyInstance, db: DB, security: Security, n
     const rows = db.prepare(`SELECT u.id FROM users u WHERE (u.id=? OR u.id IN(SELECT user_id FROM browser_accounts WHERE token_hash=?))
       AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=u.id)`).all(device.id, device.tokenHash) as { id: string }[];
     const selected = rows.find(row => accountScope(row.id) === data.scope);
-    if (!selected) throw new DomainError('ACCESS_DENIED', '此裝置沒有該帳號的授權', 403);
+    if (!selected) throw withApiError(new DomainError('ACCESS_DENIED', '此裝置沒有該帳號的授權', 403));
     db.prepare('INSERT OR IGNORE INTO browser_accounts VALUES(?,?,?)').run(device.tokenHash, device.id, stamp());
     db.prepare('UPDATE browser_sessions SET user_id=? WHERE token_hash=?').run(selected.id, device.tokenHash);
     invalidate(device.tokenHash); clearMusicClaims(db, device.tokenHash); audit(device.id, 'account_switched', { target_scope: data.scope });

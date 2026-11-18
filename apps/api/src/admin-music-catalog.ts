@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { musicCreatedIds,type DB } from '@qgroup/database';
@@ -22,7 +23,7 @@ export function adminMusicCatalog(db:DB,now:Date){
 }
 function checkName(input:string,entries:ReturnType<typeof adminMusicCatalog>['entries'],id?:string){
   const name=musicText(input),key=musicEntryKey(name);
-  if(!key||Array.from(name).length>24||/[\x00-\x1f\x7f]/.test(name))throw new DomainError('ENTRY_NAME','詞條名稱須為 1–24 字，不可包含控制字元');
+  if(!key||Array.from(name).length>24||/[\x00-\x1f\x7f]/.test(name))throw withApiError(new DomainError('ENTRY_NAME','詞條名稱須為 1–24 字，不可包含控制字元'));
   const duplicate=entries.find(e=>e.id!==id&&[e.name,...e.aliases].some(alias=>musicEntryKey(alias)===key));
   if(duplicate)throw new DomainError('ENTRY_EXISTS','已有「'+duplicate.name+'」詞條，請編輯既有詞條或合併',409);
   return name;
@@ -58,11 +59,11 @@ export function registerAdminMusicCatalog(app:FastifyInstance,db:DB,admin:AdminS
     const access=admin.authority(request,true),input=AdminMusicEntryCommand.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']);
     const signature=hash('v2:admin-music-entry:'+JSON.stringify(input));
     const prior=db.prepare('SELECT signature,response_json FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope,key) as {signature:string;response_json:string}|undefined;
-    if(prior){if(prior.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409);return JSON.parse(prior.response_json);}
+    if(prior){if(prior.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return JSON.parse(prior.response_json);}
     const current=adminMusicCatalog(db,now());
-    if(input.revision!==current.revision)throw new DomainError('CATALOG_CHANGED','詞庫或會員選擇已有更新，請重新核對影響範圍後確認',409);
+    if(input.revision!==current.revision)throw withApiError(new DomainError('CATALOG_CHANGED','詞庫或會員選擇已有更新，請重新核對影響範圍後確認',409));
     const before=input.command==='create'?undefined:current.entries.find(e=>e.id===input.id);
-    if(input.command!=='create'&&!before)throw new DomainError('ENTRY_NOT_FOUND','詞條不存在或已刪除',404);
+    if(input.command!=='create'&&!before)throw withApiError(new DomainError('ENTRY_NOT_FOUND','詞條不存在或已刪除',404));
     admin.preserve(request);
     const stamp=now().toISOString(),seconds=JSON.stringify(Math.trunc(now().getTime()/1000));
     const id=before?.id??'e_'+randomUUID().replaceAll('-','');let targetId='',affectedProfiles=0;
@@ -79,8 +80,8 @@ export function registerAdminMusicCatalog(app:FastifyInstance,db:DB,admin:AdminS
     }else{
       const target=input.command==='merge'?current.entries.find(e=>e.id===input.toId):undefined;
       if(input.command==='merge'){
-        if(input.id===input.toId)throw new DomainError('MERGE_SELF','不能合併到同一詞條');
-        if(!target)throw new DomainError('ENTRY_NOT_FOUND','目標詞條不存在或已刪除',404);
+        if(input.id===input.toId)throw withApiError(new DomainError('MERGE_SELF','不能合併到同一詞條'));
+        if(!target)throw withApiError(new DomainError('ENTRY_NOT_FOUND','目標詞條不存在或已刪除',404));
         targetId=target.id;
         const aliases=JSON.stringify(mergeMusicAliases(target,before!));
         db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'',?,'null') ON CONFLICT(entry_id) DO UPDATE SET aliases_json=excluded.aliases_json").run(target.id,target.category,aliases,JSON.stringify(target.createdAt??0));

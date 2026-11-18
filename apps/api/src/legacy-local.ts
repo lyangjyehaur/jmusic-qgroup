@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { LegacyRequestCheck } from '@qgroup/contracts';
@@ -34,7 +35,7 @@ export function registerLegacyLocal(app:FastifyInstance,db:DB,security:Security)
     const user=security.memberWrite(request),input=LegacyRequestCheck.parse(request.body);
     const row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,input.requestKey) as {signature:string;response_json:string}|undefined;
     if(!row)return {committed:false};
-    if(row.signature!==originalRequestSignature(input.method,input.path,input.data))throw new DomainError('LEGACY_REQUEST_CONFLICT','原操作編號與內容不符，請保留原紀錄；不能改用新版操作重送',409);
+    if(row.signature!==originalRequestSignature(input.method,input.path,input.data))throw withApiError(new DomainError('LEGACY_REQUEST_CONFLICT','原操作編號與內容不符，請保留原紀錄；不能改用新版操作重送',409));
     // Never return frozen owner/private fields. Resolve only a currently accessible destination.
     const result:unknown=JSON.parse(row.response_json);
     if(result&&typeof result==='object'&&'id' in result&&typeof result.id==='string'){

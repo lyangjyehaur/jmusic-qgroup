@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ export function registerAdminOperations(app: FastifyInstance, db: DB, admin: Adm
     z.object({}).strict().parse(request.query);
     const scope = z.string().regex(/^[a-f0-9]{64}$/).parse(request.headers['x-admin-scope']);
     if (scope !== access.scope)
-      throw new DomainError('ADMIN_CHANGED', '原操作的管理授權已變更，請回原頁核對管理狀態。', 409);
+      throw withApiError(new DomainError('ADMIN_CHANGED', '原操作的管理授權已變更，請回原頁核對管理狀態。', 409));
     // Derive the receipt scope from current authority, never from a supplied token or target.
     return { committed: !!db.prepare('SELECT 1 FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) };
   })());

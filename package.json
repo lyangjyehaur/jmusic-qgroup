@@ -18,7 +18,8 @@
     "typecheck:rebuild": "tsc -p tsconfig.rebuild.json",
     "test:rebuild": "vitest run --config vitest.rebuild.config.ts",
     "build:analytics:rebuild": "tsx tools/rebuild/build-analytics-manifest.ts",
-    "build:rebuild": "npm run build:analytics:rebuild && npm run typecheck:rebuild && vite build --config apps/web/vite.config.ts && node tools/rebuild/build-api.mjs",
+    "build:error-displays:rebuild": "tsx tools/rebuild/build-error-displays.ts",
+    "build:rebuild": "npm run build:error-displays:rebuild && npm run build:analytics:rebuild && npm run typecheck:rebuild && vite build --config apps/web/vite.config.ts && node tools/rebuild/build-api.mjs",
     "test:e2e:rebuild": "playwright test --config apps/web/playwright.config.ts",
     "test:build:rebuild": "node tools/rebuild/smoke-build.mjs",
     "check:capabilities": "node tools/rebuild/check-capabilities.mjs"

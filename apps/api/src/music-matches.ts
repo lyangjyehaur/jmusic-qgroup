@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { MusicMatches, MusicComparison, MusicShareContext, LookupMusicProfile } from '@qgroup/contracts';
@@ -9,12 +10,12 @@ import { matchingIdentity, musicMatchData } from './music-match-data';
 import { resolveMusicProfileId } from './music-profile-id';
 function viewerProfile(db: DB, userId: string) {
   const profile = getProfile(db, userId);
-  if (!profile) throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403);
+  if (!profile) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403));
   return profile;
 }
 function compare(db: DB, userId: string, target: string) {
   const profile = viewerProfile(db, userId), otherId = resolveMusicProfileId(db, target);
-  if (profile.id === otherId) throw new DomainError('COMPARE_SELF', '這是你自己的成分，請選擇另一份成分', 400);
+  if (profile.id === otherId) throw withApiError(new DomainError('COMPARE_SELF', '這是你自己的成分，請選擇另一份成分', 400));
   const { entries, members } = musicMatchData(db), me = members.find(m => m.id === profile.id)!, other = members.find(m => m.id === otherId)!;
   const allowed = musicMatches(me, members, entries).matches[0]?.member.id === other.id;
   return MusicComparison.parse({ ...musicComparison(me.selections, other.selections, entries), me: matchingIdentity(me, true, true), other: matchingIdentity(other, allowed) });

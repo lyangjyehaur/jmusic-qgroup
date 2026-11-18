@@ -8,16 +8,18 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { displayLanguage, BOT_KINDS } from '@qgroup/contracts';
 import { openDatabase } from '@qgroup/database';
 import { createApp } from '../src/app';
-import { displayText, uiText, withErrorText, errorText } from '../../web/src/language';
+import { displayText, uiText, withErrorText, errorText, displayError } from '../../web/src/language';
 import { offlinePage } from '../../web/src/pwa/offline';
 import { transformUILanguage } from '../../web/ui-language';
+import { z } from 'zod';
+import { ApiFailure } from '@qgroup/contracts';
 const require = createRequire(import.meta.url);
 afterEach(() => vi.unstubAllGlobals());
 function render(source: string, language: string, original = false) {
   vi.stubGlobal('document', { documentElement: { lang: language } });
   const code = ts.transpileModule(original ? source : transformUILanguage(source, '/src/example.tsx'), { compilerOptions: { jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2022 } }).outputText;
   const output = { Sample: undefined as unknown as () => React.ReactNode };
-  new Function('require', 'exports', code)((name: string) => name === './language' ? { displayText, uiText, withErrorText, errorText } : require(name), output);
+  new Function('require', 'exports', code)((name: string) => name === './language' ? { displayText, uiText, withErrorText, errorText, displayError } : require(name), output);
   return renderToStaticMarkup(output.Sample());
 }
 it('preserves the legacy highest-quality and first-header language strategy', () => {
@@ -92,13 +94,61 @@ it('leaves API, interpolated and untagged error messages original and rejects ov
   expect(errorText(new Error(raw))).toBe(raw);expect(errorText({message:raw})).toBe(raw);
   expect(() => transformUILanguage("new Error('後臺',{cause:new Error('帳號')})", '/src/example.ts')).toThrow('overlapping language boundaries');
 });
+it('annotates fixed native Error subclass constructors after super while preserving fields, cause and dynamic subclasses', () => {
+  const source = `import {errorText} from './language';
+    class LinkExpired extends Error { readonly field='original field'; constructor(public token:string,cause:Error){super('裝置連結已失效，請重新產生。',{cause});this.name='LinkExpired';} }
+    class DynamicError extends Error { constructor(message:string){super(message);} }
+    class Foreign { constructor(public message:string){} }
+    class ForeignChild extends Foreign { constructor(){super('帳號原文');} }
+    export function Sample(){const cause=new Error('cause'),error=new LinkExpired('original token',cause),stack=error.stack;
+      if(!(error instanceof LinkExpired)||error.cause!==cause||error.message!=='裝置連結已失效，請重新產生。'||error.token!=='original token'||error.field!=='original field'||error.name!=='LinkExpired')throw Error('native constructor changed');
+      const text=errorText(error);if(error.stack!==stack)throw Error('stack changed');
+      return <p>{text}／{errorText(new DynamicError('帳號原文'))}／{new ForeignChild().message}</p>}`;
+  expect(render(source,'zh-Hans')).toBe('<p>装置连结已失效，请重新产生。／帳號原文／帳號原文</p>');
+  expect(render(source,'zh-Hant')).toBe('<p>裝置連結已失效，請重新產生。／帳號原文／帳號原文</p>');
+});
+it('explicit displayError preserves the original ZodError and issue data and rejects variable displays', () => {
+  const source = `import {displayError,errorText} from './language';import {z} from 'zod';
+    export function Sample(){let error:z.ZodError;try{z.object({nickname:z.string()}).parse({nickname:7});throw Error('expected failure');}catch(failure){if(!(failure instanceof z.ZodError))throw failure;error=failure;}
+      const issues=error.issues,message=error.message,stack=error.stack;const annotated=displayError(error,'回應資料格式不符，請先核對結果後重試。');
+      if(annotated!==error||annotated.issues!==issues||error.message!==message||error.stack!==stack||issues[0]?.path[0]!=='nickname')throw Error('exception changed');return <p>{errorText(error)}</p>}`;
+  expect(render(source,'zh-Hans')).toBe('<p>回应资料格式不符，请先核对结果后重试。</p>');
+  expect(render(source,'zh-Hant')).toBe('<p>回應資料格式不符，請先核對結果後重試。</p>');
+  for(const source of ["displayError(error,message)","displayError(error,'帳號：'+user)","displayError(error)","displayError(error,'帳號',extra)"])
+    expect(()=>transformUILanguage(source,'/src/example.ts')).toThrow('one static display literal');
+});
+it('compiled API network, JSON and successful-response validation failures retain original exceptions and analytics outcomes', async () => {
+  const source=readFileSync(new URL('../../web/src/api.ts',import.meta.url),'utf8');
+  const code=ts.transpileModule(transformUILanguage(source,'/src/api.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+  const events:unknown[][]=[],output={api:undefined as unknown as (path:string,schema:z.ZodType,init?:RequestInit)=>Promise<unknown>};
+  new Function('require','exports',code)((name:string)=>name==='./language'?{displayText,withErrorText,displayError}:name==='./analytics'?{analyticsRequest:(...args:unknown[])=>events.push(args)}:name==='@qgroup/contracts'?{ApiFailure}:require(name),output);
+  for(const language of ['zh-Hans','zh-Hant']){
+    vi.stubGlobal('document',{documentElement:{lang:language}});
+    const network=new TypeError('canonical network failure'),json=new SyntaxError('canonical JSON failure');
+    for(const [failure,status,prompt,simplified] of [[network,0,'連線未完成，請先核對結果後重試。','连线未完成，请先核对结果后重试。'],[json,200,'伺服器回應無法讀取，請先核對結果後重試。','伺服器回应无法读取，请先核对结果后重试。']] as const){
+      const stack=failure.stack,message=failure.message;
+      vi.stubGlobal('fetch',status===0?async()=>{throw failure;}:async()=>({status,ok:true,json:async()=>{throw failure;}}));
+      await expect(output.api('/me/profile',z.object({nickname:z.string()}),{method:'PUT'})).rejects.toBe(failure);
+      expect(failure.message).toBe(message);expect(failure.stack).toBe(stack);
+      expect(errorText(failure)).toBe(language==='zh-Hans'?simplified:prompt);
+      expect(events.at(-1)).toEqual(['/api/v2/me/profile','PUT',status,status===0?'network_error':'parse_error']);
+    }
+    const issue=z.object({nickname:z.string()}).safeParse({nickname:7});if(issue.success)throw Error('expected schema error');
+    const failure=issue.error,issues=failure.issues,message=failure.message;
+    vi.stubGlobal('fetch',async()=>({status:200,ok:true,json:async()=>({nickname:7})}));
+    const schema=z.object({nickname:z.string()});vi.spyOn(schema,'parse').mockImplementation(()=>{throw failure;});
+    await expect(output.api('/me/profile',schema)).rejects.toBe(failure);expect(failure.issues).toBe(issues);expect(failure.message).toBe(message);
+    expect(errorText(failure)).toBe(language==='zh-Hans'?'回应资料格式不符，请先核对结果后重试。':'回應資料格式不符，請先核對結果後重試。');
+    expect(events.at(-1)).toEqual(['/api/v2/me/profile','GET',200,'parse_error']);
+  }
+});
 it('localizes all frontend bot event labels while preserving the shared keys and canonical bot text', () => {
   const canonical=JSON.stringify(BOT_KINDS),source=readFileSync(new URL('../../web/src/bot-kind-labels.ts',import.meta.url),'utf8');
   for(const language of ['zh-Hans','zh-Hant']){
     vi.stubGlobal('document',{documentElement:{lang:language}});
     const code=ts.transpileModule(transformUILanguage(source,'/src/bot-kind-labels.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
     const output={botKindLabels:{} as Record<string,string>};
-    new Function('require','exports',code)((name:string)=>name==='./language'?{displayText,uiText,withErrorText,errorText}:require(name),output);
+    new Function('require','exports',code)((name:string)=>name==='./language'?{displayText,uiText,withErrorText,errorText,displayError}:require(name),output);
     expect(Object.keys(output.botKindLabels)).toEqual(Object.keys(BOT_KINDS));
     expect(output.botKindLabels.activity_published).toBe(language==='zh-Hans'?'活动发起':'活動發起');
     expect(output.botKindLabels.finance_closed).toBe(language==='zh-Hans'?'账务已结清':'帳務已結清');

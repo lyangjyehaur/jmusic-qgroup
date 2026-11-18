@@ -6879,19 +6879,29 @@
         "apps/web/src/activity-sharing.tsx",
         "apps/web/src/music-share-canvas.ts",
         "apps/web/src/music-room-share.tsx",
-        "apps/web/src/api.ts"
+        "apps/web/src/api.ts",
+        "packages/domain/src/error-display.ts",
+        "apps/api/src/error-display.ts",
+        "apps/api/src/error-response.ts",
+        "tools/rebuild/build-error-displays.ts",
+        "packages/contracts/src/index.ts"
       ],
       "behavior_evidence": [
         "apps/api/testsupport/language.test.ts",
         "apps/web/tests/language.spec.ts",
-        "tools/rebuild/verify-image.mjs"
+        "tools/rebuild/verify-image.mjs",
+        "apps/api/src/error-display.test.ts",
+        "docs/unified-rebuild/96-system-error-displays-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/testsupport/language.test.ts",
-        "apps/web/tests/language.spec.ts"
+        "apps/web/tests/language.spec.ts",
+        "apps/api/src/error-display.test.ts",
+        "apps/web/tests/error-displays.spec.ts"
       ],
       "permission_evidence": [
-        "apps/api/testsupport/language.test.ts"
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/error-displays.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/language.spec.ts",
@@ -6899,10 +6909,12 @@
         "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md",
         "apps/web/tests/activity-sharing.spec.ts",
         "apps/web/tests/music-share.spec.ts",
-        "docs/unified-rebuild/94-display-fragments-checkpoint.md"
+        "docs/unified-rebuild/94-display-fragments-checkpoint.md",
+        "apps/web/tests/error-displays.spec.ts",
+        "docs/unified-rebuild/96-system-error-displays-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定顯示／本機錯誤與手冊已實作；107 檔／4,092 邊界／165 固定本機錯誤，補驗選單、原生 template 插值／string hint、雙語摘要原文／行高、成分 level／Canvas／原稿及管理分類原協議值（檢查點 94）。固定 subclass／驗證錯誤、持久舊稿系統 notes 的呈現、API 通知／安排／結算／錯誤、統一政策／同意、候選 web／bot 組合與實體裝置驗收仍待完成；不全文轉換使用者或持久資料。"
+      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定與動態顯示片段、原生 template／原文、手冊／統一政策及同意已隔離實作。API／domain 361 個固定標記、例外身份／cause／stack／Zod issues、可選顯示欄位及舊回應相容、圖片／下載／原 UUID／payload／雙分頁刪除已補驗（檢查點 96）；原生完整 963 項與新增雙語瀏覽器 14 場景通過。全套瀏覽器回歸進行中；未標記固定 helper／驗證訊息、持久系統 notes、API 通知／安排／結算顯示、實際候選 web／bot 組合、實體裝置與 QQ WebView 仍待完成，不轉換使用者或持久原文。"
     },
     {
       "capability_id": "O09",

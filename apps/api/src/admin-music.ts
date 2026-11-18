@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { AdminMusicSearch, PreviewMusicLink, SaveMusicLink, type AdminMusicProfile } from '@qgroup/contracts';
@@ -24,16 +25,16 @@ function serialize(db: DB, row: { id: string; name: string; legacyKey: string; h
 }
 export function adminMusicProfile(db: DB, id: string) {
   const row = db.prepare(projection + ' WHERE p.id=? AND p.erased_at IS NULL').get(id) as Parameters<typeof serialize>[1] | undefined;
-  if (!row) throw new DomainError('PROFILE_NOT_FOUND', '成分不存在或已刪除', 404);
+  if (!row) throw withApiError(new DomainError('PROFILE_NOT_FOUND', '成分不存在或已刪除', 404));
   return serialize(db, row);
 }
 function preview(db: DB, id: string, targetUserId: string | null) {
   const music = adminMusicProfile(db, id);
   const target = targetUserId === null ? null : db.prepare('SELECT id,nickname FROM users WHERE id=? AND NOT EXISTS(SELECT 1 FROM privacy_requests WHERE user_id=users.id)').get(targetUserId) as { id: string; nickname: string } | undefined;
-  if (target === undefined) throw new DomainError('USER_NOT_FOUND', '目標帳號不存在或已關閉', 404);
+  if (target === undefined) throw withApiError(new DomainError('USER_NOT_FOUND', '目標帳號不存在或已關閉', 404));
   if (target) {
     const existing = getProfile(db, target.id);
-    if (existing && existing.id !== music.id) throw new DomainError('PROFILE_EXISTS', '目標帳號已有另一份成分，請先核對並解除原關聯；不會覆蓋或合併', 409);
+    if (existing && existing.id !== music.id) throw withApiError(new DomainError('PROFILE_EXISTS', '目標帳號已有另一份成分，請先核對並解除原關聯；不會覆蓋或合併', 409));
   }
   const epochs = [music.owner?.id, target?.id].map(userId => userId ? (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(userId) ?? null) : null);
   return { profile: music, target: target ?? null, revision: hash(JSON.stringify({ music, target, epochs })) };
@@ -59,9 +60,9 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
     const access = admin.authority(request, true); const id = musicAdminProfileId(request.params); const input = SaveMusicLink.parse(request.body);
     const key = z.string().uuid().parse(request.headers['idempotency-key']); const signature = hash('v2:admin:music-link:' + id + ':' + JSON.stringify(input));
     const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
-    if (prior) { if (prior.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409); return { ok: true }; }
+    if (prior) { if (prior.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409)); return { ok: true }; }
     const before = preview(db, id, input.targetUserId);
-    if (input.revision !== before.revision) throw new DomainError('MUSIC_LINK_CHANGED', '成分、關聯或目標帳號已有變更，請重新預覽後核對', 409);
+    if (input.revision !== before.revision) throw withApiError(new DomainError('MUSIC_LINK_CHANGED', '成分、關聯或目標帳號已有變更，請重新預覽後核對', 409));
     admin.preserve(request);
     if ((before.profile.owner?.id ?? null) !== input.targetUserId) {
       const stamp = now().toISOString();

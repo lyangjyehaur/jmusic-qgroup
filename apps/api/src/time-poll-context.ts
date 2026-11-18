@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { DB } from '@qgroup/database';
 import { PollCounts, PollHistoryDetails, TimePoll } from '@qgroup/contracts';
 import { botLocalTime, botMoment, DomainError } from '@qgroup/domain';
@@ -34,7 +35,7 @@ export type PollCandidate = { id: string; starts_at: string };
 export function pollRow(db: DB, id: string, allowDeleted = false) {
   const row = db.prepare('SELECT * FROM time_polls WHERE id=?').get(id) as PollRow | undefined;
   if (!row || (!allowDeleted && row.status === 'deleted'))
-    throw new DomainError('POLL_NOT_FOUND', '找不到時間投票或已刪除', 404);
+    throw withApiError(new DomainError('POLL_NOT_FOUND', '找不到時間投票或已刪除', 404));
   return row;
 }
 export function pollOptions(db: DB, id: string) {
@@ -46,11 +47,11 @@ export function pollDate(option: Pick<PollCandidate, 'starts_at'>, zone: string)
   return botLocalTime(option.starts_at, zone).slice(0, 10);
 }
 export function pollDateStart(day: string, zone: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new DomainError('POLL_DATE', '請選擇有效候選日期', 400);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw withApiError(new DomainError('POLL_DATE', '請選擇有效候選日期', 400));
   activityDate(day + 'T00:00:00Z'); // Validate calendar before applying IANA wall time, including a DST gap.
   const at = botMoment(day + 'T00:00:00', zone);
   if (!Number.isFinite(at) || new Date(at).getUTCFullYear() < 1 || new Date(at).getUTCFullYear() > 9999)
-    throw new DomainError('POLL_DATE', '候選日期超出範圍', 400);
+    throw withApiError(new DomainError('POLL_DATE', '候選日期超出範圍', 400));
   return legacyStamp(new Date(at));
 }
 export function pollExpires(option: Pick<PollCandidate, 'starts_at'>, poll: Pick<PollRow, 'time_mode' | 'timezone'>) {
@@ -78,7 +79,7 @@ export function pollDeadline(
       Date.parse(deadline) < Math.max(...options.map((o) => Date.parse(pollExpires(o, poll))))
     )
   )
-    throw new DomainError('POLL_DEADLINE', '投票截止須晚於現在，並早於最後一個候選的失效時間', 400);
+    throw withApiError(new DomainError('POLL_DEADLINE', '投票截止須晚於現在，並早於最後一個候選的失效時間', 400));
 }
 export function pollTotals(db: DB, poll: PollRow): Record<string, z.infer<typeof PollCounts>> {
   if (poll.result_json) return z.record(z.string(), PollCounts).parse(JSON.parse(poll.result_json));

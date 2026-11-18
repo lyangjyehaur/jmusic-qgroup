@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { MusicPinResultRequest, ResetMusicPin } from '@qgroup/contracts';
@@ -15,12 +16,12 @@ export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: Admi
     const signature = hash('v2:POST:/admin/music/' + id + '/pin:' + JSON.stringify(input));
     const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
     if (prior) {
-      if (prior.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409);
+      if (prior.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409));
       return { ok: true };
     }
     const before = adminMusicProfile(db, id);
-    if (!/^[0-9]{4,12}$/.test(before.legacyKey)) throw new DomainError('PIN_NOT_SUPPORTED', '只有原數字 QQ 成分使用找回口令；此成分請用帳號登入或核對關聯', 409);
-    if (before.revision !== input.revision) throw new DomainError('MUSIC_PIN_CHANGED', '成分、口令或關聯已有變更，請核對目前資料後再重設', 409);
+    if (!/^[0-9]{4,12}$/.test(before.legacyKey)) throw withApiError(new DomainError('PIN_NOT_SUPPORTED', '只有原數字 QQ 成分使用找回口令；此成分請用帳號登入或核對關聯', 409));
+    if (before.revision !== input.revision) throw withApiError(new DomainError('MUSIC_PIN_CHANGED', '成分、口令或關聯已有變更，請核對目前資料後再重設', 409));
     admin.preserve(request);
     const stamp = now().toISOString();
     db.prepare('UPDATE music_legacy_profiles SET pin_hash=? WHERE profile_id=?').run(hash('jpm-pin|' + input.pin), id);
@@ -37,7 +38,7 @@ export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: Admi
     const prior = db.prepare('SELECT response_json FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, input.requestId) as { response_json: string } | undefined;
     if (!prior) return { status: 'not_found' };
     const result = JSON.parse(prior.response_json) as { operation?: string; profileId?: string };
-    if (result.operation !== 'music_pin_reset' || result.profileId !== id) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409);
+    if (result.operation !== 'music_pin_reset' || result.profileId !== id) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409));
     return { status: 'completed' };
   });
   app.get('/api/v2/admin/music/:id/pin-history', async request => {

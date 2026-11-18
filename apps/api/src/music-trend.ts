@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
@@ -25,7 +26,7 @@ function history(db: DB): TrendPoint[] {
     const t = integerTime(raw.t);
     if (t === null) return [];
     const point = MusicTrendPoint.safeParse({ t, counts: raw.counts ?? {} });
-    if (!point.success) throw new DomainError('TREND_HISTORY_INVALID', '趨勢快照格式不符，請管理員核對匯入資料；原始資料仍保留', 409);
+    if (!point.success) throw withApiError(new DomainError('TREND_HISTORY_INVALID', '趨勢快照格式不符，請管理員核對匯入資料；原始資料仍保留', 409));
     return [point.data];
   }).slice(-keep);
 }
@@ -79,7 +80,7 @@ export function registerMusicTrend(app: FastifyInstance, db: DB, security: Secur
   })());
   app.get('/api/v2/music/trend/members', async request => db.transaction(() => {
     const viewer = security.scopedMember(request); z.object({}).strict().parse(request.query);
-    if (!getProfile(db, viewer.id)) throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看新增同好', 403);
+    if (!getProfile(db, viewer.id)) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看新增同好', 403));
     return MusicTrendMembers.parse({ members: profiles(db).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8) });
   })());
 }

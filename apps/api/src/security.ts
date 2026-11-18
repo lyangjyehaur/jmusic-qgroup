@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -34,25 +35,25 @@ export function createSecurity(db: DB, origin: string, now: () => Date, secret =
   }
   function requireDevice(request: FastifyRequest): Device {
     const device = read(request);
-    if (!device) throw new DomainError('SESSION_EXPIRED', '工作階段已失效，請重新整理', 401);
+    if (!device) throw withApiError(new DomainError('SESSION_EXPIRED', '工作階段已失效，請重新整理', 401));
     return device;
   }
   function member(request: FastifyRequest): Extract<Device, { kind: 'member' }> {
     const device = read(request);
-    if (device?.kind !== 'member') throw new DomainError('LOGIN_REQUIRED', '請先登入', 401);
+    if (device?.kind !== 'member') throw withApiError(new DomainError('LOGIN_REQUIRED', '請先登入', 401));
     return device;
   }
   function scoped(request: FastifyRequest): Device {
     const device = requireDevice(request);
-    if (request.headers['x-account-scope'] !== device.scope) throw new DomainError('ACCOUNT_CHANGED', '目前帳號已變更；請重新整理並確認帳號', 409);
+    if (request.headers['x-account-scope'] !== device.scope) throw withApiError(new DomainError('ACCOUNT_CHANGED', '目前帳號已變更；請重新整理並確認帳號', 409));
     return device;
   }
   const csrf = (device: Device) => createHmac('sha256', secret).update(device.tokenHash + ':' + device.scope).digest('hex');
   function write(request: FastifyRequest): Device {
     const device = scoped(request);
-    if (request.headers.origin !== origin) throw new DomainError('ORIGIN_REJECTED', '請從本站重新開啟操作', 403);
+    if (request.headers.origin !== origin) throw withApiError(new DomainError('ORIGIN_REJECTED', '請從本站重新開啟操作', 403));
     const token = request.headers['x-csrf-token'];
-    if (typeof token !== 'string' || token.length !== 64 || !/^[a-f0-9]{64}$/.test(token) || !timingSafeEqual(Buffer.from(token), Buffer.from(csrf(device)))) throw new DomainError('CSRF_REJECTED', '操作驗證已失效，請重新整理', 403);
+    if (typeof token !== 'string' || token.length !== 64 || !/^[a-f0-9]{64}$/.test(token) || !timingSafeEqual(Buffer.from(token), Buffer.from(csrf(device)))) throw withApiError(new DomainError('CSRF_REJECTED', '操作驗證已失效，請重新整理', 403));
     return device;
   }
   function memberWrite(request: FastifyRequest) { member(request); return write(request) as Extract<Device, { kind: 'member' }>; }

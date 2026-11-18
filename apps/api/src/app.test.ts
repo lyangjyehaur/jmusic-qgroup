@@ -28,7 +28,7 @@ describe('unified public and music API', () => {
     expect(listing.events.map((e: { id: string }) => e.id)).toEqual(['karaoke', 'listen']);
     for (const id of ['invite', 'draft', 'deleted', 'missing']) {
       const response = await app.inject('/api/v2/activities/' + id);
-      expect(response.statusCode).toBe(404); expect(response.json()).toEqual({ code: 'NOT_FOUND', message: '找不到活動或尚未公開' });
+      expect(response.statusCode).toBe(404); expect(response.json()).toEqual({ code: 'NOT_FOUND', message: '找不到活動或尚未公開', messageDisplay: {hans:'找不到活动或尚未公开',hant:'找不到活動或尚未公開'} });
     }
     expect((await app.inject('/api/v2/activities?period=history')).json().events.map((e: { id: string }) => e.id)).toEqual(['past']);
     expect(JSON.stringify(listing)).not.toMatch(/owner_id|token|user_id/);

@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { createHash } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import { legacyMusicFields } from '@qgroup/database';
@@ -11,7 +12,7 @@ import { settlementVersion } from './settlement-context';
 /** Minimal projection: private notes/contact/credentials never enter room work. */
 export function musicRoomSource(db: DB, userId: string, eventId: string | null) {
   const own = getProfile(db, userId);
-  if (!own) throw new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再使用分房試算', 403);
+  if (!own) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再使用分房試算', 403));
   const entries = db
     .prepare(
       `SELECT e.id,e.name,e.kind,count(p.id) count FROM music_entries e LEFT JOIN music_selections s ON s.entry_id=e.id

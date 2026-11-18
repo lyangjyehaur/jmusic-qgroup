@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
@@ -21,7 +22,7 @@ export function registerInbox(app:FastifyInstance,db:DB,security:Security,now:()
     return db.transaction(()=>{
       const user=security.memberWrite(request),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='notifications-read:'+hash(JSON.stringify(input));
       const old=db.prepare('SELECT signature FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string}|undefined;
-      if(old){if(old.signature!==signature)throw new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409);return {ok:true};}
+      if(old){if(old.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409));return {ok:true};}
       const stamp=legacyStamp(now());for(const id of input.ids)db.prepare('UPDATE notifications SET read_at=COALESCE(read_at,?) WHERE id=? AND user_id=?').run(stamp,BigInt(id),user.id);
       db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,'{"ok":true}',200,stamp);return {ok:true};
     }).immediate();

@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { eraseLegacyProfile, detachLegacyAccount, removeMusicShout, type DB } from '@qgroup/database';
@@ -149,23 +150,23 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
   return {
     assertReadable() {
       // Partner reads must fail closed without replaying a pending erasure.
-      if (journalFailed || recoveryRequired) throw new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503);
+      if (journalFailed || recoveryRequired) throw withApiError(new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503));
     },
     guard() {
       if (journalFailed || recoveryRequired) {
-        try { recover(); } catch { throw new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503); }
+        try { recover(); } catch { throw withApiError(new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503)); }
       }
     },
     receipt(requestId: string, secret: string): Result | z.infer<typeof AdminMusicErasureResult> {
       const row = db.prepare('SELECT secret_hash,result_json FROM privacy_receipts WHERE request_id=?').get(requestId) as { secret_hash: string; result_json: string } | undefined;
       const candidate = Buffer.from(hash(secret), 'hex');
-      if (!row || !timingSafeEqual(candidate, Buffer.from(row.secret_hash, 'hex'))) throw new DomainError('RECEIPT_NOT_FOUND', '尚未找到此操作的結果；請回原帳號確認後重試', 404);
+      if (!row || !timingSafeEqual(candidate, Buffer.from(row.secret_hash, 'hex'))) throw withApiError(new DomainError('RECEIPT_NOT_FOUND', '尚未找到此操作的結果；請回原帳號確認後重試', 404));
       return JSON.parse(row.result_json) as Result | z.infer<typeof AdminMusicErasureResult>;
     },
     submit(entry: ErasureIntent) {
       const existing = db.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId) as { signature: string; secret_hash: string } | undefined;
       if (existing) {
-        if (existing.signature !== entry.signature || existing.secret_hash !== entry.secretHash) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+        if (existing.signature !== entry.signature || existing.secret_hash !== entry.secretHash) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
         return;
       }
       recoveryRequired = true;
@@ -186,7 +187,7 @@ export function registerPrivacy(app: FastifyInstance, db: DB, security: Security
     // The secret is sent only in a JSON body, never a URL or log.
     const proof = ErasureProof.parse(request.body);
     const result=privacy.receipt(proof.requestId, proof.secret);
-    if(result.target==='admin_music')throw new DomainError('RECEIPT_NOT_FOUND','尚未找到此操作的結果',404);
+    if(result.target==='admin_music')throw withApiError(new DomainError('RECEIPT_NOT_FOUND','尚未找到此操作的結果',404));
     return result;
   });
   app.post('/api/v2/me/privacy/erase', { config: { rateLimit: { max: 6, timeWindow: '1 minute' } } }, async request => {
@@ -196,16 +197,16 @@ export function registerPrivacy(app: FastifyInstance, db: DB, security: Security
       const signature = hash('v2:privacy:' + device.id + ':' + JSON.stringify(input));
       const previous = db.prepare('SELECT signature FROM privacy_receipts WHERE request_id=?').get(input.requestId) as { signature: string } | undefined;
       if (previous) {
-        if (previous.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409);
+        if (previous.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
         return;
       }
       const profile = getProfile(db, device.id);
-      if ((profile?.id ?? null) !== input.profileId || (profile?.revision ?? 0) !== input.profileRevision) throw new DomainError('PROFILE_CHANGED', '成分已變更，請重新讀取並核對刪除範圍', 409);
-      if (input.target !== 'account' && !profile) throw new DomainError('NO_PROFILE', '目前沒有可刪除的成分', 409);
+      if ((profile?.id ?? null) !== input.profileId || (profile?.revision ?? 0) !== input.profileRevision) throw withApiError(new DomainError('PROFILE_CHANGED', '成分已變更，請重新讀取並核對刪除範圍', 409));
+      if (input.target !== 'account' && !profile) throw withApiError(new DomainError('NO_PROFILE', '目前沒有可刪除的成分', 409));
       if (input.target !== 'music') {
         const active = activeWork(db, device.id);
-        if (active.activePolls) throw new DomainError('ACTIVE_POLLS', '請先定案或取消仍由你管理的時間投票，再關閉帳號', 409);
-        if (active.activeEvents) throw new DomainError('ACTIVE_EVENTS', '請先轉交、結束或取消仍由你管理的活動，再關閉帳號', 409);
+        if (active.activePolls) throw withApiError(new DomainError('ACTIVE_POLLS', '請先定案或取消仍由你管理的時間投票，再關閉帳號', 409));
+        if (active.activeEvents) throw withApiError(new DomainError('ACTIVE_EVENTS', '請先轉交、結束或取消仍由你管理的活動，再關閉帳號', 409));
       }
       privacy.submit({ version: 1, kind: input.target, userId: device.id, profileId: input.profileId, requestId: input.requestId, secretHash: hash(input.secret), signature, createdAt: now().toISOString() });
     }).immediate();

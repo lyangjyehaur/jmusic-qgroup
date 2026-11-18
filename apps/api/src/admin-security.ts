@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import { randomBytes, timingSafeEqual } from 'node:crypto';
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -25,18 +26,18 @@ export function createAdminSecurity(db: DB, security: Security, origin: string, 
       const tokenHash = cookieHash(request);
       const row = db.prepare('SELECT credential_hash,expires_at FROM admin_sessions WHERE token_hash=?').get(tokenHash) as { credential_hash: string; expires_at: string } | undefined;
       const current = credential();
-      if (!row || !current || row.credential_hash !== current || !Number.isFinite(Date.parse(row.expires_at)) || Date.parse(row.expires_at) <= now().getTime()) throw new DomainError('ADMIN_REQUIRED', '需要管理員權限或救援憑證登入', device.kind === 'member' && !tokenHash ? 403 : 401);
+      if (!row || !current || row.credential_hash !== current || !Number.isFinite(Date.parse(row.expires_at)) || Date.parse(row.expires_at) <= now().getTime()) throw withApiError(new DomainError('ADMIN_REQUIRED', '需要管理員權限或救援憑證登入', device.kind === 'member' && !tokenHash ? 403 : 401));
       method = 'credential'; userId = null; digest = tokenHash;
       adminCsrf = hash('qgroup-v2-admin-credential:' + security.csrf(device) + ':' + digest + ':' + current);
     }
-    if (write && request.headers['x-admin-csrf'] !== adminCsrf) throw new DomainError('ADMIN_CHANGED', '管理權限已變更，請重新讀取後確認', 403);
+    if (write && request.headers['x-admin-csrf'] !== adminCsrf) throw withApiError(new DomainError('ADMIN_CHANGED', '管理權限已變更，請重新讀取後確認', 403));
     const scope = hash('qgroup-v2-admin-scope:' + digest + ':' + device.scope);
     return { device, method, userId, adminCsrf, scope, receiptScope: hash('qgroup-v2-admin-receipt:' + scope), actorRef: userId ? 'account:' + userId : 'credential:' + digest };
   }
   function login(request: FastifyRequest, reply: FastifyReply, supplied: string) {
     security.write(request);
     const current = credential();
-    if (!current || !timingSafeEqual(Buffer.from(hash(supplied), 'hex'), Buffer.from(current, 'hex'))) throw new DomainError('ADMIN_CREDENTIAL_INVALID', '管理憑證不正確或尚未配置', 401);
+    if (!current || !timingSafeEqual(Buffer.from(hash(supplied), 'hex'), Buffer.from(current, 'hex'))) throw withApiError(new DomainError('ADMIN_CREDENTIAL_INVALID', '管理憑證不正確或尚未配置', 401));
     const token = randomBytes(32).toString('base64url');
     db.prepare('DELETE FROM admin_sessions WHERE expires_at<=? OR token_hash=?').run(now().toISOString(), cookieHash(request));
     db.prepare('INSERT INTO admin_sessions VALUES(?,?,?,?)').run(hash(token), current, new Date(now().getTime() + 3600000).toISOString(), now().toISOString());

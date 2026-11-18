@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { DB } from '@qgroup/database';
 import { FinancePayload, FinanceParty, FinanceRoom, FinanceSummary, FinanceView, FinanceRoomBalance } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
@@ -36,7 +37,7 @@ export function financeParties(db:DB,event:EventRow,viewer:string|null,entries=f
   relabelParties(parties);return {parties,owned,users};
 }
 export function relabelParties(parties:Map<string,z.infer<typeof FinanceParty>>){const counts=new Map<string,number>();for(const p of parties.values())counts.set(p.name,(counts.get(p.name)??0)+1);let i=0;for(const p of parties.values()){i++;p.label=p.name+((counts.get(p.name)??0)>1?'（账户 '+i+'）':'');}}
-export function validateRoomJournal(entries:JournalEntry[],rooms:{id:string}[],strict:boolean){const reversed=projectJournal(entries).reversed,known=new Set(rooms.map(r=>r.id));for(const e of entries){if(!financeKinds.has(e.kind)||reversed.has(e.id))continue;const room=e.payload.room_id;if((room&&!known.has(room))||(strict&&!known.has(room??'')))throw new DomainError('FINANCE_ROOM','已有款項須保留所屬包間；未分配款項請先沖正並按包間重新登記',409);}for(const room of rooms)projectJournal(entries.filter(e=>e.kind==='reversal'||e.payload.room_id===room.id));}
+export function validateRoomJournal(entries:JournalEntry[],rooms:{id:string}[],strict:boolean){const reversed=projectJournal(entries).reversed,known=new Set(rooms.map(r=>r.id));for(const e of entries){if(!financeKinds.has(e.kind)||reversed.has(e.id))continue;const room=e.payload.room_id;if((room&&!known.has(room))||(strict&&!known.has(room??'')))throw withApiError(new DomainError('FINANCE_ROOM','已有款項須保留所屬包間；未分配款項請先沖正並按包間重新登記',409));}for(const room of rooms)projectJournal(entries.filter(e=>e.kind==='reversal'||e.payload.room_id===room.id));}
 const sum=(values:number[])=>{const value=values.reduce((a,b)=>a+b,0);if(!Number.isSafeInteger(value))throw Error('Unsafe invoice total');return value;};
 export function roomReconciliation(invoice:z.infer<typeof LedgerInvoice>,entries:Entry[]):z.infer<typeof FinanceRoomBalance>[] {
   const names=new Map(invoice.payers.map(p=>[p.id,p.label??p.name]));for(const e of entries)for(const p of e.payload.parties??[])if(!names.has(p.id))names.set(p.id,p.label);

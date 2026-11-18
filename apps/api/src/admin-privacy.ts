@@ -1,3 +1,4 @@
+import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
@@ -11,7 +12,7 @@ type Row = { id: string; user_id: string; status: string; created_at: string; up
 const Id = z.string().min(1).max(128);
 function entry(db: DB, id: string) {
   const row = db.prepare('SELECT * FROM privacy_requests WHERE id=?').get(id) as Row | undefined;
-  if (!row) throw new DomainError('PRIVACY_REQUEST_NOT_FOUND', '刪除申請不存在', 404);
+  if (!row) throw withApiError(new DomainError('PRIVACY_REQUEST_NOT_FOUND', '刪除申請不存在', 404));
   return project(db, row);
 }
 function project(db: DB, row: Row) {
@@ -38,11 +39,11 @@ export function registerAdminPrivacy(app: FastifyInstance, db: DB, admin: AdminS
       const signature = hash('v2:privacy-review:' + id + ':' + JSON.stringify(input));
       const receipt = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
       if (receipt) {
-        if (receipt.signature !== signature) throw new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409);
+        if (receipt.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409));
         return { ok: true };
       }
       const current = entry(db, id);
-      if (current.revision !== input.revision) throw new DomainError('PRIVACY_REVIEW_CHANGED', '申請或共享紀錄已變更，請核對目前資料', 409);
+      if (current.revision !== input.revision) throw withApiError(new DomainError('PRIVACY_REVIEW_CHANGED', '申請或共享紀錄已變更，請核對目前資料', 409));
       admin.preserve(request);
       // No client-supplied status or completion checkbox can override real retained data.
       const status = Object.keys(current.sharedRecords).length ? 'shared_review' : 'completed';
