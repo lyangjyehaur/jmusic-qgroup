@@ -7076,7 +7076,9 @@
         "tools/migration/rollback-erasures.ts",
         "tools/migration/rollback-erasures-reconciliation.ts",
         "tools/migration/rollback-state.ts",
-        "tools/migration/rollback-state-reconciliation.ts"
+        "tools/migration/rollback-state-reconciliation.ts",
+        "tools/migration/rollback-media.ts",
+        "tools/migration/rollback-media-reconciliation.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7111,7 +7113,9 @@
         "apps/api/src/rollback-erasures.test.ts",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "apps/api/src/rollback-state.test.ts",
-        "docs/unified-rebuild/107-rollback-state-checkpoint.md"
+        "docs/unified-rebuild/107-rollback-state-checkpoint.md",
+        "apps/api/src/rollback-media.test.ts",
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7141,7 +7145,9 @@
         "apps/api/src/rollback-erasures.test.ts",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "apps/api/src/rollback-state.test.ts",
-        "docs/unified-rebuild/107-rollback-state-checkpoint.md"
+        "docs/unified-rebuild/107-rollback-state-checkpoint.md",
+        "apps/api/src/rollback-media.test.ts",
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7155,7 +7161,8 @@
         "apps/api/src/rollback-checkpoint.test.ts",
         "apps/api/src/rollback-identity.test.ts",
         "apps/api/src/rollback-erasures.test.ts",
-        "apps/api/src/rollback-state.test.ts"
+        "apps/api/src/rollback-state.test.ts",
+        "apps/api/src/rollback-media.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7169,10 +7176,11 @@
         "docs/unified-rebuild/104-rollback-checkpoint.md",
         "docs/unified-rebuild/105-rollback-identity-checkpoint.md",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
-        "docs/unified-rebuild/107-rollback-state-checkpoint.md"
+        "docs/unified-rebuild/107-rollback-state-checkpoint.md",
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "完整新庫／統一 journal、舊看板／成分／身份／erasure 已從同一 checkpoint 組裝為私人記憶體狀態（檢查點 107），原 durable journal 只讀一次；途中即時資料／刪除變更不混入，完整新表／bot claim／audit mappings 與七產物 digest 獨立對帳，晚期失敗關閉投影連線，rollbackEligible=false。尚缺 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 成套讀寫／重新向前恢復及正式規模／實際候選組合驗收。最新 erasure 私人投影與原 Python 刪除元件連續重播兩次已有隔離證據（檢查點 106）：原 closure ID／time、缺 journal 的原 marker、成分原 erased_at 表示／tombstone 舊鍵、完整重複 journal／reset scope 與獨立篡改拒絕；重設後新增成分／重用詞條 ID／喊話不被再刪。只適用 latest_projected_data_only，不能用舊兩份 ledger 恢復任意歷史，rollbackEligible=false。完整 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 全套與重新向前恢復仍待完成。最新成分身份 SQLite 私人元件已有隔離證據（檢查點 105）：最新 owner／QQ proof／contact／native recovery／used attempts／限流、原 signed rowid／audit ID／高水位與可逆新審計，原 Python Store 在隔離生成資料上可讀寫；舊 sessions／entry intents 明確失效，orphan proof 留 full checkpoint 不啟用，完整 browser 恢復、成套 erasure／資產／落盤 manifest 與固定舊 web／music／bot／重新前進演練仍待完成，rollbackEligible=false。完整新庫／最新 journal 的一致私人來源快照與全部 schema／rowid／storage／BigInt／高水位對帳已有隔離證據（檢查點 104），包含新版 audit／receipt／consent 與 bot 工作，來源 writer lock／失敗釋放及兩領域共用固定快照已驗證；仍不是完整落盤回退包或固定舊版本演練，rollbackEligible=false。最新成分 JSON 的私人回退元件與獨立對帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "收款圖片／最新壁紙／完整新庫及 journal 已在同一真實 writer lock 捕獲，從該 checkpoint 組裝全部資料投影（檢查點 108）；原 files／orphan 私人保全，最新壁紙 bytes／舊路徑／排序／輪換／原表示與 missing 保留，未知原 manifest 欄位只留私人來源，獨立篡改／連結／檔案替換拒絕及舊 Python media／wall 函式讀寫已有隔離證據，rollbackEligible=false。歷史來源保全、完整 private 落盤／fsync／manifest、browser pending／失效 proof、固定舊 web／music／bot 成套與重新向前恢復、資源量測及正式候選組合仍待完成。完整新庫／統一 journal、舊看板／成分／身份／erasure 已從同一 checkpoint 組裝為私人記憶體狀態（檢查點 107），原 durable journal 只讀一次；途中即時資料／刪除變更不混入，完整新表／bot claim／audit mappings 與七產物 digest 獨立對帳，晚期失敗關閉投影連線，rollbackEligible=false。尚缺 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 成套讀寫／重新向前恢復及正式規模／實際候選組合驗收。最新 erasure 私人投影與原 Python 刪除元件連續重播兩次已有隔離證據（檢查點 106）：原 closure ID／time、缺 journal 的原 marker、成分原 erased_at 表示／tombstone 舊鍵、完整重複 journal／reset scope 與獨立篡改拒絕；重設後新增成分／重用詞條 ID／喊話不被再刪。只適用 latest_projected_data_only，不能用舊兩份 ledger 恢復任意歷史，rollbackEligible=false。完整 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 全套與重新向前恢復仍待完成。最新成分身份 SQLite 私人元件已有隔離證據（檢查點 105）：最新 owner／QQ proof／contact／native recovery／used attempts／限流、原 signed rowid／audit ID／高水位與可逆新審計，原 Python Store 在隔離生成資料上可讀寫；舊 sessions／entry intents 明確失效，orphan proof 留 full checkpoint 不啟用，完整 browser 恢復、成套 erasure／資產／落盤 manifest 與固定舊 web／music／bot／重新前進演練仍待完成，rollbackEligible=false。完整新庫／最新 journal 的一致私人來源快照與全部 schema／rowid／storage／BigInt／高水位對帳已有隔離證據（檢查點 104），包含新版 audit／receipt／consent 與 bot 工作，來源 writer lock／失敗釋放及兩領域共用固定快照已驗證；仍不是完整落盤回退包或固定舊版本演練，rollbackEligible=false。最新成分 JSON 的私人回退元件與獨立對帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -7213,7 +7221,9 @@
         "tools/migration/rollback-erasures.ts",
         "tools/migration/rollback-erasures-reconciliation.ts",
         "tools/migration/rollback-state.ts",
-        "tools/migration/rollback-state-reconciliation.ts"
+        "tools/migration/rollback-state-reconciliation.ts",
+        "tools/migration/rollback-media.ts",
+        "tools/migration/rollback-media-reconciliation.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7244,7 +7254,9 @@
         "apps/api/src/rollback-erasures.test.ts",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "apps/api/src/rollback-state.test.ts",
-        "docs/unified-rebuild/107-rollback-state-checkpoint.md"
+        "docs/unified-rebuild/107-rollback-state-checkpoint.md",
+        "apps/api/src/rollback-media.test.ts",
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7270,7 +7282,9 @@
         "apps/api/src/rollback-erasures.test.ts",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "apps/api/src/rollback-state.test.ts",
-        "docs/unified-rebuild/107-rollback-state-checkpoint.md"
+        "docs/unified-rebuild/107-rollback-state-checkpoint.md",
+        "apps/api/src/rollback-media.test.ts",
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7284,7 +7298,8 @@
         "apps/api/src/rollback-checkpoint.test.ts",
         "apps/api/src/rollback-identity.test.ts",
         "apps/api/src/rollback-erasures.test.ts",
-        "apps/api/src/rollback-state.test.ts"
+        "apps/api/src/rollback-state.test.ts",
+        "apps/api/src/rollback-media.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7297,10 +7312,11 @@
         "docs/unified-rebuild/104-rollback-checkpoint.md",
         "docs/unified-rebuild/105-rollback-identity-checkpoint.md",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
-        "docs/unified-rebuild/107-rollback-state-checkpoint.md"
+        "docs/unified-rebuild/107-rollback-state-checkpoint.md",
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "完整新庫／統一 journal、舊看板／成分／身份／erasure 已從同一 checkpoint 組裝為私人記憶體狀態（檢查點 107），原 durable journal 只讀一次；途中即時資料／刪除變更不混入，完整新表／bot claim／audit mappings 與七產物 digest 獨立對帳，晚期失敗關閉投影連線，rollbackEligible=false。尚缺 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 成套讀寫／重新向前恢復及正式規模／實際候選組合驗收。最新 erasure 私人投影與原 Python 刪除元件連續重播兩次已有隔離證據（檢查點 106）：原 closure ID／time、缺 journal 的原 marker、成分原 erased_at 表示／tombstone 舊鍵、完整重複 journal／reset scope 與獨立篡改拒絕；重設後新增成分／重用詞條 ID／喊話不被再刪。只適用 latest_projected_data_only，不能用舊兩份 ledger 恢復任意歷史，rollbackEligible=false。完整 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 全套與重新向前恢復仍待完成。最新成分身份 SQLite 私人元件已有隔離證據（檢查點 105）：最新 owner／QQ proof／contact／native recovery／used attempts／限流、原 signed rowid／audit ID／高水位與可逆新審計，原 Python Store 在隔離生成資料上可讀寫；舊 sessions／entry intents 明確失效，orphan proof 留 full checkpoint 不啟用，完整 browser 恢復、成套 erasure／資產／落盤 manifest 與固定舊 web／music／bot／重新前進演練仍待完成，rollbackEligible=false。完整新庫／最新 journal 的一致私人來源快照與全部 schema／rowid／storage／BigInt／高水位對帳已有隔離證據（檢查點 104），包含新版 audit／receipt／consent 與 bot 工作，來源 writer lock／失敗釋放及兩領域共用固定快照已驗證；仍不是完整落盤回退包或固定舊版本演練，rollbackEligible=false。最新成分 JSON 的私人回退元件與獨立對帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "收款圖片／最新壁紙／完整新庫及 journal 已在同一真實 writer lock 捕獲，從該 checkpoint 組裝全部資料投影（檢查點 108）；原 files／orphan 私人保全，最新壁紙 bytes／舊路徑／排序／輪換／原表示與 missing 保留，未知原 manifest 欄位只留私人來源，獨立篡改／連結／檔案替換拒絕及舊 Python media／wall 函式讀寫已有隔離證據，rollbackEligible=false。歷史來源保全、完整 private 落盤／fsync／manifest、browser pending／失效 proof、固定舊 web／music／bot 成套與重新向前恢復、資源量測及正式候選組合仍待完成。完整新庫／統一 journal、舊看板／成分／身份／erasure 已從同一 checkpoint 組裝為私人記憶體狀態（檢查點 107），原 durable journal 只讀一次；途中即時資料／刪除變更不混入，完整新表／bot claim／audit mappings 與七產物 digest 獨立對帳，晚期失敗關閉投影連線，rollbackEligible=false。尚缺 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 成套讀寫／重新向前恢復及正式規模／實際候選組合驗收。最新 erasure 私人投影與原 Python 刪除元件連續重播兩次已有隔離證據（檢查點 106）：原 closure ID／time、缺 journal 的原 marker、成分原 erased_at 表示／tombstone 舊鍵、完整重複 journal／reset scope 與獨立篡改拒絕；重設後新增成分／重用詞條 ID／喊話不被再刪。只適用 latest_projected_data_only，不能用舊兩份 ledger 恢復任意歷史，rollbackEligible=false。完整 private 落盤／fsync／manifest、圖片／壁紙／歷史、browser pending／失效 proof 恢復、固定舊 web／music／bot 全套與重新向前恢復仍待完成。最新成分身份 SQLite 私人元件已有隔離證據（檢查點 105）：最新 owner／QQ proof／contact／native recovery／used attempts／限流、原 signed rowid／audit ID／高水位與可逆新審計，原 Python Store 在隔離生成資料上可讀寫；舊 sessions／entry intents 明確失效，orphan proof 留 full checkpoint 不啟用，完整 browser 恢復、成套 erasure／資產／落盤 manifest 與固定舊 web／music／bot／重新前進演練仍待完成，rollbackEligible=false。完整新庫／最新 journal 的一致私人來源快照與全部 schema／rowid／storage／BigInt／高水位對帳已有隔離證據（檢查點 104），包含新版 audit／receipt／consent 與 bot 工作，來源 writer lock／失敗釋放及兩領域共用固定快照已驗證；仍不是完整落盤回退包或固定舊版本演練，rollbackEligible=false。最新成分 JSON 的私人回退元件與獨立對帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O14",
