@@ -26,6 +26,7 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
             raise ValueError('Music authority binding or installation differs')
         original_music_record, original_music_replay = maintenance.record_erasures, maintenance.replay
         original_snapshot = music_service.administration.snapshot
+        original_erase = music_service.administration.erase
     # Capture known live SQLite identities using lstat only. Ledger readers must
     # reject those inodes before opening any extra raw descriptor.
     sqlite_paths = [path for path in [board_path, Path(music_service.STORE.path) if music_service else None] if path is not None]
@@ -56,20 +57,69 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
             del board_privacy._rollback_erasure_authority
         undo.append(undo_board)
     if music_service:
+        handled_reset_pins = []
+        pending_reset = None
+
+        def require_known_resets():
+            pins = [row['recordSha256'] for row in authority.music_reset_records()]
+            expected = handled_reset_pins + ([pending_reset['recordSha256']] if pending_reset and 'recordSha256' in pending_reset else [])
+            if pins != expected:
+                raise music_service.Rejected('重設紀錄尚未完成恢復核對，請先保全原檔', 503)
+
         def record_erasures(folder, qqs):
             if Path(folder) != music_folder:
                 raise ValueError('Music erasure source differs from explicit authority binding')
-            raw = ''.join(json.dumps({'qq': qq, 'erased_at': maintenance.time.time()}) + '\n' for qq in qqs).encode()
             try:
-                authority.record('music', raw)
+                require_known_resets()
+                if pending_reset is None:
+                    raw = ''.join(json.dumps({'qq': qq, 'erased_at': maintenance.time.time()}) + '\n' for qq in qqs).encode()
+                    authority.record('music', raw)
+                else:
+                    from tools.migration.rollback_music_reset import capture_legacy_music_reset
+                    if list(qqs) != list(music_service.upstream.data['members']):
+                        raise ValueError('Original reset member scope changed')
+                    source_path = music_folder / 'data.json'
+                    source, identity = authority._read_file(source_path)
+                    time = maintenance.time.time()
+                    operation = capture_legacy_music_reset(source, music_service.upstream.data, time)
+                    raw = ''.join(json.dumps({'qq': qq, 'erased_at': time}) + '\n' for qq in qqs).encode()
+                    recorded = authority.record('music', raw, operation=operation)
+                    after, checked = authority._read_file(source_path)
+                    if source != after or identity != checked or capture_legacy_music_reset(after, music_service.upstream.data, time) != operation:
+                        raise ValueError('Original reset source changed during recording')
+                    pending_reset.update(recorded)
             except Exception:
                 raise music_service.Rejected('刪除紀錄無法核對或保存，請先恢復並重新載入', 503) from None
 
         def replay(folder, store):
             if Path(folder) != music_folder or Path(store.path) != Path(music_service.STORE.path):
                 raise ValueError('Music recovery source differs from explicit authority binding')
-            authority.recover('music')
-            return original_music_replay(folder, store)
+            with authority._held():
+                require_known_resets()
+                authority.recover('music')
+                return original_music_replay(folder, store)
+
+        def erase(folder, store, body, reset=False):
+            nonlocal pending_reset
+            # Preserve the original confirmation and missing-member responses.
+            # The original HTTP handler owns its non-reentrant upstream lock.
+            if not reset or body.get('confirm') != 'RESET':
+                return original_erase(folder, store, body, reset=reset)
+            if Path(folder) != music_folder or Path(store.path) != Path(music_service.STORE.path) or not music_service.upstream._lock.locked():
+                raise music_service.Rejected('重設來源或維護鎖無法核對', 503)
+            with authority._held():
+                require_known_resets()
+                if pending_reset is not None:
+                    raise music_service.Rejected('重設尚未完成，請先恢復並重新載入', 503)
+                pending_reset = {}
+                try:
+                    result = original_erase(folder, store, body, reset=True)
+                    if any(music_service.upstream.data.get(name) for name in ('entries', 'members', 'shouts', 'shoutHistory', 'trend')) or 'recordSha256' not in pending_reset:
+                        raise ValueError('Original reset did not complete')
+                    handled_reset_pins.append(pending_reset['recordSha256'])
+                    return result
+                finally:
+                    pending_reset = None
 
         def snapshot(folder, name=None, store=None):
             if Path(folder) != music_folder:
@@ -86,12 +136,14 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
         maintenance.record_erasures = music_service.administration.record_erasures = record_erasures
         maintenance.replay = music_service.administration.replay = music_service.replay = replay
         music_service.administration.snapshot = snapshot
+        music_service.administration.erase = erase
         music_service._rollback_erasure_authority = authority
 
         def undo_music():
             maintenance.record_erasures = music_service.administration.record_erasures = original_music_record
             maintenance.replay = music_service.administration.replay = music_service.replay = original_music_replay
             music_service.administration.snapshot = original_snapshot
+            music_service.administration.erase = original_erase
             del music_service._rollback_erasure_authority
         undo.append(undo_music)
 

@@ -17,6 +17,7 @@ import threading
 import uuid
 
 from tools.migration.rollback_history_runtime import _directory, _file, _json, _keys, _timestamp, SHA, KEY
+from tools.migration.rollback_music_reset import validate_music_reset_operation, validate_music_reset_suffix
 
 DOMAINS = ('board', 'music', 'unified')
 LIMIT = 64 * 1024 * 1024
@@ -276,22 +277,29 @@ class ErasureAuthority:
         if count not in (head['sequence'], head['sequence'] + 1) or count > 100000 or names != [f'{i:012}.json' for i in range(1, count + 1)] or count != head['sequence'] and not finish_record:
             raise ValueError('Authority record publication incomplete or lost')
         previous = self.pin
+        reset_records = []
         if not head['sequence'] and head != self._head(0, None, ledgers):
             raise ValueError('Authority baseline head differs')
         for sequence, name in enumerate(names, 1):
             raw, _ = self._read_file(self.root / 'records' / name, 90 * 1024 * 1024)
             record = _json(raw)
-            _keys(record, ['version', 'authoritySha256', 'sequence', 'previousRecordSha256', 'domain', 'suffixBase64', 'ledgerSize', 'ledgerSha256'])
-            if type(record['version']) is not int or record['version'] != 1 or type(record['sequence']) is not int or record['sequence'] != sequence or record['authoritySha256'] != self.pin or record['previousRecordSha256'] != previous or record['domain'] not in DOMAINS or not isinstance(record['suffixBase64'], str) or _encode(record) != raw:
+            _keys(record, ['version', 'authoritySha256', 'sequence', 'previousRecordSha256', 'domain', 'suffixBase64', 'ledgerSize', 'ledgerSha256'] + (['operation'] if record.get('version') == 2 else []))
+            if type(record['version']) is not int or record['version'] not in (1, 2) or type(record['sequence']) is not int or record['sequence'] != sequence or record['authoritySha256'] != self.pin or record['previousRecordSha256'] != previous or record['domain'] not in DOMAINS or not isinstance(record['suffixBase64'], str) or _encode(record) != raw:
                 raise ValueError('Authority record chain differs')
             suffix = base64.b64decode(record['suffixBase64'], validate=True)
-            if not suffix or base64.b64encode(suffix).decode() != record['suffixBase64']:
+            if record['version'] == 1 and not suffix or base64.b64encode(suffix).decode() != record['suffixBase64']:
                 raise ValueError('Invalid authority suffix')
             domain = record['domain']; sizes[domain] += len(suffix); hashes[domain].update(suffix)
             _count(record['ledgerSize']); _pin(record['ledgerSha256'])
             if dict(size=sizes[domain], sha256=hashes[domain].hexdigest()) != dict(size=record['ledgerSize'], sha256=record['ledgerSha256']):
                 raise ValueError('Authority record payload differs')
-            _ledger(domain, suffix, seen[domain]); chunks[domain].append(suffix); previous = _sha(raw)
+            _ledger(domain, suffix, seen[domain])
+            if record['version'] == 2:
+                if domain != 'music':
+                    raise ValueError('Reset authority domain differs')
+                validate_music_reset_suffix(record['operation'], suffix)
+                reset_records.append(dict(sequence=sequence, recordSha256=_sha(raw), operation=record['operation']))
+            chunks[domain].append(suffix); previous = _sha(raw)
             expected_head = dict(version=1, authoritySha256=self.pin, sequence=sequence, recordSha256=previous,
                                  ledgers={key: dict(size=sizes[key], sha256=hashes[key].hexdigest()) for key in DOMAINS})
             if sequence == head['sequence'] and head != expected_head:
@@ -300,6 +308,7 @@ class ErasureAuthority:
         if count != head['sequence']:
             head = self._head(count, previous, ledgers)
             self._publish(head, head_bytes, head_identity)
+        self._music_reset_records = reset_records
         return head, ledgers
 
     def _source(self, domain):
@@ -348,10 +357,17 @@ class ErasureAuthority:
             head, ledgers = self._read()
             return head, dict(ledgers)
 
+    def music_reset_records(self):
+        with self._held():
+            self._read()
+            return list(self._music_reset_records)
+
     @contextmanager
     def guard(self, domain):
         with self._held():
             _, ledgers = self._read()
+            if domain == 'music' and self._music_reset_records:
+                raise ValueError('Structured reset history requires source generation verification')
             original, identity = self._source(domain)
             if original != ledgers[domain]:
                 raise ValueError('Latest authority intent absent from source')
@@ -371,13 +387,20 @@ class ErasureAuthority:
                 self._source_write(domain, original, identity, target[len(original or b''):])
             return target
 
-    def record(self, domain, suffix):
+    def record(self, domain, suffix, *, operation=None):
         with self._held():
             head, ledgers = self._read()
             original, identity = self._source(domain)
             if original != ledgers[domain] or not isinstance(suffix, bytes):
                 raise ValueError('Authority source must be recovered before recording')
-            if not suffix:
+            if operation is not None:
+                if domain != 'music':
+                    raise ValueError('Reset authority domain differs')
+                operation = _json(_encode(operation))
+                validate_music_reset_operation(operation)
+                _ledger(domain, suffix)
+                validate_music_reset_suffix(operation, suffix)
+            if not suffix and operation is None:
                 return
             combined = original + suffix
             _ledger(domain, combined)
@@ -386,16 +409,21 @@ class ErasureAuthority:
             head_bytes, head_identity = self._read_file(self.root / 'authority-head.json', 4096)
             if head_bytes != _encode(head):
                 raise ValueError('Authority head changed before recording')
-            record = dict(version=1, authoritySha256=self.pin, sequence=sequence,
+            record = dict(version=2 if operation is not None else 1, authoritySha256=self.pin, sequence=sequence,
                           previousRecordSha256=head['recordSha256'] or self.pin, domain=domain,
                           suffixBase64=base64.b64encode(suffix).decode(), ledgerSize=len(combined), ledgerSha256=_sha(combined))
+            if operation is not None:
+                record['operation'] = operation
             raw = _encode(record)
+            if len(raw) > 90 * 1024 * 1024:
+                raise ValueError('Authority record exceeds limit')
             self._write_new(self.root / 'records' / f'{sequence:012}.json', raw)
             self._sync(self.root / 'records'); self._fault('record_fsynced')
             ledgers[domain] = combined
             self._publish(self._head(sequence, _sha(raw), ledgers), head_bytes, head_identity)
             self._fault('head_published'); self._fault('before_source')
             self._source_write(domain, original, identity, suffix); self._fault('source_fsynced')
+            return dict(sequence=sequence, recordSha256=_sha(raw))
 
     def close(self):
         if not self.mutex.acquire(blocking=False):

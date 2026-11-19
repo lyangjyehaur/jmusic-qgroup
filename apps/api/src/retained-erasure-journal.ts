@@ -30,6 +30,7 @@ export async function createRetainedErasureJournal(db:DB,input:Config,dependenci
   function snapshot(includeUnpublished=false){owned();const saved=readRollbackErasureAuthority(root,pin,{beforeFile:protect,includeUnpublished});if(saved.recordPins.length<observedPins.length||observedPins.some((sha,index)=>saved.recordPins[index]!==sha))throw Error('Observed authority records were rewound or replaced');
     // A resumed old service can write board/music intents after rollback. These
     // need a complete forward projection; unified-only replay cannot apply them.
+    if(saved.records.some(row=>row.domain!=='unified'))throw Error('Latest old-service erasures require forward projection before native startup');
     for(const domain of ['board','music'] as const){const baseline=saved.manifest.baseline.find(row=>row.domain===domain)!;if(saved.head.ledgers[domain].size!==baseline.size||saved.head.ledgers[domain].sha256!==baseline.sha256)throw Error('Latest old-service erasures require forward projection before native startup');}
     return saved;}
   function observe(saved:Snapshot){observedPins=[...saved.recordPins];}

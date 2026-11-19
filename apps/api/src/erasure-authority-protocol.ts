@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {decodeErasureJournal} from './erasure-journal';
 import {sourceDirectory,sourceStat,snapshotRollbackFile} from '../../../packages/runtime/src/private-source-files';
-import {digest,parseJson} from '../../../packages/runtime/src/strict-json';
+import {digest,parseJson,type Json} from '../../../packages/runtime/src/strict-json';
 
 export const authorityDomains=['board','music','unified'] as const;
 export type AuthorityDomain=typeof authorityDomains[number];
@@ -13,7 +13,23 @@ const descriptor=z.object({size:z.number().int().nonnegative().safe().max(limit)
 export const ErasureAuthorityManifest=z.object({version:z.literal(1),kind:z.literal('qgroup-private-erasure-authority'),authorityId:z.string().regex(/^[a-f0-9]{32}$/),createdAt:z.iso.datetime(),sourcePackageSha256:sha,checkpointSha256:sha,journalSha256:sha,
   baseline:z.array(z.object({domain,path:z.string(),size:descriptor.shape.size,sha256:sha}).strict()).length(3),rollbackEligible:z.literal(false)}).strict().refine(row=>JSON.stringify(row.baseline.map(file=>[file.domain,file.path]))===JSON.stringify(authorityDomains.map(domain=>[domain,'baseline/'+domain+'.erasures.jsonl'])));
 export const ErasureAuthorityHead=z.object({version:z.literal(1),authoritySha256:sha,sequence:z.number().int().nonnegative().safe().max(999999999999),recordSha256:sha.nullable(),ledgers:z.object({board:descriptor,music:descriptor,unified:descriptor}).strict()}).strict().refine(row=>(row.sequence===0)===(row.recordSha256===null));
-export const ErasureAuthorityRecord=z.object({version:z.literal(1),authoritySha256:sha,sequence:z.number().int().positive().safe().max(999999999999),previousRecordSha256:sha,domain,suffixBase64:z.string().max(90*1024*1024),ledgerSize:descriptor.shape.size,ledgerSha256:sha}).strict();
+const keyedScope=(key:z.ZodString)=>z.array(z.object({key,sha256:sha}).strict()).max(100000).refine(rows=>new Set(rows.map(row=>row.key)).size===rows.length);
+const orderedScope=z.array(z.object({index:z.number().int().nonnegative().safe(),sha256:sha}).strict()).max(100000).refine(rows=>rows.every((row,index)=>row.index===index));
+const musicResetScope=z.object({entries:keyedScope(z.string().max(1024).refine(value=>!/[\p{Surrogate}]/u.test(value))),members:keyedScope(z.string().regex(/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/)),shouts:orderedScope,shoutHistory:orderedScope,trend:orderedScope}).strict();
+export const LegacyMusicResetOperation=z.object({kind:z.literal('legacy_music_reset'),source:descriptor,loadedSha256:sha,erasedAtJson:z.string().max(80).refine(value=>{try{const time=parseJson(value);return typeof time==='number'&&time>=0&&time<=8640000000000;}catch{return false;}}),scope:musicResetScope,loadedScope:musicResetScope}).strict();
+const recordFields={authoritySha256:sha,sequence:z.number().int().positive().safe().max(999999999999),previousRecordSha256:sha,domain,suffixBase64:z.string().max(90*1024*1024),ledgerSize:descriptor.shape.size,ledgerSha256:sha};
+export const ErasureAuthorityRecord=z.discriminatedUnion('version',[
+  z.object({version:z.literal(1),...recordFields}).strict(),
+  z.object({version:z.literal(2),...recordFields,domain:z.literal('music'),operation:LegacyMusicResetOperation}).strict(),
+]);
+/** The member suffix is the original ledger representation of this same reset.
+ * An empty member set still records a reset of terms, shouts and trends. */
+export function validateAuthorityRecordSuffix(record:z.infer<typeof ErasureAuthorityRecord>,suffix:Buffer){
+  if(suffix.toString('base64')!==record.suffixBase64||record.version===1&&!suffix.length)throw Error('Invalid authority suffix');
+  validateAuthorityLedger(record.domain,suffix);
+  if(record.version===2){const rows=decode(suffix).split('\n').filter(line=>line.trim()).map(line=>parseJson(line)) as {qq:string;erased_at:Json}[];
+    if(JSON.stringify(rows.map(row=>row.qq))!==JSON.stringify(record.operation.loadedScope.members.map(row=>row.key))||rows.some(row=>row.erased_at!==parseJson(record.operation.erasedAtJson)))throw Error('Reset member ledger differs from structured scope');}
+}
 export const encode=(value:unknown)=>Buffer.from(JSON.stringify(value)+'\n');
 function decode(bytes:Buffer){return new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}
 export function validateAuthorityLedger(domain:AuthorityDomain,bytes:Buffer,seen=new Map<string,string>()){
@@ -49,19 +65,19 @@ export function readRollbackErasureAuthority(root:string,pin:string,options:{bef
   let previous=pin;
   const count=readdirSync(join(root,'records')).length,sequence=publishedHead.sequence;
   if(count!==sequence&&!(options.includeUnpublished&&count===sequence+1)||count>100000)throw Error('Authority publication incomplete or inventory differs');
-  const paths=Array.from({length:count},(_,i)=>String(i+1).padStart(12,'0')+'.json'),recordPins:string[]=[];
+  const paths=Array.from({length:count},(_,i)=>String(i+1).padStart(12,'0')+'.json'),recordPins:string[]=[],records:z.infer<typeof ErasureAuthorityRecord>[]=[];
   const currentHead=(sequence:number)=>ErasureAuthorityHead.parse({version:1,authoritySha256:pin,sequence,recordSha256:sequence?previous:null,ledgers:Object.fromEntries(authorityDomains.map(domain=>[domain,{size:sizes[domain],sha256:hashes[domain].copy().digest('hex')}]))});
   if(sequence===0&&JSON.stringify(publishedHead)!==JSON.stringify(currentHead(0)))throw Error('Authority head ledger differs');
   for(const [index,path] of paths.entries()){
     const saved=file(join(root,'records',path),90*1024*1024);if(!saved.bytes)throw Error('Missing authority record');held.push(saved);const row=canonical(ErasureAuthorityRecord,saved.bytes),suffix=Buffer.from(row.suffixBase64,'base64');
-    if(row.authoritySha256!==pin||row.sequence!==index+1||row.previousRecordSha256!==previous||suffix.toString('base64')!==row.suffixBase64||!suffix.length)throw Error('Authority record chain differs');
-    sizes[row.domain]+=suffix.length;hashes[row.domain].update(suffix);if(sizes[row.domain]!==row.ledgerSize||hashes[row.domain].copy().digest('hex')!==row.ledgerSha256)throw Error('Authority record ledger differs');validateAuthorityLedger(row.domain,suffix,seen[row.domain]);chunks[row.domain].push(suffix);previous=saved.sha256!;recordPins.push(previous);
+    if(row.authoritySha256!==pin||row.sequence!==index+1||row.previousRecordSha256!==previous)throw Error('Authority record chain differs');validateAuthorityRecordSuffix(row,suffix);
+    sizes[row.domain]+=suffix.length;hashes[row.domain].update(suffix);if(sizes[row.domain]!==row.ledgerSize||hashes[row.domain].copy().digest('hex')!==row.ledgerSha256)throw Error('Authority record ledger differs');validateAuthorityLedger(row.domain,suffix,seen[row.domain]);chunks[row.domain].push(suffix);previous=saved.sha256!;recordPins.push(previous);records.push(row);
     if(index+1===sequence&&JSON.stringify(publishedHead)!==JSON.stringify(currentHead(sequence)))throw Error('Authority head lost a recorded intent');
   }
   const head=currentHead(count),pendingPublication=count!==sequence,sourceHeadBytes=Buffer.from(headFile.bytes);
   for(const domain of authorityDomains)ledgers[domain]=Buffer.concat(chunks[domain]);
   function inventory(extraRootFiles:string[]=[]){if(extraRootFiles.some(name=>!/^\.head-[a-f0-9]{32}\.tmp$/.test(name))||new Set(extraRootFiles).size!==extraRootFiles.length||JSON.stringify(readdirSync(root).sort())!==JSON.stringify(['.authority.lock','authority-head.json','authority-manifest.json','baseline','records',...extraRootFiles].sort())||JSON.stringify(readdirSync(join(root,'baseline')).sort())!==JSON.stringify(authorityDomains.map(domain=>domain+'.erasures.jsonl').sort())||JSON.stringify(readdirSync(join(root,'records')).sort())!==JSON.stringify(paths))throw Error('Authority publication incomplete or inventory differs');}
-  const view=()=>digest(JSON.stringify({manifest,head,publishedHead,pendingPublication,sourceHeadSha256:digest(sourceHeadBytes),recordPins,ledgerKeys:Object.keys(ledgers).sort(),ledgers:Object.fromEntries(authorityDomains.map(domain=>[domain,digest(ledgers[domain])]))})),originalView=view();
+  const view=()=>digest(JSON.stringify({manifest,head,publishedHead,pendingPublication,sourceHeadSha256:digest(sourceHeadBytes),recordPins,records,ledgerKeys:Object.keys(ledgers).sort(),ledgers:Object.fromEntries(authorityDomains.map(domain=>[domain,digest(ledgers[domain])]))})),originalView=view();
   function assertUnchanged(extraRootFiles:string[]=[]){for(const [path,original] of [[root,identity],[join(root,'baseline'),baselineIdentity],[join(root,'records'),recordsIdentity]] as const){const current=privateDirectory(path);if(current.dev!==original.dev||current.ino!==original.ino)throw Error('Authority directory replaced');}for(const file of held)file.assertUnchanged();if(view()!==originalView)throw Error('Authority snapshot view changed');inventory(extraRootFiles);}
-  assertUnchanged();return {manifest,head,publishedHead,pendingPublication,sourceHeadBytes,recordPins,ledgers,manifestSha256:pin,assertUnchanged,rollbackEligible:false as const};
+  assertUnchanged();return {manifest,head,publishedHead,pendingPublication,sourceHeadBytes,recordPins,records,ledgers,manifestSha256:pin,assertUnchanged,rollbackEligible:false as const};
 }

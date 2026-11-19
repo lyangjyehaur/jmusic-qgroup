@@ -49,6 +49,7 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
   let oldPhase=false;const oldMusic=new Map<string,Json>();
   for(let sequence=1;sequence<=authority.head.sequence;sequence++){
     const file=privateFile(join(input.authorityRoot,'records',String(sequence).padStart(12,'0')+'.json'),90*1024*1024),record=ErasureAuthorityRecord.parse(parseJson(text(file.bytes!)));file.assertUnchanged();
+    if(record.version===2)throw Error('Structured old reset requires source generation and complete forward repair');
     if(record.domain==='unified'&&oldPhase)throw Error('Interleaved native and old-service writes require a complete rebase');
     if(record.domain!=='unified')oldPhase=true;
     if(record.domain==='music')for(const row of rows(Buffer.from(record.suffixBase64,'base64')) as {qq:string;erased_at:Json}[])oldMusic.set(row.qq,row.erased_at);
