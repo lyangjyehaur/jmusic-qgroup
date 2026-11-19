@@ -7067,7 +7067,9 @@
         "tools/migration/rollback-board-reconciliation.ts",
         "tools/migration/rollback-source.ts",
         "tools/migration/rollback-music.ts",
-        "tools/migration/rollback-music-reconciliation.ts"
+        "tools/migration/rollback-music-reconciliation.ts",
+        "tools/migration/rollback-checkpoint.ts",
+        "tools/migration/rollback-checkpoint-reconciliation.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7094,7 +7096,9 @@
         "apps/api/src/rollback-board.test.ts",
         "docs/unified-rebuild/102-rollback-board-checkpoint.md",
         "apps/api/src/rollback-music.test.ts",
-        "docs/unified-rebuild/103-rollback-music-checkpoint.md"
+        "docs/unified-rebuild/103-rollback-music-checkpoint.md",
+        "apps/api/src/rollback-checkpoint.test.ts",
+        "docs/unified-rebuild/104-rollback-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7116,7 +7120,9 @@
         "apps/api/src/rollback-board.test.ts",
         "docs/unified-rebuild/102-rollback-board-checkpoint.md",
         "apps/api/src/rollback-music.test.ts",
-        "docs/unified-rebuild/103-rollback-music-checkpoint.md"
+        "docs/unified-rebuild/103-rollback-music-checkpoint.md",
+        "apps/api/src/rollback-checkpoint.test.ts",
+        "docs/unified-rebuild/104-rollback-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7126,7 +7132,8 @@
         "apps/api/src/capture-snapshot.test.ts",
         "apps/api/src/legacy-music-history.test.ts",
         "apps/api/src/rollback-board.test.ts",
-        "apps/api/src/rollback-music.test.ts"
+        "apps/api/src/rollback-music.test.ts",
+        "apps/api/src/rollback-checkpoint.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7136,10 +7143,11 @@
         "apps/web/tests/legacy-backups.spec.ts",
         "docs/unified-rebuild/101-legacy-history-checkpoint.md",
         "docs/unified-rebuild/102-rollback-board-checkpoint.md",
-        "docs/unified-rebuild/103-rollback-music-checkpoint.md"
+        "docs/unified-rebuild/103-rollback-music-checkpoint.md",
+        "docs/unified-rebuild/104-rollback-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "最新成分 JSON 的私人回退元件與獨立对帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "完整新庫／最新 journal 的一致私人來源快照與全部 schema／rowid／storage／BigInt／高水位對帳已有隔離證據（檢查點 104），包含新版 audit／receipt／consent 與 bot 工作，來源 writer lock／失敗釋放及兩領域共用固定快照已驗證；仍不是完整落盤回退包或固定舊版本演練，rollbackEligible=false。最新成分 JSON 的私人回退元件與獨立對帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -7171,7 +7179,9 @@
         "tools/migration/rollback-board-reconciliation.ts",
         "tools/migration/rollback-source.ts",
         "tools/migration/rollback-music.ts",
-        "tools/migration/rollback-music-reconciliation.ts"
+        "tools/migration/rollback-music-reconciliation.ts",
+        "tools/migration/rollback-checkpoint.ts",
+        "tools/migration/rollback-checkpoint-reconciliation.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7194,7 +7204,9 @@
         "apps/api/src/rollback-board.test.ts",
         "docs/unified-rebuild/102-rollback-board-checkpoint.md",
         "apps/api/src/rollback-music.test.ts",
-        "docs/unified-rebuild/103-rollback-music-checkpoint.md"
+        "docs/unified-rebuild/103-rollback-music-checkpoint.md",
+        "apps/api/src/rollback-checkpoint.test.ts",
+        "docs/unified-rebuild/104-rollback-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7212,7 +7224,9 @@
         "apps/api/src/rollback-board.test.ts",
         "docs/unified-rebuild/102-rollback-board-checkpoint.md",
         "apps/api/src/rollback-music.test.ts",
-        "docs/unified-rebuild/103-rollback-music-checkpoint.md"
+        "docs/unified-rebuild/103-rollback-music-checkpoint.md",
+        "apps/api/src/rollback-checkpoint.test.ts",
+        "docs/unified-rebuild/104-rollback-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7222,7 +7236,8 @@
         "apps/api/src/capture-snapshot.test.ts",
         "apps/api/src/legacy-music-history.test.ts",
         "apps/api/src/rollback-board.test.ts",
-        "apps/api/src/rollback-music.test.ts"
+        "apps/api/src/rollback-music.test.ts",
+        "apps/api/src/rollback-checkpoint.test.ts"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7231,10 +7246,11 @@
         "apps/web/tests/legacy-backups.spec.ts",
         "docs/unified-rebuild/101-legacy-history-checkpoint.md",
         "docs/unified-rebuild/102-rollback-board-checkpoint.md",
-        "docs/unified-rebuild/103-rollback-music-checkpoint.md"
+        "docs/unified-rebuild/103-rollback-music-checkpoint.md",
+        "docs/unified-rebuild/104-rollback-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "最新成分 JSON 的私人回退元件與獨立对帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
+      "remaining": "完整新庫／最新 journal 的一致私人來源快照與全部 schema／rowid／storage／BigInt／高水位對帳已有隔離證據（檢查點 104），包含新版 audit／receipt／consent 與 bot 工作，來源 writer lock／失敗釋放及兩領域共用固定快照已驗證；仍不是完整落盤回退包或固定舊版本演練，rollbackEligible=false。最新成分 JSON 的私人回退元件與獨立對帳已有隔離證據（檢查點 103）：原鍵保留、新鍵可逆轉舊格式、最新 ownership／PIN／contact／選擇／建立／喊話／刪除及原表示；rollbackEligible=false，身份 SQLite、舊認證安全處理、完整新庫 audit／receipt／consent／ledger／資產／browser requests 與固定舊版本讀寫演練仍待完成。新版看板 59 表的精確回退投影與獨立對帳已具隔離證據（檢查點 102），含新 API 寫入、raw rowid／型別／BigInt、所有 bot 狀態與高水位；只是元件，rollbackEligible=false，身份／資產／最新 ledger／browser requests／完整新庫保全與固定舊版本讀寫演練尚待完成。本機一致擷取器已實作（檢查點 100）：明確本機 Docker Unix socket、三個停止容器的固定 IDs／images／角色／實際資料路徑／重啟時段、成分 flock 與兩庫 writer lock、原 WAL／JSON／媒體／歷史／bot 證據；真實 Linux 鎖與 Docker 唯讀檢查分別具隔離證據。舊成分配對／單 JSON 已連接來源驗證與最新隱私下載（檢查點 101）；原稿仍保留，不是完整回退包。原會員／詞條私人封存、25 成分表與兩個 mapping namespace 的獨立來源模型、精度拒絕、刪除／關閉／reset 保全已具證據（檢查點 98）；identity 原 schema／隱式與部分索引／rowid／原儲存型別／高水位封存與獨立對帳已有隔離證據（檢查點 99），未知結構與正式規模仍待審查；這不是完整回退匯出器。看板固定 59 表的逐列／rowid／原型別／映射／schema／sequence、獨立刪除與 bot 狀態保全已具隔離證據（檢查點 97）；原生 v2／schema 14 來源識別、最新 ledger 重播、最新 bot 狀態對帳、群授權／診斷保全與只寫新目錄的隔離恢復候選已實作；候選撤銷舊認證並阻止新版網站啟動。正式來源實際擷取／部署控制鎖與服務停寫演練、平台不確定投遞審核、候選啟用、舊歷史備份 URL adapters、回退匯出、正式規模及實際版本組合驗收仍待完成；restoreEligible=false。"
     },
     {
       "capability_id": "O14",
