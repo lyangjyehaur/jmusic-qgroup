@@ -132,6 +132,7 @@
 | [離線回退封存與來源邊界檢查點](112-offline-capture-boundary-checkpoint.md) | reviewed input／停止服務 pins、v3 私人套件及 raw journal、完整持鎖 CLI／source 與 socket fences、late partial 保全及未協調邊界 |
 | [最新 bot 外部狀態與原時間恢復檢查點](113-original-bot-state-restore-checkpoint.md) | v2／v3 最新 bot 原 bytes／奈秒時間落盤、缺失／休眠／uncertain 保全、固定 reader／CLI 與真 Python／TS 元件 TTL／群拒絕／詞庫驗證 |
 | [舊成分歷史 namespace 與 HTTP adapter 檢查點](114-old-history-adapter-checkpoint.md) | 三種歷史 catalog、明確舊 HTTP overlay／proxy 管理限制、目前 erasure／身分投影及真 loopback 原 Handler 演練 |
+| [實際 Docker 擷取證據檢查點](115-real-docker-inspection-checkpoint.md) | 真 Go-template／23 項 inert-container 檢查、原環境值等號保全／socket 身份修正、實際 Docker v3 封存及持鎖對帳 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 原系統盤點結論

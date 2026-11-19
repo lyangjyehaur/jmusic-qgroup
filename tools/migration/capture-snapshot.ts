@@ -16,13 +16,21 @@ export type ContainerEvidence = { Id: string; Image: string; State: { Running: b
 const inspection = z.object({Id:z.string(),Image:z.string(),State:z.object({Running:z.boolean(),Paused:z.boolean(),Restarting:z.boolean(),Dead:z.boolean(),Status:z.string(),Pid:z.number().int(),StartedAt:z.string(),FinishedAt:z.string()}).strict(),RestartCount:z.number().int().nonnegative(),Revision:z.string().nullable(),Service:z.string(),BoardDatabase:z.string(),MusicData:z.string(),BotLogDir:z.string(),Mounts:z.array(z.object({Type:z.string(),Source:z.string(),Destination:z.string()}).strict())}).strict();
 /** Select only data-path settings, never other environment values, credentials,
  * full Docker configuration or log text. */
-export function inspectCaptureContainer(id: string, socketPath='/var/run/docker.sock'): ContainerEvidence {
+function pinCaptureDockerSocket(socketPath?:string){
+  const socket=socketPath??realpathSync('/var/run/docker.sock');
+  if(resolve(socket)!==socket||realpathSync(socket)!==socket)throw new Error('Capture requires a canonical local Docker Unix socket');
+  const original=lstatSync(socket,{bigint:true});if(!original.isSocket())throw new Error('Capture requires a canonical local Docker Unix socket');
+  const assertUnchanged=()=>{const current=lstatSync(socket,{bigint:true});if(!current.isSocket()||current.dev!==original.dev||current.ino!==original.ino||realpathSync(socket)!==socket)throw new Error('Capture Docker socket was replaced');};
+  return {socket,assertUnchanged};
+}
+export function inspectCaptureContainer(id: string, socketPath?:string): ContainerEvidence {
   if (!/^[a-f0-9]{64}$/.test(id)) throw new Error('A complete container ID is required');
-  const socket=realpathSync(resolve(socketPath));if(!lstatSync(socket).isSocket())throw new Error('Capture requires a local Docker Unix socket');
-  const environment=(name:string)=>'{{ $value := "" }}{{range .Config.Env}}{{ $parts := split . "=" }}{{if eq (index $parts 0) "'+name+'" }}{{ $value = index $parts 1 }}{{end}}{{end}}{{json $value}}';
+  const pinned=pinCaptureDockerSocket(socketPath),socket=pinned.socket;
+  const environment=(name:string)=>'{{ $value := "" }}{{range .Config.Env}}{{ $parts := split . "=" }}{{if eq (index $parts 0) "'+name+'" }}{{ $value = join (slice $parts 1) "=" }}{{end}}{{end}}{{json $value}}';
   const format='{"Id":{{json .Id}},"Image":{{json .Image}},"State":{"Running":{{json .State.Running}},"Paused":{{json .State.Paused}},"Restarting":{{json .State.Restarting}},"Dead":{{json .State.Dead}},"Status":{{json .State.Status}},"Pid":{{json .State.Pid}},"StartedAt":{{json .State.StartedAt}},"FinishedAt":{{json .State.FinishedAt}}},"RestartCount":{{json .RestartCount}},"Revision":{{json (index .Config.Labels "org.opencontainers.image.revision")}},"Service":{{json (index .Config.Labels "com.docker.compose.service")}},"BoardDatabase":'+environment('KANBAN_DB')+',"MusicData":'+environment('JPM_DATA')+',"BotLogDir":'+environment('KANBAN_BOT_LOG_DIR')+',"Mounts":[{{range $i,$m:=.Mounts}}{{if $i}},{{end}}{"Type":{{json $m.Type}},"Source":{{json $m.Source}},"Destination":{{json $m.Destination}}}{{end}}]}';
-  const environmentVariables={...process.env};for(const name of ['DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH'])delete environmentVariables[name];
-  return inspection.parse(JSON.parse(execFileSync('docker',['--host','unix://'+socket,'inspect','--type','container','--format',format,id],{encoding:'utf8',timeout:5000,maxBuffer:1024*1024,stdio:['ignore','pipe','pipe'],env:environmentVariables})));
+  const environmentVariables={...process.env};for(const name of ['DOCKER_HOST','DOCKER_CONTEXT','DOCKER_TLS_VERIFY','DOCKER_CERT_PATH','NODE_OPTIONS'])delete environmentVariables[name];
+  const result=inspection.parse(JSON.parse(execFileSync('docker',['--host','unix://'+socket,'inspect','--type','container','--format',format,id],{encoding:'utf8',timeout:5000,maxBuffer:1024*1024,stdio:['ignore','pipe','pipe'],env:environmentVariables})));
+  pinned.assertUnchanged();if(result.Id!==id)throw new Error('Capture Docker inspection container differs');return result;
 }
 const maxFile = 512 * 1024 * 1024;
 const decode = (raw: Buffer) => new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(raw);
@@ -72,7 +80,9 @@ export async function captureSnapshot(rawInput:Input, now=new Date(), dependenci
   canonical(dirname(input.destination),true);if(existsEntry(input.destination))throw new Error('Refusing existing capture destination');
   const sources=[dirname(input.board),input.music,input.boardBackups,input.botEvidence,dirname(input.boardLedger)];
   for(const source of sources)if(input.destination===source||input.destination.startsWith(source+sep)||source.startsWith(input.destination+sep))throw new Error('Capture sources and destination must be isolated');
-  const inspector=dependencies.inspect??((id:string)=>inspectCaptureContainer(id,input.dockerSocket)),services=stopped(input,inspector);
+  let inspector=dependencies.inspect;
+  if(!inspector){const pinned=pinCaptureDockerSocket(input.dockerSocket);inspector=(id:string)=>{pinned.assertUnchanged();const result=inspectCaptureContainer(id,pinned.socket);pinned.assertUnchanged();return result;};}
+  const services=stopped(input,inspector);
   const reservation=input.destination+'.capture-lock',reservationFD=openSync(reservation,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);
   let musicLock:CaptureLock|undefined,board:Database.Database|undefined,identity:Database.Database|undefined,stage:string|undefined;
   try{

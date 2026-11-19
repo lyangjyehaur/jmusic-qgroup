@@ -1,9 +1,10 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import {createServer} from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import Database from 'better-sqlite3';
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { legacySchema } from '../../../packages/database/src/legacy-schema';
 import { identitySchema } from '../../../tools/migration/identity-schema';
 import { captureSnapshot, inspectCaptureContainer, type ContainerEvidence } from '../../../tools/migration/capture-snapshot';
@@ -12,7 +13,7 @@ import { importSnapshot } from '../../../tools/migration/import-snapshot';
 import { digest } from '../../../tools/migration/music-codec';
 import { fixture } from '../testsupport/fixture';
 import { createLegacyMusicHistory } from './legacy-music-history';
-const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
+const cleanup:(()=>void|Promise<void>)[]=[];afterEach(async()=>{vi.unstubAllEnvs();for(const close of cleanup.splice(0).reverse())await close();});
 function setup(){
   const root=realpathSync(mkdtempSync(join(tmpdir(),'qgroup-capture-test-'))),boardRoot=join(root,'board'),music=join(root,'music'),boardBackups=join(root,'backups'),botEvidence=join(boardRoot,'bot-logs'),destination=join(root,'capture');
   for(const path of [join(boardRoot,'images'),join(music,'walls'),boardBackups,botEvidence])mkdirSync(path,{recursive:true,mode:0o700});
@@ -99,4 +100,26 @@ it('has no permissive CLI assertion or test dependency option, and reports usage
 it('rejects remote endpoint syntax before Docker execution and requires complete container IDs',()=>{
   expect(()=>inspectCaptureContainer('short','/unavailable')).toThrow('complete container ID');
   expect(()=>inspectCaptureContainer('a'.repeat(64),'tcp://untrusted.invalid:2375')).toThrow();
+});
+async function localInspectionFixture(){
+  const s=setup(),socket=join(s.root,'docker.sock'),replacement=join(s.root,'replacement.sock'),bin=join(s.root,'bin'),rows=join(s.root,'inspection.json'),calls=join(s.root,'calls.jsonl');
+  for(const path of [socket,replacement]){const server=createServer(connection=>connection.destroy());await new Promise<void>((ok,no)=>{server.once('error',no);server.listen(path,ok);});cleanup.push(()=>new Promise<void>(ok=>server.close(()=>ok())));}
+  mkdirSync(bin,{mode:0o700});s.save(rows,s.input.services.map(row=>s.inspect(row.containerId)));
+  const install=(replace=false,wrongId=false)=>writeFileSync(join(bin,'docker'),'#!'+process.execPath+'\n'+`const fs=require('fs'),args=process.argv.slice(2);if(args.length!==8||args[0]!=='--host'||args[1]!=='unix://'+process.env.MOCK_CAPTURE_SOCKET||args[2]!=='inspect'||args[3]!=='--type'||args[4]!=='container'||args[5]!=='--format'||process.env.DOCKER_HOST||process.env.DOCKER_CONTEXT||process.env.DOCKER_TLS_VERIFY||process.env.DOCKER_CERT_PATH||process.env.NODE_OPTIONS)process.exit(2);fs.appendFileSync(process.env.MOCK_CAPTURE_CALLS,JSON.stringify(args)+'\\n');const row=JSON.parse(fs.readFileSync(process.env.MOCK_CAPTURE_ROWS)).find(row=>row.Id===args[7]);${replace?"fs.renameSync(process.env.MOCK_CAPTURE_SOCKET,process.env.MOCK_CAPTURE_SOCKET+'-saved');fs.renameSync(process.env.MOCK_CAPTURE_REPLACEMENT,process.env.MOCK_CAPTURE_SOCKET);":''}${wrongId?"row.Id='f'.repeat(64);":''}process.stdout.write(JSON.stringify(row));`,{mode:0o700});
+  for(const [name,value] of Object.entries({PATH:bin+':'+process.env.PATH,MOCK_CAPTURE_SOCKET:socket,MOCK_CAPTURE_REPLACEMENT:replacement,MOCK_CAPTURE_ROWS:rows,MOCK_CAPTURE_CALLS:calls,DOCKER_HOST:'tcp://forbidden.invalid',DOCKER_CONTEXT:'forbidden',DOCKER_TLS_VERIFY:'1',DOCKER_CERT_PATH:'/nonexistent-certs',NODE_OPTIONS:'--require /inactive-secret'}))vi.stubEnv(name,value);
+  install();return {...s,socket,replacement,calls,install};
+}
+it('selects a narrow explicit local Docker endpoint and clears inherited endpoint/TLS/Node options',async()=>{
+  const s=await localInspectionFixture(),expected=s.inspect(s.input.services[0]!.containerId);expect(inspectCaptureContainer(expected.Id,s.socket)).toEqual(expected);
+  const calls=readFileSync(s.calls,'utf8').trim().split('\n').map(line=>JSON.parse(line));expect(calls).toHaveLength(1);expect(calls[0][6]).toContain('join (slice $parts 1) "="');expect(calls[0][6]).not.toContain('json .Config.Env');expect(calls[0][6]).not.toContain('QQBOT_APP_SECRET');
+});
+it('rejects a same-type socket replacement during standalone original-service inspection',async()=>{
+  const s=await localInspectionFixture(),original=lstatSync(s.socket,{bigint:true});s.install(true);expect(()=>inspectCaptureContainer(s.input.services[0]!.containerId,s.socket)).toThrow('socket was replaced');expect(lstatSync(s.socket,{bigint:true}).isSocket()).toBe(true);expect(lstatSync(s.socket,{bigint:true}).ino).not.toBe(original.ino);expect(lstatSync(s.socket+'-saved',{bigint:true}).ino).toBe(original.ino);
+});
+it('pins the original socket across the complete acquisition, rejecting a replacement between separate inspections',async()=>{
+  const s=await localInspectionFixture();await expect(captureSnapshot({...s.input,dockerSocket:s.socket},new Date(),{lock:async()=>{const held=await s.lock();renameSync(s.socket,s.socket+'-saved');renameSync(s.replacement,s.socket);return held;}})).rejects.toThrow('socket was replaced');
+  expect(readFileSync(s.calls,'utf8').trim().split('\n')).toHaveLength(3);expect(existsSync(s.input.destination)).toBe(false);expect(existsSync(s.input.destination+'.capture-lock')).toBe(false);expect(s.releases()).toBe(1);expect(readdirSync(s.root).some(name=>name.startsWith('.qgroup-capture-'))).toBe(false);
+});
+it('rejects socket aliases and a returned container ID that differs from the requested complete ID',async()=>{
+  const s=await localInspectionFixture(),alias=join(s.root,'alias.sock');symlinkSync(s.socket,alias);expect(()=>inspectCaptureContainer(s.input.services[0]!.containerId,alias)).toThrow('canonical local');expect(existsSync(s.calls)).toBe(false);s.install(false,true);expect(()=>inspectCaptureContainer(s.input.services[0]!.containerId,s.socket)).toThrow('container differs');
 });
