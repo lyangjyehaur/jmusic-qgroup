@@ -12,7 +12,7 @@ type Config = z.infer<typeof LegacyHistoryConfig>;
 const File = z.object({path:z.string().min(1),size:z.number().int().nonnegative().safe(),sha256:z.string().regex(/^[a-f0-9]{64}$/)}).strict();
 const Manifest = z.object({version:z.literal(1),files:z.array(File),sourceDigest:z.string(),releaseEligible:z.literal(false)}).passthrough();
 const stampPattern = '[0-9]{8}-[0-9]{6}';
-const pairPattern = new RegExp('^history/music/paired-backups/('+stampPattern+')/(?:data\\.json|identity\\.sqlite3|walls/(?:manifest\\.json|[^/]+\\.(?:png|jpg|jpeg|webp)))$');
+const pairPattern = new RegExp('^history/music/paired-backups/('+stampPattern+')/(?:data\\.json|identity\\.sqlite3|erasures\\.jsonl|walls/(?:manifest\\.json|[^/]+\\.(?:png|jpg|jpeg|webp)))$');
 const jsonPattern = new RegExp('^history/music/backups/data-('+stampPattern+')\\.json$');
 function directory(path:string) { const info=lstatSync(path);if(!info.isDirectory()||info.isSymbolicLink())throw Error('Unsafe history directory'); }
 function read(path:string,limit=512*1024*1024) {
@@ -75,11 +75,15 @@ export function createLegacyMusicHistory(db:DB,input:Config) {
       const latest=new Map(intents.map(entry=>[erasureRequestId(entry),JSON.stringify(entry)]));
       if(source.capturedIntents.some(entry=>latest.get(erasureRequestId(entry))!==JSON.stringify(entry)))throw Error('Captured erasure intent was lost');
       let data:Buffer|undefined;
+      const erased=new Set([...source.erased,...(db.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[]).map(row=>row.legacy_key)]);
       for(const path of group.paths){
         const bytes=source.verified(path);
         if(path.endsWith('/identity.sqlite3')){
           const copy=new Database(bytes);try{if(copy.pragma('integrity_check',{simple:true})!=='ok'||(copy.pragma('foreign_key_check') as unknown[]).length)throw Error('Historical identity integrity failed');readIdentity(copy);}finally{copy.close();}
         }else if(path.endsWith('/data.json')||group.source==='legacy_json')data=bytes;
+        else if(path.endsWith('/erasures.jsonl')){
+          for(const key of musicErasures(decode(bytes)).keys())if(!erased.has(key))throw Error('Historical music erasure intent was lost');
+        }
         else if(path.endsWith('/walls/manifest.json')){
           const walls=z.object({items:z.array(z.object({src:z.string()}).passthrough())}).passthrough().parse(parseJson(decode(bytes)));
           for(const item of walls.items){if(!/^\/walls\/[^/]+\.(?:png|jpg|jpeg|webp)$/.test(item.src)||item.src.includes('..'))throw Error('Invalid historical wall reference');source.verified('history/music/paired-backups/'+group.sourceStamp+item.src);}

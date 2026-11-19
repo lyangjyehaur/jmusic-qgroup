@@ -12,7 +12,7 @@ const idPattern = /^[0-9]{8}-[0-9]{6}-[a-f0-9]{32}$/;
 const filePattern = /^(?:state\.sqlite3|state\.erasures\.jsonl|images\/[a-f0-9]{2}\/[a-f0-9]{64}\.png)$/;
 const File = z.object({ path: z.string().regex(filePattern), size: z.number().int().nonnegative().safe(), sha256: z.string().regex(/^[a-f0-9]{64}$/) }).strict();
 const common = { id: z.string().regex(idPattern), createdAt: z.iso.datetime(), sequence: z.number().int().positive().safe(), files: z.array(File), restoreEligible: z.literal(false) };
-const Manifest = z.union([
+export const PairedBackupManifest = z.union([
   z.object({ ...common, version: z.literal(1), schema: z.literal(13) }).strict(),
   z.object({ ...common, version: z.literal(2), schema: z.literal(REBUILD_SCHEMA_VERSION), lineageId: z.string().regex(/^[a-f0-9]{32}$/) }).strict(),
 ]).refine(m => {
@@ -20,6 +20,7 @@ const Manifest = z.union([
   return paths.length === new Set(paths).size && paths.includes('state.sqlite3') && paths.includes('state.erasures.jsonl') &&
     paths.every(path => !path.startsWith('images/') || path.split('/')[1] === path.split('/')[2]!.slice(0, 2));
 });
+const Manifest = PairedBackupManifest;
 type Manifest = z.infer<typeof Manifest>;
 const hash = (raw: Buffer) => createHash('sha256').update(raw).digest('hex');
 function directory(path: string, create = false) {

@@ -120,3 +120,12 @@ it('rejects nested unclassified fields rather than exposing opaque credentials i
     const data=structuredClone(s.historical);mutate(data);s.save(s.pair+'/data.json',data);const history=createLegacyMusicHistory(s.db,s.repin());expect(()=>history.export('legacy-pair-'+s.stamp,[])).toThrow();
   }
 });
+it('accepts optional paired erasure ledgers and checks them against latest durable erasures',async()=>{
+  const s=await legacyHistoryFixture({musicLedger:'{"qq":"10004","erased_at":123}\n'});cleanup.push(()=>s.close());
+  s.save(s.pair+'/erasures.jsonl','{"qq":"10004","erased_at":122}\n');
+  const history=createLegacyMusicHistory(s.db,s.repin());expect(history.list()).toHaveLength(2);expect(history.export('legacy-pair-'+s.stamp,[]).members).not.toHaveProperty('10004');
+});
+it.each(['missing latest marker','incomplete ledger'])('rejects optional paired erasure ledger with %s',async(change)=>{
+  const s=await setup();s.save(s.pair+'/erasures.jsonl',change==='missing latest marker'?'{"qq":"10004","erased_at":123}\n':'{"qq":"10004","erased_at":123}');
+  const history=createLegacyMusicHistory(s.db,s.repin());expect(history.list()).toHaveLength(2);expect(()=>history.export('legacy-pair-'+s.stamp,[])).toThrow();
+});
