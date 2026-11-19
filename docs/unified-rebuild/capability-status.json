@@ -7377,7 +7377,10 @@
         "tools/migration/forward-erasure-projection.ts",
         "tools/migration/forward-board-merge.ts",
         "tools/migration/forward-board-reconciliation.ts",
-        "tools/migration/forward-board-storage.ts"
+        "tools/migration/forward-board-storage.ts",
+        "tools/migration/forward-music-merge.ts",
+        "tools/migration/forward-music-sources.ts",
+        "tools/migration/forward-music-reconciliation.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7500,7 +7503,9 @@
         "apps/api/src/forward-erasure-projection.test.ts",
         "docs/unified-rebuild/120-forward-erasure-projection-checkpoint.md",
         "apps/api/src/forward-board-merge.test.ts",
-        "docs/unified-rebuild/121-forward-board-merge-checkpoint.md"
+        "docs/unified-rebuild/121-forward-board-merge-checkpoint.md",
+        "apps/api/src/forward-music-merge.test.ts",
+        "docs/unified-rebuild/122-forward-music-identity-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7638,7 +7643,10 @@
         "tools/migration/forward-erasure-projection.ts",
         "tools/migration/forward-board-merge.ts",
         "tools/migration/forward-board-reconciliation.ts",
-        "tools/migration/forward-board-storage.ts"
+        "tools/migration/forward-board-storage.ts",
+        "tools/migration/forward-music-merge.ts",
+        "tools/migration/forward-music-sources.ts",
+        "tools/migration/forward-music-reconciliation.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7749,7 +7757,9 @@
         "apps/api/src/forward-erasure-projection.test.ts",
         "docs/unified-rebuild/120-forward-erasure-projection-checkpoint.md",
         "apps/api/src/forward-board-merge.test.ts",
-        "docs/unified-rebuild/121-forward-board-merge-checkpoint.md"
+        "docs/unified-rebuild/121-forward-board-merge-checkpoint.md",
+        "apps/api/src/forward-music-merge.test.ts",
+        "docs/unified-rebuild/122-forward-music-identity-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
