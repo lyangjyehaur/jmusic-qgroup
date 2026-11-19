@@ -5,7 +5,10 @@ x-common: &common
   network_mode: host
   user: "${QGROUP_UID:-994}:${QGROUP_GID:-992}"
   volumes:
-    - ${QGROUP_DATA_DIR:?Set an explicit isolated or approved data directory}:/var/lib/qgroup
+    - type: bind
+      source: ${QGROUP_DATA_DIR:?Set an explicit isolated or approved data directory}
+      target: /var/lib/qgroup
+      bind: {create_host_path: false}
   init: true
   restart: unless-stopped
   stop_grace_period: 15s
@@ -29,10 +32,28 @@ services:
       - path: ${QGROUP_WEB_ENV_FILE:?Set the private web environment file}
         required: true
     environment:
+      NODE_ENV: production
       REBUILD_DB: /var/lib/qgroup/kanban.sqlite3
       REBUILD_HOST: 127.0.0.1
       REBUILD_PORT: "${QGROUP_WEB_PORT:-8791}"
       REBUILD_ORIGIN: ${QGROUP_ORIGIN:?Set the approved public origin}
+      REBUILD_ERASURE_AUTHORITY_ROOT: /var/lib/qgroup-erasure
+      REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256: ${QGROUP_ERASURE_AUTHORITY_MANIFEST_SHA256:?Set the independently retained authority manifest pin}
+      REBUILD_ERASURE_AUTHORITY_CHECKPOINT: /var/lib/qgroup-checkpoint/unified.sqlite3
+    volumes:
+      - type: bind
+        source: ${QGROUP_DATA_DIR:?Set an explicit isolated or approved data directory}
+        target: /var/lib/qgroup
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${QGROUP_ERASURE_AUTHORITY_DIR:?Set the separately retained private authority directory}
+        target: /var/lib/qgroup-erasure
+        bind: {create_host_path: false}
+      - type: bind
+        source: ${QGROUP_ERASURE_CHECKPOINT_DIR:?Set the separately retained private checkpoint directory}
+        target: /var/lib/qgroup-checkpoint
+        read_only: true
+        bind: {create_host_path: false}
     command: [node, .rebuild-dist/api/start.mjs]
     healthcheck:
       test: [CMD, node, -e, "fetch('http://127.0.0.1:'+process.env.REBUILD_PORT+'/api/v2/health',{signal:AbortSignal.timeout(3000)}).then(async r=>{if(!r.ok||(await r.json()).ok!==true)process.exit(1)}).catch(()=>process.exit(1))"]
@@ -47,6 +68,7 @@ services:
       - path: ${QGROUP_BOT_ENV_FILE:?Set the private bot environment file}
         required: true
     environment:
+      NODE_ENV: production
       KANBAN_DB: /var/lib/qgroup/kanban.sqlite3
       KANBAN_BOT_LOG_DIR: /var/lib/qgroup/bot-logs
     command: [node, .rebuild-dist/bot/start.mjs]

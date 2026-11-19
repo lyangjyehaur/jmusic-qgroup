@@ -5,13 +5,13 @@ import { openDatabase,openServiceDatabase } from '@qgroup/database';
 import { createApp } from './app';
 import { qqProvider } from './qq-provider';
 import { LegacyHistoryConfig } from './legacy-music-history';
-import {createRetainedErasureJournal,RetainedErasureConfig} from './retained-erasure-journal';
+import {createRetainedErasureJournal} from './retained-erasure-journal';
+import {retainedErasureConfig} from './retained-erasure-config';
 
 const version=runtimeInfo('web');
 if(process.argv.length>2){if(process.argv.length!==3||process.argv[2]!=='--version')throw Error('Unsupported web argument');process.stdout.write(JSON.stringify(version)+'\n');process.exit(0);}
 const {port,host,origin,database,production}=webRuntimeConfig(process.env);
-const authorityRoot=process.env.REBUILD_ERASURE_AUTHORITY_ROOT,authorityPin=process.env.REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256,authorityCheckpoint=process.env.REBUILD_ERASURE_AUTHORITY_CHECKPOINT;
-const authorityConfig=[authorityRoot,authorityPin,authorityCheckpoint].some(value=>value!==undefined)?RetainedErasureConfig.parse({root:authorityRoot,manifestSha256:authorityPin,sourceCheckpoint:authorityCheckpoint}):undefined;
+const authorityConfig=retainedErasureConfig(process.env,production);
 const staticRoot = resolve('.rebuild-dist/web');
 if(production&&!existsSync(staticRoot))throw Error('Production web assets are missing');
 const historyRoot=process.env.REBUILD_LEGACY_HISTORY_ROOT,historyPin=process.env.REBUILD_LEGACY_HISTORY_MANIFEST_SHA256;

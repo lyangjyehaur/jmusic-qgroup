@@ -16,10 +16,23 @@ export function checkRuntimeCompose(input:unknown){
   if(JSON.stringify(s.tmpfs)!=='["/tmp:rw,nosuid,nodev,noexec,size=64m"]')throw Error('A bounded, non-executable temporary filesystem is required');
   if(JSON.stringify(s.command)!==JSON.stringify(['node','.rebuild-dist/'+(name==='web'?'api':'bot')+'/start.mjs']))throw Error('Unexpected service command');
   const health=obj(s.healthcheck),test=health.test;if(health.disable||!Array.isArray(test)||test[0]!=='CMD'||test[1]!=='node'||(name==='bot'?(test.length!==4||test[2]!=='.rebuild-dist/bot/start.mjs'||test[3]!=='--check-health'):(test.length!==4||test[2]!=='-e'||typeof test[3]!=='string'||!test[3].includes('/api/v2/health')||!test[3].includes('r.ok')||!test[3].includes('AbortSignal.timeout(3000)'))))throw Error('An active bounded service health check is required');
-  if(!Array.isArray(s.volumes)||s.volumes.length!==1)throw Error('Only the explicit data mount is allowed');const mount=obj(s.volumes[0]);
-  if(mount.type!=='bind'||mount.target!=='/var/lib/qgroup'||typeof mount.source!=='string'||!isAbsolute(mount.source)||mount.source==='/'||mount.source==='/var'||mount.source==='/etc'||mount.read_only)throw Error('Invalid explicit data mount');
-  if(data&&mount.source!==data)throw Error('Web and bot must use the same approved data directory');data=mount.source;
-  const env=obj(s.environment);if(env[name==='web'?'REBUILD_DB':'KANBAN_DB']!=='/var/lib/qgroup/kanban.sqlite3')throw Error('Web and bot database paths must agree');
+  const targets=name==='web'?['/var/lib/qgroup','/var/lib/qgroup-erasure','/var/lib/qgroup-checkpoint']:['/var/lib/qgroup'];
+  if(!Array.isArray(s.volumes)||s.volumes.length!==targets.length)throw Error('Only the explicit service data and web erasure mounts are allowed');
+  const mounts=s.volumes.map(obj);
+  if(JSON.stringify(mounts.map(mount=>mount.target).sort())!==JSON.stringify([...targets].sort()))throw Error('Service mount targets differ');
+  for(const mount of mounts){
+   if(mount.type!=='bind'||typeof mount.source!=='string'||!isAbsolute(mount.source)||resolve(mount.source)!==mount.source||['/','/var','/etc'].includes(mount.source)||obj(mount.bind).create_host_path!==false)throw Error('Explicit existing canonical bind sources are required');
+   if(mount.target==='/var/lib/qgroup-checkpoint'?mount.read_only!==true:mount.read_only!==undefined&&mount.read_only!==false)throw Error('Authority must be writable and checkpoint must be read-only');
+  }
+  const mount=mounts.find(mount=>mount.target==='/var/lib/qgroup')!;
+  const dataSource=mount.source as string;
+  if(data&&dataSource!==data)throw Error('Web and bot must use the same approved data directory');data=dataSource;
+  const env=obj(s.environment);if(env.NODE_ENV!=='production'||env[name==='web'?'REBUILD_DB':'KANBAN_DB']!=='/var/lib/qgroup/kanban.sqlite3')throw Error('Production mode and web/bot database paths must agree');
+  if(name==='web'){
+   const sources=mounts.map(mount=>mount.source as string);
+   for(const [i,source] of sources.entries())for(const other of sources.slice(i+1))if(source===other||source.startsWith(other+'/')||other.startsWith(source+'/'))throw Error('Data, retained authority and checkpoint sources must be separate');
+   if(env.REBUILD_ERASURE_AUTHORITY_ROOT!=='/var/lib/qgroup-erasure'||env.REBUILD_ERASURE_AUTHORITY_CHECKPOINT!=='/var/lib/qgroup-checkpoint/unified.sqlite3'||typeof env.REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256!=='string'||!/^[a-f0-9]{64}$/.test(env.REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256))throw Error('Explicit retained authority and checkpoint configuration required');
+  }
  }
  return {images,resources:'bounded',rootfs:'read-only',sourceVersions:'check independently',deploymentPerformed:false};
 }

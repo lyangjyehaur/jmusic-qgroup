@@ -3,14 +3,15 @@ import {basename,dirname,join,resolve} from 'node:path';
 import {randomBytes} from 'node:crypto';
 import {REBUILD_SCHEMA_VERSION,type DB} from '@qgroup/database';
 import Database from 'better-sqlite3';
-import {z} from 'zod';
+import type {z} from 'zod';
 import {decodeErasureJournal,erasureJournalPath,type ErasureIntent,type ErasureJournal} from './erasure-journal';
 import {acquireErasureAuthorityLock,type ErasureAuthorityLock} from './erasure-authority-lock';
 import {encode,ErasureAuthorityRecord,privateDirectory,privateFile,readRollbackErasureAuthority,validateAuthorityLedger} from './erasure-authority-protocol';
 import {sourceDirectory,sourceStat,snapshotRollbackFile} from '../../../packages/runtime/src/private-source-files';
 import {digest} from '../../../packages/runtime/src/strict-json';
+import {RetainedErasureConfig} from './retained-erasure-config';
+export {RetainedErasureConfig} from './retained-erasure-config';
 
-export const RetainedErasureConfig=z.object({root:z.string().refine(path=>resolve(path)===path),manifestSha256:z.string().regex(/^[a-f0-9]{64}$/),sourceCheckpoint:z.string().refine(path=>resolve(path)===path)}).strict();
 type Config=z.infer<typeof RetainedErasureConfig>;
 type Snapshot=ReturnType<typeof readRollbackErasureAuthority>;
 export type RetainedJournal=ErasureJournal&{close():Promise<void>};

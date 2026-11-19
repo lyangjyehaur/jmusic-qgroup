@@ -19,7 +19,7 @@ ARG QGROUP_COMMIT
 LABEL org.opencontainers.image.title="qgroup-unified" org.opencontainers.image.revision="${QGROUP_COMMIT}"
 ENV NODE_ENV=production QGROUP_BUILD_INFO=/app/release-source.json
 RUN apt-get update && apt-get install -y --no-install-recommends util-linux && rm -rf /var/lib/apt/lists/*
-RUN groupadd --gid "${QGROUP_GID}" qgroupsvc && useradd --uid "${QGROUP_UID}" --gid "${QGROUP_GID}" --no-create-home --shell /usr/sbin/nologin qgroupsvc && mkdir -p /var/lib/qgroup && chown qgroupsvc:qgroupsvc /var/lib/qgroup
+RUN groupadd --gid "${QGROUP_GID}" qgroupsvc && useradd --uid "${QGROUP_UID}" --gid "${QGROUP_GID}" --no-create-home --shell /usr/sbin/nologin qgroupsvc && install -d -m 0700 -o qgroupsvc -g qgroupsvc /var/lib/qgroup /var/lib/qgroup-erasure /var/lib/qgroup-checkpoint
 WORKDIR /app
 COPY --from=build /build/node_modules/ ./node_modules/
 COPY --from=build /build/.rebuild-dist/ ./.rebuild-dist/
