@@ -31,7 +31,7 @@ function choices(value:Json|undefined){
 }
 /** Preserve original representation whenever its effective value is unchanged. */
 function patch(target:ObjectValue,field:string,current:Json,previous:Json|undefined){if(!same(current,previous))target[field]=current;}
-function keyMap(db:DB){
+export function rollbackMusicKeys(db:DB){
   const profiles=db.prepare('SELECT id,erased_at FROM music_profiles ORDER BY rowid').all() as {id:string;erased_at:string|null}[];
   const aliases=new Map<string,Set<string>>(),reserved=new Set<string>();
   const add=(id:string,key:string)=>{if(!oldKey.test(key))throw Error('Unsupported rollback legacy key');reserved.add(key);const names=aliases.get(id)??new Set<string>();names.add(key);aliases.set(id,names);};
@@ -52,7 +52,7 @@ function keyMap(db:DB){
 export function projectRollbackMusic(db:DB,journal:ErasureJournal){
   if(db.inTransaction)throw Error('Rollback music projection requires a standalone source transaction');
   return db.transaction(()=>{
-    assertRollbackSource(db);const intents=readVerifiedErasureJournal(db,journal),mapping=keyMap(db),byId=new Map(mapping.map(row=>[row.profileId,row]));
+    assertRollbackSource(db);const intents=readVerifiedErasureJournal(db,journal),mapping=rollbackMusicKeys(db),byId=new Map(mapping.map(row=>[row.profileId,row]));
     const erased=new Set(mapping.filter(row=>row.erased).flatMap(row=>[row.profileId,row.legacyKey]));
     for(const row of db.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[])erased.add(row.legacy_key);
     const translate=(value:string)=>erased.has(value)?'':byId.get(value)?.legacyKey??value;

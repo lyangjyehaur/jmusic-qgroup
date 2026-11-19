@@ -42,7 +42,7 @@ function activeWork(db: DB, userId: string) {
   const activePolls = (db.prepare("SELECT count(*) n FROM time_polls WHERE owner_id=? AND status IN ('open','closed')").get(userId) as { n: number }).n;
   return { activeEvents, activePolls };
 }
-function eraseMusic(db: DB, profileId: string, userId: string | null, createdAt: string) {
+export function replayMusicErasure(db: DB, profileId: string, userId: string | null, createdAt: string) {
   const current = db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId) as {user_id:string|null}|undefined;
   const owners = [...new Set([userId,current?.user_id].filter((id):id is string=>!!id&&!!db.prepare('SELECT 1 FROM users WHERE id=?').get(id)))];
   invalidateMusicOwnership(db,profileId,owners);
@@ -110,7 +110,7 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
       return;
     }
     if (!legacy && entry.version === 2) {
-      for (const profile of entry.profiles) eraseMusic(db,profile.id,profile.userId,entry.createdAt);
+      for (const profile of entry.profiles) replayMusicErasure(db,profile.id,profile.userId,entry.createdAt);
       if(entry.command==='reset_music'){
         // Match the effective service's administration.erase(reset=True), including unlinked history.
         for(const {id} of db.prepare('SELECT id FROM music_shouts').all() as {id:string}[])removeMusicShout(db,id,'deleted');
@@ -133,7 +133,7 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
       db.prepare('INSERT INTO erasure_applied VALUES(?)').run(requestId);return;
     }
     let status: Result['status'] = 'completed';
-    if (!legacy && entry.kind !== 'account' && entry.profileId) eraseMusic(db, entry.profileId, entry.userId, entry.createdAt);
+    if (!legacy && entry.kind !== 'account' && entry.profileId) replayMusicErasure(db, entry.profileId, entry.userId, entry.createdAt);
     if (legacy || entry.kind !== 'music') status = closeAccount(db, legacy ? entry.user_id : entry.userId, requestId, legacy ? entry.created_at : entry.createdAt);
     if (!legacy) {
       const result: Result = { requestId, target: entry.kind, status };
