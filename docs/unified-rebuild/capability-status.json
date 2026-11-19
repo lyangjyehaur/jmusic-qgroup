@@ -547,7 +547,12 @@
         "tools/migration/rollback-board-history.ts",
         "tools/migration/rollback-board-history-reconciliation.ts",
         "tools/migration/rollback-board-history-artifact.ts",
-        "tools/migration/read-rollback-board-history.ts"
+        "tools/migration/read-rollback-board-history.ts",
+        "tools/migration/rollback-erasure-authority.ts",
+        "tools/migration/read-rollback-erasure-authority.ts",
+        "tools/migration/rollback_erasure_authority.py",
+        "tools/migration/rollback_erasure_runtime.py",
+        "tools/migration/rollback_music_maintenance.py"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -557,7 +562,9 @@
         "apps/api/src/music-contact.test.ts",
         "apps/api/testsupport/erasure-record.test.ts",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -570,7 +577,9 @@
         "apps/api/src/offline-restore.test.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -579,7 +588,9 @@
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-contact.test.ts",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -592,7 +603,7 @@
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。"
+      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。"
     },
     {
       "capability_id": "I15",
@@ -625,7 +636,12 @@
         "tools/migration/rollback-board-history.ts",
         "tools/migration/rollback-board-history-reconciliation.ts",
         "tools/migration/rollback-board-history-artifact.ts",
-        "tools/migration/read-rollback-board-history.ts"
+        "tools/migration/read-rollback-board-history.ts",
+        "tools/migration/rollback-erasure-authority.ts",
+        "tools/migration/read-rollback-erasure-authority.ts",
+        "tools/migration/rollback_erasure_authority.py",
+        "tools/migration/rollback_erasure_runtime.py",
+        "tools/migration/rollback_music_maintenance.py"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -636,7 +652,9 @@
         "apps/api/src/admin-music-erasure.test.ts",
         "apps/api/testsupport/erasure-record.test.ts",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -650,7 +668,9 @@
         "apps/api/src/privacy-consent.test.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -660,7 +680,9 @@
         "apps/api/src/music-contact.test.ts",
         "apps/api/src/admin-music-erasure.test.ts",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -672,7 +694,7 @@
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。"
+      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。"
     },
     {
       "capability_id": "I16",
@@ -4908,19 +4930,30 @@
         "tools/migration/import-snapshot.ts",
         "apps/web/src/erasure-record.ts",
         "apps/web/src/erasure-store.ts",
-        "apps/web/src/erasure-local.tsx"
+        "apps/web/src/erasure-local.tsx",
+        "tools/migration/rollback-erasure-authority.ts",
+        "tools/migration/read-rollback-erasure-authority.ts",
+        "tools/migration/rollback_erasure_authority.py",
+        "tools/migration/rollback_erasure_runtime.py",
+        "tools/migration/rollback_music_maintenance.py"
       ],
       "behavior_evidence": [
         "apps/api/src/admin-music-erasure.test.ts",
-        "apps/api/testsupport/erasure-record.test.ts"
+        "apps/api/testsupport/erasure-record.test.ts",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music-erasure.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "docs/unified-rebuild/46-admin-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/46-admin-music-erasure-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/admin-music-erasure.test.ts"
+        "apps/api/src/admin-music-erasure.test.ts",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music-erasure.spec.ts",
@@ -4928,7 +4961,7 @@
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生管理成分刪除／重置、詞條保留與建立者清除、私人投影與找回證據清除、持久版本 2 意圖、SQL 故障恢復、回執核對、舊副本／成套匯入防復活與 bot 讀取差分已合成驗證；重置前成套備份、配對資產／歷史濾除、回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。 已直接差分有效 administration.erase：RESET 同時清空全部找搭子與趨勢，重播不清除後續新資料。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。"
+      "remaining": "原生管理成分刪除／重置、詞條保留與建立者清除、私人投影與找回證據清除、持久版本 2 意圖、SQL 故障恢復、回執核對、舊副本／成套匯入防復活與 bot 讀取差分已合成驗證；重置前成套備份、配對資產／歷史濾除、回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。 已直接差分有效 administration.erase：RESET 同時清空全部找搭子與趨勢，重播不清除後續新資料。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。"
     },
     {
       "capability_id": "A12",
@@ -5029,7 +5062,12 @@
         "apps/web/src/admin-backups.tsx",
         "packages/contracts/src/backups.ts",
         "apps/api/src/legacy-music-history.ts",
-        "apps/api/src/legacy-music-export.ts"
+        "apps/api/src/legacy-music-export.ts",
+        "tools/migration/rollback-erasure-authority.ts",
+        "tools/migration/read-rollback-erasure-authority.ts",
+        "tools/migration/rollback_erasure_authority.py",
+        "tools/migration/rollback_erasure_runtime.py",
+        "tools/migration/rollback_music_maintenance.py"
       ],
       "behavior_evidence": [
         "apps/api/src/admin-backups.test.ts",
@@ -5037,17 +5075,23 @@
         "tools/rebuild/smoke-build.mjs",
         "apps/api/src/legacy-music-history.test.ts",
         "apps/web/tests/legacy-backups.spec.ts",
-        "docs/unified-rebuild/101-legacy-history-checkpoint.md"
+        "docs/unified-rebuild/101-legacy-history-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-backups.test.ts",
         "apps/api/src/legacy-music-history.test.ts",
-        "apps/api/src/capture-snapshot.test.ts"
+        "apps/api/src/capture-snapshot.test.ts",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-backups.test.ts",
         "apps/web/tests/admin-backups.spec.ts",
-        "apps/api/src/legacy-music-history.test.ts"
+        "apps/api/src/legacy-music-history.test.ts",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-backups.spec.ts",
@@ -5056,7 +5100,7 @@
         "docs/unified-rebuild/101-legacy-history-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生及舊配對／單 JSON 已接入統一管理下載，固定 capture manifest 與實際匯入來源、最新刪除／RESET／帳號關閉、關聯／明確空聯絡／目前 PIN、原稿保全、權限與晚回應已隔離驗證（檢查點 101）。舊 URL adapters、正式歷史來源／規模、完整恢復與實際候選版本組合尚待完成。"
+      "remaining": "原生及舊配對／單 JSON 已接入統一管理下載，固定 capture manifest 與實際匯入來源、最新刪除／RESET／帳號關閉、關聯／明確空聯絡／目前 PIN、原稿保全、權限與晚回應已隔離驗證（檢查點 101）。舊 URL adapters、正式歷史來源／規模、完整恢復與實際候選版本組合尚待完成。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。"
     },
     {
       "capability_id": "A15",
@@ -7224,7 +7268,12 @@
         "tools/migration/rollback-board-history.ts",
         "tools/migration/rollback-board-history-reconciliation.ts",
         "tools/migration/rollback-board-history-artifact.ts",
-        "tools/migration/read-rollback-board-history.ts"
+        "tools/migration/read-rollback-board-history.ts",
+        "tools/migration/rollback-erasure-authority.ts",
+        "tools/migration/read-rollback-erasure-authority.ts",
+        "tools/migration/rollback_erasure_authority.py",
+        "tools/migration/rollback_erasure_runtime.py",
+        "tools/migration/rollback_music_maintenance.py"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7278,7 +7327,9 @@
         "tools/rebuild/verify-rollback-inspection.ts",
         "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7326,7 +7377,9 @@
         "docs/unified-rebuild/114-old-history-adapter-checkpoint.md",
         "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7355,7 +7408,9 @@
         "docs/unified-rebuild/114-old-history-adapter-checkpoint.md",
         "tools/rebuild/verify-rollback-inspection.ts",
         "apps/api/src/rollback-board-history.test.ts",
-        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md"
+        "docs/unified-rebuild/116-board-history-restoration-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7373,7 +7428,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 檢查點 114 已保全三 namespace／null 舊時間的私人 catalog，明確舊 HTTP overlay 經原 Handler 真 loopback HTTP 驗證清單／下載、原 proxy／admin 限制、目前 PIN／unlink／contact／erasure 與同程序 ledger 退回拒絕；普通 timestamp 流程不變，overlay 不是新版 runtime。固定 image／overlay 版本、gateway／browser、重啟後 durable erasure 權威及完整舊 web／music／bot／forward restore 尚未驗收，原 namespace adapter gate 仍保留。 檢查點 115 已補真 Docker Go-template／17 個未啟動容器的 23 項檢查、預設實際 Docker TS／無 label Python-command metadata 的 v3 封存與持鎖對帳；原 source inspector 環境值等號及跨命令 socket 身份已修正。只觀察宣告的指令與 label，沒有執行容器內 bot、認證版本或取得外部協調，所有原切換 gate 維持。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。"
+      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 檢查點 114 已保全三 namespace／null 舊時間的私人 catalog，明確舊 HTTP overlay 經原 Handler 真 loopback HTTP 驗證清單／下載、原 proxy／admin 限制、目前 PIN／unlink／contact／erasure 與同程序 ledger 退回拒絕；普通 timestamp 流程不變，overlay 不是新版 runtime。固定 image／overlay 版本、gateway／browser、重啟後 durable erasure 權威及完整舊 web／music／bot／forward restore 尚未驗收，原 namespace adapter gate 仍保留。 檢查點 115 已補真 Docker Go-template／17 個未啟動容器的 23 項檢查、預設實際 Docker TS／無 label Python-command metadata 的 v3 封存與持鎖對帳；原 source inspector 環境值等號及跨命令 socket 身份已修正。只觀察宣告的指令與 label，沒有執行容器內 bot、認證版本或取得外部協調，所有原切換 gate 維持。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。"
     },
     {
       "capability_id": "O13",
@@ -7435,7 +7490,12 @@
         "tools/migration/read-rollback-bot-restore.ts",
         "tools/migration/rollback-history-catalog.ts",
         "tools/migration/rollback_history_runtime.py",
-        "tools/rebuild/verify-rollback-inspection.ts"
+        "tools/rebuild/verify-rollback-inspection.ts",
+        "tools/migration/rollback-erasure-authority.ts",
+        "tools/migration/read-rollback-erasure-authority.ts",
+        "tools/migration/rollback_erasure_authority.py",
+        "tools/migration/rollback_erasure_runtime.py",
+        "tools/migration/rollback_music_maintenance.py"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7483,7 +7543,9 @@
         "apps/api/src/rollback-history-adapter.test.ts",
         "docs/unified-rebuild/114-old-history-adapter-checkpoint.md",
         "tools/rebuild/verify-rollback-inspection.ts",
-        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md"
+        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7525,7 +7587,9 @@
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
         "apps/api/src/rollback-history-adapter.test.ts",
         "docs/unified-rebuild/114-old-history-adapter-checkpoint.md",
-        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md"
+        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7552,7 +7616,9 @@
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
         "apps/api/src/rollback-history-adapter.test.ts",
         "docs/unified-rebuild/114-old-history-adapter-checkpoint.md",
-        "tools/rebuild/verify-rollback-inspection.ts"
+        "tools/rebuild/verify-rollback-inspection.ts",
+        "apps/api/src/rollback-erasure-authority.test.ts",
+        "docs/unified-rebuild/117-erasure-authority-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7569,7 +7635,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 檢查點 114 已保全三 namespace／null 舊時間的私人 catalog，明確舊 HTTP overlay 經原 Handler 真 loopback HTTP 驗證清單／下載、原 proxy／admin 限制、目前 PIN／unlink／contact／erasure 與同程序 ledger 退回拒絕；普通 timestamp 流程不變，overlay 不是新版 runtime。固定 image／overlay 版本、gateway／browser、重啟後 durable erasure 權威及完整舊 web／music／bot／forward restore 尚未驗收，原 namespace adapter gate 仍保留。 檢查點 115 已補真 Docker Go-template／17 個未啟動容器的 23 項檢查、預設實際 Docker TS／無 label Python-command metadata 的 v3 封存與持鎖對帳；原 source inspector 環境值等號及跨命令 socket 身份已修正。只觀察宣告的指令與 label，沒有執行容器內 bot、認證版本或取得外部協調，所有原切換 gate 維持。"
+      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 檢查點 114 已保全三 namespace／null 舊時間的私人 catalog，明確舊 HTTP overlay 經原 Handler 真 loopback HTTP 驗證清單／下載、原 proxy／admin 限制、目前 PIN／unlink／contact／erasure 與同程序 ledger 退回拒絕；普通 timestamp 流程不變，overlay 不是新版 runtime。固定 image／overlay 版本、gateway／browser、重啟後 durable erasure 權威及完整舊 web／music／bot／forward restore 尚未驗收，原 namespace adapter gate 仍保留。 檢查點 115 已補真 Docker Go-template／17 個未啟動容器的 23 項檢查、預設實際 Docker TS／無 label Python-command metadata 的 v3 封存與持鎖對帳；原 source inspector 環境值等號及跨命令 socket 身份已修正。只觀察宣告的指令與 label，沒有執行容器內 bot、認證版本或取得外部協調，所有原切換 gate 維持。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。"
     },
     {
       "capability_id": "O14",

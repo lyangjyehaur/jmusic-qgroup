@@ -4,6 +4,7 @@ The native product stays TypeScript. This optional rollback overlay does not
 start services, initialize databases, import credentials, restore or deliver.
 """
 from datetime import datetime
+from contextlib import nullcontext
 import hashlib
 import json
 import math
@@ -241,7 +242,7 @@ def _download(service, folder, data, baseline):
         db.close()
 
 
-def install_rollback_history_adapter(service, catalog_root, manifest_sha256):
+def install_rollback_history_adapter(service, catalog_root, manifest_sha256, *, authority=None):
     """Explicit overlay installation; never changes source files or starts HTTP.
 
     The caller must independently certify and pin the overlay and old service
@@ -258,6 +259,8 @@ def install_rollback_history_adapter(service, catalog_root, manifest_sha256):
     initial_manifest, initial_files = catalog.read()
     baseline = initial_files[initial_manifest['baselineLedger']['path']]
     observed_ledger = [baseline]
+    if authority is not None and authority.sources.get('music') != folder / 'erasures.jsonl':
+        raise ValueError('Explicit history erasure authority source differs')
 
     def observe_ledger():
         raw, _ = _file(folder / 'erasures.jsonl', 64 * 1024 * 1024)
@@ -285,7 +288,7 @@ def install_rollback_history_adapter(service, catalog_root, manifest_sha256):
             if (parsed.path.endswith('/backups') and query
                     or parsed.path.endswith('/backup') and (set(query) != {'name'} or len(query['name']) != 1)):
                 raise service.Rejected('备份请求格式不正确', 400)
-            with service.upstream._lock:
+            with service.upstream._lock, (authority.guard('music') if authority is not None else nullcontext()):
                 required_ledger = observe_ledger()
                 manifest, files = catalog.read()
                 rows = manifest['histories']
