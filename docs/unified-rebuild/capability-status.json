@@ -7082,7 +7082,10 @@
         "tools/migration/rollback-history-source.ts",
         "tools/migration/rollback-history-music.ts",
         "tools/migration/rollback-history.ts",
-        "tools/migration/rollback-history-reconciliation.ts"
+        "tools/migration/rollback-history-reconciliation.ts",
+        "tools/migration/rollback-package-codec.ts",
+        "tools/migration/rollback-package.ts",
+        "tools/migration/read-rollback-package.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7121,7 +7124,9 @@
         "apps/api/src/rollback-media.test.ts",
         "docs/unified-rebuild/108-rollback-media-checkpoint.md",
         "apps/api/src/rollback-history.test.ts",
-        "docs/unified-rebuild/109-rollback-history-checkpoint.md"
+        "docs/unified-rebuild/109-rollback-history-checkpoint.md",
+        "apps/api/src/rollback-package.test.ts",
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7155,7 +7160,9 @@
         "apps/api/src/rollback-media.test.ts",
         "docs/unified-rebuild/108-rollback-media-checkpoint.md",
         "apps/api/src/rollback-history.test.ts",
-        "docs/unified-rebuild/109-rollback-history-checkpoint.md"
+        "docs/unified-rebuild/109-rollback-history-checkpoint.md",
+        "apps/api/src/rollback-package.test.ts",
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7170,7 +7177,9 @@
         "apps/api/src/rollback-identity.test.ts",
         "apps/api/src/rollback-erasures.test.ts",
         "apps/api/src/rollback-state.test.ts",
-        "apps/api/src/rollback-media.test.ts"
+        "apps/api/src/rollback-media.test.ts",
+        "apps/api/src/rollback-package.test.ts",
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7188,7 +7197,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "歷史捕獲的完整 raw capture／看板 DB 與 tar 配對／music pair 與 JSON／bot 證據／native archives 已由外部 pins 和原 import receipts 綁定固定 checkpoint（檢查點 109）；私人 bytes 保留、三個不碰撞 namespace、schema13 原 bytes／source receipts、latest erasure／ownership／PIN／contact 與 generated keys 投影、重置後 native 新寫入及獨立篡改拒絕有隔離證據。可選 paired erasures.jsonl 下載分類不一致已修正；原 Python snapshot／sanitize 連讀兩次通過。仍為 rollbackEligible=false。尚缺完整 private exclusive 落盤／fsync／manifest／pinned reader／CLI、捕獲邊界與排程停寫控制、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 成套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
+      "remaining": "完整私人回退套件已組裝最新新庫／journal、舊看板／成分／身份／ledger、原媒體／歷史／bot 證據及三個歷史投影 namespace（檢查點 110）；外部 checkpoint／media／capture／native pins、exclusive 0700／0600 落盤、逐檔與目錄 fsync、最後 manifest、完整固定 reader／唯讀 CLI、partial／目錄替換保全與跨領域篡改拒絕有隔離證據。version2 schema14 原生歷史已明確納入讀取／記憶體升級／package 與管理員 HTTP 匯出測試，原 bytes／schema／claim 保留，不推導新 consent。仍為 rollbackEligible=false。尚缺實際同一停寫捕獲邊界／部署鎖與排程控制、live-source 組裝 CLI、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
     },
     {
       "capability_id": "O13",
@@ -7235,7 +7244,10 @@
         "tools/migration/rollback-history-source.ts",
         "tools/migration/rollback-history-music.ts",
         "tools/migration/rollback-history.ts",
-        "tools/migration/rollback-history-reconciliation.ts"
+        "tools/migration/rollback-history-reconciliation.ts",
+        "tools/migration/rollback-package-codec.ts",
+        "tools/migration/rollback-package.ts",
+        "tools/migration/read-rollback-package.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7270,7 +7282,9 @@
         "apps/api/src/rollback-media.test.ts",
         "docs/unified-rebuild/108-rollback-media-checkpoint.md",
         "apps/api/src/rollback-history.test.ts",
-        "docs/unified-rebuild/109-rollback-history-checkpoint.md"
+        "docs/unified-rebuild/109-rollback-history-checkpoint.md",
+        "apps/api/src/rollback-package.test.ts",
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7300,7 +7314,9 @@
         "apps/api/src/rollback-media.test.ts",
         "docs/unified-rebuild/108-rollback-media-checkpoint.md",
         "apps/api/src/rollback-history.test.ts",
-        "docs/unified-rebuild/109-rollback-history-checkpoint.md"
+        "docs/unified-rebuild/109-rollback-history-checkpoint.md",
+        "apps/api/src/rollback-package.test.ts",
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7315,7 +7331,9 @@
         "apps/api/src/rollback-identity.test.ts",
         "apps/api/src/rollback-erasures.test.ts",
         "apps/api/src/rollback-state.test.ts",
-        "apps/api/src/rollback-media.test.ts"
+        "apps/api/src/rollback-media.test.ts",
+        "apps/api/src/rollback-package.test.ts",
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7332,7 +7350,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "歷史捕獲的完整 raw capture／看板 DB 與 tar 配對／music pair 與 JSON／bot 證據／native archives 已由外部 pins 和原 import receipts 綁定固定 checkpoint（檢查點 109）；私人 bytes 保留、三個不碰撞 namespace、schema13 原 bytes／source receipts、latest erasure／ownership／PIN／contact 與 generated keys 投影、重置後 native 新寫入及獨立篡改拒絕有隔離證據。可選 paired erasures.jsonl 下載分類不一致已修正；原 Python snapshot／sanitize 連讀兩次通過。仍為 rollbackEligible=false。尚缺完整 private exclusive 落盤／fsync／manifest／pinned reader／CLI、捕獲邊界與排程停寫控制、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 成套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
+      "remaining": "完整私人回退套件已組裝最新新庫／journal、舊看板／成分／身份／ledger、原媒體／歷史／bot 證據及三個歷史投影 namespace（檢查點 110）；外部 checkpoint／media／capture／native pins、exclusive 0700／0600 落盤、逐檔與目錄 fsync、最後 manifest、完整固定 reader／唯讀 CLI、partial／目錄替換保全與跨領域篡改拒絕有隔離證據。version2 schema14 原生歷史已明確納入讀取／記憶體升級／package 與管理員 HTTP 匯出測試，原 bytes／schema／claim 保留，不推導新 consent。仍為 rollbackEligible=false。尚缺實際同一停寫捕獲邊界／部署鎖與排程控制、live-source 組裝 CLI、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
     },
     {
       "capability_id": "O14",

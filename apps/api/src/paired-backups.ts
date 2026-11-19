@@ -14,7 +14,7 @@ const File = z.object({ path: z.string().regex(filePattern), size: z.number().in
 const common = { id: z.string().regex(idPattern), createdAt: z.iso.datetime(), sequence: z.number().int().positive().safe(), files: z.array(File), restoreEligible: z.literal(false) };
 export const PairedBackupManifest = z.union([
   z.object({ ...common, version: z.literal(1), schema: z.literal(13) }).strict(),
-  z.object({ ...common, version: z.literal(2), schema: z.literal(REBUILD_SCHEMA_VERSION), lineageId: z.string().regex(/^[a-f0-9]{32}$/) }).strict(),
+  z.object({ ...common, version: z.literal(2), schema: z.union([z.literal(14),z.literal(REBUILD_SCHEMA_VERSION)]), lineageId: z.string().regex(/^[a-f0-9]{32}$/) }).strict(),
 ]).refine(m => {
   const paths = m.files.map(f => f.path);
   return paths.length === new Set(paths).size && paths.includes('state.sqlite3') && paths.includes('state.erasures.jsonl') &&
