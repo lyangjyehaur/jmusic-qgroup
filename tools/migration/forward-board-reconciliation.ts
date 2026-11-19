@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import type {DB} from '@qgroup/database';
 import {createHash} from 'node:crypto';
 import {boardTables,schemaObjects} from './board-reconciliation';
-import {assertRollbackSource} from './rollback-source';
+import {assertRollbackSource,assertRollbackSourceStructure} from './rollback-source';
 import {copyForwardBoardInput,openForwardBoardSources,forwardRows,forwardRowReader,forwardEqual,forwardCanonical,forwardSequences,assertForwardImage,forwardHash,type ForwardBoardInput,type ForwardBoardSources,type ForwardRow} from './forward-board-storage';
 
 const reject=():never=>{throw Error('Forward board reconciliation failed; retain every source');};
@@ -11,6 +11,12 @@ const reject=():never=>{throw Error('Forward board reconciliation failed; retain
 export function reconcileForwardBoardSources(s:ForwardBoardSources,candidate:DB){
   if((candidate.pragma('foreign_key_check') as unknown[]).length)throw Error('Forward merge requires complete cross-domain reference reconciliation');
   candidate.transaction(()=>assertRollbackSource(candidate)).immediate();
+  return reconcileForwardBoardRows(s,candidate);
+}
+/** Internal independent row oracle; never accepts or exports a complete image.
+ * Account-reference reconciliation must prove every pending reference separately. */
+export function reconcileForwardBoardRows(s:ForwardBoardSources,candidate:DB){
+  candidate.transaction(()=>assertRollbackSourceStructure(candidate)).immediate();
   if(!forwardEqual(schemaObjects(candidate),schemaObjects(s.native)))reject();
   const counts:Record<string,{baseline:number;native:number;old:number;candidate:number;oldChanges:number}>={},hash=createHash('sha256');
   for(const table of boardTables){

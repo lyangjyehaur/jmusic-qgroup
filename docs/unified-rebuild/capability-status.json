@@ -560,7 +560,10 @@
         "apps/api/src/retained-erasure-config.ts",
         "deploy/unified-compose.yaml",
         "tools/rebuild/check-runtime-compose.ts",
-        "tools/rebuild/verify-image.mjs"
+        "tools/rebuild/verify-image.mjs",
+        "tools/migration/forward-board-account-merge.ts",
+        "tools/migration/forward-board-account-reconciliation.ts",
+        "tools/migration/forward-board-account-source.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -596,7 +599,9 @@
         "apps/api/src/retained-erasure-journal.test.ts",
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
-        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
+        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
+        "apps/api/src/forward-board-account-merge.test.ts",
+        "docs/unified-rebuild/129-board-account-references-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7409,7 +7414,10 @@
         "tools/migration/source-rebase-evidence.ts",
         "tools/migration/rollback_music_reset.py",
         "tools/migration/forward-account-erasures.ts",
-        "tools/migration/forward-account-reconciliation.ts"
+        "tools/migration/forward-account-reconciliation.ts",
+        "tools/migration/forward-board-account-merge.ts",
+        "tools/migration/forward-board-account-reconciliation.ts",
+        "tools/migration/forward-board-account-source.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7566,7 +7574,9 @@
         "apps/api/src/forward-account-authority.test.ts",
         "docs/unified-rebuild/127-account-erasure-repair-checkpoint.md",
         "apps/api/src/forward-music-authority.test.ts",
-        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
+        "apps/api/src/forward-board-account-merge.test.ts",
+        "docs/unified-rebuild/129-board-account-references-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7734,7 +7744,10 @@
         "tools/migration/source-rebase-evidence.ts",
         "tools/migration/rollback_music_reset.py",
         "tools/migration/forward-account-erasures.ts",
-        "tools/migration/forward-account-reconciliation.ts"
+        "tools/migration/forward-account-reconciliation.ts",
+        "tools/migration/forward-board-account-merge.ts",
+        "tools/migration/forward-board-account-reconciliation.ts",
+        "tools/migration/forward-board-account-source.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7879,7 +7892,9 @@
         "apps/api/src/forward-account-authority.test.ts",
         "docs/unified-rebuild/127-account-erasure-repair-checkpoint.md",
         "apps/api/src/forward-music-authority.test.ts",
-        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
+        "apps/api/src/forward-board-account-merge.test.ts",
+        "docs/unified-rebuild/129-board-account-references-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",

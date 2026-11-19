@@ -3,7 +3,7 @@ import {ErasureResult} from '@qgroup/contracts';
 import {readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
 import {forwardHash} from './forward-board-storage';
 
-const privateTables=['external_profiles','external_identities','qq_accounts','qq_attempts','login_attempts','privacy_consents','user_payment_codes','notifications','request_results','device_links','admin_user_metadata','event_access','time_poll_votes','time_poll_ballots','unified_privacy_receipts','unified_privacy_consents'] as const;
+const privateTables=['music_profile_receipts','external_profiles','external_identities','qq_accounts','qq_attempts','login_attempts','privacy_consents','user_payment_codes','notifications','request_results','device_links','admin_user_metadata','event_access','time_poll_votes','time_poll_ballots','unified_privacy_receipts','unified_privacy_consents'] as const;
 /** A non-SHA value cannot match the original credential's SHA256 lookup. The
  * stable sentinel has no usable password preimage and repeated repair is exact. */
 export const erasedAccountToken=(userId:string,requestId:string)=>'erased-account-v1:'+forwardHash(JSON.stringify([userId,requestId]));

@@ -2,7 +2,7 @@ import type {DB} from '@qgroup/database';
 import {ErasureResult} from '@qgroup/contracts';
 import {readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
 import {schemaObjects} from './board-reconciliation';
-import {assertRollbackSource} from './rollback-source';
+import {assertRollbackSource,assertRollbackSourceStructure} from './rollback-source';
 import {forwardRows,forwardEqual,forwardHash,forwardSequences} from './forward-board-storage';
 
 const reject=():never=>{throw Error('Account erasure reconciliation failed; retain original images');};
@@ -10,7 +10,7 @@ const reject=():never=>{throw Error('Account erasure reconciliation failed; reta
  * pre-repair image and original journal. No writer, repair report or mutation
  * list is consulted; shared history, schema and sequence rows remain exact. */
 export function reconcileAppliedAccountRepair(source:DB,candidate:DB,journal:ErasureJournal){
-  source.transaction(()=>assertRollbackSource(source)).immediate();
+  source.transaction(()=>assertRollbackSourceStructure(source)).immediate();
   if(candidate.inTransaction)assertRollbackSource(candidate);else candidate.transaction(()=>assertRollbackSource(candidate)).immediate();
   if(!forwardEqual(schemaObjects(source),schemaObjects(candidate)))reject();
   for(const name of ['user_version','application_id','encoding'])if(!forwardEqual(source.pragma(name,{simple:true}),candidate.pragma(name,{simple:true})))reject();
@@ -22,6 +22,15 @@ export function reconcileAppliedAccountRepair(source:DB,candidate:DB,journal:Era
   for(const entry of intents)if('user_id' in entry||entry.version===1&&entry.kind!=='music'){
     const id='user_id' in entry?entry.user_id:entry.userId;if(source.prepare('SELECT 1 FROM users WHERE id=?').get(id)&&!closures.has(id))reject();
     if('version' in entry){const result=ErasureResult.parse(JSON.parse((source.prepare('SELECT result_json FROM privacy_receipts WHERE request_id=?').get(entry.requestId) as {result_json:string}).result_json));if(result.requestId!==entry.requestId||result.target!==entry.kind)reject();}
+  }
+  // Only the unpublished, independently checked board merge can contain these
+  // retained children. A missing parent is not itself evidence of an erasure.
+  const parentKeys=source.prepare('PRAGMA foreign_key_list(music_profile_receipts)').all() as {id:number;table:string}[];
+  const resultFk=parentKeys.find(row=>row.table==='request_results')?.id;
+  for(const fk of source.prepare('PRAGMA foreign_key_check').safeIntegers(true).all() as {table:string;rowid:bigint;parent:string;fkid:bigint}[]){
+    if(fk.table!=='music_profile_receipts'||fk.parent!=='request_results'||fk.fkid!==BigInt(resultFk??-1))reject();
+    const receipt=source.prepare('SELECT user_id,request_key FROM music_profile_receipts WHERE rowid=?').get(fk.rowid) as {user_id:string;request_key:string}|undefined;
+    if(!receipt||!closures.has(receipt.user_id)||source.prepare('SELECT 1 FROM request_results WHERE user_id=? AND request_key=?').get(receipt.user_id,receipt.request_key))reject();
   }
   const closed=(id:unknown)=>typeof id==='string'&&closures.has(id);
   const tokens=new Set((source.prepare('SELECT token_hash,user_id FROM browser_sessions').all() as {token_hash:string;user_id:string}[]).filter(row=>closed(row.user_id)).map(row=>row.token_hash));

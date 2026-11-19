@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-20（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[已關閉帳號的離線恢復修復檢查點](127-account-erasure-repair-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
+日期：2026-11-20（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[舊帳號關閉與跨站回執合併檢查點](129-board-account-references-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
 
 後續已完成[統一 PWA](62-pwa-checkpoint.md)、[bot 並行寫入修正](63-bot-sqlite-locking-checkpoint.md)、[共用表單 IndexedDB 原稿](64-durable-drafts-checkpoint.md)、[活動與帳務原稿持久化](65-durable-authoring-checkpoint.md)、[活動參與原稿持久化](66-durable-participation-checkpoint.md)、[邀請與分工原稿持久化](67-durable-invitations-checkpoint.md)、[帳號與成分原稿持久化](68-durable-identity-checkpoint.md)、[管理原稿與權限失效保全](69-durable-admin-checkpoint.md)、[管理內容原稿持久化](70-durable-admin-content-checkpoint.md)、[成分關聯與 PIN 回執持久化](71-durable-admin-ownership-checkpoint.md)、[成分刪除後原操作核對](72-erased-music-acknowledgements-checkpoint.md)、[bot 設定原稿持久化](73-durable-bot-policy-checkpoint.md)、[收件匣管理回執隔離](74-admin-operation-receipts-checkpoint.md)、[通知已讀操作持久化](75-durable-notifications-checkpoint.md)、[群通知原重送操作持久化](76-durable-bot-deliveries-checkpoint.md)、[活動查看邀請操作持久化](77-durable-activity-access-checkpoint.md)、[找搭子原稿與發布操作持久化](78-durable-music-shouts-checkpoint.md)、[舊成分找回操作持久化](79-durable-music-recovery-checkpoint.md)及[自由／活動分房原稿持久化](80-durable-music-rooms-checkpoint.md)的隔離實作；另已完成[隱私刪除回執保全](81-durable-erasure-recovery-checkpoint.md)、[短效裝置連結](82-short-lived-device-links-checkpoint.md)、[舊本機紀錄保全](83-legacy-local-preservation-checkpoint.md)、[持久建立識別](84-create-intents-checkpoint.md)、[舊活動／投票草稿轉換](85-legacy-authoring-conversion-checkpoint.md)與[舊包間／收支原稿轉換](86-legacy-money-conversion-checkpoint.md)；全站遷移與正式切換驗收仍未完成。
 
@@ -139,6 +139,14 @@
 | [候選服務刪除保全配置檢查點](119-retained-authority-config-checkpoint.md) | production 強制 authority／checkpoint、獨立私人 bind、解析後 Compose gate、可獨立讀取的空映像 fixture |
 | [舊站刪除紀錄向新版回放檢查點](120-forward-erasure-projection-checkpoint.md) | 原 authority bytes 與完整 checkpoint 綁定、原 ID／key／收據保全、離線刪除 footprint 回放與 Python 對帳；候選仍阻擋啟動 |
 | [回退看板新寫入向新版合併檢查點](121-forward-board-merge-checkpoint.md) | 59 表三方合併、原流水號／歷史／bot 投遞保全、完整 native 專用資料及獨立 Python 對帳；跨 domain 恢復與啟動仍待完成 |
+| [成分與身份新寫入來源合併檢查點](122-forward-music-identity-checkpoint.md) | 原成分／身份的三方來源合併、順序與 rowid 保留；原生業務重建仍須核對 |
+| [看板與成分新寫入資料重建檢查點](123-forward-business-reconstruction-checkpoint.md) | 原生業務圖、revisions／receipts／來源保留；憑證與完整刪除回放仍待完成 |
+| [合併後認領憑證與原回執核對檢查點](124-forward-proof-reconciliation-checkpoint.md) | 原找回 proof／device／PIN 與回執失效、原始私人映像保全 |
+| [合併來源、原 ID 與身份審計重整檢查點](125-source-rebase-checkpoint.md) | 原成分 key／ID、來源映射、凍結歷史與 audit 高水位重新綁定 |
+| [原始重設範圍與空會員 authority 檢查點](126-legacy-reset-authority-checkpoint.md) | 原五容器 reset scope、空會員 chain、TS／Python ledger 核對與匯出 gate |
+| [已關閉帳號的離線恢復修復檢查點](127-account-erasure-repair-checkpoint.md) | 原關閉意圖／回執、私人 footprint、source-rebase 與 bot 工作保全 |
+| [舊成分刪除意圖與原生恢復檢查點](128-legacy-music-erasure-checkpoint.md) | 原刪除紀錄匯入、實際 profile／key／時間、完整私人套件與 bot 保全；外部 ancestry 與完整切換仍待完成 |
+| [舊帳號關閉與跨站回執合併檢查點](129-board-account-references-checkpoint.md) | 原帳號關閉授權、native orphan receipt 引用修復、獨立全列 verifier 與原 bot 投遞保全；完整 music／proof／epoch pipeline 仍待完成 |
 | [166 項驗收台帳](capability-status.json) | 每項實作狀態與剩餘工作；未完整驗收不標記通過 |
 
 ## 原系統盤點結論
