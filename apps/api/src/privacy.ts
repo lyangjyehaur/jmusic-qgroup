@@ -152,11 +152,13 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
     assertReadable() {
       // Partner reads must fail closed without replaying a pending erasure.
       if (journalFailed || recoveryRequired) throw withApiError(new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503));
+      try { journal.assertReadable?.(); } catch { throw withApiError(new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503)); }
     },
     guard() {
       if (journalFailed || recoveryRequired) {
         try { recover(); } catch { throw withApiError(new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503)); }
       }
+      try { journal.assertReadable?.(); } catch { throw withApiError(new DomainError('ERASURE_RECOVERY_REQUIRED', '資料刪除仍待恢復，暫停操作；請稍後重試', 503)); }
     },
     receipt(requestId: string, secret: string): Result | z.infer<typeof AdminMusicErasureResult> {
       const row = db.prepare('SELECT secret_hash,result_json FROM privacy_receipts WHERE request_id=?').get(requestId) as { secret_hash: string; result_json: string } | undefined;

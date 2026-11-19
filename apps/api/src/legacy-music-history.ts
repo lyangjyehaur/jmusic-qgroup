@@ -3,7 +3,7 @@ import { dirname, join, resolve } from 'node:path';
 import Database from 'better-sqlite3';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
-import { digest, musicErasures, parseJson, readIdentity } from '../../../tools/migration/music-codec';
+import { digest, musicErasures, parseJson, readIdentity } from '../../../packages/database/src/legacy-music-codec';
 import { decodeErasureJournal, erasureRequestId, type StoredIntent } from './erasure-journal';
 import { exportLegacyMusic } from './legacy-music-export';
 

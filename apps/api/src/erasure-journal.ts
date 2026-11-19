@@ -19,7 +19,8 @@ const CurrentIntent = z.union([NewIntent,AdminIntent]);
 export type ErasureIntent = z.infer<typeof CurrentIntent>;
 export type StoredIntent = ErasureIntent | z.infer<typeof LegacyIntent>;
 const StoredIntentValue = z.union([CurrentIntent, LegacyIntent]);
-export interface ErasureJournal { read(): StoredIntent[]; append(entry: ErasureIntent): void }
+export interface ErasureJournal { read(): StoredIntent[]; append(entry: ErasureIntent): void; assertReadable?(): void }
+export function erasureJournalPath(database:string){const suffix=extname(database);return (suffix?database.slice(0,-suffix.length):database)+'.erasures.jsonl';}
 export function decodeErasureJournal(source: string): StoredIntent[] {
   if (source && !source.endsWith('\n')) throw new Error('Incomplete erasure journal line');
   return source.split('\n').filter(line => line.trim()).map(line => StoredIntentValue.parse(JSON.parse(line)));
@@ -48,8 +49,7 @@ export function erasureJournal(db: DB): ErasureJournal {
     const entries: StoredIntent[] = [];
     return { read: () => structuredClone(entries), append: entry => { entries.push(structuredClone(entry)); } };
   }
-  const suffix = extname(db.name);
-  const path = (suffix ? db.name.slice(0, -suffix.length) : db.name) + '.erasures.jsonl';
+  const path = erasureJournalPath(db.name);
   return {
     read() {
       if (!existsSync(path)) return [];

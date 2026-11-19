@@ -1,5 +1,5 @@
 import type { DB } from '@qgroup/database';
-import { keys, object, profileId, type Json, type ObjectValue } from '../../../tools/migration/music-codec';
+import { keys, object, profileId, type Json, type ObjectValue } from '../../../packages/database/src/legacy-music-codec';
 import type { StoredIntent } from './erasure-journal';
 
 const memberFields = ['qq','name','consent','selection','created','createdAt','pinHash','lastJoinAt','boardUserId','gender','genderPublic','note','noteAt','lastShoutAt','contactQQ'];
