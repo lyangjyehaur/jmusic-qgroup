@@ -5539,7 +5539,10 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -5550,7 +5553,10 @@
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -5705,7 +5711,10 @@
         "apps/web/tests/bot-deliveries.spec.ts",
         "tools/rebuild/smoke-build.mjs",
         "apps/bot/src/dispatch-workers.test.ts",
-        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md"
+        "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -5718,7 +5727,10 @@
         "apps/api/src/privacy-consent.test.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
         "docs/unified-rebuild/97-board-reconciliation-checkpoint.md",
-        "apps/api/src/import-snapshot.test.ts"
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -5856,13 +5868,19 @@
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
         "tools/rebuild/smoke-bot.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/abbreviations.test.ts",
         "apps/bot/src/abbreviation-delivery.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -5942,7 +5960,10 @@
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "apps/api/testsupport/pending-operations.test.ts",
-        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -5960,7 +5981,10 @@
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
-        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -7085,7 +7109,9 @@
         "tools/migration/rollback-history-reconciliation.ts",
         "tools/migration/rollback-package-codec.ts",
         "tools/migration/rollback-package.ts",
-        "tools/migration/read-rollback-package.ts"
+        "tools/migration/read-rollback-package.ts",
+        "tools/migration/rollback-bot-state.ts",
+        "tools/migration/rollback-bot-exclusion.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7126,7 +7152,10 @@
         "apps/api/src/rollback-history.test.ts",
         "docs/unified-rebuild/109-rollback-history-checkpoint.md",
         "apps/api/src/rollback-package.test.ts",
-        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7162,7 +7191,10 @@
         "apps/api/src/rollback-history.test.ts",
         "docs/unified-rebuild/109-rollback-history-checkpoint.md",
         "apps/api/src/rollback-package.test.ts",
-        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7179,7 +7211,10 @@
         "apps/api/src/rollback-state.test.ts",
         "apps/api/src/rollback-media.test.ts",
         "apps/api/src/rollback-package.test.ts",
-        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7197,7 +7232,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "完整私人回退套件已組裝最新新庫／journal、舊看板／成分／身份／ledger、原媒體／歷史／bot 證據及三個歷史投影 namespace（檢查點 110）；外部 checkpoint／media／capture／native pins、exclusive 0700／0600 落盤、逐檔與目錄 fsync、最後 manifest、完整固定 reader／唯讀 CLI、partial／目錄替換保全與跨領域篡改拒絕有隔離證據。version2 schema14 原生歷史已明確納入讀取／記憶體升級／package 與管理員 HTTP 匯出測試，原 bytes／schema／claim 保留，不推導新 consent。仍為 rollbackEligible=false。尚缺實際同一停寫捕獲邊界／部署鎖與排程控制、live-source 組裝 CLI、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
+      "remaining": "檢查點 111 在 v2 私人套件保留最新 bot 群授權／日誌／縮寫 cursor、uncertain、原 created／mtime 及自訂屏蔽詞；v1 仍可讀寫並明確標記缺少最新 bot 外部狀態。持續 IMMEDIATE 媒體 callback、既有 Python／TS owner 排除、stat-only POSIX 鎖检查及三次來源 guard／partial 保全已有合成跨程序與完整 package 證據；不重送、不續期、不回收 outbox。仍為 rollbackEligible=false。尚缺 native source 建立 CLI、停寫服務檢查／邊界 manifest、實際配置與版本／部署鎖／retention 控制、外部 bot 原時間與狀態恢復、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
     },
     {
       "capability_id": "O13",
@@ -7247,7 +7282,9 @@
         "tools/migration/rollback-history-reconciliation.ts",
         "tools/migration/rollback-package-codec.ts",
         "tools/migration/rollback-package.ts",
-        "tools/migration/read-rollback-package.ts"
+        "tools/migration/read-rollback-package.ts",
+        "tools/migration/rollback-bot-state.ts",
+        "tools/migration/rollback-bot-exclusion.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7284,7 +7321,10 @@
         "apps/api/src/rollback-history.test.ts",
         "docs/unified-rebuild/109-rollback-history-checkpoint.md",
         "apps/api/src/rollback-package.test.ts",
-        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7316,7 +7356,10 @@
         "apps/api/src/rollback-history.test.ts",
         "docs/unified-rebuild/109-rollback-history-checkpoint.md",
         "apps/api/src/rollback-package.test.ts",
-        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7333,7 +7376,10 @@
         "apps/api/src/rollback-state.test.ts",
         "apps/api/src/rollback-media.test.ts",
         "apps/api/src/rollback-package.test.ts",
-        "docs/unified-rebuild/110-rollback-package-checkpoint.md"
+        "docs/unified-rebuild/110-rollback-package-checkpoint.md",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-bot-exclusion.test.ts",
+        "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7350,7 +7396,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "完整私人回退套件已組裝最新新庫／journal、舊看板／成分／身份／ledger、原媒體／歷史／bot 證據及三個歷史投影 namespace（檢查點 110）；外部 checkpoint／media／capture／native pins、exclusive 0700／0600 落盤、逐檔與目錄 fsync、最後 manifest、完整固定 reader／唯讀 CLI、partial／目錄替換保全與跨領域篡改拒絕有隔離證據。version2 schema14 原生歷史已明確納入讀取／記憶體升級／package 與管理員 HTTP 匯出測試，原 bytes／schema／claim 保留，不推導新 consent。仍為 rollbackEligible=false。尚缺實際同一停寫捕獲邊界／部署鎖與排程控制、live-source 組裝 CLI、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
+      "remaining": "檢查點 111 在 v2 私人套件保留最新 bot 群授權／日誌／縮寫 cursor、uncertain、原 created／mtime 及自訂屏蔽詞；v1 仍可讀寫並明確標記缺少最新 bot 外部狀態。持續 IMMEDIATE 媒體 callback、既有 Python／TS owner 排除、stat-only POSIX 鎖检查及三次來源 guard／partial 保全已有合成跨程序與完整 package 證據；不重送、不續期、不回收 outbox。仍為 rollbackEligible=false。尚缺 native source 建立 CLI、停寫服務檢查／邊界 manifest、實際配置與版本／部署鎖／retention 控制、外部 bot 原時間與狀態恢復、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／失效 proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
     },
     {
       "capability_id": "O14",

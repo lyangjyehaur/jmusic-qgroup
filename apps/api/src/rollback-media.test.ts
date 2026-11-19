@@ -13,13 +13,36 @@ import {putPaymentImage} from './payment-media';
 import {erasureJournal} from './erasure-journal';
 import {createPrivacy} from './privacy';
 import {hash} from './security';
-import {captureRollbackMedia,type RollbackMedia} from '../../../tools/migration/rollback-media';
+import {captureRollbackMedia,withRollbackMediaCapture,type RollbackMedia} from '../../../tools/migration/rollback-media';
 import * as reconciliation from '../../../tools/migration/rollback-media-reconciliation';
 import {projectRollbackBoard} from '../../../tools/migration/rollback-board';
 import {verifyRollbackBoard} from '../../../tools/migration/rollback-board-reconciliation';
 import {digest} from '../../../tools/migration/music-codec';
 import {projectRollbackStateFromCheckpoint} from '../../../tools/migration/rollback-state';
 const cleanup:(()=>void)[]=[];afterEach(()=>{vi.restoreAllMocks();for(const close of cleanup.splice(0).reverse())close();});
+it('retains the actual writer lock through dependent projection and explicit checks, and invalidates its guard after return',async()=>{
+  const s=await legacyHistoryFixture();cleanup.push(()=>s.close());const before=s.db.serialize();let guard=()=>{};
+  const result=withRollbackMediaCapture(s.db,erasureJournal(s.db),({media,assertUnchanged})=>{
+    guard=assertUnchanged;const state=projectRollbackStateFromCheckpoint(media.checkpointImage,media.journal);
+    const competitor=new Database(s.db.name,{timeout:0});try{expect(()=>competitor.exec('BEGIN IMMEDIATE')).toThrow('locked');}finally{competitor.close();}
+    assertUnchanged();return state;
+  });
+  expect(result.checkpointImage.length).toBeGreaterThan(100);expect(s.db.serialize()).toEqual(before);expect(s.db.inTransaction).toBe(false);expect(()=>guard()).toThrow('released');
+  const competitor=new Database(s.db.name,{timeout:0});try{competitor.exec('BEGIN IMMEDIATE');competitor.exec('ROLLBACK');}finally{competitor.close();}
+  s.db.transaction(()=>expect(()=>guard()).toThrow('released')).immediate();
+});
+it.each(['callback failure','async callback','source write','journal write','captured checkpoint write','captured media write','early transaction release'])('rejects %s inside the extended capture, releases the writer and preserves original SQLite data',async change=>{
+  const s=await legacyHistoryFixture();cleanup.push(()=>s.close());const before=s.db.serialize(),entries:{user_id:string;request_id:string;created_at:string}[]=[],journal={read:()=>entries,append(){throw Error('Read only');}};
+  expect(()=>withRollbackMediaCapture(s.db,journal,({media})=>{
+    if(change==='callback failure')throw Error('synthetic callback');if(change==='async callback')return Promise.resolve('invalid');
+    if(change==='source write')s.db.prepare("UPDATE users SET nickname='changed' WHERE id='alice'").run();
+    if(change==='journal write')entries.push({user_id:'alice',request_id:'not-applied',created_at:'synthetic'});
+    if(change==='captured checkpoint write')media.checkpointImage.fill(0,100,200);
+    if(change==='captured media write')media.walls.manifest='{"items":[{"src":"/walls/unknown.png"}]}';
+    if(change==='early transaction release')s.db.exec('ROLLBACK');return 'invalid';
+  })).toThrow();
+  expect(s.db.inTransaction).toBe(false);expect(s.db.serialize()).toEqual(before);
+});
 const a='w_'+'a'.repeat(24),b='w_'+'b'.repeat(24),missing='w_'+'c'.repeat(24);
 async function setup(){
   const s=await legacyHistoryFixture();cleanup.push(()=>s.close());const root=dirname(s.db.name),journal=erasureJournal(s.db);

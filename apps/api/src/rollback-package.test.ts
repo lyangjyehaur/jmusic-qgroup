@@ -8,12 +8,15 @@ import {erasureJournal} from './erasure-journal';
 import {createPairedBackups} from './paired-backups';
 import {putPaymentImage} from './payment-media';
 import {createApp} from './app';
-import {captureRollbackMedia} from '../../../tools/migration/rollback-media';
+import {captureRollbackMedia,withRollbackMediaCapture} from '../../../tools/migration/rollback-media';
 import {projectRollbackStateFromCheckpoint} from '../../../tools/migration/rollback-state';
 import {projectRollbackHistory} from '../../../tools/migration/rollback-history';
 import * as codec from '../../../tools/migration/rollback-package-codec';
 import {readRollbackPackage,writeRollbackPackage} from '../../../tools/migration/rollback-package';
 import {digest} from '../../../tools/migration/music-codec';
+import {captureRollbackBotState} from '../../../tools/migration/rollback-bot-state';
+import {withRollbackBotExclusion} from '../../../tools/migration/rollback-bot-exclusion';
+import {BotOwnership} from '../../bot/src/ownership';
 vi.mock('node:fs',async importOriginal=>{const real=await importOriginal<typeof import('node:fs')>();return {...real,fsyncSync:vi.fn(real.fsyncSync)};});
 const cleanup:(()=>void)[]=[];afterEach(()=>{vi.restoreAllMocks();vi.mocked(fs.fsyncSync).mockReset();for(const close of cleanup.splice(0).reverse())close();});
 function originals(root:string){const files=new Map<string,Buffer>();function walk(path:string,prefix=''){for(const file of fs.readdirSync(path,{withFileTypes:true})){const relative=prefix+file.name;if(file.isDirectory())walk(join(path,file.name),relative+'/');else files.set(relative,fs.readFileSync(join(path,file.name)));}}walk(root);return files;}
@@ -29,6 +32,66 @@ async function setup(options:{schema14?:boolean}={}){
   function save(){return writeRollbackPackage(pkg,destination,sourceRoots,new Date('2026-11-19T08:00:00Z'));}
   return {...s,current,journal,raw,image,backup,media,state,history,pkg,destination,sourceRoots,save};
 }
+async function setupV2(){
+  const s=await setup(),logs=join(s.current,'bot-logs'),results=join(s.current,'bot-abbreviation-results'),words=join(s.current,'sensitive-words.json');fs.mkdirSync(logs,{mode:0o700});fs.mkdirSync(results,{mode:0o700});
+  fs.writeFileSync(join(logs,'bot-group-state.json'),'{"push_authorized":false}',{mode:0o600});fs.writeFileSync(join(results,'a'.repeat(24)+'.json'),'{"offset":11,"uncertain":true,"created":1000}',{mode:0o600});fs.writeFileSync(words,'["合成詞"]',{mode:0o600});
+  const bot=captureRollbackBotState({database:s.db.name,logDirectory:logs,sensitiveWordsFile:words},new Date('2026-11-19T08:00:00Z'));
+  const pins=codec.pinRollbackPackageSourceV2(s.media,{captureManifestSha256:s.config.manifestSha256,native:s.pkg.sourcePins.native},bot.state),pkg=codec.assembleRollbackPackageV2(s.state,s.media,s.history,bot.state,pins);
+  return {...s,bot,pkg,save:()=>writeRollbackPackage(pkg,s.destination,s.sourceRoots,new Date('2026-11-19T08:00:00Z'))};
+}
+it('round trips version2 latest external bot bytes and original mtime pins, retains version1 compatibility and never advertises eligibility',async()=>{
+  const s=await setupV2(),before=s.db.serialize(),saved=s.save(),read=readRollbackPackage(s.destination,saved.manifestSha256);expect(read.version).toBe(2);expect(read.manifest.version).toBe(2);expect(read.report.bot?.pin).toBe(s.bot.pin);expect(read.report.remaining).toContain('quiescent_capture_boundary');expect(read.report.remaining).toContain('fixed_bot_external_state_restore');expect(read.report.remaining).not.toContain('latest_external_bot_state');
+  if(read.version!==2)throw Error('Expected version2');expect(read.bot).toEqual(s.bot.state);
+  for(const file of s.bot.state.files){const path=join(s.destination,'private/latest/bot',file.path);expect(fs.readFileSync(path)).toEqual(file.bytes);expect(fs.statSync(path).mode&0o7777).toBe(0o600);}
+  s.bot.assertUnchanged();read.assertUnchanged();expect(s.db.serialize()).toEqual(before);expect(saved.rollbackEligible).toBe(false);
+  const v1=codec.assembleRollbackPackage(s.state,s.media,s.history,codec.PackageSourcePins.parse({checkpointSha256:s.pkg.sourcePins.checkpointSha256,mediaFiles:s.pkg.sourcePins.mediaFiles,captureManifestSha256:s.pkg.sourcePins.captureManifestSha256,native:s.pkg.sourcePins.native}));
+  const other=join(s.root,'v1-package'),v1saved=writeRollbackPackage(v1,other,s.sourceRoots);expect(readRollbackPackage(other,v1saved.manifestSha256).version).toBe(1);expect(v1.report.remaining).toContain('latest_external_bot_state');
+});
+it.each(['bot raw bytes','bot mtime','bot source path','bot file omission','wrong bot pin','unknown bot field'])('rejects version2 %s before reserving a destination',async change=>{
+  const s=await setupV2();if(change==='bot raw bytes')s.pkg.bot.files[0]!.bytes=Buffer.from('wrong');if(change==='bot mtime')s.pkg.bot.files[0]!.mtimeNs='0';if(change==='bot source path')s.pkg.bot.sources.logDirectory='/private/other';if(change==='bot file omission')s.pkg.bot.files.pop();if(change==='wrong bot pin')s.pkg.sourcePins.botStateSha256='0'.repeat(64);if(change==='unknown bot field')Object.assign(s.pkg.bot,{active:true});
+  expect(()=>s.save()).toThrow();expect(fs.existsSync(s.destination)).toBe(false);s.bot.assertUnchanged();
+});
+it.each(['renewed cursor','renewed mtime','lost bot file','downgrade manifest','v1 with bot pins','extra metadata'])('rejects stored version2 %s even when outer file/manifest checksums are replaced',async change=>{
+  const s=await setupV2();s.save();const path=join(s.destination,'rollback-manifest.json'),manifest=JSON.parse(fs.readFileSync(path,'utf8'));
+  function replace(relative:string,bytes:Buffer){fs.writeFileSync(join(s.destination,relative),bytes);const row=manifest.files.find((file:{path:string})=>file.path===relative);row.size=bytes.length;row.sha256=digest(bytes);}
+  const index='private/latest/bot-state-index.json';
+  if(change==='renewed cursor')replace('private/latest/bot/abbreviations/'+'a'.repeat(24)+'.json',Buffer.from('{"offset":0,"uncertain":false,"created":2000}'));
+  if(change==='renewed mtime'||change==='extra metadata'){const data=JSON.parse(fs.readFileSync(join(s.destination,index),'utf8'));if(change==='renewed mtime')data.files[0].mtimeNs='0';else data.active=true;replace(index,Buffer.from(JSON.stringify(data)+'\n'));}
+  if(change==='lost bot file'){const row=manifest.files.find((file:{path:string})=>file.path.startsWith('private/latest/bot/'));fs.rmSync(join(s.destination,row.path));manifest.files=manifest.files.filter((file:{path:string})=>file.path!==row.path);}
+  if(change==='downgrade manifest'){manifest.version=1;delete manifest.sourcePins.botStateSha256;}if(change==='v1 with bot pins')manifest.version=1;
+  const encoded=Buffer.from(JSON.stringify(manifest)+'\n');fs.writeFileSync(path,encoded);expect(()=>readRollbackPackage(s.destination,digest(encoded))).toThrow();
+});
+it('verifies version2 through the same redacted CLI without printing private bot state or source paths',async()=>{
+  const s=await setupV2(),saved=s.save(),result=execFileSync(join(process.cwd(),'node_modules/.bin/tsx'),['tools/migration/read-rollback-package.ts',s.destination,saved.manifestSha256],{encoding:'utf8'});expect(JSON.parse(result)).toMatchObject({status:'verified_private_package',rollbackEligible:false});expect(result).not.toMatch(/uncertain|push_authorized|合成詞|bot-logs|\/tmp/);
+});
+it('retains both actual OS locks through latest bot/media/history projection, package IO and repeated source guards on synthetic sources',async()=>{
+  const s=await setupV2(),before=s.db.serialize(),owner=new BotOwnership(s.db.name);owner.close();let checks=0;
+  const saved=withRollbackBotExclusion(s.db.name,({assertHeld})=>withRollbackMediaCapture(s.db,s.journal,({media,assertUnchanged})=>{
+    const bot=captureRollbackBotState({database:s.db.name,logDirectory:s.bot.state.sources.logDirectory,sensitiveWordsFile:s.bot.state.sources.sensitiveWordsFile}),state=projectRollbackStateFromCheckpoint(media.checkpointImage,media.journal),history=projectRollbackHistory(state,{capture:s.config,native:{root:join(s.current,'paired-backups'),manifests:s.pkg.sourcePins.native}});
+    const pins=codec.pinRollbackPackageSourceV2(media,{captureManifestSha256:s.config.manifestSha256,native:s.pkg.sourcePins.native},bot.state),pkg=codec.assembleRollbackPackageV2(state,media,history,bot.state,pins);
+    function guarded(){assertHeld();assertUnchanged();bot.assertUnchanged();checks++;
+      const output=execFileSync('python3',['-c',`import sqlite3,sys
+for path in sys.argv[1:]:
+ db=sqlite3.connect(path,timeout=0)
+ try:
+  db.execute('BEGIN EXCLUSIVE');raise AssertionError('Lock was released')
+ except sqlite3.OperationalError:print('blocked')
+ finally:db.close()
+`,s.db.name,join(s.current,'.bot-owner.sqlite3')],{encoding:'utf8'});expect(output.trim().split('\n')).toEqual(['blocked','blocked']);
+    }
+    return writeRollbackPackage(pkg,s.destination,s.sourceRoots,new Date(),guarded);
+  }));
+  expect(checks).toBe(3);expect(saved.rollbackEligible).toBe(false);expect(s.db.serialize()).toEqual(before);const read=readRollbackPackage(s.destination,saved.manifestSha256);expect(read.version).toBe(2);
+  const next=new BotOwnership(s.db.name);next.close();const other=new Database(s.db.name,{timeout:0});try{other.exec('BEGIN IMMEDIATE');other.exec('ROLLBACK');}finally{other.close();}
+});
+it.each([1,2,3])('rejects a source change at writer guard %i and retains an unusable partial output after reservation',async stage=>{
+  const s=await setupV2(),before=s.db.serialize();let calls=0;
+  function guard(){if(++calls===stage)fs.writeFileSync(s.bot.state.sources.sensitiveWordsFile!,'["changed"]');s.bot.assertUnchanged();}
+  expect(()=>writeRollbackPackage(s.pkg,s.destination,s.sourceRoots,new Date(),guard)).toThrow();expect(calls).toBe(stage);expect(s.db.serialize()).toEqual(before);expect(fs.readFileSync(s.bot.state.sources.sensitiveWordsFile!,'utf8')).toBe('["changed"]');
+  if(stage===1)expect(fs.existsSync(s.destination)).toBe(false);
+  else{expect(fs.existsSync(join(s.destination,'incomplete.json'))).toBe(true);const manifest=join(s.destination,'rollback-manifest.json');expect(()=>readRollbackPackage(s.destination,digest(fs.existsSync(manifest)?fs.readFileSync(manifest):'missing'))).toThrow();}
+});
+it('rejects a deferred source guard before reserving an output',async()=>{const s=await setupV2();expect(()=>writeRollbackPackage(s.pkg,s.destination,s.sourceRoots,new Date(),async()=>{})).toThrow('synchronous');expect(fs.existsSync(s.destination)).toBe(false);});
 it('seals every domain with private modes, full source pins and exact raw bytes, and reconstructs the same fixed state without source/bot writes',async()=>{
   const s=await setup(),before=s.db.serialize(),capture=originals(s.capture),current=originals(s.current),result=s.save(),read=readRollbackPackage(s.destination,result.manifestSha256);
   expect(result.status).toBe('sealed_private_package');expect(result.rollbackEligible).toBe(false);expect(read.report.rollbackEligible).toBe(false);expect(read.state.checkpointImage).toEqual(s.state.checkpointImage);expect(read.state.boardImage).toEqual(s.state.boardImage);expect(read.state.identityImage).toEqual(s.state.identityImage);expect(read.state.music).toEqual(s.state.music);expect(read.state.erasures).toEqual(s.state.erasures);expect(read.history.projections).toEqual(s.history.projections);

@@ -70,7 +70,7 @@ function walls(db:DB):RollbackMedia['walls']{
 }
 /** One standalone IMMEDIATE lock covers SQLite, its durable journal and
  * external content-addressed images. Never deletes, rewrites or serves files. */
-export function captureRollbackMedia(source:DB,journal:ErasureJournal){
+export function withRollbackMediaCapture<T>(source:DB,journal:ErasureJournal,work:(capture:{media:RollbackMedia&{report:ReturnType<typeof verifyRollbackMedia>};assertUnchanged:()=>void})=>T):T{
   if(source.inTransaction)throw Error('Rollback media requires a standalone source transaction');
   if(!source.name||source.name===':memory:'||resolve(source.name)!==source.name||realpathSync(source.name)!==source.name||!lstatSync(source.name).isFile())throw Error('Rollback media requires a canonical file-backed source');
   const root=dirname(source.name);if(realpathSync(root)!==root)throw Error('Unsafe rollback media source root');
@@ -86,8 +86,26 @@ export function captureRollbackMedia(source:DB,journal:ErasureJournal){
     const result:RollbackMedia={version:1,checkpointImage:image,journal:intents,originalFiles:expected.map(file=>({path:file.path,bytes:Buffer.from(file.bytes)})),boardImages,walls:walls(source)};
     const report=verifyRollbackMedia(source,result,expected,intents);
     verifyRollbackCheckpoint(source,image,intents);
-    const after=originals(root);if(JSON.stringify(after.map(file=>[file.path,digest(file.bytes)]))!==JSON.stringify(expected.map(file=>[file.path,digest(file.bytes)])))throw Error('Rollback media source changed while locked');
-    const afterStat=lstatSync(source.name,{bigint:true});if(afterStat.isSymbolicLink()||!afterStat.isFile()||afterStat.dev!==sourceStat.dev||afterStat.ino!==sourceStat.ino)throw Error('Rollback media database file changed while locked');
-    return {...result,report};
+    const fixedImage=Buffer.from(image),fixedIntents=structuredClone(intents);
+    let active=true;
+    function assertUnchanged(){
+      if(!active||!source.inTransaction)throw Error('Rollback media source lock was released');
+      const after=originals(root);if(JSON.stringify(after.map(file=>[file.path,digest(file.bytes)]))!==JSON.stringify(expected.map(file=>[file.path,digest(file.bytes)])))throw Error('Rollback media source changed while locked');
+      const afterStat=lstatSync(source.name,{bigint:true});if(afterStat.isSymbolicLink()||!afterStat.isFile()||afterStat.dev!==sourceStat.dev||afterStat.ino!==sourceStat.ino)throw Error('Rollback media database file changed while locked');
+      const current=readVerifiedErasureJournal(source,journal);if(JSON.stringify(current)!==JSON.stringify(fixedIntents))throw Error('Rollback media journal changed while locked');
+      if(!image.equals(fixedImage)||JSON.stringify(result.journal)!==JSON.stringify(fixedIntents))throw Error('Rollback media captured checkpoint was changed');
+      verifyRollbackCheckpoint(source,fixedImage,fixedIntents);
+    }
+    try{
+      assertUnchanged();const captured={...result,report};const output=work({media:captured,assertUnchanged});
+      if(output!==null&&(typeof output==='object'||typeof output==='function')&&'then' in output)throw Error('Rollback media capture callback must be synchronous');
+      assertUnchanged();verifyRollbackMedia(source,result,expected,fixedIntents);return output;
+    }finally{active=false;}
   }).immediate();
+}
+
+/** Compatibility API. Use withRollbackMediaCapture to retain the writer lock
+ * through dependent capture/projection/IO; never await inside that callback. */
+export function captureRollbackMedia(source:DB,journal:ErasureJournal){
+  return withRollbackMediaCapture(source,journal,({media})=>media);
 }

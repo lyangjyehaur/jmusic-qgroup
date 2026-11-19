@@ -29,11 +29,12 @@ export function readRollbackPackage(root:string,manifestSha256:string){
 /** Exclusively reserves the final private directory, never renames onto an
  * existing target. A manifest is written last after all files/dirs are synced;
  * incomplete directories are retained for inspection and never auto-resumed. */
-export function writeRollbackPackage(input:RollbackPackage,destination:string,sourceRoots:string[],now=new Date()){
+export function writeRollbackPackage(input:RollbackPackage,destination:string,sourceRoots:string[],now=new Date(),assertSourceUnchanged?:()=>void){
+  function sourcesUnchanged(){const result:unknown=assertSourceUnchanged?.();if(result!==null&&(typeof result==='object'||typeof result==='function')&&'then' in result)throw Error('Rollback package source guard must be synchronous');}
   if(resolve(destination)!==destination||!sourceRoots.length)throw Error('Explicit canonical destination and isolated source roots are required');
   const parent=dirname(destination),parentStat=directory(parent),inside=(path:string,root:string)=>path===root||path.startsWith(root.endsWith(sep)?root:root+sep);for(const root of sourceRoots){directory(root);if(inside(destination,root)||inside(root,destination))throw Error('Rollback package source and destination must be isolated');}
-  const files=encodeRollbackPackage(input),manifest:PackageManifestValue=PackageManifest.parse({version:1,kind:'qgroup-private-rollback-package',createdAt:now.toISOString(),sourcePins:input.sourcePins,files:files.map(file=>({path:file.path,size:file.bytes.length,sha256:digest(file.bytes)})),rollbackEligible:false}),encoded=Buffer.from(JSON.stringify(manifest)+'\n');
-  if(encoded.length>16*1024*1024)throw Error('Rollback package manifest exceeds supported size');sameDirectory(parent,parentStat);
+  const files=encodeRollbackPackage(input),manifest:PackageManifestValue=PackageManifest.parse({version:input.version,kind:'qgroup-private-rollback-package',createdAt:now.toISOString(),sourcePins:input.sourcePins,files:files.map(file=>({path:file.path,size:file.bytes.length,sha256:digest(file.bytes)})),rollbackEligible:false}),encoded=Buffer.from(JSON.stringify(manifest)+'\n');
+  if(encoded.length>16*1024*1024)throw Error('Rollback package manifest exceeds supported size');sourcesUnchanged();sameDirectory(parent,parentStat);
   mkdirSync(destination,{mode:0o700});const rootStat=directory(destination,true),incomplete=Buffer.from('{"version":1,"status":"incomplete","rollbackEligible":false}\n');
   function owned(){sameDirectory(parent,parentStat);sameDirectory(destination,rootStat,true);}
   try{
@@ -44,9 +45,9 @@ export function writeRollbackPackage(input:RollbackPackage,destination:string,so
     owned();const check=inventory(destination,[marker,...files.map(file=>file.path)]);
     const saved:MediaSourceFile[]=files.map(file=>({path:file.path,bytes:read(join(destination,file.path),file.bytes.length)}));decodeRollbackPackage(manifest,saved);
     for(const path of ordered.reverse())sync(join(destination,path));sync(destination);check();owned();
-    if(!read(join(destination,marker),incomplete.length).equals(incomplete))throw Error('Rollback package incomplete marker changed');unlinkSync(join(destination,marker));sync(destination);
+    sourcesUnchanged();if(!read(join(destination,marker),incomplete.length).equals(incomplete))throw Error('Rollback package incomplete marker changed');unlinkSync(join(destination,marker));sync(destination);
     write(join(destination,manifestName),encoded);sync(destination);sync(parent);owned();
-    const result=readRollbackPackage(destination,digest(encoded));result.assertUnchanged();
+    const result=readRollbackPackage(destination,digest(encoded));result.assertUnchanged();sourcesUnchanged();
     return {status:'sealed_private_package' as const,manifestSha256:digest(encoded),files:files.length,bytes:files.reduce((n,file)=>n+file.bytes.length,0),checkpointDigest:manifest.sourcePins.checkpointSha256,rollbackEligible:false as const,remaining:result.report.remaining};
   }catch(error){
     // Only our original inode may receive a failure marker. Never follow a
