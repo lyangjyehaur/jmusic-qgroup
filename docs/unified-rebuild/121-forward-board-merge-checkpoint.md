@@ -29,15 +29,21 @@
 
 ## 驗證
 
-新增 **47 項**合成案例全部通過。原 Python `qgroup_core.events.create` 在私人 59 表副本實際建立新活動、名冊、條件／審計及群工作，合併後與原列完全相同；另一份 native 成分選擇修改及完整專用資料保留。原負額帳單 BLOB／帳本、pending／sending／sent／failed／skipped、精確 time／claim／retry／simulation／本文與設定原樣保全。測試沒有 QQ worker 或真群投遞。
+第一版新增 **47 項**合成案例全部通過；後續補上 1 項 inherited pending simulation 的相容案例。原 Python `qgroup_core.events.create` 在私人 59 表副本實際建立新活動、名冊、條件／審計及群工作，合併後與原列完全相同；另一份 native 成分選擇修改及完整專用資料保留。原負額帳單 BLOB／帳本、pending／sending／sent／failed／skipped、精確 time／claim／retry／simulation／本文與設定原樣保全。測試沒有 QQ worker 或真群投遞。
 
 另以完全獨立 Python readonly SQLite reader 對三份來源推導期望列，再對全部 59 張共用表與每張 native 專用表逐列、逐型別核對候選；不讀 TS 報告或 migration_map 作 oracle。TS standalone verifier 同樣不呼叫 projector，不信任 change list／摘要，會拒絕重新計算 image pin 後的列、專用資料、流水號、trigger、metadata 或 recovery flag 竄改。
 
 正向案例包含 native 側獨有 board 變更、相同變更 coalesce、合法 UNIQUE 交換、INTEGER beyond Number、負 rowid、REAL、BLOB／TEXT／NULL、空表最大流水號、metadata 與兩次語意重播；負向包含六種來源 pin、schema／WAL／lineage／baseline、丟失 journal／applied、高水位回卷、row／PK／storage／metadata 衝突、歷史及全部 bot 保全規則，以及真正最後邊界的 bytes／pin 變動與非同步 callback。第一次測試有一個摘要 hash 的恢復標記正規化失敗，資料列沒有差異；已改為 hash 候選實際標記，原失敗 log 保留。
 
-固定來源相關回歸 **287 項／23 檔全部通過**，零 failed／pending／todo／skipped。涵蓋本元件 47 項、刪除投影／privacy、原 rollback board／checkpoint／state／bot exclusion、全部 13 份 TS bot 測試及 3 份資料庫／遷移測試；3 批 assertions／檔案 inventory 與全部 979 份來源 SHA256 由獨立 verifier 核對。最新 strict、完整 web／API／worker 建置及隔離 build smoke 已通過；12 個 runtime bundles 與第 120 號已驗證 bytes 全部相同，沒有將離線 merge 工具加入 runtime。第 120 號完整 **1,890 項／137 檔**證據仍綁定提交 `e29a769b494b1cb55c2cf9ed286834ea81cdfd91`，本輪相關回歸不冒稱重新跑過目前全 inventory。
+第一版固定來源相關回歸 **287 項／23 檔全部通過**，零 failed／pending／todo／skipped。涵蓋本元件 47 項、刪除投影／privacy、原 rollback board／checkpoint／state／bot exclusion、全部 13 份 TS bot 測試及 3 份資料庫／遷移測試；3 批 assertions／檔案 inventory 與全部 979 份來源 SHA256 由獨立 verifier 核對。最新 strict、完整 web／API／worker 建置及隔離 build smoke 已通過；12 個 runtime bundles 與第 120 號已驗證 bytes 全部相同，沒有將離線 merge 工具加入 runtime。第一版證據綁定提交 `1e2166d645c4329230e8d6dfd28083ad714cfcc9`。第 120 號完整 **1,890 項／137 檔**證據仍綁定提交 `e29a769b494b1cb55c2cf9ed286834ea81cdfd91`，本輪相關回歸不冒稱重新跑過目前全 inventory。
 
 私人證據：`/Users/danersaka/.codex/rebuild-verification/forward-board-121-fc159c06c1ce4bd7b353aa50b5f2a064/`；固定來源 plan pin `56ff063a76a9a6160af1a0e649e63f93f702d61079ece30695aab83b7e1b01f4`，979 份來源、138 份總 inventory，明確選取 23 份相關測試／3 批、每批一個 worker。
+
+## inherited simulation 相容修正
+
+原歷史工作可能是 pending／sending 且已帶模擬標記，不能只因它未變成 skipped 就拒絕相同快照。補充修正保留未改變的狀態與原模擬時間；仍拒絕移除／改寫標記或把它轉向 pending／sending／sent 的不同狀態。新案例確認原 pending 工作及其所有欄位原樣保留、沒有新增投遞，改為 sent 時會被阻擋。沒有改動 worker 或把歷史狀態正規化為新的工作。
+
+補充固定來源相關回歸 **288 項／23 檔全部通過**，新增合併案例共 **48 項**，零 failed／pending／todo／skipped；3 批 assertions／檔案清單與 979 份來源由 verifier 核對。最新 strict、完整建置與隔離 build smoke 通過。私人證據在上列根目錄的 `simulation-preservation/`，新 plan pin `13708e019d5e9b157b2d562193aa3c54c8c2d4e07214969128c453decea3bfe0`；沿用同 23 份測試及 979 份來源，保留前一版結果及提交綁定。最新完整建置通過，12 個 runtime bundles 仍與第 120 號相同。
 
 ## 完整 forward restore 尚須完成
 

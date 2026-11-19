@@ -60,7 +60,7 @@ function assertRetainedForwardHistory(baseline:DB,native:DB,old:DB){
   for(const row of forwardRows(baseline,'bot_outbox'))for(const after of [a(row.__forward_rowid__),b(row.__forward_rowid__)]){
     if(!after||frozen.some(field=>!forwardEqual(row[field],after[field])))throw Error('Forward bot work identity or frozen payload changed');
     if(row.status==='sent'&&(after.status!=='sent'||!forwardEqual(row.delivered_payload_json,after.delivered_payload_json)))throw Error('Forward already-sent bot work was replayed or rewritten');
-    if(row.simulated_at!==null&&(!forwardEqual(row.simulated_at,after.simulated_at)||after.status==='pending'||after.status==='sending'||after.status==='sent'))throw Error('Forward simulation cannot become live work');
+    if(row.simulated_at!==null&&(!forwardEqual(row.simulated_at,after.simulated_at)||after.status!==row.status&&['pending','sending','sent'].includes(String(after.status))))throw Error('Forward simulation cannot become live work');
   }
 }
 export function forwardSequences(db:DB){

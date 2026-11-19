@@ -20,13 +20,14 @@ import {forwardHash,forwardCanonical,type ForwardBoardInput} from '../../../tool
 const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
 const stamp=new Date('2026-11-20T01:00:00Z');
 const pin=(bytes:Buffer)=>({bytes:Buffer.from(bytes),sha256:forwardHash(bytes)});
-function setup(options:{baselineErasure?:boolean;musicReceipt?:boolean}={}){
+function setup(options:{baselineErasure?:boolean;musicReceipt?:boolean;pendingSimulation?:boolean}={}){
   const native=openDatabase(':memory:');cleanup.push(()=>native.close());fixture(native);native.pragma('user_version=42');native.pragma('application_id=12345');const journal=erasureJournal(native);
   const profile=saveProfile(native,'alice',{profileId:null,revision:0,musicEpoch:0,selections:[{entryId:'sub-0',level:4}]},stamp);
   if(options.musicReceipt){native.prepare("INSERT INTO request_results VALUES('alice','synthetic-music-save','synthetic',?,200,'before')").run(JSON.stringify({id:profile.id}));native.prepare("INSERT INTO music_profile_receipts VALUES('alice','synthetic-music-save',?)").run(profile.id);}
   native.prepare("INSERT INTO notifications(id,user_id,event_id,kind,message,created_at,read_at) VALUES(-7,'bob','listen','synthetic',?,'before',NULL)").run(Buffer.from('same'));
   native.prepare("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,qr_image,updated_at,actor_id,actor_name,kind,changed_fields) VALUES('listen',1,-101,3,'保留原帳單',?,'unknown-zone','alice','原名字','full','[]')").run(Buffer.from([0,1,255]));
   for(const [index,status] of ['pending','sending','sent','failed','skipped'].entries())native.prepare("INSERT INTO bot_outbox(event_id,kind,dedupe_key,target,payload_json,status,claim_token,retry_at,simulated_at,delivered_payload_json,created_at) VALUES('listen','synthetic',?,'synthetic-group','{}',?,?,?,?,?,'before')").run('forward-'+index,status,status==='sending'?'original-unconfirmed':'',status==='failed'?'future-retry':null,status==='skipped'?'original-simulation':null,status==='sent'?'original-delivered-body':null);
+  if(options.pendingSimulation)native.prepare("UPDATE bot_outbox SET simulated_at='retained-simulation' WHERE status='pending'").run();
   if(options.baselineErasure){const profile=saveProfile(native,'bob',{profileId:null,revision:0,musicEpoch:0,selections:[]},stamp),privacy=createPrivacy(native,journal),intent:ErasureIntent={version:1,kind:'both',userId:'bob',profileId:profile.id,requestId:randomUUID(),createdAt:stamp.toISOString(),secretHash:hash('synthetic-secret'),signature:hash('synthetic-signature')};native.transaction(()=>privacy.submit(intent)).immediate();privacy.guard();}
   const checkpoint=captureRollbackCheckpoint(native,journal),baseline=projectRollbackBoard(native);cleanup.push(()=>baseline.db.close());const baselineBytes=baseline.db.serialize(),old=new Database(baselineBytes);cleanup.push(()=>old.close());
   function input():ForwardBoardInput{return {checkpoint:pin(checkpoint.image),baselineBoard:pin(baselineBytes),baselineJournal:pin(Buffer.from(checkpoint.journal.map(row=>JSON.stringify(row)+'\n').join(''))),nativeImage:pin(captureRollbackCheckpoint(native,journal).image),nativeJournal:pin(Buffer.from(journal.read().map(row=>JSON.stringify(row)+'\n').join(''))),oldBoard:pin(old.serialize())};}
@@ -145,4 +146,7 @@ it('rejects opposed infinite SQLite REAL values instead of collapsing both to JS
 });
 it('keeps all sources and blocks a partial board merge that would orphan native music receipts after an old private-result deletion',()=>{
   const s=setup({musicReceipt:true});s.old.prepare("DELETE FROM request_results WHERE user_id='alice'").run();const input=s.input(),native=Buffer.from(input.nativeImage.bytes),old=Buffer.from(input.oldBoard.bytes);expect(()=>mergeForwardBoard(input)).toThrow('cross-domain reference reconciliation');expect(input.nativeImage.bytes).toEqual(native);expect(input.oldBoard.bytes).toEqual(old);expect(s.native.prepare('SELECT 1 FROM music_profile_receipts').get()).toBeDefined();
+});
+it('preserves an inherited pending simulation marker without converting it to live delivery or rejecting the unchanged historical state',()=>{
+  const s=setup({pendingSimulation:true}),input=s.input(),merged=mergeForwardBoard(input),db=open(merged.nativeImage);expect(rows(db,'bot_outbox')).toEqual(rows(s.native,'bot_outbox'));expect(merged.report.decisions.bot_outbox?.inserted).toBe(0);s.old.prepare("UPDATE bot_outbox SET status='sent',delivered_payload_json='unexpected-live-delivery' WHERE status='pending'").run();expect(()=>mergeForwardBoard(s.input())).toThrow('simulation cannot become live work');
 });
