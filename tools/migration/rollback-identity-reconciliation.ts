@@ -7,6 +7,7 @@ import type {IdentityAuditMapping} from './rollback-identity';
 import {identitySchema} from './identity-schema';
 import {identityTables,identitySeconds,quoteIdentity,readRollbackIdentitySource} from './rollback-identity-source';
 import {verifyRollbackMusic} from './rollback-music-reconciliation';
+import {readSourceRebaseEvidence} from './source-rebase-evidence';
 
 function reject():never{throw Error('Rollback identity reconciliation failed; retain the complete latest source');}
 function encode(value:unknown):unknown{if(typeof value==='bigint')return {integer:value.toString()};if(Array.isArray(value))return value.map(encode);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b)).map(([key,item])=>[key,encode(item)]));return value;}
@@ -22,9 +23,9 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
     reference.exec(identitySchema);const schema=(db:DB)=>db.prepare('SELECT type,name,tbl_name,sql FROM sqlite_master ORDER BY type,name').all();equal(schema(copy),schema(reference));
     for(const name of ['user_version','application_id','encoding'])equal(copy.pragma(name,{simple:true}),reference.pragma(name,{simple:true}));
     if(copy.pragma('integrity_check',{simple:true})!=='ok'||(copy.pragma('foreign_key_check') as unknown[]).length)reject();
-    const original=readRollbackIdentitySource(source),byId=new Map(music.keys.map(row=>[row.profileId,row])),byKey=new Map(music.keys.map(row=>[row.legacyKey,row]));
+    const rebased=readSourceRebaseEvidence(source,intents),original=readRollbackIdentitySource(source),byId=new Map(music.keys.map(row=>[row.profileId,row])),byKey=new Map(music.keys.map(row=>[row.legacyKey,row]));
     const originalKeys=new Set(Object.values(original.rows).flatMap(rows=>rows.flatMap(row=>typeof row.value.qq==='string'?[row.value.qq]:[])));
-    for(const key of music.keys)if(key.mode==='generated'&&originalKeys.has(key.legacyKey))reject();
+    for(const key of music.keys)if(key.mode==='generated'&&originalKeys.has(key.legacyKey)&&!rebased?.bindings.some(row=>row.profileId===key.profileId&&row.legacyKey===key.legacyKey&&row.mode==='generated'))reject();
     const rows=Object.fromEntries(identityTables.map(table=>[table,copy.prepare(`SELECT rowid AS original_rowid,* FROM ${quoteIdentity(table)} ORDER BY rowid`).safeIntegers(true).all() as Record<string,string|number|bigint>[]]));
     for(const table of identityTables){
       const columns=copy.prepare(`PRAGMA table_xinfo(${quoteIdentity(table)})`).all() as {name:string}[];
@@ -47,8 +48,8 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
       const {original_rowid:rowid,...body}=actual;equal(body,expected);
       if(old)equal(rowid,old.rowid);else if(typeof rowid!=='bigint'||rowid<=(original.reserved.get(table)??0n))reject();
     };
-    const changes=source.prepare('SELECT * FROM music_ownership_history ORDER BY id').safeIntegers(true).all() as {id:bigint;profile_id:string;revision:bigint;actor_ref:string;before_user_id:string|null;after_user_id:string|null;created_at:string}[];
-    const claims=source.prepare("SELECT * FROM music_profile_audit WHERE json_extract(after_json,'$.action')='legacy_claim' ORDER BY id").safeIntegers(true).all() as {id:bigint;profile_id:string;revision:bigint;actor_id:string;before_json:string;after_json:string;created_at:string}[];
+    const changes=source.prepare('SELECT * FROM music_ownership_history WHERE (? IS NULL OR id>?) ORDER BY id').safeIntegers(true).all(rebased?BigInt(rebased.histories.music_ownership_history.cutoff):null,rebased?BigInt(rebased.histories.music_ownership_history.cutoff):null) as {id:bigint;profile_id:string;revision:bigint;actor_ref:string;before_user_id:string|null;after_user_id:string|null;created_at:string}[];
+    const claims=source.prepare("SELECT * FROM music_profile_audit WHERE json_extract(after_json,'$.action')='legacy_claim' AND (? IS NULL OR id>?) ORDER BY id").safeIntegers(true).all(rebased?BigInt(rebased.histories.music_profile_audit.cutoff):null,rebased?BigInt(rebased.histories.music_profile_audit.cutoff):null) as {id:bigint;profile_id:string;revision:bigint;actor_id:string;before_json:string;after_json:string;created_at:string}[];
     const revisions=new Set<string>();for(const row of [...changes,...claims]){const key=row.profile_id+':'+row.revision;if(revisions.has(key))reject();revisions.add(key);}
     for(const row of rows.links!){
       const profile=live.get(String(row.qq))??reject(),old=original.rows.links.find(item=>item.value.qq===row.qq),prelink=original.rows.prelinks.find(item=>item.value.qq===row.qq);
@@ -103,7 +104,7 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
     for(const row of rows.used_oauth!){const old=original.rows.used_oauth.find(item=>item.value.attempt===row.attempt);checkRow('used_oauth',row,expectedUsed.get(String(row.attempt))!,old);}
     equal(rows.login_attempts!.map(row=>[row.bucket,Number(row.created)]).sort(),(source.prepare('SELECT bucket,created FROM music_claim_attempts').all() as {bucket:string;created:number}[]).map(row=>[row.bucket,row.created]).sort());
     const available=[...original.rows.login_attempts];for(const row of rows.login_attempts!){const index=available.findIndex(item=>item.value.bucket===row.bucket&&Number(item.value.created)===Number(row.created)),old=index<0?undefined:available.splice(index,1)[0];checkRow('login_attempts',row,old?.value??{bucket:row.bucket!,created:row.created!},old);}
-    let high=original.highWater;const expectedMappings:IdentityAuditMapping[]=[];
+    let high=original.highWater;const expectedMappings:IdentityAuditMapping[]=structuredClone(rebased?.auditMappings??[]);
     const expectedAudits:Record<string,string|number|bigint>[]=original.rows.link_audit.map(row=>({original_rowid:row.rowid,...row.value}));
     const audit=(kind:'ownership'|'claim',id:bigint,profile:string,actor:string,before:string|null,after:string|null,created:string)=>{const key=byId.get(profile)??reject();if(key.erased)return;high++;expectedAudits.push({original_rowid:high,id:high,qq:key.legacyKey,actor,before_user_id:before??'',after_user_id:after??'',created:identitySeconds(created)});expectedMappings.push({source:kind,sourceId:id.toString(),legacyId:high.toString()});};
     const events=[...changes.map(row=>({source:'ownership' as const,id:row.id,profile:row.profile_id,revision:row.revision,actor:row.actor_ref,before:row.before_user_id,after:row.after_user_id,created:row.created_at})),

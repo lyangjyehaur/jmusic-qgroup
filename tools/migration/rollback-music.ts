@@ -3,6 +3,7 @@ import type { DB } from '@qgroup/database';
 import { readVerifiedErasureJournal, type ErasureJournal } from '../../apps/api/src/erasure-journal';
 import { assertRollbackSource } from './rollback-source';
 import { keys, object, parseJson, type Json, type ObjectValue } from './music-codec';
+import { readSourceRebaseEvidence } from './source-rebase-evidence';
 import { verifyRollbackMusic } from './rollback-music-reconciliation';
 
 export type RollbackMusicKey={profileId:string;legacyKey:string;mode:'preserved'|'generated';erased:boolean};
@@ -32,6 +33,7 @@ function choices(value:Json|undefined){
 /** Preserve original representation whenever its effective value is unchanged. */
 function patch(target:ObjectValue,field:string,current:Json,previous:Json|undefined){if(!same(current,previous))target[field]=current;}
 export function rollbackMusicKeys(db:DB){
+  const rebased=readSourceRebaseEvidence(db),bindings=new Map(rebased?.bindings.map(row=>[row.profileId,row]));
   const profiles=db.prepare('SELECT id,erased_at FROM music_profiles ORDER BY rowid').all() as {id:string;erased_at:string|null}[];
   const aliases=new Map<string,Set<string>>(),reserved=new Set<string>();
   const add=(id:string,key:string)=>{if(!oldKey.test(key))throw Error('Unsupported rollback legacy key');reserved.add(key);const names=aliases.get(id)??new Set<string>();names.add(key);aliases.set(id,names);};
@@ -41,8 +43,9 @@ export function rollbackMusicKeys(db:DB){
   const used=new Set<string>();return profiles.map(row=>{
     if(typeof row.id!=='string'||!/^m_(?:[a-f0-9]{32}|[a-f0-9]{40})$/.test(row.id))throw Error('Unsupported rollback profile ID');
     const names=aliases.get(row.id);if(names&&names.size!==1)throw Error('Ambiguous rollback profile key');
-    const mode=names?'preserved':'generated',legacyKey=names?[...names][0]!:generated(row.id);
-    if(used.has(legacyKey)||mode==='generated'&&reserved.has(legacyKey))throw Error('Rollback profile key collision');used.add(legacyKey);
+    const binding=bindings.get(row.id),mode=binding?.mode??(names?'preserved':'generated'),legacyKey=binding?.legacyKey??(names?[...names][0]!:generated(row.id));
+    if(binding&&names&&[...names].some(name=>name!==binding.legacyKey))throw Error('Rollback rebased profile alias differs');
+    if(used.has(legacyKey)||mode==='generated'&&reserved.has(legacyKey)&&!binding)throw Error('Rollback profile key collision');used.add(legacyKey);
     if(!row.erased_at&&db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=?').get(legacyKey))throw Error('Active rollback profile has an erased legacy key');
     return {profileId:row.id,legacyKey,mode,erased:row.erased_at!==null} as RollbackMusicKey;
   });
@@ -52,7 +55,7 @@ export function rollbackMusicKeys(db:DB){
 export function projectRollbackMusic(db:DB,journal:ErasureJournal){
   if(db.inTransaction)throw Error('Rollback music projection requires a standalone source transaction');
   return db.transaction(()=>{
-    assertRollbackSource(db);const intents=readVerifiedErasureJournal(db,journal),mapping=rollbackMusicKeys(db),byId=new Map(mapping.map(row=>[row.profileId,row]));
+    assertRollbackSource(db);const intents=readVerifiedErasureJournal(db,journal);readSourceRebaseEvidence(db,intents);const mapping=rollbackMusicKeys(db),byId=new Map(mapping.map(row=>[row.profileId,row]));
     const erased=new Set(mapping.filter(row=>row.erased).flatMap(row=>[row.profileId,row.legacyKey]));
     for(const row of db.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[])erased.add(row.legacy_key);
     const translate=(value:string)=>erased.has(value)?'':byId.get(value)?.legacyKey??value;

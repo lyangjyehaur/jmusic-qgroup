@@ -80,7 +80,7 @@ export function openForwardMusicSources(input:ForwardMusicInput){
     }
     const seq=(db:DB)=>(db.prepare("SELECT seq FROM sqlite_sequence WHERE name='link_audit'").safeIntegers(true).get() as {seq:bigint}|undefined)?.seq;
     const minimum=seq(baselineIdentity);if(minimum!==undefined&&((seq(identity.db)??-1n)<minimum||(seq(oldIdentity)??-1n)<minimum))throw Error('Forward identity high-water rewound');
-    return {board,baseline,baselineIdentity,native,nativeIdentity:identity.db,old,oldIdentity,erased,close(){for(const db of dbs.splice(0).reverse())db.close();board.close();}};
+    return {board,baseline,baselineIdentity,native,nativeIdentity:identity.db,nativeAuditMappings:identity.report.auditMappings,old,oldIdentity,erased,close(){for(const db of dbs.splice(0).reverse())db.close();board.close();}};
   }catch(error){for(const db of dbs.reverse())db.close();board.close();throw error;}
 }
 export type ForwardMusicSources=ReturnType<typeof openForwardMusicSources>;

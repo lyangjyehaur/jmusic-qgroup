@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import type { StoredIntent } from '../../apps/api/src/erasure-journal';
 import type { RollbackMusic } from './rollback-music';
+import {readSourceRebaseEvidence} from './source-rebase-evidence';
 type RecordValue=Record<string,unknown>;
 const reject=():never=>{throw Error('Rollback music reconciliation failed; retain the complete latest source');};
 const obj=(value:unknown):RecordValue=>{if(!value||typeof value!=='object'||Array.isArray(value))return reject();return value as RecordValue;};
@@ -24,6 +25,7 @@ function normalizedSelection(value:unknown){
 /** Independently reads latest normalized rows and source evidence. It neither
  * calls the projector nor authorizes differences from its generated report. */
 export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredIntent[]){
+  const rebased=readSourceRebaseEvidence(db,intents),bindings=new Map(rebased?.bindings.map(row=>[row.profileId,row]));
   const root=obj(result.data);equal(Object.keys(root).sort(),['entries','members','settings','shouts','shoutHistory','trend'].sort());
   const entries=obj(root.entries),members=obj(root.members),profiles=db.prepare('SELECT id,erased_at FROM music_profiles ORDER BY rowid').all() as {id:string;erased_at:string|null}[];
   const map=new Map(result.keys.map(row=>[row.profileId,row]));if(map.size!==result.keys.length||map.size!==profiles.length)reject();
@@ -35,7 +37,9 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
     if(typeof p.id!=='string'||!/^m_(?:[a-f0-9]{32}|[a-f0-9]{40})$/.test(p.id))reject();
     const key=map.get(p.id)??reject();if(key.erased!==(p.erased_at!==null)||used.has(key.legacyKey)||!/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/.test(key.legacyKey))reject();used.add(key.legacyKey);
     const names=db.prepare("SELECT legacy_key AS name FROM music_legacy_profiles WHERE profile_id=? UNION SELECT source_id AS name FROM migration_map WHERE source='music' AND entity_type='profile' AND target_id=?").all(p.id,p.id) as {name:string}[];
-    if(names.length){if(names.length!==1||key.mode!=='preserved'||key.legacyKey!==names[0]!.name)reject();}
+    const binding=bindings.get(p.id);
+    if(binding){if(key.mode!==binding.mode||key.legacyKey!==binding.legacyKey||names.some(row=>row.name!==binding.legacyKey))reject();}
+    else if(names.length){if(names.length!==1||key.mode!=='preserved'||key.legacyKey!==names[0]!.name)reject();}
     else{const expected='m_'+createHash('sha256').update('qgroup:rollback-music-key:v1:'+p.id).digest('hex').slice(0,24);if(key.mode!=='generated'||key.legacyKey!==expected||reserved.has(expected))reject();}
     if(key.erased){erased.add(p.id);erased.add(key.legacyKey);}else if(reserved.has(key.legacyKey)&&db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=?').get(key.legacyKey))reject();
   }

@@ -1,6 +1,6 @@
 # 群聚：看板與成分的單一產品重構
 
-日期：2026-11-20（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[合併後認領憑證與原回執核對檢查點](124-forward-proof-reconciliation-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
+日期：2026-11-20（Asia/Taipei）。狀態：完成盤點與 Git 保全，隔離實作持續進行，最新進度見[合併來源、原 ID 與身份審計重整檢查點](125-source-rebase-checkpoint.md)。完整功能、資料遷移與 bot 候選版本組合尚未驗收；未切換或發布新版，目前發布範圍為 **`none`**。
 
 後續已完成[統一 PWA](62-pwa-checkpoint.md)、[bot 並行寫入修正](63-bot-sqlite-locking-checkpoint.md)、[共用表單 IndexedDB 原稿](64-durable-drafts-checkpoint.md)、[活動與帳務原稿持久化](65-durable-authoring-checkpoint.md)、[活動參與原稿持久化](66-durable-participation-checkpoint.md)、[邀請與分工原稿持久化](67-durable-invitations-checkpoint.md)、[帳號與成分原稿持久化](68-durable-identity-checkpoint.md)、[管理原稿與權限失效保全](69-durable-admin-checkpoint.md)、[管理內容原稿持久化](70-durable-admin-content-checkpoint.md)、[成分關聯與 PIN 回執持久化](71-durable-admin-ownership-checkpoint.md)、[成分刪除後原操作核對](72-erased-music-acknowledgements-checkpoint.md)、[bot 設定原稿持久化](73-durable-bot-policy-checkpoint.md)、[收件匣管理回執隔離](74-admin-operation-receipts-checkpoint.md)、[通知已讀操作持久化](75-durable-notifications-checkpoint.md)、[群通知原重送操作持久化](76-durable-bot-deliveries-checkpoint.md)、[活動查看邀請操作持久化](77-durable-activity-access-checkpoint.md)、[找搭子原稿與發布操作持久化](78-durable-music-shouts-checkpoint.md)、[舊成分找回操作持久化](79-durable-music-recovery-checkpoint.md)及[自由／活動分房原稿持久化](80-durable-music-rooms-checkpoint.md)的隔離實作；另已完成[隱私刪除回執保全](81-durable-erasure-recovery-checkpoint.md)、[短效裝置連結](82-short-lived-device-links-checkpoint.md)、[舊本機紀錄保全](83-legacy-local-preservation-checkpoint.md)、[持久建立識別](84-create-intents-checkpoint.md)、[舊活動／投票草稿轉換](85-legacy-authoring-conversion-checkpoint.md)與[舊包間／收支原稿轉換](86-legacy-money-conversion-checkpoint.md)；全站遷移與正式切換驗收仍未完成。
 
@@ -174,3 +174,5 @@
 程式基線是 `origin/main` 的 `8da877857f163853c449474e168534e2e493121b`；已抓取核對。文件分支為 `codex/unified-product-plan`。工作目錄原有 Android QQ 頁首／靜態產物等未提交修改，另行保留，未將它們當作已發布能力，也未改動它們。
 
 盤點包含本機程式、既有測試、使用說明與發布紀錄；沒有讀取正式會員資料或憑證、沒有操作正式服務。歷史發布文件中的會員數、映像與 OAuth 結果只代表其記錄時間，不能據此宣稱目前線上狀態或本輪已完成真實 QQ 驗收。功能矩陣是待驗收規格，不是本輪測試通過報告。
+
+最新：[合併來源、原 ID 與身份審計重整](125-source-rebase-checkpoint.md)，保全首次來源 epoch、generated 原對照、審計映射／截點及原生刪除後投影；完整驗收與正式切換仍未放行。
