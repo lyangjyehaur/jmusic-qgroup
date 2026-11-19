@@ -85,7 +85,7 @@ export function captureRollbackBotState(raw:RollbackBotInputValue,now=new Date()
       const after=directory(root);if(JSON.stringify(fingerprint(after))!==JSON.stringify(fingerprint(before)))throw Error('Bot capture directory changed');
       if(JSON.stringify(readdirSync(root).sort(order))!==JSON.stringify(inventories.get(root)))throw Error('Bot capture inventory changed');
     }
-    for(const [path,before] of held){const after=externalFile(path);if(JSON.stringify(fingerprint(after.stat))!==JSON.stringify(fingerprint(before.stat))||!after.bytes.equals(before.bytes))throw Error('Bot capture source changed');}
+    for(const [path,before] of held){const current=stat(path);if(!current||JSON.stringify(fingerprint(current))!==JSON.stringify(fingerprint(before.stat)))throw Error('Bot capture source changed before opening');const after=externalFile(path);if(JSON.stringify(fingerprint(after.stat))!==JSON.stringify(fingerprint(before.stat))||!after.bytes.equals(before.bytes))throw Error('Bot capture source changed');}
   }
   assertUnchanged();return {state,pin,report,assertUnchanged};
 }

@@ -15,6 +15,8 @@
     "import:rebuild": "tsx tools/migration/import-snapshot.ts",
     "capture:rebuild": "tsx tools/migration/capture-snapshot.ts",
     "verify:rollback": "tsx tools/migration/read-rollback-package.ts",
+    "inspect:rollback": "tsx tools/migration/rollback-service-evidence.ts",
+    "capture:rollback": "tsx tools/migration/capture-rollback-package.ts",
     "dev:rebuild": "node tools/rebuild/dev.mjs",
     "start:rebuild": "tsx apps/api/src/start.ts",
     "typecheck:rebuild": "tsc -p tsconfig.rebuild.json",

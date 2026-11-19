@@ -48,7 +48,8 @@ export function writeRollbackPackage(input:RollbackPackage,destination:string,so
     sourcesUnchanged();if(!read(join(destination,marker),incomplete.length).equals(incomplete))throw Error('Rollback package incomplete marker changed');unlinkSync(join(destination,marker));sync(destination);
     write(join(destination,manifestName),encoded);sync(destination);sync(parent);owned();
     const result=readRollbackPackage(destination,digest(encoded));result.assertUnchanged();sourcesUnchanged();
-    return {status:'sealed_private_package' as const,manifestSha256:digest(encoded),files:files.length,bytes:files.reduce((n,file)=>n+file.bytes.length,0),checkpointDigest:manifest.sourcePins.checkpointSha256,rollbackEligible:false as const,remaining:result.report.remaining};
+    const markIncomplete=()=>{owned();const path=join(destination,marker);try{lstatSync(path);if(!read(path,incomplete.length).equals(incomplete))throw Error('Rollback failure marker differs');}catch(error){if((error as NodeJS.ErrnoException).code!=='ENOENT')throw error;write(path,incomplete);}sync(destination);sync(parent);};
+    return {markIncomplete,status:'sealed_private_package' as const,manifestSha256:digest(encoded),files:files.length,bytes:files.reduce((n,file)=>n+file.bytes.length,0),checkpointDigest:manifest.sourcePins.checkpointSha256,rollbackEligible:false as const,remaining:result.report.remaining};
   }catch(error){
     // Only our original inode may receive a failure marker. Never follow a
     // replaced directory or remove someone else's files after a failed write.
