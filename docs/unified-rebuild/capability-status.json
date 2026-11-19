@@ -5527,7 +5527,10 @@
         "tools/migration/rollback-source-files.ts",
         "tools/migration/rollback-service-evidence.ts",
         "tools/migration/rollback-capture-boundary.ts",
-        "tools/migration/capture-rollback-package.ts"
+        "tools/migration/capture-rollback-package.ts",
+        "tools/migration/rollback-bot-restore.ts",
+        "tools/migration/restore-bot-file-times.py",
+        "tools/migration/read-rollback-bot-restore.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
@@ -5548,7 +5551,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -5564,7 +5569,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -5578,7 +5585,9 @@
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -5593,7 +5602,7 @@
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
     },
     {
       "capability_id": "B09",
@@ -5712,7 +5721,10 @@
         "tools/migration/rollback-source-files.ts",
         "tools/migration/rollback-service-evidence.ts",
         "tools/migration/rollback-capture-boundary.ts",
-        "tools/migration/capture-rollback-package.ts"
+        "tools/migration/capture-rollback-package.ts",
+        "tools/migration/rollback-bot-restore.ts",
+        "tools/migration/restore-bot-file-times.py",
+        "tools/migration/read-rollback-bot-restore.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -5730,7 +5742,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -5748,7 +5762,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -5757,7 +5773,9 @@
         "apps/api/src/bot-deliveries.test.ts",
         "apps/web/tests/bot-deliveries.spec.ts",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
@@ -5767,7 +5785,7 @@
         "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。"
+      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
     },
     {
       "capability_id": "B11",
@@ -5883,7 +5901,10 @@
         "tools/migration/rollback-source-files.ts",
         "tools/migration/rollback-service-evidence.ts",
         "tools/migration/rollback-capture-boundary.ts",
-        "tools/migration/capture-rollback-package.ts"
+        "tools/migration/capture-rollback-package.ts",
+        "tools/migration/rollback-bot-restore.ts",
+        "tools/migration/restore-bot-file-times.py",
+        "tools/migration/read-rollback-bot-restore.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -5897,7 +5918,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -5908,7 +5931,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -5918,7 +5943,9 @@
         "apps/bot/src/runtime.test.ts",
         "apps/bot/src/ownership.test.ts",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/55-bot-abbreviations-checkpoint.md",
@@ -5927,7 +5954,7 @@
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "縮寫／引用／遮罩／快取／完整分段／續讀與新舊檔案互讀已有差分；隔離 runtime 接通並保留原續讀目錄，更新後同目錄官方程序互斥，取消／token 後再驗政策已測。未更新程序與異機不受鎖保證；正式規模／巨量傳遞、續讀對帳及實際組合／QQ 尚待驗收，見 55–57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。"
+      "remaining": "縮寫／引用／遮罩／快取／完整分段／續讀與新舊檔案互讀已有差分；隔離 runtime 接通並保留原續讀目錄，更新後同目錄官方程序互斥，取消／token 後再驗政策已測。未更新程序與異機不受鎖保證；正式規模／巨量傳遞、續讀對帳及實際組合／QQ 尚待驗收，見 55–57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
     },
     {
       "capability_id": "B13",
@@ -5970,7 +5997,10 @@
         "tools/migration/rollback-source-files.ts",
         "tools/migration/rollback-service-evidence.ts",
         "tools/migration/rollback-capture-boundary.ts",
-        "tools/migration/capture-rollback-package.ts"
+        "tools/migration/capture-rollback-package.ts",
+        "tools/migration/rollback-bot-restore.ts",
+        "tools/migration/restore-bot-file-times.py",
+        "tools/migration/read-rollback-bot-restore.ts"
       ],
       "behavior_evidence": [
         "apps/bot/src/config-protocol.test.ts",
@@ -5999,7 +6029,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -6022,7 +6054,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -6040,7 +6074,9 @@
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
@@ -6058,7 +6094,7 @@
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
     },
     {
       "capability_id": "B14",
@@ -7155,7 +7191,10 @@
         "tools/migration/rollback-source-files.ts",
         "tools/migration/rollback-service-evidence.ts",
         "tools/migration/rollback-capture-boundary.ts",
-        "tools/migration/capture-rollback-package.ts"
+        "tools/migration/capture-rollback-package.ts",
+        "tools/migration/rollback-bot-restore.ts",
+        "tools/migration/restore-bot-file-times.py",
+        "tools/migration/read-rollback-bot-restore.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7201,7 +7240,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7242,7 +7283,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7264,7 +7307,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7282,7 +7327,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、外部 bot 原時間／狀態恢復、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
+      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
     },
     {
       "capability_id": "O13",
@@ -7338,7 +7383,10 @@
         "tools/migration/rollback-source-files.ts",
         "tools/migration/rollback-service-evidence.ts",
         "tools/migration/rollback-capture-boundary.ts",
-        "tools/migration/capture-rollback-package.ts"
+        "tools/migration/capture-rollback-package.ts",
+        "tools/migration/rollback-bot-restore.ts",
+        "tools/migration/restore-bot-file-times.py",
+        "tools/migration/read-rollback-bot-restore.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7380,7 +7428,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7417,7 +7467,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7439,7 +7491,9 @@
         "apps/api/src/rollback-bot-exclusion.test.ts",
         "docs/unified-rebuild/111-latest-bot-capture-checkpoint.md",
         "apps/api/src/capture-rollback-package.test.ts",
-        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md"
+        "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7456,7 +7510,7 @@
         "docs/unified-rebuild/108-rollback-media-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、外部 bot 原時間／狀態恢復、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。"
+      "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
     },
     {
       "capability_id": "O14",

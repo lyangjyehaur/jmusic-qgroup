@@ -14,6 +14,7 @@ export const RollbackBotInput=z.object({database:z.string().min(1),logDirectory:
 export type RollbackBotInputValue=z.infer<typeof RollbackBotInput>;
 const log=/^logs\/(?:bot-group-state(?:-[a-f0-9]{20})?\.json|bot-health\.json|bot-events\.jsonl(?:\.[1-4])?|\.bot-(?:group|health)-[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\.tmp)$/;
 const abbreviation=/^abbreviations\/[a-f0-9]{24}(?:\.[a-f0-9]{12})?\.(?:json|txt)(?:\.[a-f0-9]{12}\.tmp)?$/;
+export const isRollbackBotFilePath=(path:string)=>log.test(path)||abbreviation.test(path)||path==='configuration/sensitive-words.json';
 function canonical(path:string){if(resolve(path)!==path)throw Error('Bot capture requires canonical paths');}
 function stat(path:string){try{return lstatSync(path,{bigint:true});}catch(error){if((error as NodeJS.ErrnoException).code==='ENOENT')return null;throw error;}}
 function directory(path:string){canonical(path);const value=stat(path);if(!value?.isDirectory()||value.isSymbolicLink()||realpathSync(path)!==path)throw Error('Unsafe bot capture directory');return value;}
@@ -32,13 +33,17 @@ export function pinRollbackBotState(state:RollbackBotState){return digest(encode
  * files are retained, including incomplete bytes, rather than treated as work. */
 export function verifyRollbackBotState(state:RollbackBotState,externalPin:string){
   if(JSON.stringify(Object.keys(state).sort())!==JSON.stringify(['version','capturedAt','sources','directories','files'].sort())||!state.files.every(file=>Buffer.isBuffer(file.bytes)&&JSON.stringify(Object.keys(file).sort())===JSON.stringify(['path','bytes','mtimeNs'].sort())))throw Error('Invalid bot capture components');
-  const index=describeRollbackBotState(state);for(const path of Object.values(index.sources))if(path!==null)canonical(path);
+  return verifyRollbackBotIndex(describeRollbackBotState(state),externalPin);
+}
+/** Validate the complete pinned index before any restore path is opened. */
+export function verifyRollbackBotIndex(raw:z.infer<typeof BotStateIndex>,externalPin:string){
+  const index=BotStateIndex.parse(raw);for(const path of Object.values(index.sources))if(path!==null)canonical(path);
   if(index.sources.abbreviationDirectory!==join(dirname(index.sources.database),'bot-abbreviation-results'))throw Error('Bot continuation source differs');
   if(JSON.stringify(index.directories.map(row=>row.role))!==JSON.stringify(['logs','abbreviations']))throw Error('Bot capture directory roles differ');
   const paths=index.files.map(file=>file.path);if(new Set(paths).size!==paths.length||JSON.stringify(paths)!==JSON.stringify([...paths].sort(order)))throw Error('Ambiguous bot capture inventory');
-  for(const path of paths){if(!log.test(path)&&!abbreviation.test(path)&&path!=='configuration/sensitive-words.json')throw Error('Unclassified bot capture file');if(path.startsWith('logs/')&&!index.directories[0]!.exists||path.startsWith('abbreviations/')&&!index.directories[1]!.exists)throw Error('Absent bot capture directory contains files');}
+  for(const path of paths){if(!isRollbackBotFilePath(path))throw Error('Unclassified bot capture file');if(path.startsWith('logs/')&&!index.directories[0]!.exists||path.startsWith('abbreviations/')&&!index.directories[1]!.exists)throw Error('Absent bot capture directory contains files');}
   if(paths.includes('configuration/sensitive-words.json')!==(index.sources.sensitiveWordsFile!==null))throw Error('Bot word list inventory differs');
-  if(!/^[a-f0-9]{64}$/.test(externalPin)||pinRollbackBotState(state)!==externalPin)throw Error('Bot capture pin differs');
+  if(!/^[a-f0-9]{64}$/.test(externalPin)||digest(JSON.stringify(index)+'\n')!==externalPin)throw Error('Bot capture pin differs');
   return {version:1 as const,files:paths.length,pin:externalPin,rollbackEligible:false as const};
 }
 /** Caller must exclude the native delivery owner and retain the business DB
