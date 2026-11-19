@@ -65,6 +65,7 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
     }
     for(const profile of profiles){
       const key=byId.get(profile.id)!.legacyKey,link=rows.links!.find(row=>row.qq===key),prelink=rows.prelinks!.find(row=>row.qq===key),oldLink=original.rows.links.find(row=>row.value.qq===key),oldPre=original.rows.prelinks.find(row=>row.value.qq===key);
+      if(link&&prelink&&(!oldPre||oldPre.value.user_id!==profile.user_id))reject();
       const latest=changes.filter(row=>row.profile_id===profile.id).at(-1),claim=claims.filter(row=>row.profile_id===profile.id).at(-1);
       if(latest&&claim&&latest.revision===claim.revision)reject();
       if(profile.user_id&&!link){

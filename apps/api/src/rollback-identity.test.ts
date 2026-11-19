@@ -50,6 +50,7 @@ it('keeps original OAuth links only when the latest board identity agrees, and i
   s.db.prepare("INSERT INTO external_identities(provider,client_id,subject,user_id,display_name,created_at) VALUES('qq','fixture-app','fixture-subject','alice','fixture','after')").run();
   const result=project(s.db,s.journal);expect(result.db.prepare('SELECT * FROM links').all()).toEqual([{qq:'10001',app_id:'fixture-app',openid:'fixture-subject',user_id:'alice',created:123,source:'legacy_pin_and_qq_oauth'}]);expect(result.db.prepare('SELECT * FROM used_oauth').all()).toEqual([{attempt:'consumed',created:123}]);
   expect(result.report.authentication).toMatchObject({sessions:'invalidated',entryIntents:'invalidated'});
+  result.db.prepare("INSERT INTO prelinks VALUES('10001','alice',123)").run();expect(()=>s.db.transaction(()=>verifyRollbackIdentity(s.db,result.db,result.music,[],result.report.auditMappings)).immediate()).toThrow('reconciliation failed');
   s.db.prepare("DELETE FROM external_identities WHERE client_id='fixture-app'").run();expect(()=>project(s.db,s.journal)).toThrow('current identity');
 });
 it('projects administrative unlink and relink using newest owner, original audit IDs and high-water with reversible audit mappings',async()=>{

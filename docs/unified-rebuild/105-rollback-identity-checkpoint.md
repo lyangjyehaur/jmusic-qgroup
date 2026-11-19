@@ -22,7 +22,7 @@
 
 `rollback-identity-reconciliation.ts` 不呼叫身份 projector，重新讀最新 owner／QQ evidence／history／contact／used attempts／rate attempts，以及原 row decoder。核對完整 fixed schema、column storage、有效 ownership 集合、原 rowid、native body、contact reservation、全部 audit／mapping 與高水位；刻意增加舊 proof、錯 owner／contact／native body／audit／rowid／schema／sequence 都拒絕。music 及 journal 重新驗證，不信任傳入 report。結果始終 **`rollbackEligible:false`**。
 
-最終相關 **83 項／4 檔通過**，Strict TypeScript 通過。完整單工回歸 **1,194 項／122 檔通過**；完整回歸啟動後補了 key／orphan 衝突、原 evidence 欄位、revision 排序及兩項相關測試，最終相關 83 項與 strict 再次通過。紀錄：`/tmp/qgroup-rollback-identity-targeted-final.log`、`/tmp/qgroup-rollback-identity-typecheck-final.log`、`/tmp/qgroup-rollback-identity-native.log`。
+最終相關 **83 項／4 檔通過**，Strict TypeScript 通過。完整單工回歸 **1,194 項／122 檔通過**；完整回歸啟動後補了 key／orphan 衝突、原 evidence 欄位、revision 排序、兩項相關測試及 OAuth-only profile 不可額外加 prelink 的拒絕檢查，最終相關 83 項與 strict 再次通過。紀錄：`/tmp/qgroup-rollback-identity-targeted-final.log`、`/tmp/qgroup-rollback-identity-typecheck-final.log`、`/tmp/qgroup-rollback-identity-native.log`。
 
 測試實際匯入原 Python `Store`／contacts／admin_links，僅在本次生成的隔離身份 SQLite 與 JSON 上讀有效 prelink、清空聯絡號、解除 owner、追加舊審計，確認失效 session 不可用。沒有啟動 HTTP service／bot、沒有正式憑證或 QQ；這是原 identity 元件讀寫演練，**不是固定舊 web／music／bot 完整候選版本組合驗收**。本輪沒有修改 runtime entry、TSX、schema 或 bot 邏輯，未建置候選映像或瀏覽器驗收。
 
