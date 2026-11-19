@@ -1,5 +1,5 @@
 import type { DB } from '@qgroup/database';
-import type { StoredIntent } from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, type StoredIntent } from '../../apps/api/src/erasure-journal';
 import { digest, parseJson, profileId, musicErasures, type Identity, type Json, type ObjectValue } from './music-codec';
 import { reconcileIdentitySource } from './identity-reconciliation';
 
@@ -28,6 +28,7 @@ const tables=[
 /** Independent source projection: never calls importMusic/projectMusic, seeds,
  * privacy replay, or uses migration statuses to authorize data differences. */
 export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacyLedger:string, journal:StoredIntent[], board:DB, stamp:string, identitySource:DB){
+  if(journal.some(intent=>'version' in intent&&intent.version===3))throw Error('Imported original music erasures require a complete native source with original key bindings');
   const data=obj(raw),originalMembers=obj(data.members),originalEntries=obj(data.entries);
   const expected:Record<string,Row[]>=Object.fromEntries(tables.map(table=>[table,[]]));
   const add=(table:string,row:Row)=>expected[table]!.push(row);
@@ -38,12 +39,13 @@ export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacy
   const users=new Set((board.prepare('SELECT id FROM users').all() as {id:string}[]).map(row=>row.id));
   const closed=new Set((board.prepare('SELECT user_id FROM privacy_requests').all() as {user_id:string}[]).map(row=>row.user_id));
   const unique=new Map<string,StoredIntent>();
-  for(const intent of journal){const id='request_id' in intent?intent.request_id:intent.requestId;if(unique.has(id)&&encode(unique.get(id))!==encode(intent))reject();unique.set(id,intent);}
+  for(const intent of journal){const id=erasureRequestId(intent);if(unique.has(id)&&encode(unique.get(id))!==encode(intent))reject();unique.set(id,intent);}
   const tombstones=new Map<string,Row>(),epochs=new Map<string,number>();
   const epoch=(user:Json|undefined)=>{if(typeof user==='string'&&users.has(user))epochs.set(user,(epochs.get(user)??0)+1);};
   for(const intent of unique.values()){
     if('user_id' in intent){if(users.has(intent.user_id))closed.add(intent.user_id);continue;}
     if(intent.version===2)continue;
+    if(intent.version===3)throw Error('Imported original music erasures require a complete native source with original key bindings');
     if(intent.kind!=='music'&&users.has(intent.userId))closed.add(intent.userId);
     if(intent.kind!=='account'&&intent.profileId){tombstones.set(intent.profileId,{id:intent.profileId,user_id:null,revision:0,updated_at:tombstones.get(intent.profileId)?.updated_at??intent.createdAt,erased_at:intent.createdAt});epoch(intent.userId);}
   }

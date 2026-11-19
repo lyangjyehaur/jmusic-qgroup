@@ -68,31 +68,35 @@ def _ledger(domain, raw, seen=None):
         else:
             if domain == 'board':
                 raise ValueError('Board authority requires original closure records')
-            if type(row['version']) is not int or row['version'] not in (1, 2):
+            if type(row['version']) is not int or row['version'] not in (1, 2, 3):
                 raise ValueError('Unsupported authority unified intent')
-            common = ['version', 'kind', 'requestId', 'createdAt', 'secretHash', 'signature']
-            if row['version'] == 1:
-                _keys(row, common + ['userId', 'profileId'])
-                if row['kind'] not in ('account', 'music', 'both') or not isinstance(row['userId'], str) or not 1 <= len(row['userId']) <= 128:
-                    raise ValueError('Invalid unified account intent')
-                if row['profileId'] is not None and (not isinstance(row['profileId'], str) or not 1 <= len(row['profileId']) <= 128):
-                    raise ValueError('Invalid unified profile scope')
-                if row['kind'] != 'account' and row['profileId'] is None:
-                    raise ValueError('Missing unified profile scope')
+            if row['version'] == 3:
+                from tools.migration.legacy_music_intent import validate_imported_music
+                request = validate_imported_music(row)
             else:
-                _keys(row, common + ['command', 'actorRef', 'profiles', 'entries'])
-                if row['kind'] != 'admin_music' or row['command'] not in ('delete_profile', 'reset_music') or not isinstance(row['actorRef'], str) or not 1 <= len(row['actorRef']) <= 128 or not isinstance(row['profiles'], list) or not isinstance(row['entries'], list):
-                    raise ValueError('Invalid unified administration intent')
-                for profile in row['profiles']:
-                    _keys(profile, ['id', 'userId'])
-                    if not isinstance(profile['id'], str) or not 1 <= len(profile['id']) <= 128 or profile['userId'] is not None and (not isinstance(profile['userId'], str) or not 1 <= len(profile['userId']) <= 128):
-                        raise ValueError('Invalid unified administration profile')
-                if any(not isinstance(entry, str) or not 1 <= len(entry) <= 128 for entry in row['entries']) or len(set(row['entries'])) != len(row['entries']) or len(set(p['id'] for p in row['profiles'])) != len(row['profiles']) or row['command'] == 'delete_profile' and (len(row['profiles']) != 1 or row['entries']):
-                    raise ValueError('Invalid unified administration scope')
-            if not isinstance(row['requestId'], str) or not re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', row['requestId'], re.I) or not _timestamp(row['createdAt']):
-                raise ValueError('Invalid unified request identity')
-            _pin(row['secretHash']); _pin(row['signature'])
-            request = row['requestId']
+                common = ['version', 'kind', 'requestId', 'createdAt', 'secretHash', 'signature']
+                if row['version'] == 1:
+                    _keys(row, common + ['userId', 'profileId'])
+                    if row['kind'] not in ('account', 'music', 'both') or not isinstance(row['userId'], str) or not 1 <= len(row['userId']) <= 128:
+                        raise ValueError('Invalid unified account intent')
+                    if row['profileId'] is not None and (not isinstance(row['profileId'], str) or not 1 <= len(row['profileId']) <= 128):
+                        raise ValueError('Invalid unified profile scope')
+                    if row['kind'] != 'account' and row['profileId'] is None:
+                        raise ValueError('Missing unified profile scope')
+                else:
+                    _keys(row, common + ['command', 'actorRef', 'profiles', 'entries'])
+                    if row['kind'] != 'admin_music' or row['command'] not in ('delete_profile', 'reset_music') or not isinstance(row['actorRef'], str) or not 1 <= len(row['actorRef']) <= 128 or not isinstance(row['profiles'], list) or not isinstance(row['entries'], list):
+                        raise ValueError('Invalid unified administration intent')
+                    for profile in row['profiles']:
+                        _keys(profile, ['id', 'userId'])
+                        if not isinstance(profile['id'], str) or not 1 <= len(profile['id']) <= 128 or profile['userId'] is not None and (not isinstance(profile['userId'], str) or not 1 <= len(profile['userId']) <= 128):
+                            raise ValueError('Invalid unified administration profile')
+                    if any(not isinstance(entry, str) or not 1 <= len(entry) <= 128 for entry in row['entries']) or len(set(row['entries'])) != len(row['entries']) or len(set(p['id'] for p in row['profiles'])) != len(row['profiles']) or row['command'] == 'delete_profile' and (len(row['profiles']) != 1 or row['entries']):
+                        raise ValueError('Invalid unified administration scope')
+                if not isinstance(row['requestId'], str) or not re.fullmatch(r'[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[89ab][0-9a-f]{3}-[0-9a-f]{12}', row['requestId'], re.I) or not _timestamp(row['createdAt']):
+                    raise ValueError('Invalid unified request identity')
+                _pin(row['secretHash']); _pin(row['signature'])
+                request = row['requestId']
         value = json.dumps(row, sort_keys=True, separators=(',', ':'))
         if request in seen and seen[request] != value:
             raise ValueError('Conflicting authority intent')

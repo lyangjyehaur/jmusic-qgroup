@@ -2,7 +2,7 @@ import {readdirSync} from 'node:fs';
 import {join,resolve} from 'node:path';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {decodeErasureJournal} from './erasure-journal';
+import {erasureRequestId, decodeErasureJournal} from './erasure-journal';
 import {sourceDirectory,sourceStat,snapshotRollbackFile} from '../../../packages/runtime/src/private-source-files';
 import {digest,parseJson,type Json} from '../../../packages/runtime/src/strict-json';
 
@@ -38,7 +38,7 @@ export function validateAuthorityLedger(domain:AuthorityDomain,bytes:Buffer,seen
   for(const line of text.split('\n').filter(line=>line.trim()))parseJson(line);
   if(domain!=='music'){
     const rows=decodeErasureJournal(text);
-    for(const row of rows){if(domain==='board'&&'version' in row)throw Error('Board authority requires original closure records');const id='request_id' in row?row.request_id:row.requestId,value=JSON.stringify(row);if(seen.has(id)&&seen.get(id)!==value)throw Error('Conflicting authority intent');seen.set(id,value);}
+    for(const row of rows){if(domain==='board'&&'version' in row)throw Error('Board authority requires original closure records');const id=erasureRequestId(row),value=JSON.stringify(row);if(seen.has(id)&&seen.get(id)!==value)throw Error('Conflicting authority intent');seen.set(id,value);}
     return rows.length;
   }
   const rows=text.split('\n').filter(line=>line.trim()).map(line=>parseJson(line));

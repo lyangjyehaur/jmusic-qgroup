@@ -34,7 +34,7 @@ export function readSourceRebaseEvidence(db:DB,intents?:StoredIntent[]){
     const aliases=db.prepare("SELECT legacy_key AS key FROM music_legacy_profiles WHERE profile_id=? UNION SELECT source_id AS key FROM migration_map WHERE source='music' AND entity_type='profile' AND target_id=?").all(binding.profileId,binding.profileId) as {key:string}[];
     if(aliases.some(row=>row.key!==binding.legacyKey))throw Error('Source rebase profile alias differs');
   }
-  const authorized=(id:string)=>intents?.some(intent=>'user_id' in intent?false:intent.version===2?intent.profiles.some(row=>row.id===id):intent.kind!=='account'&&intent.profileId===id)??false;
+  const authorized=(id:string)=>intents?.some(intent=>'user_id' in intent?false:intent.version===2?intent.profiles.some(row=>row.id===id):intent.version===3?intent.profileId===id&&intent.legacyKey===byId.get(id)?.legacyKey&&intent.origin.sourceRebaseSha256===run&&db.prepare('SELECT 1 FROM music_profiles WHERE id=? AND erased_at=?').get(id,intent.createdAt)&&db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=? AND erased_at_json=?').get(intent.legacyKey,intent.originalErasedAtJson):intent.kind!=='account'&&intent.profileId===id)??false;
   for(const table of ['music_ownership_history','music_profile_audit'] as const){
     const history=evidence.histories[table],cutoff=BigInt(history.cutoff),snapshots=new Map(history.rows.map(row=>[row.id,row]));
     if(snapshots.size!==history.rows.length||history.rows.some(row=>BigInt(row.id)>cutoff||!byId.has(row.profileId)))throw Error('Invalid source rebase history cutoff');

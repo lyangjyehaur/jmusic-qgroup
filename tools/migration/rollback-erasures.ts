@@ -1,5 +1,5 @@
 import type {DB} from '@qgroup/database';
-import {readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
 import {assertRollbackSource} from './rollback-source';
 import {verifyRollbackMusic} from './rollback-music-reconciliation';
 import type {RollbackMusic} from './rollback-music';
@@ -29,7 +29,7 @@ export function projectRollbackErasures(db:DB,journal:ErasureJournal,music:Rollb
       if(previous){
         if(previous.user_id!==row.user_id||previous.created_at!==row.created_at)throw Error('Ambiguous rollback account erasure marker');
       }else{
-        if(intents.some(entry=>('request_id' in entry?entry.request_id:entry.requestId)===row.id))throw Error('Ambiguous rollback account erasure ID');
+        if(intents.some(entry=>(erasureRequestId(entry))===row.id))throw Error('Ambiguous rollback account erasure ID');
         const entry={user_id:row.user_id,request_id:row.id,created_at:row.created_at};seen.set(row.id,entry);board.push(entry);
       }
     }
@@ -39,7 +39,7 @@ export function projectRollbackErasures(db:DB,journal:ErasureJournal,music:Rollb
       const key=map.get(row.id);if(!key?.erased)throw Error('Missing rollback erased profile mapping');if(!erased.has(key.legacyKey))erased.set(key.legacyKey,row.erased_at);
     }
     const scopes:RollbackErasures['scopes']=[];const unique=new Set<string>();
-    for(const row of intents){const requestId='request_id' in row?row.request_id:row.requestId;if(unique.has(requestId))continue;unique.add(requestId);
+    for(const row of intents){const requestId=erasureRequestId(row);if(unique.has(requestId))continue;unique.add(requestId);
       const ids='user_id' in row||row.kind==='account'?[]:row.version===2?row.profiles.map(profile=>profile.id):[row.profileId!];
       const profileKeys=ids.map(id=>{const key=map.get(id);if(!key?.erased)throw Error('Rollback erasure scope lacks current tombstone');return key.legacyKey;});
       scopes.push({requestId,kind:'user_id' in row?'account':row.version===2?row.command:row.kind,profileKeys,entries:'version' in row&&row.version===2?[...row.entries]:[],alreadyApplied:true});

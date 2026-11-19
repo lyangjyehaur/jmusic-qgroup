@@ -126,6 +126,7 @@ export async function importSnapshot(sourcePath: string, destinationPath: string
     // Replay current account closures before resolving any music ownership.
     const boardCounts = db.transaction(() => recordBoard(db!)).immediate();
     const boardJournal = erasureJournal(db);
+    if(boardJournal.read().some(intent=>'version' in intent&&intent.version===3))throw Error('Imported original music erasures require a complete native source with original key bindings');
     createPrivacy(db, {read:()=>boardJournal.read().filter(intent=>!('version' in intent&&intent.version===2)),append:entry=>boardJournal.append(entry)});
     const identityCopy = join(stage, '.source-identity.sqlite3');
     writePrivate(identityCopy, readPrivateFile(join(source, 'music/identity.sqlite3')));

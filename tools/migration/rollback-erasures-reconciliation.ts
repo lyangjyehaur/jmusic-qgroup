@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import type {DB} from '@qgroup/database';
 import {z} from 'zod';
-import {decodeErasureJournal,readVerifiedErasureJournal,type StoredIntent} from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, decodeErasureJournal,readVerifiedErasureJournal,type StoredIntent} from '../../apps/api/src/erasure-journal';
 import type {RollbackMusic} from './rollback-music';
 import type {RollbackErasures,LegacyBoardErasure,LegacyMusicErasure} from './rollback-erasures';
 import {verifyRollbackMusic} from './rollback-music-reconciliation';
@@ -29,7 +29,7 @@ export function verifyRollbackErasures(db:DB,result:RollbackErasures,music:Rollb
   for(const row of db.prepare('SELECT user_id,id,created_at FROM privacy_requests ORDER BY rowid').all() as {user_id:string;id:string;created_at:string}[]){
     const previous=expectedBoard.find(entry=>entry.request_id===row.id);
     if(previous){if(previous.user_id!==row.user_id||previous.created_at!==row.created_at)reject();}
-    else{if(intents.some(entry=>('request_id' in entry?entry.request_id:entry.requestId)===row.id))reject();requests.add(row.id);expectedBoard.push({user_id:row.user_id,request_id:row.id,created_at:row.created_at});}
+    else{if(intents.some(entry=>(erasureRequestId(entry))===row.id))reject();requests.add(row.id);expectedBoard.push({user_id:row.user_id,request_id:row.id,created_at:row.created_at});}
   }
   same(board,expectedBoard);if(new Set(board.map(row=>row.request_id)).size!==board.length)reject();
   // Old recover() skips a closed account only when its current marker exists.
@@ -43,7 +43,7 @@ export function verifyRollbackErasures(db:DB,result:RollbackErasures,music:Rollb
   }
   same(erased,[...tombstones].map(([qq,erased_at])=>({qq,erased_at})));if(new Set(erased.map(row=>row.qq)).size!==erased.length)reject();
   const scopes:RollbackErasures['scopes']=[],unique=new Set<string>();
-  for(const row of intents){const requestId='request_id' in row?row.request_id:row.requestId;if(unique.has(requestId))continue;unique.add(requestId);
+  for(const row of intents){const requestId=erasureRequestId(row);if(unique.has(requestId))continue;unique.add(requestId);
     const profileIds='user_id' in row||row.kind==='account'?[]:row.version===2?row.profiles.map(profile=>profile.id):[row.profileId!];
     const profileKeys=profileIds.map(id=>{const key=music.keys.find(item=>item.profileId===id);if(!key?.erased||!tombstones.has(key.legacyKey))return reject();return key.legacyKey;});
     scopes.push({requestId,kind:'user_id' in row?'account':row.version===2?row.command:row.kind,profileKeys,entries:'version' in row&&row.version===2?row.entries:[],alreadyApplied:true});

@@ -10,7 +10,7 @@ export const erasedAccountToken=(userId:string,requestId:string)=>'erased-accoun
 export function verifiedAccountClosures(db:DB,journal:ErasureJournal){
   const intents=readVerifiedErasureJournal(db,journal),scopes=new Map<string,Map<string,string>>();
   for(const entry of intents){
-    if('version' in entry&&(entry.version===2||entry.kind==='music'))continue;
+    if('version' in entry&&(entry.version!==1||entry.kind==='music'))continue;
     const [userId,requestId,createdAt]='user_id' in entry?[entry.user_id,entry.request_id,entry.created_at]:[entry.userId,entry.requestId,entry.createdAt];
     if('version' in entry){const receipt=db.prepare('SELECT result_json FROM privacy_receipts WHERE request_id=?').get(requestId) as {result_json:string};const result=ErasureResult.parse(JSON.parse(receipt.result_json));if(result.requestId!==requestId||result.target!==entry.kind)throw Error('Account closure receipt scope differs');}
     const requests=scopes.get(userId)??new Map<string,string>();requests.set(requestId,createdAt);scopes.set(userId,requests);

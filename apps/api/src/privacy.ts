@@ -8,7 +8,7 @@ import { DomainError } from '@qgroup/domain';
 import { getProfile } from './repositories';
 import type { Security } from './security';
 import { hash } from './security';
-import { erasureJournal, type ErasureJournal, type ErasureIntent, type StoredIntent } from './erasure-journal';
+import { erasureJournal, erasureRequestId, type ErasureJournal, type ErasureIntent, type StoredIntent } from './erasure-journal';
 import { prunePrivateImages } from './privacy-assets';
 import { clearMusicClaims } from './music-claim-state';
 import { invalidateMusicOwnership } from './music-ownership';
@@ -101,13 +101,22 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
   let journalFailed = false;
   function apply(entry: StoredIntent) {
     const legacy = 'user_id' in entry;
-    const requestId = legacy ? entry.request_id : entry.requestId;
+    const requestId = erasureRequestId(entry);
     if (db.prepare('SELECT 1 FROM erasure_applied WHERE request_id=?').get(requestId)) {
-      if (!legacy) {
+      if (!legacy&&entry.version!==3) {
         const receipt = db.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(requestId) as { signature: string; secret_hash: string } | undefined;
         if (receipt?.signature !== entry.signature || receipt.secret_hash !== entry.secretHash) throw new Error('Conflicting erasure journal intent');
       }
       return;
+    }
+    if(!legacy&&entry.version===3){
+      const mapping=db.prepare("SELECT target_id FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=?").get(entry.legacyKey) as {target_id:string}|undefined;
+      const aliases=db.prepare("SELECT legacy_key AS key FROM music_legacy_profiles WHERE profile_id=? UNION SELECT source_id AS key FROM migration_map WHERE source='music' AND entity_type='profile' AND target_id=?").all(entry.profileId,entry.profileId) as {key:string}[];
+      if(mapping&&mapping.target_id!==entry.profileId||aliases.some(row=>row.key!==entry.legacyKey))throw Error('Imported original music key binding differs');
+      if(!mapping)db.prepare("INSERT INTO migration_map VALUES('music','profile',?,?,?,?,'erased')").run(entry.legacyKey,entry.profileId,entry.origin.recordSha256,hash(JSON.stringify(entry)));
+      replayMusicErasure(db,entry.profileId,null,entry.createdAt);
+      db.prepare('INSERT INTO music_legacy_erasures VALUES(?,?) ON CONFLICT(legacy_key) DO UPDATE SET erased_at_json=excluded.erased_at_json').run(entry.legacyKey,entry.originalErasedAtJson);
+      db.prepare('INSERT INTO erasure_applied VALUES(?)').run(entry.markerId);return;
     }
     if (!legacy && entry.version === 2) {
       for (const profile of entry.profiles) replayMusicErasure(db,profile.id,profile.userId,entry.createdAt);

@@ -12,6 +12,8 @@ import {rollbackMusicKeys} from './rollback-music';
 import {assertRollbackSource} from './rollback-source';
 import {repairAppliedAccountErasures} from './forward-account-erasures';
 import {reconcileAppliedAccountRepair} from './forward-account-reconciliation';
+import {importedLegacyMusicIntent} from '../../apps/api/src/legacy-music-intent';
+import {readSourceRebaseEvidence,sourceRebaseDigest} from './source-rebase-evidence';
 
 export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string};
 const sha=z.string().regex(/^[a-f0-9]{64}$/);
@@ -48,20 +50,20 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
   if(digest(JSON.stringify(baselineIntents))!==authority.manifest.journalSha256||canonical(rows(baselines.board))!==canonical(rows(Buffer.from(baseline.erasures.boardJournal)))||canonical(rows(baselines.music))!==canonical(rows(Buffer.from(baseline.erasures.musicJournal))))throw Error('Forward baseline differs from complete checkpoint erasures');
   // A native writer refuses old-service additions until a full rebase. Hence
   // its source phase must precede resumed old writers in this authority epoch.
-  let oldPhase=false;const oldMusic=new Map<string,Json>();
+  let oldPhase=false;const oldMusic=new Map<string,Json>(),oldOrigins=new Map<string,{recordSequence:number;recordSha256:string;suffixSha256:string;rowIndex:number}>();
   for(let sequence=1;sequence<=authority.head.sequence;sequence++){
     const file=privateFile(join(input.authorityRoot,'records',String(sequence).padStart(12,'0')+'.json'),90*1024*1024),record=ErasureAuthorityRecord.parse(parseJson(text(file.bytes!)));file.assertUnchanged();
     if(record.version===2)throw Error('Structured old reset requires source generation and complete forward repair');
     if(record.domain==='unified'&&oldPhase)throw Error('Interleaved native and old-service writes require a complete rebase');
     if(record.domain!=='unified')oldPhase=true;
-    if(record.domain==='music')for(const row of rows(Buffer.from(record.suffixBase64,'base64')) as {qq:string;erased_at:Json}[])oldMusic.set(row.qq,row.erased_at);
+    if(record.domain==='music'){const suffix=Buffer.from(record.suffixBase64,'base64');for(const [rowIndex,row] of (rows(suffix) as {qq:string;erased_at:Json}[]).entries()){oldMusic.set(row.qq,row.erased_at);oldOrigins.set(row.qq,{recordSequence:sequence,recordSha256:file.sha256!,suffixSha256:digest(suffix),rowIndex});}}
   }
   const nativeIntents=decodeErasureJournal(text(authority.ledgers.unified)),merged=[...nativeIntents],byRequest=new Map(merged.map(entry=>[erasureRequestId(entry),entry])),added:StoredIntent[]=[],closures=new Set<string>();
   for(const entry of decodeErasureJournal(text(authority.ledgers.board))){if(!('user_id' in entry))throw Error('Original board closure required');closures.add(entry.user_id);const previous=byRequest.get(entry.request_id);
     if(previous){const closure='user_id' in previous?previous:previous.version===1&&previous.kind!=='music'?{user_id:previous.userId,request_id:previous.requestId,created_at:previous.createdAt}:null;if(canonical(closure)!==canonical(entry))throw Error('Forward account request identity conflicts');}
     else{byRequest.set(entry.request_id,entry);merged.push(entry);added.push(entry);}
   }
-  const journal=Buffer.concat([authority.ledgers.unified,Buffer.from(added.map(entry=>JSON.stringify(entry)+'\n').join(''))]);validateAuthorityLedger('unified',journal);
+  let journal:Buffer;
   const fixed=new Database(held.checkpoint);let db:DB;
   try{db=new Database(held.nativeImage);}catch(error){fixed.close();throw error;}
   try{
@@ -72,6 +74,13 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
       assertRollbackSource(db);
       for(const key of [...baseline.music.keys,...rollbackMusicKeys(db)]){const prior=mappings.get(key.legacyKey),name=ids.get(key.profileId);if(prior&&prior!==key.profileId||name&&name!==key.legacyKey)throw Error('Forward music key mapping conflicts');mappings.set(key.legacyKey,key.profileId);ids.set(key.profileId,key.legacyKey);}
     }).immediate();
+    const rebased=readSourceRebaseEvidence(db),imported=[] as ReturnType<typeof importedLegacyMusicIntent>[];
+    for(const [legacyKey,raw] of oldMusic){
+      const entry=importedLegacyMusicIntent({version:3,kind:'legacy_music',profileId:mappings.get(legacyKey)??profileId(legacyKey),legacyKey,createdAt:nativeStamp(raw),originalErasedAtJson:JSON.stringify(raw),origin:{authoritySha256:input.manifestSha256,checkpointSha256:authority.manifest.checkpointSha256,...oldOrigins.get(legacyKey)!,sourceRebaseSha256:rebased?sourceRebaseDigest(rebased):null}}),previous=byRequest.get(entry.markerId);
+      if(previous){if(canonical(previous)!==canonical(entry))throw Error('Imported original music scope differs');}
+      else{byRequest.set(entry.markerId,entry);merged.push(entry);added.push(entry);imported.push(entry);}
+    }
+    journal=Buffer.concat([authority.ledgers.unified,Buffer.from(added.map(entry=>JSON.stringify(entry)+'\n').join(''))]);validateAuthorityLedger('unified',journal);
     const mergedJournal={read:()=>merged,append(){throw Error('Forward projection journal is read-only');}};
     // Commit only in this disposable memory candidate. Serialized dirty pages
     // need not include unapplied transaction writes, so capture the verifier's
@@ -91,10 +100,11 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         for(const row of baselineMusic)if(!scope.has(row.qq))throw Error('Baseline erased key lacks checkpoint mapping');
         for(const [key,raw] of oldMusic){const id=mappings.get(key)??profileId(key);if(ids.has(id)&&ids.get(id)!==key)throw Error('Forward music key mapping conflicts');scope.set(key,{id,stamp:nativeStamp(raw),raw});}
         const nativeScopes=new Map<string,string>();
-        for(const intent of nativeIntents){
+        for(const intent of merged){
           if('user_id' in intent)closures.add(intent.user_id);
           else if(intent.version===1){if(intent.kind!=='music')closures.add(intent.userId);if(intent.kind!=='account'&&intent.profileId)nativeScopes.set(intent.profileId,intent.createdAt);}
-          else for(const profile of intent.profiles)nativeScopes.set(profile.id,intent.createdAt);
+          else if(intent.version===2)for(const profile of intent.profiles)nativeScopes.set(profile.id,intent.createdAt);
+          else nativeScopes.set(intent.profileId,intent.createdAt);
         }
         repairAppliedAccountErasures(db,mergedJournal);
         const accountRepair=reconcileAppliedAccountRepair(repairSource,db,mergedJournal);
@@ -126,7 +136,7 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         readVerifiedErasureJournal(db,{read:()=>merged,append(){throw Error('Forward projection journal is read-only');}});
         if(db.pragma('integrity_check',{simple:true})!=='ok'||(db.pragma('foreign_key_check') as unknown[]).length)throw Error('Forward erasure projection integrity failed');
         db.prepare('UPDATE rebuild_storage SET recovery_required=1 WHERE id=1 AND recovery_required<>1').run();
-        return {accountClosures:closures.size,accountRepair,addedBoardIntents:added.length,nativeProfileScopes:nativeScopes.size,musicScopes:projected};
+        return {accountClosures:closures.size,accountRepair,addedBoardIntents:added.filter(row=>'user_id' in row).length,importedLegacyMusicIntents:imported.length,nativeProfileScopes:nativeScopes.size,musicScopes:projected};
       }).immediate();
     }finally{repairSource.close();}
     guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};

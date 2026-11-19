@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import Database from 'better-sqlite3';
 import type { DB } from '@qgroup/database';
-import type { StoredIntent } from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, type StoredIntent } from '../../apps/api/src/erasure-journal';
 
 const quoted=(name:string)=>'"'+name.replaceAll('"','""')+'"';
 const reject=():never=>{throw Error('Rollback checkpoint reconciliation failed; retain the complete latest source');};
@@ -49,9 +49,9 @@ export function verifyRollbackCheckpoint(source:DB,image:Buffer,journal:StoredIn
       if(max!==null&&max>0n&&(!sequence||sequence.seq<max))reject();
     }
     const unique=new Map<string,StoredIntent>();
-    for(const entry of journal){const id='request_id' in entry?entry.request_id:entry.requestId;if(unique.has(id)&&canonical(unique.get(id))!==canonical(entry))reject();unique.set(id,entry);}
+    for(const entry of journal){const id=erasureRequestId(entry);if(unique.has(id)&&canonical(unique.get(id))!==canonical(entry))reject();unique.set(id,entry);}
     same([...unique.keys()].sort(),(copy.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[]).map(row=>row.request_id).sort());
-    for(const entry of unique.values())if('version' in entry)same(copy.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId),{signature:entry.signature,secret_hash:entry.secretHash});
+    for(const entry of unique.values())if('version' in entry&&entry.version!==3)same(copy.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId),{signature:entry.signature,secret_hash:entry.secretHash});
     return {version:1 as const,tables:counts,tableCount:tables.length,rowsDigest:hash.digest('hex'),imageDigest:createHash('sha256').update(image).digest('hex'),imageBytes:image.length,metadata,
       sequences:sequences.map(row=>({name:row.name,seq:row.seq.toString()})),journalRequests:unique.size,journalDigest:createHash('sha256').update(canonical(journal)).digest('hex'),
       rollbackEligible:false as const,remaining:['identity_sqlite','latest_erasure_package_replay','media_history','browser_requests','package_manifest','fixed_old_web_music_bot_rehearsal']};

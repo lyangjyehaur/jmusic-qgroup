@@ -1,6 +1,6 @@
 import { createHash } from 'node:crypto';
 import type { DB } from '@qgroup/database';
-import type { StoredIntent } from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, type  StoredIntent } from '../../apps/api/src/erasure-journal';
 import type { RollbackMusic } from './rollback-music';
 import {readSourceRebaseEvidence} from './source-rebase-evidence';
 type RecordValue=Record<string,unknown>;
@@ -114,7 +114,7 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   }
   for(const point of list(root.trend))fields(obj(point),['t','counts']);
   equal(root.trend,(db.prepare("SELECT payload_json FROM music_documents WHERE kind IN ('trend','trend_sample') ORDER BY CASE kind WHEN 'trend' THEN 0 ELSE 1 END,position").all() as {payload_json:string}[]).map(row=>JSON.parse(row.payload_json)));equal(root.settings,{});
-  const requestIds=new Set(intents.map(entry=>'request_id' in entry?entry.request_id:entry.requestId));equal((db.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[]).map(row=>row.request_id).sort(),[...requestIds].sort());
+  const requestIds=new Set(intents.map(entry=>erasureRequestId(entry)));equal((db.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[]).map(row=>row.request_id).sort(),[...requestIds].sort());
   return {version:1 as const,entries:terms.length,profiles:Object.keys(members).length,selections:choices,shouts:active,shoutHistory:history,keys:map.size,dataDigest:createHash('sha256').update(canonical(result.data)).digest('hex'),rollbackEligible:false as const,
     remaining:['identity_sqlite','latest_erasure_package','full_source_audits_receipts_consents','media','browser_requests','fixed_old_web_music_bot_rehearsal']};
 }

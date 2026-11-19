@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
 import Database from 'better-sqlite3';
 import type {DB} from '@qgroup/database';
-import type {StoredIntent} from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, type StoredIntent} from '../../apps/api/src/erasure-journal';
 import type {RollbackMusic} from './rollback-music';
 import type {IdentityAuditMapping} from './rollback-identity';
 import {identitySchema} from './identity-schema';
@@ -113,7 +113,7 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
     for(const row of events)audit(row.source,row.id,row.profile,row.actor,row.before,row.after,row.created);
     equal(rows.link_audit,expectedAudits.sort((a,b)=>(a.original_rowid as bigint)<(b.original_rowid as bigint)?-1:1));equal(mappings,expectedMappings);
     equal(copy.prepare('SELECT name,seq FROM sqlite_sequence').safeIntegers(true).all(),high||original.evidence?.sqliteSequence.length?[{name:'link_audit',seq:high}]:[]);
-    equal((source.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[]).map(row=>row.request_id).sort(),[...new Set(intents.map(row=>'request_id' in row?row.request_id:row.requestId))].sort());
+    equal((source.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[]).map(row=>row.request_id).sort(),[...new Set(intents.map(row=>erasureRequestId(row)))].sort());
     const counts=Object.fromEntries(identityTables.map(table=>[table,rows[table]!.length]));
     return {version:1 as const,tables:counts,rowsDigest:createHash('sha256').update(canonical(rows)).digest('hex'),auditMappings:mappings,highWater:high.toString(),
       authentication:{sessions:'invalidated' as const,entryIntents:'invalidated' as const,orphanLinks:'inactive_checkpoint_only' as const},rollbackEligible:false as const,

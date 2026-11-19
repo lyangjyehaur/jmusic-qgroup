@@ -2,6 +2,7 @@ import { constants, closeSync, existsSync, fchmodSync, fsyncSync, openSync, read
 import { dirname, extname } from 'node:path';
 import { z } from 'zod';
 import type { DB } from '@qgroup/database';
+import {ImportedLegacyMusicIntent} from './legacy-music-intent';
 
 const Id = z.string().min(1).max(128);
 const LegacyIntent = z.object({ user_id: Id, request_id: Id, created_at: z.string().min(1).max(80) }).strict();
@@ -17,15 +18,15 @@ const AdminIntent = z.object({
 });
 const CurrentIntent = z.union([NewIntent,AdminIntent]);
 export type ErasureIntent = z.infer<typeof CurrentIntent>;
-export type StoredIntent = ErasureIntent | z.infer<typeof LegacyIntent>;
-const StoredIntentValue = z.union([CurrentIntent, LegacyIntent]);
+export type StoredIntent = ErasureIntent | z.infer<typeof LegacyIntent> | z.infer<typeof ImportedLegacyMusicIntent>;
+const StoredIntentValue = z.union([CurrentIntent, LegacyIntent, ImportedLegacyMusicIntent]);
 export interface ErasureJournal { read(): StoredIntent[]; append(entry: ErasureIntent): void; assertReadable?(): void }
 export function erasureJournalPath(database:string){const suffix=extname(database);return (suffix?database.slice(0,-suffix.length):database)+'.erasures.jsonl';}
 export function decodeErasureJournal(source: string): StoredIntent[] {
   if (source && !source.endsWith('\n')) throw new Error('Incomplete erasure journal line');
   return source.split('\n').filter(line => line.trim()).map(line => StoredIntentValue.parse(JSON.parse(line)));
 }
-export const erasureRequestId = (entry: StoredIntent) => 'request_id' in entry ? entry.request_id : entry.requestId;
+export const erasureRequestId = (entry: StoredIntent) => 'request_id' in entry ? entry.request_id : entry.version===3?entry.markerId:entry.requestId;
 /** Missing, changed or pending deletion intents must never authorize an export. */
 export function readVerifiedErasureJournal(db: DB, journal: ErasureJournal) {
   const entries = journal.read().map(entry => StoredIntentValue.parse(entry));
@@ -37,7 +38,7 @@ export function readVerifiedErasureJournal(db: DB, journal: ErasureJournal) {
   }
   const applied = new Set((db.prepare('SELECT request_id FROM erasure_applied').all() as { request_id: string }[]).map(row => row.request_id));
   if (applied.size !== intents.size || [...applied].some(id => !intents.has(id))) throw new Error('Erasure journal and applied markers differ');
-  for (const entry of entries) if ('version' in entry) {
+  for (const entry of entries) if ('version' in entry&&entry.version!==3) {
     const receipt = db.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId) as { signature: string; secret_hash: string } | undefined;
     if (receipt?.signature !== entry.signature || receipt.secret_hash !== entry.secretHash) throw new Error('Erasure journal and receipt differ');
   }
@@ -47,7 +48,7 @@ export function readVerifiedErasureJournal(db: DB, journal: ErasureJournal) {
 export function erasureJournal(db: DB): ErasureJournal {
   if (db.name === ':memory:') {
     const entries: StoredIntent[] = [];
-    return { read: () => structuredClone(entries), append: entry => { entries.push(structuredClone(entry)); } };
+    return { read: () => structuredClone(entries), append: entry => { entries.push(structuredClone(CurrentIntent.parse(entry))); } };
   }
   const path = erasureJournalPath(db.name);
   return {

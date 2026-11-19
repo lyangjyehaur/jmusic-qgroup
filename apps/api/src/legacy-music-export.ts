@@ -19,7 +19,8 @@ export function exportLegacyMusic(raw: Json, db: DB, intents: StoredIntent[], le
     if (intent.version === 2) {
       intent.profiles.forEach(row=>erasedIds.add(row.id));
       if (intent.command === 'reset_music') { resetHistory = true; intent.entries.forEach(id=>erasedEntries.add(id)); }
-    } else if (intent.kind !== 'account' && intent.profileId) erasedIds.add(intent.profileId);
+    } else if(intent.version===3){erasedKeys.add(intent.legacyKey);erasedIds.add(intent.profileId);}
+    else if (intent.kind !== 'account' && intent.profileId) erasedIds.add(intent.profileId);
   }
   const removed = (key: string) => erasedKeys.has(key) || erasedIds.has(key) || erasedIds.has(profileId(key));
   for (const [key,value] of Object.entries(entries)) {

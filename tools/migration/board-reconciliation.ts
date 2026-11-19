@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import { createHash } from 'node:crypto';
 import { openDatabase, type DB } from '@qgroup/database';
 import { legacySchema } from '../../packages/database/src/legacy-schema';
-import type { StoredIntent } from '../../apps/api/src/erasure-journal';
+import {erasureRequestId, type  StoredIntent } from '../../apps/api/src/erasure-journal';
 import { digest } from './music-codec';
 
 type Row = Record<string, unknown>;
@@ -48,13 +48,13 @@ function equal(a: unknown, b: unknown) { if (canonical(a) !== canonical(b)) reje
 function verifyErasureMarkers(candidate:DB, entries:StoredIntent[]) {
   const unique=new Map<string,StoredIntent>();
   for(const entry of entries){
-    const id='request_id' in entry?entry.request_id:entry.requestId;
+    const id=erasureRequestId(entry);
     if(unique.has(id)&&canonical(unique.get(id))!==canonical(entry))reject();unique.set(id,entry);
   }
   const applied=candidate.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[];
   equal(applied.map(row=>row.request_id).sort(),[...unique.keys()].sort());
   let receipts=0;
-  for(const entry of unique.values())if('version' in entry){
+  for(const entry of unique.values())if('version' in entry&&entry.version!==3){
     receipts++;
     equal(candidate.prepare('SELECT signature,secret_hash FROM privacy_receipts WHERE request_id=?').get(entry.requestId),{signature:entry.signature,secret_hash:entry.secretHash});
   }
@@ -68,10 +68,10 @@ function verifyErasureMarkers(candidate:DB, entries:StoredIntent[]) {
 function projectClosures(expected: DB, entries: StoredIntent[]) {
   const revoked = new Set<string>(); const requests = new Map<string, string>();
   for (const entry of entries) {
-    const id = 'request_id' in entry ? entry.request_id : entry.requestId, encoded = canonical(entry);
+    const id = erasureRequestId(entry), encoded = canonical(entry);
     if (requests.has(id) && requests.get(id) !== encoded) reject();
     requests.set(id, encoded);
-    if ('version' in entry && (entry.version === 2 || entry.kind === 'music')) continue;
+    if ('version' in entry && (entry.version !== 1 || entry.kind === 'music')) continue;
     const user = 'user_id' in entry ? entry.user_id : entry.userId;
     const stamp = 'created_at' in entry ? entry.created_at : entry.createdAt;
     if (!expected.prepare('SELECT 1 FROM users WHERE id=?').get(user) || expected.prepare('SELECT 1 FROM privacy_requests WHERE user_id=?').get(user)) continue;
