@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import { legacyMusicFields, type DB, type StoredMusicFields } from '@qgroup/database';
@@ -11,7 +12,7 @@ export const musicNameSQL = `COALESCE(NULLIF(f.name,''),NULLIF(l.name,''),u.nick
 export const musicNameJoins = `LEFT JOIN music_profile_fields f ON f.profile_id=p.id LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id LEFT JOIN users u ON u.id=p.user_id`;
 export function profileFields(db: DB, profileId: string): Fields {
   const row = db.prepare(`SELECT p.id AS profileId,${musicNameSQL} AS name,f.note,f.note_at AS noteAt,f.gender,f.gender_public AS genderPublic,
-    COALESCE(f.revision,0) AS revision,l.fields_json AS sourceFields FROM music_profiles p ${musicNameJoins} WHERE p.id=? AND p.erased_at IS NULL`).get(profileId) as Omit<Fields, 'genderPublic'> & { genderPublic: number | null; sourceFields: string | null } | undefined;
+    COALESCE(f.revision,0) AS revision,l.fields_json AS sourceFields FROM music_profiles p ${musicNameJoins} WHERE p.id=? AND ${musicProfileActiveSQL('p')}`).get(profileId) as Omit<Fields, 'genderPublic'> & { genderPublic: number | null; sourceFields: string | null } | undefined;
   if (!row) throw withApiError(new DomainError('NO_PROFILE', '請先保存成分，再編輯成分資料', 404));
   if (row.genderPublic === null) {
     const fields = legacyMusicFields(row.name, row.sourceFields ?? '{}');
@@ -45,7 +46,7 @@ export function registerMusicFields(app: FastifyInstance, db: DB, security: Secu
     if (input.revision !== before.revision) throw withApiError(new DomainError('MUSIC_FIELDS_CHANGED', '成分資料已變更；輸入仍保留，請核對目前資料後再保存', 409));
     const next = normalize(input, before);
     if (next.name !== before.name) {
-      const names = db.prepare(`SELECT ${musicNameSQL} AS name FROM music_profiles p ${musicNameJoins} WHERE p.erased_at IS NULL AND p.id!=?`).all(before.profileId) as { name: string }[];
+      const names = db.prepare(`SELECT ${musicNameSQL} AS name FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} AND p.id!=?`).all(before.profileId) as { name: string }[];
       if (names.some(row => musicNameKey(row.name) === musicNameKey(next.name))) throw withApiError(new DomainError('MUSIC_NAME_IN_USE', '此成分稱呼已被使用，請更換；如為你的舊成分，請先找回', 409));
     }
     const stamp = now().toISOString();

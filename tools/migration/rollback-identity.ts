@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import type { DB } from '@qgroup/database';
+import {readMusicRetirements,type DB} from '@qgroup/database';
 import { readVerifiedErasureJournal,type ErasureJournal } from '../../apps/api/src/erasure-journal';
 import { assertRollbackSource } from './rollback-source';
 import { identitySchema } from './identity-schema';
@@ -24,13 +24,14 @@ export function projectRollbackIdentity(source:DB,journal:ErasureJournal,music:R
       const rows=Object.fromEntries(identityTables.map(table=>[table,[] as IdentityRow[]])) as typeof original.rows;
       const next=new Map(original.reserved),allocate=(table:string)=>{const value=(next.get(table)??0n)+1n;if(value>9223372036854775807n)throw Error('Rollback identity rowid capacity exhausted');next.set(table,value);return value;};
       const append=(table:typeof identityTables[number],value:IdentityRow['value'],previous?:IdentityRow)=>rows[table].push({rowid:previous?.rowid??allocate(table),value});
+      const retired=new Set(readMusicRetirements(source).map(row=>row.profileId));
       const profiles=source.prepare('SELECT id,user_id,erased_at FROM music_profiles ORDER BY rowid').all() as {id:string;user_id:string|null;erased_at:string|null}[];
       const erased=new Set([...music.keys.filter(row=>row.erased).map(row=>row.legacyKey),...(source.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[]).map(row=>row.legacy_key)]);
       const changes=source.prepare('SELECT * FROM music_ownership_history WHERE (? IS NULL OR id>?) ORDER BY id').safeIntegers(true).all(rebased?BigInt(rebased.histories.music_ownership_history.cutoff):null,rebased?BigInt(rebased.histories.music_ownership_history.cutoff):null) as {id:bigint;profile_id:string;revision:bigint;actor_ref:string;before_user_id:string|null;after_user_id:string|null;created_at:string}[];
       const claims=source.prepare("SELECT * FROM music_profile_audit WHERE json_extract(after_json,'$.action')='legacy_claim' AND (? IS NULL OR id>?) ORDER BY id").safeIntegers(true).all(rebased?BigInt(rebased.histories.music_profile_audit.cutoff):null,rebased?BigInt(rebased.histories.music_profile_audit.cutoff):null) as {id:bigint;profile_id:string;revision:bigint;actor_id:string;before_json:string;after_json:string;created_at:string}[];
       const revisions=new Set<string>();for(const row of [...changes,...claims]){const key=row.profile_id+':'+row.revision;if(revisions.has(key))throw Error('Ambiguous rollback ownership revision');revisions.add(key);}
       for(const profile of profiles){
-        if(profile.erased_at!==null)continue;const key=map.get(profile.id)!.legacyKey;
+        if(profile.erased_at!==null||retired.has(profile.id))continue;const key=map.get(profile.id)!.legacyKey;
         const link=original.rows.links.find(row=>row.value.qq===key),prelink=original.rows.prelinks.find(row=>row.value.qq===key),override=original.rows.link_overrides.find(row=>row.value.qq===key);
         const latestChange=changes.filter(row=>row.profile_id===profile.id).at(-1),latestClaim=claims.filter(row=>row.profile_id===profile.id).at(-1);
         if(latestChange&&latestClaim&&latestChange.revision===latestClaim.revision)throw Error('Ambiguous rollback ownership revision');
@@ -82,7 +83,7 @@ export function projectRollbackIdentity(source:DB,journal:ErasureJournal,music:R
         if(row.erased_at!==null)continue;const key=map.get(row.profile_id)!.legacyKey,previous=original.rows.profile_contacts.find(item=>item.value.qq===key);
         if(/^[0-9]{4,12}$/.test(key)&&row.contact_qq!==key)throw Error('Legacy numeric rollback contact cannot change');
         if(previous&&previous.value.number===row.contact_qq)append('profile_contacts',previous.value,previous);
-        else if(previous||row.source==='self_reported')append('profile_contacts',{qq:key,number:row.contact_qq,updated:identitySeconds(row.updated_at)},previous);
+        else if(previous||row.source==='self_reported'||retired.has(row.profile_id))append('profile_contacts',{qq:key,number:row.contact_qq,updated:identitySeconds(row.updated_at)},previous);
       }
       for(const row of original.rows.used_oauth)append('used_oauth',row.value,row);
       for(const row of source.prepare("SELECT id,created_at FROM login_attempts WHERE provider='qq' AND status='used' ORDER BY rowid").all() as {id:string;created_at:string}[]){
@@ -96,7 +97,7 @@ export function projectRollbackIdentity(source:DB,journal:ErasureJournal,music:R
       let auditId=original.highWater;for(const row of original.rows.link_audit){if(erased.has(String(row.value.qq)))throw Error('Erased rollback audit requires recovery');append('link_audit',row.value,row);}
       const auditMappings:IdentityAuditMapping[]=structuredClone(rebased?.auditMappings??[]);
       const audit=(kind:'ownership'|'claim',id:bigint,profileId:string,actor:string,before:string|null,after:string|null,created:string)=>{
-        if(map.get(profileId)?.erased)return;const key=map.get(profileId)?.legacyKey;if(!key)throw Error('Unmapped rollback audit profile');if(auditId===9223372036854775807n)throw Error('Rollback identity audit capacity exhausted');auditId++;
+        if(map.get(profileId)?.erased||retired.has(profileId))return;const key=map.get(profileId)?.legacyKey;if(!key)throw Error('Unmapped rollback audit profile');if(auditId===9223372036854775807n)throw Error('Rollback identity audit capacity exhausted');auditId++;
         rows.link_audit.push({rowid:auditId,value:{id:auditId,qq:key,actor,before_user_id:before??'',after_user_id:after??'',created:identitySeconds(created)}});auditMappings.push({source:kind,sourceId:id.toString(),legacyId:auditId.toString()});
       };
       const pending=[...changes.map(row=>({kind:'ownership' as const,id:row.id,profile:row.profile_id,revision:row.revision,actor:row.actor_ref,before:row.before_user_id,after:row.after_user_id,created:row.created_at})),

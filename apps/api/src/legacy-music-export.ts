@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import type { DB } from '@qgroup/database';
 import { keys, object, profileId, type Json, type ObjectValue } from '../../../packages/database/src/legacy-music-codec';
 import type { StoredIntent } from './erasure-journal';
@@ -49,7 +50,7 @@ export function exportLegacyMusic(raw: Json, db: DB, intents: StoredIntent[], le
     });
     member.created = list(member.created).filter(id=>{ if(typeof id !== 'string')throw Error('Invalid historical creation');return !erasedEntries.has(id); });
     const live = db.prepare(`SELECT p.id,p.user_id,l.pin_hash FROM music_profiles p JOIN music_legacy_profiles l ON l.profile_id=p.id
-      WHERE l.legacy_key=? AND p.erased_at IS NULL`).get(key) as {id:string;user_id:string|null;pin_hash:string}|undefined;
+      WHERE l.legacy_key=? AND ${musicProfileActiveSQL('p')}`).get(key) as {id:string;user_id:string|null;pin_hash:string}|undefined;
     const contact = live && db.prepare('SELECT contact_qq FROM music_profile_contacts WHERE profile_id=?').get(live.id) as {contact_qq:string}|undefined;
     member.boardUserId = live?.user_id ?? '';
     member.pinHash = live?.pin_hash ?? '';

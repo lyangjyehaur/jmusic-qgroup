@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import type { DB } from '@qgroup/database';
 import { musicCreatedIds } from '@qgroup/database';
 import { profileFields } from './music-fields';
@@ -8,7 +9,7 @@ const records = <T>(pairs: [string, T][]) => Object.fromEntries(pairs);
 function profiles(db: DB) {
   return db.prepare(`SELECT p.id,p.user_id,l.legacy_key,l.consent,l.pin_hash,l.fields_json,c.created_at
     FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id
-    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE p.erased_at IS NULL ORDER BY p.rowid`).all() as Profile[];
+    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as Profile[];
 }
 /** Administrative data export, never an authentication or complete restore package. */
 export function exportMusic(db: DB, latest: DB = db) {
@@ -27,7 +28,7 @@ export function exportMusic(db: DB, latest: DB = db) {
   const members = records(rows.map(row => {
     const fields: RecordValue = row.fields_json === null ? {} : JSON.parse(row.fields_json) as RecordValue;
     const info = profileFields(db, row.id), live = current.get(row.id);
-    const contact = latest.prepare('SELECT contact_qq FROM music_profile_contacts WHERE profile_id=?').get(row.id) as { contact_qq: string } | undefined;
+    const contact = live&&latest.prepare('SELECT contact_qq FROM music_profile_contacts WHERE profile_id=?').get(row.id) as { contact_qq: string } | undefined;
     const last = db.prepare('SELECT last_post_at FROM music_shout_authors WHERE profile_id=?').get(row.id) as { last_post_at: number } | undefined;
     const selections = db.prepare('SELECT entry_id AS id,level FROM music_selections WHERE profile_id=? ORDER BY position').all(row.id);
     // Latest identity and explicit empty contacts override every historical copy.

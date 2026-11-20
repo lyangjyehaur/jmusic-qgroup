@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -23,8 +24,8 @@ function serialize(db: DB, row: { id: string; name: string; legacyKey: string; h
   return { id: row.id, name: row.name, legacyKey: row.legacyKey, hasPin: !!row.hasPin, owner: row.userId ? { id: row.userId, nickname: row.nickname ?? '未設定稱呼' } : null, revision: row.revision, status: row.status,
     selections: db.prepare(`SELECT s.entry_id AS entryId,e.name,e.kind,s.level FROM music_selections s JOIN music_entries e ON e.id=s.entry_id WHERE s.profile_id=? ORDER BY s.position`).all(row.id) as Profile['selections'] };
 }
-export function adminMusicProfile(db: DB, id: string) {
-  const row = db.prepare(projection + ' WHERE p.id=? AND p.erased_at IS NULL').get(id) as Parameters<typeof serialize>[1] | undefined;
+export function adminMusicProfile(db: DB, id: string, includeRetired=false) {
+  const row = db.prepare(projection + ` WHERE p.id=? AND ${includeRetired?'p.erased_at IS NULL':musicProfileActiveSQL('p')}`).get(id) as Parameters<typeof serialize>[1] | undefined;
   if (!row) throw withApiError(new DomainError('PROFILE_NOT_FOUND', '成分不存在或已刪除', 404));
   return serialize(db, row);
 }
@@ -43,7 +44,7 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
   // Search keys may contain contact QQs; never put them into URLs or browser history.
   app.post('/api/v2/admin/music/search', async request => {
     admin.authority(request, true); const input = AdminMusicSearch.parse(request.body);
-    const where = `p.erased_at IS NULL AND (?='' OR instr(lower(p.id),lower(?))>0 OR instr(lower(${musicNameSQL}),lower(?))>0
+    const where = `${musicProfileActiveSQL('p')} AND (?='' OR instr(lower(p.id),lower(?))>0 OR instr(lower(${musicNameSQL}),lower(?))>0
       OR instr(COALESCE(l.legacy_key,''),?)>0 OR instr(COALESCE(c.contact_qq,''),?)>0 OR instr(COALESCE(p.user_id,''),?)>0)`;
     const params = Array(6).fill(input.search) as string[];
     const sql = 'SELECT * FROM (' + projection + ' WHERE ' + where + ") WHERE (?='all' OR status=?)";

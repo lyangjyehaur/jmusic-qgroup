@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -15,11 +16,11 @@ export function registerMusicCircles(app: FastifyInstance, db: DB, security: Sec
     const entries = db.prepare('SELECT id,name,kind,0 AS count FROM music_entries ORDER BY rowid').all() as MatchEntry[];
     const picks = new Map<string, MatchMember['selections'][number][]>();
     for (const row of db.prepare(`SELECT s.profile_id,s.entry_id,s.level FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id
-      WHERE p.erased_at IS NULL ORDER BY p.rowid,s.position`).all() as { profile_id: string; entry_id: string; level: number }[]) {
+      WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid,s.position`).all() as { profile_id: string; entry_id: string; level: number }[]) {
       const list = picks.get(row.profile_id) ?? []; list.push({ entryId: row.entry_id, level: row.level }); picks.set(row.profile_id, list);
     }
     // Only the fields required by clustering are loaded. Notes/contact/gender never enter this projection.
-    const members = (db.prepare(`SELECT p.id,${musicNameSQL} name FROM music_profiles p ${musicNameJoins} WHERE p.erased_at IS NULL ORDER BY p.rowid`).all() as { id: string; name: string }[])
+    const members = (db.prepare(`SELECT p.id,${musicNameSQL} name FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as { id: string; name: string }[])
       .map(member => ({ ...member, selections: picks.get(member.id) ?? [] }));
     return MusicCircles.parse(musicCircles(members, entries, minLink));
   })());

@@ -10,7 +10,7 @@ import { adminMusicProfile,musicAdminProfileId } from './admin-music';
 import { hash } from './security';
 
 export function musicErasureScope(db:DB,id?:string){
-  const profile=id?adminMusicProfile(db,id):null;
+  const profile=id?adminMusicProfile(db,id,true):null;
   const profiles=db.prepare('SELECT id,user_id AS userId FROM music_profiles WHERE erased_at IS NULL'+(id?' AND id=?':'')+' ORDER BY id').all(...id?[id]:[]) as {id:string;userId:string|null}[];
   const entries=id?[]:(db.prepare('SELECT id FROM music_entries ORDER BY id').all() as {id:string}[]).map(row=>row.id);
   // Bind review to every affected record, including PIN, identity proofs and draft revisions.

@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
@@ -19,13 +20,14 @@ export function archiveMusicShouts(db:DB,time:number,replaceProfile?:string){
   if(expired.length)for(const row of db.prepare('SELECT id FROM music_shouts WHERE archived_at IS NOT NULL ORDER BY created_at DESC,ordinal LIMIT -1 OFFSET ?').all(shoutHistoryMax) as {id:string}[])removeMusicShout(db,row.id,'pruned');
 }
 function view(db:DB,row:Row,viewer=''){
-  const author=row.profile_id?db.prepare(`SELECT p.id,${musicNameSQL} name,COALESCE(c.contact_qq,'') contactQQ,COALESCE(c.source,'') contactSource FROM music_profiles p ${musicNameJoins} LEFT JOIN music_profile_contacts c ON c.profile_id=p.id WHERE p.id=? AND p.erased_at IS NULL`).get(row.profile_id) as {id:string;name:string;contactQQ:string;contactSource:'legacy'|'self_reported'|''}|undefined:undefined;
+  const author=row.profile_id?db.prepare(`SELECT p.id,${musicNameSQL} name,COALESCE(c.contact_qq,'') contactQQ,COALESCE(c.source,'') contactSource FROM music_profiles p ${musicNameJoins} LEFT JOIN music_profile_contacts c ON c.profile_id=p.id WHERE p.id=? AND ${musicProfileActiveSQL('p')}`).get(row.profile_id) as {id:string;name:string;contactQQ:string;contactSource:'legacy'|'self_reported'|''}|undefined:undefined;
   return MusicShout.parse({id:row.id,text:row.body,name:author?.name||row.name,author:author??null,createdAt:Math.trunc(row.created_at),expiresAt:Math.trunc(row.created_at)+shoutTTL,archivedAt:row.archived_at===null?null:Math.trunc(row.archived_at),mine:!!viewer&&row.profile_id===viewer});
 }
 function mine(db:DB,user:string){const profile=getProfile(db,user);if(!profile)throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED','請先保存成分，再使用找搭子',403));return profile;}
+const currentShoutSQL=`NOT EXISTS(SELECT 1 FROM music_profiles p WHERE p.id=s.profile_id AND NOT (${musicProfileActiveSQL('p')}))`;
 function listing(db:DB,viewer:string,history:boolean,offset:number,limit:number,time:number){
-  const where='archived_at IS '+(history?'NOT NULL':'NULL'),myRow=db.prepare('SELECT * FROM music_shouts WHERE profile_id=? AND archived_at IS NULL ORDER BY ordinal LIMIT 1').get(viewer) as Row|undefined;
-  return MusicShouts.parse({items:(db.prepare('SELECT * FROM music_shouts WHERE '+where+' ORDER BY created_at DESC,ordinal LIMIT ? OFFSET ?').all(limit,offset) as Row[]).map(row=>view(db,row,viewer)),total:(db.prepare('SELECT count(*) n FROM music_shouts WHERE '+where).get() as {n:number}).n,offset,limit,now:Math.trunc(time),mine:myRow?view(db,myRow,viewer):null,nextAllowedAt:myRow?Math.trunc(myRow.created_at+shoutCooldown):0});
+  const where=history?'s.archived_at IS NOT NULL':`s.archived_at IS NULL AND ${currentShoutSQL}`,myRow=db.prepare('SELECT * FROM music_shouts WHERE profile_id=? AND archived_at IS NULL ORDER BY ordinal LIMIT 1').get(viewer) as Row|undefined;
+  return MusicShouts.parse({items:(db.prepare('SELECT s.* FROM music_shouts s WHERE '+where+' ORDER BY created_at DESC,ordinal LIMIT ? OFFSET ?').all(limit,offset) as Row[]).map(row=>view(db,row,viewer)),total:(db.prepare('SELECT count(*) n FROM music_shouts s WHERE '+where).get() as {n:number}).n,offset,limit,now:Math.trunc(time),mine:myRow?view(db,myRow,viewer):null,nextAllowedAt:myRow?Math.trunc(myRow.created_at+shoutCooldown):0});
 }
 export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,admin:AdminSecurity,now:()=>Date){
   for(const history of [false,true])app.get('/api/v2/music/shouts'+(history?'/history':''),{exposeHeadRoute:false},async request=>db.transaction(()=>{
@@ -34,7 +36,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
   }).immediate());
   app.get('/api/v2/music/shouts/:id',{exposeHeadRoute:false},async request=>db.transaction(()=>{
     const profile=mine(db,security.scopedMember(request).id),{id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);z.object({}).strict().parse(request.query);
-    archiveMusicShouts(db,now().getTime()/1000);const row=db.prepare('SELECT * FROM music_shouts WHERE id=?').get(id) as Row|undefined;
+    archiveMusicShouts(db,now().getTime()/1000);const row=db.prepare(`SELECT s.* FROM music_shouts s WHERE s.id=? AND (s.archived_at IS NOT NULL OR ${currentShoutSQL})`).get(id) as Row|undefined;
     if(!row)throw withApiError(new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404));return view(db,row,profile.id);
   }).immediate());
   app.post('/api/v2/me/music/shouts',{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async(request,reply)=>db.transaction(()=>{

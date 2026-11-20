@@ -1,12 +1,12 @@
 import { createHash } from 'node:crypto';
-import type { DB } from '@qgroup/database';
+import {musicProfileActiveSQL,readMusicRetirements,type DB} from '@qgroup/database';
 import { readVerifiedErasureJournal, type ErasureJournal } from '../../apps/api/src/erasure-journal';
 import { assertRollbackSource } from './rollback-source';
 import { keys, object, parseJson, type Json, type ObjectValue } from './music-codec';
 import { readSourceRebaseEvidence } from './source-rebase-evidence';
 import { verifyRollbackMusic } from './rollback-music-reconciliation';
 
-export type RollbackMusicKey={profileId:string;legacyKey:string;mode:'preserved'|'generated';erased:boolean};
+export type RollbackMusicKey={profileId:string;legacyKey:string;mode:'preserved'|'generated';erased:boolean;retired?:true};
 export type RollbackMusic={data:ObjectValue;keys:RollbackMusicKey[]};
 const oldKey=/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/;
 const generated=(id:string)=>'m_'+createHash('sha256').update('qgroup:rollback-music-key:v1:'+id).digest('hex').slice(0,24);
@@ -33,6 +33,7 @@ function choices(value:Json|undefined){
 /** Preserve original representation whenever its effective value is unchanged. */
 function patch(target:ObjectValue,field:string,current:Json,previous:Json|undefined){if(!same(current,previous))target[field]=current;}
 export function rollbackMusicKeys(db:DB){
+  const retired=new Map(readMusicRetirements(db).map(row=>[row.profileId,row]));
   const rebased=readSourceRebaseEvidence(db),bindings=new Map(rebased?.bindings.map(row=>[row.profileId,row]));
   const profiles=db.prepare('SELECT id,erased_at FROM music_profiles ORDER BY rowid').all() as {id:string;erased_at:string|null}[];
   const aliases=new Map<string,Set<string>>(),reserved=new Set<string>();
@@ -47,7 +48,8 @@ export function rollbackMusicKeys(db:DB){
     if(binding&&names&&[...names].some(name=>name!==binding.legacyKey))throw Error('Rollback rebased profile alias differs');
     if(used.has(legacyKey)||mode==='generated'&&reserved.has(legacyKey)&&!binding)throw Error('Rollback profile key collision');used.add(legacyKey);
     if(!row.erased_at&&db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=?').get(legacyKey))throw Error('Active rollback profile has an erased legacy key');
-    return {profileId:row.id,legacyKey,mode,erased:row.erased_at!==null} as RollbackMusicKey;
+    if(retired.has(row.id)&&retired.get(row.id)!.legacyKey!==legacyKey)throw Error('Retired rollback profile alias differs');
+    return {profileId:row.id,legacyKey,mode,erased:row.erased_at!==null,...(retired.has(row.id)?{retired:true as const}:{})} as RollbackMusicKey;
   });
 }
 /** Private component only. Identity SQLite, audits, assets, ledgers and a fixed
@@ -89,7 +91,7 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
     const members:ObjectValue={};
     for(const row of db.prepare(`SELECT p.id,p.user_id,l.consent,l.pin_hash,l.fields_json,l.created_entries_json,f.name,f.note,f.note_at,f.gender,f.gender_public,c.contact_qq,pc.created_at
       FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id LEFT JOIN music_profile_fields f ON f.profile_id=p.id
-      LEFT JOIN music_profile_contacts c ON c.profile_id=p.id LEFT JOIN music_profile_creation pc ON pc.profile_id=p.id WHERE p.erased_at IS NULL ORDER BY p.rowid`).all() as {
+      LEFT JOIN music_profile_contacts c ON c.profile_id=p.id LEFT JOIN music_profile_creation pc ON pc.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as {
         id:string;user_id:string|null;consent:number|null;pin_hash:string|null;fields_json:string|null;created_entries_json:string|null;name:string|null;note:string|null;note_at:number|null;gender:string|null;gender_public:number|null;contact_qq:string|null;created_at:string|null
       }[]){
       if(row.name===null||row.note===null||row.note_at===null||row.gender===null||row.gender_public===null)throw Error('Missing rollback profile fields');
@@ -125,6 +127,7 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
     }
     const shouts:Json[]=[],shoutHistory:Json[]=[];
     for(const row of db.prepare('SELECT * FROM music_shouts ORDER BY ordinal').all() as {id:string;profile_id:string|null;legacy_key:string;name:string;body:string;created_at:number;archived_at:number|null}[]){
+      if(row.archived_at===null&&row.profile_id&&byId.get(row.profile_id)?.retired)continue;
       strings([row.id,row.profile_id,row.legacy_key,row.name,row.body]);time(row.created_at);if(row.archived_at!==null)time(row.archived_at);
       if(row.profile_id&&byId.get(row.profile_id)?.erased||erased.has(row.legacy_key))throw Error('Erased rollback shout requires recovery');
       const source=originalShouts.get(row.id),old=source?.value,value:ObjectValue=old?structuredClone(old):{id:row.id};

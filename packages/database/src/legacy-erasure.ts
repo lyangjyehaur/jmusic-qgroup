@@ -21,6 +21,7 @@ export function eraseLegacyProfile(db: DB, profileId: string, stamp: string) {
   // Source evidence must disappear even if a prior replay already removed the
   // legacy projection. It is never a recovery source for an erased profile.
   db.prepare("DELETE FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.profileId')=?").run(profileId);
+  db.prepare("DELETE FROM music_documents WHERE kind='profile_retirement' AND json_extract(payload_json,'$.profileId')=?").run(profileId);
   db.prepare("UPDATE music_documents SET payload_json=json_set(payload_json,'$.entry.createdBy','') WHERE kind='entry_source' AND json_extract(payload_json,'$.entry.createdBy')=?").run(profileId);
   // Native entry creators use a profile ID. Erasure keeps the public term and other people's selections.
   db.prepare("UPDATE migration_map SET status='erasure_redacted' WHERE source='music' AND entity_type='entry' AND target_id IN (SELECT entry_id FROM music_entry_details WHERE created_by=?)").run(profileId);

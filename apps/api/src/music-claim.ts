@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { clientAddress } from './client-address';
 import { timingSafeEqual } from 'node:crypto';
@@ -18,7 +19,7 @@ const uid = (device: Device) => device.kind === 'member' ? device.id : null;
 export function createMusicClaims(db: DB, now: () => Date) {
   const epoch = (id: string) => (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(id) as { epoch: number } | undefined)?.epoch ?? 0;
   const legacy = (id: string) => db.prepare(`SELECT p.id,p.user_id,p.revision,COALESCE(NULLIF(f.name,''),l.name) AS name,l.legacy_key,l.pin_hash FROM music_profiles p JOIN music_legacy_profiles l ON l.profile_id=p.id LEFT JOIN music_profile_fields f ON f.profile_id=p.id
-    WHERE p.id=? AND p.erased_at IS NULL`).get(id) as Legacy | undefined;
+    WHERE p.id=? AND ${musicProfileActiveSQL('p')}`).get(id) as Legacy | undefined;
   function current(device: Device, id?: string): Intent | undefined {
     return db.prepare(`SELECT * FROM music_claim_intents WHERE current_token_hash=? AND target_user_id IS ? ${id ? 'AND id=?' : ''} ORDER BY created_at DESC,rowid DESC LIMIT 1`)
       .get(device.tokenHash, uid(device), ...(id ? [id] : [])) as Intent | undefined;
@@ -51,7 +52,7 @@ export function createMusicClaims(db: DB, now: () => Date) {
         if (prior.stage !== 'completed') valid(prior);
         return status(device, prior.id);
       }
-      const profile = db.prepare(`SELECT p.id,p.user_id,p.revision,COALESCE(NULLIF(f.name,''),l.name) AS name,l.legacy_key,l.pin_hash FROM music_legacy_profiles l JOIN music_profiles p ON p.id=l.profile_id LEFT JOIN music_profile_fields f ON f.profile_id=p.id WHERE l.legacy_key=? AND p.erased_at IS NULL`).get(input.legacyQQ) as Legacy | undefined;
+      const profile = db.prepare(`SELECT p.id,p.user_id,p.revision,COALESCE(NULLIF(f.name,''),l.name) AS name,l.legacy_key,l.pin_hash FROM music_legacy_profiles l JOIN music_profiles p ON p.id=l.profile_id LEFT JOIN music_profile_fields f ON f.profile_id=p.id WHERE l.legacy_key=? AND ${musicProfileActiveSQL('p')}`).get(input.legacyQQ) as Legacy | undefined;
       const expected = profile?.pin_hash ?? '';
       if (!/^[a-f0-9]{64}$/.test(expected) || !timingSafeEqual(Buffer.from(hash('jpm-pin|' + input.pin), 'hex'), Buffer.from(expected, 'hex'))) throw withApiError(new DomainError('PIN_INVALID', '舊帳號或口令不正確；忘記口令請聯絡管理員', 403));
       if (!profile || profile.user_id) throw withApiError(new DomainError('PROFILE_LINKED', '此成分已關聯帳號，請使用對應帳號登入；無法登入請聯絡管理員', 409));

@@ -19,6 +19,7 @@ import { seedWallpapers } from './wallpapers';
 import { schemaV12 } from './schema-v12';
 import { seedMusicShouts } from './music-shouts';
 import { seedMusicFields } from './music-fields';
+import {readMusicRetirements} from './music-retirements';
 
 export type DB = Database.Database;
 export const REBUILD_SCHEMA_VERSION = 15;
@@ -58,6 +59,7 @@ export function assertDatabaseUsable(db: DB) {
   const storage = db.prepare('SELECT lineage_id,recovery_required FROM rebuild_storage WHERE id=1').get() as {lineage_id:string;recovery_required:number}|undefined;
   if (!storage || !/^[a-f0-9]{32}$/.test(storage.lineage_id)) throw new Error('Invalid storage lineage');
   if (storage.recovery_required !== 0) throw new Error('Recovery candidate requires offline review; service startup refused');
+  readMusicRetirements(db);
 }
 /** Upgrade an owned file or disposable memory image; never an arbitrary legacy DB. */
 export function migrateDatabase(db: DB): DB {
@@ -116,3 +118,4 @@ export { musicCreatedIds } from './music-creations';
 
 export { seedWallpapers,wallpaperDigest,wallpaperFile } from './wallpapers';
 export * from './bot-policy';
+export * from './music-retirements';

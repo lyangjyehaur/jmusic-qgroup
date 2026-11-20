@@ -3,6 +3,7 @@ import { eventRow } from './activity-arrangements';
 import { financeSummary } from './finance-context';
 import { randomUUID } from 'node:crypto';
 import type { DB } from '@qgroup/database';
+import {musicProfileActiveSQL} from '@qgroup/database';
 import type { ActivityView, MusicEntry, MusicProfile, SaveProfileInput } from '@qgroup/contracts';
 import { activityState, DomainError, validateSelections } from '@qgroup/domain';
 import { requireActivityAccess } from './activity-access';
@@ -50,7 +51,7 @@ export function catalog(db: DB): MusicEntry[] {
   return db.prepare('SELECT id,name,kind FROM music_entries ORDER BY kind,name,id').all() as MusicEntry[];
 }
 export function getProfile(db: DB, userId: string): MusicProfile {
-  const row = db.prepare('SELECT id,revision,updated_at FROM music_profiles WHERE user_id=? AND erased_at IS NULL').get(userId) as { id: string; revision: number; updated_at: string } | undefined;
+  const row = db.prepare(`SELECT id,revision,updated_at FROM music_profiles WHERE user_id=? AND ${musicProfileActiveSQL('music_profiles')}`).get(userId) as { id: string; revision: number; updated_at: string } | undefined;
   if (!row) return null;
   const selections = db.prepare('SELECT entry_id AS entryId,level FROM music_selections WHERE profile_id=? ORDER BY position').all(row.id) as NonNullable<MusicProfile>['selections'];
   return { id: row.id, revision: row.revision, updatedAt: row.updated_at, selections };
@@ -61,7 +62,7 @@ export function saveProfile(db: DB, userId: string, input: SaveProfileInput, now
   if ((before?.id ?? null) !== input.profileId || (before?.revision ?? 0) !== input.revision) throw withApiError(new DomainError('REVISION_CONFLICT', '成分已有更新；你的選擇仍保留，請核對最新版本', 409));
   const epoch = (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(userId) as { epoch: number } | undefined)?.epoch ?? 0;
   if (input.musicEpoch !== epoch) throw withApiError(new DomainError('PROFILE_ERASED', '成分已刪除或重建，請核對目前狀態後再明確保存', 409));
-  if (!before && db.prepare("SELECT 1 FROM music_claim_intents WHERE target_user_id=? AND stage!='completed' AND expires_at>?").get(userId, now.toISOString())) throw withApiError(new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立新成分', 409));
+  if (!before && db.prepare(`SELECT 1 FROM music_claim_intents i JOIN music_profiles p ON p.id=i.profile_id WHERE i.target_user_id=? AND i.stage!='completed' AND i.expires_at>? AND ${musicProfileActiveSQL('p')}`).get(userId, now.toISOString())) throw withApiError(new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立新成分', 409));
   validateSelections(input.selections, catalog(db));
   const id = before?.id ?? 'm_' + randomUUID().replaceAll('-', '');
   const updatedAt = now.toISOString();

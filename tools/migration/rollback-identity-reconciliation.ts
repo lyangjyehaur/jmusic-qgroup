@@ -1,6 +1,6 @@
 import {createHash} from 'node:crypto';
 import Database from 'better-sqlite3';
-import type {DB} from '@qgroup/database';
+import {musicProfileActiveSQL,readMusicRetirements,type DB} from '@qgroup/database';
 import {erasureRequestId, type StoredIntent} from '../../apps/api/src/erasure-journal';
 import type {RollbackMusic} from './rollback-music';
 import type {IdentityAuditMapping} from './rollback-identity';
@@ -40,7 +40,8 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
       }
     }
     equal(rows.sessions,[]);equal(rows.entry_intents,[]);
-    const profiles=source.prepare('SELECT id,user_id FROM music_profiles WHERE erased_at IS NULL ORDER BY rowid').all() as {id:string;user_id:string|null}[];
+    const retired=new Set(readMusicRetirements(source).map(row=>row.profileId));
+    const profiles=source.prepare(`SELECT p.id,p.user_id FROM music_profiles p WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as {id:string;user_id:string|null}[];
     const live=new Map(profiles.map(row=>[byId.get(row.id)!.legacyKey,row]));
     const expectedOwners=profiles.filter(row=>row.user_id!==null).map(row=>[byId.get(row.id)!.legacyKey,row.user_id]).sort();
     equal([...new Map([...rows.links!,...rows.prelinks!].map(row=>[row.qq,row.user_id])).entries()].sort(),expectedOwners);
@@ -93,7 +94,7 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
     const expectedContacts=new Set<string>();
     for(const row of contacts){const key=byId.get(row.profile_id)!.legacyKey,old=original.rows.profile_contacts.find(item=>item.value.qq===key),actual=rows.profile_contacts!.find(item=>item.qq===key);
       if(/^\d{4,12}$/.test(key)&&row.contact_qq!==key)reject();
-      if(old||row.source==='self_reported'){expectedContacts.add(key);if(!actual)reject();checkRow('profile_contacts',actual,old&&old.value.number===row.contact_qq?old.value:{qq:key,number:row.contact_qq,updated:identitySeconds(row.updated_at)},old);}else if(actual)reject();
+      if(old||row.source==='self_reported'||retired.has(row.profile_id)){expectedContacts.add(key);if(!actual)reject();checkRow('profile_contacts',actual,old&&old.value.number===row.contact_qq?old.value:{qq:key,number:row.contact_qq,updated:identitySeconds(row.updated_at)},old);}else if(actual)reject();
     }
     const erased=new Set((source.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[]).map(row=>row.legacy_key));
     for(const old of original.rows.profile_contacts)if(!byKey.has(String(old.value.qq))&&!erased.has(String(old.value.qq))){expectedContacts.add(String(old.value.qq));checkRow('profile_contacts',rows.profile_contacts!.find(item=>item.qq===old.value.qq)??reject(),old.value,old);}
@@ -106,7 +107,7 @@ export function verifyRollbackIdentity(source:DB,copy:DB,music:RollbackMusic,int
     const available=[...original.rows.login_attempts];for(const row of rows.login_attempts!){const index=available.findIndex(item=>item.value.bucket===row.bucket&&Number(item.value.created)===Number(row.created)),old=index<0?undefined:available.splice(index,1)[0];checkRow('login_attempts',row,old?.value??{bucket:row.bucket!,created:row.created!},old);}
     let high=original.highWater;const expectedMappings:IdentityAuditMapping[]=structuredClone(rebased?.auditMappings??[]);
     const expectedAudits:Record<string,string|number|bigint>[]=original.rows.link_audit.map(row=>({original_rowid:row.rowid,...row.value}));
-    const audit=(kind:'ownership'|'claim',id:bigint,profile:string,actor:string,before:string|null,after:string|null,created:string)=>{const key=byId.get(profile)??reject();if(key.erased)return;high++;expectedAudits.push({original_rowid:high,id:high,qq:key.legacyKey,actor,before_user_id:before??'',after_user_id:after??'',created:identitySeconds(created)});expectedMappings.push({source:kind,sourceId:id.toString(),legacyId:high.toString()});};
+    const audit=(kind:'ownership'|'claim',id:bigint,profile:string,actor:string,before:string|null,after:string|null,created:string)=>{const key=byId.get(profile)??reject();if(key.erased||retired.has(profile))return;high++;expectedAudits.push({original_rowid:high,id:high,qq:key.legacyKey,actor,before_user_id:before??'',after_user_id:after??'',created:identitySeconds(created)});expectedMappings.push({source:kind,sourceId:id.toString(),legacyId:high.toString()});};
     const events=[...changes.map(row=>({source:'ownership' as const,id:row.id,profile:row.profile_id,revision:row.revision,actor:row.actor_ref,before:row.before_user_id,after:row.after_user_id,created:row.created_at})),
       ...claims.map(row=>({source:'claim' as const,id:row.id,profile:row.profile_id,revision:row.revision,actor:'account:'+row.actor_id,before:(JSON.parse(row.before_json) as {userId:string|null}).userId,after:(JSON.parse(row.after_json) as {userId:string|null}).userId,created:row.created_at}))];
     events.sort((a,b)=>a.profile<b.profile?-1:a.profile>b.profile?1:a.revision<b.revision?-1:a.revision>b.revision?1:a.source<b.source?-1:a.source>b.source?1:a.id<b.id?-1:1);

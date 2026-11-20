@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import type { DB } from '@qgroup/database';
+import {musicProfileActiveSQL,readMusicRetirements,type DB} from '@qgroup/database';
 import {erasureRequestId, type  StoredIntent } from '../../apps/api/src/erasure-journal';
 import type { RollbackMusic } from './rollback-music';
 import {readSourceRebaseEvidence} from './source-rebase-evidence';
@@ -25,6 +25,7 @@ function normalizedSelection(value:unknown){
 /** Independently reads latest normalized rows and source evidence. It neither
  * calls the projector nor authorizes differences from its generated report. */
 export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredIntent[]){
+  const retired=new Map(readMusicRetirements(db).map(row=>[row.profileId,row]));
   const rebased=readSourceRebaseEvidence(db,intents),bindings=new Map(rebased?.bindings.map(row=>[row.profileId,row]));
   const root=obj(result.data);equal(Object.keys(root).sort(),['entries','members','settings','shouts','shoutHistory','trend'].sort());
   const entries=obj(root.entries),members=obj(root.members),profiles=db.prepare('SELECT id,erased_at FROM music_profiles ORDER BY rowid').all() as {id:string;erased_at:string|null}[];
@@ -35,7 +36,7 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   for(const row of db.prepare('SELECT legacy_key FROM music_legacy_profiles').all() as {legacy_key:string}[])reserved.add(row.legacy_key);
   for(const p of profiles){
     if(typeof p.id!=='string'||!/^m_(?:[a-f0-9]{32}|[a-f0-9]{40})$/.test(p.id))reject();
-    const key=map.get(p.id)??reject();if(key.erased!==(p.erased_at!==null)||used.has(key.legacyKey)||!/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/.test(key.legacyKey))reject();used.add(key.legacyKey);
+    const key=map.get(p.id)??reject();if(key.retired!==(retired.has(p.id)?true:undefined)||retired.has(p.id)&&retired.get(p.id)!.legacyKey!==key.legacyKey)reject();if(key.erased!==(p.erased_at!==null)||used.has(key.legacyKey)||!/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/.test(key.legacyKey))reject();used.add(key.legacyKey);
     const names=db.prepare("SELECT legacy_key AS name FROM music_legacy_profiles WHERE profile_id=? UNION SELECT source_id AS name FROM migration_map WHERE source='music' AND entity_type='profile' AND target_id=?").all(p.id,p.id) as {name:string}[];
     const binding=bindings.get(p.id);
     if(binding){if(key.mode!==binding.mode||key.legacyKey!==binding.legacyKey||names.some(row=>row.name!==binding.legacyKey))reject();}
@@ -45,7 +46,7 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   }
   for(const key of reserved)if(db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=?').get(key))erased.add(key);
   const creator=(value:string)=>erased.has(value)?'':map.get(value)?.legacyKey??value;
-  equal(Object.keys(members).sort(),profiles.filter(p=>p.erased_at===null).map(p=>map.get(p.id)!.legacyKey).sort());
+  equal(Object.keys(members).sort(),profiles.filter(p=>p.erased_at===null&&!retired.has(p.id)).map(p=>map.get(p.id)!.legacyKey).sort());
   const terms=db.prepare(`SELECT e.id,e.name,e.kind,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json FROM music_entries e
     LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.rowid`).all() as {id:string;name:string;kind:string;category:string|null;aliases_json:string|null;created_by:string|null;created_at_json:string|null;updated_at_json:string|null}[];
   equal(Object.keys(entries).sort(),terms.map(row=>row.id).sort());
@@ -65,7 +66,7 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   let choices=0;
   for(const row of db.prepare(`SELECT p.id,p.user_id,l.consent,l.pin_hash,l.fields_json,l.created_entries_json,f.name,f.note,f.note_at,f.gender,f.gender_public,c.contact_qq,pc.created_at
     FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id LEFT JOIN music_profile_fields f ON f.profile_id=p.id
-    LEFT JOIN music_profile_contacts c ON c.profile_id=p.id LEFT JOIN music_profile_creation pc ON pc.profile_id=p.id WHERE p.erased_at IS NULL ORDER BY p.rowid`).all() as {
+    LEFT JOIN music_profile_contacts c ON c.profile_id=p.id LEFT JOIN music_profile_creation pc ON pc.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as {
       id:string;user_id:string|null;consent:number|null;pin_hash:string|null;fields_json:string|null;created_entries_json:string|null;name:string|null;note:string|null;note_at:number|null;gender:string|null;gender_public:number|null;contact_qq:string|null;created_at:string|null
     }[]){
     const member=obj(members[map.get(row.id)!.legacyKey]);fields(member,['qq','name','consent','selection','created','createdAt','pinHash','lastJoinAt','boardUserId','gender','genderPublic','note','noteAt','lastShoutAt','contactQQ']);
@@ -103,7 +104,7 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   const liveShouts=db.prepare('SELECT * FROM music_shouts ORDER BY ordinal').all() as {id:string;profile_id:string|null;legacy_key:string;name:string;body:string;created_at:number;archived_at:number|null}[];
   let active=0,history=0;
   for(const kind of ['shouts','shoutHistory']){
-    const expected=liveShouts.filter(row=>(row.archived_at===null)===(kind==='shouts')),values=list(root[kind]);equal(values.length,expected.length);
+    const expected=liveShouts.filter(row=>(row.archived_at===null)===(kind==='shouts')&&(row.archived_at!==null||!row.profile_id||!retired.has(row.profile_id))),values=list(root[kind]);equal(values.length,expected.length);
     expected.forEach((row,index)=>{
       const shout=obj(values[index]);fields(shout,['id','qq','name','text','createdAt','archivedAt']);equal(shout.id,row.id);equal(shout.qq,row.profile_id?map.get(row.profile_id)!.legacyKey:creator(row.legacy_key));equal(shout.name||'群友',row.name);equal(shout.text,row.body);equal(Number(shout.createdAt??0),row.created_at);if(kind==='shoutHistory')equal(Number(shout.archivedAt??0),row.archived_at);if(erased.has(String(shout.qq)))reject();
       const original=db.prepare("SELECT kind,payload_json FROM music_documents WHERE kind IN ('shouts','shoutHistory') AND json_extract(payload_json,'$.id')=?").all(row.id) as {kind:string;payload_json:string}[];

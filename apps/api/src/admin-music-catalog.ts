@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
@@ -9,7 +10,7 @@ import type { AdminSecurity } from './admin-security';
 import { musicCatalog,entryCategories } from './music-catalog';
 import { hash } from './security';
 
-const profiles=(db:DB)=>db.prepare('SELECT id,revision FROM music_profiles WHERE erased_at IS NULL ORDER BY id').all() as {id:string;revision:number}[];
+const profiles=(db:DB)=>db.prepare(`SELECT id,revision FROM music_profiles WHERE ${musicProfileActiveSQL('music_profiles')} ORDER BY id`).all() as {id:string;revision:number}[];
 export function adminMusicCatalog(db:DB,now:Date){
   const members=profiles(db),created=members.map(p=>({id:p.id,ids:musicCreatedIds(db,p.id)}));
   const creationCounts=new Map<string,number>();for(const p of created)for(const id of p.ids)creationCounts.set(id,(creationCounts.get(id)??0)+1);

@@ -1,3 +1,4 @@
+import {musicProfileActiveSQL} from '@qgroup/database';
 import type { DB } from '@qgroup/database';
 
 // Source timestamps use float(value or 0), not JavaScript coercion or date parsing.
@@ -23,7 +24,7 @@ export function musicStats(db: DB, entryTimes: readonly string[], now: Date) {
   const asOf = now.getTime() / 1000, cutoff = asOf - 86400;
   const profiles = db.prepare(`SELECT l.fields_json,c.created_at
     FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id
-    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE p.erased_at IS NULL`)
+    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE ${musicProfileActiveSQL('p')}`)
     .all() as { fields_json: string | null; created_at: string | null }[];
   return {
     members: profiles.length,
