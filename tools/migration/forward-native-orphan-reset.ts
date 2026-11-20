@@ -3,6 +3,7 @@ import type {DB} from '@qgroup/database';
 import {AdminMusicErasureResult} from '@qgroup/contracts';
 import {decodeErasureJournal,readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
 import {nativeResetPrivateRelation} from './native-reset-private-relation';
+import {nativeOwnerEpochs,assertNativeResetPrivateBoundary} from './native-reset-candidate-boundary';
 import {schemaObjects} from './board-reconciliation';
 import {assertRollbackSource} from './rollback-source';
 import {assertForwardImage,forwardEqual,forwardHash,forwardLineage,forwardRows,forwardSequences,type ForwardRow,type PinnedForwardBytes} from './forward-board-storage';
@@ -45,7 +46,7 @@ function openSource(input:NativeResetSource,general=false){
   const close=()=>{completed.close();before.close();};
   try{
     for(const db of [before,completed]){
-      db.pragma('foreign_keys = ON');db.transaction(()=>{assertRollbackSource(db);forwardSequences(db);}).immediate();
+      db.pragma('foreign_keys = ON');db.transaction(()=>{assertRollbackSource(db);forwardSequences(db);nativeOwnerEpochs(db);}).immediate();
       if(readSourceRebaseEvidence(db))throw Error('Native orphan reset after rebase requires generation ancestry');
     }
     const prior=readVerifiedErasureJournal(before,journal(held.beforeJournal.bytes)),after=readVerifiedErasureJournal(completed,journal(held.completedJournal.bytes));
@@ -105,6 +106,8 @@ function candidateBoundary(before:DB,completed:DB,db:DB,current:ErasureJournal,c
   const original=journal(completedJournal).read(),actual=readVerifiedErasureJournal(db,current);
   if(actual.length<original.length||!forwardEqual(original,actual.slice(0,original.length)))throw Error('Native orphan reset candidate lost its completed journal prefix');
   if(actual.slice(original.length).some(intent=>'version' in intent&&intent.version===2&&intent.command==='reset_music'))throw Error('Native orphan reset followed by a later reset requires generation ancestry');
+  const reset=original.at(-1)!;if(!('version' in reset)||reset.version!==2)throw Error('Native reset completion scope missing');
+  assertNativeResetPrivateBoundary(before,completed,db,actual,original.length,reset.profiles.map(p=>p.id),reset.entries);
   for(const table of ['privacy_receipts','erasure_applied','music_catalog_actions']){
     const rows=new Map([...forwardRows(db,table)].map(row=>[row.__forward_rowid__,row]));
     for(const row of forwardRows(completed,table))if(!forwardEqual(row,rows.get(row.__forward_rowid__)))throw Error('Native orphan reset original authority row changed');
@@ -119,6 +122,13 @@ function candidateBoundary(before:DB,completed:DB,db:DB,current:ErasureJournal,c
       else if(table==='music_documents'&&['shouts','shoutHistory'].includes(String(row.kind))&&shoutIds.has(String((JSON.parse(String(row.payload_json)) as {id?:unknown}).id)))throw Error('Native orphan reset shout shadow identity was reused');
     }
   }
+}
+
+/** Check a raw disposable input before ordinary recovery or private writers
+ * can hide a rewind. A genuinely unapplied reset is replayed separately. */
+export function assertAppliedNativeResetCandidateBoundary(db:DB,current:ErasureJournal,input:NativeResetSource,general=true){
+  if(!db.prepare('SELECT 1 FROM erasure_applied WHERE request_id=?').get(input.requestId))return;
+  const source=openSource(input,general);try{candidateBoundary(source.before,source.completed,db,current,source.held.completedJournal.bytes);}finally{source.close();}
 }
 
 /** Only a disposable memory candidate in a held transaction may be repaired.

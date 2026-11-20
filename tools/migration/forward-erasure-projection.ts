@@ -19,7 +19,7 @@ import {readForwardLegacyResetVault,type LegacyResetVaultInput} from './forward-
 import {pinRollbackTree} from '../../packages/runtime/src/private-source-files';
 import {repairAppliedLegacyResetEntries,reconcileAppliedLegacyResetEntries} from './forward-legacy-reset-entries';
 import {repairAppliedLegacyGlobalReset,reconcileAppliedLegacyGlobalReset} from './forward-legacy-reset-global';
-import {copyNativeOrphanResetSource,verifyNativeOrphanResetSource,repairAppliedNativeOrphanResetGlobal,reconcileAppliedNativeOrphanResetGlobal,verifyNativeResetSource,repairAppliedNativeResetGlobal,reconcileAppliedNativeResetGlobal,type NativeOrphanResetSource,type NativeResetSource} from './forward-native-orphan-reset';
+import {copyNativeOrphanResetSource,verifyNativeOrphanResetSource,repairAppliedNativeOrphanResetGlobal,reconcileAppliedNativeOrphanResetGlobal,verifyNativeResetSource,repairAppliedNativeResetGlobal,reconcileAppliedNativeResetGlobal,assertAppliedNativeResetCandidateBoundary,type NativeOrphanResetSource,type NativeResetSource} from './forward-native-orphan-reset';
 
 export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string;resetSourceVault?:Pick<LegacyResetVaultInput,'vaultRoot'|'vaultManifestSha256'>;nativeOrphanResetSources?:NativeOrphanResetSource[];nativeResetSources?:NativeResetSource[]};
 const sha=z.string().regex(/^[a-f0-9]{64}$/);
@@ -112,6 +112,12 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
     // need not include unapplied transaction writes, so capture the verifier's
     // pre-repair source after the ordinary recovery transaction has committed.
     // Nothing is returned or published unless every subsequent check succeeds.
+    // Read only already-applied original intents from the raw image. Pending
+    // genuine intents will be recovered below; unknown existing markers fail.
+    const rawApplied=new Set((db.prepare('SELECT request_id FROM erasure_applied').all() as {request_id:string}[]).map(row=>row.request_id));
+    const rawJournal={read:()=>merged.filter(intent=>rawApplied.has(erasureRequestId(intent))),append(){throw Error('Raw forward journal is read-only');}};
+    for(const source of orphanSources)assertAppliedNativeResetCandidateBoundary(db,rawJournal,source,false);
+    for(const source of fullSources)assertAppliedNativeResetCandidateBoundary(db,rawJournal,source);
     createPrivacy(db,mergedJournal);
     const repairSource=new Database(db.serialize());
     let report;
