@@ -7641,7 +7641,8 @@
         "tools/migration/forward-legacy-reset-member-disposition.ts",
         "tools/migration/rollback_music_reset_member_disposition.py",
         "packages/database/src/music-retirements.ts",
-        "tools/migration/forward-reset-member-retirement.ts"
+        "tools/migration/forward-reset-member-retirement.ts",
+        "tools/migration/forward-reset-retirement-sources.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7749,7 +7750,9 @@
         "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
         "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md",
         "apps/api/src/forward-reset-member-retirement.test.ts",
-        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md"
+        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
+        "apps/api/src/forward-reset-retirement-sources.test.ts",
+        "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7844,7 +7847,9 @@
         "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
         "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md",
         "apps/api/src/forward-reset-member-retirement.test.ts",
-        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md"
+        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
+        "apps/api/src/forward-reset-retirement-sources.test.ts",
+        "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7898,7 +7903,8 @@
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
         "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
         "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
-        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md"
+        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
+        "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7917,7 +7923,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 149 號完成 native reset 會員失效、原欄位／選擇／歷史與 bot 保全、epoch／回應失效及完整回退／原 Python Store 不復活；22 檔／343 個不同案例通過。第 146／147／148 號全量 CI 原 ZIP 及固定 inventory 已獨立核對通過。本批尚未接入整組 forward business／proof／rebase，147 missing-member gate 保留；尚缺一致退休 baseline／native 與私人派生 identity、完整来源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。維持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 150 號完成原 journal 綁定的 retired baseline／native fork 分離與私人派生 identity source，8 個新案例通過；第 149 號 162／2619 unit、78／833 browser 全量 CI 原 ZIP、inventory、image pair／development 原 Python 報告已獨立核對通過。尚未把退休來源接入 global reset／完整 forward business／proof／rebase，147 missing-member gate 保留。尚缺 source／history 與退休 mapping 的整組驗證、完整来源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。維持 in_progress／release_eligible=false，不部署。"
     },
     {
       "capability_id": "O13",
@@ -8041,7 +8047,8 @@
         "tools/migration/forward-legacy-reset-member-disposition.ts",
         "tools/migration/rollback_music_reset_member_disposition.py",
         "packages/database/src/music-retirements.ts",
-        "tools/migration/forward-reset-member-retirement.ts"
+        "tools/migration/forward-reset-member-retirement.ts",
+        "tools/migration/forward-reset-retirement-sources.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8143,7 +8150,9 @@
         "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
         "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md",
         "apps/api/src/forward-reset-member-retirement.test.ts",
-        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md"
+        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
+        "apps/api/src/forward-reset-retirement-sources.test.ts",
+        "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8232,7 +8241,9 @@
         "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
         "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md",
         "apps/api/src/forward-reset-member-retirement.test.ts",
-        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md"
+        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
+        "apps/api/src/forward-reset-retirement-sources.test.ts",
+        "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8284,7 +8295,8 @@
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
         "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
         "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
-        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md"
+        "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
+        "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -8302,7 +8314,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 149 號完成 native reset 會員失效、原欄位／選擇／歷史與 bot 保全、epoch／回應失效及完整回退／原 Python Store 不復活；22 檔／343 個不同案例通過。第 146／147／148 號全量 CI 原 ZIP 及固定 inventory 已獨立核對通過。本批尚未接入整組 forward business／proof／rebase，147 missing-member gate 保留；尚缺一致退休 baseline／native 與私人派生 identity、完整来源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。維持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 150 號完成原 journal 綁定的 retired baseline／native fork 分離與私人派生 identity source，8 個新案例通過；第 149 號 162／2619 unit、78／833 browser 全量 CI 原 ZIP、inventory、image pair／development 原 Python 報告已獨立核對通過。尚未把退休來源接入 global reset／完整 forward business／proof／rebase，147 missing-member gate 保留。尚缺 source／history 與退休 mapping 的整組驗證、完整来源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。維持 in_progress／release_eligible=false，不部署。"
     },
     {
       "capability_id": "O14",
