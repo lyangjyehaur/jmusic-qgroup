@@ -83,16 +83,18 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
     {blocker.state==='blocked'&&<Surface role="alert"><Text>仍有刪除確認或待確認操作。離開後可用原操作紀錄查詢結果。</Text><Button onClick={()=>blocker.reset()}>留在此頁</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留操作紀錄並離開</Button></Surface>}
     <ErasureStorageFeedback record={record}/>
     {!record.ready&&<Notice>正在讀取刪除紀錄…</Notice>}
-    {done?<Surface className="detail" role="status"><Text>{done.command==='reset_music'?'成分與詞庫重置已完成。':'成分已刪除，自建詞條保留並移除原建立者資訊。'}</Text><Text>已刪除 {done.profiles} 份成分{done.command==='reset_music'?'、'+done.entries+' 個詞條':''}。</Text><Text>操作編號：{done.requestId}</Text><Button variant="secondary" loading={busy} onClick={()=>void dismiss()}>完成</Button><Link to="/admin/music">返回成分關聯</Link></Surface>:<>
+    {done?<Surface className="detail" role="status"><Text>{done.command==='reset_music'?'成分與詞庫重置已完成。':'成分已刪除，自建詞條保留並移除原建立者資訊。'}</Text><Text>{done.command==='reset_music'&&!done.profiles&&!done.entries?'找搭子與趨勢歷史已清空。':<>已刪除 {done.profiles} 份成分{done.command==='reset_music'?'、'+done.entries+' 個詞條':''}。</>}</Text><Text>操作編號：{done.requestId}</Text><Button variant="secondary" loading={busy} onClick={()=>void dismiss()}>完成</Button><Link to="/admin/music">返回成分關聯</Link></Surface>:<>
       {pending&&<Surface className="detail" role="region" aria-label="待確認刪除操作"><Text>刪除結果尚未確認；請先查詢原操作，避免重複刪除。</Text><Text>操作編號：{pending.input.requestId}</Text><Button disabled={!!readError} loading={busy} onClick={()=>void check()}>查詢刪除結果</Button>{notFound&&<Button variant="secondary" disabled={!!readError||busy} onClick={()=>void submit(true)}>重新提交原刪除</Button>}</Surface>}
       {preview.isPending||!preview.isFetchedAfterMount?<Notice>正在核對刪除範圍…</Notice>:preview.error?<Failure error={preview.error} retry={()=>void preview.refetch()}/>:<Surface className="detail auth-panel" role="region" aria-label="刪除範圍核對">
         {preview.data.profile&&<><Heading level={2}>{preview.data.profile.name}</Heading><Text>成分 ID：{preview.data.profile.id}</Text><Text>關聯帳號：{preview.data.profile.ownerId??'未關聯'}</Text></>}
         <Text>{preview.data.profiles} 份成分 · {preview.data.selections} 項選擇 · {preview.data.shouts} 則找搭子</Text>
+        {reset&&preview.data.historyRecords>0&&<Text>留言與趨勢相關紀錄：{preview.data.historyRecords} 筆</Text>}
         <Text>{reset?preview.data.entries+' 個詞條將刪除。全部成分的稱呼、私人資料、選擇、找回授權及已關聯找搭子將移除。':'這份成分的私人資料、選擇、找回授權及找搭子將移除；'+preview.data.entries+' 個自建詞條保留並移除原建立者資訊，其他人的選擇保留。'}</Text>
         <Text>不會關閉會員帳號，也不刪除活動、報名、帳務或 bot 工作。{reset?'找搭子與趨勢歷史同時清空，外觀設定保留。':''}刪除紀錄會在恢復備份時重播，無法直接復原。</Text>
         <label className="account-field">輸入 {reset?'RESET':'DELETE'} 確認<input value={word} autoComplete="off" spellCheck={false} disabled={!record.ready||busy||!!pending||!!readError} onChange={event=>{setWord(event.target.value);setConsent(false);}}/></label>
         <label className="consent"><input type="checkbox" checked={consent} disabled={!record.ready||busy||!!pending||!!readError} onChange={event=>setConsent(event.target.checked)}/><span>我已核對刪除範圍及不可復原的影響</span></label>
-        <Button disabled={!record.ready||!!pending||!!readError||word!==(reset?'RESET':'DELETE')||!consent||(!preview.data.profiles&&!preview.data.entries)} loading={busy} onClick={()=>void submit()}>{reset?'重置成分與詞庫':'確認刪除成分'}</Button>
+        {reset&&!preview.data.profiles&&!preview.data.entries&&!preview.data.shouts&&!preview.data.historyRecords&&<Notice>目前沒有可重置的成分、詞條、找搭子或歷史紀錄。</Notice>}
+        <Button disabled={!record.ready||!!pending||!!readError||word!==(reset?'RESET':'DELETE')||!consent||(!preview.data.profiles&&!preview.data.entries&&!preview.data.shouts&&!preview.data.historyRecords)} loading={busy} onClick={()=>void submit()}>{reset?'重置成分與詞庫':'確認刪除成分'}</Button>
         <Button variant="secondary" disabled={busy||!!pending} onClick={()=>{setWord('');setConsent(false);void preview.refetch();}}>重新核對範圍</Button>
       </Surface>}
     </>}

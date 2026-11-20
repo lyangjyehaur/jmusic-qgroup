@@ -8,6 +8,7 @@ import { musicRoomFixture } from './music-room-fixture';
 import { musicMatchingFixture } from './music-matching-fixture';
 import { musicShoutFixture } from './music-shout-fixture';
 import { adminCatalogFixture } from './admin-catalog-fixture';
+import { orphanMusicResetFixture } from './orphan-music-reset-fixture';
 import { musicCircleFixture } from './music-circle-fixture';
 import { musicTrendFixture } from './music-trend-fixture';
 import { musicClaimFixture } from './music-claim-fixture';
@@ -34,7 +35,8 @@ if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
 if (process.env.REBUILD_TEST_BOT_DELIVERIES === '1') botDeliveryFixture(db);
-if (process.env.REBUILD_TEST_ADMIN_CATALOG !== '1'&&!legacyHistory) musicClaimFixture(db);
+const orphanReset=process.env.REBUILD_TEST_ORPHAN_MUSIC_RESET;
+if (process.env.REBUILD_TEST_ADMIN_CATALOG !== '1'&&!legacyHistory&&(!orphanReset||orphanReset==='none')) musicClaimFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_SHOUTS === '1') musicShoutFixture(db);
 if (process.env.REBUILD_TEST_ADMIN_CATALOG === '1') adminCatalogFixture(db);
 if (process.env.REBUILD_TEST_MUSIC_CIRCLES === '1') musicCircleFixture(db);
@@ -49,6 +51,7 @@ if (process.env.REBUILD_TEST_ROSTER === '1') {
 }
 // Imported-history pagination uses a separate synthetic profile from ownership tests.
 if (process.env.REBUILD_TEST_MUSIC_HISTORY === '1') for (let i = 0; i < 52; i++) db.prepare("INSERT INTO music_legacy_identity VALUES('link_audit',?,?)").run(i, JSON.stringify({ id: i + 100, qq: '10002', actor: 'credential:synthetic-private', before_user_id: i % 2 ? 'bob' : '', after_user_id: i % 2 ? '' : 'bob', created: 1794902400 + i }));
+if(orphanReset==='shouts'||orphanReset==='trend'||orphanReset==='empty')orphanMusicResetFixture(db,orphanReset);
 const port = Number(process.env.REBUILD_TEST_PORT ?? 5082);
 const origin = `http://127.0.0.1:${port}`;
 db.prepare("INSERT INTO users VALUES('auth-owner',?,'舊帳號','synthetic')").run(hash('fixture-auth-owner'));

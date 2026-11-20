@@ -5146,7 +5146,9 @@
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
         "apps/api/src/legacy-music-intent.test.ts",
         "apps/api/src/forward-music-authority.test.ts",
-        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
+        "apps/api/src/orphan-music-reset.test.ts",
+        "docs/unified-rebuild/157-orphan-history-reset-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music-erasure.test.ts",
@@ -5174,10 +5176,11 @@
         "apps/web/tests/admin-music-erasure.spec.ts",
         "apps/web/tests/durable-erasures.spec.ts",
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/orphan-music-reset.spec.ts"
       ],
       "state": "in_progress",
-      "remaining": "原生管理成分刪除／重置、詞條保留與建立者清除、私人投影與找回證據清除、持久版本 2 意圖、SQL 故障恢復、回執核對、舊副本／成套匯入防復活與 bot 讀取差分已合成驗證；重置前成套備份、配對資產／歷史濾除、回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。 已直接差分有效 administration.erase：RESET 同時清空全部找搭子與趨勢，重播不清除後續新資料。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。"
+      "remaining": "157 補齊無成分／詞條時的匿名、歷史留言、趨勢及發布紀錄重置，historyRecords預覽、mapping revision與空資料原因；40 unit／28 browser、固定Python及compiled API本機驗證通過。新固定原Linux／實際雙映像、原生reset完整世代與exact key reuse、原來源 ancestry／high-water／custody、完整歷史／媒體／browser及正式候選驗收仍待完成。"
     },
     {
       "capability_id": "A12",

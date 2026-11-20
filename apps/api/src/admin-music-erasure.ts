@@ -15,10 +15,12 @@ export function musicErasureScope(db:DB,id?:string){
   const entries=id?[]:(db.prepare('SELECT id FROM music_entries ORDER BY id').all() as {id:string}[]).map(row=>row.id);
   // Bind review to every affected record, including PIN, identity proofs and draft revisions.
   const tables=['music_profiles','music_legacy_profiles','music_profile_fields','music_profile_contacts','music_selections','music_entry_details','music_entry_creations','music_claim_intents','music_legacy_identity','music_shouts','music_shout_authors','music_entries','music_documents'];
-  const revision=hash(JSON.stringify([id??null,...tables.map(table=>db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all())]));
+  const mappings=id?[]:db.prepare("SELECT * FROM migration_map WHERE source='music' AND entity_type IN ('shouts','shoutHistory','trend') ORDER BY rowid").all();
+  const revision=hash(JSON.stringify([id??null,...tables.map(table=>db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all()),...(id?[]:[mappings])]));
   const count=(table:string)=> (db.prepare('SELECT count(*) n FROM '+table+(id?' WHERE profile_id=?':'')).get(...id?[id]:[]) as {n:number}).n;
   const shouts=(db.prepare('SELECT count(*) n FROM music_shouts'+(id?' WHERE profile_id=?':'')).get(...id?[id]:[]) as {n:number}).n;
-  const preview=AdminMusicErasurePreview.parse({command:id?'delete_profile':'reset_music',revision,profile:profile?{id:profile.id,name:profile.name,ownerId:profile.owner?.id??null}:null,profiles:profiles.length,entries:id?(db.prepare("SELECT count(*) n FROM music_entry_details WHERE created_by=? OR created_by=?").get(id,profile!.legacyKey||id) as {n:number}).n:entries.length,selections:count('music_selections'),shouts});
+  const historyRecords=id?0:(db.prepare("SELECT (SELECT count(*) FROM music_documents WHERE kind IN ('shouts','shoutHistory','trend','trend_sample'))+(SELECT count(*) FROM music_shout_authors) n").get() as {n:number}).n;
+  const preview=AdminMusicErasurePreview.parse({command:id?'delete_profile':'reset_music',revision,profile:profile?{id:profile.id,name:profile.name,ownerId:profile.owner?.id??null}:null,profiles:profiles.length,entries:id?(db.prepare("SELECT count(*) n FROM music_entry_details WHERE created_by=? OR created_by=?").get(id,profile!.legacyKey||id) as {n:number}).n:entries.length,selections:count('music_selections'),shouts,historyRecords});
   return{preview,profiles,entries};
 }
 export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminSecurity,now:()=>Date,privacy:PrivacyService){
@@ -38,7 +40,7 @@ export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminS
         if(prior){if(prior.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return;}
         const scope=musicErasureScope(db,id);
         if(scope.preview.revision!==input.revision)throw withApiError(new DomainError('MUSIC_ERASURE_CHANGED','成分、詞庫或相關資料已有變更，請重新核對刪除範圍',409));
-        if(!scope.profiles.length&&!scope.entries.length)throw withApiError(new DomainError('NO_MUSIC_DATA','目前沒有可重置的成分或詞條',409));
+        if(!scope.profiles.length&&!scope.entries.length&&!scope.preview.shouts&&!scope.preview.historyRecords)throw withApiError(new DomainError('NO_MUSIC_DATA','目前沒有可重置的成分、詞條、找搭子或歷史紀錄',409));
         admin.preserve(request);
         privacy.submit({version:2,kind:'admin_music',command:reset?'reset_music':'delete_profile',actorRef:access.actorRef,profiles:scope.profiles,entries:scope.entries,requestId:input.requestId,secretHash:hash(input.secret),signature,createdAt:now().toISOString()});
       }).immediate();
