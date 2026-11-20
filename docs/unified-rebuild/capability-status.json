@@ -5415,7 +5415,8 @@
         "apps/bot/src/runtime.test.ts",
         "tools/rebuild/smoke-bot.ts",
         "apps/bot/src/outbox.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/replies.test.ts",
@@ -5456,7 +5457,8 @@
         "apps/bot/src/replies.test.ts",
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/replies.test.ts"
@@ -5501,7 +5503,8 @@
         "apps/bot/src/replies.test.ts",
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5561,7 +5564,8 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5622,7 +5626,8 @@
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5699,7 +5704,8 @@
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "apps/api/testsupport/pending-operations.test.ts",
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -5788,7 +5794,8 @@
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6078,7 +6085,8 @@
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -6173,7 +6181,8 @@
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6370,7 +6379,8 @@
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -6522,7 +6532,8 @@
         "apps/bot/src/outbox.test.ts",
         "tools/rebuild/smoke-bot.ts",
         "apps/bot/src/replies.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/135-retained-python-images-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",

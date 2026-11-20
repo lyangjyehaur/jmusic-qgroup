@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { syntheticImageFixture } from './synthetic-image-fixture.mjs';
 import { randomUUID } from 'node:crypto';
 import { execFileSync,spawnSync } from 'node:child_process';
 const args=process.argv.slice(2);
@@ -11,26 +12,14 @@ const id='qgroup-rebuild-'+randomUUID(),volume=id+'-data',authorityVolume=id+'-a
 const limits=['--network','none','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges:true','--memory','512m','--memory-swap','512m','--cpus','1','--pids-limit','128','--tmpfs','/tmp:rw,nosuid,nodev,noexec,size=64m','--platform','linux/'+spec.Architecture];
 // Synthetic empty storage only; the image owns all three new private roots.
 // Export no source data and never prepare an authority from an existing DB.
-const emptyAuthorityScript=String.raw`
-import fs from 'node:fs';import path from 'node:path';import Database from 'better-sqlite3';import {createHash,randomBytes} from 'node:crypto';import {openDatabase} from './.rebuild-dist/api/database.mjs';
-const [database,authority,checkpoint]=process.argv.slice(1),roots=[path.dirname(database),authority,checkpoint],digest=b=>createHash('sha256').update(b).digest('hex');
-if(roots.length!==3||roots.some(p=>!path.isAbsolute(p)||path.resolve(p)!==p)||new Set(roots).size!==3)throw Error('Explicit synthetic fixture roots required');
-for(const [i,p] of roots.entries()){const stat=fs.lstatSync(p);if(!stat.isDirectory()||fs.realpathSync(p)!==p||stat.uid!==process.getuid()||(stat.mode&0o7777)!==0o700||fs.readdirSync(p).length)throw Error('Synthetic fixture root must already be private and empty');for(const other of roots.slice(i+1))if(p.startsWith(other+'/')||other.startsWith(p+'/'))throw Error('Fixture roots overlap');}
-const checkpointPath=path.join(checkpoint,'unified.sqlite3'),db=openDatabase(database);try{await db.backup(checkpointPath);}finally{db.close();}const fixed=new Database(checkpointPath);try{fixed.pragma('journal_mode = DELETE');}finally{fixed.close();}fs.chmodSync(checkpointPath,0o600);const bytes=fs.readFileSync(checkpointPath),write=(p,b)=>fs.writeFileSync(p,b,{flag:'wx',mode:0o600}),encode=v=>Buffer.from(JSON.stringify(v)+'\n');
-write(database.replace(/\.[^/.]+$/,'')+'.erasures.jsonl','');fs.mkdirSync(path.join(authority,'baseline'),{mode:0o700});fs.mkdirSync(path.join(authority,'records'),{mode:0o700});
-const domains=['board','music','unified'],baseline=domains.map(domain=>({domain,path:'baseline/'+domain+'.erasures.jsonl',size:0,sha256:digest('')}));
-for(const row of baseline)write(path.join(authority,row.path),'');write(path.join(authority,'.authority.lock'),'');
-const manifest={version:1,kind:'qgroup-private-erasure-authority',authorityId:randomBytes(16).toString('hex'),createdAt:new Date().toISOString(),sourcePackageSha256:digest('synthetic-empty-image-fixture'),checkpointSha256:digest(bytes),journalSha256:digest('[]'),baseline,rollbackEligible:false},raw=encode(manifest),pin=digest(raw);
-write(path.join(authority,'authority-manifest.json'),raw);write(path.join(authority,'authority-head.json'),encode({version:1,authoritySha256:pin,sequence:0,recordSha256:null,ledgers:Object.fromEntries(baseline.map(row=>[row.domain,{size:row.size,sha256:row.sha256}]))}));
-console.log(JSON.stringify({manifestSha256:pin,checkpointSha256:manifest.checkpointSha256,uid:process.getuid(),gid:process.getgid(),synthetic:true}));
-`;
+
 const madeVolumes=[];let attemptedContainer=false,result,failure;
 try{
  for(const v of [volume,authorityVolume,checkpointVolume]){docker('volume','create','--label','qgroup.rehearsal=true',v);madeVolumes.push(v);}
  // Docker populates this new volume from the image's service-owned data
  // directory. Initialize the fixture as that same user; no root or CHOWN
  // capability is needed, and every database sidecar keeps service ownership.
- const fixture=JSON.parse(docker('run','--rm',...limits,'-v',volume+':/var/lib/qgroup','-v',authorityVolume+':/var/lib/qgroup-erasure','-v',checkpointVolume+':/var/lib/qgroup-checkpoint','--entrypoint','node',image,'--input-type=module','-e',emptyAuthorityScript,'/var/lib/qgroup/isolated.sqlite3','/var/lib/qgroup-erasure','/var/lib/qgroup-checkpoint'));
+ const fixture=JSON.parse(docker('run','--rm',...limits,'-v',volume+':/var/lib/qgroup','-v',authorityVolume+':/var/lib/qgroup-erasure','-v',checkpointVolume+':/var/lib/qgroup-checkpoint','--entrypoint','node',image,'--input-type=module','-e',syntheticImageFixture,'/var/lib/qgroup/isolated.sqlite3','/var/lib/qgroup-erasure','/var/lib/qgroup-checkpoint'));
  assert(fixture.synthetic&&fixture.uid===994&&fixture.gid===992&&/^[a-f0-9]{64}$/.test(fixture.manifestSha256));
  attemptedContainer=true;
  docker('run','-d','--name',name,'--label','qgroup.rehearsal=true','--init','--stop-timeout','15',...limits,'-v',volume+':/var/lib/qgroup','-v',authorityVolume+':/var/lib/qgroup-erasure','-v',checkpointVolume+':/var/lib/qgroup-checkpoint:ro','-e','REBUILD_DB=/var/lib/qgroup/isolated.sqlite3','-e','REBUILD_ERASURE_AUTHORITY_ROOT=/var/lib/qgroup-erasure','-e','REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256='+fixture.manifestSha256,'-e','REBUILD_ERASURE_AUTHORITY_CHECKPOINT=/var/lib/qgroup-checkpoint/unified.sqlite3','-e','REBUILD_PORT=8791','-e','REBUILD_ORIGIN=http://127.0.0.1:8791',image);

@@ -16,7 +16,8 @@ socket.socket = deny_network
 source, database, mode, event_id, origin = sys.argv[1:]
 source, database = Path(source).resolve(), Path(database).resolve()
 assert mode in ('plain', 'rich', 'dry-run', 'inspect')
-assert source.parent == database.parent and source.name == 'original-python'
+assert ((source.parent == database.parent and source.name == 'original-python') or
+        (source == Path('/app/original-python') and database.parent == Path('/var/lib/qgroup')))
 assert database.name == 'synthetic.sqlite3'
 assert origin.startswith('http://127.0.0.1:')
 sys.path.insert(0, str(source))
