@@ -213,3 +213,5 @@
 - [重設後曲目與留言世代](142-legacy-reset-generations-checkpoint.md)：原始完成紀錄綁定的新 ID 與引用轉換、獨立 Python reverse 核對；原生 reset／完整重建接入與 ancestry 仍待完成。
 
 - [原始重設的會員與曲目投影](143-legacy-reset-entry-projection-checkpoint.md)：真 reset vault 接入原生會員／曲目 erasure、persisted／loaded 分域、完整 row oracle；完整 shout／trend 世代與重建仍待完成。
+
+- [原始全域重設的資料世代清除](144-legacy-global-reset-checkpoint.md)：原 checkpoint 曲目／匿名留言／趨勢全世代清除、後續原生資料保全與完整 row oracle；完整 latest generation 重建與 ancestry 仍待完成。

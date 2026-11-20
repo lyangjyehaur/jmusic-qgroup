@@ -18,6 +18,7 @@ import {repairAppliedNativeResetEntries,reconcileAppliedNativeResetEntries} from
 import {readForwardLegacyResetVault,type LegacyResetVaultInput} from './forward-legacy-reset-vault';
 import {pinRollbackTree} from '../../packages/runtime/src/private-source-files';
 import {repairAppliedLegacyResetEntries,reconcileAppliedLegacyResetEntries} from './forward-legacy-reset-entries';
+import {repairAppliedLegacyGlobalReset,reconcileAppliedLegacyGlobalReset} from './forward-legacy-reset-global';
 
 export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string;resetSourceVault?:Pick<LegacyResetVaultInput,'vaultRoot'|'vaultManifestSha256'>};
 const sha=z.string().regex(/^[a-f0-9]{64}$/);
@@ -165,6 +166,17 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         }).immediate();
       }finally{resetSource.close();}
     }
-    guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,legacyResetEntryRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
+    let legacyGlobalResetRepair:ReturnType<typeof reconcileAppliedLegacyGlobalReset>|null=null;
+    if(legacyVault){
+      const resetSource=new Database(db.serialize());
+      try{
+        resetSource.pragma('foreign_keys = ON');
+        legacyGlobalResetRepair=db.transaction(()=>{
+          repairAppliedLegacyGlobalReset(fixed,db,authority.records,legacyVault,nativeIntents);
+          return reconcileAppliedLegacyGlobalReset(fixed,resetSource,db,authority.records,legacyVault,nativeIntents);
+        }).immediate();
+      }finally{resetSource.close();}
+    }
+    guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,legacyResetEntryRepair,legacyGlobalResetRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
   }finally{db.close();fixed.close();}
 }
