@@ -64,6 +64,13 @@ it('revalidates fixed-name icons and keeps translated SPA shells and bot deep li
 it('does not cache or compress API/session responses and preserves their cookie variation',async()=>{
   for(const url of ['/api/v2/session','/api/v2/activities','/api/v2/health']){const response=await app.inject({url,headers:{'accept-encoding':'br'}});expect(response.statusCode).toBe(200);expect(response.headers['cache-control']).toBe('no-store');expect(response.headers.vary).toBe('Cookie');expect(response.headers['content-encoding']).toBeUndefined();if(url.endsWith('/session')){expect(response.json().scope).toBeTruthy();expect(response.headers['set-cookie']).toBeTruthy();}}
 });
+it('does not spend the API rate budget on registered public assets while actual API requests remain limited',async()=>{
+  const remoteAddress='198.51.100.154';
+  for(let n=0;n<181;n++)expect((await app.inject({url:asset,remoteAddress})).statusCode).toBe(200);
+  for(let n=0;n<180;n++)expect((await app.inject({url:'/api/v2/health',remoteAddress})).statusCode).toBe(200);
+  const limited=await app.inject({url:'/api/v2/health',remoteAddress});expect(limited.statusCode).toBe(429);expect(limited.headers['retry-after']).toBeTruthy();
+  expect((await app.inject({url:asset,remoteAddress})).statusCode).toBe(200);
+});
 it.each([asset+'.gz',asset+'.br','/.private','/assets/missing.js'])('does not expose a direct representation or missing static path %s as a SPA shell',async url=>{
   const response=await app.inject(url);expect(response.statusCode).toBe(404);expect(response.headers['content-type']).toMatch(/json/);
 });

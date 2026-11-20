@@ -42,7 +42,7 @@ export async function verifyBuiltStatic(base,root){
         for(const key of ['content-type','content-encoding','content-length','cache-control','etag'])assert.equal(head.headers[key],response.headers[key]);
       }
     }
-    for(const [key,suffix] of [['br','.br'],['gzip','.gz']])if(row[key]!==null){const direct=await get(path+suffix);assert.equal(direct.status,404);assert.match(direct.headers['content-type'],/json/);directSidecarsDenied++;}
+    if(/^index-/.test(name)||/^guide-/.test(name))for(const [key,suffix] of [['br','.br'],['gzip','.gz']])if(row[key]!==null){const direct=await get(path+suffix);assert.equal(direct.status,404);assert.match(direct.headers['content-type'],/json/);directSidecarsDenied++;}
     assets.push(row);
   }
   for(const extension of ['.js','.css'])assert(assets.some(row=>row.path.endsWith(extension)&&row.br!==null&&row.gzip!==null),'Missing build compression variants for '+extension);

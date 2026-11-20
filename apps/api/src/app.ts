@@ -20,7 +20,7 @@ import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
 import { ANALYTICS_HOST, ANALYTICS_ORIGIN, displayLanguage } from '@qgroup/contracts';
 import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join,resolve } from 'node:path';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
 import { staticCacheControl } from './static-cache';
@@ -96,6 +96,13 @@ export function createApp(options: AppOptions) {
   app.register(cookie);
   const analyticsHosts=origin===ANALYTICS_ORIGIN?[ANALYTICS_HOST]:[];
   app.register(helmet, { contentSecurityPolicy: { directives: { defaultSrc: ["'self'"], scriptSrc: ["'self'",...analyticsHosts], styleSrc: ["'self'", "'unsafe-inline'"], imgSrc: ["'self'", 'data:', 'blob:', 'https://qlogo.cn', 'https://*.qlogo.cn'], connectSrc: ["'self'",...analyticsHosts], objectSrc: ["'none'"], frameAncestors: ["'none'"], upgradeInsecureRequests: null } } });
+  // Only routes registered by the static plugin get this exemption. A URL
+  // prefix or client header cannot exempt an API, shell or auth operation.
+  app.addHook('onRoute',route=>{
+    const config=route.config as typeof route.config & {rootPath?:unknown;file?:unknown};
+    const methods=Array.isArray(route.method)?route.method:[route.method];
+    if(options.staticRoot&&typeof config?.rootPath==='string'&&resolve(config.rootPath)===resolve(options.staticRoot)&&typeof config.file==='string'&&methods.every(method=>method==='GET'||method==='HEAD'))config.rateLimit=false;
+  });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute',keyGenerator:clientAddress });
   // Independent of browser sessions, write recovery hooks and browser errors.
   registerPublicAPI(app, db, now, options.publicAPIKeys ?? (() => process.env.KANBAN_PUBLIC_API_KEYS ?? ''), privacy.assertReadable);

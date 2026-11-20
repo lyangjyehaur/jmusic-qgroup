@@ -80,8 +80,8 @@ test('the active root worker preserves the complete synthetic QQ redirect and a 
     await page.goto('/me/app');
     await ready(page);
     await page.goto('/login?returnTo=%2Fme%2Faccounts');
-    const consent = page.getByRole('checkbox');
-    if (await consent.count()) await consent.check();
+    // The guest login page may still be downloading when navigation ends.
+    await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: '前往 QQ 登入', exact: true }).click();
     await page.getByRole('button', { name: '確認登入', exact: true }).click();
     await expect(page.getByRole('heading', { name: '測試帳號 browser-default', exact: true })).toBeVisible();
