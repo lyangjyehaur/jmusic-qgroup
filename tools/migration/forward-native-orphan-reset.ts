@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import type {DB} from '@qgroup/database';
 import {AdminMusicErasureResult} from '@qgroup/contracts';
 import {decodeErasureJournal,readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
+import {replayMusicErasure} from '../../apps/api/src/privacy';
 import {schemaObjects} from './board-reconciliation';
 import {assertRollbackSource} from './rollback-source';
 import {assertForwardImage,forwardEqual,forwardHash,forwardLineage,forwardRows,type ForwardRow,type PinnedForwardBytes} from './forward-board-storage';
@@ -10,6 +11,7 @@ import {readSourceRebaseEvidence} from './source-rebase-evidence';
 /** Explicit frozen sources for one empty-profile/empty-entry native reset.
  * Byte pins and a verified transition do not establish stopped-source custody. */
 export type NativeOrphanResetSource={requestId:string;before:PinnedForwardBytes;beforeJournal:PinnedForwardBytes;completed:PinnedForwardBytes;completedJournal:PinnedForwardBytes};
+export type NativeResetSource=NativeOrphanResetSource;
 const kinds=['shouts','shoutHistory','trend','trend_sample'];
 const mapKinds=['shouts','shoutHistory','trend'];
 const slot=(table:string,row:ForwardRow)=>table==='music_shouts'?String(row.id):table==='music_shout_authors'?String(row.profile_id):table==='music_documents'?JSON.stringify([row.kind,String(row.position)]):JSON.stringify([row.source,row.entity_type,row.source_id]);
@@ -35,12 +37,14 @@ function addedRow(db:DB,table:string,values:Record<string,unknown>,rowid:bigint)
   return row;
 }
 
-/** Full independent pre/completion row relation, including the three exact
- * appended audit/receipt/marker rows. No administrative writer is replayed. */
-function openSource(input:NativeOrphanResetSource){
+/** Full pre/completion row relation with independent global/authority rules.
+ * General resets explicitly reuse private profile service semantics, without
+ * replaying the administrative action or producing a replacement receipt. */
+function openSource(input:NativeResetSource,general=false){
   const held=copyNativeOrphanResetSource(input),before=new Database(held.before.bytes);let completed:DB;
   try{completed=new Database(held.completed.bytes);}catch(error){before.close();throw error;}
-  const close=()=>{completed.close();before.close();};
+  let projected:DB|undefined;
+  const close=()=>{projected?.close();completed.close();before.close();};
   try{
     for(const db of [before,completed]){
       db.pragma('foreign_keys = ON');db.transaction(()=>assertRollbackSource(db)).immediate();
@@ -49,23 +53,43 @@ function openSource(input:NativeOrphanResetSource){
     const prior=readVerifiedErasureJournal(before,journal(held.beforeJournal.bytes)),after=readVerifiedErasureJournal(completed,journal(held.completedJournal.bytes));
     if(!held.completedJournal.bytes.subarray(0,held.beforeJournal.bytes.length).equals(held.beforeJournal.bytes)||after.length!==prior.length+1||new Set(after.map(row=>'user_id' in row?row.request_id:row.version===3?row.markerId:row.requestId)).size!==after.length)throw Error('Native orphan reset journal transition differs');
     const intent=after.at(-1)!;
-    if(!('version' in intent)||intent.version!==2||intent.command!=='reset_music'||intent.requestId!==held.requestId||intent.profiles.length||intent.entries.length||before.prepare('SELECT 1 FROM music_profiles WHERE erased_at IS NULL LIMIT 1').get()||before.prepare('SELECT 1 FROM music_entries LIMIT 1').get())throw Error('Native orphan reset scope requires empty profile and entry generations');
-    const receipt=AdminMusicErasureResult.parse({requestId:intent.requestId,target:'admin_music',command:'reset_music',status:'completed',profiles:0,entries:0});
+    if(!('version' in intent)||intent.version!==2||intent.command!=='reset_music'||intent.requestId!==held.requestId)throw Error('Native reset source intent differs');
+    const profiles=before.prepare('SELECT id,user_id AS userId FROM music_profiles WHERE erased_at IS NULL ORDER BY id').all(),entries=(before.prepare('SELECT id FROM music_entries ORDER BY id').all() as {id:string}[]).map(row=>row.id);
+    if(!forwardEqual(profiles,intent.profiles)||!forwardEqual(entries,intent.entries))throw Error('Native reset source profile or entry scope differs');
+    if(!general&&(intent.profiles.length||intent.entries.length))throw Error('Native orphan reset scope requires empty profile and entry generations');
+    // A full reset also invokes the established private profile erasure and
+    // catalog semantics. Their service writer is explicitly reused here; the
+    // global row oracle and appended authority relation remain independent.
+    if(general&&(intent.profiles.length||intent.entries.length)){
+      projected=new Database(before.serialize());projected.pragma('foreign_keys = ON');
+      const model=projected;
+      model.transaction(()=>{
+        for(const profile of intent.profiles)replayMusicErasure(model,profile.id,profile.userId,intent.createdAt);
+        for(const id of intent.entries){
+          model.prepare("DELETE FROM music_documents WHERE kind='entry_source' AND json_extract(payload_json,'$.entryId')=?").run(id);
+          model.prepare('DELETE FROM music_selections WHERE entry_id=?').run(id);
+          model.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
+          model.prepare('DELETE FROM music_entries WHERE id=?').run(id);
+          model.prepare("UPDATE migration_map SET status='deleted' WHERE source='music' AND entity_type='entry' AND target_id=?").run(id);
+        }
+      }).immediate();
+    }
+    const expected=projected??before;
+    const receipt=AdminMusicErasureResult.parse({requestId:intent.requestId,target:'admin_music',command:'reset_music',status:'completed',profiles:intent.profiles.length,entries:intent.entries.length});
     const actor=intent.actorRef.startsWith('account:')?intent.actorRef.slice(8):null;
     const appended:Record<string,Record<string,unknown>>={
       privacy_receipts:{request_id:intent.requestId,secret_hash:intent.secretHash,signature:intent.signature,result_json:JSON.stringify(receipt)},
       erasure_applied:{request_id:intent.requestId},
-      music_catalog_actions:{actor_id:actor&&before.prepare('SELECT 1 FROM users WHERE id=?').get(actor)?actor:null,actor_ref:intent.actorRef,command:'reset_music',entry_id:'',target_id:'',affected_profiles:0n,created_at:intent.createdAt},
+      music_catalog_actions:{actor_id:actor&&before.prepare('SELECT 1 FROM users WHERE id=?').get(actor)?actor:null,actor_ref:intent.actorRef,command:'reset_music',entry_id:'',target_id:'',affected_profiles:BigInt(intent.profiles.length),created_at:intent.createdAt},
     };
     if(!forwardEqual(schemaObjects(before),schemaObjects(completed)))throw Error('Native orphan reset source schema differs');
     for(const name of ['user_version','application_id','encoding'])if(!forwardEqual(before.pragma(name,{simple:true}),completed.pragma(name,{simple:true})))throw Error('Native orphan reset source metadata differs');
-    let erasedRows=0;
     for(const table of schemaObjects(before).filter(row=>row.type==='table').map(row=>row.name)){
       const actual=forwardRows(completed,table);let high=0n;
       try{
-        for(const row of forwardRows(before,table)){
+        for(const row of forwardRows(expected,table)){
           high=row.__forward_rowid__>high?row.__forward_rowid__:high;
-          if(scoped(table,row)&&table!=='migration_map'){erasedRows++;continue;}
+          if(scoped(table,row)&&table!=='migration_map')continue;
           const wanted={...row};if(table==='migration_map'&&scoped(table,row))wanted.status='deleted';
           const next=actual.next();if(next.done||!forwardEqual(wanted,next.value))throw Error('Native orphan reset completion row relation differs');
         }
@@ -76,13 +100,17 @@ function openSource(input:NativeOrphanResetSource){
         if(!actual.next().done)throw Error('Native orphan reset completion contains unrelated writes');
       }finally{actual.return?.();}
     }
-    if(!erasedRows)throw Error('Native orphan reset source contains no reset data');
-    return {held,before,completed,intent,erasedRows,close};
+    const globalSourceRows=tables.filter(table=>table!=='migration_map').reduce((count,table)=>count+[...forwardRows(before,table)].filter(row=>scoped(table,row)).length,0);
+    if(!globalSourceRows&&!intent.profiles.length&&!intent.entries.length)throw Error('Native reset source contains no reset data');
+    return {held,before,completed,intent,erasedRows:globalSourceRows,profileProjectionUsesServiceWriter:intent.profiles.length>0,close};
   }catch(error){close();throw error;}
 }
 
 export function verifyNativeOrphanResetSource(input:NativeOrphanResetSource){
   const s=openSource(input);try{return {requestId:s.intent.requestId,beforeSha256:s.held.before.sha256,completedSha256:s.held.completed.sha256,erasedRows:s.erasedRows,allTransitionRowsVerified:true as const,stoppedCaptureCustodyVerified:false as const,allResetGenerationsReconciled:false as const,releaseEligible:false as const};}finally{s.close();}
+}
+export function verifyNativeResetSource(input:NativeResetSource){
+  const s=openSource(input,true);try{return {requestId:s.intent.requestId,beforeSha256:s.held.before.sha256,completedSha256:s.held.completed.sha256,profileScopes:s.intent.profiles.length,entryScopes:s.intent.entries.length,globalSourceRows:s.erasedRows,allTransitionRowsVerified:true as const,profileProjectionUsesServiceWriter:s.profileProjectionUsesServiceWriter,fullPrivateScopeIndependentlyVerified:!s.profileProjectionUsesServiceWriter,stoppedCaptureCustodyVerified:false as const,allResetGenerationsReconciled:false as const,releaseEligible:false as const};}finally{s.close();}
 }
 
 function candidateBoundary(before:DB,completed:DB,db:DB,current:ErasureJournal,completedJournal:Buffer){
@@ -108,10 +136,10 @@ function candidateBoundary(before:DB,completed:DB,db:DB,current:ErasureJournal,c
 
 /** Only a disposable memory candidate in a held transaction may be repaired.
  * Later keys are retained; ambiguous key reuse blocks before the first write. */
-export function repairAppliedNativeOrphanResetGlobal(db:DB,current:ErasureJournal,input:NativeOrphanResetSource){
+function repairGlobal(db:DB,current:ErasureJournal,input:NativeResetSource,general:boolean){
   if(db.name!==':memory:'||!db.inTransaction||db.pragma('foreign_keys',{simple:true})!==1)throw Error('Native orphan reset repair requires a disposable memory image and held foreign-key transaction');
   assertRollbackSource(db);
-  const s=openSource(input);
+  const s=openSource(input,general);
   try{
     candidateBoundary(s.before,s.completed,db,current,s.held.completedJournal.bytes);
     for(const table of tables){
@@ -124,12 +152,14 @@ export function repairAppliedNativeOrphanResetGlobal(db:DB,current:ErasureJourna
     }
   }finally{s.close();}
 }
+export function repairAppliedNativeOrphanResetGlobal(db:DB,current:ErasureJournal,input:NativeOrphanResetSource){return repairGlobal(db,current,input,false);}
+export function repairAppliedNativeResetGlobal(db:DB,current:ErasureJournal,input:NativeResetSource){return repairGlobal(db,current,input,true);}
 
 /** Independent whole-candidate oracle from the frozen pre-reset generation,
  * not the repairer's reported scope or counters. */
-export function reconcileAppliedNativeOrphanResetGlobal(source:DB,candidate:DB,current:ErasureJournal,input:NativeOrphanResetSource){
+function reconcileGlobal(source:DB,candidate:DB,current:ErasureJournal,input:NativeResetSource,general:boolean){
   const reject=():never=>{throw Error('Native orphan reset reconciliation failed; retain all source generations');};
-  const s=openSource(input);
+  const s=openSource(input,general);
   try{
     source.transaction(()=>assertRollbackSource(source)).immediate();
     if(candidate.inTransaction)assertRollbackSource(candidate);else candidate.transaction(()=>assertRollbackSource(candidate)).immediate();
@@ -152,6 +182,8 @@ export function reconcileAppliedNativeOrphanResetGlobal(source:DB,candidate:DB,c
       }finally{actual.return?.();}
     }
     readVerifiedErasureJournal(candidate,current);
-    return {requestId:input.requestId,removedRows,changedRows,retainedRows,allRowsVerified:true as const,stoppedCaptureCustodyVerified:false as const,allResetGenerationsReconciled:false as const,releaseEligible:false as const};
+    return {requestId:input.requestId,removedRows,changedRows,retainedRows,allRowsVerified:true as const,profileProjectionUsesServiceWriter:s.profileProjectionUsesServiceWriter,fullPrivateScopeIndependentlyVerified:!s.profileProjectionUsesServiceWriter,stoppedCaptureCustodyVerified:false as const,allResetGenerationsReconciled:false as const,releaseEligible:false as const};
   }finally{s.close();}
 }
+export function reconcileAppliedNativeOrphanResetGlobal(source:DB,candidate:DB,current:ErasureJournal,input:NativeOrphanResetSource){return reconcileGlobal(source,candidate,current,input,false);}
+export function reconcileAppliedNativeResetGlobal(source:DB,candidate:DB,current:ErasureJournal,input:NativeResetSource){return reconcileGlobal(source,candidate,current,input,true);}

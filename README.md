@@ -1,6 +1,6 @@
 # 群聚看板
 
-重構最新驗證：[原生歷史重置的離線修復](docs/unified-rebuild/158-native-orphan-reset-checkpoint.md)。目前仍在功能分支實作與驗收，尚未部署。
+重構最新驗證：[一般原生重置的來源範圍與離線恢復](docs/unified-rebuild/159-native-reset-scope-checkpoint.md)。目前仍在功能分支實作與驗收，尚未部署。
 
 看板與成分的單一產品重構規劃（2026-11-20，隔離實作中、尚未發布；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。最新檢查點為[退休恢復的原認領證據驗證](docs/unified-rebuild/152-retired-reset-proof-checkpoint.md)，仍在隔離開發與驗收階段。
 

@@ -6,6 +6,7 @@ from contextlib import ExitStack, closing
 from pathlib import Path
 
 root = Path(sys.argv[1])
+expected_changed = int(sys.argv[2]) if len(sys.argv) == 3 else 4
 with ExitStack() as stack:
     before, source, candidate = [stack.enter_context(closing(sqlite3.connect(
         (root / name).as_uri() + '?mode=ro', uri=True)))
@@ -44,7 +45,7 @@ with ExitStack() as stack:
                 changed += 1
             wanted.append(tuple(next_row))
         assert wanted == candidate.execute(query).fetchall(), table
-    assert removed == 7 and changed == 4 and retained > 0
+    assert removed == 7 and changed == expected_changed and retained > 0
     print(json.dumps(dict(allTables=len(tables), removedRows=removed,
                          changedRows=changed, retainedRows=retained,
                          allRowsAndStorageVerified=True)))

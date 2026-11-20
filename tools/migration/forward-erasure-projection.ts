@@ -19,9 +19,9 @@ import {readForwardLegacyResetVault,type LegacyResetVaultInput} from './forward-
 import {pinRollbackTree} from '../../packages/runtime/src/private-source-files';
 import {repairAppliedLegacyResetEntries,reconcileAppliedLegacyResetEntries} from './forward-legacy-reset-entries';
 import {repairAppliedLegacyGlobalReset,reconcileAppliedLegacyGlobalReset} from './forward-legacy-reset-global';
-import {copyNativeOrphanResetSource,verifyNativeOrphanResetSource,repairAppliedNativeOrphanResetGlobal,reconcileAppliedNativeOrphanResetGlobal,type NativeOrphanResetSource} from './forward-native-orphan-reset';
+import {copyNativeOrphanResetSource,verifyNativeOrphanResetSource,repairAppliedNativeOrphanResetGlobal,reconcileAppliedNativeOrphanResetGlobal,verifyNativeResetSource,repairAppliedNativeResetGlobal,reconcileAppliedNativeResetGlobal,type NativeOrphanResetSource,type NativeResetSource} from './forward-native-orphan-reset';
 
-export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string;resetSourceVault?:Pick<LegacyResetVaultInput,'vaultRoot'|'vaultManifestSha256'>;nativeOrphanResetSources?:NativeOrphanResetSource[]};
+export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string;resetSourceVault?:Pick<LegacyResetVaultInput,'vaultRoot'|'vaultManifestSha256'>;nativeOrphanResetSources?:NativeOrphanResetSource[];nativeResetSources?:NativeResetSource[]};
 const sha=z.string().regex(/^[a-f0-9]{64}$/);
 const text=(bytes:Buffer)=>new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);
 const rows=(bytes:Buffer)=>text(bytes).split('\n').filter(row=>row.trim()).map(row=>parseJson(row));
@@ -46,25 +46,28 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
   image(input.checkpoint);image(input.nativeImage);sha.parse(input.nativeImageSha256);sha.parse(input.nativeJournalSha256);
   if(digest(input.nativeImage)!==input.nativeImageSha256||digest(input.nativeJournal)!==input.nativeJournalSha256)throw Error('Forward native source pin differs');
   const sourceIdentity={authorityRoot:input.authorityRoot,manifestSha256:input.manifestSha256,nativeImageSha256:input.nativeImageSha256,nativeJournalSha256:input.nativeJournalSha256},held={checkpoint:Buffer.from(input.checkpoint),nativeImage:Buffer.from(input.nativeImage),nativeJournal:Buffer.from(input.nativeJournal)},authority=readRollbackErasureAuthority(input.authorityRoot,input.manifestSha256);
-  if((input.nativeOrphanResetSources??[]).length>1)throw Error('Multiple native orphan reset generations require explicit ancestry');
+  if((input.nativeOrphanResetSources??[]).length+(input.nativeResetSources??[]).length>1)throw Error('Multiple native reset generations require explicit ancestry');
   const orphanSources=(input.nativeOrphanResetSources??[]).map(copyNativeOrphanResetSource);
+  const fullSources=(input.nativeResetSources??[]).map(copyNativeOrphanResetSource);
   if(new Set(orphanSources.map(row=>row.requestId)).size!==orphanSources.length)throw Error('Native orphan reset source inventory differs');
   orphanSources.forEach(verifyNativeOrphanResetSource);
+  fullSources.forEach(verifyNativeResetSource);
   if(digest(held.checkpoint)!==authority.manifest.checkpointSha256)throw Error('Forward authority checkpoint pin differs');
   const resetBinding=input.resetSourceVault?{vaultRoot:input.resetSourceVault.vaultRoot,vaultManifestSha256:input.resetSourceVault.vaultManifestSha256}:undefined,resetTree=resetBinding?pinRollbackTree(resetBinding.vaultRoot):undefined;
   const legacyVault=authority.records.some(row=>row.version===2)?resetBinding?readForwardLegacyResetVault({authorityRoot:input.authorityRoot,manifestSha256:input.manifestSha256,...resetBinding}):null:null;
   if(authority.records.some(row=>row.version===2)&&(!legacyVault||!legacyVault.vaultEvidence.allRecordedResetCompletionsPresent))throw Error('Structured old reset requires source generation and complete original source vault and results');
   function guarded(){const value:unknown=assertBoundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Forward erasure boundary must be synchronous');if(Object.keys(sourceIdentity).some(key=>input[key as keyof typeof sourceIdentity]!==sourceIdentity[key as keyof typeof sourceIdentity]))throw Error('Forward native source identity changed');for(const key of ['checkpoint','nativeImage','nativeJournal'] as const)if(!Buffer.isBuffer(input[key])||!input[key].equals(held[key]))throw Error('Forward native source bytes changed');if(input.resetSourceVault?.vaultRoot!==resetBinding?.vaultRoot||input.resetSourceVault?.vaultManifestSha256!==resetBinding?.vaultManifestSha256)throw Error('Forward reset vault identity changed');resetTree?.assertUnchanged();authority.assertUnchanged();}
   guarded();validateAuthorityLedger('unified',held.nativeJournal);
-  const guardOrphans=()=>{
-    const current=input.nativeOrphanResetSources??[];
-    if(current.length!==orphanSources.length)throw Error('Native orphan reset source inventory changed');
-    for(const [index,original] of orphanSources.entries()){
-      const row=current[index];if(!row||row.requestId!==original.requestId)throw Error('Native orphan reset source identity changed');
-      for(const key of ['before','beforeJournal','completed','completedJournal'] as const)if(row[key]?.sha256!==original[key].sha256||!Buffer.isBuffer(row[key].bytes)||!row[key].bytes.equals(original[key].bytes))throw Error('Native orphan reset source bytes changed');
+  const guardNativeResetSources=()=>{
+    for(const [current,originals] of [[input.nativeOrphanResetSources??[],orphanSources],[input.nativeResetSources??[],fullSources]]){
+      if(current!.length!==originals!.length)throw Error('Native reset source inventory changed');
+      for(const [index,original] of originals!.entries()){
+        const row=current![index];if(!row||row.requestId!==original.requestId)throw Error('Native reset source identity changed');
+        for(const key of ['before','beforeJournal','completed','completedJournal'] as const)if(row[key]?.sha256!==original[key].sha256||!Buffer.isBuffer(row[key].bytes)||!row[key].bytes.equals(original[key].bytes))throw Error('Native reset source bytes changed');
+      }
     }
   };
-  guardOrphans();
+  guardNativeResetSources();
   if(!authority.ledgers.unified.subarray(0,held.nativeJournal.length).equals(held.nativeJournal))throw Error('Forward native journal has unrecorded bytes');
   const baselines=Object.fromEntries(authority.manifest.baseline.map(row=>{const file=privateFile(join(input.authorityRoot,row.path),64*1024*1024);if(!file.bytes||file.sha256!==row.sha256)throw Error('Forward authority baseline differs');file.assertUnchanged();return [row.domain,file.bytes];})) as Record<'board'|'music'|'unified',Buffer>;
   const baselineMusic=rows(baselines.music) as {qq:string;erased_at:Json}[],baselineTimes=new Map(baselineMusic.map(row=>[row.qq,row.erased_at]));
@@ -81,6 +84,7 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
   }
   const nativeIntents=decodeErasureJournal(text(authority.ledgers.unified)),merged=[...nativeIntents],byRequest=new Map(merged.map(entry=>[erasureRequestId(entry),entry])),added:StoredIntent[]=[],closures=new Set<string>();
   for(const source of orphanSources)if(!nativeIntents.some(intent=>'version' in intent&&intent.version===2&&intent.command==='reset_music'&&intent.requestId===source.requestId&&!intent.profiles.length&&!intent.entries.length))throw Error('Native orphan reset source is outside the original authority');
+  for(const source of fullSources)if(!nativeIntents.some(intent=>'version' in intent&&intent.version===2&&intent.command==='reset_music'&&intent.requestId===source.requestId))throw Error('Native reset source is outside the original authority');
   for(const entry of decodeErasureJournal(text(authority.ledgers.board))){if(!('user_id' in entry))throw Error('Original board closure required');closures.add(entry.user_id);const previous=byRequest.get(entry.request_id);
     if(previous){const closure='user_id' in previous?previous:previous.version===1&&previous.kind!=='music'?{user_id:previous.userId,request_id:previous.requestId,created_at:previous.createdAt}:null;if(canonical(closure)!==canonical(entry))throw Error('Forward account request identity conflicts');}
     else{byRequest.set(entry.request_id,entry);merged.push(entry);added.push(entry);}
@@ -182,6 +186,17 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         }).immediate());
       }finally{resetSource.close();}
     }
+    const nativeGlobalResetRepairs:ReturnType<typeof reconcileAppliedNativeResetGlobal>[]=[];
+    for(const source of fullSources){
+      const resetSource=new Database(db.serialize());
+      try{
+        resetSource.pragma('foreign_keys = ON');
+        nativeGlobalResetRepairs.push(db.transaction(()=>{
+          repairAppliedNativeResetGlobal(db,mergedJournal,source);
+          return reconcileAppliedNativeResetGlobal(resetSource,db,mergedJournal,source);
+        }).immediate());
+      }finally{resetSource.close();}
+    }
     if(legacyVault){
       const resetSource=new Database(db.serialize());
       try{
@@ -203,6 +218,6 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         }).immediate();
       }finally{resetSource.close();}
     }
-    guarded();guardOrphans();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,nativeOrphanResetRepairs,legacyResetEntryRepair,legacyGlobalResetRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
+    guarded();guardNativeResetSources();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,nativeOrphanResetRepairs,nativeGlobalResetRepairs,legacyResetEntryRepair,legacyGlobalResetRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
   }finally{db.close();fixed.close();}
 }
