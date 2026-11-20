@@ -197,7 +197,7 @@ it('projects an authority-bound full native reset while preserving later profile
  beforeDb.prepare("INSERT INTO music_shouts(rowid,id,profile_id,legacy_key,name,body,created_at,archived_at,ordinal) VALUES(?,'full-reset-anonymous',NULL,'anonymous','匿名','原全站歷史',1001.25,NULL,900)").run(shoutRowid);
  beforeDb.prepare("INSERT INTO music_documents(rowid,kind,position,payload_json) VALUES(?,'trend_sample',987,'{\"t\":1001.25,\"counts\":{}}')").run(documentRowid);
  const epoch=(beforeDb.prepare("SELECT epoch FROM music_account_epochs WHERE user_id='alice'").get() as {epoch:number}|undefined)?.epoch??0,later=saveProfile(beforeDb,'alice',{profileId:null,revision:0,musicEpoch:epoch,selections:[]},new Date('2026-11-21T04:00:00.000Z'));
- beforeDb.prepare("INSERT INTO music_entries VALUES('full-reset-later-entry','後來詞條','sub')").run();
+ beforeDb.prepare("INSERT INTO music_entries(rowid,id,name,kind) VALUES(5000,'full-reset-later-entry','後來詞條','sub')").run();
  beforeDb.prepare("INSERT INTO music_shouts VALUES('full-reset-later-shout',?,'','後來成分','後來留言',2001.25,NULL,901)").run(later.id);
  beforeDb.exec("INSERT INTO music_documents VALUES('trend_sample',988,'{\"t\":2001.25,\"counts\":{}}')");
  s.input.nativeImage=beforeDb.serialize();s.input.nativeImageSha256=digest(s.input.nativeImage);s.input.nativeResetSources=[evidence];
@@ -217,6 +217,15 @@ it('projects an authority-bound full native reset while preserving later profile
  const rejectedSource=Buffer.from(rewound.nativeImage);
  expect(()=>projectNativeForwardErasures(rewound)).toThrow('owner epoch rewound below completion');
  expect(rewound.nativeImage).toEqual(rejectedSource);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
+ const reused:ForwardErasureInput={...s.input,nativeImage:Buffer.from(s.input.nativeImage)},originalEntries=new Database(evidence.before.bytes);cleanup.push(()=>originalEntries.close());
+ const originalEntry=originalEntries.prepare('SELECT rowid AS original_rowid,id,name,kind FROM music_entries ORDER BY rowid DESC LIMIT 1').safeIntegers(true).get() as {original_rowid:bigint;id:string;name:string;kind:string};
+ changeImage(reused,image=>{
+   image.prepare('INSERT INTO music_entries(rowid,id,name,kind) VALUES(?,?,?,?)').run(originalEntry.original_rowid,originalEntry.id,originalEntry.name,originalEntry.kind);
+   image.prepare('INSERT INTO music_selections VALUES(?,?,4,0)').run(later.id,originalEntry.id);
+ });
+ const rejectedRelationshipSource=Buffer.from(reused.nativeImage);
+ expect(()=>projectNativeForwardErasures(reused)).toThrow('original entry relationship changed');
+ expect(reused.nativeImage).toEqual(rejectedRelationshipSource);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
  const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));expect(result.report.remaining).toContain('native_global_reset_generations');
  expect(()=>projectNativeForwardErasures({...s.input,nativeOrphanResetSources:[evidence]})).toThrow('Multiple native reset generations');
  const bytes=Buffer.from(evidence.completed.bytes);expect(()=>projectNativeForwardErasures(s.input,()=>{evidence.completed.bytes[100]=evidence.completed.bytes[100]!^1;})).toThrow('source bytes changed');evidence.completed.bytes=bytes;
