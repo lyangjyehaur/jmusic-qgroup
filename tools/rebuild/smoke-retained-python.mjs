@@ -53,10 +53,15 @@ child.stdout.on('data', bytes => { logs = (logs + bytes).slice(-32768); });
 child.stderr.on('data', bytes => { logs = (logs + bytes).slice(-32768); });
 const closed = new Promise(resolve => child.once('exit', (code, signal) => { stopped = true; resolve({ code, signal }); }));
 const rows = (sql, ...values) => { const db = new Database(database, { readonly: true }); try { return db.prepare(sql).all(...values); } finally { db.close(); } };
-const python = (mode, id) => JSON.parse(execFileSync('python3', [fixture, pythonSource, database, mode, id, origin], {
-  env: { PATH: process.env.PATH, PYTHONDONTWRITEBYTECODE: '1', KANBAN_BOT_BASE_URL: origin },
-  encoding: 'utf8', timeout: 15000, maxBuffer: 8 * 1024 * 1024,
-}));
+let httpCalls = 0, originalWorkerInvocations = 0;
+const request = (...args) => { httpCalls++; return fetch(...args); };
+const python = (mode, id) => {
+  originalWorkerInvocations++;
+  return JSON.parse(execFileSync('python3', [fixture, pythonSource, database, mode, id, origin], {
+    env: { PATH: process.env.PATH, PYTHONDONTWRITEBYTECODE: '1', KANBAN_BOT_BASE_URL: origin },
+    encoding: 'utf8', timeout: 15000, maxBuffer: 8 * 1024 * 1024,
+  }));
+};
 try {
   let ready = false;
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -66,13 +71,13 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   assert(ready, logs);
-  const scenario = await exerciseRetainedPython({ origin, rescue, rows, python });
+  const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, fetch: request });
   child.kill('SIGTERM'); const exit = await closed; assert.equal(exit.code, 0, logs);
   const afterPins = sourceFiles.map(path => ({ path, sha256: hash(readFileSync(join(pythonSource, path))) })); assert.deepEqual(afterPins, pythonPins);
   assert.equal(hash(readFileSync(fixture)), fixtureSha256);
   assert.equal(hash(readFileSync(scenarioPath)), scenarioSha256);
   assert.deepEqual(runtimePins.map(({ path }) => ({ path, sha256: hash(readFileSync('.rebuild-dist/' + path)) })), runtimePins);
-  console.log(JSON.stringify({ version: 1, pythonCommit, pythonSourcePins: pythonPins, runtimePins, fixtureSha256, scenarioSha256, ...scenario,
+  console.log(JSON.stringify({ version: 1, pythonCommit, pythonSourcePins: pythonPins, runtimePins, fixtureSha256, scenarioSha256, ...scenario, httpCalls, originalWorkerInvocations,
     networkTransport: 'denied', actualQQ: false, actualProductionImageCombination: false, scope: 'none', releaseEligible: false, gracefulStop: true }));
 } finally {
   if (!stopped) { child.kill('SIGTERM'); const timer = setTimeout(() => child.kill('SIGKILL'), 10000); try { await closed; } finally { clearTimeout(timer); } }

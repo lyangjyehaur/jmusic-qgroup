@@ -36,7 +36,8 @@ if mode != 'inspect':
         log_dir=database.parent / 'synthetic-logs', log_content=False,
         verbose_events=False)
     api = Mock()
-    api.post.return_value = (True, 0, dict(id='SYNTHETIC_ONLY'))
+    api.post.side_effect = lambda path, body: (True, 0,
+        dict(file_info='SYNTHETIC_FILE') if path.endswith('/files') else dict(id='SYNTHETIC_ONLY'))
     consumer = worker.OutboxWorker(config, api)
     result.update(first=consumer.poll_once(), second=consumer.poll_once(),
                   calls=[dict(path=c.args[0], body=c.args[1]) for c in api.post.call_args_list])
