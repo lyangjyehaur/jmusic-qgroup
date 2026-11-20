@@ -38,7 +38,7 @@ const limits = ['--network', 'none', '--read-only', '--cap-drop', 'ALL', '--secu
   '--memory', '512m', '--memory-swap', '512m', '--cpus', '1', '--pids-limit', '128',
   '--tmpfs', '/tmp:rw,nosuid,nodev,noexec,size=64m', '--platform', 'linux/' + specs[0].Architecture];
 const sourceProbe = String.raw`
-import hashlib,json,os,pathlib,sys
+import asyncio,hashlib,importlib.metadata,json,os,pathlib,socket,sys
 root=pathlib.Path('/app/original-python'); manifest=json.loads(pathlib.Path('/app/retained-source.json').read_text())
 actual=[]
 for path in sorted(root.rglob('*')):
@@ -48,7 +48,16 @@ assert actual == manifest['pythonSourcePins']
 assert len(actual)==55 and manifest['pythonCommit']=='8da877857f163853c449474e168534e2e493121b'
 fixture=hashlib.sha256(pathlib.Path('/app/retained-python-fixture.py').read_bytes()).hexdigest()
 assert fixture == manifest['fixtureSha256']
-print(json.dumps(dict(manifest=manifest,manifestSha256=hashlib.sha256(pathlib.Path('/app/retained-source.json').read_bytes()).hexdigest(),fixtureSha256=fixture,uid=os.getuid(),gid=os.getgid(),python=sys.version)))
+assert hashlib.sha256(pathlib.Path('/app/original-Dockerfile').read_bytes()).hexdigest() == manifest['originalDockerfileSha256']
+assert manifest['dependency'] == dict(name='websockets',version='17.4')
+assert importlib.metadata.version('websockets') == '17.4'
+def denied(*_args, **_kwargs): raise AssertionError('Source probe cannot use network')
+socket.socket=denied
+sys.path.insert(0,str(root))
+from qgroup_bot import main
+assert pathlib.Path(main.__file__).resolve() == root / 'qgroup_bot/main.py'
+assert callable(main.ws_connect())
+print(json.dumps(dict(manifest=manifest,manifestSha256=hashlib.sha256(pathlib.Path('/app/retained-source.json').read_bytes()).hexdigest(),fixtureSha256=fixture,gatewayDependencyAvailable=True,dependencyVersion='17.4',networkTransport='denied',uid=os.getuid(),gid=os.getgid(),python=sys.version)))
 `;
 const containers = [], ownedContainers = [], volumes = []; let failure, result;
 function cleanupOwned() {

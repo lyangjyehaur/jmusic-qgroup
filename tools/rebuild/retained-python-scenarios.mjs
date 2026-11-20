@@ -31,6 +31,14 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
     const frozen = rows('SELECT * FROM bot_outbox WHERE event_id=? ORDER BY id', draft.id);
     assert.equal(frozen.filter(r => r.kind === 'activity_published').length, 1); assert.equal(frozen.filter(r => r.due_at).length, 2);
     const data = python(mode, draft.id);
+    const dispatchExpected = { aliases: 54, passiveMockReplies: mode === 'dry-run' ? 0 : 55,
+      originalReplyBodiesVerified: mode === 'dry-run' ? null : true,
+      callbackMockAcks: 2, readyAndResumed: true, duplicateEventsSuppressed: true,
+      callbackAckBeforeReply: mode === 'dry-run' ? null : true,
+      originalOuterEventIdPreserved: mode === 'dry-run' ? null : true, callbackReplySuppressed: mode === 'dry-run',
+      deniedGroupsNeverReplied: true, ignoredMessagesNeverReplied: true,
+      privateIdentityRestriction: true, actualTransportCalls: 0 };
+    assert.deepEqual(data.dispatch, dispatchExpected);
     assert.deepEqual(data.first, { ...emptyPoll, claimed: 1, sent, simulated });
     assert.deepEqual(data.second, emptyPoll);
     assert.equal(data.queries.length, 54); assert.equal(new Set(data.queries.map(row => row.alias)).size, 54);
@@ -50,6 +58,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
     assert.deepEqual(preview.allocation.map(row => row.status), ['confirmed', 'waiting']);
     const joined = await post('/activities/' + draft.id + '/registration', { ...input, conditionsVersion: preview.conditionsVersion, previewToken: preview.token, acceptConditions: true, acceptPartial: true, confirm: true });
     const signup = python(mode, draft.id); assert.equal(signup.first.failed, 0); assert.equal(signup.second.claimed, 0);
+    assert.deepEqual(signup.dispatch, dispatchExpected);
     assert.deepEqual(signup.first, { ...emptyPoll, claimed: 1, sent, simulated });
     assert.deepEqual(signup.second, emptyPoll); assert.equal(signup.calls.length, sent);
     const owner = rows('SELECT id FROM attendees WHERE event_id=? AND user_id=?', draft.id, 'alice')[0];
@@ -59,6 +68,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
     assert.equal(newRows.filter(row => row.channel === 'group' && row.kind === 'registration_changed').length, 1);
     assert.deepEqual(rows('SELECT status FROM attendees WHERE event_id=? ORDER BY seq', draft.id).map(row => row.status), ['withdrawn', 'confirmed', 'confirmed']);
     const withdrawal = python(mode, draft.id); assert.equal(withdrawal.first.failed, 0); assert.equal(withdrawal.second.claimed, 0);
+    assert.deepEqual(withdrawal.dispatch, dispatchExpected);
     assert.deepEqual(withdrawal.first, { ...emptyPoll, claimed: 2, sent, simulated, skipped: 1 });
     assert.deepEqual(withdrawal.second, emptyPoll);
     assert.equal(withdrawal.calls.length, mode === 'dry-run' ? 0 : 1);
@@ -71,7 +81,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
     assert(data.mine.includes('尚未绑定')); assert(!JSON.stringify(data.queries).includes('synthetic-retained-'));
     for (const url of JSON.stringify(data).match(/http:\/\/127\.0\.0\.1:\d+[^\s"\\<>]*/g) ?? []) linkChecks.add(url.replace(/[)\]，。；]+$/, ''));
     results.push({ mode, eventId: draft.id, nativePublication: true, originalReceiptReplayed: true,
-      aliases: data.queries.length, first: data.first, second: data.second, signup: signup.first, withdrawalAndPromotion: withdrawal.first,
+      aliases: data.queries.length, dispatch: data.dispatch, first: data.first, second: data.second, signup: signup.first, withdrawalAndPromotion: withdrawal.first,
       singleCombinedWithdrawalCard: true, privateNoticesNeverForwarded: true, actualTransportCalls: 0,
       publicationMockCalls: data.calls.length, totalMockCalls: data.calls.length + signup.calls.length + withdrawal.calls.length,
       appliedPolicyRevision: data.revision, futureRemindersUnchanged: true });

@@ -32,11 +32,15 @@ const pythonSourcePins = paths.map(path => {
   return { path, sha256: digest(bytes) };
 });
 const fixture = readFileSync(join(source, inputs[0]));
+const originalDockerfile = git('show', pythonCommit + ':Dockerfile');
+assert(originalDockerfile.toString().includes('"websockets==17.4"'));
+writeFileSync(join(output, 'original-Dockerfile'), originalDockerfile, { mode: 0o644, flag: 'wx' });
 writeFileSync(join(output, 'retained-python-fixture.py'), fixture, { mode: 0o644, flag: 'wx' });
 writeFileSync(join(output, 'Dockerfile'), readFileSync(join(source, inputs[1])), { mode: 0o644, flag: 'wx' });
 const manifest = { version: 1, kind: 'qgroup-retained-python-rehearsal', pythonCommit,
   verificationCommit: metadata.commit, verificationTree: metadata.tree,
-  pythonSourcePins, fixtureSha256: digest(fixture), inputs: inputs.map(path => ({ path, sha256: digest(readFileSync(join(source, path))) })),
+  pythonSourcePins, originalDockerfileSha256: digest(originalDockerfile), dependency: { name: 'websockets', version: '17.4' },
+  fixtureSha256: digest(fixture), inputs: inputs.map(path => ({ path, sha256: digest(readFileSync(join(source, path))) })),
   actualOnlineBotVersionKnown: false, actualQQ: false, releaseEligible: false };
 writeFileSync(join(output, 'retained-source.json'), JSON.stringify(manifest, null, 2) + '\n', { mode: 0o644, flag: 'wx' });
 process.stdout.write(JSON.stringify(manifest) + '\n');
