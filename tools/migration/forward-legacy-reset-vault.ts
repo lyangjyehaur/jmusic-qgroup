@@ -8,8 +8,8 @@ import {verifyForwardLegacyResetSources,type LegacyResetSourceInput} from './for
 
 export type LegacyResetVaultInput={authorityRoot:string;manifestSha256:string;vaultRoot:string;vaultManifestSha256:string};
 const sha=z.string().regex(/^[a-f0-9]{64}$/),receipt=z.object({version:z.literal(1),vaultSha256:sha,authoritySha256:sha,checkpointSha256:sha,
-  sources:z.array(z.object({sequence:z.number().int().positive().safe().max(100000),persisted:z.string().max(90*1024*1024),loaded:z.string().max(90*1024*1024),snapshotSha256:sha,captureId:z.string().regex(/^[a-f0-9]{32}$/)}).strict()).max(1000),
-  unboundOrDuplicateCapturesRetained:z.number().int().nonnegative().safe().max(1000),allRecordedResetSourcesPresent:z.literal(true),externalRetentionVerified:z.literal(false),releaseEligible:z.literal(false)}).strict();
+  sources:z.array(z.object({sequence:z.number().int().positive().safe().max(100000),persisted:z.string().max(90*1024*1024),loaded:z.string().max(90*1024*1024),snapshotSha256:sha,captureId:z.string().regex(/^[a-f0-9]{32}$/),completion:z.object({authorityRecordSha256:sha,result:z.string().max(90*1024*1024),completionSha256:sha}).strict().nullable()}).strict()).max(1000),
+  unboundOrDuplicateCapturesRetained:z.number().int().nonnegative().safe().max(1000),allRecordedResetSourcesPresent:z.literal(true),allRecordedResetCompletionsPresent:z.boolean(),externalRetentionVerified:z.literal(false),releaseEligible:z.literal(false)}).strict();
 const script=`import json,sys
 sys.path.insert(0,sys.argv[1])
 from tools.migration.rollback_reset_source_vault import _read_vault_offline
@@ -34,11 +34,17 @@ export function readForwardLegacyResetVault(input:LegacyResetVaultInput,boundary
   try{result=receipt.parse(JSON.parse(execFileSync('python3',['-I','-c',script,fileURLToPath(new URL('../../',import.meta.url))],{input:payload,encoding:'utf8',timeout:30000,maxBuffer:192*1024*1024,stdio:['pipe','pipe','pipe']})));}catch{throw Error('Original reset source vault verification failed; retain private captures');}
   if(result.vaultSha256!==held.vaultManifestSha256||result.authoritySha256!==held.manifestSha256||result.checkpointSha256!==authority.manifest.checkpointSha256)throw Error('Original reset vault receipt binding differs');
   let total=0;
+  const decode=(raw:string)=>{
+    const bytes=Buffer.from(raw,'base64');total+=bytes.length;
+    if(bytes.toString('base64')!==raw||bytes.length>64*1024*1024||total>128*1024*1024)throw Error('Original reset vault source bytes exceed supported scope');
+    return bytes;
+  };
   const sources:LegacyResetSourceInput={authorityRoot:held.authorityRoot,manifestSha256:held.manifestSha256,resets:result.sources.map(row=>({sequence:row.sequence,...Object.fromEntries((['persisted','loaded'] as const).map(key=>{
-    const bytes=Buffer.from(row[key],'base64');total+=bytes.length;
-    if(bytes.toString('base64')!==row[key]||bytes.length>64*1024*1024||total>128*1024*1024)throw Error('Original reset vault source bytes exceed supported scope');
+    const bytes=decode(row[key]);
     return [key,{bytes,sha256:forwardHash(bytes)}];
   }))})) as LegacyResetSourceInput['resets']};
+  const completionSources=result.sources.flatMap(row=>row.completion?[{sequence:row.sequence,authorityRecordSha256:row.completion.authorityRecordSha256,completionSha256:row.completion.completionSha256,bytes:decode(row.completion.result)}]:[]);
+  if(result.allRecordedResetCompletionsPresent!==(completionSources.length===sources.resets.length))throw Error('Original reset completion inventory differs');
   guard();const verification=verifyForwardLegacyResetSources(sources);guard();
-  return {sources,verification,vaultEvidence:{version:1 as const,vaultSha256:held.vaultManifestSha256,authoritySha256:held.manifestSha256,captures:result.sources.map(row=>({sequence:row.sequence,captureId:row.captureId,snapshotSha256:row.snapshotSha256})),unboundOrDuplicateCapturesRetained:result.unboundOrDuplicateCapturesRetained,allRecordedResetSourcesPresent:true as const,externalRetentionVerified:false as const,releaseEligible:false as const}};
+  return {sources,completionSources,verification,vaultEvidence:{version:1 as const,vaultSha256:held.vaultManifestSha256,authoritySha256:held.manifestSha256,captures:result.sources.map(row=>({sequence:row.sequence,captureId:row.captureId,snapshotSha256:row.snapshotSha256})),unboundOrDuplicateCapturesRetained:result.unboundOrDuplicateCapturesRetained,allRecordedResetSourcesPresent:true as const,allRecordedResetCompletionsPresent:result.allRecordedResetCompletionsPresent,externalRetentionVerified:false as const,releaseEligible:false as const}};
 }

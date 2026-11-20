@@ -142,27 +142,28 @@ class ResetSourceVault:
         self.manifest = _manifest(raw, authority.pin, authority._manifest()['checkpointSha256'])
         self.fault_hook = fault_hook; self.snapshots = []; self._guard()
 
-    def _guard(self):
+    def _guard(self, pending=None):
         _isolated(self.root, self.manifest['protectedRoots'] + _roots(self.authority))
         if _directory(self.root.parent) != self.parent or _directory(self.root) != self.identity or _identity((self.root / 'vault-manifest.json').lstat()) != self.header_identity:
             raise ValueError('Reset vault declaration or directory changed')
         for path, identity, files in self.snapshots:
-            _assert_snapshot(path, identity, files)
+            _assert_snapshot(path, identity, files, pending[1] if pending and pending[0] == path else None)
 
-    def _budget(self, incoming):
+    def _budget(self, incoming, completing=False):
         total = incoming; names = sorted(item.name for item in self.root.iterdir())
         captures = [name for name in names if name.startswith('capture-') and len(name) == 40 and all(c in '0123456789abcdef' for c in name[8:])]
-        if names != sorted(['vault-manifest.json'] + captures) or len(captures) >= 1000:
+        if names != sorted(['vault-manifest.json'] + captures) or len(captures) > 1000 or not completing and len(captures) == 1000:
             raise ValueError('Reset vault capture inventory differs or exceeds capacity')
         for name in captures:
             path = self.root / name; _directory(path)
-            if sorted(item.name for item in path.iterdir()) != ['loaded.json', 'persisted.json', 'snapshot.json']:
+            files = sorted(item.name for item in path.iterdir())
+            if files not in (['loaded.json', 'persisted.json', 'snapshot.json'], ['completion.json', 'loaded.json', 'persisted.json', 'result.json', 'snapshot.json']):
                 raise ValueError('Prior reset source capture is incomplete; retain for review')
-            for file in ('persisted.json', 'loaded.json', 'snapshot.json'):
+            for file in files:
                 info = (path / file).lstat()
-                if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1 or info.st_uid != os.getuid() or info.st_size > (16 * 1024 if file == 'snapshot.json' else LIMIT):
+                if not stat.S_ISREG(info.st_mode) or stat.S_IMODE(info.st_mode) != 0o600 or info.st_nlink != 1 or info.st_uid != os.getuid() or info.st_size > (16 * 1024 if file in ('snapshot.json', 'completion.json') else LIMIT):
                     raise ValueError('Prior reset source metadata differs')
-                if file != 'snapshot.json':
+                if file not in ('snapshot.json', 'completion.json'):
                     total += info.st_size
         if total > TOTAL:
             raise ValueError('Reset source vault exceeds supported total size')
@@ -208,25 +209,68 @@ class ResetSourceVault:
                 self._fault('before_' + stage, path); files[file] = _new_file(directory_fd, file, raw, guard)
                 os.fsync(directory_fd); os.fsync(root_fd)
                 if stage == 'snapshot':
-                    self.snapshots.append((path, identity, dict(files)))
+                    self.snapshots.append((path, identity, files))
                 self._fault(stage + '_fsynced', path); guard()
             def assert_captured():
                 guard()
                 _assert_snapshot(path, identity, files)
             assert_captured()
-            return dict(path=str(path), snapshotSha256=_sha(_encode(snapshot)), assertCaptured=assert_captured)
+            def complete(recorded, result, loaded_result):
+                if not self.authority.depth:
+                    raise ValueError('Reset completion requires held original authority')
+                assert_captured(); _completed_result(result)
+                if _encode(_json(result)) != _encode(loaded_result):
+                    raise ValueError('Original reset result and loaded state differ')
+                head, _ = self.authority._read(finish_record=False)
+                if recorded != dict(sequence=snapshot['sequence'], recordSha256=head['recordSha256']) or head['sequence'] != snapshot['sequence']:
+                    raise ValueError('Reset completion record binding differs')
+                record = next((row for row in self.authority._music_reset_records if row['sequence'] == snapshot['sequence']), None)
+                if not record or record['recordSha256'] != recorded['recordSha256'] or _sha(_encode(record['operation'])) != snapshot['operationSha256']:
+                    raise ValueError('Reset completion operation differs')
+                self._budget(len(result), completing=True)
+                declaration = dict(version=1, kind='qgroup-original-legacy-reset-completion',
+                                   captureId=capture_id, snapshotSha256=_sha(_encode(snapshot)),
+                                   authorityRecordSha256=recorded['recordSha256'], sequence=recorded['sequence'],
+                                   result=dict(size=len(result), sha256=_sha(result)),
+                                   allFiveContainersEmpty=True, resetGenerationsReconciled=False, releaseEligible=False)
+                fd = os.open(path, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW)
+                try:
+                    if (os.fstat(fd).st_dev, os.fstat(fd).st_ino) != identity:
+                        raise ValueError('Reset completion directory changed before open')
+                    for file, raw, stage in [('result.json', result, 'result'), ('completion.json', _encode(declaration), 'completion')]:
+                        def completion_guard():
+                            self._guard((path, file))
+                        self._fault('before_' + stage, path)
+                        files[file] = _new_file(fd, file, raw, completion_guard)
+                        os.fsync(fd); self._fault(stage + '_fsynced', path); self._guard()
+                    assert_captured()
+                    return dict(completionSha256=_sha(_encode(declaration)), resetGenerationsReconciled=False, releaseEligible=False)
+                finally:
+                    os.close(fd)
+            return dict(path=str(path), snapshotSha256=_sha(_encode(snapshot)), assertCaptured=assert_captured, complete=complete)
         finally:
             if directory_fd is not None:
                 os.close(directory_fd)
             os.close(root_fd)
 
 
-def _assert_snapshot(path, identity, files):
-    if _directory(path) != identity or sorted(item.name for item in path.iterdir()) != sorted(files):
+def _assert_snapshot(path, identity, files, pending=None):
+    names = sorted(item.name for item in path.iterdir())
+    if _directory(path) != identity or names not in (sorted(files), sorted(set(files) | ({pending} if pending else set()))):
         raise ValueError('Original reset capture inventory changed')
     for file, before in files.items():
         if _identity((path / file).lstat()) != before:
             raise ValueError('Original reset capture file changed')
+
+
+def _completed_result(raw):
+    if not isinstance(raw, bytes) or len(raw) > LIMIT:
+        raise ValueError('Bound original reset result bytes required')
+    value = _json(raw)
+    if not isinstance(value, dict) or any(value.get(key) != empty or type(value.get(key)) is not type(empty)
+                                          for key, empty in [('entries', {}), ('members', {}), ('shouts', []), ('shoutHistory', []), ('trend', [])]):
+        raise ValueError('Original reset completion has uncleared containers')
+    return value
 
 
 def _manifest(raw, authority_pin, checkpoint_pin):
@@ -252,11 +296,13 @@ def _read_vault_offline(root, pin, view):
     if names != sorted(['vault-manifest.json'] + captures) or len(captures) > 1000:
         raise ValueError('Original reset vault inventory differs')
     wanted = {row['record']['sequence']: row for row in view['records'] if row['record']['version'] == 2}
-    found = {}; retained = 0; total = 0; held = []
+    found = {}; retained = 0; total = 0; held = []; folders = []
     for name in captures:
         folder = root / name; folder_identity = _directory(folder)
-        if sorted(item.name for item in folder.iterdir()) != ['loaded.json', 'persisted.json', 'snapshot.json']:
+        files = sorted(item.name for item in folder.iterdir())
+        if files not in (['loaded.json', 'persisted.json', 'snapshot.json'], ['completion.json', 'loaded.json', 'persisted.json', 'result.json', 'snapshot.json']):
             raise ValueError('Original reset source capture is incomplete')
+        folders.append((folder, folder_identity, files))
         raw, saved = _file(folder / 'snapshot.json', 16 * 1024); snapshot = _json(raw)
         _keys(snapshot, ['version', 'kind', 'captureId', 'vaultSha256', 'authoritySha256', 'checkpointSha256', 'sequence', 'previousRecordSha256', 'operationSha256', 'persisted', 'loaded', 'releaseEligible'])
         if type(snapshot['version']) is not int or snapshot['version'] != 1 or snapshot['kind'] != 'qgroup-original-legacy-reset-snapshot' or snapshot['captureId'] != name[8:] or snapshot['vaultSha256'] != pin or snapshot['authoritySha256'] != view['authoritySha256'] or snapshot['checkpointSha256'] != view['checkpointSha256'] or type(snapshot['sequence']) is not int or not 1 <= snapshot['sequence'] <= 100000 or snapshot['releaseEligible'] is not False or _encode(snapshot) != raw:
@@ -273,13 +319,31 @@ def _read_vault_offline(root, pin, view):
             if len(value) != descriptor['size'] or _sha(value) != descriptor['sha256']:
                 raise ValueError('Original reset source capture bytes differ')
             data[key] = value; held.append((folder / (key + '.json'), file_identity))
-        held.append((folder / 'snapshot.json', saved)); held.append((folder, folder_identity))
+        held.append((folder / 'snapshot.json', saved)); completion = None
+        if 'completion.json' in files:
+            completed_raw, completed_identity = _file(folder / 'completion.json', 16 * 1024); completed = _json(completed_raw)
+            _keys(completed, ['version', 'kind', 'captureId', 'snapshotSha256', 'authorityRecordSha256', 'sequence', 'result', 'allFiveContainersEmpty', 'resetGenerationsReconciled', 'releaseEligible'])
+            if type(completed['version']) is not int or completed['version'] != 1 or completed['kind'] != 'qgroup-original-legacy-reset-completion' or completed['captureId'] != snapshot['captureId'] or completed['snapshotSha256'] != _sha(raw) or type(completed['sequence']) is not int or completed['sequence'] != snapshot['sequence'] or completed['allFiveContainersEmpty'] is not True or completed['resetGenerationsReconciled'] is not False or completed['releaseEligible'] is not False or _encode(completed) != completed_raw:
+                raise ValueError('Original reset completion binding differs')
+            _pin(completed['authorityRecordSha256']); descriptor = completed['result']; _keys(descriptor, ['size', 'sha256']); _pin(descriptor['sha256'])
+            if type(descriptor['size']) is not int or not 0 <= descriptor['size'] <= LIMIT:
+                raise ValueError('Original reset completion result size differs')
+            total += descriptor['size']
+            if total > TOTAL:
+                raise ValueError('Original reset vault exceeds supported total size')
+            result, result_identity = _file(folder / 'result.json', LIMIT)
+            if len(result) != descriptor['size'] or _sha(result) != descriptor['sha256']:
+                raise ValueError('Original reset completion result bytes differ')
+            _completed_result(result); held.extend([(folder / 'result.json', result_identity), (folder / 'completion.json', completed_identity)])
+            completion = dict(authorityRecordSha256=completed['authorityRecordSha256'], result=base64.b64encode(result).decode(), completionSha256=_sha(completed_raw))
         row = wanted.get(snapshot['sequence']); record = row['record'] if row else None
         if not record or snapshot['previousRecordSha256'] != record['previousRecordSha256'] or snapshot['operationSha256'] != _sha(_encode(record['operation'])):
             retained += 1; continue
         verify_legacy_music_reset_sources(record['operation'], data['persisted'], data['loaded'])
+        if completion and completion['authorityRecordSha256'] != row['recordSha256']:
+            raise ValueError('Original reset completion authority record differs')
         if snapshot['sequence'] not in found:
-            found[snapshot['sequence']] = dict(sequence=snapshot['sequence'], persisted=base64.b64encode(data['persisted']).decode(), loaded=base64.b64encode(data['loaded']).decode(), snapshotSha256=_sha(raw), captureId=snapshot['captureId'])
+            found[snapshot['sequence']] = dict(sequence=snapshot['sequence'], persisted=base64.b64encode(data['persisted']).decode(), loaded=base64.b64encode(data['loaded']).decode(), snapshotSha256=_sha(raw), captureId=snapshot['captureId'], completion=completion)
         else:
             retained += 1
     if set(found) != set(wanted):
@@ -287,11 +351,12 @@ def _read_vault_offline(root, pin, view):
     if _directory(root) != identity or _directory(root.parent) != parent or _identity((root / 'vault-manifest.json').lstat()) != header_identity or sorted(item.name for item in root.iterdir()) != names:
         raise ValueError('Original reset vault changed during reading')
     for path, saved in held:
-        if len(saved) == 2:
-            if _directory(path) != saved or sorted(item.name for item in path.iterdir()) != ['loaded.json', 'persisted.json', 'snapshot.json']:
-                raise ValueError('Original reset source capture directory changed')
-        elif _identity(path.lstat()) != saved:
+        if _identity(path.lstat()) != saved:
             raise ValueError('Original reset source capture changed during reading')
+    for path, saved, files in folders:
+        if _directory(path) != saved or sorted(item.name for item in path.iterdir()) != files:
+            raise ValueError('Original reset source capture directory changed')
     return dict(version=1, vaultSha256=pin, authoritySha256=view['authoritySha256'], checkpointSha256=view['checkpointSha256'],
                 sources=[found[key] for key in sorted(found)], unboundOrDuplicateCapturesRetained=retained,
-                allRecordedResetSourcesPresent=True, externalRetentionVerified=False, releaseEligible=False)
+                allRecordedResetSourcesPresent=True, allRecordedResetCompletionsPresent=all(row['completion'] for row in found.values()),
+                externalRetentionVerified=False, releaseEligible=False)

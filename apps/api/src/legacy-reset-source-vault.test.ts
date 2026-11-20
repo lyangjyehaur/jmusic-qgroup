@@ -35,7 +35,21 @@ if case=='total capacity':
 def fault(stage,path):
  if case==stage:os._exit(77)
  if case=='vault write failure' and stage=='before_persisted':(path/'persisted.json').symlink_to(music/'identity.sqlite3')
+ if case=='unsafe result permissions' and stage=='snapshot_fsynced':os.umask(0o022)
+ if case=='completion write failure' and stage=='before_result':(path/'result.json').symlink_to(music/'identity.sqlite3')
+ if case=='completion capacity' and stage=='snapshot_fsynced':
+  import tools.migration.rollback_reset_source_vault as module
+  module.TOTAL=(path/'persisted.json').stat().st_size+(path/'loaded.json').stat().st_size
+ if case=='late result source' and stage=='before_result':(music/'data.json').write_bytes(b'{}')
 vault=ResetSourceVault(vault_root,saved['manifestSha256'],a,fault_hook=fault)
+if case in ('uncleared result','loaded result differs'):
+ original_save=service.upstream.save
+ def changed_save():
+  original_save()
+  if case=='uncleared result':
+   value=json.loads((music/'data.json').read_bytes());value['entries']={'unexpected':{'text':'synthetic'}};(music/'data.json').write_text(json.dumps(value))
+  else:service.upstream.data['settings']['syntheticAfterSave']=True
+ service.upstream.save=changed_save
 if case in ('record_fsynced','head_published','before_source','source_fsynced'):a.fault_hook=lambda stage:os._exit(77) if stage==case else None
 undo=install_legacy_erasure_authority(a,music_service=service,reset_source_vault=vault)
 try:
@@ -44,8 +58,8 @@ try:
  with service.upstream._lock:
   try:assert service.administration.erase(music,service.STORE,{'confirm':'RESET'},reset=True)['ok']
   except service.Rejected:
-   if case not in ('vault write failure','prior incomplete','capture capacity','source metadata limit','total capacity'):raise
-   assert a.snapshot()[0]['sequence']==0
+   if case not in ('vault write failure','prior incomplete','capture capacity','source metadata limit','total capacity','unsafe result permissions','completion write failure','completion capacity','late result source','uncleared result','loaded result differs'):raise
+   assert a.snapshot()[0]['sequence']==(1 if case in ('unsafe result permissions','completion write failure','completion capacity','late result source','uncleared result','loaded result differs') else 0)
  if case=='normal':
   service.upstream.data['entries']['after-first-reset']={'id':'after-first-reset','text':'重置後新詞條','kind':'sub'};service.upstream.save()
   with service.upstream._lock:assert service.administration.erase(music,service.STORE,{'confirm':'RESET'},reset=True)['ok']
@@ -59,7 +73,37 @@ it('durably captures both original generations before actual resets, reloads all
   expect(result.verification).toMatchObject({allOriginalResetSourcesVerified:true,headSequence:2,resetGenerationsReconciled:false,releaseEligible:false});expect(result.sources.resets).toHaveLength(2);expect(result.sources.resets[0]!.persisted.bytes).toEqual(s.source);
   const first=JSON.parse(result.sources.resets[0]!.loaded.bytes.toString()) as {members:Record<string,unknown>};expect(first.members).toHaveProperty('18888');expect(result.sources.resets[0]!.loaded.bytes.toString()).toContain('[1.0,-0.0,1e-07]');
   const second=JSON.parse(result.sources.resets[1]!.persisted.bytes.toString()) as {members:Record<string,unknown>;entries:Record<string,unknown>};expect(second.entries).toHaveProperty('after-first-reset');expect(second.members).toEqual({});expect(result.vaultEvidence).toMatchObject({allRecordedResetSourcesPresent:true,unboundOrDuplicateCapturesRetained:0,externalRetentionVerified:false,releaseEligible:false});expect(result.vaultEvidence.captures).toHaveLength(2);
+  expect(result.vaultEvidence.allRecordedResetCompletionsPresent).toBe(true);expect(result.completionSources).toHaveLength(2);
+  for(const completed of result.completionSources)expect(JSON.parse(completed.bytes.toString())).toMatchObject({entries:{},members:{},shouts:[],shoutHistory:[],trend:[]});
   expect(readFileSync(join(s.authority,'authority-head.json'))).toEqual(head);expect(s.db.serialize()).toEqual(s.before);expect(s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()).toEqual(s.bot);
+});
+it.each(['result_fsynced','completion_fsynced'])('retains the completed real reset and distinguishes completion durability after an actual exit at %s',async stage=>{
+  const s=await setup(stage);expect(s.status).toBe(77);expect(readRollbackErasureAuthority(s.authority,s.pin).head.sequence).toBe(1);expect(JSON.parse(readFileSync(join(s.music,'data.json'),'utf8'))).toMatchObject({entries:{},members:{},shouts:[],shoutHistory:[],trend:[]});expect(s.db.serialize()).toEqual(s.before);expect(s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()).toEqual(s.bot);
+  const folder=join(s.vault,readdirSync(s.vault).find(name=>name.startsWith('capture-'))!);expect(readFileSync(join(folder,'persisted.json'))).toEqual(s.source);
+  if(stage==='result_fsynced')expect(()=>readForwardLegacyResetVault(s.input)).toThrow('vault verification failed');
+  else{const result=readForwardLegacyResetVault(s.input);expect(result.vaultEvidence.allRecordedResetCompletionsPresent).toBe(true);expect(result.completionSources).toHaveLength(1);expect(result.completionSources[0]!.bytes).toEqual(readFileSync(join(s.music,'data.json')));}
+});
+it.each(['unsafe result permissions','completion write failure','completion capacity','late result source','uncleared result','loaded result differs'])('retains original sources and the recorded reset when completion rejects %s',async cause=>{
+  const s=await setup(cause);expect(s.status).toBe(0);expect(readRollbackErasureAuthority(s.authority,s.pin).head.sequence).toBe(1);const folder=join(s.vault,readdirSync(s.vault).find(name=>name.startsWith('capture-'))!);expect(readFileSync(join(folder,'persisted.json'))).toEqual(s.source);expect(s.db.serialize()).toEqual(s.before);expect(s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()).toEqual(s.bot);
+  if(cause==='completion write failure')expect(()=>readForwardLegacyResetVault(s.input)).toThrow();
+  else{const result=readForwardLegacyResetVault(s.input);expect(result.vaultEvidence.allRecordedResetCompletionsPresent).toBe(cause==='late result source');expect(result.completionSources).toHaveLength(cause==='late result source'?1:0);expect(result.verification.resetGenerationsReconciled).toBe(false);}
+});
+it.each(['result bytes','record binding','snapshot binding','missing result','result symlink','self-consistent uncleared result'])('rejects retained completion corruption: %s',async change=>{
+  const s=await setup(),folder=join(s.vault,readdirSync(s.vault).find(name=>name.startsWith('capture-'))!);
+  execFileSync('python3',['-c',`import hashlib,sys
+from pathlib import Path
+from tools.migration.rollback_music_reset import _json,_encode
+folder=Path(sys.argv[1]);case=sys.argv[2];path=folder/'completion.json';value=_json(path.read_bytes())
+if case=='result bytes':(folder/'result.json').write_bytes(b'{}')
+elif case=='record binding':value['authorityRecordSha256']='f'*64;path.write_bytes(_encode(value))
+elif case=='snapshot binding':value['snapshotSha256']='f'*64;path.write_bytes(_encode(value))
+elif case=='missing result':(folder/'result.json').rename(folder.parent.parent/'retained-result.json')
+elif case=='result symlink':
+ retained=folder.parent.parent/'retained-result.json';(folder/'result.json').rename(retained);(folder/'result.json').symlink_to(retained)
+else:
+ raw=_encode(dict(entries={'revived':{}},members={},shouts=[],shoutHistory=[],trend=[]));(folder/'result.json').write_bytes(raw);value['result']=dict(size=len(raw),sha256=hashlib.sha256(raw).hexdigest());path.write_bytes(_encode(value))
+`,folder,change],{timeout:10000,stdio:'pipe'});
+  expect(()=>readForwardLegacyResetVault(s.input)).toThrow();expect(s.db.serialize()).toEqual(s.before);expect(s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()).toEqual(s.bot);
 });
 it.each(['persisted_fsynced','loaded_fsynced','snapshot_fsynced','record_fsynced','head_published','before_source','source_fsynced'])('retains the real source and vault at an actual Python exit after %s',async stage=>{
   const s=await setup(stage);expect(s.status).toBe(77);expect(readFileSync(join(s.music,'data.json'))).toEqual(s.source);expect(readFileSync(join(s.music,'identity.sqlite3'))).toEqual(s.identity);expect(s.db.serialize()).toEqual(s.before);expect(s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()).toEqual(s.bot);

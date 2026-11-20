@@ -102,6 +102,8 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
                     if source != after or identity != checked or capture_legacy_music_reset(after, music_service.upstream.data, time) != operation:
                         raise ValueError('Original reset source changed during recording')
                     pending_reset.update(recorded)
+                    if captured is not None:
+                        pending_reset['capturedReset'] = captured
             except Exception:
                 raise music_service.Rejected('刪除紀錄無法核對或保存，請先恢復並重新載入', 503) from None
 
@@ -130,6 +132,18 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
                     result = original_erase(folder, store, body, reset=True)
                     if any(music_service.upstream.data.get(name) for name in ('entries', 'members', 'shouts', 'shoutHistory', 'trend')) or 'recordSha256' not in pending_reset:
                         raise ValueError('Original reset did not complete')
+                    if 'capturedReset' in pending_reset:
+                        try:
+                            source_path = music_folder / 'data.json'
+                            completed, identity = authority._read_file(source_path)
+                            pending_reset['capturedReset']['complete'](
+                                {key: pending_reset[key] for key in ('sequence', 'recordSha256')}, completed, music_service.upstream.data)
+                            after, checked = authority._read_file(source_path)
+                            from tools.migration.rollback_music_reset import _encode
+                            if completed != after or identity != checked or _encode(music_service.upstream.data) != _encode(json.loads(after)):
+                                raise ValueError('Completed reset source changed during capture')
+                        except Exception:
+                            raise music_service.Rejected('重設結果尚未完成保全，請保留原檔與紀錄後恢復', 503) from None
                     handled_reset_pins.append(pending_reset['recordSha256'])
                     return result
                 finally:
