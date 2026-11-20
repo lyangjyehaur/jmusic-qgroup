@@ -12,7 +12,8 @@ import {rollbackMusicKeys} from './rollback-music';
 import {assertRollbackSource} from './rollback-source';
 import {repairAppliedAccountErasures} from './forward-account-erasures';
 import {reconcileAppliedAccountRepair} from './forward-account-reconciliation';
-import {reconcileAppliedMusicRepair,type MusicRepairContext} from './forward-music-repair-reconciliation';
+import {reconcileAppliedMusicRepair} from './forward-music-repair-reconciliation';
+import {deriveForwardMusicRepairContext} from './forward-music-scope-authority';
 import {importedLegacyMusicIntent} from '../../apps/api/src/legacy-music-intent';
 import {readSourceRebaseEvidence,sourceRebaseDigest} from './source-rebase-evidence';
 import {repairAppliedNativeResetEntries,reconcileAppliedNativeResetEntries} from './forward-native-reset-entries';
@@ -149,37 +150,30 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
       const musicSource=new Database(db.serialize());
       try{
         musicSource.pragma('foreign_keys = ON');
+        const musicAuthority={authorityRoot:input.authorityRoot,manifestSha256:input.manifestSha256,checkpoint:held.checkpoint};
+        const musicContext=deriveForwardMusicRepairContext(musicSource,mergedJournal,musicAuthority);
         report=db.transaction(()=>{
           assertRollbackSource(db);
-          const musicContext:MusicRepairContext={authoritySha256:input.manifestSha256,headRecordSha256:authority.head.recordSha256,legacyScopes:[...scope].map(([key,value])=>{
-            const current=musicSource.prepare('SELECT erased_at FROM music_profiles WHERE id=?').get(value.id) as {erased_at:string|null}|undefined,original=musicSource.prepare('SELECT erased_at_json FROM music_legacy_erasures WHERE legacy_key=?').get(key) as {erased_at_json:string}|undefined,old=oldMusic.has(key);
-            const stamp=!old&&current?.erased_at?current.erased_at:nativeScopes.get(value.id)&&!old?nativeScopes.get(value.id)!:value.stamp;
-            if(!z.iso.datetime().safeParse(stamp).success)throw Error('Current native tombstone time requires review');
-            return {legacyKey:key,profileId:value.id,stamp,originalTimeJson:!old&&current?.erased_at&&original?original.erased_at_json:JSON.stringify(value.raw)};
-          })};
           // Receipts prove the intent, not a restored snapshot's private footprint.
           // Reapply native-only profile scopes without duplicating administration
           // audits or manufacturing a new intent. Reset entry repair has its own
           // committed pre-repair source and independent full-row oracle below.
-          const scopedIds=new Set([...scope.values()].map(value=>value.id));
+          const scopedIds=new Set(musicContext.legacyScopes.map(value=>value.profileId));
           for(const [id,stamp] of nativeScopes)if(!scopedIds.has(id))replayMusicErasure(db,id,null,stamp);
           const projected:{legacyKey:string;profileId:string;stamp:string;originalTime:Json;source:'baseline'|'old-service'}[]=[];
-          for(const [key,value] of scope){
+          for(const verified of musicContext.legacyScopes){
+            const {legacyKey:key,profileId:id,stamp,originalTimeJson:savedTime}=verified,value=scope.get(key);
+            if(!value||value.id!==id)throw Error('Forward music scope authority differs');
             const prior=db.prepare("SELECT target_id FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=?").get(key) as {target_id:string}|undefined;
             if(prior&&prior.target_id!==value.id)throw Error('Forward music source mapping conflicts');
             if(!prior)db.prepare("INSERT INTO migration_map VALUES('music','profile',?,?,?,?,'erased')").run(key,value.id,'',digest(canonical({authority:input.manifestSha256,head:authority.head.recordSha256,key,profileId:value.id})));
-            const current=db.prepare('SELECT erased_at FROM music_profiles WHERE id=?').get(value.id) as {erased_at:string|null}|undefined;
-            const old=oldMusic.has(key),stamp=!old&&current?.erased_at?current.erased_at:nativeScopes.get(value.id)&&!old?nativeScopes.get(value.id)!:value.stamp;
-            if(!z.iso.datetime().safeParse(stamp).success)throw Error('Current native tombstone time requires review');
-            const originalTime=db.prepare('SELECT erased_at_json FROM music_legacy_erasures WHERE legacy_key=?').get(key) as {erased_at_json:string}|undefined;
-            if(originalTime)parseJson(originalTime.erased_at_json);
-            const savedTime=!old&&current?.erased_at&&originalTime?originalTime.erased_at_json:JSON.stringify(value.raw);
-            replayMusicErasure(db,value.id,null,stamp);
+            const old=oldMusic.has(key);
+            replayMusicErasure(db,id,null,stamp);
             // Retain exact original JSON time independently from the native marker.
             db.prepare('INSERT INTO music_legacy_erasures VALUES(?,?) ON CONFLICT(legacy_key) DO UPDATE SET erased_at_json=excluded.erased_at_json').run(key,savedTime);
             projected.push({legacyKey:key,profileId:value.id,stamp,originalTime:value.raw,source:old?'old-service':'baseline'});
           }
-          const musicRepair=reconcileAppliedMusicRepair(musicSource,db,mergedJournal,musicContext);
+          const musicRepair=reconcileAppliedMusicRepair(musicSource,db,mergedJournal,musicContext,musicAuthority);
           readVerifiedErasureJournal(db,{read:()=>merged,append(){throw Error('Forward projection journal is read-only');}});
           if(db.pragma('integrity_check',{simple:true})!=='ok'||(db.pragma('foreign_key_check') as unknown[]).length)throw Error('Forward erasure projection integrity failed');
           db.prepare('UPDATE rebuild_storage SET recovery_required=1 WHERE id=1 AND recovery_required<>1').run();

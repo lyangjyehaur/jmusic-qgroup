@@ -5,17 +5,20 @@ import {schemaObjects} from './board-reconciliation';
 import {assertRollbackSource} from './rollback-source';
 import {nativeOwnerEpochs} from './native-reset-candidate-boundary';
 import {forwardCanonical,forwardEqual,forwardHash,forwardRows,forwardSequences,type ForwardRow} from './forward-board-storage';
+import {assertForwardMusicRepairContext,type ForwardMusicScopeAuthority} from './forward-music-scope-authority';
 
-/** Legacy overrides come from the already pinned authority/baseline relation,
- * never from the repair report. Their external ancestry remains a separate gate. */
+/** Legacy overrides require an independent authority derivation in the forward
+ * projection. Standalone row-oracle calls without that input prove only rows;
+ * external generation ancestry remains a separate gate in both cases. */
 export type MusicRepairContext={authoritySha256:string;headRecordSha256:string|null;legacyScopes:{legacyKey:string;profileId:string;stamp:string;originalTimeJson:string}[]};
 const reject=():never=>{throw Error('Native music repair reconciliation failed; retain all original images');};
 
 /** Complete private-replay row oracle. No privacy, ownership or erasure writer
  * is imported. The source must be a committed, owned in-memory snapshot taken
  * after the separately verified account repair and before music repair. */
-export function reconcileAppliedMusicRepair(source:DB,candidate:DB,journal:ErasureJournal,context:MusicRepairContext){
+export function reconcileAppliedMusicRepair(source:DB,candidate:DB,journal:ErasureJournal,context:MusicRepairContext,authority?:ForwardMusicScopeAuthority){
   if(source.name!==':memory:'||source.inTransaction||candidate.name!==':memory:')reject();
+  if(authority)assertForwardMusicRepairContext(source,journal,authority,context);
   source.transaction(()=>assertRollbackSource(source)).immediate();
   if(candidate.inTransaction)assertRollbackSource(candidate);else candidate.transaction(()=>assertRollbackSource(candidate)).immediate();
   if(!forwardEqual(schemaObjects(source),schemaObjects(candidate)))reject();
@@ -110,5 +113,5 @@ export function reconcileAppliedMusicRepair(source:DB,candidate:DB,journal:Erasu
   forwardSequences(source);forwardSequences(candidate);
   if(!forwardEqual([...forwardRows(source,'sqlite_sequence')],[...forwardRows(candidate,'sqlite_sequence')]))reject();
   readVerifiedErasureJournal(candidate,journal);
-  return {profileScopes:profiles.size,legacyScopes:context.legacyScopes.length,removedRows,changedRows,retainedRows,addedRows,allRowsVerified:true as const,oracleUsesServiceWriter:false as const,externalLegacyScopeIndependentlyDerived:false as const,allResetGenerationsReconciled:false as const,releaseEligible:false as const};
+  return {profileScopes:profiles.size,legacyScopes:context.legacyScopes.length,removedRows,changedRows,retainedRows,addedRows,allRowsVerified:true as const,oracleUsesServiceWriter:false as const,externalLegacyScopeIndependentlyDerived:authority!==undefined,allResetGenerationsReconciled:false as const,releaseEligible:false as const};
 }
