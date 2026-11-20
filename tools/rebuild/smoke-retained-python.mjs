@@ -12,6 +12,8 @@ import { openDatabase } from '../../.rebuild-dist/api/database.mjs';
 // This baseline is the original audited bot, not an assertion about the bot
 // currently online. Nothing from the working-tree Python implementation loads.
 const pythonCommit = '8da877857f163853c449474e168534e2e493121b';
+assert(process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === '--handoff-only'));
+const onlyHandoff = process.argv[2] === '--handoff-only';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const root = realpathSync(mkdtempSync(join(tmpdir(), 'qgroup-retained-python-')));
 try {
@@ -22,6 +24,8 @@ const scenarioPath = resolve('tools/rebuild/retained-python-scenarios.mjs');
 const scenarioSha256 = hash(readFileSync(scenarioPath));
 const recoveryPath = resolve('tools/rebuild/retained-python-recovery.mjs');
 const recoverySha256 = hash(readFileSync(recoveryPath));
+const handoffPath = resolve('tools/rebuild/retained-worker-handoff.mjs'), nativeFixture = resolve('tools/rebuild/native-outbox-fixture.mjs');
+const handoffSha256 = hash(readFileSync(handoffPath)), nativeFixtureSha256 = hash(readFileSync(nativeFixture));
 const db = openDatabase(database);
 try {
   for (const id of ['alice', 'bob']) {
@@ -55,13 +59,19 @@ child.stdout.on('data', bytes => { logs = (logs + bytes).slice(-32768); });
 child.stderr.on('data', bytes => { logs = (logs + bytes).slice(-32768); });
 const closed = new Promise(resolve => child.once('exit', (code, signal) => { stopped = true; resolve({ code, signal }); }));
 const rows = (sql, ...values) => { const db = new Database(database, { readonly: true }); try { return db.prepare(sql).all(...values); } finally { db.close(); } };
-let httpCalls = 0, originalWorkerInvocations = 0;
+let httpCalls = 0, originalWorkerInvocations = 0, nativeWorkerInvocations = 0;
 const request = (...args) => { httpCalls++; return fetch(...args); };
 const python = (mode, id, fault = 'success') => {
   originalWorkerInvocations++;
   return JSON.parse(execFileSync('python3', [fixture, pythonSource, database, mode, id, origin, fault], {
     env: { PATH: process.env.PATH, PYTHONDONTWRITEBYTECODE: '1', KANBAN_BOT_BASE_URL: origin },
     encoding: 'utf8', timeout: 15000, maxBuffer: 8 * 1024 * 1024,
+  }));
+};
+const native = (mode, fault = 'success') => {
+  nativeWorkerInvocations++;
+  return JSON.parse(execFileSync(process.execPath, [nativeFixture, database, mode, origin, fault], {
+    env: { PATH: process.env.PATH }, encoding: 'utf8', timeout: 15000, maxBuffer: 8 * 1024 * 1024,
   }));
 };
 try {
@@ -73,14 +83,15 @@ try {
     await new Promise(resolve => setTimeout(resolve, 100));
   }
   assert(ready, logs);
-  const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, fetch: request });
+  const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, native, onlyHandoff, fetch: request });
   child.kill('SIGTERM'); const exit = await closed; assert.equal(exit.code, 0, logs);
   const afterPins = sourceFiles.map(path => ({ path, sha256: hash(readFileSync(join(pythonSource, path))) })); assert.deepEqual(afterPins, pythonPins);
   assert.equal(hash(readFileSync(fixture)), fixtureSha256);
   assert.equal(hash(readFileSync(scenarioPath)), scenarioSha256);
   assert.equal(hash(readFileSync(recoveryPath)), recoverySha256);
+  assert.equal(hash(readFileSync(handoffPath)), handoffSha256); assert.equal(hash(readFileSync(nativeFixture)), nativeFixtureSha256);
   assert.deepEqual(runtimePins.map(({ path }) => ({ path, sha256: hash(readFileSync('.rebuild-dist/' + path)) })), runtimePins);
-  console.log(JSON.stringify({ version: 1, pythonCommit, pythonSourcePins: pythonPins, runtimePins, fixtureSha256, scenarioSha256, recoverySha256, ...scenario, httpCalls, originalWorkerInvocations,
+  console.log(JSON.stringify({ version: 1, pythonCommit, pythonSourcePins: pythonPins, runtimePins, fixtureSha256, scenarioSha256, recoverySha256, handoffSha256, nativeFixtureSha256, ...scenario, httpCalls, originalWorkerInvocations, nativeWorkerInvocations,
     networkTransport: 'denied', actualQQ: false, actualProductionImageCombination: false, scope: 'none', releaseEligible: false, gracefulStop: true }));
 } finally {
   if (!stopped) { child.kill('SIGTERM'); const timer = setTimeout(() => child.kill('SIGKILL'), 10000); try { await closed; } finally { clearTimeout(timer); } }

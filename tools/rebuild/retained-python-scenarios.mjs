@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
 import { exerciseRetainedPythonRecovery } from './retained-python-recovery.mjs';
+import { exerciseRetainedWorkerHandoff } from './retained-worker-handoff.mjs';
 
 // Both adapters execute these same HTTP and original-worker assertions.
-export async function exerciseRetainedPython({ origin, rescue, rows, python, fetch = globalThis.fetch }) {
+export async function exerciseRetainedPython({ origin, rescue, rows, python, native, onlyHandoff = false, fetch = globalThis.fetch }) {
   const results = [], linkChecks = new Set(), completed = [];
   let rateLimitDeferrals = 0, rateLimitWaitSeconds = 0;
   const collectLinks = value => { for (const url of JSON.stringify(value).match(/http:\/\/127\.0\.0\.1:\d+[^\s"\\<>]*/g) ?? []) linkChecks.add(url.replace(/[)\]，。；]+$/, '')); };
@@ -31,6 +32,13 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
   assert.equal(login.status, 200); await login.arrayBuffer(); cookie += '; ' + login.headers.getSetCookie().map(v => v.split(';')[0]).join('; ');
   const read = async path => { const response = await fetch(origin + '/api/v2' + path, { headers: { Cookie: cookie, 'X-Account-Scope': viewer.scope }, signal: AbortSignal.timeout(5000) }); const value = await response.json(); assert.equal(response.status, 200, JSON.stringify(value)); return value; };
   const access = await read('/admin/session'), admin = { 'X-Admin-CSRF': access.adminCsrf };
+  if (onlyHandoff) {
+    const before = await read('/admin/bot');
+    await post('/admin/bot', { command: 'save', revision: before.revision, config: { ...before.config, enabled: true,
+      groups: [{ id: 'synthetic-group', name: '', replies: true, broadcast: true }] }, confirm: true }, admin);
+    const handoff = await exerciseRetainedWorkerHandoff({ post, read, rows, python, native, collectLinks, admin });
+    return { webRuntime, handoff, focus: 'worker-handoff-only', fullScenarioVerified: false, rateLimitDeferrals, rateLimitWaitSeconds };
+  }
   for (const mode of ['plain', 'rich', 'dry-run']) {
     const sent = mode === 'dry-run' ? 0 : 1, simulated = mode === 'dry-run' ? 1 : 0;
     const emptyPoll = { claimed: 0, sent: 0, simulated: 0, skipped: 0, failed: 0, deferred: 0 };
@@ -191,6 +199,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
   const noReplay = python('plain', results.at(-1).eventId); assert.equal(noReplay.first.claimed, 0); assert.equal(noReplay.calls.length, 0);
   for (const original of completed) assert.deepEqual(rows('SELECT * FROM bot_outbox WHERE id=?', original.id)[0], original);
   const recovery = await exerciseRetainedPythonRecovery({ post, read, rows, python, collectLinks, admin });
+  const handoff = await exerciseRetainedWorkerHandoff({ post, read, rows, python, native, collectLinks, admin });
   for (const original of completed) assert.deepEqual(rows('SELECT * FROM bot_outbox WHERE id=?', original.id)[0], original);
   for (const url of linkChecks) {
     assert.equal(new URL(url).origin, origin);
@@ -205,9 +214,9 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
       assert.equal(response.status, 200, url); assert(html.includes('/assets/'), url); break;
     }
   }
-  assert.equal(linkChecks.size, 202);
+  assert.equal(linkChecks.size, 314);
   const deepLinkRouteInventory = {};
   for (const link of linkChecks) { const url = new URL(link), route = url.pathname + '?' + [...url.searchParams.keys()].sort().join('&'); deepLinkRouteInventory[route] = (deepLinkRouteInventory[route] ?? 0) + 1; }
   return { webRuntime, cases: results, deepLinkShells: linkChecks.size, simulationNotReplayedInRealMode: true, deliveredRowsUnchangedAfterPolicyChanges: true,
-    deepLinkRouteInventory, recovery, rateLimitDeferrals, rateLimitWaitSeconds, rateLimitsRespectedWithOriginalRequestKeys: true };
+    deepLinkRouteInventory, recovery, handoff, rateLimitDeferrals, rateLimitWaitSeconds, rateLimitsRespectedWithOriginalRequestKeys: true };
 }

@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync, spawnSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import { exerciseRetainedPython } from './retained-python-scenarios.mjs';
 import { syntheticImageFixture } from './synthetic-image-fixture.mjs';
 
@@ -13,12 +14,13 @@ assert([webImage, pythonImage].every(id => /^sha256:[a-f0-9]{64}$/.test(id)) && 
 assert.notEqual(webImage, pythonImage);
 const pythonCommit = '8da877857f163853c449474e168534e2e493121b';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const harnessPaths = ['verify-retained-python-images.mjs', 'retained-python-scenarios.mjs', 'retained-python-recovery.mjs', 'synthetic-image-fixture.mjs'];
+const harnessPaths = ['verify-retained-python-images.mjs', 'retained-python-scenarios.mjs', 'retained-python-recovery.mjs', 'retained-worker-handoff.mjs', 'native-outbox-fixture.mjs', 'synthetic-image-fixture.mjs'];
 const harnessPins = harnessPaths.map(name => {
   const path = 'tools/rebuild/' + name, bytes = readFileSync(new URL(name, import.meta.url));
   assert(bytes.equals(execFileSync('git', ['show', commit + ':' + path], { maxBuffer: 1024 * 1024 })), path);
   return { path, sha256: hash(bytes) };
 });
+const nativeFixturePath = fileURLToPath(new URL('./native-outbox-fixture.mjs', import.meta.url));
 const docker = (...argv) => execFileSync('docker', argv, { encoding: 'utf8', timeout: 30000,
   maxBuffer: 16 * 1024 * 1024, stdio: ['pipe', 'pipe', 'pipe'] }).trim();
 const context = docker('context', 'show');
@@ -98,6 +100,7 @@ try {
   const rescue = 'synthetic-image-rescue-' + randomUUID();
   containers.push(web); ownedContainers.push(web);
   docker('run', '-d', '--name', web, '--label', 'qgroup.rehearsal=true', '--init', '--stop-timeout', '15', ...limits,
+    '--mount', 'type=bind,src=' + nativeFixturePath + ',dst=/app/tools/rebuild/native-outbox-fixture.mjs,readonly',
     '-v', volume + ':/var/lib/qgroup', '-v', authorityVolume + ':/var/lib/qgroup-erasure',
     '-v', checkpointVolume + ':/var/lib/qgroup-checkpoint:ro',
     '-e', 'REBUILD_DB=' + database, '-e', 'REBUILD_ORIGIN=' + origin, '-e', 'REBUILD_PORT=8791',
@@ -115,6 +118,11 @@ try {
     await new Promise(resolve => setTimeout(resolve, 250));
   }
   assert(ready, 'Isolated web image failed to become healthy');
+  const nativeMount = JSON.parse(docker('inspect', web, '--format', '{{json .Mounts}}')).find(mount => mount.Destination === '/app/tools/rebuild/native-outbox-fixture.mjs');
+  assert.equal(nativeMount.Type, 'bind'); assert.equal(nativeMount.Source, nativeFixturePath); assert.equal(nativeMount.RW, false);
+  const mountedFixtureSha256 = docker('exec', web, 'node', '-e', "console.log(require('crypto').createHash('sha256').update(require('fs').readFileSync('/app/tools/rebuild/native-outbox-fixture.mjs')).digest('hex'))");
+  assert.equal(mountedFixtureSha256, harnessPins.find(pin => pin.path === 'tools/rebuild/native-outbox-fixture.mjs').sha256);
+  const nativeFixtureMount = { readOnly: true, sha256: mountedFixtureSha256, runtimeSource: 'web-image' };
   containers.push(bot); ownedContainers.push(bot);
   docker('run', '-d', '--name', bot, '--label', 'qgroup.rehearsal=true', '--init', '--stop-timeout', '15', ...limits,
     '-v', volume + ':/var/lib/qgroup', '-e', 'KANBAN_BOT_BASE_URL=' + origin, pythonImage);
@@ -124,7 +132,7 @@ try {
   assert.deepEqual(rows('SELECT id FROM users ORDER BY id').map(row => row.id), ['alice', 'bob']);
   const runtimePins = JSON.parse(docker('exec', web, 'node', '-e',
     "const fs=require('fs'),hash=b=>require('crypto').createHash('sha256').update(b).digest('hex');console.log(JSON.stringify(['api/start.mjs','api/database.mjs'].map(path=>({path,sha256:hash(fs.readFileSync('.rebuild-dist/'+path))}))))"));
-  let httpCalls = 0, originalWorkerInvocations = 0;
+  let httpCalls = 0, originalWorkerInvocations = 0, nativeWorkerInvocations = 0;
   const request = async (url, options = {}) => {
     assert.equal(new URL(url).origin, origin);
     const { signal: _signal, ...input } = options;
@@ -140,7 +148,11 @@ try {
     return JSON.parse(docker('exec', bot, 'python', '/app/retained-python-fixture.py',
       '/app/original-python', database, mode, event, origin, fault));
   };
-  const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, fetch: request });
+  const native = (mode, fault = 'success') => {
+    nativeWorkerInvocations++;
+    return JSON.parse(docker('exec', web, 'node', '/app/tools/rebuild/native-outbox-fixture.mjs', database, mode, origin, fault));
+  };
+  const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, native, fetch: request });
   assert.equal(scenario.webRuntime.commit, commit); assert.equal(scenario.webRuntime.source, 'rehearsal');
   assert.equal(scenario.webRuntime.tree, source.manifest.verificationTree);
   assert.deepEqual(JSON.parse(docker('exec', bot, 'python', '-c', sourceProbe)), source);
@@ -166,7 +178,7 @@ try {
     assert.equal(spec.State.ExitCode, 0); assert(!spec.State.OOMKilled); exits.push({ service: name === bot ? 'python' : 'web', code: 0 });
   }
   result = { version: 1, commit, pythonCommit, imageCombination: { web: webImage, python: pythonImage },
-    architecture: specs[0].Architecture, pythonSource: source, runtimePins, harnessPins, fixture, ...scenario, httpCalls, originalWorkerInvocations,
+    architecture: specs[0].Architecture, pythonSource: source, runtimePins, harnessPins, nativeFixtureMount, fixture, ...scenario, httpCalls, originalWorkerInvocations, nativeWorkerInvocations,
     separateActualImages: true, sharedSyntheticDatabase: true, networkTransport: 'denied', network: 'none',
     actualQQ: false, actualOnlineBotVersionKnown: false, fullB01ToB15Accepted: false,
     scope: 'none', releaseEligible: false, gracefulStops: exits };

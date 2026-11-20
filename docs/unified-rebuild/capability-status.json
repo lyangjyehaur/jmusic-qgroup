@@ -6007,7 +6007,10 @@
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "tools/rebuild/retained-python-recovery.mjs",
-        "docs/unified-rebuild/168-retained-bot-recovery-checkpoint.md"
+        "docs/unified-rebuild/168-retained-bot-recovery-checkpoint.md",
+        "tools/rebuild/retained-worker-handoff.mjs",
+        "tools/rebuild/native-outbox-fixture.mjs",
+        "docs/unified-rebuild/169-retained-worker-handoff-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6047,7 +6050,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。持久勿擾／間隔、頻控不耗失敗次數、提醒去重及公開回覆已有差分；runtime 驗證 Gateway 離線輪詢，新增 token 等待跨入勿擾時段的延後保全。QQ／版本組合及長期負載尚待驗收，見 53／54／57 號檢查點。 第 168 號新增固定舊 bot 與編譯網站的自然到期、勿擾／間隔與投遞恢復演練；本機完整報告已核對，原 Linux 双映像及完整 B01–B15 驗收仍待完成。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。持久勿擾／間隔、頻控不耗失敗次數、提醒去重及公開回覆已有差分；runtime 驗證 Gateway 離線輪詢，新增 token 等待跨入勿擾時段的延後保全。QQ／版本組合及長期負載尚待驗收，見 53／54／57 號檢查點。 第 168 號新增固定舊 bot 與編譯網站的自然到期、勿擾／間隔與投遞恢復演練；本機完整報告已核對，原 Linux 双映像及完整 B01–B15 驗收仍待完成。 第 169 號新增順序 Python／compiled TypeScript consumer 雙向重試、未確認／模擬保全與持久間隔交接；本機完整演練及三個領域 oracle 已核對，原 Linux CI 及正式 runtime 切換仍未驗收。"
     },
     {
       "capability_id": "B10",
@@ -6103,7 +6106,10 @@
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
         "tools/rebuild/retained-python-recovery.mjs",
-        "docs/unified-rebuild/168-retained-bot-recovery-checkpoint.md"
+        "docs/unified-rebuild/168-retained-bot-recovery-checkpoint.md",
+        "tools/rebuild/retained-worker-handoff.mjs",
+        "tools/rebuild/native-outbox-fixture.mjs",
+        "docs/unified-rebuild/169-retained-worker-handoff-checkpoint.md"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -6146,7 +6152,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 第 168 號新增固定舊 bot 與編譯網站的自然到期、勿擾／間隔與投遞恢復演練；本機完整報告已核對，原 Linux 双映像及完整 B01–B15 驗收仍待完成。"
+      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 第 168 號新增固定舊 bot 與編譯網站的自然到期、勿擾／間隔與投遞恢復演練；本機完整報告已核對，原 Linux 双映像及完整 B01–B15 驗收仍待完成。 第 169 號新增順序 Python／compiled TypeScript consumer 雙向重試、未確認／模擬保全與持久間隔交接；本機完整演練及三個領域 oracle 已核對，原 Linux CI 及正式 runtime 切換仍未驗收。"
     },
     {
       "capability_id": "B11",

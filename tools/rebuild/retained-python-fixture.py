@@ -68,26 +68,34 @@ if mode != 'inspect':
         aliases = [alias for alias, command in replies.ALIASES.items() if command != '缩写']
         assert len(aliases) == 54
         first = None
+        def original_body(alias):
+            db = replies.read_db(database)
+            try:
+                command = replies.ALIASES[alias]
+                text, keyboard = replies.answer(db, command, event_id)
+                return text, keyboard, main._markdown_reply(db, command, event_id, config)
+            finally:
+                db.close()
+
         for index, alias in enumerate(aliases):
             message = dict(t='GROUP_AT_MESSAGE_CREATE', d=dict(
                 id='synthetic-message-' + str(index), group_openid='synthetic-group',
                 content='<@SYNTHETIC> /' + alias + ' ' + event_id,
                 author=dict(id='SYNTHETIC_AUTHOR'), timestamp=str(index)))
+            # Countdown text can change while the real clock crosses a minute.
+            # Keep exact original bytes from both sides of dispatch; never
+            # freeze time, normalize text, or accept arbitrary timer content.
+            before_body = original_body(alias) if mode != 'dry-run' else None
             await bot.handle_dispatch(None, message)
             if mode != 'dry-run':
-                db = replies.read_db(database)
-                try:
-                    command = replies.ALIASES[alias]
-                    text, keyboard = replies.answer(db, command, event_id)
-                    rich = main._markdown_reply(db, command, event_id, config)
-                finally:
-                    db.close()
+                after_body = original_body(alias)
                 call = passive.reply_group.call_args
-                assert call.args == ('synthetic-group', text)
-                assert call.kwargs['keyboard'] == keyboard and call.kwargs['seq'] == 1
+                assert call.args in [('synthetic-group', body[0]) for body in (before_body, after_body)], dict(alias=alias, actual=call.args, expected=(before_body, after_body))
+                assert before_body[1] == after_body[1] == call.kwargs['keyboard']
+                assert call.kwargs['seq'] == 1
                 assert call.kwargs['msg_id'] == message['d']['id'] and call.kwargs['event_id'] is None
-                if rich: assert call.kwargs['markdown'] == rich
-                else: assert 'markdown' not in call.kwargs
+                assert call.kwargs.get('markdown') in (before_body[2], after_body[2])
+                if before_body[2] is None and after_body[2] is None: assert 'markdown' not in call.kwargs
             first = first or message
         expected = 0 if mode == 'dry-run' else 54
         assert passive.reply_group.call_count == expected

@@ -10,7 +10,10 @@ export async function exerciseRetainedPythonRecovery({ post, read, rows, python,
   const report = { reminders: [], failures: [] }, completed = [];
   let naturalWaitMilliseconds = 0;
   const waitUntil = async (value, maximum) => {
-    const remaining = Date.parse(value) - Date.now();
+    // The retained Python claimant compares second-only UTC strings. A stored
+    // fractional timestamp sorts after that entire second, including .000000.
+    const due = Date.parse(value), target = /\.\d+/.test(value) ? Math.floor(due / 1000) * 1000 + 1000 : due;
+    const remaining = target - Date.now();
     assert(Number.isFinite(remaining) && remaining <= maximum);
     const delay = Math.max(0, remaining + 250);
     naturalWaitMilliseconds += delay;
