@@ -13,7 +13,7 @@ assert([webImage, pythonImage].every(id => /^sha256:[a-f0-9]{64}$/.test(id)) && 
 assert.notEqual(webImage, pythonImage);
 const pythonCommit = '8da877857f163853c449474e168534e2e493121b';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
-const harnessPaths = ['verify-retained-python-images.mjs', 'retained-python-scenarios.mjs', 'synthetic-image-fixture.mjs'];
+const harnessPaths = ['verify-retained-python-images.mjs', 'retained-python-scenarios.mjs', 'retained-python-recovery.mjs', 'synthetic-image-fixture.mjs'];
 const harnessPins = harnessPaths.map(name => {
   const path = 'tools/rebuild/' + name, bytes = readFileSync(new URL(name, import.meta.url));
   assert(bytes.equals(execFileSync('git', ['show', commit + ':' + path], { maxBuffer: 1024 * 1024 })), path);
@@ -135,10 +135,10 @@ try {
     const headers = new Headers(response.headers); for (const value of response.cookies) headers.append('Set-Cookie', value);
     return new Response(response.body, { status: response.status, headers });
   };
-  const python = (mode, event) => {
+  const python = (mode, event, fault = 'success') => {
     originalWorkerInvocations++;
     return JSON.parse(docker('exec', bot, 'python', '/app/retained-python-fixture.py',
-      '/app/original-python', database, mode, event, origin));
+      '/app/original-python', database, mode, event, origin, fault));
   };
   const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, fetch: request });
   assert.equal(scenario.webRuntime.commit, commit); assert.equal(scenario.webRuntime.source, 'rehearsal');

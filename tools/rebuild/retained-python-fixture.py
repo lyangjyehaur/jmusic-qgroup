@@ -17,9 +17,13 @@ def deny_network(*_args, **_kwargs):
 # that event-loop plumbing before bot imports, then prohibit all new sockets.
 event_loop = asyncio.new_event_loop()
 socket.socket = deny_network
-source, database, mode, event_id, origin = sys.argv[1:]
+source, database, mode, event_id, origin, *faults = sys.argv[1:]
+assert len(faults) <= 1
+fault = faults[0] if faults else 'success'
+assert fault in ('success', 'transient', 'permanent', 'rate-limit', 'unconfirmed')
 source, database = Path(source).resolve(), Path(database).resolve()
 assert mode in ('plain', 'rich', 'dry-run', 'inspect')
+assert fault == 'success' or mode in ('plain', 'rich')
 assert ((source.parent == database.parent and source.name == 'original-python') or
         (source == Path('/app/original-python') and database.parent == Path('/var/lib/qgroup')))
 assert database.name == 'synthetic.sqlite3'
@@ -36,8 +40,14 @@ if mode != 'inspect':
         log_dir=database.parent / 'synthetic-logs', log_content=False,
         verbose_events=False)
     api = Mock()
-    api.post.side_effect = lambda path, body: (True, 0,
-        dict(file_info='SYNTHETIC_FILE') if path.endswith('/files') else dict(id='SYNTHETIC_ONLY'))
+    def transport(path, body):
+        assert path == '/v2/groups/synthetic-group/messages' or path == '/v2/groups/synthetic-group/files'
+        if fault == 'transient': return False, None, dict(_http_status=503)
+        if fault == 'permanent': return False, 304061, dict(_http_status=200)
+        if fault == 'rate-limit': return False, None, dict(_http_status=429)
+        if fault == 'unconfirmed': return False, 0, dict(_http_status=202, _unconfirmed_http=202)
+        return True, 0, dict(file_info='SYNTHETIC_FILE') if path.endswith('/files') else dict(id='SYNTHETIC_ONLY')
+    api.post.side_effect = transport
     consumer = worker.OutboxWorker(config, api)
     result.update(first=consumer.poll_once(), second=consumer.poll_once(),
                   calls=[dict(path=c.args[0], body=c.args[1]) for c in api.post.call_args_list])

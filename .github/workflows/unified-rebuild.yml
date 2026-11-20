@@ -115,7 +115,7 @@ jobs:
           image_id="$(cat artifacts/ci/image.id)"
           python_id="$(cat artifacts/ci/retained-python-image.id)"
           docker image inspect "$python_id" > artifacts/ci/retained-python-image-inspect.json
-          timeout --signal=TERM --kill-after=90s 600s node "$image_context/tools/rebuild/verify-retained-python-images.mjs" --web-image "$image_id" --python-image "$python_id" --commit "$GITHUB_SHA" > artifacts/ci/retained-python-image-pair.json
+          timeout --signal=TERM --kill-after=90s 900s node "$image_context/tools/rebuild/verify-retained-python-images.mjs" --web-image "$image_id" --python-image "$python_id" --commit "$GITHUB_SHA" > artifacts/ci/retained-python-image-pair.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
+import { exerciseRetainedPythonRecovery } from './retained-python-recovery.mjs';
 
 // Both adapters execute these same HTTP and original-worker assertions.
 export async function exerciseRetainedPython({ origin, rescue, rows, python, fetch = globalThis.fetch }) {
@@ -11,7 +12,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
   const viewer = await (await fetch(origin + '/api/v2/session', { headers: { Cookie: cookie } })).json();
   assert.equal(viewer.authenticated, true); assert.equal(viewer.nickname, 'alice');
   const headers = { Cookie: cookie, Origin: origin, 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Content-Type': 'application/json' };
-  const post = async (path, value, extra = {}, key = randomUUID()) => {
+  const post = async (path, value, extra = {}, key = randomUUID(), status = 200) => {
     const body = JSON.stringify(value), requestHeaders = { ...headers, Cookie: cookie, 'Idempotency-Key': key, ...extra };
     for (let attempt = 0; attempt < 3; attempt++) {
       const response = await fetch(origin + '/api/v2' + path, { method: 'POST', headers: requestHeaders, body, signal: AbortSignal.timeout(5000) });
@@ -22,7 +23,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
         rateLimitDeferrals++; rateLimitWaitSeconds += seconds;
         await new Promise(resolve => setTimeout(resolve, seconds * 1000)); continue;
       }
-      assert.equal(response.status, 200, path + ': ' + text); return JSON.parse(text);
+      assert.equal(response.status, status, path + ': ' + text); return JSON.parse(text);
     }
     assert.fail('Retained Python scenario exhausted bounded rate-limit recovery');
   };
@@ -189,10 +190,24 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, fet
   await post('/admin/bot', { command: 'save', revision: simulatedPolicy.revision, config: { ...simulatedPolicy.config, dry_run: false }, confirm: true }, admin);
   const noReplay = python('plain', results.at(-1).eventId); assert.equal(noReplay.first.claimed, 0); assert.equal(noReplay.calls.length, 0);
   for (const original of completed) assert.deepEqual(rows('SELECT * FROM bot_outbox WHERE id=?', original.id)[0], original);
-  for (const url of linkChecks) { assert.equal(new URL(url).origin, origin); const response = await fetch(url, { signal: AbortSignal.timeout(5000) }); assert.equal(response.status, 200, url); const html = await response.text(); assert(html.includes('/assets/'), url); }
-  assert.equal(linkChecks.size, 58);
+  const recovery = await exerciseRetainedPythonRecovery({ post, read, rows, python, collectLinks, admin });
+  for (const original of completed) assert.deepEqual(rows('SELECT * FROM bot_outbox WHERE id=?', original.id)[0], original);
+  for (const url of linkChecks) {
+    assert.equal(new URL(url).origin, origin);
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const response = await fetch(url, { signal: AbortSignal.timeout(5000) }), html = await response.text();
+      if (response.status === 429 && attempt < 2) {
+        const seconds = Number(response.headers.get('retry-after'));
+        assert(Number.isInteger(seconds) && seconds >= 1 && seconds <= 60);
+        rateLimitDeferrals++; rateLimitWaitSeconds += seconds;
+        await new Promise(resolve => setTimeout(resolve, seconds * 1000)); continue;
+      }
+      assert.equal(response.status, 200, url); assert(html.includes('/assets/'), url); break;
+    }
+  }
+  assert.equal(linkChecks.size, 202);
   const deepLinkRouteInventory = {};
   for (const link of linkChecks) { const url = new URL(link), route = url.pathname + '?' + [...url.searchParams.keys()].sort().join('&'); deepLinkRouteInventory[route] = (deepLinkRouteInventory[route] ?? 0) + 1; }
   return { webRuntime, cases: results, deepLinkShells: linkChecks.size, simulationNotReplayedInRealMode: true, deliveredRowsUnchangedAfterPolicyChanges: true,
-    deepLinkRouteInventory, rateLimitDeferrals, rateLimitWaitSeconds, rateLimitsRespectedWithOriginalRequestKeys: true };
+    deepLinkRouteInventory, recovery, rateLimitDeferrals, rateLimitWaitSeconds, rateLimitsRespectedWithOriginalRequestKeys: true };
 }
