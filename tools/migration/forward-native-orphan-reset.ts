@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import type {DB} from '@qgroup/database';
 import {AdminMusicErasureResult} from '@qgroup/contracts';
 import {decodeErasureJournal,readVerifiedErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
-import {replayMusicErasure} from '../../apps/api/src/privacy';
+import {nativeResetPrivateRelation} from './native-reset-private-relation';
 import {schemaObjects} from './board-reconciliation';
 import {assertRollbackSource} from './rollback-source';
 import {assertForwardImage,forwardEqual,forwardHash,forwardLineage,forwardRows,forwardSequences,type ForwardRow,type PinnedForwardBytes} from './forward-board-storage';
@@ -37,14 +37,12 @@ function addedRow(db:DB,table:string,values:Record<string,unknown>,rowid:bigint)
   return row;
 }
 
-/** Full pre/completion row relation with independent global/authority rules.
- * General resets explicitly reuse private profile service semantics, without
- * replaying the administrative action or producing a replacement receipt. */
+/** Full pre/completion row relation with independent private/global/authority
+ * rules. It never replays the action or generates a replacement receipt. */
 function openSource(input:NativeResetSource,general=false){
   const held=copyNativeOrphanResetSource(input),before=new Database(held.before.bytes);let completed:DB;
   try{completed=new Database(held.completed.bytes);}catch(error){before.close();throw error;}
-  let projected:DB|undefined;
-  const close=()=>{projected?.close();completed.close();before.close();};
+  const close=()=>{completed.close();before.close();};
   try{
     for(const db of [before,completed]){
       db.pragma('foreign_keys = ON');db.transaction(()=>{assertRollbackSource(db);forwardSequences(db);}).immediate();
@@ -57,25 +55,7 @@ function openSource(input:NativeResetSource,general=false){
     const profiles=before.prepare('SELECT id,user_id AS userId FROM music_profiles WHERE erased_at IS NULL ORDER BY id').all(),entries=(before.prepare('SELECT id FROM music_entries ORDER BY id').all() as {id:string}[]).map(row=>row.id);
     if(!forwardEqual(profiles,intent.profiles)||!forwardEqual(entries,intent.entries))throw Error('Native reset source profile or entry scope differs');
     if(!general&&(intent.profiles.length||intent.entries.length))throw Error('Native orphan reset scope requires empty profile and entry generations');
-    // A full reset also invokes the established private profile erasure and
-    // catalog semantics. Their service writer is explicitly reused here; the
-    // global row oracle and appended authority relation remain independent.
-    if(general&&(intent.profiles.length||intent.entries.length)){
-      projected=new Database(before.serialize());projected.pragma('foreign_keys = ON');
-      const model=projected;
-      model.transaction(()=>{
-        for(const profile of intent.profiles)replayMusicErasure(model,profile.id,profile.userId,intent.createdAt);
-        for(const id of intent.entries){
-          model.prepare("DELETE FROM music_documents WHERE kind='entry_source' AND json_extract(payload_json,'$.entryId')=?").run(id);
-          model.prepare('DELETE FROM music_selections WHERE entry_id=?').run(id);
-          model.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
-          model.prepare('DELETE FROM music_entries WHERE id=?').run(id);
-          model.prepare("UPDATE migration_map SET status='deleted' WHERE source='music' AND entity_type='entry' AND target_id=?").run(id);
-        }
-        assertRollbackSource(model);forwardSequences(model);
-      }).immediate();
-    }
-    const expected=projected??before;
+    const privateRelation=nativeResetPrivateRelation(before,intent);
     const receipt=AdminMusicErasureResult.parse({requestId:intent.requestId,target:'admin_music',command:'reset_music',status:'completed',profiles:intent.profiles.length,entries:intent.entries.length});
     const actor=intent.actorRef.startsWith('account:')?intent.actorRef.slice(8):null;
     const appended:Record<string,Record<string,unknown>>={
@@ -88,11 +68,15 @@ function openSource(input:NativeResetSource,general=false){
     for(const table of schemaObjects(before).filter(row=>row.type==='table').map(row=>row.name)){
       const actual=forwardRows(completed,table);let high=0n;
       try{
-        for(const row of forwardRows(expected,table)){
+        for(const row of forwardRows(before,table)){
           high=row.__forward_rowid__>high?row.__forward_rowid__:high;
           if(scoped(table,row)&&table!=='migration_map')continue;
-          const wanted={...row};if(table==='migration_map'&&scoped(table,row))wanted.status='deleted';
+          const wanted=privateRelation.row(table,row);if(!wanted)continue;
+          if(table==='migration_map'&&scoped(table,row))wanted.status='deleted';
           const next=actual.next();if(next.done||!forwardEqual(wanted,next.value))throw Error('Native orphan reset completion row relation differs');
+        }
+        for(const extra of privateRelation.additions.get(table)??[]){
+          const next=actual.next();if(next.done||!forwardEqual(addedRow(before,table,extra.values,extra.rowid),next.value))throw Error('Native reset private appended row differs');
         }
         if(appended[table]){
           const id=high+1n,values={...appended[table],...table==='music_catalog_actions'?{id}:{}},next=actual.next();
@@ -103,7 +87,7 @@ function openSource(input:NativeResetSource,general=false){
     }
     const globalSourceRows=tables.filter(table=>table!=='migration_map').reduce((count,table)=>count+[...forwardRows(before,table)].filter(row=>scoped(table,row)).length,0);
     if(!globalSourceRows&&!intent.profiles.length&&!intent.entries.length)throw Error('Native reset source contains no reset data');
-    return {held,before,completed,intent,erasedRows:globalSourceRows,profileProjectionUsesServiceWriter:intent.profiles.length>0,close};
+    return {held,before,completed,intent,erasedRows:globalSourceRows,profileProjectionUsesServiceWriter:false as const,close};
   }catch(error){close();throw error;}
 }
 

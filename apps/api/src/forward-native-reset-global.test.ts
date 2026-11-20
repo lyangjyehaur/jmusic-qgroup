@@ -53,7 +53,7 @@ function setup(){
 
 it('verifies a genuine full native reset including linked and unlinked profiles, terms, OAuth proofs, epochs and saved responses',()=>{
   const s=setup(),result=verifyNativeResetSource(s.evidence);
-  expect(result).toMatchObject({requestId:s.intent.requestId,allTransitionRowsVerified:true,profileProjectionUsesServiceWriter:true,fullPrivateScopeIndependentlyVerified:false,releaseEligible:false});
+  expect(result).toMatchObject({requestId:s.intent.requestId,allTransitionRowsVerified:true,profileProjectionUsesServiceWriter:false,fullPrivateScopeIndependentlyVerified:true,releaseEligible:false});
   expect(s.intent.profiles.length).toBeGreaterThan(1);expect(s.intent.entries.length).toBeGreaterThan(0);
   const completed=memory(s.evidence.completed.bytes);
   expect(completed.prepare('SELECT 1 FROM music_profiles WHERE erased_at IS NULL').get()).toBeUndefined();expect(completed.prepare('SELECT 1 FROM music_entries').get()).toBeUndefined();

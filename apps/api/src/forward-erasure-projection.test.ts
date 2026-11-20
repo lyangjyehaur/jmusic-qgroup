@@ -202,7 +202,7 @@ it('projects an authority-bound full native reset while preserving later profile
  beforeDb.exec("INSERT INTO music_documents VALUES('trend_sample',988,'{\"t\":2001.25,\"counts\":{}}')");
  s.input.nativeImage=beforeDb.serialize();s.input.nativeImageSha256=digest(s.input.nativeImage);s.input.nativeResetSources=[evidence];
  const original=Buffer.from(s.input.nativeImage),head=fs.readFileSync(join(s.input.authorityRoot,'authority-head.json')),result=projectNativeForwardErasures(s.input),db=open(result);
- expect(result.report.nativeGlobalResetRepairs).toMatchObject([{requestId:intent.requestId,removedRows:2,allRowsVerified:true,profileProjectionUsesServiceWriter:true,fullPrivateScopeIndependentlyVerified:false,releaseEligible:false}]);
+ expect(result.report.nativeGlobalResetRepairs).toMatchObject([{requestId:intent.requestId,removedRows:2,allRowsVerified:true,profileProjectionUsesServiceWriter:false,fullPrivateScopeIndependentlyVerified:true,releaseEligible:false}]);
  expect(db.prepare('SELECT id FROM music_profiles WHERE erased_at IS NULL').all()).toEqual([{id:later.id}]);expect(db.prepare('SELECT id FROM music_entries').all()).toEqual([{id:'full-reset-later-entry'}]);expect(db.prepare('SELECT id FROM music_shouts').all()).toEqual([{id:'full-reset-later-shout'}]);
  expect(db.prepare("SELECT kind,position FROM music_documents WHERE kind='trend_sample'").all()).toEqual([{kind:'trend_sample',position:988}]);
  const expectedUsers=(beforeDb.prepare('SELECT rowid,* FROM users ORDER BY rowid').safeIntegers().all() as {id:string;token_hash:string}[]).map(row=>row.id==='bob'?{...row,token_hash:'erased-account-v1:'+hash(JSON.stringify(['bob',s.baselineIntent.requestId]))}:row);
