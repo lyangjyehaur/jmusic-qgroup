@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { createHash,randomUUID } from 'node:crypto';
 import sharp from 'sharp';
 import {verifyBuiltStatic} from './verify-built-static.mjs';
+import {verifyWorkerPrecache} from './verify-worker-precache.mjs';
 const botSmoke = spawnSync(process.execPath, ['--import', 'tsx', 'tools/rebuild/smoke-bot.ts'], {
   encoding: 'utf8', timeout: 15000, env: { PATH: process.env.PATH, TMPDIR: process.env.TMPDIR },
 });
@@ -49,6 +50,7 @@ try {
   assert((await bundle.arrayBuffer()).byteLength > 0);
   const staticProof=await verifyBuiltStatic(base,'.rebuild-dist/web');
   console.log('Built static resources: '+JSON.stringify(staticProof));
+  console.log('Built worker precache: '+JSON.stringify(await verifyWorkerPrecache('.rebuild-dist/web')));
   for(const alias of ['/music/index.html','/music/admin.html','/music/privacy.html','/privacy.html','/contact.html']){
     const response=await fetch(base+alias);assert.equal(response.status,200);assert.equal(await response.text(),html);
   }

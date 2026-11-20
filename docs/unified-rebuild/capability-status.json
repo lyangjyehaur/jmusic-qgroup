@@ -7503,7 +7503,9 @@
         "apps/web/static-compression.ts",
         "apps/api/src/static-cache.ts",
         "apps/web/src/main.tsx",
-        "apps/web/src/lazy-page.tsx"
+        "apps/web/src/lazy-page.tsx",
+        "apps/web/src/pwa/worker.ts",
+        "apps/web/pwa-build.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
@@ -7511,13 +7513,17 @@
         "tools/rebuild/verify-built-static.mjs",
         "docs/unified-rebuild/153-static-resources-checkpoint.md",
         "apps/web/tests/page-loading.spec.ts",
-        "docs/unified-rebuild/154-page-loading-checkpoint.md"
+        "docs/unified-rebuild/154-page-loading-checkpoint.md",
+        "apps/web/src/pwa/worker.test.ts",
+        "apps/web/tests/pwa-precache.spec.ts",
+        "tools/rebuild/verify-worker-precache.mjs",
+        "docs/unified-rebuild/155-bounded-precache-checkpoint.md"
       ],
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [],
       "state": "in_progress",
-      "remaining": "153／154 已實作壓縮、MIME、ETag、快取與頁面按需載入；26 unit、48 browser 及82資源／277真實HTTP檢查本機通過，靜態下載不消耗API限流配額。153 原 Linux image／browser 已核對；154 全量原 Linux、代理層快取、首次載入／PWA背景下載與正式規模資源驗收仍待完成。"
+      "remaining": "153–155 已實作壓縮、快取、lazy pages、完整 precache 分批與 worker dependency 版本識別；155 本機4 unit／64不同browser、85快取資源與82資源／277真HTTP檢查通過。153 原Linux完整成功；154 原Linux836／837 browser，跨分頁準備時序已修正但須新完整結果。155 原Linux全量／雙映像、代理層快取、首次載入與正式規模資源驗收仍待完成；decoded working set不等於browser RSS或正式負載。"
     },
     {
       "capability_id": "O12",

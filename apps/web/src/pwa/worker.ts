@@ -32,7 +32,12 @@ async function cleanup() {
 scope.addEventListener('install', event => event.waitUntil((async () => {
     try {
         const cache = await caches.open(cacheName);
-        await cache.addAll([...assets].map(path => new Request(new URL(path, scope.location.origin), { cache: 'reload', credentials: 'omit' })));
+        // Keep the complete inventory, but bound each atomic cache operation's
+        // queued downloads and retained response bodies. Installation finishes
+        // only after every batch; a failed batch removes the entire new cache.
+        const paths = [...assets];
+        for (let start = 0; start < paths.length; start += 4)
+            await cache.addAll(paths.slice(start, start + 4).map(path => new Request(new URL(path, scope.location.origin), { cache: 'reload', credentials: 'omit' })));
     }
     catch (error) {
         await caches.delete(cacheName);
