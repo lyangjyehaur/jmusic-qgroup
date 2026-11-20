@@ -20,6 +20,8 @@ import {writeRollbackErasureAuthority,readRollbackErasureAuthority} from '../../
 import {projectNativeForwardErasures,type ForwardErasureInput} from '../../../tools/migration/forward-erasure-projection';
 import {profileId,digest} from '../../../tools/migration/music-codec';
 import {exportLegacyMusic} from './legacy-music-export';
+import {musicErasureScope} from './admin-music-erasure';
+import type {NativeOrphanResetSource} from '../../../tools/migration/forward-native-orphan-reset';
 const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
 const stamp=new Date('2026-11-20T01:00:00Z');
 async function setup(options:{opaque?:boolean;generated?:boolean;musicOnly?:boolean}={}){
@@ -157,4 +159,28 @@ it('repairs restored entry content under a genuine applied native reset while re
  for(const table of ['bot_outbox','bot_settings','bot_settings_history','bot_runtime','privacy_receipts','music_catalog_actions','event_audit','finance_entries','settlement_history'])expect(db.prepare('SELECT rowid,* FROM '+table+' ORDER BY rowid').safeIntegers().all(),table).toEqual(sourceDb.prepare('SELECT rowid,* FROM '+table+' ORDER BY rowid').safeIntegers().all());
  expect(result.nativeJournal).toEqual(authoritative.ledgers.unified);expect(s.input.nativeImage).toEqual(source);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
  const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));expect(again.nativeJournal).toEqual(result.nativeJournal);expect(result.report.remaining).toContain('native_global_reset_generations');
+});
+
+it('projects a pinned orphan-only reset generation without clearing later anonymous histories or changing bot work and authority',async()=>{
+ const s=await setup();
+ const beforeDb=new Database(s.input.nativeImage);cleanup.push(()=>beforeDb.close());beforeDb.pragma('foreign_keys = ON');
+ const scope=musicErasureScope(beforeDb),first:ErasureIntent={version:2,kind:'admin_music',command:'reset_music',actorRef:'account:alice',profiles:scope.profiles,entries:scope.entries,requestId:randomUUID(),createdAt:'2026-11-20T02:00:00.000Z',secretHash:hash('first-reset-secret'),signature:hash('first-reset-signature')};
+ s.record('unified',[first]);let authoritative=readRollbackErasureAuthority(s.input.authorityRoot,s.input.manifestSha256);
+ createPrivacy(beforeDb,{read:()=>decodeErasureJournal(authoritative.ledgers.unified.toString()),append(){throw Error();}});
+ beforeDb.exec("INSERT INTO music_shouts VALUES('orphan-restored',NULL,'anonymous','匿名','已重置留言',1001.25,NULL,0); INSERT INTO music_documents VALUES('trend',0,'{\"t\":1001.25,\"counts\":{}}')");
+ const before=beforeDb.serialize(),prior=Buffer.from(authoritative.ledgers.unified),second:ErasureIntent={...first,profiles:[],entries:[],requestId:randomUUID(),createdAt:'2026-11-20T03:00:00.000Z',signature:hash('second-reset-signature')};
+ s.record('unified',[second]);authoritative=readRollbackErasureAuthority(s.input.authorityRoot,s.input.manifestSha256);
+ createPrivacy(beforeDb,{read:()=>decodeErasureJournal(authoritative.ledgers.unified.toString()),append(){throw Error();}});
+ const pin=(bytes:Buffer)=>({bytes,sha256:digest(bytes)}),evidence:NativeOrphanResetSource={requestId:second.requestId,before:pin(before),beforeJournal:pin(prior),completed:pin(beforeDb.serialize()),completedJournal:pin(Buffer.from(authoritative.ledgers.unified))};
+ beforeDb.exec("INSERT INTO music_shouts VALUES('orphan-restored',NULL,'anonymous','匿名','已重置留言',1001.25,NULL,0),('orphan-later',NULL,'anonymous','匿名','後來留言',2001.25,NULL,1); INSERT INTO music_documents VALUES('trend',0,'{\"t\":1001.25,\"counts\":{}}'),('trend_sample',1,'{\"t\":2001.25,\"counts\":{}}')");
+ s.input.nativeImage=beforeDb.serialize();s.input.nativeImageSha256=digest(s.input.nativeImage);s.input.nativeOrphanResetSources=[evidence];
+ const source=Buffer.from(s.input.nativeImage),head=fs.readFileSync(join(s.input.authorityRoot,'authority-head.json')),result=projectNativeForwardErasures(s.input),db=open(result);
+ expect(result.report.nativeOrphanResetRepairs).toMatchObject([{requestId:second.requestId,removedRows:2,allRowsVerified:true,stoppedCaptureCustodyVerified:false,releaseEligible:false}]);
+ expect(db.prepare('SELECT id FROM music_shouts').all()).toEqual([{id:'orphan-later'}]);expect(db.prepare("SELECT kind,position FROM music_documents WHERE kind IN ('trend','trend_sample')").all()).toEqual([{kind:'trend_sample',position:1}]);
+ for(const table of ['bot_outbox','bot_settings','bot_settings_history','bot_runtime','privacy_receipts','music_catalog_actions','event_audit','finance_entries','settlement_history'])expect(db.prepare('SELECT rowid,* FROM '+table+' ORDER BY rowid').safeIntegers().all(),table).toEqual(beforeDb.prepare('SELECT rowid,* FROM '+table+' ORDER BY rowid').safeIntegers().all());
+ expect(s.input.nativeImage).toEqual(source);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);expect(result.nativeJournal).toEqual(authoritative.ledgers.unified);
+ const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));expect(result.report.remaining).toContain('native_global_reset_generations');
+ const originalEvidence=Buffer.from(evidence.before.bytes);
+ expect(()=>projectNativeForwardErasures(s.input,()=>{evidence.before.bytes[100]=evidence.before.bytes[100]!^1;})).toThrow('source bytes changed');
+ evidence.before.bytes=originalEvidence;expect(s.input.nativeImage).toEqual(source);
 });
