@@ -7739,7 +7739,9 @@
         "apps/api/src/forward-legacy-reset-proof-recovery.test.ts",
         "apps/api/src/forward-legacy-reset-identity-members.test.ts",
         "apps/api/src/forward-legacy-reset-identity-rows.test.ts",
-        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md"
+        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-scope.test.ts",
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7828,7 +7830,9 @@
         "docs/unified-rebuild/140-legacy-reset-vault-checkpoint.md",
         "docs/unified-rebuild/141-legacy-reset-completion-checkpoint.md",
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
-        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md"
+        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-scope.test.ts",
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7880,7 +7884,8 @@
         "apps/api/src/forward-account-authority.test.ts",
         "docs/unified-rebuild/127-account-erasure-repair-checkpoint.md",
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
-        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md"
+        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7899,7 +7904,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 146 號接通原 Store 的 persisted-only native 會員恢復，reset 選擇保持清空；並行新增身份 rowid 以明確 bindings 推導，十張身份表、startup／整組候選／reports 獨立核對。7 檔／154 個不同相關案例與修正後原六個裝置 browser 案例通過。第 145 號 Linux browser 原報告為 832 passed／1 timeout，trace 與原 artifact 保存，不能記成全量成功。仍缺其他 loaded／persisted-only 數字會員與身份差異、native reset 後續世代／重複 epoch／exact key reuse 來源鏈、latest-erasure 私人歷史、外部 ancestry／custody／high-water、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。保持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 147 號從完整原 reset vault 核對 persisted-only 會員：原 native payload 可恢復或已有真正刪除 authority 才通過；只剩 prelink／session 等身份 rows 的數字會員明確阻擋，原 sources／bot rows 保留。4 檔／72 個不同相關案例通過；第 146 號 Linux 全量仍須按固定提交核對。尚缺無可恢復 payload 會員的實際處置／歷史／來源鏈、native reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody／high-water、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。維持 in_progress／release_eligible=false，不部署。"
     },
     {
       "capability_id": "O13",
@@ -8115,7 +8120,9 @@
         "apps/api/src/forward-legacy-reset-proof-recovery.test.ts",
         "apps/api/src/forward-legacy-reset-identity-members.test.ts",
         "apps/api/src/forward-legacy-reset-identity-rows.test.ts",
-        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md"
+        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-scope.test.ts",
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8198,7 +8205,9 @@
         "docs/unified-rebuild/140-legacy-reset-vault-checkpoint.md",
         "docs/unified-rebuild/141-legacy-reset-completion-checkpoint.md",
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
-        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md"
+        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-scope.test.ts",
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8248,7 +8257,8 @@
         "apps/api/src/forward-account-authority.test.ts",
         "docs/unified-rebuild/127-account-erasure-repair-checkpoint.md",
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
-        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md"
+        "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -8266,7 +8276,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 146 號接通原 Store 的 persisted-only native 會員恢復，reset 選擇保持清空；並行新增身份 rowid 以明確 bindings 推導，十張身份表、startup／整組候選／reports 獨立核對。7 檔／154 個不同相關案例與修正後原六個裝置 browser 案例通過。第 145 號 Linux browser 原報告為 832 passed／1 timeout，trace 與原 artifact 保存，不能記成全量成功。仍缺其他 loaded／persisted-only 數字會員與身份差異、native reset 後續世代／重複 epoch／exact key reuse 來源鏈、latest-erasure 私人歷史、外部 ancestry／custody／high-water、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。保持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 147 號從完整原 reset vault 核對 persisted-only 會員：原 native payload 可恢復或已有真正刪除 authority 才通過；只剩 prelink／session 等身份 rows 的數字會員明確阻擋，原 sources／bot rows 保留。4 檔／72 個不同相關案例通過；第 146 號 Linux 全量仍須按固定提交核對。尚缺無可恢復 payload 會員的實際處置／歷史／來源鏈、native reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody／high-water、media／browser pending、真正停止來源 capture、完整 TS bot／實際版本組合／B01–B15／QQ／正式規模與 audited activation。維持 in_progress／release_eligible=false，不部署。"
     },
     {
       "capability_id": "O14",

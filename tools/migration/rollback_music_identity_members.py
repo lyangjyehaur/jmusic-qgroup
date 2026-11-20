@@ -14,6 +14,19 @@ from tools.migration.rollback_history_runtime import _json, KEY
 from tools.migration.rollback_music_reset import _encode
 
 
+class UnreconciledResetMembers(ValueError):
+    pass
+
+
+def _unloaded_scope(data, erased, unloaded):
+    if len(unloaded) > 100000 or any(not KEY.fullmatch(key) for key in unloaded):
+        raise ValueError('Invalid original unloaded member scope')
+    # A mapping, session or contact row alone cannot recreate a lost profile.
+    # Only a current member or the original Store's native payload covers it.
+    if set(unloaded) - erased - set(data['members']):
+        raise UnreconciledResetMembers('Original unloaded member scope requires reconciliation')
+
+
 def _source(raw, erased):
     data = _json(raw)
     if not isinstance(data, dict) or not isinstance(data.get('members'), dict):
@@ -31,7 +44,7 @@ def _identity(path):
     return db
 
 
-def prepare_identity_members(raw, image, erased):
+def prepare_identity_members(raw, image, erased, unloaded=()):
     from music_site.identity_store import Store
     from music_site import contacts, admin_links
     data = _source(raw, erased)
@@ -42,11 +55,11 @@ def prepare_identity_members(raw, image, erased):
         contacts.project(data, store)
         admin_links.projection(data, store)
         result = _encode(data)
-    verify_identity_members(raw, image, erased, result)
+    verify_identity_members(raw, image, erased, result, unloaded)
     return result
 
 
-def verify_identity_members(raw, image, erased, derived):
+def verify_identity_members(raw, image, erased, derived, unloaded=()):
     expected = copy.deepcopy(_source(raw, erased))
     before = list(expected['members'])
     with tempfile.TemporaryDirectory(prefix='qgroup-identity-member-verify-') as root:
@@ -70,11 +83,13 @@ def verify_identity_members(raw, image, erased, derived):
                         expected['members'][row['qq']]['boardUserId'] = row['user_id']
     if len(expected['members']) > 100000 or any(key in erased for key in expected['members']):
         raise ValueError('Original recovered member scope invalid')
+    _unloaded_scope(expected, erased, unloaded)
     actual = _source(derived, erased)
     if _encode(actual) != _encode(expected) or derived != _encode(actual):
         raise ValueError('Original identity member reconstruction differs')
     digest = lambda value: hashlib.sha256(value).hexdigest()
     return dict(originalMusicSha256=digest(raw), originalIdentitySha256=digest(image),
                 projectedMusicSha256=digest(derived), recoveredKeys=[key for key in expected['members'] if key not in before],
+                unloadedResetKeys=sorted(set(unloaded) - erased), unloadedResetMembersCovered=True,
                 originalValuesTypesAndOrderVerified=True, originalIdentityImageRetained=True,
                 authenticationActive=False, latestSourceAncestryVerified=False, releaseEligible=False)

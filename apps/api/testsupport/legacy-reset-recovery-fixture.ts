@@ -2,7 +2,7 @@ import Database from 'better-sqlite3';
 import {execFileSync} from 'node:child_process';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {legacyResetGenerationFixture} from './legacy-reset-generation-fixture';
+import {legacyResetGenerationFixture,type NumericResetMemberMode} from './legacy-reset-generation-fixture';
 import {saveProfile} from '../src/repositories';
 import {hash} from '../src/security';
 import {forwardHash} from '../../../tools/migration/forward-board-storage';
@@ -10,8 +10,8 @@ import type {LegacyResetRecoveryInput} from '../../../tools/migration/forward-le
 
 /** Real original reset/Store/save flow, followed by separate native additions.
  * All credentials, people, messages and images are isolated synthetic fixtures. */
-export async function legacyResetRecoveryFixture(nativeFork=true,persistedOnlyProfile=false){
-  const s=await legacyResetGenerationFixture(true,'e','',false,persistedOnlyProfile);let native:Database.Database|undefined;
+export async function legacyResetRecoveryFixture(nativeFork=true,persistedOnlyProfile=false,numericMemberMode:NumericResetMemberMode|null=null){
+  const s=await legacyResetGenerationFixture(true,'e','',false,persistedOnlyProfile,numericMemberMode);let native:Database.Database|undefined;
   try{
     execFileSync('python3',['-c',`import os,json,sys
 from pathlib import Path

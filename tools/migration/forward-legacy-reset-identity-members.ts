@@ -5,18 +5,21 @@ import Database from 'better-sqlite3';
 import {readRollbackErasureAuthority} from '../../apps/api/src/erasure-authority-protocol';
 import {pinRollbackTree} from '../../packages/runtime/src/private-source-files';
 import {forwardHash,assertForwardImage,type PinnedForwardBytes} from './forward-board-storage';
-import {assertForwardIdentity} from './forward-music-sources';
+import {assertForwardIdentity,musicBytes} from './forward-music-sources';
+import {object} from './music-codec';
 import {readForwardLegacyResetVault,type LegacyResetVaultInput} from './forward-legacy-reset-vault';
 export type LegacyResetIdentityMemberInput={vault:LegacyResetVaultInput;music:PinnedForwardBytes;identity:PinnedForwardBytes};
-const sha=z.string().regex(/^[a-f0-9]{64}$/),receiptSchema=z.object({originalMusicSha256:sha,originalIdentitySha256:sha,projectedMusicSha256:sha,recoveredKeys:z.array(z.string().regex(/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/)).max(100000),originalValuesTypesAndOrderVerified:z.literal(true),originalIdentityImageRetained:z.literal(true),authenticationActive:z.literal(false),latestSourceAncestryVerified:z.literal(false),releaseEligible:z.literal(false)}).strict();
+const sha=z.string().regex(/^[a-f0-9]{64}$/),memberKeys=z.array(z.string().regex(/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/)).max(100000),receiptSchema=z.object({originalMusicSha256:sha,originalIdentitySha256:sha,projectedMusicSha256:sha,recoveredKeys:memberKeys,unloadedResetKeys:memberKeys,unloadedResetMembersCovered:z.literal(true),originalValuesTypesAndOrderVerified:z.literal(true),originalIdentityImageRetained:z.literal(true),authenticationActive:z.literal(false),latestSourceAncestryVerified:z.literal(false),releaseEligible:z.literal(false)}).strict();
 const script=`import json,base64,sys
 sys.path.insert(0,sys.argv[1])
-from tools.migration.rollback_music_identity_members import prepare_identity_members,verify_identity_members
-value=json.loads(sys.stdin.buffer.read());raw=base64.b64decode(value['music'],validate=True);image=base64.b64decode(value['identity'],validate=True);erased=set(value['erased'])
-if value['mode']=='prepare':print(json.dumps(dict(derived=base64.b64encode(prepare_identity_members(raw,image,erased)).decode())))
-else:print(json.dumps(verify_identity_members(raw,image,erased,base64.b64decode(value['derived'],validate=True))))
+from tools.migration.rollback_music_identity_members import prepare_identity_members,verify_identity_members,UnreconciledResetMembers
+value=json.loads(sys.stdin.buffer.read());raw=base64.b64decode(value['music'],validate=True);image=base64.b64decode(value['identity'],validate=True);erased=set(value['erased']);unloaded=value['unloaded']
+try:
+ if value['mode']=='prepare':print(json.dumps(dict(derived=base64.b64encode(prepare_identity_members(raw,image,erased,unloaded)).decode())))
+ else:print(json.dumps(verify_identity_members(raw,image,erased,base64.b64decode(value['derived'],validate=True),unloaded)))
+except UnreconciledResetMembers:print(json.dumps(dict(error='unreconciled_reset_members')))
 `;
-function call(payload:unknown){try{return JSON.parse(execFileSync('python3',['-I','-c',script,fileURLToPath(new URL('../../',import.meta.url))],{input:JSON.stringify(payload),encoding:'utf8',timeout:30000,maxBuffer:192*1024*1024,stdio:['pipe','pipe','pipe']}));}catch{throw Error('Original reset identity member relation failed; retain original sources');}}
+function call(payload:unknown){let result:unknown;try{result=JSON.parse(execFileSync('python3',['-I','-c',script,fileURLToPath(new URL('../../',import.meta.url))],{input:JSON.stringify(payload),encoding:'utf8',timeout:30000,maxBuffer:192*1024*1024,stdio:['pipe','pipe','pipe']}));}catch{throw Error('Original reset identity member relation failed; retain original sources');}if(z.object({error:z.literal('unreconciled_reset_members')}).strict().safeParse(result).success)throw Error('Original persisted-only reset members require explicit membership reconciliation; retain all sources');return result;}
 function held(input:LegacyResetIdentityMemberInput,boundary?:()=>void){
   const s={vault:{...input.vault},music:{bytes:Buffer.from(input.music.bytes),sha256:input.music.sha256},identity:{bytes:Buffer.from(input.identity.bytes),sha256:input.identity.sha256}};
   for(const row of [s.music,s.identity])if(!sha.safeParse(row.sha256).success||forwardHash(row.bytes)!==row.sha256)throw Error('Original identity member source pin differs');
@@ -25,8 +28,12 @@ function held(input:LegacyResetIdentityMemberInput,boundary?:()=>void){
   const authority=readRollbackErasureAuthority(s.vault.authorityRoot,s.vault.manifestSha256),tree=pinRollbackTree(s.vault.vaultRoot),vault=readForwardLegacyResetVault(s.vault);
   if(!authority.records.some(row=>row.version===2)||!vault.vaultEvidence.allRecordedResetCompletionsPresent)throw Error('Original identity member recovery requires complete resets');
   const erased=[...new Set(authority.ledgers.music.toString().split('\n').filter(row=>row.trim()).map(row=>(JSON.parse(row) as {qq:string}).qq))];
+  const unloaded=memberKeys.parse([...new Set(vault.sources.resets.flatMap(row=>{
+    const persisted=object(object(musicBytes(row.persisted.bytes),'original persisted reset').members,'original persisted reset members'),loaded=object(object(musicBytes(row.loaded.bytes),'original loaded reset').members,'original loaded reset members');
+    return Object.keys(persisted).filter(key=>!Object.hasOwn(loaded,key));
+  }))].sort());
   const guard=()=>{const value:unknown=boundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Identity member recovery boundary must be synchronous');for(const key of Object.keys(s.vault) as (keyof LegacyResetVaultInput)[])if(input.vault[key]!==s.vault[key])throw Error('Identity member vault changed');for(const key of ['music','identity'] as const)if(input[key].sha256!==s[key].sha256||!Buffer.isBuffer(input[key].bytes)||!input[key].bytes.equals(s[key].bytes))throw Error('Identity member source changed');tree.assertUnchanged();authority.assertUnchanged();};
-  guard();return {s,guard,payload:{music:s.music.bytes.toString('base64'),identity:s.identity.bytes.toString('base64'),erased}};
+  guard();return {s,guard,payload:{music:s.music.bytes.toString('base64'),identity:s.identity.bytes.toString('base64'),erased,unloaded}};
 }
 function relation(h:ReturnType<typeof held>,music:PinnedForwardBytes){
   if(!Buffer.isBuffer(music.bytes)||music.bytes.length>64*1024*1024||forwardHash(music.bytes)!==music.sha256)throw Error('Projected identity member pin differs');
