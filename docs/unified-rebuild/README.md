@@ -209,3 +209,5 @@
 - [原始重設來源的私有持久保存](140-legacy-reset-vault-checkpoint.md)：先保存原 persisted／loaded bytes 再記錄 authority intent，86 個不同 focused 案例通過；第 138 號完整瀏覽器與第 139 號實際雙映像已核對，完整 reset 世代與最新全套驗收仍待完成。
 
 - [原始重設完成結果與固定回歸](141-legacy-reset-completion-checkpoint.md)：原 reset 完成後 bytes／record 綁定、100 項相關完整回歸通過；第 138／139 號完整 Linux 回歸與第 140 號實際雙映像已核對，完整世代與最新全套验收仍待完成。
+
+- [重設後曲目與留言世代](142-legacy-reset-generations-checkpoint.md)：原始完成紀錄綁定的新 ID 與引用轉換、獨立 Python reverse 核對；原生 reset／完整重建接入與 ancestry 仍待完成。
