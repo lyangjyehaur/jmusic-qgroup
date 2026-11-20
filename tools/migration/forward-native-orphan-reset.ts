@@ -5,7 +5,7 @@ import {decodeErasureJournal,readVerifiedErasureJournal,type ErasureJournal} fro
 import {replayMusicErasure} from '../../apps/api/src/privacy';
 import {schemaObjects} from './board-reconciliation';
 import {assertRollbackSource} from './rollback-source';
-import {assertForwardImage,forwardEqual,forwardHash,forwardLineage,forwardRows,type ForwardRow,type PinnedForwardBytes} from './forward-board-storage';
+import {assertForwardImage,forwardEqual,forwardHash,forwardLineage,forwardRows,forwardSequences,type ForwardRow,type PinnedForwardBytes} from './forward-board-storage';
 import {readSourceRebaseEvidence} from './source-rebase-evidence';
 
 /** Explicit frozen sources for one empty-profile/empty-entry native reset.
@@ -47,7 +47,7 @@ function openSource(input:NativeResetSource,general=false){
   const close=()=>{projected?.close();completed.close();before.close();};
   try{
     for(const db of [before,completed]){
-      db.pragma('foreign_keys = ON');db.transaction(()=>assertRollbackSource(db)).immediate();
+      db.pragma('foreign_keys = ON');db.transaction(()=>{assertRollbackSource(db);forwardSequences(db);}).immediate();
       if(readSourceRebaseEvidence(db))throw Error('Native orphan reset after rebase requires generation ancestry');
     }
     const prior=readVerifiedErasureJournal(before,journal(held.beforeJournal.bytes)),after=readVerifiedErasureJournal(completed,journal(held.completedJournal.bytes));
@@ -72,6 +72,7 @@ function openSource(input:NativeResetSource,general=false){
           model.prepare('DELETE FROM music_entries WHERE id=?').run(id);
           model.prepare("UPDATE migration_map SET status='deleted' WHERE source='music' AND entity_type='entry' AND target_id=?").run(id);
         }
+        assertRollbackSource(model);forwardSequences(model);
       }).immediate();
     }
     const expected=projected??before;
@@ -115,6 +116,8 @@ export function verifyNativeResetSource(input:NativeResetSource){
 
 function candidateBoundary(before:DB,completed:DB,db:DB,current:ErasureJournal,completedJournal:Buffer){
   if(forwardLineage(before)!==forwardLineage(db)||readSourceRebaseEvidence(db))throw Error('Native orphan reset candidate generation ancestry differs');
+  const minimum=forwardSequences(completed),currentSequences=forwardSequences(db);
+  for(const [name,value] of minimum)if((currentSequences.get(name)??-1n)<value)throw Error('Native reset candidate sequence rewound below completion');
   const original=journal(completedJournal).read(),actual=readVerifiedErasureJournal(db,current);
   if(actual.length<original.length||!forwardEqual(original,actual.slice(0,original.length)))throw Error('Native orphan reset candidate lost its completed journal prefix');
   if(actual.slice(original.length).some(intent=>'version' in intent&&intent.version===2&&intent.command==='reset_music'))throw Error('Native orphan reset followed by a later reset requires generation ancestry');
@@ -138,7 +141,7 @@ function candidateBoundary(before:DB,completed:DB,db:DB,current:ErasureJournal,c
  * Later keys are retained; ambiguous key reuse blocks before the first write. */
 function repairGlobal(db:DB,current:ErasureJournal,input:NativeResetSource,general:boolean){
   if(db.name!==':memory:'||!db.inTransaction||db.pragma('foreign_keys',{simple:true})!==1)throw Error('Native orphan reset repair requires a disposable memory image and held foreign-key transaction');
-  assertRollbackSource(db);
+  assertRollbackSource(db);forwardSequences(db);
   const s=openSource(input,general);
   try{
     candidateBoundary(s.before,s.completed,db,current,s.held.completedJournal.bytes);
@@ -161,8 +164,8 @@ function reconcileGlobal(source:DB,candidate:DB,current:ErasureJournal,input:Nat
   const reject=():never=>{throw Error('Native orphan reset reconciliation failed; retain all source generations');};
   const s=openSource(input,general);
   try{
-    source.transaction(()=>assertRollbackSource(source)).immediate();
-    if(candidate.inTransaction)assertRollbackSource(candidate);else candidate.transaction(()=>assertRollbackSource(candidate)).immediate();
+    source.transaction(()=>{assertRollbackSource(source);forwardSequences(source);}).immediate();
+    if(candidate.inTransaction){assertRollbackSource(candidate);forwardSequences(candidate);}else candidate.transaction(()=>{assertRollbackSource(candidate);forwardSequences(candidate);}).immediate();
     candidateBoundary(s.before,s.completed,source,current,s.held.completedJournal.bytes);
     if(!forwardEqual(schemaObjects(source),schemaObjects(candidate)))reject();
     for(const name of ['user_version','application_id','encoding'])if(!forwardEqual(source.pragma(name,{simple:true}),candidate.pragma(name,{simple:true})))reject();
