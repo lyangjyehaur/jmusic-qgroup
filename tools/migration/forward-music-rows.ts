@@ -17,6 +17,15 @@ function documents(base:ObjectValue,native:ObjectValue,old:ObjectValue,label:str
   }
   return Object.fromEntries(mergeForwardOrder(Object.keys(base),Object.keys(native),Object.keys(old),new Set(values.keys())).map(key=>[key,values.get(key)!]));
 }
+function trend(before:Json,current:Json,legacy:Json){
+  if(musicEqual(before,legacy)||musicEqual(current,legacy))return structuredClone(current);
+  if(musicEqual(before,current))return structuredClone(legacy);
+  if(!Array.isArray(before)||!Array.isArray(current)||!Array.isArray(legacy)||current.length<before.length||legacy.length<before.length||before.some((point,index)=>!musicEqual(point,current[index])||!musicEqual(point,legacy[index])))throw Error('Forward music conflict in trend; explicit reconciliation required');
+  let shared=before.length;while(shared<current.length&&shared<legacy.length&&musicEqual(current[shared],legacy[shared]))shared++;
+  // Preserve the native prefix/row identities. Exact shared-prefix samples are
+  // already represented; retain every distinct old append in its source order.
+  return structuredClone([...current,...legacy.slice(shared)]);
+}
 type Shout={kind:'shouts'|'shoutHistory';value:Json};
 function shouts(data:ObjectValue){
   const result=new Map<string,Shout>();
@@ -28,7 +37,8 @@ function shouts(data:ObjectValue){
 export function mergeForwardMusicRows(s:ForwardMusicSources){
     const sources=[s.baseline.data,s.native.data,s.old];
     const data:ObjectValue={};for(const kind of ['entries','members'])data[kind]=documents(...sources.map(source=>object(source[kind],'forward '+kind)) as [ObjectValue,ObjectValue,ObjectValue],kind);
-    for(const kind of ['settings','trend'])data[kind]=structuredClone(choose(...sources.map(source=>source[kind]??(kind==='settings'?{}:[])) as [Json,Json,Json],musicEqual,kind)!);
+    data.settings=structuredClone(choose(...sources.map(source=>source.settings??{}) as [Json,Json,Json],musicEqual,'settings')!);
+    data.trend=trend(...sources.map(source=>source.trend??[]) as [Json,Json,Json]);
     const shoutSources=sources.map(shouts),mergedShouts=new Map<string,Shout>();
     for(const id of new Set(shoutSources.flatMap(map=>[...map.keys()]))){const wanted=choose(...shoutSources.map(map=>map.get(id)) as [Shout|undefined,Shout|undefined,Shout|undefined],musicEqual,'shouts');if(wanted)mergedShouts.set(id,structuredClone(wanted));}
     for(const kind of ['shouts','shoutHistory'] as const){const present=new Set([...mergedShouts].filter(([,row])=>row.kind===kind).map(([id])=>id)),orders=shoutSources.map(map=>[...map].filter(([,row])=>row.kind===kind).map(([id])=>id));data[kind]=mergeForwardOrder(...orders as [string[],string[],string[]],present).map(id=>mergedShouts.get(id)!.value);}

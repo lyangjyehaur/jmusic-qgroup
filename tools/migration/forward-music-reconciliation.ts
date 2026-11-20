@@ -12,13 +12,17 @@ function expected<T>(before:T|undefined,current:T|undefined,legacy:T|undefined,e
   if(equal(before,legacy))return current;if(!equal(before,current)&&!equal(current,legacy))reject();return legacy;
 }
 /** Independent order oracle; no merge helper or report is consulted. */
-function order(before:string[],current:string[],legacy:string[],present:Set<string>,actual:string[]){
+function order(before:string[],current:string[],legacy:string[],present:Set<string>,actual:string[],objectKeys=false){
   const lists=[before,current,legacy].map(list=>list.filter(id=>present.has(id))),[b,n,o]=lists as [string[],string[],string[]],eq=(a:string[],b:string[])=>JSON.stringify(a)===JSON.stringify(b);
   const chosen=eq(b,o)?[n]:eq(b,n)?[o]:[n,o],discovery=[...new Set(lists.flat())],rank=new Map(discovery.map((id,index)=>[id,index])),constraints=new Set<string>();
   for(const list of chosen)for(let index=1;index<list.length;index++)constraints.add(JSON.stringify([list[index-1],list[index]]));
   const remaining=new Set(discovery),wanted:string[]=[];
   while(remaining.size){const blocked=new Set([...constraints].map(value=>JSON.parse(value) as [string,string]).filter(([a,b])=>remaining.has(a)&&remaining.has(b)).map(([,b])=>b)),ready=[...remaining].filter(id=>!blocked.has(id)).sort((a,b)=>rank.get(a)!-rank.get(b)!);if(!ready.length)reject();wanted.push(ready[0]!);remaining.delete(ready[0]!);}
-  if(!eq(wanted,actual)||wanted.length!==present.size)reject();
+  // Object enumeration sorts canonical array-index keys before string keys.
+  // Shout arrays retain the topological order without this object-only rule.
+  const indexKey=(id:string)=>Number.isInteger(Number(id))&&Number(id)>=0&&Number(id)<4294967295&&String(Number(id))===id;
+  const enumerated=objectKeys?[...wanted.filter(indexKey).sort((a,b)=>Number(a)-Number(b)),...wanted.filter(id=>!indexKey(id))]:wanted;
+  if(!eq(enumerated,actual)||wanted.length!==present.size)reject();
 }
 /** Reads all source rows and derives expectations independently. It never
  * invokes the merger or accepts its decisions, mapping list or summary as proof. */
@@ -36,9 +40,19 @@ export function reconcileForwardMusicRows(s:ForwardMusicSources,music:RollbackMu
     const [base,current,old]=sources.map(data=>object(data[kind],'verify music '+kind)) as [ReturnType<typeof object>,ReturnType<typeof object>,ReturnType<typeof object>],actual=object(music.data[kind],'candidate music '+kind),wanted=new Map<string,Json>();
     for(const key of new Set([...Object.keys(base),...Object.keys(current),...Object.keys(old)])){const value=expected(base[key],current[key],old[key],musicEqual);if(value!==undefined)wanted.set(key,value);}
     if(Object.keys(actual).length!==wanted.size||[...wanted].some(([key,value])=>!Object.hasOwn(actual,key)||!musicEqual(value,actual[key])))reject();
-    order(Object.keys(base),Object.keys(current),Object.keys(old),new Set(wanted.keys()),Object.keys(actual));counts[kind]=wanted.size;
+    order(Object.keys(base),Object.keys(current),Object.keys(old),new Set(wanted.keys()),Object.keys(actual),true);counts[kind]=wanted.size;
   }
-  for(const kind of ['settings','trend']){const [b,n,o]=sources.map(data=>data[kind]??(kind==='settings'?{}:[]));if(!musicEqual(expected(b,n,o,musicEqual),music.data[kind]))reject();}
+  const [beforeSettings,currentSettings,legacySettings]=sources.map(data=>data.settings??{});if(!musicEqual(expected(beforeSettings,currentSettings,legacySettings,musicEqual),music.data.settings))reject();
+  const [beforeTrend,currentTrend,legacyTrend]=sources.map(data=>data.trend??[]);let expectedTrend;
+  if(musicEqual(beforeTrend,legacyTrend)||musicEqual(currentTrend,legacyTrend))expectedTrend=currentTrend;
+  else if(musicEqual(beforeTrend,currentTrend))expectedTrend=legacyTrend;
+  else{
+    if(!Array.isArray(beforeTrend)||!Array.isArray(currentTrend)||!Array.isArray(legacyTrend)||currentTrend.length<beforeTrend.length||legacyTrend.length<beforeTrend.length)return reject();
+    for(let index=0;index<beforeTrend.length;index++)if(!musicEqual(beforeTrend[index],currentTrend[index])||!musicEqual(beforeTrend[index],legacyTrend[index]))reject();
+    let common=beforeTrend.length;for(;common<Math.min(currentTrend.length,legacyTrend.length);common++)if(!musicEqual(currentTrend[common],legacyTrend[common]))break;
+    expectedTrend=currentTrend.concat(legacyTrend.slice(common));
+  }
+  if(!musicEqual(expectedTrend,music.data.trend))reject();
   type Shout={kind:string;value:Json};
   const lists=[...sources,music.data].map(data=>{
     const rows=new Map<string,Shout>();for(const kind of ['shouts','shoutHistory']){const list=data[kind]??[];if(!Array.isArray(list))reject();for(const item of list){const value=object(item,'verify forward shout');if(typeof value.id!=='string'||rows.has(value.id))reject();rows.set(value.id,{kind,value});}}return rows;

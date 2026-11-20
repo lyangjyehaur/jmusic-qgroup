@@ -55,7 +55,7 @@ export function rollbackMusicKeys(db:DB){
 export function projectRollbackMusic(db:DB,journal:ErasureJournal){
   if(db.inTransaction)throw Error('Rollback music projection requires a standalone source transaction');
   return db.transaction(()=>{
-    assertRollbackSource(db);const intents=readVerifiedErasureJournal(db,journal);readSourceRebaseEvidence(db,intents);const mapping=rollbackMusicKeys(db),byId=new Map(mapping.map(row=>[row.profileId,row]));
+    assertRollbackSource(db);const intents=readVerifiedErasureJournal(db,journal),rebased=readSourceRebaseEvidence(db,intents);const mapping=rollbackMusicKeys(db),byId=new Map(mapping.map(row=>[row.profileId,row]));
     const erased=new Set(mapping.filter(row=>row.erased).flatMap(row=>[row.profileId,row.legacyKey]));
     for(const row of db.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[])erased.add(row.legacy_key);
     const translate=(value:string)=>erased.has(value)?'':byId.get(value)?.legacyKey??value;
@@ -102,7 +102,11 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
       patch(member,'name',row.name,old?.name??'');patch(member,'consent',row.consent===null?true:!!row.consent,old?.consent??false);
       patch(member,'note',row.note,old?.note??'');patch(member,'noteAt',row.note_at,old?.noteAt??0);patch(member,'gender',row.gender,old?.gender??'');patch(member,'genderPublic',!!row.gender_public,old?.genderPublic??false);
       if(!old)member.name=row.name;
-      member.boardUserId=row.user_id??'';member.contactQQ=row.contact_qq??'';
+      member.boardUserId=row.user_id??'';
+      // A rebased source retains the old raw field when its effective contact
+      // is unchanged. Numeric old keys are their own implicit QQ contact.
+      const oldContact=/^\d{4,12}$/.test(String(member.qq))?String(member.qq):String(old?.contactQQ??'');
+      if(!(rebased&&old&&oldContact===(row.contact_qq??'')))member.contactQQ=row.contact_qq??'';
       patch(member,'pinHash',row.pin_hash??'',old?.pinHash??'');
       const selections=db.prepare('SELECT entry_id AS id,level FROM music_selections WHERE profile_id=? ORDER BY position').all(row.id) as {id:string;level:number}[];
       if(!(old&&!Object.hasOwn(old,'selection')&&selections.length===0))member.selection=old&&same(choices(old.selection),selections)?structuredClone(old.selection??[]):selections as unknown as Json[];

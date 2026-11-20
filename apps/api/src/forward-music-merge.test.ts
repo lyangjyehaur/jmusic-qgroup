@@ -95,13 +95,31 @@ it.each(['duplicate-json','unknown-root','unknown-member','unknown-entry','unkno
 it.each(['member','entry','trend','identity-row','identity-pk','ownership','contact','orphan-contact'] as const)('blocks conflicting %s changes without modifying any input',async kind=>{
   const s=await setup();if(kind==='member'){s.db.prepare("UPDATE music_profile_fields SET note='native' WHERE profile_id=?").run(profileId('10002'));member(s.old,'10002').note='old';}
   if(kind==='entry'){s.db.prepare("UPDATE music_entries SET name='native' WHERE id='e'").run();object(object(s.old.entries,'entries').e,'e').text='old';}
-  if(kind==='trend'){s.db.prepare("INSERT INTO music_documents VALUES('trend_sample',0,'{\"t\":555,\"counts\":{}}')").run();(s.old.trend as ObjectValue[]).push({t:666,counts:{}});}
+  if(kind==='trend'){s.db.prepare("INSERT INTO music_documents VALUES('trend_sample',0,'{\"t\":555,\"counts\":{}}')").run();(s.old.trend as ObjectValue[])[0]!.counts={e:666};}
   if(kind==='identity-row'){s.db.prepare("INSERT INTO music_claim_attempts VALUES(?,111)").run('ip:'+'a'.repeat(64));s.oldIdentity.prepare('INSERT INTO login_attempts VALUES(?,222)').run('ip:'+'b'.repeat(64));}
   if(kind==='identity-pk'){const profile=saveProfile(s.db,'later-native',{profileId:null,revision:0,musicEpoch:0,selections:[]},stamp),current=projectRollbackState(s.db,s.journal),key=current.music.keys.find(row=>row.profileId===profile.id)!.legacyKey,identity=open(current.identityImage),row=identity.prepare('SELECT * FROM prelinks WHERE qq=?').get(key) as {qq:string;user_id:string;created:number};members(s.old)[key]=structuredClone(member(current.music.data,key));s.oldIdentity.prepare('INSERT INTO prelinks(rowid,qq,user_id,created) VALUES(77,?,?,?)').run(row.qq,row.user_id,row.created);}
   if(kind==='ownership')s.oldIdentity.prepare("INSERT INTO links VALUES('10001','synthetic','subject','bob',123,'original')").run();
   if(kind==='contact'){const key=s.base.music.keys.find(row=>row.profileId===s.generated.id)!.legacyKey;s.oldIdentity.prepare('INSERT INTO profile_contacts VALUES(?,?,123)').run(key,'10002');}
   if(kind==='orphan-contact')s.oldIdentity.prepare("INSERT INTO profile_contacts VALUES('99998','10002',123)").run();
   const input=s.input(),before=Object.fromEntries(Object.entries(input).map(([key,value])=>[key,Buffer.from(value.bytes)]));expect(()=>mergeForwardMusic(input)).toThrow();for(const [key,value] of Object.entries(input))expect(value.bytes).toEqual(before[key]);
+});
+it.each(['independent','shared-prefix','repeated-value','numeric-object-keys'] as const)('preserves concurrent trend appends and independently checks their order: %s',async kind=>{
+  const s=await setup(),shared={t:101,counts:{}},nativeOnly={t:102,counts:{}},legacyOnly={t:103,counts:{}},before=structuredClone(s.old.trend as ObjectValue[]);
+  const nativeTail=kind==='shared-prefix'?[shared,nativeOnly]:[nativeOnly],legacyTail=kind==='shared-prefix'?[shared,legacyOnly]:kind==='repeated-value'?[legacyOnly,nativeOnly]:[legacyOnly];
+  for(const [position,point] of nativeTail.entries())s.db.prepare("INSERT INTO music_documents VALUES('trend_sample',?,?)").run(position,JSON.stringify(point));
+  (s.old.trend as ObjectValue[]).push(...legacyTail);
+  if(kind==='numeric-object-keys'){
+    // Array-index object keys sort ahead of generated string keys; 2^32-1 and
+    // leading-zero keys remain strings. The array shout order stays independent.
+    for(const id of ['4294967295','01','12','2'])object(s.old.entries,'entries')[id]={id,text:id,kind:'sub'};
+    s.db.prepare("INSERT INTO music_entries VALUES('native-string','native','sub')").run();
+  }
+  const input=s.input(),merged=mergeForwardMusic(input),expected=[...before,...nativeTail,...legacyTail.slice(kind==='shared-prefix'?1:0)];
+  expect(merged.music.data.trend).toEqual(expected);expect(verifyForwardMusicMerge(input,merged.music,merged.identityImage).releaseEligible).toBe(false);
+  if(kind==='numeric-object-keys')expect(Object.keys(object(merged.music.data.entries,'entries'))).toEqual(['2','12','e','native-string','4294967295','01']);
+  for(const change of [(music:RollbackMusic)=>{(music.data.trend as ObjectValue[]).reverse();},(music:RollbackMusic)=>{(music.data.trend as ObjectValue[]).pop();},(music:RollbackMusic)=>{(music.data.trend as ObjectValue[]).at(-1)!.t=999;}]){
+    const altered=structuredClone(merged.music);change(altered);expect(()=>verifyForwardMusicMerge(input,altered,merged.identityImage)).toThrow('reconciliation');
+  }
 });
 it('rejects an unproved member disappearance, identity schema/storage changes and an unverified checkpoint projection',async()=>{
   const s=await setup(),missing=s.input();changeMusic(missing,'oldMusic',data=>{delete members(data)['10002'];});expect(()=>mergeForwardMusic(missing)).toThrow('member disappearance');const schema=s.input();alter(schema,'oldIdentity',db=>db.exec('CREATE TABLE unknown(value)'));expect(()=>mergeForwardMusic(schema)).toThrow('identity schema');const storage=s.input();alter(storage,'oldIdentity',db=>db.prepare("UPDATE prelinks SET user_id=? WHERE qq='10001'").run(Buffer.from('alice')));expect(()=>mergeForwardMusic(storage)).toThrow('storage class');const baseline=s.input();changeMusic(baseline,'baselineMusic',data=>{member(object(data.data,'data'),'10001').name='forged';});expect(()=>mergeForwardMusic(baseline)).toThrow('reconciliation');

@@ -71,7 +71,9 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
     const member=obj(members[map.get(row.id)!.legacyKey]);fields(member,['qq','name','consent','selection','created','createdAt','pinHash','lastJoinAt','boardUserId','gender','genderPublic','note','noteAt','lastShoutAt','contactQQ']);
     for(const value of list(member.selection))if(value&&typeof value==='object'&&!Array.isArray(value))fields(obj(value),['id','entryId','level']);
     equal(member.qq,map.get(row.id)!.legacyKey);equal(member.name??'',row.name);equal(member.consent??false,row.consent===null?true:!!row.consent);
-    equal(member.boardUserId,row.user_id??'');equal(member.pinHash??'',row.pin_hash??'');equal(member.contactQQ,row.contact_qq??'');
+    equal(member.boardUserId,row.user_id??'');equal(member.pinHash??'',row.pin_hash??'');
+    if(rebased){const key=String(member.qq),contact=/^[0-9]{4,12}$/.test(key)?key:String(member.contactQQ??'');equal(contact,row.contact_qq??'');}
+    else equal(member.contactQQ,row.contact_qq??'');
     equal(member.note??'',row.note);equal(member.noteAt??0,row.note_at);equal(member.gender??'',row.gender);equal(member.genderPublic??false,!!row.gender_public);
     const expected=db.prepare('SELECT entry_id AS id,level FROM music_selections WHERE profile_id=? ORDER BY position').all(row.id);equal(normalizedSelection(member.selection),expected);choices+=list(expected).length;
     const created=[...new Set([...list(row.created_entries_json===null?[]:JSON.parse(row.created_entries_json)).filter(id=>typeof id==='string'&&Object.hasOwn(entries,id)),
@@ -80,6 +82,7 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
     if(list(member.created).some(id=>typeof id!=='string'||!Object.hasOwn(entries,id)))reject();equal([...new Set(list(member.created))],created);
     const source=db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' AND json_extract(payload_json,'$.profileId')=?").get(row.id) as {payload_json:string}|undefined;
     if(source){const old=obj(obj(JSON.parse(source.payload_json)).member);
+      if(rebased){const key=String(member.qq),originalContact=/^[0-9]{4,12}$/.test(key)?key:String(old.contactQQ??'');if(originalContact===(row.contact_qq??''))equal(member.contactQQ,old.contactQQ);else equal(member.contactQQ,row.contact_qq??'');}
       if(canonical(normalizedSelection(old.selection))===canonical(expected))equal(member.selection,old.selection);
       for(const field of ['note','noteAt','gender','genderPublic']){const fallback=field==='noteAt'?0:field==='genderPublic'?false:'';if(canonical(old[field]??fallback)===canonical(member[field]??fallback))equal(Object.hasOwn(member,field)?member[field]:undefined,Object.hasOwn(old,field)?old[field]:undefined);}
       const expectedRaw=list(old.created).filter(id=>typeof id==='string'&&created.includes(id));
