@@ -2,6 +2,7 @@ import type {DB} from '@qgroup/database';
 import type {StoredIntent} from '../../apps/api/src/erasure-journal';
 import {forwardEqual,forwardRows} from './forward-board-storage';
 import {assertNativeResetEntryBoundary} from './native-reset-entry-boundary';
+import {assertNativeResetProfileBoundary} from './native-reset-profile-boundary';
 
 /** Physical owner counters are monotone, including when no live profile
  * remains. Never replace them with a count or a JavaScript rounded number. */
@@ -34,4 +35,5 @@ export function assertNativeResetPrivateBoundary(before:DB,completed:DB,current:
   const ids=new Set(entryIds),originalEntries=new Map([...forwardRows(before,'music_entries')].filter(r=>ids.has(String(r.id))).map(r=>[String(r.id),r]));
   for(const row of forwardRows(current,'music_entries'))if(ids.has(String(row.id))&&!forwardEqual(row,originalEntries.get(String(row.id))))throw Error('Native reset original entry identity was reused; generation evidence required');
   assertNativeResetEntryBoundary(before,current,profileIds,entryIds);
+  assertNativeResetProfileBoundary(before,completed,current,profileIds);
 }

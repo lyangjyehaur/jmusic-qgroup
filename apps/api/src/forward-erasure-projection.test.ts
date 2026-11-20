@@ -226,6 +226,11 @@ it('projects an authority-bound full native reset while preserving later profile
  const rejectedRelationshipSource=Buffer.from(reused.nativeImage);
  expect(()=>projectNativeForwardErasures(reused)).toThrow('original entry relationship changed');
  expect(reused.nativeImage).toEqual(rejectedRelationshipSource);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
+ const privateReuse:ForwardErasureInput={...s.input,nativeImage:Buffer.from(s.input.nativeImage)};
+ changeImage(privateReuse,image=>image.prepare("INSERT INTO music_profile_contacts VALUES(?,'987654321','self_reported',0,'later-private-contact')").run(originalNative.id));
+ const rejectedPrivateSource=Buffer.from(privateReuse.nativeImage);
+ expect(()=>projectNativeForwardErasures(privateReuse)).toThrow('original profile relationship changed');
+ expect(privateReuse.nativeImage).toEqual(rejectedPrivateSource);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
  const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));expect(result.report.remaining).toContain('native_global_reset_generations');
  expect(()=>projectNativeForwardErasures({...s.input,nativeOrphanResetSources:[evidence]})).toThrow('Multiple native reset generations');
  const bytes=Buffer.from(evidence.completed.bytes);expect(()=>projectNativeForwardErasures(s.input,()=>{evidence.completed.bytes[100]=evidence.completed.bytes[100]!^1;})).toThrow('source bytes changed');evidence.completed.bytes=bytes;
