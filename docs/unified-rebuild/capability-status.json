@@ -7625,7 +7625,8 @@
         "tools/migration/forward-account-epoch.ts",
         "tools/migration/forward-account-business.ts",
         "tools/migration/forward-account-rebase.ts",
-        "tools/migration/forward-native-reset-entries.ts"
+        "tools/migration/forward-native-reset-entries.ts",
+        "tools/migration/forward-legacy-reset-sources.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7709,7 +7710,9 @@
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
         "apps/api/src/forward-account-business.test.ts",
         "apps/api/src/forward-native-reset-entries.test.ts",
-        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md"
+        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-sources.test.ts",
+        "docs/unified-rebuild/139-legacy-reset-source-binding-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7791,7 +7794,9 @@
         "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md",
         "docs/unified-rebuild/137-capture-inode-checkpoint.md",
         "apps/api/src/forward-native-reset-entries.test.ts",
-        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md"
+        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-sources.test.ts",
+        "docs/unified-rebuild/139-legacy-reset-source-binding-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7968,7 +7973,8 @@
         "tools/migration/forward-account-epoch.ts",
         "tools/migration/forward-account-business.ts",
         "tools/migration/forward-account-rebase.ts",
-        "tools/migration/forward-native-reset-entries.ts"
+        "tools/migration/forward-native-reset-entries.ts",
+        "tools/migration/forward-legacy-reset-sources.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8046,7 +8052,9 @@
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
         "apps/api/src/forward-account-business.test.ts",
         "apps/api/src/forward-native-reset-entries.test.ts",
-        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md"
+        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-sources.test.ts",
+        "docs/unified-rebuild/139-legacy-reset-source-binding-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8122,7 +8130,9 @@
         "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md",
         "docs/unified-rebuild/137-capture-inode-checkpoint.md",
         "apps/api/src/forward-native-reset-entries.test.ts",
-        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md"
+        "docs/unified-rebuild/138-native-reset-entry-repair-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-sources.test.ts",
+        "docs/unified-rebuild/139-legacy-reset-source-binding-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",

@@ -103,3 +103,32 @@ def capture_legacy_music_reset(source_bytes, loaded, erased_at):
         source=dict(size=len(source_bytes), sha256=_sha(source_bytes)),
         loadedSha256=_sha(loaded_bytes), erasedAtJson=_encode(erased_at).decode().strip(),
         scope=_capture_scope(source_value), loadedScope=_capture_scope(_json(loaded_bytes))))
+
+
+def verify_legacy_music_reset_sources(operation, source_bytes, loaded_bytes):
+    """Verify both original generations; no cleanup, reconstruction or file IO.
+
+    Persisted bytes retain their original formatting. Loaded bytes are the exact
+    Python snapshot encoded by the original producer, including 1.0 vs 1, float
+    exponents, negative zero, unknown fields and map/list ordering. Neither
+    generation may be substituted for the other even when member keys agree.
+    """
+    validate_music_reset_operation(operation)
+    for raw in (source_bytes, loaded_bytes):
+        if not isinstance(raw, bytes) or len(raw) > LIMIT:
+            raise ValueError('Bound original reset source bytes required')
+    if operation['source'] != dict(size=len(source_bytes), sha256=_sha(source_bytes)):
+        raise ValueError('Original persisted reset source differs')
+    if operation['loadedSha256'] != _sha(loaded_bytes):
+        raise ValueError('Original loaded reset source differs')
+    source, loaded = _json(source_bytes), _json(loaded_bytes)
+    if loaded_bytes != _encode(loaded):
+        raise ValueError('Original loaded reset encoding differs')
+    if _capture_scope(source) != operation['scope'] or _capture_scope(loaded) != operation['loadedScope']:
+        raise ValueError('Original reset container scope differs')
+    return dict(version=1, persistedSha256=_sha(source_bytes), loadedSha256=_sha(loaded_bytes),
+                persistedSize=len(source_bytes), loadedSize=len(loaded_bytes),
+                persistedContainers={key: len(rows) for key, rows in operation['scope'].items()},
+                loadedContainers={key: len(rows) for key, rows in operation['loadedScope'].items()},
+                bothOriginalSourcesVerified=True, resetGenerationsReconciled=False,
+                releaseEligible=False)
