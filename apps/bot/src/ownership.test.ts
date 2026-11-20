@@ -27,6 +27,59 @@ describe('delivery owner protocol',()=>{
     expect(()=>new BotOwnership(s.path)).toThrow('unavailable');child.kill('SIGKILL');await exited;
     const owner=new BotOwnership(s.path);owner.assert();owner.close();
   });
+  it.each(['','-journal','-wal','-shm'])('rejects an owner inode hardlinked as %s before opening it and keeps the original TS lock',suffix=>{
+    const s=setup(),other=setup(),owner=new BotOwnership(s.path);cleanup.push(()=>owner.close());
+    if(suffix){const prepared=new BotOwnership(other.path);prepared.close();}
+    const alias=join(other.dir,'.bot-owner.sqlite3')+suffix;linkSync(owner.path,alias);
+    expect(()=>new BotOwnership(other.path)).toThrow(/Invalid bot owner/);
+    rmSync(alias);owner.assert();
+    expect(python(s.path,"try:\n BotOwnership(sys.argv[1]);print('WRONG')\nexcept RuntimeError:print('blocked')").trim()).toBe('blocked');
+    owner.close();const next=new BotOwnership(other.path);next.close();
+  });
+  it('rejects a renamed live owner inode in another directory without dropping its OS lock',()=>{
+    const s=setup(),other=setup(),owner=new BotOwnership(s.path);cleanup.push(()=>owner.close());const alias=join(other.dir,'.bot-owner.sqlite3');
+    renameSync(owner.path,alias);
+    try{
+      expect(()=>new BotOwnership(other.path)).toThrow('Invalid bot owner file');
+      expect(python(alias,"import sqlite3\ntry:\n db=sqlite3.connect(sys.argv[1],timeout=0);db.execute('BEGIN EXCLUSIVE');print('WRONG')\nexcept sqlite3.OperationalError:print('blocked')").trim()).toBe('blocked');
+    }finally{renameSync(alias,owner.path);}
+    owner.assert();
+  });
+  it('keeps Python locks through rejected hardlink/rename aliases and never opens an existing owner with a raw descriptor',()=>{
+    const s=setup(),other=setup();expect(python(s.path,`import os,sqlite3,subprocess
+from pathlib import Path
+from unittest.mock import patch
+other=Path(${JSON.stringify(other.path)})
+owner=BotOwnership(sys.argv[1])
+alias=other.parent/'.bot-owner.sqlite3'
+for suffix in ('','-journal','-wal','-shm'):
+ if suffix:
+  prepared=BotOwnership(other);prepared.close()
+ path=Path(str(alias)+suffix);os.link(owner.path,path)
+ try:
+  with patch('qgroup_bot.ownership.os.open',side_effect=AssertionError('raw FD on an existing owner')) as opened:
+   try:BotOwnership(other);raise AssertionError('alias accepted')
+   except RuntimeError:pass
+   assert opened.call_count==0
+ finally:path.unlink()
+ owner.check()
+ result=subprocess.run([sys.executable,'-c',"import sqlite3,sys;d=sqlite3.connect(sys.argv[1],timeout=0);d.execute('BEGIN EXCLUSIVE')",str(owner.path)],capture_output=True)
+ assert result.returncode!=0 and b'locked' in result.stderr
+ if alias.exists():alias.unlink()
+os.rename(owner.path,alias)
+try:
+ with patch('qgroup_bot.ownership.os.open',side_effect=AssertionError('raw FD on renamed owner')) as opened:
+  try:BotOwnership(other);raise AssertionError('renamed alias accepted')
+  except RuntimeError:pass
+  assert opened.call_count==0
+ result=subprocess.run([sys.executable,'-c',"import sqlite3,sys;d=sqlite3.connect(sys.argv[1],timeout=0);d.execute('BEGIN EXCLUSIVE')",str(alias)],capture_output=True)
+ assert result.returncode!=0 and b'locked' in result.stderr
+finally:os.rename(alias,owner.path)
+owner.check();owner.close()
+with patch('qgroup_bot.ownership.os.open',side_effect=AssertionError('raw FD on existing lock')) as opened:
+ next=BotOwnership(sys.argv[1]);next.check();next.close();assert opened.call_count==0
+print('all-aliases-blocked-lock-retained')`).trim()).toBe('all-aliases-blocked-lock-retained');
+  });
   it('keeps Python in-process exclusion and refuses symlinks/hardlinks or a replaced owner file',()=>{
     const s=setup();expect(python(s.path,"owner=BotOwnership(sys.argv[1])\ntry:\n BotOwnership(sys.argv[1]);print('WRONG')\nexcept RuntimeError:print('blocked')\nowner.close()").trim()).toBe('blocked');
     const target=join(s.dir,'target');writeFileSync(target,'private');const lock=join(s.dir,'.bot-owner.sqlite3');rmSync(lock);symlinkSync(target,lock);expect(()=>new BotOwnership(s.path)).toThrow();rmSync(lock);linkSync(target,lock);expect(()=>new BotOwnership(s.path)).toThrow();rmSync(lock);

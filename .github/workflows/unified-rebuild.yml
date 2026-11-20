@@ -42,6 +42,11 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run build:rebuild
       - run: npm run test:build:rebuild
+      - name: Verify compiled web with the fixed original Python bot
+        run: |
+          git fetch --no-tags origin 8da877857f163853c449474e168534e2e493121b
+          mkdir -p artifacts/ci
+          npm run test:retained-python:rebuild --silent > artifacts/ci/retained-python.json
       - run: npx playwright install --with-deps chromium
       - name: Pin public analytics client for intercepted transport test
         run: |

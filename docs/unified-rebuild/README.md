@@ -191,3 +191,7 @@
 - [完整瀏覽器回歸與 Linux CI](131-full-browser-ci-checkpoint.md)：固定第 130 號來源的 78 檔／832 項全部通過；Linux 原 run 取消且有未釐清失敗，CI 改為單 worker 與獨立 jobs 後須取得實際完整結果。
 
 - [Linux 映像、已建置 bot 與瀏覽器恢復](132-linux-image-bot-checkpoint.md)：固定原生映像與 compiled bot 的隔離演練通過；完整 Linux 回歸取得真實失敗，修正 CI／測試時序及 PNG 停滯恢復後須重新驗證。
+
+- [固定舊 Python、已建置網站與投遞鎖](134-retained-python-owner-checkpoint.md)：原盤點版本與真 HTTP 網站的合成工作、三種模式、原回執／連結及鎖檔別名保全；新固定 Linux 回歸與實際版本組合仍須完成。
+
+- [固定 Linux PNG 回歸與映像](133-linux-png-regression-checkpoint.md)：833 項完整瀏覽器 report 為 832 passed／1 failed，原生映像與 compiled bot 通過；原投票保存時序已修正，仍须新完整回歸。

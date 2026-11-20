@@ -42,6 +42,7 @@ test('creates date/exact polls with durable incomplete drafts and dynamic candid
   await page.getByRole('button', { name: '新增候選', exact: true }).click();
   await page.getByLabel('候選日期 3', { exact: true }).fill('2099-12-27');
   await page.getByRole('button', { name: '移除候選 2', exact: true }).click();
+  await expect.poll(async () => { const row = (await durableRows(page)).find(row => row.key.includes('activity-draft:poll-create:')); return row ? JSON.parse(row.raw).value.options : []; }).toEqual(['2099-12-20', '2099-12-27']);
   page.on('dialog', (d) => void d.accept());
   await page.reload();
   await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();

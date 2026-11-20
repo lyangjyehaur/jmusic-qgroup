@@ -10,6 +10,7 @@ from pathlib import Path
 import threading
 
 _active = set()
+_active_inodes = set()
 _guard = threading.Lock()
 
 
@@ -25,27 +26,58 @@ class BotOwnership:
             raise RuntimeError('Invalid bot database file')
         self.source_identity = (source.st_dev, source.st_ino)
         self.path = self.database.parent / '.bot-owner.sqlite3'
+        self.identities = set()
+        self.db = None
         with _guard:
-            if str(self.path) in _active:
+            if str(self.path) in _active or self.source_identity in _active_inodes:
                 raise RuntimeError('Bot ownership already held in this process')
             _active.add(str(self.path))
+            _active_inodes.add(self.source_identity)
+            self.identities.add(self.source_identity)
         try:
             self._acquire()
         except Exception:
             with _guard:
                 _active.discard(str(self.path))
+                _active_inodes.difference_update(self.identities)
             raise
 
     def _acquire(self):
-        fd = os.open(self.path, os.O_RDWR | os.O_CREAT | getattr(os, 'O_NOFOLLOW', 0), 0o600)
-        try:
-            saved = os.fstat(fd)
-            if not stat.S_ISREG(saved.st_mode) or saved.st_nlink != 1:
+        def metadata(path):
+            try:
+                return path.lstat()
+            except FileNotFoundError:
+                return None
+
+        with _guard:
+            # Keep creation/close and inode reservation under the same guard;
+            # another thread must not acquire a newly created alias meanwhile.
+            saved = metadata(self.path)
+            if saved is None:
+                try:
+                    # O_EXCL guarantees a new inode. Existing SQLite/owner
+                    # files are checked with metadata only.
+                    fd = os.open(self.path, os.O_RDWR | os.O_CREAT | os.O_EXCL |
+                                 getattr(os, 'O_NOFOLLOW', 0), 0o600)
+                    try:
+                        saved = os.fstat(fd)
+                    finally:
+                        os.close(fd)
+                except FileExistsError:
+                    saved = metadata(self.path)
+            if (saved is None or not stat.S_ISREG(saved.st_mode) or
+                    saved.st_nlink != 1 or stat.S_IMODE(saved.st_mode) != 0o600 or
+                    (saved.st_dev, saved.st_ino) in _active_inodes):
                 raise RuntimeError('Invalid bot owner file')
-            os.fchmod(fd, 0o600)
+            for suffix in ('-journal', '-wal', '-shm'):
+                sidecar = metadata(Path(str(self.path) + suffix))
+                if sidecar is not None and (not stat.S_ISREG(sidecar.st_mode) or
+                        sidecar.st_nlink != 1 or
+                        (sidecar.st_dev, sidecar.st_ino) in _active_inodes):
+                    raise RuntimeError('Invalid bot owner sidecar')
             self.identity = (saved.st_dev, saved.st_ino)
-        finally:
-            os.close(fd)
+            _active_inodes.add(self.identity)
+            self.identities.add(self.identity)
         self.db = sqlite3.connect(str(self.path), timeout=0, isolation_level=None)
         try:
             self.db.execute('PRAGMA busy_timeout=0')
@@ -57,6 +89,7 @@ class BotOwnership:
             self.db = None
             with _guard:
                 _active.discard(str(self.path))
+                _active_inodes.difference_update(self.identities)
             raise RuntimeError('Bot ownership unavailable; another delivery owner or unsafe lock file') from None
 
     def check(self):
@@ -84,3 +117,4 @@ class BotOwnership:
             self.db = None
             with _guard:
                 _active.discard(str(self.path))
+                _active_inodes.difference_update(self.identities)
