@@ -7637,7 +7637,9 @@
         "tools/migration/forward-music-rows.ts",
         "tools/migration/rollback_music_identity_members.py",
         "tools/migration/forward-legacy-reset-identity-members.ts",
-        "tools/migration/forward-legacy-reset-identity-rows.ts"
+        "tools/migration/forward-legacy-reset-identity-rows.ts",
+        "tools/migration/forward-legacy-reset-member-disposition.ts",
+        "tools/migration/rollback_music_reset_member_disposition.py"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7741,7 +7743,9 @@
         "apps/api/src/forward-legacy-reset-identity-rows.test.ts",
         "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
         "apps/api/src/forward-legacy-reset-member-scope.test.ts",
-        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
+        "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7832,7 +7836,9 @@
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
         "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
         "apps/api/src/forward-legacy-reset-member-scope.test.ts",
-        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
+        "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8024,7 +8030,9 @@
         "tools/migration/forward-music-rows.ts",
         "tools/migration/rollback_music_identity_members.py",
         "tools/migration/forward-legacy-reset-identity-members.ts",
-        "tools/migration/forward-legacy-reset-identity-rows.ts"
+        "tools/migration/forward-legacy-reset-identity-rows.ts",
+        "tools/migration/forward-legacy-reset-member-disposition.ts",
+        "tools/migration/rollback_music_reset_member_disposition.py"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8122,7 +8130,9 @@
         "apps/api/src/forward-legacy-reset-identity-rows.test.ts",
         "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
         "apps/api/src/forward-legacy-reset-member-scope.test.ts",
-        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
+        "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8207,7 +8217,9 @@
         "docs/unified-rebuild/145-legacy-reset-recovery-checkpoint.md",
         "docs/unified-rebuild/146-reset-identity-members-checkpoint.md",
         "apps/api/src/forward-legacy-reset-member-scope.test.ts",
-        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md"
+        "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
+        "apps/api/src/forward-legacy-reset-member-disposition.test.ts",
+        "docs/unified-rebuild/148-reset-member-disposition-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",

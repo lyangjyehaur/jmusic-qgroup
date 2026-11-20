@@ -7,7 +7,7 @@ import type {LegacyResetGenerationInput} from '../../../tools/migration/forward-
 
 /** Two real original resets and a later old-source generation. No native writes,
  * real credentials, workers, HTTP traffic or bot deliveries are involved. */
-export type NumericResetMemberMode='persisted-only'|'loaded-only'|'persisted-only-then-erased';
+export type NumericResetMemberMode='persisted-only'|'loaded-only'|'persisted-only-then-erased'|'persisted-only-opaque-repeated';
 export async function legacyResetGenerationFixture(completed=true,middleKey='e',firstLoadedEntryKey='',prunePersistedFirst=false,persistedOnlyProfile=false,numericMemberMode:NumericResetMemberMode|null=null){
   const s=await legacyResetFixture(),vault=join(s.root,'generation-vault');
   try{
@@ -23,6 +23,10 @@ service.ORIGIN='https://fixture.invalid';service.upstream.DATA_FILE=str(folder/'
 a=ErasureAuthority(root,pin,{'music':folder/'erasures.jsonl'},sqlite_files=[folder/'identity.sqlite3']);saved=prepare_reset_source_vault(Path(vault_root),a,now='2026-11-20T12:00:00.000Z');vault=ResetSourceVault(vault_root,saved['manifestSha256'],a)
 persisted_key=''
 if numeric_mode!='none':
+ if numeric_mode=='persisted-only-opaque-repeated':
+  from tools.migration.rollback_music_reset import _encode
+  service.upstream.data['members']['10001']['unknownFields']=dict(integer=1,floating=1.0,negative=-0.0,small=1e-7,nested=[dict(z='原始',a=False)])
+  (folder/'data.json').write_bytes(_encode(service.upstream.data))
  numeric_member=service.upstream.data['members']['10001'].copy()
  service.STORE.new_session('10001');service.STORE.entry_start(dict(session='synthetic-numeric-device',user_id='alice'),dict(selection=[dict(id='e',level=4)]),'10001')
  if numeric_mode=='loaded-only':
@@ -48,6 +52,8 @@ undo=install_legacy_erasure_authority(a,music_service=service,reset_source_vault
 try:
  with service.upstream._lock:assert service.administration.erase(folder,service.STORE,{'confirm':'RESET'},reset=True)['ok']
  service.upstream.data['entries']={middle_key:dict(id=middle_key,text='middle generation',kind='sub')};service.upstream.data['shouts']=[dict(id='reused-shout',qq='',text='middle shout',createdAt=1.0)];service.upstream.save()
+ if numeric_mode=='persisted-only-opaque-repeated':
+  persisted=json.loads((folder/'data.json').read_bytes());persisted['members']['10001']=numeric_member.copy();persisted['members']['10001']['name']='second saved member';(folder/'data.json').write_bytes(_encode(persisted))
  if completed=='false':
   original=vault.capture
   def partial(*args):
