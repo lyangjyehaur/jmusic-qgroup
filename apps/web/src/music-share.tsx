@@ -61,20 +61,23 @@ function SelectionText({ text }: { text: string }) {
     <Button variant="secondary" onClick={() => void copy()}>複製詞條清單</Button>{message && <Text role="status">{message}</Text>}</Surface>;
 }
 function ShareImage({ signature }: { signature: string }) {
-  const canvas = useRef<HTMLCanvasElement>(null), active = useRef(true), latest = useRef(signature); latest.current = signature;
+  const active = useRef(true), latest = useRef(signature); latest.current = signature;
   const [attempt, setAttempt] = useState(0), [ready, setReady] = useState<{ signature: string; url: string; file: File }>(), [error, setError] = useState(''), [message, setMessage] = useState(''), [busy, setBusy] = useState(false);
   useEffect(() => { active.current = true; return () => { active.current = false; }; }, []);
   useEffect(() => {
-    let live = true, url: string | undefined; setReady(undefined); setError(''); setMessage(''); setBusy(false);
-    if (!signature || !canvas.current) return;
+    let live = true, url: string | undefined; const stop=new AbortController(); setReady(undefined); setError(''); setMessage(''); setBusy(false);
+    if (!signature) return;
+    // Each conversion owns its bitmap. Cancelling an earlier draw must not
+    // resize the canvas used by a newer asynchronous PNG conversion.
+    const canvas = document.createElement('canvas');
     try {
-      drawMusicShare(canvas.current, JSON.parse(signature) as ShareCard);
-      void musicShareBlob(canvas.current).then(blob => {
+      drawMusicShare(canvas, JSON.parse(signature) as ShareCard);
+      void musicShareBlob(canvas,stop.signal).then(blob => {
         if (!live) return; url = URL.createObjectURL(blob);
         setReady({ signature, url, file: new File([blob], filename, { type: 'image/png' }) });
       }).catch(failure => { if (live) setError(failure instanceof Error ? errorText(failure) : uiText("圖片產生失敗，請重試。")); });
     } catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("圖片產生失敗，請重試。")); }
-    return () => { live = false; if (url) URL.revokeObjectURL(url); if (canvas.current) { canvas.current.width = 0; canvas.current.height = 0; } };
+    return () => { live = false; stop.abort(); if (url) URL.revokeObjectURL(url); canvas.width = 0; canvas.height = 0; };
   }, [signature, attempt]);
   const image = ready?.signature === signature ? ready : undefined;
   function download(url: string) { const link = document.createElement('a'); link.href = url; link.download = filename; link.click(); }
@@ -92,7 +95,7 @@ function ShareImage({ signature }: { signature: string }) {
       else { download(image.url); setMessage(uiText("圖片分享失敗，已改為下載。")); }
     } finally { if (valid()) setBusy(false); }
   }
-  return <section aria-label="分享圖片" className="music-share-preview"><canvas ref={canvas} hidden aria-hidden="true" />
+  return <section aria-label="分享圖片" className="music-share-preview">
     {signature && (error ? <div role="alert"><Text>{error}</Text><Button variant="secondary" onClick={() => setAttempt(value => value + 1)}>重新產生圖片</Button></div>
       : image ? <><img src={image.url} onError={() => setError(uiText("圖片無法顯示，請重新產生；仍可複製詞條清單。"))} alt="音樂成分分享圖片；完整詞條可見下方清單" /><div className="page-actions"><a href={image.url} download={filename}>下載圖片</a><Button variant="secondary" loading={busy} onClick={() => void share()}>分享圖片</Button></div></> : <Notice>正在產生圖片…</Notice>)}
     {message && <Text role="status">{message}</Text>}

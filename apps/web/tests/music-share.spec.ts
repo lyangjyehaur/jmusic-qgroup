@@ -20,7 +20,7 @@ async function inspectCanvas(page: Page) {
 const image = (page: Page) => page.getByRole('img', { name: '音樂成分分享圖片；完整詞條可見下方清單', exact: true });
 const lines = (page: Page) => page.evaluate(() => (window as unknown as { shareLines: string[] }).shareLines);
 async function ready(page: Page) { await expect(image(page)).toBeVisible(); await expect(image(page)).toHaveJSProperty('naturalWidth', 1440); await expect(page.getByRole('link', { name: '下載圖片', exact: true })).toBeVisible(); }
-async function redraw(page: Page, act: () => Promise<unknown>) { const src = await image(page).getAttribute('src'); await act(); await ready(page); await expect(image(page)).not.toHaveAttribute('src', src!); }
+async function redraw(page: Page, act: () => Promise<unknown>) { await page.bringToFront(); const src = await image(page).getAttribute('src'); await act(); await ready(page); await expect(image(page)).not.toHaveAttribute('src', src!); }
 test('shares current unsaved choices, exact ordered text and optional identities without saving or exposing private fields', async ({ page, context }) => {
   await login(context); await inspectCanvas(page); const headers = await auth(context), own = await (await context.request.get('/api/v2/me/music', { headers })).json();
   expect((await context.request.put('/api/v2/me/music/contact', { headers, data: { profileId: own.id, musicEpoch: 0, revision: 0, contactQQ: '123456' } })).status()).toBe(200);
@@ -154,4 +154,19 @@ test('recommendations and sharing reuse the original saved sort preference with 
   await page.evaluate(() => { Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('Denied'); } }); });
   await page.getByLabel('排序', { exact: true }).selectOption('familiar'); await expect(page).toHaveURL('/people?sort=familiar');
   await page.getByRole('navigation').getByRole('link', { name: '我的', exact: true }).click(); await page.getByRole('link', { name: '我的成分', exact: true }).click(); await page.getByRole('link', { name: '分享成分', exact: true }).click(); await ready(page); await expect(page.getByLabel('分享推薦排序', { exact: true })).toHaveValue('rare');
+});
+
+test('a stalled native PNG conversion still produces the latest valid image and ignores late callbacks', async ({ page, context }) => {
+  await login(context); await inspectCanvas(page); await page.addInitScript(() => {
+    const pending: (() => void)[] = []; Object.assign(window, { pendingNativePNGs: pending });
+    HTMLCanvasElement.prototype.toBlob = function(callback) {
+      const data = atob(this.toDataURL('image/png').split(',')[1]!), bytes = Uint8Array.from(data, char => char.charCodeAt(0)), blob = new Blob([bytes], { type: 'image/png' });
+      pending.push(() => callback(blob));
+    };
+  });
+  await page.goto('/me/music/share'); await ready(page); const old = await image(page).getAttribute('src');
+  await redraw(page, () => page.getByRole('checkbox', { name: '包含推薦同好', exact: true }).uncheck());
+  const current = await image(page).getAttribute('src'); expect(current).not.toBe(old); expect((await lines(page)).join('')).not.toContain('匹配度');
+  await page.evaluate(() => (window as unknown as { pendingNativePNGs: (() => void)[] }).pendingNativePNGs.splice(0).forEach(release => release()));
+  await expect(image(page)).toHaveAttribute('src', current!); await expect(image(page)).toHaveJSProperty('naturalWidth', 1440);
 });

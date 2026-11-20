@@ -17,9 +17,10 @@ jobs:
       - run: npm run check:capabilities
       - run: npm run check:ui
       # Fixture construction launches original Python readers and verifies whole
-      # SQLite images. Bound file concurrency; preserve the test timeout/assertions.
+      # SQLite images. A complete Linux report confirmed 55 default 5s timeouts;
+      # allow bounded fixture assembly time while preserving every assertion.
       - run: mkdir -p artifacts/ci
-      - run: npm run test:rebuild -- --maxWorkers=1 --reporter=default --reporter=json --outputFile=artifacts/ci/unit.json
+      - run: npm run test:rebuild -- --maxWorkers=1 --testTimeout=30000 --reporter=default --reporter=json --outputFile=artifacts/ci/unit.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -49,9 +50,7 @@ jobs:
           printf '%s  %s\n' '1ad1145d19d4558c20f5469ca4a5fc50a1a46f860858c9c91bfcd56fd29a522a' "$client_path" | sha256sum --check
           printf 'REBUILD_UMAMI_CLIENT=%s\n' "$client_path" >> "$GITHUB_ENV"
       - run: mkdir -p artifacts/ci
-      - run: npm run test:e2e:rebuild -- --forbid-only --reporter=line,json
-        env:
-          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/ci/browser.json
+      - run: PLAYWRIGHT_JSON_OUTPUT_FILE="$GITHUB_WORKSPACE/artifacts/ci/browser.json" npm run test:e2e:rebuild -- --forbid-only --reporter=line,json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

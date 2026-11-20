@@ -50,9 +50,27 @@ export function drawMusicShare(canvas: HTMLCanvasElement, input: ShareCard) {
   }
   return { width, height, lines: rows.map(row => row.text) };
 }
-export function musicShareBlob(canvas: HTMLCanvasElement) {
+export function musicShareBlob(canvas: HTMLCanvasElement, signal?: AbortSignal) {
   return new Promise<Blob>((resolve, reject) => {
-    try { canvas.toBlob(blob => blob ? resolve(blob) : reject(new Error('圖片轉換失敗；仍可複製詞條清單或重試。')), 'image/png'); }
-    catch { reject(new Error('圖片轉換失敗；仍可複製詞條清單或重試。')); }
+    let settled=false,timer:ReturnType<typeof setTimeout>|undefined;
+    const failure=()=>new Error('圖片轉換失敗；仍可複製詞條清單或重試。');
+    function finish(blob?:Blob,error?:Error){
+      if(settled)return;settled=true;clearTimeout(timer);signal?.removeEventListener('abort',abort);
+      if(blob)resolve(blob);else reject(error??failure());
+    }
+    function abort(){finish(undefined,new DOMException('Image conversion cancelled','AbortError'));}
+    if(signal?.aborted){abort();return;}signal?.addEventListener('abort',abort,{once:true});
+    // Some browsers defer idle PNG encoding indefinitely. A bounded fallback
+    // serializes this generation's bitmap; a late native callback cannot replace it.
+    timer=setTimeout(()=>{
+      try{
+        const prefix='data:image/png;base64,',data=canvas.toDataURL('image/png');
+        if(!canvas.width||!canvas.height||!data.startsWith(prefix))throw failure();
+        const bytes=Uint8Array.from(atob(data.slice(prefix.length)),char=>char.charCodeAt(0));
+        finish(new Blob([bytes],{type:'image/png'}));
+      }catch{finish();}
+    },1500);
+    try { canvas.toBlob(blob=>finish(blob??undefined),'image/png'); }
+    catch { finish(); }
   });
 }
