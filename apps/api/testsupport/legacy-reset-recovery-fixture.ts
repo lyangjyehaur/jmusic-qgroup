@@ -10,8 +10,8 @@ import type {LegacyResetRecoveryInput} from '../../../tools/migration/forward-le
 
 /** Real original reset/Store/save flow, followed by separate native additions.
  * All credentials, people, messages and images are isolated synthetic fixtures. */
-export async function legacyResetRecoveryFixture(nativeFork=true){
-  const s=await legacyResetGenerationFixture();let native:Database.Database|undefined;
+export async function legacyResetRecoveryFixture(nativeFork=true,persistedOnlyProfile=false){
+  const s=await legacyResetGenerationFixture(true,'e','',false,persistedOnlyProfile);let native:Database.Database|undefined;
   try{
     execFileSync('python3',['-c',`import os,json,sys
 from pathlib import Path

@@ -7,7 +7,7 @@ import type {LegacyResetGenerationInput} from '../../../tools/migration/forward-
 
 /** Two real original resets and a later old-source generation. No native writes,
  * real credentials, workers, HTTP traffic or bot deliveries are involved. */
-export async function legacyResetGenerationFixture(completed=true,middleKey='e',firstLoadedEntryKey='',prunePersistedFirst=false){
+export async function legacyResetGenerationFixture(completed=true,middleKey='e',firstLoadedEntryKey='',prunePersistedFirst=false,persistedOnlyProfile=false){
   const s=await legacyResetFixture(),vault=join(s.root,'generation-vault');
   try{
     const output=execFileSync('python3',['-c',`import json,os,sys
@@ -17,9 +17,22 @@ from music_site import service
 from tools.migration.rollback_erasure_authority import ErasureAuthority
 from tools.migration.rollback_erasure_runtime import install_legacy_erasure_authority
 from tools.migration.rollback_reset_source_vault import prepare_reset_source_vault,ResetSourceVault
-root,pin,folder,vault_root,completed,middle_key,loaded_key,prune_persisted=sys.argv[1:];folder=Path(folder)
+root,pin,folder,vault_root,completed,middle_key,loaded_key,prune_persisted,persisted_only=sys.argv[1:];folder=Path(folder)
 service.ORIGIN='https://fixture.invalid';service.upstream.DATA_FILE=str(folder/'data.json');service.upstream.BACKUP_DIR=str(folder/'backups');service.STORE=service.Store(folder/'identity.sqlite3');service.upstream.data=json.loads((folder/'data.json').read_bytes())
 a=ErasureAuthority(root,pin,{'music':folder/'erasures.jsonl'},sqlite_files=[folder/'identity.sqlite3']);saved=prepare_reset_source_vault(Path(vault_root),a,now='2026-11-20T12:00:00.000Z');vault=ResetSourceVault(vault_root,saved['manifestSha256'],a)
+persisted_key=''
+if persisted_only=='true':
+ from music_site import admin_links,contacts
+ original_key='m_'+('a'*24)
+ with service.STORE.connect() as db:revision=service.STORE.admin_state(db,original_key)['revision']
+ admin_links.change(service.upstream.data,service.STORE,dict(qq=original_key,user_id='',base_revision=revision),'synthetic-original-admin')
+ persisted_key=service.STORE.create_profile(dict(user_id='contact-owner'),'persisted native member')
+ service.STORE.recover_profiles(service.upstream.data);contacts.save(service.upstream.data,service.STORE,persisted_key,'54321')
+ class Fake:
+  def send_json(self,value,status=200):assert status==200;return value
+ service.upstream.Handler.api_selection(Fake(),dict(qq=persisted_key,selection=[dict(id='e',level=4)]))
+ service.STORE.new_session(persisted_key);service.STORE.entry_start(dict(session='synthetic-original-device',user_id='contact-owner'),dict(selection=[dict(id='e',level=4)]),persisted_key)
+ service.upstream.save();service.upstream.data['members'].pop(persisted_key)
 if loaded_key:service.upstream.data['entries']={loaded_key:dict(id=loaded_key,text='loaded only',kind='sub')}
 if prune_persisted=='true':
  from tools.migration.rollback_music_reset import _encode
@@ -48,13 +61,13 @@ try:
   shoutHistory=[dict(id='archive-shout',qq='38888',text='new archived shout',createdAt=2.0,archivedAt=3.0)],
   trend=[dict(t=1.0,counts={'e':1.0,'historic-gone':-0.0,'1':1e-7},opaque='e')],
   unclassified=dict(literal='e',negative=-0.0,integerFloat=1.0))
- service.upstream.save();print(json.dumps(dict(pin=saved['manifestSha256'])))
+ service.upstream.save();print(json.dumps(dict(pin=saved['manifestSha256'],persistedNativeKey=persisted_key)))
 finally:undo();a.close()
-`,s.authority,s.pin,s.music,vault,String(completed),middleKey,firstLoadedEntryKey,String(prunePersistedFirst)],{encoding:'utf8',timeout:30000,stdio:'pipe'});
-    const pin=(JSON.parse(output) as {pin:string}).pin,latest=readFileSync(join(s.music,'data.json'));
+`,s.authority,s.pin,s.music,vault,String(completed),middleKey,firstLoadedEntryKey,String(prunePersistedFirst),String(persistedOnlyProfile)],{encoding:'utf8',timeout:30000,stdio:'pipe'});
+    const {pin,persistedNativeKey}=JSON.parse(output) as {pin:string;persistedNativeKey:string},latest=readFileSync(join(s.music,'data.json'));
     // No native business changes occur after the verified checkpoint. Reuse its
     // complete standalone image; the live DB serialize header may declare WAL.
     const input:LegacyResetGenerationInput={vault:{authorityRoot:s.authority,manifestSha256:s.pin,vaultRoot:vault,vaultManifestSha256:pin},checkpoint:{bytes:Buffer.from(s.state.checkpointImage),sha256:forwardHash(s.state.checkpointImage)},latestMusic:{bytes:Buffer.from(latest),sha256:forwardHash(latest)},nativeImage:{bytes:Buffer.from(s.state.checkpointImage),sha256:forwardHash(s.state.checkpointImage)}};
-    return {...s,vault,latest,input};
+    return {...s,vault,latest,input,persistedNativeKey};
   }catch(error){s.close();throw error;}
 }

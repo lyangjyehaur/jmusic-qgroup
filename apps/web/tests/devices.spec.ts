@@ -17,7 +17,11 @@ async function login(page: Page, code: string, destination = '/me/accounts') {
 async function issue(page: Page) {
   await page.goto('/me/devices');
   await expect(page.getByRole('checkbox',{name:'只授權自己的另一臺裝置',exact:true})).toBeVisible();
-  if(await page.getByRole('textbox',{name:'裝置連結（可手動複製）'}).count())await page.getByRole('button',{name:'撤銷未使用連結',exact:true}).click();
+  const revoke = page.getByRole('button', { name: '撤銷未使用連結', exact: true });
+  // This control stays disabled until the saved link has finished loading.
+  // A visible consent checkbox alone cannot establish that no link exists.
+  await expect(revoke).toBeEnabled();
+  if(await page.getByRole('textbox',{name:'裝置連結（可手動複製）'}).count())await revoke.click();
   await page.getByRole('checkbox', { name: '只授權自己的另一臺裝置' }).check();
   await page.getByRole('button', { name: '產生限時連結', exact: true }).click();
   const field = page.getByRole('textbox', { name: '裝置連結（可手動複製）' });
@@ -84,7 +88,10 @@ test('guest retains the link through login, can cancel without consuming, and se
     await guest.goto(first); await expect(guest.getByRole('heading', { name: '授權帳號：測試帳號 device-guest-source', exact: true })).toBeVisible();
     const second = await issue(source);
     await guest.reload(); await expect(guest.getByText('連結已過期、使用或撤銷，請重新產生', { exact: true })).toBeVisible();
-    await guest.goto(second); if(await guest.getByRole('button',{name:'改用目前開啟的連結',exact:true}).count())await guest.getByRole('button',{name:'改用目前開啟的連結',exact:true}).click(); await guest.getByRole('link', { name: '登入後確認授權', exact: true }).click();
+    await guest.goto(second);
+    // The first link is still saved locally after its server-side revocation.
+    await guest.getByRole('button',{name:'改用目前開啟的連結',exact:true}).click();
+    await guest.getByRole('link', { name: '登入後確認授權', exact: true }).click();
     await expect(guest).toHaveURL(/\/login\?returnTo=%2Fme%2Fdevices%2Faccept$/);
     await login(guest, 'device-guest-member', '/me/devices/accept');
     await expect(guest.getByRole('heading', { name: '授權帳號：測試帳號 device-guest-source', exact: true })).toBeVisible();
