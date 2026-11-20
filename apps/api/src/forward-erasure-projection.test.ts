@@ -4,7 +4,7 @@ import {execFileSync} from 'node:child_process';
 import {randomUUID} from 'node:crypto';
 import Database from 'better-sqlite3';
 import {openDatabase} from '@qgroup/database';
-import {afterEach,it,expect} from 'vitest';
+import {afterEach,it,expect,vi} from 'vitest';
 import {legacyHistoryFixture} from '../testsupport/legacy-history-fixture';
 import {createPrivacy} from './privacy';
 import {hash} from './security';
@@ -22,7 +22,12 @@ import {profileId,digest} from '../../../tools/migration/music-codec';
 import {exportLegacyMusic} from './legacy-music-export';
 import {musicErasureScope} from './admin-music-erasure';
 import type {NativeOrphanResetSource,NativeResetSource} from '../../../tools/migration/forward-native-orphan-reset';
-const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
+const privatePoison=vi.hoisted(()=>({enabled:false,calls:0,changed:0}));
+vi.mock('./privacy',async original=>{
+ const actual=await original<typeof import('./privacy')>();
+ return {...actual,replayMusicErasure:(...args:Parameters<typeof actual.replayMusicErasure>)=>{actual.replayMusicErasure(...args);if(privatePoison.enabled){privatePoison.calls++;privatePoison.changed+=args[0].prepare("UPDATE bot_outbox SET status='failed' WHERE status='pending'").run().changes;}}};
+});
+const cleanup:(()=>void)[]=[];afterEach(()=>{privatePoison.enabled=false;privatePoison.calls=0;privatePoison.changed=0;for(const close of cleanup.splice(0).reverse())close();});
 const stamp=new Date('2026-11-20T01:00:00Z');
 async function setup(options:{opaque?:boolean;generated?:boolean;musicOnly?:boolean}={}){
  const s=await legacyHistoryFixture(options.opaque?{musicLedger:JSON.stringify({qq:'99999',erased_at:{original:'unknown-time'}})+'\n'}:{});cleanup.push(()=>s.close());
@@ -231,6 +236,9 @@ it('projects an authority-bound full native reset while preserving later profile
  const rejectedPrivateSource=Buffer.from(privateReuse.nativeImage);
  expect(()=>projectNativeForwardErasures(privateReuse)).toThrow('original profile relationship changed');
  expect(privateReuse.nativeImage).toEqual(rejectedPrivateSource);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
+ expect(beforeDb.prepare("SELECT 1 FROM bot_outbox WHERE status='pending'").get()).toBeDefined();privatePoison.enabled=true;
+ expect(()=>projectNativeForwardErasures(s.input)).toThrow('Native music repair reconciliation failed');expect(privatePoison.calls).toBeGreaterThan(0);expect(privatePoison.changed).toBeGreaterThan(0);privatePoison.enabled=false;
+ expect(s.input.nativeImage).toEqual(original);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
  const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));expect(result.report.remaining).toContain('native_global_reset_generations');
  expect(()=>projectNativeForwardErasures({...s.input,nativeOrphanResetSources:[evidence]})).toThrow('Multiple native reset generations');
  const bytes=Buffer.from(evidence.completed.bytes);expect(()=>projectNativeForwardErasures(s.input,()=>{evidence.completed.bytes[100]=evidence.completed.bytes[100]!^1;})).toThrow('source bytes changed');evidence.completed.bytes=bytes;

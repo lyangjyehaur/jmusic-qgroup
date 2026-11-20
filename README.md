@@ -1,8 +1,8 @@
 # 群聚看板
 
-重構最新驗證：[原生重置私人關係的來源邊界](docs/unified-rebuild/164-native-reset-profile-relations-checkpoint.md)。目前仍在功能分支實作與驗收，尚未部署。
+重構最新驗證：[原生私人修復的獨立逐列核對](docs/unified-rebuild/165-native-music-private-oracle-checkpoint.md)。目前仍在功能分支實作與驗收，尚未部署。
 
-看板與成分的單一產品重構規劃（2026-11-20，隔離實作中、尚未發布；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。最新檢查點為[退休恢復的原認領證據驗證](docs/unified-rebuild/152-retired-reset-proof-checkpoint.md)，仍在隔離開發與驗收階段。
+看板與成分的單一產品重構規劃（2026-11-20，隔離實作中、尚未發布；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
 
 原始碼倉庫：[git.dan.tw/dan/jmusic-qgroup](https://git.dan.tw/dan/jmusic-qgroup)（公開）與 [GitHub lyangjyehaur/jmusic-qgroup](https://github.com/lyangjyehaur/jmusic-qgroup)（公開），主分支為 `main`。兩邊保存相同提交及完整 main 歷史，提交 SHA、作者和時間不變。推送原始碼不會自動部署，線上更新仍按下方 server2 部署與保全流程進行。資料庫、使用者上傳圖片、伺服器環境設定及本機管理憑證不納入 Git。
 
