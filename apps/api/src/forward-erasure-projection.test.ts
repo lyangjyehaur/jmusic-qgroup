@@ -140,3 +140,21 @@ it.each(['revived private account','revived event access','later native account'
  expect(db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()).toEqual(s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all());
  const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));
 });
+
+it('repairs restored entry content under a genuine applied native reset while retaining later entries, original receipts, all bot work and authority bytes',async()=>{
+ const s=await setup(),entry=s.db.prepare('SELECT id,name,kind FROM music_entries ORDER BY rowid LIMIT 1').get() as {id:string;name:string;kind:string};
+ const intent:ErasureIntent={version:2,kind:'admin_music',command:'reset_music',actorRef:'account:alice',profiles:[],entries:[entry.id],requestId:randomUUID(),createdAt:'2026-11-20T02:00:00.000Z',secretHash:hash('synthetic-reset-secret'),signature:hash('synthetic-reset-signature')};
+ s.record('unified',[intent]);const authoritative=readRollbackErasureAuthority(s.input.authorityRoot,s.input.manifestSha256),intents=decodeErasureJournal(authoritative.ledgers.unified.toString());
+ changeImage(s.input,db=>{
+  createPrivacy(db,{read:()=>intents,append(){throw Error();}});
+  db.prepare('INSERT INTO music_entries VALUES(?,?,?)').run(entry.id,entry.name,entry.kind);
+  db.prepare('INSERT INTO music_entries VALUES(?,?,?)').run('after-native-reset','重置後新詞條','sub');
+  db.prepare('INSERT INTO music_entry_details VALUES(?,?,?,?,?,?)').run(entry.id,'復活的類別','[]','','1001','1002');
+ });
+ const source=Buffer.from(s.input.nativeImage),sourceDb=open({nativeImage:source} as ReturnType<typeof projectNativeForwardErasures>),head=fs.readFileSync(join(s.input.authorityRoot,'authority-head.json')),result=projectNativeForwardErasures(s.input),db=open(result);
+ expect(result.report.nativeResetEntryRepair).toMatchObject({nativeResetRequests:1,entryScopes:1,allRowsVerified:true,globalResetGenerationsVerified:false,releaseEligible:false});
+ expect(result.report.nativeResetEntryRepair!.removedRows).toBeGreaterThanOrEqual(2);expect(db.prepare('SELECT 1 FROM music_entries WHERE id=?').get(entry.id)).toBeUndefined();expect(db.prepare("SELECT name FROM music_entries WHERE id='after-native-reset'").get()).toEqual({name:'重置後新詞條'});
+ for(const table of ['bot_outbox','bot_settings','bot_settings_history','bot_runtime','privacy_receipts','music_catalog_actions','event_audit','finance_entries','settlement_history'])expect(db.prepare('SELECT rowid,* FROM '+table+' ORDER BY rowid').safeIntegers().all(),table).toEqual(sourceDb.prepare('SELECT rowid,* FROM '+table+' ORDER BY rowid').safeIntegers().all());
+ expect(result.nativeJournal).toEqual(authoritative.ledgers.unified);expect(s.input.nativeImage).toEqual(source);expect(fs.readFileSync(join(s.input.authorityRoot,'authority-head.json'))).toEqual(head);
+ const again=projectNativeForwardErasures({...s.input,nativeImage:result.nativeImage,nativeImageSha256:digest(result.nativeImage)});expect(data(open(again))).toEqual(data(db));expect(again.nativeJournal).toEqual(result.nativeJournal);expect(result.report.remaining).toContain('native_global_reset_generations');
+});

@@ -201,3 +201,5 @@
 - [完整 Linux 結果與原 Python 事件處理驗證](136-native-python-dispatch-checkpoint.md)：固定第 134 號來源的 2,331／833 項全部通過，第 135 號实际雙映像 job 已獨立核對；原被動事件／按鈕／群限制新增本機驗證，更新映像仍待 Linux 結果。
 
 - [Capture inode 保全與共用 fixture 回歸](137-capture-inode-checkpoint.md)：原 router／WebSocket dependency 的實際雙映像已獨立核對；修正共用 fixture 抽取失敗，新增 capture SQLite／SHM 別名與路徑替換保全，62 項本機回歸通過，完整新來源仍待 Linux 結果。
+
+- [已套用原生重置的詞條恢復修復](138-native-reset-entry-repair-checkpoint.md)：原 intent／回執授權的詞條與子資料修復、獨立全表 oracle 及 Python SQLite 核對，57 項本機通過；全域喊話／趨勢與舊 reset 世代仍待完成，第 136 號完整 CI 確認失敗，第 137 號完整結果仍待終態。

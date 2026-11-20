@@ -14,6 +14,7 @@ import {repairAppliedAccountErasures} from './forward-account-erasures';
 import {reconcileAppliedAccountRepair} from './forward-account-reconciliation';
 import {importedLegacyMusicIntent} from '../../apps/api/src/legacy-music-intent';
 import {readSourceRebaseEvidence,sourceRebaseDigest} from './source-rebase-evidence';
+import {repairAppliedNativeResetEntries,reconcileAppliedNativeResetEntries} from './forward-native-reset-entries';
 
 export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string};
 const sha=z.string().regex(/^[a-f0-9]{64}$/);
@@ -111,12 +112,10 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         accountFootprint(db,closures);
         // Receipts prove the intent, not a restored snapshot's private footprint.
         // Reapply native-only profile scopes without duplicating administration
-        // audits or manufacturing a new intent. Full reset repair remains separate.
+        // audits or manufacturing a new intent. Reset entry repair has its own
+        // committed pre-repair source and independent full-row oracle below.
         const scopedIds=new Set([...scope.values()].map(value=>value.id));
         for(const [id,stamp] of nativeScopes)if(!scopedIds.has(id))replayMusicErasure(db,id,null,stamp);
-        for(const intent of nativeIntents)if('version' in intent&&intent.version===2&&intent.command==='reset_music'){
-          if(intent.entries.some(id=>db.prepare('SELECT 1 FROM music_entries WHERE id=?').get(id)))throw Error('Restored native reset footprint requires complete repair');
-        }
         const projected:{legacyKey:string;profileId:string;stamp:string;originalTime:Json;source:'baseline'|'old-service'}[]=[];
         for(const [key,value] of scope){
           const prior=db.prepare("SELECT target_id FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=?").get(key) as {target_id:string}|undefined;
@@ -139,6 +138,17 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         return {accountClosures:closures.size,accountRepair,addedBoardIntents:added.filter(row=>'user_id' in row).length,importedLegacyMusicIntents:imported.length,nativeProfileScopes:nativeScopes.size,musicScopes:projected};
       }).immediate();
     }finally{repairSource.close();}
-    guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
+    let nativeResetEntryRepair:ReturnType<typeof reconcileAppliedNativeResetEntries>|null=null;
+    if(nativeIntents.some(intent=>'version' in intent&&intent.version===2&&intent.command==='reset_music')){
+      const resetSource=new Database(db.serialize());
+      try{
+        resetSource.pragma('foreign_keys = ON');
+        nativeResetEntryRepair=db.transaction(()=>{
+          repairAppliedNativeResetEntries(db,mergedJournal);
+          return reconcileAppliedNativeResetEntries(resetSource,db,mergedJournal);
+        }).immediate();
+      }finally{resetSource.close();}
+    }
+    guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
   }finally{db.close();fixed.close();}
 }
