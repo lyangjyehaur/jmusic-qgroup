@@ -24,7 +24,7 @@ const manifest={version:1,kind:'qgroup-private-erasure-authority',authorityId:ra
 write(path.join(authority,'authority-manifest.json'),raw);write(path.join(authority,'authority-head.json'),encode({version:1,authoritySha256:pin,sequence:0,recordSha256:null,ledgers:Object.fromEntries(baseline.map(row=>[row.domain,{size:row.size,sha256:row.sha256}]))}));
 console.log(JSON.stringify({manifestSha256:pin,checkpointSha256:manifest.checkpointSha256,uid:process.getuid(),gid:process.getgid(),synthetic:true}));
 `;
-const madeVolumes=[];let started=false;
+const madeVolumes=[];let attemptedContainer=false,result,failure;
 try{
  for(const v of [volume,authorityVolume,checkpointVolume]){docker('volume','create','--label','qgroup.rehearsal=true',v);madeVolumes.push(v);}
  // Docker populates this new volume from the image's service-owned data
@@ -32,7 +32,8 @@ try{
  // capability is needed, and every database sidecar keeps service ownership.
  const fixture=JSON.parse(docker('run','--rm',...limits,'-v',volume+':/var/lib/qgroup','-v',authorityVolume+':/var/lib/qgroup-erasure','-v',checkpointVolume+':/var/lib/qgroup-checkpoint','--entrypoint','node',image,'--input-type=module','-e',emptyAuthorityScript,'/var/lib/qgroup/isolated.sqlite3','/var/lib/qgroup-erasure','/var/lib/qgroup-checkpoint'));
  assert(fixture.synthetic&&fixture.uid===994&&fixture.gid===992&&/^[a-f0-9]{64}$/.test(fixture.manifestSha256));
- docker('run','-d','--name',name,'--label','qgroup.rehearsal=true','--init','--stop-timeout','15',...limits,'-v',volume+':/var/lib/qgroup','-v',authorityVolume+':/var/lib/qgroup-erasure','-v',checkpointVolume+':/var/lib/qgroup-checkpoint:ro','-e','REBUILD_DB=/var/lib/qgroup/isolated.sqlite3','-e','REBUILD_ERASURE_AUTHORITY_ROOT=/var/lib/qgroup-erasure','-e','REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256='+fixture.manifestSha256,'-e','REBUILD_ERASURE_AUTHORITY_CHECKPOINT=/var/lib/qgroup-checkpoint/unified.sqlite3','-e','REBUILD_PORT=8791','-e','REBUILD_ORIGIN=http://127.0.0.1:8791',image);started=true;
+ attemptedContainer=true;
+ docker('run','-d','--name',name,'--label','qgroup.rehearsal=true','--init','--stop-timeout','15',...limits,'-v',volume+':/var/lib/qgroup','-v',authorityVolume+':/var/lib/qgroup-erasure','-v',checkpointVolume+':/var/lib/qgroup-checkpoint:ro','-e','REBUILD_DB=/var/lib/qgroup/isolated.sqlite3','-e','REBUILD_ERASURE_AUTHORITY_ROOT=/var/lib/qgroup-erasure','-e','REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256='+fixture.manifestSha256,'-e','REBUILD_ERASURE_AUTHORITY_CHECKPOINT=/var/lib/qgroup-checkpoint/unified.sqlite3','-e','REBUILD_PORT=8791','-e','REBUILD_ORIGIN=http://127.0.0.1:8791',image);
  const command=(script,...rest)=>docker('exec',name,'node','-e',script,...rest);
  let ready=false;for(let n=0;n<60;n++){
   const r=spawnSync('docker',['exec',name,'node','-e',"fetch('http://127.0.0.1:8791/api/v2/health',{signal:AbortSignal.timeout(1000)}).then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"],{timeout:3000,stdio:'ignore'});
@@ -67,8 +68,28 @@ try{
  const running=JSON.parse(docker('inspect',name))[0];assert(running.HostConfig.ReadonlyRootfs);assert.equal(running.HostConfig.Memory,512*1024*1024);assert.equal(running.HostConfig.MemorySwap,running.HostConfig.Memory);assert.equal(running.HostConfig.NanoCpus,1e9);assert.equal(running.HostConfig.PidsLimit,128);assert.equal(running.HostConfig.NetworkMode,'none');assert.equal(running.Mounts.find(m=>m.Destination==='/var/lib/qgroup-checkpoint')?.RW,false);assert.equal(running.Mounts.find(m=>m.Destination==='/var/lib/qgroup-erasure')?.RW,true);assert.deepEqual(running.HostConfig.CapDrop,['ALL']);assert(running.HostConfig.SecurityOpt.includes('no-new-privileges:true'));
  assert.equal(command("console.log(['/usr/bin/python3','/app/node_modules/tsx','/app/node_modules/typescript'].some(p=>require('fs').existsSync(p)))"),'false');
  docker('stop','--time','15',name);const stopped=JSON.parse(docker('inspect',name))[0];assert.equal(stopped.State.ExitCode,0);assert(!stopped.State.OOMKilled);docker('run','--rm',...limits,'-v',authorityVolume+':/var/lib/qgroup-erasure','--entrypoint','/usr/bin/flock',image,'--exclusive','--nonblock','/var/lib/qgroup-erasure/.authority.lock','true');
- process.stdout.write(JSON.stringify({image,commit,architecture:spec.Architecture,web:'native-runtime-passed',retainedAuthority:'empty-fixture-startup-lock-checkpoint-passed',realErasurePerformed:false,schema:web.schema,publicShellChecks:languages.length,errorDisplayChecks:failures.length,sourceArchiveChecks:4,bot:'version-and-synthetic-health-passed',network:'none',memoryMiB:512,swapMiB:0,pids:128,rootfs:'read-only',uid:994,gracefulStop:true,releaseEligible:false})+'\n');
+ result={image,commit,architecture:spec.Architecture,web:'native-runtime-passed',retainedAuthority:'empty-fixture-startup-lock-checkpoint-passed',realErasurePerformed:false,schema:web.schema,publicShellChecks:languages.length,errorDisplayChecks:failures.length,sourceArchiveChecks:4,bot:'version-and-synthetic-health-passed',network:'none',memoryMiB:512,swapMiB:0,pids:128,rootfs:'read-only',uid:994,gracefulStop:true,releaseEligible:false};
+}catch(error){
+ failure=error;
+ // This exact container has only fresh empty synthetic volumes and no external
+ // network or credentials. Preserve its own startup diagnostics before cleanup.
+ if(attemptedContainer){
+  const log=spawnSync('docker',['logs','--tail','100',name],{timeout:10000,encoding:'utf8'});
+  process.stderr.write('Isolated image diagnostics:\n'+(log.stdout??'').slice(-16384)+(log.stderr??'').slice(-16384));
+ }
+ throw error;
 }finally{
- if(started)spawnSync('docker',['rm','-f',name],{timeout:30000,stdio:'ignore'});
- for(const v of madeVolumes.reverse())spawnSync('docker',['volume','rm',v],{timeout:30000,stdio:'ignore'});
+ const cleanupErrors=[];
+ if(attemptedContainer){
+  // A successful inventory query distinguishes absence from an engine error.
+  try{
+   const inventory=()=>docker('container','ls','--all','--filter','name=^/'+name+'$','--format','{{.ID}}');
+   if(inventory())docker('rm','-f',name);
+   assert.equal(inventory(),'','Owned image container remains after cleanup');
+  }catch(error){cleanupErrors.push(error);}
+ }
+ for(const v of madeVolumes.reverse())try{docker('volume','rm',v);}catch(error){cleanupErrors.push(error);}
+ if(cleanupErrors.length)throw new AggregateError([...(failure?[failure]:[]),...cleanupErrors],
+   'Isolated image cleanup did not complete');
 }
+process.stdout.write(JSON.stringify({...result,cleanupVerified:true})+'\n');

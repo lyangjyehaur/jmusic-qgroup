@@ -60,3 +60,47 @@ jobs:
             artifacts/ci/
             test-results/
           if-no-files-found: warn
+  isolated-image:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: mkdir -p artifacts/ci
+      - name: Archive exact commit for an isolated rehearsal image
+        run: |
+          image_output="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          npx tsx tools/rebuild/prepare-image.ts --commit "$GITHUB_SHA" --output "$image_output" --purpose rehearsal > artifacts/ci/image-source.json
+      - name: Build immutable local image from archived source
+        run: |
+          image_context="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/context"
+          docker build --file "$image_context/deploy/unified.Dockerfile" --build-arg "QGROUP_COMMIT=$GITHUB_SHA" --iidfile artifacts/ci/image.id "$image_context"
+      - name: Verify actual Linux runtime with empty private volumes
+        run: |
+          image_id="$(cat artifacts/ci/image.id)"
+          docker image inspect "$image_id" > artifacts/ci/image-inspect.json
+          node tools/rebuild/verify-image.mjs --image "$image_id" --commit "$GITHUB_SHA" > artifacts/ci/image-verification.json
+      - name: Verify built bot through container-local synthetic platform
+        run: |
+          image_context="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/context"
+          harness_dir="$RUNNER_TEMP/qgroup-bot-smoke-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          node tools/rebuild/build-image-bot-smoke.mjs --source "$image_context" --output "$harness_dir" > artifacts/ci/image-bot-harness.json
+          image_id="$(cat artifacts/ci/image.id)"
+          smoke_name="qgroup-ci-bot-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          trap 'docker rm -f "$smoke_name" >/dev/null 2>&1 || true' EXIT
+          timeout --signal=TERM --kill-after=15s 90s docker run --rm --name "$smoke_name" --label qgroup.rehearsal=true --init --network none --read-only --cap-drop ALL --security-opt no-new-privileges:true --memory 512m --memory-swap 512m --cpus 1 --pids-limit 128 --tmpfs /tmp:rw,nosuid,nodev,noexec,size=64m --mount "type=bind,src=$harness_dir,dst=/app/tools/rebuild,readonly" --entrypoint node "$image_id" /app/tools/rebuild/smoke-bot.mjs > artifacts/ci/image-bot-smoke.log
+          remaining_id="$(docker container ls --all --filter "name=^/$smoke_name$" --format '{{.ID}}')"
+          if [ -n "$remaining_id" ]; then
+            echo 'Owned smoke container was not removed after exit' >&2
+            exit 1
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-image-evidence
+          path: artifacts/ci/
+          if-no-files-found: warn
