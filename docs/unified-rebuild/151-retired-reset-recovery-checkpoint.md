@@ -25,3 +25,7 @@ ForwardMusicInput 要求兩邊退休證據對應；退休會員不能出現在 c
 這是退休恢復的完整離線候選，不會寫回原 authority、替換檔案、啟動服務或授權發布。原 generic recovery 的第 147 號 gate 保留；使用新退休流程須攜帶完整原 sources 並通过整組 oracle，不能只拿退休回執跳過 gate。候選持續 `recovery_required=1`、`releaseEligible=false`。
 
 完整來源鏈／high-water、reset 後續世代與重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍須完成。166 capabilities 維持 `in_progress`、0 accepted、`release_eligible=false`；不合入 `main`、不部署。
+
+## 後續認領與回應驗證
+
+第 152 號新增真正原 pending／authorized／completed claim 的整組原 reset fixture，並修正同一退休會員的原 old board cached save 在三方合併時可能恢復為 200 的情況；完整處置與驗證見[原認領證據驗證](152-retired-reset-proof-checkpoint.md)。本批仍為隔離候選，不授權上線。

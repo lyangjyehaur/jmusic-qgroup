@@ -12,7 +12,7 @@ import { hash } from '../src/security';
 
 /** Synthetic immutable capture-shaped history; container acquisition is covered
  * separately by capture-snapshot tests. This helper imports its actual current DB. */
-export async function legacyHistoryFixture(options:{boardLedger?:string;musicLedger?:string}={}) {
+export async function legacyHistoryFixture(options:{boardLedger?:string;musicLedger?:string;unlinkedAlice?:boolean;claimPin?:string}={}) {
   const root=realpathSync(mkdtempSync(join(tmpdir(),'qgroup-legacy-history-'))),capture=join(root,'capture'),current=join(capture,'current'),stamp='20261118-010203';
   let db:DB|undefined;
   try {
@@ -22,12 +22,14 @@ export async function legacyHistoryFixture(options:{boardLedger?:string;musicLed
     }finally{board.close();}
     const identity=new Database(join(current,'music/identity.sqlite3'));let identityBytes:Buffer;
     const nativeKey='m_'+'a'.repeat(24);
-    try{identity.exec(identitySchema);identity.prepare('INSERT INTO prelinks VALUES(?,?,?)').run('10001','alice',123);identity.prepare('INSERT INTO prelinks VALUES(?,?,?)').run('10002','bob',123);identity.prepare('INSERT INTO prelinks VALUES(?,?,?)').run(nativeKey,'contact-owner',123);identityBytes=identity.serialize();}finally{identity.close();}
+    try{identity.exec(identitySchema);if(!options.unlinkedAlice)identity.prepare('INSERT INTO prelinks VALUES(?,?,?)').run('10001','alice',123);identity.prepare('INSERT INTO prelinks VALUES(?,?,?)').run('10002','bob',123);identity.prepare('INSERT INTO prelinks VALUES(?,?,?)').run(nativeKey,'contact-owner',123);identityBytes=identity.serialize();}finally{identity.close();}
     const entries={e:{id:'e',text:'歷史詞條',kind:'sub',createdBy:'10002',aliases:['原別名'],createdAt:123}};
     const member=(qq:string,name:string)=>({qq,name,selection:[{id:'e',level:4},{id:'e',level:'2'}],created:['e'],consent:true,note:'歷史私人留言',pinHash:'HISTORICAL-PIN-NEVER-EXPORTED',boardUserId:qq==='10001'?'alice':qq==='10002'?'bob':'',contactQQ:qq});
     const data={entries,members:{'10001':member('10001','原稱呼alice'),'10002':member('10002','原稱呼bob'),[nativeKey]:{...member(nativeKey,'原生成分'),contactQQ:'12345'}},settings:{adminPasswordHash:'HISTORICAL-ADMIN-NEVER-EXPORTED'},shouts:[{id:'old',qq:'10002',name:'舊作者',text:'歷史私人喊話',createdAt:123}],shoutHistory:[{id:'orphan',qq:'99999',name:'原作者',text:'孤兒歷史',createdAt:122,archivedAt:124}],trend:[{t:123,counts:{e:2}}]};
+    if(options.unlinkedAlice)data.members['10001'].boardUserId='';
     const save=(path:string,value:unknown)=>{mkdirSync(join(capture,path,'..'),{recursive:true,mode:0o700});writeFileSync(join(capture,path),typeof value==='string'||Buffer.isBuffer(value)?value:JSON.stringify(value),{mode:0o600});};
     const currentData=structuredClone(data);for(const member of Object.values(currentData.members))member.pinHash='CURRENT-PIN';
+    if(options.claimPin)currentData.members['10001'].pinHash=hash('jpm-pin|'+options.claimPin);
     save('current/music/data.json',currentData);save('current/music/erasures.jsonl',options.musicLedger??'');save('current/board.erasures.jsonl',options.boardLedger??'');save('current/music/walls/manifest.json',{items:[]});
     const historical={...data,members:{...data.members,'10004':member('10004','歷史獨有成分')}};
     const pair='history/music/paired-backups/'+stamp;

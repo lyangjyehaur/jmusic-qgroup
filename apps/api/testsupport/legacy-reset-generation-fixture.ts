@@ -4,12 +4,13 @@ import {join} from 'node:path';
 import {legacyResetFixture} from './legacy-reset-fixture';
 import {forwardHash} from '../../../tools/migration/forward-board-storage';
 import type {LegacyResetGenerationInput} from '../../../tools/migration/forward-legacy-reset-generations';
+import type {ResetRetirementProofStage} from './reset-retirement-proof';
 
 /** Two real original resets and a later old-source generation. No native writes,
  * real credentials, workers, HTTP traffic or bot deliveries are involved. */
 export type NumericResetMemberMode='persisted-only'|'loaded-only'|'persisted-only-then-erased'|'persisted-only-opaque-repeated';
-export async function legacyResetGenerationFixture(completed=true,middleKey='e',firstLoadedEntryKey='',prunePersistedFirst=false,persistedOnlyProfile=false,numericMemberMode:NumericResetMemberMode|null=null){
-  const s=await legacyResetFixture(),vault=join(s.root,'generation-vault');
+export async function legacyResetGenerationFixture(completed=true,middleKey='e',firstLoadedEntryKey='',prunePersistedFirst=false,persistedOnlyProfile=false,numericMemberMode:NumericResetMemberMode|null=null,proofStage?:ResetRetirementProofStage){
+  const s=await legacyResetFixture(proofStage),vault=join(s.root,'generation-vault');
   try{
     const output=execFileSync('python3',['-c',`import json,os,sys
 from pathlib import Path

@@ -7643,7 +7643,8 @@
         "packages/database/src/music-retirements.ts",
         "tools/migration/forward-reset-member-retirement.ts",
         "tools/migration/forward-reset-retirement-sources.ts",
-        "tools/migration/forward-retired-reset-recovery.ts"
+        "tools/migration/forward-retired-reset-recovery.ts",
+        "tools/migration/forward-retired-reset-board.ts"
       ],
       "behavior_evidence": [
         "packages/database/src/database.test.ts",
@@ -7755,7 +7756,10 @@
         "apps/api/src/forward-reset-retirement-sources.test.ts",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
         "apps/api/src/forward-retired-reset-recovery.test.ts",
-        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md"
+        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
+        "apps/api/src/forward-retired-reset-proofs.test.ts",
+        "apps/api/src/forward-retired-reset-board.test.ts",
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -7854,7 +7858,10 @@
         "apps/api/src/forward-reset-retirement-sources.test.ts",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
         "apps/api/src/forward-retired-reset-recovery.test.ts",
-        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md"
+        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
+        "apps/api/src/forward-retired-reset-proofs.test.ts",
+        "apps/api/src/forward-retired-reset-board.test.ts",
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -7910,7 +7917,8 @@
         "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
         "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
-        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md"
+        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -7929,7 +7937,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 151 號已將退休 baseline／native fork 接入 global reset、business、proof 與 source rebase 的完整離線候選，保留退休原 source／history／map 與 inactive contact reservation，獨立逐表核對並阻擋身份復活；16 個新案例及 236 個既有回歸通過，8 檔／252 個不同案例逐名核對；第 150 號 163／2627 unit、78／833 browser 的完整 CI 原產物已獨立核對通過。本批全量 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。原 generic 147 gate 保留，retired candidate recovery_required=1；維持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。"
     },
     {
       "capability_id": "O13",
@@ -8055,7 +8063,8 @@
         "packages/database/src/music-retirements.ts",
         "tools/migration/forward-reset-member-retirement.ts",
         "tools/migration/forward-reset-retirement-sources.ts",
-        "tools/migration/forward-retired-reset-recovery.ts"
+        "tools/migration/forward-retired-reset-recovery.ts",
+        "tools/migration/forward-retired-reset-board.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8161,7 +8170,10 @@
         "apps/api/src/forward-reset-retirement-sources.test.ts",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
         "apps/api/src/forward-retired-reset-recovery.test.ts",
-        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md"
+        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
+        "apps/api/src/forward-retired-reset-proofs.test.ts",
+        "apps/api/src/forward-retired-reset-board.test.ts",
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8254,7 +8266,10 @@
         "apps/api/src/forward-reset-retirement-sources.test.ts",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
         "apps/api/src/forward-retired-reset-recovery.test.ts",
-        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md"
+        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
+        "apps/api/src/forward-retired-reset-proofs.test.ts",
+        "apps/api/src/forward-retired-reset-board.test.ts",
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8308,7 +8323,8 @@
         "docs/unified-rebuild/147-reset-member-scope-checkpoint.md",
         "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
-        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md"
+        "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -8326,7 +8342,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 151 號已將退休 baseline／native fork 接入 global reset、business、proof 與 source rebase 的完整離線候選，保留退休原 source／history／map 與 inactive contact reservation，獨立逐表核對並阻擋身份復活；16 個新案例及 236 個既有回歸通過，8 檔／252 個不同案例逐名核對；第 150 號 163／2627 unit、78／833 browser 的完整 CI 原產物已獨立核對通過。本批全量 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。原 generic 147 gate 保留，retired candidate recovery_required=1；維持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。"
     },
     {
       "capability_id": "O14",

@@ -7,11 +7,12 @@ import {saveProfile} from '../src/repositories';
 import {hash} from '../src/security';
 import {forwardHash} from '../../../tools/migration/forward-board-storage';
 import type {LegacyResetRecoveryInput} from '../../../tools/migration/forward-legacy-reset-recovery';
+import type {ResetRetirementProofStage} from './reset-retirement-proof';
 
 /** Real original reset/Store/save flow, followed by separate native additions.
  * All credentials, people, messages and images are isolated synthetic fixtures. */
-export async function legacyResetRecoveryFixture(nativeFork=true,persistedOnlyProfile=false,numericMemberMode:NumericResetMemberMode|null=null){
-  const s=await legacyResetGenerationFixture(true,'e','',false,persistedOnlyProfile,numericMemberMode);let native:Database.Database|undefined;
+export async function legacyResetRecoveryFixture(nativeFork=true,persistedOnlyProfile=false,numericMemberMode:NumericResetMemberMode|null=null,proofStage?:ResetRetirementProofStage){
+  const s=await legacyResetGenerationFixture(true,'e','',false,persistedOnlyProfile,numericMemberMode,proofStage);let native:Database.Database|undefined;
   try{
     execFileSync('python3',['-c',`import os,json,sys
 from pathlib import Path
