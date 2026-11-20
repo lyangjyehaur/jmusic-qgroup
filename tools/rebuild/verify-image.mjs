@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { verifyBuiltStatic } from './verify-built-static.mjs';
 import { syntheticImageFixture } from './synthetic-image-fixture.mjs';
 import { randomUUID } from 'node:crypto';
 import { execFileSync,spawnSync } from 'node:child_process';
@@ -32,6 +33,8 @@ try{
  const retained=JSON.parse(command("const fs=require('fs'),cp=require('child_process'),crypto=require('crypto');let blocked=false;try{fs.writeFileSync(process.env.REBUILD_ERASURE_AUTHORITY_CHECKPOINT,'x')}catch(e){blocked=e.code==='EROFS'}const rival=cp.spawnSync('/usr/bin/flock',['--exclusive','--nonblock','/var/lib/qgroup-erasure/.authority.lock','true'],{timeout:3000}),checkpoint=crypto.createHash('sha256').update(fs.readFileSync(process.env.REBUILD_ERASURE_AUTHORITY_CHECKPOINT)).digest('hex');console.log(JSON.stringify({checkpointReadOnly:blocked,rivalStatus:rival.status,checkpoint}))"));
  assert(retained.checkpointReadOnly);assert.equal(retained.rivalStatus,1);assert.equal(retained.checkpoint,fixture.checkpointSha256);
  assert.equal(web.v.commit,commit);assert.equal(web.v.source,'rehearsal');assert.equal(web.v.service,'web');assert.equal(web.uid,994);assert.equal(web.gid,992);assert(web.blocked&&web.react&&web.png&&!web.legacy);assert.equal(web.users,0);assert.equal(web.schema,15);assert.equal(web.consents,0);assert.equal(web.receipts,0);
+ const staticAssets=JSON.parse(command(`(${verifyBuiltStatic.toString()})('http://127.0.0.1:8791','/app/.rebuild-dist/web').then(result=>console.log(JSON.stringify(result))).catch(error=>{console.error(error);process.exit(1)})`));
+ assert(staticAssets.originalBytesVerified&&staticAssets.assets.length>0);
  const sourceArchive=JSON.parse(command(`(async()=>{const m=await import('/app/.rebuild-dist/api/database.mjs'),db=m.openDatabase(':memory:');try{
    db.prepare('INSERT INTO music_documents VALUES(?,?,?)').run('profile_source',0,JSON.stringify({profileId:'synthetic-profile',legacyKey:'10000',source:'json',member:{name:'private-source',pinHash:'inactive-proof'}}));
    db.prepare('INSERT INTO music_documents VALUES(?,?,?)').run('profile_source',1,JSON.stringify({profileId:'synthetic-other',legacyKey:'10001',source:'json',member:{name:'source-keep',boardUserId:'synthetic-closed',selection:['original-choice'],pinHash:'separate-music'}}));
@@ -57,7 +60,7 @@ try{
  const running=JSON.parse(docker('inspect',name))[0];assert(running.HostConfig.ReadonlyRootfs);assert.equal(running.HostConfig.Memory,512*1024*1024);assert.equal(running.HostConfig.MemorySwap,running.HostConfig.Memory);assert.equal(running.HostConfig.NanoCpus,1e9);assert.equal(running.HostConfig.PidsLimit,128);assert.equal(running.HostConfig.NetworkMode,'none');assert.equal(running.Mounts.find(m=>m.Destination==='/var/lib/qgroup-checkpoint')?.RW,false);assert.equal(running.Mounts.find(m=>m.Destination==='/var/lib/qgroup-erasure')?.RW,true);assert.deepEqual(running.HostConfig.CapDrop,['ALL']);assert(running.HostConfig.SecurityOpt.includes('no-new-privileges:true'));
  assert.equal(command("console.log(['/usr/bin/python3','/app/node_modules/tsx','/app/node_modules/typescript'].some(p=>require('fs').existsSync(p)))"),'false');
  docker('stop','--time','15',name);const stopped=JSON.parse(docker('inspect',name))[0];assert.equal(stopped.State.ExitCode,0);assert(!stopped.State.OOMKilled);docker('run','--rm',...limits,'-v',authorityVolume+':/var/lib/qgroup-erasure','--entrypoint','/usr/bin/flock',image,'--exclusive','--nonblock','/var/lib/qgroup-erasure/.authority.lock','true');
- result={image,commit,architecture:spec.Architecture,web:'native-runtime-passed',retainedAuthority:'empty-fixture-startup-lock-checkpoint-passed',realErasurePerformed:false,schema:web.schema,publicShellChecks:languages.length,errorDisplayChecks:failures.length,sourceArchiveChecks:4,bot:'version-and-synthetic-health-passed',network:'none',memoryMiB:512,swapMiB:0,pids:128,rootfs:'read-only',uid:994,gracefulStop:true,releaseEligible:false};
+ result={image,commit,architecture:spec.Architecture,web:'native-runtime-passed',retainedAuthority:'empty-fixture-startup-lock-checkpoint-passed',realErasurePerformed:false,schema:web.schema,publicShellChecks:languages.length,errorDisplayChecks:failures.length,staticAssets,sourceArchiveChecks:4,bot:'version-and-synthetic-health-passed',network:'none',memoryMiB:512,swapMiB:0,pids:128,rootfs:'read-only',uid:994,gracefulStop:true,releaseEligible:false};
 }catch(error){
  failure=error;
  // This exact container has only fresh empty synthetic volumes and no external

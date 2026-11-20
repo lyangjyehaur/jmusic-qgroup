@@ -23,6 +23,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import rateLimit from '@fastify/rate-limit';
 import staticFiles from '@fastify/static';
+import { staticCacheControl } from './static-cache';
 import { z } from 'zod';
 import { assertDatabaseUsable, REBUILD_SCHEMA_VERSION, type DB } from '@qgroup/database';
 import { SaveProfile } from '@qgroup/contracts';
@@ -213,8 +214,8 @@ export function createApp(options: AppOptions) {
         return reply.header('Content-Language',language).header('Vary','Accept-Language').header('Cache-Control','no-store').type('text/html').send(shell.replace(/<html lang="[^"]*"/,`<html lang="${language}"`));
       };
       app.get('/',sendShell);app.get('/index.html',sendShell);
-      app.register(staticFiles, { root: options.staticRoot, wildcard: false, globIgnore:['index.html'], setHeaders(response,path) {
-        if(/(?:^|\/)(?:sw\.js|manifest\.webmanifest|manifest\.json)$/.test(path))response.header('Cache-Control','no-store');
+      app.register(staticFiles, { root: options.staticRoot, wildcard: false, preCompressed:true, cacheControl:false, etag:true, dotfiles:'deny', globIgnore:['index.html','**/*.br','**/*.gz','**/*.deflate'], setHeaders(response,path) {
+        response.header('Cache-Control',staticCacheControl(options.staticRoot!,path));
       } });
       app.setNotFoundHandler((request, reply) => {
         if (!['GET','HEAD'].includes(request.method) || request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || (request.url.split('?')[0]!.includes('.')&&!['/music/index.html','/music/admin.html','/privacy.html','/music/privacy.html','/contact.html','/guide.html'].includes(request.url.split('?')[0]!))) return reply.code(404).send({ code: 'NOT_FOUND', message: '找不到此入口' });

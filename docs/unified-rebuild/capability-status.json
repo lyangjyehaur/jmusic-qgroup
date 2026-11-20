@@ -7499,16 +7499,21 @@
       "legacy_evidence_group": "HTTP、成分建置",
       "implementation": [
         "apps/api/src/app.ts",
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/web/static-compression.ts",
+        "apps/api/src/static-cache.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "apps/api/src/static-assets.test.ts",
+        "tools/rebuild/verify-built-static.mjs",
+        "docs/unified-rebuild/153-static-resources-checkpoint.md"
       ],
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [],
       "state": "in_progress",
-      "remaining": "同源、CSRF、帳號 scope、CSP、body limit、基本限流與私有 no-store 已實作；完整靜態／壓縮／快取政策待驗收。"
+      "remaining": "同源、CSRF、帳號 scope、CSP、body limit、基本限流與私有 no-store 已實作；153 新增 Brotli／gzip、logical MIME、表示 ETag、hashed immutable 與穩定更新入口 no-store，19 本機案例及40個真實 HTTP檢查通過。原 Linux image／browser、代理層快取與正式規模資源驗收待完成。"
     },
     {
       "capability_id": "O12",
