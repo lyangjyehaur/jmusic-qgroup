@@ -20,10 +20,10 @@ export function validateForwardMusicRelations(s:ForwardMusicSources,music:Rollba
     if(seen.has(key.legacyKey)||ids.has(key.profileId))throw Error('Forward profile key collision');seen.add(key.legacyKey);ids.add(key.profileId);
     const prior=s.native.keys.find(row=>row.legacyKey===key.legacyKey);
     if(prior){if(!musicEqual(prior,key))throw Error('Forward original profile mapping differs');}
-    else if(key.mode!=='preserved'||key.profileId!==profileId(key.legacyKey)||key.erased)throw Error('Invalid new forward profile mapping');
+    else if(key.mode!=='preserved'||key.profileId!==profileId(key.legacyKey)||key.erased||key.retired)throw Error('Invalid new forward profile mapping');
   }
   if(music.keys.length!==s.native.keys.length+Object.keys(members).filter(key=>!s.native.keys.some(row=>row.legacyKey===key)).length||s.native.keys.some(key=>!music.keys.some(row=>musicEqual(row,key))))throw Error('Incomplete forward original profile mapping');
-  for(const key of Object.keys(members))if(!seen.has(key)||music.keys.find(row=>row.legacyKey===key)?.erased)throw Error('Unmapped or erased forward member');
+  for(const key of Object.keys(members))if(!seen.has(key)||music.keys.find(row=>row.legacyKey===key)?.erased||music.keys.find(row=>row.legacyKey===key)?.retired)throw Error('Unmapped or erased forward member');
   const rows=readIdentity(identity);
   // Cross-table UNIQUE ownership and contacts are semantic constraints in the
   // old system. SQLite's individual indexes cannot catch these collisions.

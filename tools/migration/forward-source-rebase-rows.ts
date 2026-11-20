@@ -25,10 +25,15 @@ export function rebaseForwardSourceRows(input:ForwardSourceRebaseInput,s:ReturnT
     const document=(kind:string,position:number,payload:unknown)=>documents.push({kind,position,payload_json:JSON.stringify(payload)});
     const map=(source:string,entity_type:string,source_id:string,target_id:string,payload:string,status:string)=>maps.push({source,entity_type,source_id,target_id,source_revision:run,payload_digest:forwardHash(payload),status});
     Object.entries(object(music.data.entries,'rebased entries')).forEach(([id,entry],position)=>{document('entry_source',position,{entryId:id,entry});map('music','entry',id,id,JSON.stringify(entry),'preserved');});
+    const retiredSources=(s.proof.prepare("SELECT kind,position,payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as {kind:string;position:number;payload_json:string}[]).filter(row=>music.keys.some(key=>key.retired&&JSON.parse(row.payload_json).profileId===key.profileId));
+    if(retiredSources.some(row=>!Number.isSafeInteger(row.position)||row.position<0))throw Error('Retired profile source position exceeds supported scope');
+    documents.push(...retiredSources);const reservedProfilePositions=new Set(retiredSources.map(row=>row.position));
     let position=0;for(const key of music.keys){
       if(key.erased){map('music','profile',key.legacyKey,key.profileId,'','erased');continue;}
+      if(key.retired){const original=s.proof.prepare("SELECT * FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=? AND target_id=?").get(key.legacyKey,key.profileId) as Row|undefined;if(original)maps.push(original);else map('music','profile',key.legacyKey,key.profileId,'','retired');continue;}
       const member=object(members[key.legacyKey],'rebased member'),creation=s.proof.prepare('SELECT created_at FROM music_profile_creation WHERE profile_id=?').get(key.profileId) as {created_at:string}|undefined;
       if(creation&&member.createdAt!==Date.parse(creation.created_at)/1000)throw Error('Source rebase conflicts with original native creation time');
+      while(reservedProfilePositions.has(position))position++;
       document('profile_source',position++,{profileId:key.profileId,legacyKey:key.legacyKey,source:'json',member});map('music','profile',key.legacyKey,key.profileId,JSON.stringify(member),'preserved');
     }
     for(const kind of ['settings','shouts','shoutHistory']){const values=kind==='settings'?[music.data.settings??{}]:music.data[kind];if(!Array.isArray(values))throw Error('Invalid source rebase document list');values.forEach((value,index)=>{document(kind,index,value);map('music',kind,String(index),kind+':'+index,JSON.stringify(value),kind==='settings'?'inactive_legacy_credential':'preserved');});}

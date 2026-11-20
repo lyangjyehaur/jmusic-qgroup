@@ -21,3 +21,7 @@
 本次只完成退休 baseline／native fork 與私人派生 identity source，**尚未執行 global reset、business、proof 或 source rebase 的整組退休恢復**。回執明確保留 `globalResetProjected=false`、`businessProofAndRebasePrepared=false`、`recoveryRequired=true`、`releaseEligible=false`；第 147 號整組 gate 保留。下一步須將兩個退休分支先接原 erasure／global reset 投影，再準備 ForwardMusicInput；business／proof／rebase 對退休 mapping 必須保留 source／history、避免把缺少 current member 當成真正隱私 erasure 或刪除原來源。
 
 完整来源鏈／high-water、重複 reset epochs、exact key reuse、latest-erasure 私人歷史、media／browser pending、停止來源 capture、正式規模、實際候選版本組合、B01–B15、QQ 與 activation 仍未完成。166 capabilities 維持 `in_progress`、0 accepted、`release_eligible=false`。保留 Python bot，不合入 `main`、不部署。
+
+## 後續固定提交驗證
+
+固定 `e3894c2b34dda8f753cbf8f9bd76e28925a92cf2`、run `44737551163` 已 terminal success；原 unit／browser ZIP、完整固定 inventory、image pair 與 compiled development Python 產物已獨立核對，163／2627 unit、78／833 browser 全通過，零 skip／retry／flake，三份原 job logs 已保存並釘選。unit ZIP `f2bafdb286787806b868ce123438313edc3283720b21bc62797c2465b681dbef`，browser ZIP `cd585280e07107a0808dbd2ce0e1c7a4b8f5367eda1a22fb8029519c3391d936`，image ZIP `9dc220f6851550e5c7b44eac8ffe69b727ee1cabcacbaa1987e68be964dec161`。退休整組恢復的後續實作見[第 151 號](151-retired-reset-recovery-checkpoint.md)，仍為隔離候選，不授權正式切換。

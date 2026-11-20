@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import type {DB} from '@qgroup/database';
+import {readMusicRetirements,type DB} from '@qgroup/database';
 import {decodeErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
 import {assertIdentitySchema,captureIdentitySource} from './identity-source';
 import {keys,object,parseJson,projectMusic,readIdentity,type ObjectValue} from './music-codec';
@@ -65,11 +65,16 @@ export function openForwardMusicSources(input:ForwardMusicInput){
     const erased=new Set(native.keys.filter(row=>row.erased).map(row=>row.legacyKey));
     for(const row of board.native.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[])erased.add(row.legacy_key);
     const oldMembers=object(old.members,'old music members');
+    const retired=readMusicRetirements(board.native),baselineRetired=new Map(readMusicRetirements(board.checkpoint).map(row=>[row.profileId,row]));
+    for(const marker of baselineRetired.values())if(!retired.some(row=>row.profileId===marker.profileId)&&!native.keys.some(row=>row.profileId===marker.profileId&&row.erased))throw Error('Forward original retirement cannot be removed without verified erasure');
+    for(const marker of retired){const original=baselineRetired.get(marker.profileId);if(!original||original.legacyKey!==marker.legacyKey||original.retiredAt!==marker.retiredAt||original.originalProfileSha256!==marker.originalProfileSha256||!musicEqual(original.occurrences,marker.occurrences))throw Error('Forward retirement needs matching original baseline evidence');
+      if(Object.hasOwn(oldMembers,marker.legacyKey)||['sessions','entry_intents','links','prelinks','link_overrides','native_profiles'].some(table=>oldIdentity.prepare('SELECT 1 FROM '+table+' WHERE qq=?').get(marker.legacyKey)))throw Error('Forward retired member or authentication revival requires explicit reconciliation');
+    }
     for(const key of erased){if(Object.hasOwn(oldMembers,key)||['sessions','links','prelinks','link_overrides','link_audit','native_profiles','profile_contacts','entry_intents'].some(table=>oldIdentity.prepare(`SELECT 1 FROM "${table}" WHERE qq=?`).get(key)))throw Error('Forward erased profile requires authority-backed cleanup before source merge');}
     const erasedRefs=new Set([...erased,...native.keys.filter(row=>row.erased).map(row=>row.profileId)]);
     for(const value of Object.values(object(old.entries,'old entries')))if(erasedRefs.has(String(object(value,'old entry').createdBy??'')))throw Error('Forward erased creator requires authority-backed cleanup');
     for(const kind of ['shouts','shoutHistory']){const list=old[kind]??[];if(!Array.isArray(list))throw Error('Invalid forward shout list');for(const value of list)if(erasedRefs.has(String(object(value,'old shout').qq??'')))throw Error('Forward erased shout requires authority-backed cleanup');}
-    for(const key of baseline.keys)if(!key.erased&&!erased.has(key.legacyKey)&&!Object.hasOwn(oldMembers,key.legacyKey))throw Error('Forward member disappearance requires original erasure or reset authority');
+    for(const key of baseline.keys)if(!key.erased&&!key.retired&&!erased.has(key.legacyKey)&&!Object.hasOwn(oldMembers,key.legacyKey))throw Error('Forward member disappearance requires original erasure or reset authority');
     for(const table of ['link_audit','used_oauth']){
       const a=forwardRowReader(identity.db,table),b=forwardRowReader(oldIdentity,table);
       for(const row of forwardRows(baselineIdentity,table)){

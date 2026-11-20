@@ -22,7 +22,7 @@ import type {ForwardSourceRebaseInput} from './forward-source-rebase-source';
 
 export type LegacyResetRecoveryInput={erasures:ForwardErasureInput;latestMusic:PinnedForwardBytes;latestIdentity:PinnedForwardBytes;latestBoard:PinnedForwardBytes;reconstructedAt:string;reconciledAt:string;rebasedAt:string};
 const pin=(bytes:Buffer):PinnedForwardBytes=>({bytes:Buffer.from(bytes),sha256:forwardHash(bytes)});
-function held(input:LegacyResetRecoveryInput,boundary?:()=>void){
+export function holdLegacyResetRecoveryInput(input:LegacyResetRecoveryInput,boundary?:()=>void){
   if(!input.erasures.resetSourceVault)throw Error('Original reset recovery requires the complete private vault');
   for(const key of ['reconstructedAt','reconciledAt','rebasedAt'] as const)z.iso.datetime().parse(input[key]);
   if(Date.parse(input.reconstructedAt)>Date.parse(input.reconciledAt)||Date.parse(input.reconciledAt)>Date.parse(input.rebasedAt))throw Error('Reset recovery operation times are out of order');
@@ -43,14 +43,14 @@ function held(input:LegacyResetRecoveryInput,boundary?:()=>void){
   };
   guard();return {s,guard,authority};
 }
-function generationInput(s:ReturnType<typeof held>['s'],music=s.latestMusic){return {vault:{authorityRoot:s.erasures.authorityRoot,manifestSha256:s.erasures.manifestSha256,...s.erasures.resetSourceVault!},checkpoint:pin(s.erasures.checkpoint),nativeImage:{bytes:s.erasures.nativeImage,sha256:s.erasures.nativeImageSha256},latestMusic:music};}
+export function generationInput(s:ReturnType<typeof holdLegacyResetRecoveryInput>['s'],music=s.latestMusic){return {vault:{authorityRoot:s.erasures.authorityRoot,manifestSha256:s.erasures.manifestSha256,...s.erasures.resetSourceVault!},checkpoint:pin(s.erasures.checkpoint),nativeImage:{bytes:s.erasures.nativeImage,sha256:s.erasures.nativeImageSha256},latestMusic:music};}
 
-const startupInput=(s:ReturnType<typeof held>['s'])=>({vault:generationInput(s).vault,music:s.latestMusic,identity:s.latestIdentity});
+const startupInput=(s:ReturnType<typeof holdLegacyResetRecoveryInput>['s'])=>({vault:generationInput(s).vault,music:s.latestMusic,identity:s.latestIdentity});
 
 /** Prepare a common post-reset baseline separately from the native fork. Using
  * the current native fork as the baseline would misclassify its later additions
  * as old deletions. Original checkpoint/authority bindings are retained. */
-function sources(h:ReturnType<typeof held>,generation:LegacyResetGenerationBundle,startup:LegacyResetIdentityMemberBundle,suppliedRows?:ResetIdentityRowsBundle){
+function sources(h:ReturnType<typeof holdLegacyResetRecoveryInput>,generation:LegacyResetGenerationBundle,startup:LegacyResetIdentityMemberBundle,suppliedRows?:ResetIdentityRowsBundle){
   const {s,guard}=h;verifyForwardLegacyResetIdentityMembers(startupInput(s),startup,guard);verifyForwardLegacyResetGenerations(generationInput(s,startup.music),generation,guard);
   const native=projectNativeForwardErasures(s.erasures,guard),baseline=projectNativeForwardErasures({...s.erasures,nativeImage:Buffer.from(s.erasures.checkpoint),nativeImageSha256:forwardHash(s.erasures.checkpoint)},guard);
   const base=projectRollbackStateFromCheckpoint(baseline.nativeImage,decodeErasureJournal(baseline.nativeJournal.toString()));
@@ -63,14 +63,14 @@ function sources(h:ReturnType<typeof held>,generation:LegacyResetGenerationBundl
   inputs.oldIdentity=rows.identity;
   guard();return {identityRows:rows,inputs:copyForwardMusicInput(inputs),baselineProjection:baseline.report,nativeProjection:native.report,projectedMusicSha256:startup.music.sha256,projectedIdentitySha256:rows.identity.sha256};
 }
-function recoveryReport(h:ReturnType<typeof held>,prepared:ReturnType<typeof sources>,final:Buffer){return {version:1 as const,authoritySha256:h.s.erasures.manifestSha256,checkpointSha256:forwardHash(h.s.erasures.checkpoint),nativeOriginalSha256:h.s.erasures.nativeImageSha256,projectedMusicSha256:prepared.projectedMusicSha256,projectedIdentitySha256:prepared.projectedIdentitySha256,latestSourcePins:{music:h.s.latestMusic.sha256,identity:h.s.latestIdentity.sha256,board:h.s.latestBoard.sha256},baselineProjection:prepared.baselineProjection,nativeProjection:prepared.nativeProjection,finalNativeImageSha256:forwardHash(final),resetRecoveryCandidatePrepared:true as const,latestSourceAncestryVerified:false as const,allResetGenerationsReconciled:false as const,externalRetentionVerified:false as const,mediaAndBrowserReconciled:false as const,recoveryRequired:true as const,releaseEligible:false as const};}
-const proofInput=(s:ReturnType<typeof held>['s'],inputs:ForwardMusicInput,business:ReturnType<typeof reconstructForwardBusiness>):ForwardProofInput=>({sources:inputs,businessImage:pin(business.nativeImage),musicSources:pin(Buffer.from(JSON.stringify(business.musicSources)+'\n')),identitySources:pin(business.identitySources),reconstructedAt:s.reconstructedAt,reconciledAt:s.reconciledAt});
+function recoveryReport(h:ReturnType<typeof holdLegacyResetRecoveryInput>,prepared:ReturnType<typeof sources>,final:Buffer){return {version:1 as const,authoritySha256:h.s.erasures.manifestSha256,checkpointSha256:forwardHash(h.s.erasures.checkpoint),nativeOriginalSha256:h.s.erasures.nativeImageSha256,projectedMusicSha256:prepared.projectedMusicSha256,projectedIdentitySha256:prepared.projectedIdentitySha256,latestSourcePins:{music:h.s.latestMusic.sha256,identity:h.s.latestIdentity.sha256,board:h.s.latestBoard.sha256},baselineProjection:prepared.baselineProjection,nativeProjection:prepared.nativeProjection,finalNativeImageSha256:forwardHash(final),resetRecoveryCandidatePrepared:true as const,latestSourceAncestryVerified:false as const,allResetGenerationsReconciled:false as const,externalRetentionVerified:false as const,mediaAndBrowserReconciled:false as const,recoveryRequired:true as const,releaseEligible:false as const};}
+export const proofInput=(s:ReturnType<typeof holdLegacyResetRecoveryInput>['s'],inputs:ForwardMusicInput,business:ReturnType<typeof reconstructForwardBusiness>):ForwardProofInput=>({sources:inputs,businessImage:pin(business.nativeImage),musicSources:pin(Buffer.from(JSON.stringify(business.musicSources)+'\n')),identitySources:pin(business.identitySources),reconstructedAt:s.reconstructedAt,reconciledAt:s.reconciledAt});
 
 /** Entire business/proof/source-rebase candidate; no files, service startup,
  * authority rebase, media replacement or platform delivery. All original source
  * generations remain independently pinned and external ancestry is still needed. */
 export function reconstructForwardLegacyResetRecovery(input:LegacyResetRecoveryInput,boundary?:()=>void){
-  const h=held(input,boundary),startup=prepareForwardLegacyResetIdentityMembers(startupInput(h.s),h.guard),generation=prepareForwardLegacyResetGenerations(generationInput(h.s,startup.music),h.guard),prepared=sources(h,generation,startup),business=reconstructForwardBusiness(prepared.inputs,h.s.reconstructedAt,h.guard);
+  const h=holdLegacyResetRecoveryInput(input,boundary),startup=prepareForwardLegacyResetIdentityMembers(startupInput(h.s),h.guard),generation=prepareForwardLegacyResetGenerations(generationInput(h.s,startup.music),h.guard),prepared=sources(h,generation,startup),business=reconstructForwardBusiness(prepared.inputs,h.s.reconstructedAt,h.guard);
   const proofs=proofInput(h.s,prepared.inputs,business),proof=reconstructForwardProofs(proofs,h.guard),rebaseInput:ForwardSourceRebaseInput={proofs,proofImage:pin(proof.nativeImage),rebasedAt:h.s.rebasedAt},rebased=rebaseForwardSources(rebaseInput,h.guard);
   h.guard();return {startup,identityRows:prepared.identityRows,generation,sources:prepared.inputs,business,proof,rebased,report:recoveryReport(h,prepared,rebased.nativeImage)};
 }
@@ -80,20 +80,26 @@ export type LegacyResetRecoveryBundle=ReturnType<typeof reconstructForwardLegacy
  * rebase writers. Their independent full-row oracles verify every actual output. */
 export function verifyForwardLegacyResetRecovery(input:LegacyResetRecoveryInput,bundle:LegacyResetRecoveryBundle,boundary?:()=>void){
   const outputPins=()=>JSON.stringify({identityRows:[bundle.identityRows.identity.sha256,forwardHash(bundle.identityRows.identity.bytes),bundle.identityRows.bindings,bundle.identityRows.report],startup:[bundle.startup.music.sha256,forwardHash(bundle.startup.music.bytes),bundle.startup.report],generation:[bundle.generation.derivedMusic.sha256,forwardHash(bundle.generation.derivedMusic.bytes),bundle.generation.mapping],sources:Object.fromEntries(Object.entries(bundle.sources).map(([key,row])=>[key,[row.sha256,forwardHash(row.bytes)]])),business:[forwardHash(bundle.business.nativeImage),forwardHash(bundle.business.nativeJournal),forwardHash(bundle.business.identitySources),bundle.business.musicSources],proof:[forwardHash(bundle.proof.nativeImage),forwardHash(bundle.proof.nativeJournal),forwardHash(bundle.proof.retainedBusinessImage),forwardHash(bundle.proof.musicSources),forwardHash(bundle.proof.identitySources)],rebased:[forwardHash(bundle.rebased.nativeImage),forwardHash(bundle.rebased.nativeJournal),forwardHash(bundle.rebased.retainedBusinessImage),forwardHash(bundle.rebased.retainedProofImage),forwardHash(bundle.rebased.musicSources),forwardHash(bundle.rebased.identitySources)],reports:[bundle.generation.report,bundle.business.report,bundle.proof.report,bundle.rebased.report,bundle.report]});
-  const original=outputPins(),h=held(input,()=>{const value:unknown=boundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Reset recovery boundary must be synchronous');if(outputPins()!==original)throw Error('Reset recovery output bundle changed');}),prepared=sources(h,bundle.generation,bundle.startup,bundle.identityRows);
-  if(!musicEqual(Object.keys(bundle.sources).sort(),Object.keys(prepared.inputs).sort()))throw Error('Reset recovery source environment inventory differs');
-  for(const key of Object.keys(prepared.inputs) as (keyof ForwardMusicInput)[])if(bundle.sources[key].sha256!==prepared.inputs[key].sha256||!bundle.sources[key].bytes.equals(prepared.inputs[key].bytes))throw Error('Reset recovery source environment differs');
-  if(!bundle.business.nativeJournal.equals(prepared.inputs.nativeJournal.bytes))throw Error('Reset recovery business journal differs');
-  const business=verifyForwardBusiness(prepared.inputs,bundle.business.nativeImage,bundle.business.musicSources,bundle.business.identitySources,h.s.reconstructedAt),proofs=proofInput(h.s,prepared.inputs,bundle.business),proof=verifyForwardProofBundle(proofs,bundle.proof),rebaseInput={proofs,proofImage:pin(bundle.proof.nativeImage),rebasedAt:h.s.rebasedAt},rebased=verifyForwardSourceRebaseBundle(rebaseInput,bundle.rebased);
-  // Compare reports only after the independent row oracles have verified the
-  // underlying migration records. Reports cannot grant activation or swap pins.
+  const original=outputPins(),h=holdLegacyResetRecoveryInput(input,()=>{const value:unknown=boundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Reset recovery boundary must be synchronous');if(outputPins()!==original)throw Error('Reset recovery output bundle changed');}),prepared=sources(h,bundle.generation,bundle.startup,bundle.identityRows);
+  const result=verifyResetRecoveryCandidate(h,prepared.inputs,bundle);
   const check=(actual:unknown,wanted:unknown)=>{if(!musicEqual(actual,wanted))throw Error('Reset recovery report differs');};
   check(bundle.identityRows.report,prepared.identityRows.report);
   check(bundle.report,recoveryReport(h,prepared,bundle.rebased.nativeImage));
-  const generation=verifyForwardLegacyResetGenerations(generationInput(h.s,bundle.startup.music),bundle.generation,h.guard),vault=readForwardLegacyResetVault(generationInput(h.s).vault),last=h.authority.records.filter(row=>row.version===2).at(-1)!,completion=vault.completionSources.find(row=>row.sequence===last.sequence)!;
-  const native=new Database(h.s.erasures.nativeImage);let lineage:string;try{lineage=(native.prepare('SELECT lineage_id FROM rebuild_storage WHERE id=1').get() as {lineage_id:string}).lineage_id;}finally{native.close();}
-  check(bundle.generation.report,{...generation,authoritySha256:h.s.erasures.manifestSha256,headSequence:h.authority.head.sequence,resetSequence:last.sequence,resetRecordSha256:completion.authorityRecordSha256,completionSha256:completion.completionSha256,nativeImageSha256:h.s.erasures.nativeImageSha256,lineageId:lineage,entryGenerationSourcesPrepared:true,externalRetentionVerified:false,recoveryRequired:true,releaseEligible:false});
-  const sourcePins=Object.fromEntries(Object.entries(prepared.inputs).map(([key,row])=>[key,row.sha256]));
+  verifyResetGenerationReport(h,bundle.startup.music,bundle.generation);
+  h.guard();return result;
+}
+
+/** Shared row/report oracle for the business, proof and source-rebase outputs.
+ * The caller verifies its independently prepared source environment first. */
+export function verifyResetRecoveryCandidate(h:ReturnType<typeof holdLegacyResetRecoveryInput>,inputs:ForwardMusicInput,bundle:Pick<LegacyResetRecoveryBundle,'sources'|'business'|'proof'|'rebased'>){
+  if(!musicEqual(Object.keys(bundle.sources).sort(),Object.keys(inputs).sort()))throw Error('Reset recovery source environment inventory differs');
+  for(const key of Object.keys(inputs) as (keyof ForwardMusicInput)[])if(bundle.sources[key].sha256!==inputs[key].sha256||!bundle.sources[key].bytes.equals(inputs[key].bytes))throw Error('Reset recovery source environment differs');
+  if(!bundle.business.nativeJournal.equals(inputs.nativeJournal.bytes))throw Error('Reset recovery business journal differs');
+  const business=verifyForwardBusiness(inputs,bundle.business.nativeImage,bundle.business.musicSources,bundle.business.identitySources,h.s.reconstructedAt),proofs=proofInput(h.s,inputs,bundle.business),proof=verifyForwardProofBundle(proofs,bundle.proof),rebaseInput={proofs,proofImage:pin(bundle.proof.nativeImage),rebasedAt:h.s.rebasedAt},rebased=verifyForwardSourceRebaseBundle(rebaseInput,bundle.rebased);
+  // Compare reports only after the independent row oracles have verified the
+  // underlying migration records. Reports cannot grant activation or swap pins.
+  const check=(actual:unknown,wanted:unknown)=>{if(!musicEqual(actual,wanted))throw Error('Reset recovery report differs');};
+  const sourcePins=Object.fromEntries(Object.entries(inputs).map(([key,row])=>[key,row.sha256]));
   check(bundle.business.report,{version:1,sourcePins,sourceDigest:forwardHash('qgroup:forward-business:v1:'+musicCanonical(sourcePins)),nativeImageSha256:forwardHash(bundle.business.nativeImage),reconstructedAt:h.s.reconstructedAt,changedProfiles:business.changedProfiles,ownershipEpochs:business.ownershipEpochs,reconciliation:business,businessCandidateOnly:true,proofReconciliationRequired:true,sourceRebaseRequired:true,recoveryRequired:true,rollbackEligible:false,releaseEligible:false,remaining:['original_source_rebase_and_pending_proof_receipt_reconciliation','complete_authority_backed_account_reset_repair','media_browser_and_stopped_source_capture','authority_epoch_custody_and_fixed_service_acceptance']});
   const proofDb=new Database(bundle.proof.nativeImage);let disposition:Record<string,unknown>;try{disposition=JSON.parse((proofDb.prepare('SELECT report_json FROM migration_runs WHERE source_digest=?').get(proof.sourceDigest) as {report_json:string}).report_json);}finally{proofDb.close();}
   const {retainedBusinessImageVerified,pairedSourceBytesVerified,...proofRows}=proof;
@@ -101,4 +107,12 @@ export function verifyForwardLegacyResetRecovery(input:LegacyResetRecoveryInput,
   const {retainedOriginalImagesVerified,pairedSourceBytesVerified:pairedRebased,...rebaseRows}=rebased;
   check(bundle.rebased.report,{version:1,sourcePins:rebased.sourcePins,sourceDigest:rebased.sourceDigest,reconciliation:rebaseRows,sourceEvidenceRebased:true,externalRetentionRequired:true,externalRetentionVerified:false,latestErasureReplayRequired:true,recoveryRequired:true,rollbackEligible:false,releaseEligible:false});
   h.guard();return {business,proof,rebased,allCandidateRowsVerified:true as const,latestSourceAncestryVerified:false as const,releaseEligible:false as const};
+}
+
+export function verifyResetGenerationReport(h:ReturnType<typeof holdLegacyResetRecoveryInput>,projectedMusic:PinnedForwardBytes,generationBundle:ReturnType<typeof prepareForwardLegacyResetGenerations>){
+  const check=(actual:unknown,wanted:unknown)=>{if(!musicEqual(actual,wanted))throw Error('Reset recovery report differs');};
+  const generation=verifyForwardLegacyResetGenerations(generationInput(h.s,projectedMusic),generationBundle,h.guard),vault=readForwardLegacyResetVault(generationInput(h.s).vault),last=h.authority.records.filter(row=>row.version===2).at(-1)!,completion=vault.completionSources.find(row=>row.sequence===last.sequence)!;
+  const native=new Database(h.s.erasures.nativeImage);let lineage:string;try{lineage=(native.prepare('SELECT lineage_id FROM rebuild_storage WHERE id=1').get() as {lineage_id:string}).lineage_id;}finally{native.close();}
+  check(generationBundle.report,{...generation,authoritySha256:h.s.erasures.manifestSha256,headSequence:h.authority.head.sequence,resetSequence:last.sequence,resetRecordSha256:completion.authorityRecordSha256,completionSha256:completion.completionSha256,nativeImageSha256:h.s.erasures.nativeImageSha256,lineageId:lineage,entryGenerationSourcesPrepared:true,externalRetentionVerified:false,recoveryRequired:true,releaseEligible:false});
+  h.guard();
 }
