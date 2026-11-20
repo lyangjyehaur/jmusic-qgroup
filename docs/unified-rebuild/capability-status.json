@@ -7785,7 +7785,8 @@
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
         "apps/api/src/forward-board-account-merge.test.ts",
         "docs/unified-rebuild/129-board-account-references-checkpoint.md",
-        "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md"
+        "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md",
+        "docs/unified-rebuild/137-capture-inode-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -8110,7 +8111,8 @@
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
         "apps/api/src/forward-board-account-merge.test.ts",
         "docs/unified-rebuild/129-board-account-references-checkpoint.md",
-        "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md"
+        "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md",
+        "docs/unified-rebuild/137-capture-inode-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",

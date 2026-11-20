@@ -40,9 +40,34 @@ function canonical(path:string, folder:boolean) {
   if(realpathSync(full)!==full||stat.isSymbolicLink()||(folder?!stat.isDirectory():!stat.isFile()))throw new Error('Capture requires canonical regular source paths');
   return full;
 }
-function read(path:string) {
+type FileIdentity={dev:bigint;ino:bigint};
+function singleFile(path:string,protectedFiles:FileIdentity[]=[]){
+  const stat=lstatSync(path,{bigint:true});
+  if(!stat.isFile()||stat.isSymbolicLink()||stat.nlink!==1n||protectedFiles.some(original=>original.dev===stat.dev&&original.ino===stat.ino))throw new Error('Capture source must be a unique regular inode outside locked SQLite files');
+  return stat;
+}
+function sqliteFiles(paths:string[]){
+  const result:FileIdentity[]=[];
+  for(const path of paths)for(const suffix of ['','-journal','-wal','-shm']){
+    const name=path+suffix;if(suffix&&!existsEntry(name))continue;
+    const stat=singleFile(name,result);result.push(stat);
+  }
+  return result;
+}
+function read(path:string,protectedFiles:FileIdentity[]=[],deferredClose:number[]=[]) {
+  // Reject known aliases before any raw descriptor is opened. Closing an extra
+  // descriptor on an active SQLite/SHM inode can release this process's locks.
+  const original=singleFile(path,protectedFiles);
   const fd=openSync(path,constants.O_RDONLY|constants.O_NOFOLLOW);
-  try {const stat=fstatSync(fd);if(!stat.isFile()||stat.size>maxFile)throw new Error('Invalid or oversized capture source');return readFileSync(fd);}finally{closeSync(fd);}
+  let close=true;
+  try {
+    let stat:ReturnType<typeof singleFile>;
+    try{stat=fstatSync(fd,{bigint:true});}catch(error){if(protectedFiles.length){close=false;deferredClose.push(fd);}throw error;}
+    // A path changed between metadata and open. Never close a descriptor on a
+    // protected inode while this capture still holds either SQLite connection.
+    if(protectedFiles.some(original=>original.dev===stat.dev&&original.ino===stat.ino)){close=false;deferredClose.push(fd);throw new Error('Capture read resolved to a locked SQLite inode');}
+    if(!stat.isFile()||stat.nlink!==1n||stat.dev!==original.dev||stat.ino!==original.ino||stat.size>BigInt(maxFile))throw new Error('Invalid, replaced or oversized capture source');return readFileSync(fd);
+  }finally{if(close)closeSync(fd);}
 }
 function write(path:string,raw:Buffer|string) {
   mkdirSync(dirname(path),{recursive:true,mode:0o700});const fd=openSync(path,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);
@@ -85,12 +110,15 @@ export async function captureSnapshot(rawInput:Input, now=new Date(), dependenci
   const services=stopped(input,inspector);
   const reservation=input.destination+'.capture-lock',reservationFD=openSync(reservation,constants.O_WRONLY|constants.O_CREAT|constants.O_EXCL|constants.O_NOFOLLOW,0o600);
   let musicLock:CaptureLock|undefined,board:Database.Database|undefined,identity:Database.Database|undefined,stage:string|undefined;
+  const deferredClose:number[]=[];
   try{
     musicLock=await (dependencies.lock??acquireMusicLock)(canonical(join(input.music,'.service.lock'),false));
     if(JSON.stringify(stopped(input,inspector))!==JSON.stringify(services))throw new Error('Source container evidence changed');
-    const databaseFiles=[input.board,join(input.music,'identity.sqlite3')].map(path=>({path,stat:lstatSync(path,{bigint:true})}));
+    const paths=[input.board,canonical(join(input.music,'identity.sqlite3'),false)];
+    sqliteFiles(paths);const databaseFiles=paths.map(path=>({path,stat:singleFile(path)}));
     board=new Database(input.board,{fileMustExist:true,timeout:0});board.exec('BEGIN IMMEDIATE');
     identity=new Database(canonical(join(input.music,'identity.sqlite3'),false),{fileMustExist:true,timeout:0});identity.exec('BEGIN IMMEDIATE');
+    const protectedFiles=sqliteFiles(paths);
     for(const original of databaseFiles){const current=lstatSync(original.path,{bigint:true});if(current.dev!==original.stat.dev||current.ino!==original.stat.ino)throw new Error('Source database file changed while locking');}
     musicLock.assertHeld();check(board);check(identity);readIdentity(identity);captureIdentitySource(identity);
     const originalBoard=standalone(board),originalIdentity=standalone(identity);
@@ -112,14 +140,14 @@ export async function captureSnapshot(rawInput:Input, now=new Date(), dependenci
     const files:{path:string;size:number;sha256:string}[]=[],originals:{source:string;sha256:string}[]=[];
     stage=mkdtempSync(join(dirname(input.destination),'.qgroup-capture-'));
     const save=(path:string,bytes:Buffer)=>{write(join(stage!,path),bytes);files.push({path,size:bytes.length,sha256:digest(bytes)});};
-    const copy=(source:string,path:string)=>{const bytes=read(source);originals.push({source,sha256:digest(bytes)});save(path,bytes);return bytes;};
+    const copy=(source:string,path:string)=>{const bytes=read(source,protectedFiles,deferredClose);originals.push({source,sha256:digest(bytes)});save(path,bytes);return bytes;};
     save('current/board.sqlite3',originalBoard);save('current/music/identity.sqlite3',originalIdentity);
     const boardLedger=copy(input.boardLedger,'current/board.erasures.jsonl');decodeErasureJournal(decode(boardLedger));
     for(const path of musicFiles.filter(path=>!['.service.lock','identity.sqlite3','identity.sqlite3-wal','identity.sqlite3-shm'].includes(path))){
       const historical=path.startsWith('paired-backups/')||path.startsWith('backups/'),bytes=copy(join(input.music,path),historical?'history/music/'+path:'current/music/'+path);
       if(path.endsWith('.json'))parseJson(decode(bytes));if(path.endsWith('erasures.jsonl'))musicErasures(decode(bytes));
     }
-    const walls=parseJson(decode(read(join(stage,'current/music/walls/manifest.json'))));
+    const walls=parseJson(decode(read(join(stage,'current/music/walls/manifest.json'),protectedFiles,deferredClose)));
     if(!walls||typeof walls!=='object'||Array.isArray(walls)||!Array.isArray(walls.items))throw new Error('Invalid captured wallpaper manifest');
     for(const item of walls.items)if(!item||typeof item!=='object'||Array.isArray(item)||typeof item.src!=='string'||!/^\/walls\/[^/]+\.(?:png|jpg|jpeg|webp)$/.test(item.src)||item.src.includes('..')||!existsSync(join(stage,'current/music',item.src.slice(1))))throw new Error('Referenced captured wallpaper is missing');
     for(const path of mediaFiles){const bytes=copy(join(mediaRoot,path),'current/images/'+path);if(digest(bytes)!==path.split('/')[1]!.slice(0,-4))throw new Error('Board capture media digest mismatch');}
@@ -132,8 +160,10 @@ export async function captureSnapshot(rawInput:Input, now=new Date(), dependenci
     // endpoint or a restoration package; latest erasures must govern later use.
     const assertSources=()=>{
       musicLock!.assertHeld();
+      const currentSQLiteFiles=sqliteFiles(paths);
+      if(currentSQLiteFiles.length!==protectedFiles.length||currentSQLiteFiles.some((current,index)=>current.dev!==protectedFiles[index]!.dev||current.ino!==protectedFiles[index]!.ino))throw new Error('SQLite sidecar inode changed while capturing');
       for(const original of databaseFiles){const current=lstatSync(original.path,{bigint:true});if(!current.isFile()||current.isSymbolicLink()||current.dev!==original.stat.dev||current.ino!==original.stat.ino)throw new Error('Source database file was replaced during capture');}
-      if(!standalone(board!).equals(originalBoard)||!standalone(identity!).equals(originalIdentity)||originals.some(file=>digest(read(file.source))!==file.sha256)||JSON.stringify(walk(input.music))!==JSON.stringify(musicFiles)||JSON.stringify(walk(input.boardBackups))!==JSON.stringify(backupFiles)||JSON.stringify(walk(input.botEvidence))!==JSON.stringify(botFiles)||existsEntry(mediaRoot)!==mediaExists||JSON.stringify(mediaExists?walk(mediaRoot):[])!==JSON.stringify(mediaFiles))throw new Error('Capture sources changed while locked');
+      if(!standalone(board!).equals(originalBoard)||!standalone(identity!).equals(originalIdentity)||originals.some(file=>digest(read(file.source,protectedFiles,deferredClose))!==file.sha256)||JSON.stringify(walk(input.music))!==JSON.stringify(musicFiles)||JSON.stringify(walk(input.boardBackups))!==JSON.stringify(backupFiles)||JSON.stringify(walk(input.botEvidence))!==JSON.stringify(botFiles)||existsEntry(mediaRoot)!==mediaExists||JSON.stringify(mediaExists?walk(mediaRoot):[])!==JSON.stringify(mediaFiles))throw new Error('Capture sources changed while locked');
     };
     assertSources();
     if(JSON.stringify(stopped(input,inspector))!==JSON.stringify(services))throw new Error('Source container evidence changed');
@@ -145,7 +175,7 @@ export async function captureSnapshot(rawInput:Input, now=new Date(), dependenci
   }finally{
     try{if(identity){try{if(identity.inTransaction)identity.exec('ROLLBACK');}finally{identity.close();}}}
     finally{try{if(board){try{if(board.inTransaction)board.exec('ROLLBACK');}finally{board.close();}}}
-      finally{try{await musicLock?.release();}finally{try{if(stage)rmSync(stage,{recursive:true,force:true});}finally{closeSync(reservationFD);rmSync(reservation);}}}}
+      finally{try{for(const fd of deferredClose)closeSync(fd);}finally{try{await musicLock?.release();}finally{try{if(stage)rmSync(stage,{recursive:true,force:true});}finally{closeSync(reservationFD);rmSync(reservation);}}}}}
   }
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){

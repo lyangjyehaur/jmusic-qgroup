@@ -34,11 +34,12 @@ it.each(['absent','partial'])('rejects actual production startup with %s authori
  const stopped=run([]);expect(stopped.status,stopped.stderr).toBe(1);expect(stopped.stderr).toContain(configuration==='absent'?'Production web requires retained erasure authority and checkpoint':'ZodError');expect(readdirSync(data)).toEqual([]);
  const version=run(['--version']);expect(version.status,version.stderr).toBe(0);expect(JSON.parse(version.stdout)).toMatchObject({service:'web',commit:'a'.repeat(40)});expect(readdirSync(data)).toEqual([]);
 });
-it('builds the exact image rehearsal fixture with a portable checkpoint and refuses reuse before changing its source',()=>{
+it('builds the exact image rehearsal fixture with a portable checkpoint and refuses reuse before changing its source',async()=>{
  const root=realpathSync(mkdtempSync(join(tmpdir(),'qgroup-empty-image-fixture-')));roots.push(root);for(const name of ['data','authority','checkpoint'])mkdirSync(join(root,name),{mode:0o700});
- const raw=readFileSync('tools/rebuild/verify-image.mjs','utf8'),script=raw.match(/const emptyAuthorityScript=String\.raw`([\s\S]*?)`;/)?.[1];expect(script).toBeTruthy();
+ const {syntheticImageFixture:script}=await import(new URL('../../../tools/rebuild/synthetic-image-fixture.mjs',import.meta.url).href);expect(typeof script).toBe('string');
+ expect(readFileSync('tools/rebuild/verify-image.mjs','utf8')).toContain("import { syntheticImageFixture } from './synthetic-image-fixture.mjs'");
  // Only module loading differs locally; the exact image fixture body executes.
- const local=script!.replace("import {openDatabase} from './.rebuild-dist/api/database.mjs';","import {openDatabase} from './packages/database/src/index.ts';");
+ const local=script.replace("import {openDatabase} from './.rebuild-dist/api/database.mjs';","import {openDatabase} from './packages/database/src/index.ts';");
  const database=join(root,'data','unified.sqlite3'),authority=join(root,'authority'),checkpoint=join(root,'checkpoint','unified.sqlite3');
  const run=()=>spawnSync(process.execPath,['--import','tsx','--input-type=module','-e',local,database,authority,join(root,'checkpoint')],{env:{PATH:process.env.PATH},encoding:'utf8',timeout:10000});
  const prepared=run();expect(prepared.status,prepared.stderr).toBe(0);const result=JSON.parse(prepared.stdout),view=readRollbackErasureAuthority(authority,result.manifestSha256);expect(view.head.sequence).toBe(0);expect(view.manifest.checkpointSha256).toBe(result.checkpointSha256);view.assertUnchanged();

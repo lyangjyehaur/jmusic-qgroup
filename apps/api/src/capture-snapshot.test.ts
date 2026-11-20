@@ -1,5 +1,7 @@
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
+import fs from 'node:fs';
+import { syncBuiltinESMExports } from 'node:module';
+import { copyFileSync, existsSync, linkSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, realpathSync, renameSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs';
 import {createServer} from 'node:net';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -13,7 +15,7 @@ import { importSnapshot } from '../../../tools/migration/import-snapshot';
 import { digest } from '../../../tools/migration/music-codec';
 import { fixture } from '../testsupport/fixture';
 import { createLegacyMusicHistory } from './legacy-music-history';
-const cleanup:(()=>void|Promise<void>)[]=[];afterEach(async()=>{vi.unstubAllEnvs();for(const close of cleanup.splice(0).reverse())await close();});
+const cleanup:(()=>void|Promise<void>)[]=[];afterEach(async()=>{vi.restoreAllMocks();syncBuiltinESMExports();vi.unstubAllEnvs();for(const close of cleanup.splice(0).reverse())await close();});
 function setup(){
   const root=realpathSync(mkdtempSync(join(tmpdir(),'qgroup-capture-test-'))),boardRoot=join(root,'board'),music=join(root,'music'),boardBackups=join(root,'backups'),botEvidence=join(boardRoot,'bot-logs'),destination=join(root,'capture');
   for(const path of [join(boardRoot,'images'),join(music,'walls'),boardBackups,botEvidence])mkdirSync(path,{recursive:true,mode:0o700});
@@ -34,6 +36,54 @@ function setup(){
   return {root,input,board,identity,data,save,inspect,lock,releases:()=>releases,held:()=>held,loseLock:()=>{held=false;}};
 }
 function unchanged(db:Database.Database){return db.prepare("SELECT name,sql FROM sqlite_master WHERE type='table' ORDER BY name").all().map((row)=>{const name=(row as {name:string}).name;return [name,db.prepare('SELECT rowid,* FROM "'+name+'" ORDER BY rowid').safeIntegers(true).all()];});}
+function externalWriterBlocked(path:string){return JSON.parse(execFileSync('python3',['-c',String.raw`
+import json,sqlite3,sys
+db=sqlite3.connect(sys.argv[1],timeout=0)
+try:
+    try: db.execute('BEGIN IMMEDIATE'); blocked=False
+    except sqlite3.OperationalError as error:
+        assert 'locked' in str(error); blocked=True
+    print(json.dumps(dict(blocked=blocked)))
+finally: db.rollback(); db.close()
+`,path],{encoding:'utf8',timeout:5000,stdio:['ignore','pipe','pipe']})) as {blocked:boolean};}
+it.each([
+  ['board',''],['board','-wal'],['board','-shm'],
+  ['identity',''],['identity','-wal'],['identity','-shm'],
+] as const)('rejects %s %s hard-link history before raw reads and preserves the original process writer lock',async(domain,suffix)=>{
+  const s=setup(),db=domain==='board'?s.board:s.identity,original=unchanged(db),alias=join(s.input.music,'walls','private-alias.png');
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const source=db.name+suffix;expect(lstatSync(source).isFile()).toBe(true);linkSync(source,alias);
+    await expect(captureSnapshot(s.input,new Date(),{inspect:s.inspect,lock:s.lock})).rejects.toThrow('unique regular inode');
+    expect(s.releases()).toBe(1);expect(existsSync(s.input.destination)).toBe(false);
+    expect(existsSync(s.input.destination+'.capture-lock')).toBe(false);expect(db.inTransaction).toBe(true);
+    expect(unchanged(db)).toEqual(original);rmSync(alias);
+    const rival=externalWriterBlocked(db.name);
+    expect(rival).toEqual({blocked:true});
+  } finally {if(existsSync(alias))rmSync(alias);db.exec('ROLLBACK');}
+});
+it.each(['board','identity'] as const)('defers a raced %s SHM descriptor until both capture SQLite locks have been released',async domain=>{
+  const s=setup(),db=domain==='board'?s.board:s.identity,alias=join(s.input.music,'walls','private-race.png');
+  s.save(alias,Buffer.from('original independent asset'));
+  const open=fs.openSync,close=fs.closeSync;let racedFD:number|undefined,closedAfterUnlock:boolean|undefined;
+  vi.spyOn(fs,'openSync').mockImplementation((path,flags,mode)=>{
+    if(String(path)===alias&&racedFD===undefined){
+      expect(externalWriterBlocked(db.name)).toEqual({blocked:true});
+      rmSync(alias);linkSync(db.name+'-shm',alias);racedFD=open(path,flags,mode);return racedFD;
+    }
+    return open(path,flags,mode);
+  });
+  vi.spyOn(fs,'closeSync').mockImplementation(fd=>{
+    if(fd===racedFD&&closedAfterUnlock===undefined)closedAfterUnlock=!externalWriterBlocked(db.name).blocked;
+    close(fd);
+  });
+  syncBuiltinESMExports();
+  try{
+    await expect(captureSnapshot(s.input,new Date(),{inspect:s.inspect,lock:s.lock})).rejects.toThrow('locked SQLite inode');
+    expect(racedFD).toBeTypeOf('number');expect(closedAfterUnlock).toBe(true);expect(s.releases()).toBe(1);
+    expect(existsSync(s.input.destination)).toBe(false);expect(existsSync(s.input.destination+'.capture-lock')).toBe(false);
+  }finally{vi.restoreAllMocks();syncBuiltinESMExports();rmSync(alias,{force:true});}
+});
 it('captures committed WAL, original bot/data/schema rows, independent history, source images and permissions, then imports only the current snapshot',async()=>{
   const s=setup(),originalBoard=unchanged(s.board),originalIdentity=unchanged(s.identity),bytes=Buffer.from('private immutable image'),key=digest(bytes);
   mkdirSync(join(s.root,'board/images',key.slice(0,2)));s.save(join(s.root,'board/images',key.slice(0,2),key+'.png'),bytes);s.board.prepare('INSERT INTO image_assets VALUES(?,?,?,?)').run(key,bytes.length,'image/png','source');
