@@ -5,7 +5,7 @@ import { build } from 'esbuild';
 import sharp from 'sharp';
 import type { Plugin } from 'vite';
 async function compileWorker(entry:string,version:string,assets:string[]){
-    const result=await build({entryPoints:[entry],bundle:true,write:false,format:'iife',target:'es2022',minify:true,define:{__PWA_BUILD_ID__:JSON.stringify(version),__PWA_ASSETS__:JSON.stringify(assets)}});
+    const result=await build({entryPoints:[entry],tsconfig:fileURLToPath(new URL('../../tsconfig.rebuild.json',import.meta.url)),bundle:true,write:false,format:'iife',target:'es2022',minify:true,define:{__PWA_BUILD_ID__:JSON.stringify(version),__PWA_ASSETS__:JSON.stringify(assets)}});
     return result.outputFiles[0]!.contents;
 }
 /** Hash the complete compiled dependency graph with a fixed version placeholder

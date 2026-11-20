@@ -7517,13 +7517,14 @@
         "apps/web/src/pwa/worker.test.ts",
         "apps/web/tests/pwa-precache.spec.ts",
         "tools/rebuild/verify-worker-precache.mjs",
-        "docs/unified-rebuild/155-bounded-precache-checkpoint.md"
+        "docs/unified-rebuild/155-bounded-precache-checkpoint.md",
+        "docs/unified-rebuild/156-worker-compiler-checkpoint.md"
       ],
       "data_evidence": [],
       "permission_evidence": [],
       "ux_evidence": [],
       "state": "in_progress",
-      "remaining": "153–155 已實作壓縮、快取、lazy pages、完整 precache 分批與 worker dependency 版本識別；155 本機4 unit／64不同browser、85快取資源與82資源／277真HTTP檢查通過。153 原Linux完整成功；154 原Linux836／837 browser，跨分頁準備時序已修正但須新完整結果。155 原Linux全量／雙映像、代理層快取、首次載入與正式規模資源驗收仍待完成；decoded working set不等於browser RSS或正式負載。"
+      "remaining": "153–156 已實作壓縮、快取、lazy pages、完整 precache 分批與 worker dependency 版本；156 明確使用新 tsconfig，5 unit／25 browser、85快取資源及82資源／277真HTTP本機通過。155 原image／雙映像已核對並精確重現compiler差異；155 全量unit／browser及156原Linux／一致映像、代理快取、首次載入與正式規模驗收仍待完成。decoded working set不等於browser RSS或正式負載。"
     },
     {
       "capability_id": "O12",

@@ -69,3 +69,15 @@ it('changes canonical worker version bytes for an imported-only behavior or asse
     expect(hash(await workerVersionBytes(entry,[...assets,'/icon.svg']))).not.toBe(second);expect(readFileSync(entry)).toEqual(source);
   }finally{rmSync(directory,{recursive:true,force:true});}
 });
+
+it('uses the rebuild compiler settings regardless of an unrelated nearest tsconfig',async()=>{
+  const directory=mkdtempSync(join(tmpdir(),'qgroup-worker-config-')),entry=join(directory,'worker.ts'),config=join(directory,'tsconfig.json');
+  try{
+    writeFileSync(entry,'globalThis.__fixtureStrict = (function(){return this === undefined;})();');
+    writeFileSync(config,JSON.stringify({compilerOptions:{alwaysStrict:false,strict:false}}));
+    const first=await workerVersionBytes(entry,[]),context:{__fixtureStrict?:boolean}={};runInNewContext(Buffer.from(first).toString(),context);
+    expect(context.__fixtureStrict).toBe(true);
+    writeFileSync(config,JSON.stringify({compilerOptions:{alwaysStrict:true,strict:true}}));
+    expect(Buffer.from(await workerVersionBytes(entry,[]))).toEqual(Buffer.from(first));
+  }finally{rmSync(directory,{recursive:true,force:true});}
+});
