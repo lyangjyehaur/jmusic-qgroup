@@ -205,3 +205,5 @@
 - [已套用原生重置的詞條恢復修復](138-native-reset-entry-repair-checkpoint.md)：原 intent／回執授權的詞條與子資料修復、獨立全表 oracle 及 Python SQLite 核對，57 項本機通過；全域喊話／趨勢與舊 reset 世代仍待完成，第 136 號完整 CI 確認失敗，第 137 號完整結果仍待終態。
 
 - [原始重置的磁碟與記憶體來源核對](139-legacy-reset-source-binding-checkpoint.md)：原 Python 五容器雙來源與完整 authority record 綁定、58 項 focused 通過；第 137 號完整 2,339／833 回歸成功，第 138 號實際雙映像通過，完整 reset 世代與最新全套驗收仍待完成。
+
+- [原始重設來源的私有持久保存](140-legacy-reset-vault-checkpoint.md)：先保存原 persisted／loaded bytes 再記錄 authority intent，86 個不同 focused 案例通過；第 138 號完整瀏覽器與第 139 號實際雙映像已核對，完整 reset 世代與最新全套驗收仍待完成。

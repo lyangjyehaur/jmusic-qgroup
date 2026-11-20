@@ -5,7 +5,7 @@ from pathlib import Path
 from tools.migration.rollback_erasure_authority import ErasureAuthority
 
 
-def install_legacy_erasure_authority(authority, *, music_service=None, board_privacy=None, board_database=None):
+def install_legacy_erasure_authority(authority, *, music_service=None, board_privacy=None, board_database=None, reset_source_vault=None):
     """Install only on an independently selected old-service rehearsal/version.
 
     Call the wrapped recover/replay before traffic, after restoring service
@@ -14,6 +14,11 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
     """
     if not isinstance(authority, ErasureAuthority) or not any((music_service, board_privacy)):
         raise ValueError('Explicit authority and old service required')
+    if reset_source_vault is not None:
+        from tools.migration.rollback_reset_source_vault import ResetSourceVault
+        if not music_service or not isinstance(reset_source_vault, ResetSourceVault) or reset_source_vault.authority is not authority:
+            raise ValueError('Explicit reset source vault and matching music authority required')
+        reset_source_vault._guard()
     board_path = Path(board_database) if board_database is not None else None
     if board_privacy:
         if getattr(board_privacy, '_rollback_erasure_authority', None) is not None or board_path is None or not board_path.is_absolute() or board_path.resolve() != board_path or authority.sources.get('board') != board_path.with_suffix('.erasures.jsonl'):
@@ -75,7 +80,7 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
                     raw = ''.join(json.dumps({'qq': qq, 'erased_at': maintenance.time.time()}) + '\n' for qq in qqs).encode()
                     authority.record('music', raw)
                 else:
-                    from tools.migration.rollback_music_reset import capture_legacy_music_reset
+                    from tools.migration.rollback_music_reset import capture_legacy_music_reset, _encode
                     if list(qqs) != list(music_service.upstream.data['members']):
                         raise ValueError('Original reset member scope changed')
                     source_path = music_folder / 'data.json'
@@ -83,7 +88,16 @@ def install_legacy_erasure_authority(authority, *, music_service=None, board_pri
                     time = maintenance.time.time()
                     operation = capture_legacy_music_reset(source, music_service.upstream.data, time)
                     raw = ''.join(json.dumps({'qq': qq, 'erased_at': time}) + '\n' for qq in qqs).encode()
+                    captured = None
+                    if reset_source_vault is not None:
+                        captured = reset_source_vault.capture(operation, source, _encode(music_service.upstream.data))
+                        captured['assertCaptured']()
+                        before, checked = authority._read_file(source_path)
+                        if source != before or identity != checked or capture_legacy_music_reset(before, music_service.upstream.data, time) != operation:
+                            raise ValueError('Original reset sources changed during durable capture')
                     recorded = authority.record('music', raw, operation=operation)
+                    if captured is not None:
+                        captured['assertCaptured']()
                     after, checked = authority._read_file(source_path)
                     if source != after or identity != checked or capture_legacy_music_reset(after, music_service.upstream.data, time) != operation:
                         raise ValueError('Original reset source changed during recording')
