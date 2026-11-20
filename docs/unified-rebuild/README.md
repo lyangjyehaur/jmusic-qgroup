@@ -211,3 +211,5 @@
 - [原始重設完成結果與固定回歸](141-legacy-reset-completion-checkpoint.md)：原 reset 完成後 bytes／record 綁定、100 項相關完整回歸通過；第 138／139 號完整 Linux 回歸與第 140 號實際雙映像已核對，完整世代與最新全套验收仍待完成。
 
 - [重設後曲目與留言世代](142-legacy-reset-generations-checkpoint.md)：原始完成紀錄綁定的新 ID 與引用轉換、獨立 Python reverse 核對；原生 reset／完整重建接入與 ancestry 仍待完成。
+
+- [原始重設的會員與曲目投影](143-legacy-reset-entry-projection-checkpoint.md)：真 reset vault 接入原生會員／曲目 erasure、persisted／loaded 分域、完整 row oracle；完整 shout／trend 世代與重建仍待完成。

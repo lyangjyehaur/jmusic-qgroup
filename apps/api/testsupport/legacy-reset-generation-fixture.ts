@@ -7,7 +7,7 @@ import type {LegacyResetGenerationInput} from '../../../tools/migration/forward-
 
 /** Two real original resets and a later old-source generation. No native writes,
  * real credentials, workers, HTTP traffic or bot deliveries are involved. */
-export async function legacyResetGenerationFixture(completed=true){
+export async function legacyResetGenerationFixture(completed=true,middleKey='e',firstLoadedEntryKey=''){
   const s=await legacyResetFixture(),vault=join(s.root,'generation-vault');
   try{
     const output=execFileSync('python3',['-c',`import json,os,sys
@@ -17,13 +17,14 @@ from music_site import service
 from tools.migration.rollback_erasure_authority import ErasureAuthority
 from tools.migration.rollback_erasure_runtime import install_legacy_erasure_authority
 from tools.migration.rollback_reset_source_vault import prepare_reset_source_vault,ResetSourceVault
-root,pin,folder,vault_root,completed=sys.argv[1:];folder=Path(folder)
+root,pin,folder,vault_root,completed,middle_key,loaded_key=sys.argv[1:];folder=Path(folder)
 service.ORIGIN='https://fixture.invalid';service.upstream.DATA_FILE=str(folder/'data.json');service.upstream.BACKUP_DIR=str(folder/'backups');service.STORE=service.Store(folder/'identity.sqlite3');service.upstream.data=json.loads((folder/'data.json').read_bytes())
 a=ErasureAuthority(root,pin,{'music':folder/'erasures.jsonl'},sqlite_files=[folder/'identity.sqlite3']);saved=prepare_reset_source_vault(Path(vault_root),a,now='2026-11-20T12:00:00.000Z');vault=ResetSourceVault(vault_root,saved['manifestSha256'],a)
+if loaded_key:service.upstream.data['entries']={loaded_key:dict(id=loaded_key,text='loaded only',kind='sub')}
 undo=install_legacy_erasure_authority(a,music_service=service,reset_source_vault=vault)
 try:
  with service.upstream._lock:assert service.administration.erase(folder,service.STORE,{'confirm':'RESET'},reset=True)['ok']
- service.upstream.data['entries']={'e':dict(id='e',text='middle generation',kind='sub')};service.upstream.data['shouts']=[dict(id='reused-shout',qq='',text='middle shout',createdAt=1.0)];service.upstream.save()
+ service.upstream.data['entries']={middle_key:dict(id=middle_key,text='middle generation',kind='sub')};service.upstream.data['shouts']=[dict(id='reused-shout',qq='',text='middle shout',createdAt=1.0)];service.upstream.save()
  if completed=='false':
   original=vault.capture
   def partial(*args):
@@ -46,7 +47,7 @@ try:
   unclassified=dict(literal='e',negative=-0.0,integerFloat=1.0))
  service.upstream.save();print(json.dumps(dict(pin=saved['manifestSha256'])))
 finally:undo();a.close()
-`,s.authority,s.pin,s.music,vault,String(completed)],{encoding:'utf8',timeout:30000,stdio:'pipe'});
+`,s.authority,s.pin,s.music,vault,String(completed),middleKey,firstLoadedEntryKey],{encoding:'utf8',timeout:30000,stdio:'pipe'});
     const pin=(JSON.parse(output) as {pin:string}).pin,latest=readFileSync(join(s.music,'data.json'));
     // No native business changes occur after the verified checkpoint. Reuse its
     // complete standalone image; the live DB serialize header may declare WAL.

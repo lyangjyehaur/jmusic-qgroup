@@ -15,8 +15,11 @@ import {reconcileAppliedAccountRepair} from './forward-account-reconciliation';
 import {importedLegacyMusicIntent} from '../../apps/api/src/legacy-music-intent';
 import {readSourceRebaseEvidence,sourceRebaseDigest} from './source-rebase-evidence';
 import {repairAppliedNativeResetEntries,reconcileAppliedNativeResetEntries} from './forward-native-reset-entries';
+import {readForwardLegacyResetVault,type LegacyResetVaultInput} from './forward-legacy-reset-vault';
+import {pinRollbackTree} from '../../packages/runtime/src/private-source-files';
+import {repairAppliedLegacyResetEntries,reconcileAppliedLegacyResetEntries} from './forward-legacy-reset-entries';
 
-export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string};
+export type ForwardErasureInput={authorityRoot:string;manifestSha256:string;checkpoint:Buffer;nativeImage:Buffer;nativeImageSha256:string;nativeJournal:Buffer;nativeJournalSha256:string;resetSourceVault?:Pick<LegacyResetVaultInput,'vaultRoot'|'vaultManifestSha256'>};
 const sha=z.string().regex(/^[a-f0-9]{64}$/);
 const text=(bytes:Buffer)=>new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);
 const rows=(bytes:Buffer)=>text(bytes).split('\n').filter(row=>row.trim()).map(row=>parseJson(row));
@@ -40,9 +43,12 @@ function accountFootprint(db:DB,userIds:Iterable<string>){
 export function projectNativeForwardErasures(input:ForwardErasureInput,assertBoundary?:()=>void){
   image(input.checkpoint);image(input.nativeImage);sha.parse(input.nativeImageSha256);sha.parse(input.nativeJournalSha256);
   if(digest(input.nativeImage)!==input.nativeImageSha256||digest(input.nativeJournal)!==input.nativeJournalSha256)throw Error('Forward native source pin differs');
-  const held={checkpoint:Buffer.from(input.checkpoint),nativeImage:Buffer.from(input.nativeImage),nativeJournal:Buffer.from(input.nativeJournal)},authority=readRollbackErasureAuthority(input.authorityRoot,input.manifestSha256);
+  const sourceIdentity={authorityRoot:input.authorityRoot,manifestSha256:input.manifestSha256,nativeImageSha256:input.nativeImageSha256,nativeJournalSha256:input.nativeJournalSha256},held={checkpoint:Buffer.from(input.checkpoint),nativeImage:Buffer.from(input.nativeImage),nativeJournal:Buffer.from(input.nativeJournal)},authority=readRollbackErasureAuthority(input.authorityRoot,input.manifestSha256);
   if(digest(held.checkpoint)!==authority.manifest.checkpointSha256)throw Error('Forward authority checkpoint pin differs');
-  function guarded(){const value:unknown=assertBoundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Forward erasure boundary must be synchronous');if(!input.checkpoint.equals(held.checkpoint)||!input.nativeImage.equals(held.nativeImage)||!input.nativeJournal.equals(held.nativeJournal))throw Error('Forward native source bytes changed');authority.assertUnchanged();}
+  const resetBinding=input.resetSourceVault?{vaultRoot:input.resetSourceVault.vaultRoot,vaultManifestSha256:input.resetSourceVault.vaultManifestSha256}:undefined,resetTree=resetBinding?pinRollbackTree(resetBinding.vaultRoot):undefined;
+  const legacyVault=authority.records.some(row=>row.version===2)?resetBinding?readForwardLegacyResetVault({authorityRoot:input.authorityRoot,manifestSha256:input.manifestSha256,...resetBinding}):null:null;
+  if(authority.records.some(row=>row.version===2)&&(!legacyVault||!legacyVault.vaultEvidence.allRecordedResetCompletionsPresent))throw Error('Structured old reset requires source generation and complete original source vault and results');
+  function guarded(){const value:unknown=assertBoundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Forward erasure boundary must be synchronous');if(Object.keys(sourceIdentity).some(key=>input[key as keyof typeof sourceIdentity]!==sourceIdentity[key as keyof typeof sourceIdentity]))throw Error('Forward native source identity changed');for(const key of ['checkpoint','nativeImage','nativeJournal'] as const)if(!Buffer.isBuffer(input[key])||!input[key].equals(held[key]))throw Error('Forward native source bytes changed');if(input.resetSourceVault?.vaultRoot!==resetBinding?.vaultRoot||input.resetSourceVault?.vaultManifestSha256!==resetBinding?.vaultManifestSha256)throw Error('Forward reset vault identity changed');resetTree?.assertUnchanged();authority.assertUnchanged();}
   guarded();validateAuthorityLedger('unified',held.nativeJournal);
   if(!authority.ledgers.unified.subarray(0,held.nativeJournal.length).equals(held.nativeJournal))throw Error('Forward native journal has unrecorded bytes');
   const baselines=Object.fromEntries(authority.manifest.baseline.map(row=>{const file=privateFile(join(input.authorityRoot,row.path),64*1024*1024);if(!file.bytes||file.sha256!==row.sha256)throw Error('Forward authority baseline differs');file.assertUnchanged();return [row.domain,file.bytes];})) as Record<'board'|'music'|'unified',Buffer>;
@@ -54,7 +60,6 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
   let oldPhase=false;const oldMusic=new Map<string,Json>(),oldOrigins=new Map<string,{recordSequence:number;recordSha256:string;suffixSha256:string;rowIndex:number}>();
   for(let sequence=1;sequence<=authority.head.sequence;sequence++){
     const file=privateFile(join(input.authorityRoot,'records',String(sequence).padStart(12,'0')+'.json'),90*1024*1024),record=ErasureAuthorityRecord.parse(parseJson(text(file.bytes!)));file.assertUnchanged();
-    if(record.version===2)throw Error('Structured old reset requires source generation and complete forward repair');
     if(record.domain==='unified'&&oldPhase)throw Error('Interleaved native and old-service writes require a complete rebase');
     if(record.domain!=='unified')oldPhase=true;
     if(record.domain==='music'){const suffix=Buffer.from(record.suffixBase64,'base64');for(const [rowIndex,row] of (rows(suffix) as {qq:string;erased_at:Json}[]).entries()){oldMusic.set(row.qq,row.erased_at);oldOrigins.set(row.qq,{recordSequence:sequence,recordSha256:file.sha256!,suffixSha256:digest(suffix),rowIndex});}}
@@ -149,6 +154,17 @@ export function projectNativeForwardErasures(input:ForwardErasureInput,assertBou
         }).immediate();
       }finally{resetSource.close();}
     }
-    guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
+    let legacyResetEntryRepair:ReturnType<typeof reconcileAppliedLegacyResetEntries>|null=null;
+    if(legacyVault){
+      const resetSource=new Database(db.serialize());
+      try{
+        resetSource.pragma('foreign_keys = ON');
+        legacyResetEntryRepair=db.transaction(()=>{
+          repairAppliedLegacyResetEntries(fixed,db,authority.records,legacyVault);
+          return reconcileAppliedLegacyResetEntries(fixed,resetSource,db,authority.records,legacyVault);
+        }).immediate();
+      }finally{resetSource.close();}
+    }
+    guarded();const nativeImage=db.serialize();image(nativeImage);return {nativeImage,nativeJournal:journal,boardJournal:Buffer.from(authority.ledgers.board),musicJournal:Buffer.from(authority.ledgers.music),report:{version:1 as const,authoritySha256:input.manifestSha256,headSequence:authority.head.sequence,headRecordSha256:authority.head.recordSha256,checkpointSha256:authority.manifest.checkpointSha256,nativeSourceSha256:input.nativeImageSha256,nativeSourceJournalSha256:input.nativeJournalSha256,nativeImageSha256:digest(nativeImage),nativeJournalSha256:digest(journal),lineageId:lineage(db),...report,nativeResetEntryRepair,legacyResetEntryRepair,erasureOnly:true as const,recoveryRequired:true as const,rollbackEligible:false as const,releaseEligible:false as const,remaining:['complete_old_and_native_business_forward_merge','structured_old_reset_scope','native_global_reset_generations','fixed_web_music_bot_combination','media_and_browser_forward_restore','rebase_authority_and_external_retention','audited_recovery_activation']}};
   }finally{db.close();fixed.close();}
 }
