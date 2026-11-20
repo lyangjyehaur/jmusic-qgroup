@@ -4,7 +4,7 @@ import {object,profileId,type Json} from './music-codec';
 import type {RollbackMusic} from './rollback-music';
 import {identityTables} from './rollback-identity-source';
 import {forwardRows,forwardRowReader,forwardEqual,forwardHash,forwardCanonical,assertForwardImage} from './forward-board-storage';
-import {copyForwardMusicInput,openForwardMusicSources,musicEqual,musicCanonical,type ForwardMusicInput,type ForwardMusicSources} from './forward-music-sources';
+import {copyForwardMusicInput,openForwardMusicSources,assertForwardIdentity,musicEqual,musicCanonical,type ForwardMusicInput,type ForwardMusicSources} from './forward-music-sources';
 import {validateForwardMusicGraph} from './forward-music-validation';
 
 function reject():never{throw Error('Forward music reconciliation failed; retain every source');}
@@ -24,6 +24,12 @@ function order(before:string[],current:string[],legacy:string[],present:Set<stri
  * invokes the merger or accepts its decisions, mapping list or summary as proof. */
 export function reconcileForwardMusicSources(s:ForwardMusicSources,music:RollbackMusic,identity:DB){
   validateForwardMusicGraph(s,music,identity);
+  return reconcileForwardMusicRows(s,music,identity);
+}
+/** Internal complete row/order oracle; a caller must validate the final graph
+ * before returning any effective source pair or native image. */
+export function reconcileForwardMusicRows(s:ForwardMusicSources,music:RollbackMusic,identity:DB){
+  assertForwardIdentity(identity);
   const sources=[s.baseline.data,s.native.data,s.old],counts:Record<string,number>={};
   if(Object.keys(music.data).sort().join()!==['entries','members','settings','shouts','shoutHistory','trend'].sort().join())reject();
   for(const kind of ['entries','members']){

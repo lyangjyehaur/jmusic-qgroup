@@ -8,6 +8,12 @@ import type {RollbackMusic} from './rollback-music';
 /** Only a throw-away semantic validator. It is never a reconstructed native
  * image; importing a fresh model would discard native receipts and provenance. */
 export function validateForwardMusicGraph(s:ForwardMusicSources,music:RollbackMusic,identity:DB){
+  const result=validateForwardMusicRelations(s,music,identity);
+  if(result.closedOwners.length)throw Error('Closed forward owner requires authority-backed account cleanup');
+}
+/** Internal relation validation reports closed owners but never approves them.
+ * The complete account-authority parent must prove and remove each such owner. */
+export function validateForwardMusicRelations(s:ForwardMusicSources,music:RollbackMusic,identity:DB){
   assertForwardIdentity(identity);
   const members=object(music.data.members,'merged music members'),seen=new Set<string>(),ids=new Set<string>();
   for(const key of music.keys){
@@ -50,9 +56,10 @@ export function validateForwardMusicGraph(s:ForwardMusicSources,music:RollbackMu
     }
     // Native-only owners are checked against the real merged board identity;
     // closed accounts require the full erasure replay, not silent detachment.
-    for(const owner of owners.keys())if(validation.prepare('SELECT 1 FROM privacy_requests WHERE user_id=?').get(owner))throw Error('Closed forward owner requires authority-backed account cleanup');
+    const closedOwners=[...owners.keys()].filter(owner=>validation.prepare('SELECT 1 FROM privacy_requests WHERE user_id=?').get(owner));
     importMusic(validation,music.data as ObjectValue,rows,new Map(),'2000-01-01T00:00:00.000Z');
     const normalized=validation.prepare('SELECT count(*) AS n FROM music_profiles').get() as {n:number};
     if(normalized.n!==Object.keys(members).length)throw Error('Forward source graph lost members');
+    return {closedOwners};
   }finally{validation.close();}
 }
