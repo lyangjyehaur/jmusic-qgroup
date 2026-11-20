@@ -1,9 +1,9 @@
 name: Unified rebuild checkpoint
 on: [push, pull_request]
 jobs:
-  isolated-rebuild:
+  isolated-unit:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -16,13 +16,47 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - run: npm run check:capabilities
       - run: npm run check:ui
-      - run: npm run test:rebuild
+      # Fixture construction launches original Python readers and verifies whole
+      # SQLite images. Bound file concurrency; preserve the test timeout/assertions.
+      - run: mkdir -p artifacts/ci
+      - run: npm run test:rebuild -- --maxWorkers=1 --reporter=default --reporter=json --outputFile=artifacts/ci/unit.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-unit-evidence
+          path: artifacts/ci/
+          if-no-files-found: warn
+  isolated-browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22.22.3
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: npm ci --no-audit --no-fund
       - run: npm run build:rebuild
       - run: npm run test:build:rebuild
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e:rebuild
+      - name: Pin public analytics client for intercepted transport test
+        run: |
+          client_path="$RUNNER_TEMP/qgroup-public-umami-client.js"
+          curl --fail --silent --show-error --max-time 30 https://u.danndann.cn/script.js --output "$client_path"
+          printf '%s  %s\n' '1ad1145d19d4558c20f5469ca4a5fc50a1a46f860858c9c91bfcd56fd29a522a' "$client_path" | sha256sum --check
+          printf 'REBUILD_UMAMI_CLIENT=%s\n' "$client_path" >> "$GITHUB_ENV"
+      - run: mkdir -p artifacts/ci
+      - run: npm run test:e2e:rebuild -- --forbid-only --reporter=line,json
+        env:
+          PLAYWRIGHT_JSON_OUTPUT_NAME: artifacts/ci/browser.json
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: browser-evidence
-          path: test-results/
+          name: linux-browser-evidence
+          path: |
+            artifacts/ci/
+            test-results/
+          if-no-files-found: warn

@@ -30,7 +30,8 @@
         "apps/api/src/auth.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "訪客 session、不建會員與登入引導已測；完整舊入口與正式遷移後的匿名／權限驗收待完成。"
@@ -65,7 +66,8 @@
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/privacy-consent.spec.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已實作登入／綁定／回調確認、原裝置與時限、衝突與失效競態；真 QQ、正式資料及完整錯誤恢復驗收待完成。"
@@ -111,7 +113,8 @@
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/activity-roster.spec.ts",
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。 已補名單浮層、完整卡與新成分保存的活動錨點返回；完整邀請／報名／分房上下文仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
@@ -138,7 +141,8 @@
         "apps/api/src/auth.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/auth.spec.ts"
+        "apps/web/tests/auth.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "兩種 QQ 綁定衝突、同名／UnionID 不合併及 client 隔離已測；正式匯入與完整身分操作聯測待完成。"
@@ -182,7 +186,8 @@
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/privacy-consent.spec.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "名稱註冊開關、獨立政策版本、既有帳號明確確認及回應／儲存失敗、原帳號、版本漂移與跨頁恢復已隔離驗證（檢查點 95）。正式政策版本／公告、完整資料遷移、實體裝置及實際候選 web／bot 組合仍待驗收。"
@@ -221,7 +226,8 @@
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/account-profile.spec.ts",
-        "apps/web/tests/music-fields.spec.ts"
+        "apps/web/tests/music-fields.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "稱呼、名冊版本／快照、去重恢復、QQ 暱稱分離與官方頭像備援已實作；正式遷移後資料、真實平台／完整可及性及語言驗收待完成。 已補成分稱呼與帳號稱呼獨立、預設固定及 Unicode 重名保護；完整名冊成分卡與舊協議投影仍待驗收。"
@@ -265,7 +271,8 @@
         "apps/web/tests/devices.spec.ts",
         "apps/web/tests/account-profile.spec.ts",
         "apps/web/tests/privacy-consent.spec.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "帳號 grant、切換、撤銷後替代帳號與跨分頁 scope／草稿隔離已測；完整離線／背景、多瀏覽器、真實遷移與舊入口驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。"
@@ -297,7 +304,8 @@
       "ux_evidence": [
         "apps/web/tests/devices.spec.ts",
         "apps/web/tests/durable-device-links.spec.ts",
-        "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md"
+        "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已實作十分鐘一次性連結、兩端確認、訪客登入返回、取消不消耗、並行一次成功與回執核對；舊入口 adapters、真 QQ WebView 與遷移版本組合驗收待完成。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
@@ -329,7 +337,8 @@
       "ux_evidence": [
         "apps/web/tests/devices.spec.ts",
         "apps/web/tests/durable-device-links.spec.ts",
-        "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md"
+        "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已實作裝置列出、二次確認撤權、排除目前裝置、保留其他帳號／意圖、帳號歷史分頁與交易回滾；裝置舊入口、完整恢復／還原與實際版本組合驗收待完成。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
@@ -377,7 +386,8 @@
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/account-profile.spec.ts",
-        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md"
+        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "UnionID 狀態、原 QQ bind 重授權、24 小時提醒節流及缺值／成功結果已測；原生 worker 存在／布林匹配診斷與 Python 差分已接通，不輸出原值或推定 bot 已綁定。真 QQ 跨應用授權、全裝置／儲存限制與實際版本組合驗收待完成，見 59 號檢查點。"
@@ -433,7 +443,8 @@
         "apps/web/tests/music-recovery.spec.ts",
         "apps/web/tests/admin-music.spec.ts",
         "apps/web/tests/durable-music-recovery.spec.ts",
-        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。共用 session、已關聯匯入、PIN／本次 OAuth 找回及管理關聯已實作並以合成資料驗證；完整欄位、原 session／intent adapter、正式版本組合及副本演練待驗收。"
@@ -471,7 +482,8 @@
       "ux_evidence": [
         "apps/web/tests/music-recovery.spec.ts",
         "apps/web/tests/durable-music-recovery.spec.ts",
-        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。PIN 4–6 位、持久 QQ／IP 限流、原 session 十分鐘 intent、本次 QQ 授權與明確關聯、取消／未知結果恢復均有合成驗證；真 QQ、舊 session／intent 協議與正式版本組合待驗收。"
@@ -513,7 +525,8 @@
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
         "apps/web/tests/music-contact.spec.ts",
-        "docs/unified-rebuild/15-contact-checkpoint.md"
+        "docs/unified-rebuild/15-contact-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "權威聯絡表、舊數字鍵保護、native 自填修改／清空、會員查詢／複製、重號／原子競態、身份隔離與刪除已實作並與 Python 差分；管理更正、舊網址／協議 adapter、完整匯入未知案例、合併隱私政策與實際平台驗收待完成。"
@@ -632,7 +645,8 @@
         "apps/web/tests/durable-erasures.spec.ts",
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
         "apps/web/tests/privacy-consent.spec.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 130 號接通原帳號關閉的三方成分／身份清理、完整 business／proof／再次 source rebase 與十份原來源 bytes 保留。完整最新 music erasure／reset generation、外部 ancestry／custody／高水位、latest-erasure 私人存取、browser／media／stopped capture、固定 Linux 版本組合及全功能／B01–B15 驗收仍待完成，recovery-blocked，不部署。"
@@ -749,7 +763,8 @@
         "apps/web/tests/music-contact.spec.ts",
         "apps/web/tests/admin-music-erasure.spec.ts",
         "apps/web/tests/durable-erasures.spec.ts",
-        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
+        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。"
@@ -805,7 +820,8 @@
         "apps/web/tests/durable-device-links.spec.ts",
         "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
         "apps/web/tests/privacy-consent.spec.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
@@ -831,7 +847,8 @@
         "apps/api/src/activity-access.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/legacy-navigation.spec.ts"
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "公開列表以外已補本人所有／協辦／有效本人及同行、草稿與歷史結算義務的 scoped 分頁；只持查看權不視為參與。合成權限、結算後不再代管、草稿入口與分頁已測；正式副本、規模及全部篩選／實際版本組合仍待成套驗收。"
@@ -896,7 +913,8 @@
         "apps/web/tests/legacy-local.spec.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 草稿及已發布安排已可在同一 TSX 表單編輯，原欄位、UTC 秒驗證、revision／比較、scope／owner 限制與狀態／結算鎖已測；完整時區輸入、日期防誤、舊入口與全部場景驗收仍待完成。"
@@ -929,7 +947,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
-        "apps/web/tests/activity-publish.spec.ts"
+        "apps/web/tests/activity-publish.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已實作既有草稿發布、明確本人同意、初始條件、本人自動報名、嚴格 FIFO／整組阻塞、原子稽核／收據與最終名單 bot 卡片；原 Python 全紀錄差分與現有 worker 無網路消費已測。發起者發布後退出、舊 API 直接建立 scheduled 的明確 join_owner=false、全部恢復與完整入口仍待完成。"
@@ -992,7 +1011,8 @@
         "apps/web/tests/create-intents.spec.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、建立結果與目的稿的轉換確認、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
@@ -1032,7 +1052,8 @@
       "ux_evidence": [
         "apps/web/tests/legacy-navigation.spec.ts",
         "apps/web/tests/durable-activity-access.spec.ts",
-        "docs/unified-rebuild/77-durable-activity-access-checkpoint.md"
+        "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。已補有限預覽、明確 scoped／CSRF／Origin／revision／冪等授權、owner-only 邀請分享、撤銷／草稿／刪除與原結果再驗權；僅 event_access 改動及原名單／帳務／bot 工作保全已測。私有資產／歷史完整矩陣、正式副本與實際版本組合仍待成套驗收。"
@@ -1059,7 +1080,8 @@
         "apps/api/src/activity-lifecycle.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-lifecycle.spec.ts"
+        "apps/web/tests/activity-lifecycle.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "暫停／恢復、截止阻擋與只在實際開放時嚴格 FIFO 遞補已實作，已做原 Python 完整資料／bot 差分；完整報名／退出、舊 API 與正式副本驗收待完成。"
@@ -1086,7 +1108,8 @@
         "apps/api/src/activity-lifecycle.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-lifecycle.spec.ts"
+        "apps/web/tests/activity-lifecycle.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "發起者成團確認、低於門檻原因、通知及無操作去重已實作並差分；全站待辦、全部舊入口與正式副本驗收待完成。"
@@ -1116,7 +1139,8 @@
         "apps/api/src/activity-lifecycle.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-lifecycle.spec.ts"
+        "apps/web/tests/activity-lifecycle.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "實際開始／結束、原時間保留與明確確認已實作，預定時間不自動轉實際；安排可延長並保留條件版本。當地時區完整 UI、待辦、舊入口、跨日與正式副本驗收待完成。"
@@ -1150,7 +1174,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
-        "apps/web/tests/activity-lifecycle.spec.ts"
+        "apps/web/tests/activity-lifecycle.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已發布活動取消、歸檔／取消歸檔、受限移除及原 key 恢復已實作，保留名單／帳務，必要寫入回滾；取消損失／結算流程、全部舊入口與正式副本驗收待完成。"
@@ -1177,7 +1202,8 @@
         "apps/api/src/activity-management.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "重要欄位變更追加條件快照、原因、有效報名標 pending、保留原接受版本與財務、FIFO 遞補／通知、Python 全紀錄及 outbox 差分已測；完整報名／狀態／收件匣、舊入口與正式版本組合驗收仍待完成。"
@@ -1204,7 +1230,8 @@
         "apps/api/src/activity-management.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "目前原管理人逐人接受／暫不同意、拒絕原因、雙版本、原報名／費用保全、no-op、未知結果與 Python 差分已測；需結合完整報名／認領／代管轉移及通知收件匣驗收，尚未完整通過。"
@@ -1233,7 +1260,8 @@
         "apps/api/src/activity-delegation.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-delegation.spec.ts"
+        "apps/web/tests/activity-delegation.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "四 scopes、七日邀請、本人接受、替換與撤銷、綁定真實帳號、精確未知結果恢復與 Python 差分已測；需結合完整出席／結算、收件匣、全部舊 API 及隔離正式資料驗收，尚未完整通過。"
@@ -1262,7 +1290,8 @@
         "apps/api/src/activity-delegation.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-delegation.spec.ts"
+        "apps/web/tests/activity-delegation.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "唯一指定結算人、替換／撤銷、雙方其他 scopes 保留及舊 worker 作廢撤權發布者通知已測；完整結算／收款與通知介面、全部舊 API 及資料遷移後成套驗收待完成。"
@@ -1291,7 +1320,8 @@
         "apps/api/src/activity-delegation.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-delegation.spec.ts"
+        "apps/web/tests/activity-delegation.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "本人接受、舊邀請失效、原人報名／付款與結算歷史保全、同名帳號 audit、未知接受恢復與 Python worker 群卡已測；完整資金／出席／收件匣及舊入口、遷移後成套驗收待完成。"
@@ -1319,7 +1349,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-attendance.spec.ts",
-        "apps/web/tests/activity-publish.spec.ts"
+        "apps/web/tests/activity-publish.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "五狀態、UTC 實際時間、開始／歸檔／結束後原因、原名額／付款與帳單保全、未知結果及 Python 差分已測；完整結算／分房／歷史收件匣、全部舊 API 及隔離正式資料成套驗收待完成。"
@@ -1347,7 +1378,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-attendance.spec.ts",
-        "apps/web/tests/activity-publish.spec.ts"
+        "apps/web/tests/activity-publish.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "雙 scope、首份帳單前、逐人條件接受、超額與繞候補分別確認、原隊序保全、去重恢復及 Python 差分已測；完整結算／付款、全部舊 API 與隔離正式資料成套驗收待完成。"
@@ -1378,7 +1410,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/inbox-history.spec.ts",
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "公開／私人歷史、前後快照、數字游標／分頁、未確認申報與 token 防洩漏、錯誤恢復已測；完整帳本／結算／包間歷史及全部舊 API 與隔離正式資料成套驗收待完成。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
@@ -1410,7 +1443,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-sharing.spec.ts",
         "apps/web/tests/legacy-navigation.spec.ts",
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生活動／目前安排摘要、完整選文退路、原時區／DST／跨日與目前／歷史高德導航已隔離驗證；實機 clipboard／地圖／QQ WebView、正式來源、完整遷移及候選版本組合尚待驗收。"
@@ -1437,7 +1471,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生報名預覽、當時安排／revision 綁定及逐次明確接受費用安排已實作，原 Python token／資料／outbox 差分通過；全部舊入口及正式副本驗收待完成。"
@@ -1464,7 +1499,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "每批本人／同行／純代報、逐人公開備註與付款標記已實作，不建假帳號；原 manager 與 payer 分離。認領／代管交接及正式副本綜合驗收待完成。"
@@ -1491,7 +1527,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "逐人／整組、整組不足全候補與阻塞後方、混合分配明確 acceptPartial 已實作並與原 Python 差分；更多正式匯入／邊界隊列及全部舊入口驗收待完成。"
@@ -1518,7 +1555,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "待確認不占位、整組或逐人確認取得新 party ticket、最終名單通知已實作並差分；全部舊入口／待辦、正式副本驗收待完成。"
@@ -1545,7 +1583,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已報本人可新增同行，退出後可重新報名且取得新隊序，未知結果不重複新增；全部舊入口及正式副本驗收待完成。"
@@ -1572,7 +1611,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原管理人／roster scope 修改公開備註、訪客稱呼與付款標記，協助他人須原因，拆組保留本組隊序；凍結付款來源不可改。認領全流程及正式副本驗收待完成。"
@@ -1599,7 +1639,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "逐人退出、只在實際開放時原嚴格 FIFO 遞補、合併退出與遞補群通知已實作；全部舊入口、待辦與正式副本驗收待完成。"
@@ -1626,7 +1667,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "逾期正式報名退出須原因且保留位至審核，roster scope 同意／拒絕須原因，候補／待確認直接退出，泛化私人提醒不含原因；通知收件匣／待辦、全部舊入口及正式副本驗收待完成。"
@@ -1655,7 +1697,8 @@
         "apps/api/src/activity-invitations.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-invitations.spec.ts"
+        "apps/web/tests/activity-invitations.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生批量邀請、不占位、有限預覽、單次接受、候補確認、私人存取與舊 attendee_invite 網址已測；原 key 恢復、Python 差分及舊 worker 消費已測。全部舊 API 轉接、正式副本與實際平台驗收待完成。"
@@ -1685,7 +1728,8 @@
         "apps/api/src/activity-claims.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-claims.spec.ts"
+        "apps/web/tests/activity-claims.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生認領邀請／七日效期／原 issuer 重驗／有限預覽／本人雙確認／管理審核／拒絕撤銷／未知結果恢復已測；全部舊 API、正式副本與實際平台驗收待完成。"
@@ -1715,7 +1759,8 @@
         "apps/api/src/activity-claims.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-claims.spec.ts"
+        "apps/web/tests/activity-claims.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "批准保留原 attendee／party／隊序／consent 與全部帳務／圖片，兩種 append-only 付款來源凍結及舊 finance consumer 已測；新版結算／申報權利全流程、正式副本與實際平台驗收待完成。"
@@ -1746,7 +1791,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-roster.spec.ts",
-        "docs/unified-rebuild/20-roster-checkpoint.md"
+        "docs/unified-rebuild/20-roster-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "已實作同名獨立列、目前官方頭像備援、單一成分浮層／共同喜好、同行隔離、關閉不加歷史、完整卡返回與跨頁登出；名冊全部寫操作、舊入口、正式資料／真實平台與完整無障礙驗收仍待完成。"
@@ -1773,7 +1819,8 @@
         "apps/api/src/activity-registration.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-registration.spec.ts"
+        "apps/web/tests/activity-registration.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "每批 1–20、重複本人、精確預覽版本、SQLite immediate 並行不超賣、409 保稿重預覽及原 key 恢復已實作；多程序負載、全部舊入口與正式副本驗收待完成。"
@@ -1839,7 +1886,8 @@
         "apps/web/tests/create-intents.spec.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、建立結果與目的稿的轉換確認、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -1867,7 +1915,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -1895,7 +1944,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -1923,7 +1973,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -1951,7 +2002,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -1979,7 +2031,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -2007,7 +2060,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -2035,7 +2089,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -2063,7 +2118,8 @@
         "apps/api/src/time-polls.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/time-polls.spec.ts"
+        "apps/web/tests/time-polls.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
@@ -2102,7 +2158,8 @@
         "apps/web/tests/activity-room-overview.spec.ts",
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
-        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -2141,7 +2198,8 @@
         "apps/web/tests/activity-room-overview.spec.ts",
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
-        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -2171,7 +2229,8 @@
         "apps/web/tests/activity-room-overview.spec.ts",
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
-        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -2210,7 +2269,8 @@
         "apps/web/tests/activity-room-overview.spec.ts",
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
-        "docs/unified-rebuild/50-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -2252,7 +2312,8 @@
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
@@ -2294,7 +2355,8 @@
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
@@ -2336,7 +2398,8 @@
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
@@ -2390,7 +2453,8 @@
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
@@ -2432,7 +2496,8 @@
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
@@ -2474,7 +2539,8 @@
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
@@ -2505,7 +2571,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2543,7 +2610,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2581,7 +2649,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2619,7 +2688,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2650,7 +2720,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
-        "docs/unified-rebuild/33-settlement-checkpoint.md"
+        "docs/unified-rebuild/33-settlement-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2688,7 +2759,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2729,7 +2801,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2767,7 +2840,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2805,7 +2879,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2853,7 +2928,8 @@
         "apps/web/tests/payment-codes.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2901,7 +2977,8 @@
         "apps/web/tests/payment-codes.spec.ts",
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2955,7 +3032,8 @@
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -2993,7 +3071,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -3031,7 +3110,8 @@
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "apps/web/tests/legacy-settlement.spec.ts"
+        "apps/web/tests/legacy-settlement.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
@@ -3082,7 +3162,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3133,7 +3214,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3184,7 +3266,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3235,7 +3318,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3286,7 +3370,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3337,7 +3422,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3388,7 +3474,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3439,7 +3526,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3469,7 +3557,8 @@
         "apps/api/src/finance.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3499,7 +3588,8 @@
         "apps/api/src/finance.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3550,7 +3640,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3580,7 +3671,8 @@
         "apps/api/src/finance.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-finance.spec.ts"
+        "apps/web/tests/activity-finance.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
@@ -3617,7 +3709,8 @@
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "詞庫與編輯已共用完整 category／別名／原文與分類；正式副本、後台及舊入口成套驗收待完成。"
@@ -3655,7 +3748,8 @@
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
-        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "名稱／別名、完整拼音／首字母／假名、正規化、分類／類型、清空／Escape／斜線及兩頁共用搜尋已實作並對照原字典；舊 adapter、browser 遷移與正式副本成套驗收待完成。"
@@ -3684,7 +3778,8 @@
       "permission_evidence": [],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "兩頁同一選擇與前後端 5／15／20、至少一項保存、首次空白成分及快取更新已測；正式副本、全部入口與舊資料成套驗收待完成。"
@@ -3711,7 +3806,8 @@
       "permission_evidence": [],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/37-music-workspace-checkpoint.md"
+        "docs/unified-rebuild/37-music-workspace-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "兩頁共用細分四級，領域不顯示程度且保留等級；舊值正式副本對帳及其他音樂入口成套驗收待完成。"
@@ -3740,7 +3836,8 @@
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
-        "docs/unified-rebuild/38-music-entry-checkpoint.md"
+        "docs/unified-rebuild/38-music-entry-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "詞庫／排行詳情／獨立詞條頁與成分編輯共用選擇、程度、移除及分類收合，名單與成分卡可往返並保留原稿；氣泡及全部入口成套驗收待完成。"
@@ -3783,7 +3880,8 @@
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "docs/unified-rebuild/38-music-entry-checkpoint.md",
-        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "詞庫／獨立詞條／成分共用草稿、原 UUID、保存中鎖定及變更保存列，名單只反映已保存資料，跨成分卡恢復已測；browser 舊草稿遷移、完整跨入口與實際平台驗收待完成。"
@@ -3811,7 +3909,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
-        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生 2／8 建立額度、Unicode 24 字、名稱／別名重名指向、首次空白成分、精確重試與原建立清單已測；完整後台、舊 adapter、正式副本與跨服務驗收待完成。"
@@ -3839,7 +3938,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
-        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "會員改名／分類／類型、原建立者授權、版本衝突、熟悉度保全與未知結果已測；管理員完整詞條維護、舊入口及正式副本成套驗收待完成。"
@@ -3867,7 +3967,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
-        "docs/unified-rebuild/36-music-catalog-checkpoint.md"
+        "docs/unified-rebuild/36-music-catalog-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生選用者刪除保護、確認／精確恢復、建立額度回收及成分刪除匿名化已測；完整後台、舊入口與正式副本成套驗收待完成。"
@@ -3909,7 +4010,8 @@
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
         "apps/web/tests/music-ranking.spec.ts",
-        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生兩類獨立顯示排序、10／20／完整展開、成分／詞條／近期統計及建立時間保全已隔離驗證；正式匯入副本全量對帳、全部舊入口與切換版本組合驗收待完成。"
@@ -3941,7 +4043,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-ranking.spec.ts",
-        "docs/unified-rebuild/39-music-ranking-checkpoint.md"
+        "docs/unified-rebuild/39-music-ranking-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生兩類獨立氣泡／清單、完整標籤與人數、鍵盤詳情、共用草稿、響應式全量配置已隔離驗證；正式大詞庫副本、舊入口與切換版本組合驗收待完成。"
@@ -3982,7 +4085,8 @@
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "apps/web/tests/music-entry.spec.ts",
-        "docs/unified-rebuild/38-music-entry-checkpoint.md"
+        "docs/unified-rebuild/38-music-entry-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生獨立／內嵌詳情、完整已保存選取者、成分身份門檻、複製／同好返回、共用草稿、權限快取及 Python 差分已測；正式副本、舊 adapter、外部入口及切換版本組合成套驗收待完成。"
@@ -4018,7 +4122,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-matches.spec.ts",
-        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+        "docs/unified-rebuild/40-music-matching-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
@@ -4058,7 +4163,8 @@
         "apps/web/tests/music-matches.spec.ts",
         "docs/unified-rebuild/40-music-matching-checkpoint.md",
         "apps/web/tests/music-share.spec.ts",
-        "docs/unified-rebuild/41-music-sharing-checkpoint.md"
+        "docs/unified-rebuild/41-music-sharing-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生兩種排序、資料較少分區、tie-break、偏好記憶／舊偏好讀取與 URL 優先已隔離實作；正式副本、大量資料效能、舊入口 adapter、跨 origin client migrator 及切換版本組合成套驗收待完成。"
@@ -4094,7 +4200,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-matches.spec.ts",
-        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+        "docs/unified-rebuild/40-music-matching-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
@@ -4130,7 +4237,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-matches.spec.ts",
-        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+        "docs/unified-rebuild/40-music-matching-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生兩種推薦排序／資料較少分區／完整比較、留言條件授權與共用選詞返回已隔離實作；正式副本對帳、大量資料效能、舊入口 adapter 及切換版本組合成套驗收待完成。"
@@ -4175,7 +4283,8 @@
         "apps/web/tests/music-entry.spec.ts",
         "docs/unified-rebuild/38-music-entry-checkpoint.md",
         "apps/web/tests/music-matches.spec.ts",
-        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+        "docs/unified-rebuild/40-music-matching-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生獨立欄位、原生／匯入資料優先與私人留言依所選排序或預設首位授權已隔離實作；正式副本、舊入口 adapter、外部入口及切換版本組合仍待成套驗收。"
@@ -4218,7 +4327,8 @@
         "apps/web/tests/music-fields.spec.ts",
         "docs/unified-rebuild/19-fields-checkpoint.md",
         "apps/web/tests/music-matches.spec.ts",
-        "docs/unified-rebuild/40-music-matching-checkpoint.md"
+        "docs/unified-rebuild/40-music-matching-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生獨立欄位、原生／匯入資料優先與私人留言依所選排序或預設首位授權已隔離實作；正式副本、舊入口 adapter、外部入口及切換版本組合仍待成套驗收。"
@@ -4252,7 +4362,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-fields.spec.ts",
-        "docs/unified-rebuild/19-fields-checkpoint.md"
+        "docs/unified-rebuild/19-fields-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "本人空值／內建／自訂至 12 字／公開開關、成分卡本人與他人可見性已實作；原超限值在未編輯時保留。分房使用的授權與性別分組、正式副本與實際平台驗收仍待完成。"
@@ -4286,7 +4397,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-share.spec.ts",
-        "docs/unified-rebuild/41-music-sharing-checkpoint.md"
+        "docs/unified-rebuild/41-music-sharing-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "目前草稿／完整文字清單、原生 Canvas PNG、可選聯絡、配色／下載／原生分享與 API 失敗退路已隔離實作；正式副本、實機分享面板、舊入口 adapter、browser migrator 與切換版本組合仍待成套驗收。"
@@ -4318,7 +4430,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-trend.spec.ts",
-        "docs/unified-rebuild/42-music-trend-checkpoint.md"
+        "docs/unified-rebuild/42-music-trend-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生趨勢／漲幅／最近新增、半小時定時持久取樣與原 Handler／圖表差分已隔離實作；舊備份補種、正式副本完整對帳、大量資料效能、舊入口 adapter、切換版本組合成套驗收待完成。"
@@ -4349,7 +4462,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-circles.spec.ts",
-        "docs/unified-rebuild/43-music-circles-checkpoint.md"
+        "docs/unified-rebuild/43-music-circles-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生完整圈子／可調門檻／間接連結／獨立成員、原 Handler 多門檻順序差分、同好／比較／共用選詞動線與 bot 唯讀保全已隔離實作；正式副本完整對帳、正式規模與併發效能、舊入口 adapter、實際切換版本組合仍待驗收。"
@@ -4394,7 +4508,8 @@
         "apps/web/tests/music-shouts.spec.ts",
         "docs/unified-rebuild/44-music-shouts-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。原生發布、140 code point／Python 空白、24 小時邊界、帳號隔離草稿及同操作編號恢復已隔離實作；完整副本對帳、併發、舊入口 adapter、實際 bot 組合與 QQ WebView 待驗收。"
@@ -4428,7 +4543,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
-        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "會員列表／詳情、目前稱呼／權威聯絡及來源、複製失敗退路、成分／比較安全返回已隔離實作；完整舊入口 adapter、正式來源與實際版本組合待驗收。"
@@ -4462,7 +4578,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
-        "docs/unified-rebuild/44-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/44-music-shouts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "30 天浮點邊界、穩定歷史分頁／500 則、Python 差分、刪除與裁切清原副本、schema 11 遷移已隔離實作；正式副本完整對帳、備份／還原與舊入口待驗收。"
@@ -4491,7 +4608,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/appearance.spec.ts",
-        "docs/unified-rebuild/47-appearance-checkpoint.md"
+        "docs/unified-rebuild/47-appearance-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "全站深淺／跟隨系統、舊偏好、跨分頁與儲存失敗已隔離驗證；所有正式裝置與舊瀏覽器草稿／PWA 切換的成套驗收待完成。"
@@ -4521,7 +4639,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/appearance.spec.ts",
-        "docs/unified-rebuild/47-appearance-checkpoint.md"
+        "docs/unified-rebuild/47-appearance-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "個人開關、解碼後切換、隨機不連續重複、雙層畫面、減少動態／背景暫停及壞圖恢復已驗證；正式素材完整對帳、備份與切換後實際版本組合待驗收。"
@@ -4551,7 +4670,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/pwa.spec.ts",
-        "docs/unified-rebuild/62-pwa-checkpoint.md"
+        "docs/unified-rebuild/62-pwa-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "統一安裝身分、明確啟用且不自動重載、多視窗舊快取／分塊保全、離線私密隔離、下載失敗與舊 worker 自然退役已有本機瀏覽器證據。真實既有安裝者、手機實機與多平台升級、全部語系及正式切換／回退仍待 P6／P7 驗收；IndexedDB／舊草稿遷移未完成。未部署。"
@@ -4579,7 +4699,8 @@
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "apps/web/tests/music-entry.spec.ts",
-        "docs/unified-rebuild/38-music-entry-checkpoint.md"
+        "docs/unified-rebuild/38-music-entry-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "詞庫／成分修改後手機固定保存列、長名稱換行及減少動效已實作；底部導覽、鍵盤避讓、回頂部與全站成套驗收待完成。"
@@ -4621,7 +4742,8 @@
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。逐請求角色／救援憑證、輪替／到期、管理 CSRF、限流、兩種登出與未知結果查回已實作；完整後台、跨裝置／真 QQ WebView 與正式版本組合待驗收。"
@@ -4648,7 +4770,8 @@
         "apps/api/src/admin-users.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin.spec.ts"
+        "apps/web/tests/admin.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "每頁 20、搜尋與精確身份關係的 UnionID 篩選、不輸出身份秘密已實作；大量匯入資料、完整語言／讀屏／WebView 及正式資料遷移待驗收。"
@@ -4684,7 +4807,8 @@
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。角色獨立版本、不可自撤／對註銷授權、同交易不可變歷史及歷史分頁已實作；關閉帳號歷史入口、完整後台與匯入角色對照待驗收。"
@@ -4720,7 +4844,8 @@
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。私人備註／人工 QQ 版本、唯一檢查、恢復與會員隔離已實作；未用於認領，完整 ownership／匯入資料與舊站所有管理流程待驗收。"
@@ -4749,7 +4874,8 @@
         "apps/api/src/admin-music.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/admin-music.spec.ts"
+        "apps/web/tests/admin-music.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "查詢／分頁與未關聯／預先關聯／OAuth／直接帳號成分分流已實作，不回傳 PIN 摘要或私人欄位；完整匯入資料及正式後台流程待驗收。"
@@ -4808,7 +4934,8 @@
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史、原 link_audit 分頁合流與 Python 差分已驗證；重建／回退投影、舊 adapter 及正式副本待完成。"
@@ -4835,7 +4962,8 @@
         "apps/api/src/activity-management.test.ts"
       ],
       "ux_evidence": [
-        "apps/web/tests/activity-conditions.spec.ts"
+        "apps/web/tests/activity-conditions.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "具名會員管理員在可查看、未結算、未終止／歸檔的活動協助安排、必填原因、owner 設定限制、截止連動例外及通知原發起者已實作；不擴名單／帳權。完整後台活動入口、角色撤銷跨流程、舊 adapter 與正式副本仍待驗收。"
@@ -4875,7 +5003,8 @@
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/admin-privacy.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。註冊開關／revision／稽核及刪除申請分頁、即時共享紀錄／bot 收件人檢查與明確說明、衝突及未知結果恢復已實作；政策版本更新／重同意、完整審核歷史與共享資料處理、備份／還原濾除仍待完成。"
@@ -4915,7 +5044,8 @@
       "ux_evidence": [
         "apps/web/tests/admin-music-catalog.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。原生管理 CRUD／合併、Python 選擇順序與熟悉度差分、建立清單轉移及額度、目標編輯權保留、全域版本核對、精確恢復與 bot 資料保全已合成驗證；來源全量對帳、備份／還原／回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。"
@@ -4968,7 +5098,8 @@
         "apps/web/tests/admin-music-pin.spec.ts",
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。無成分管理員可查看原成分、詞條與程度；數字 QQ PIN 重設、目前管理授權／版本／確認、未知結果只查回執、找回證據撤銷、原關聯歷史及隱私保全已合成驗證；完整會員欄位、舊 adapter／回退投影與正式版本組合仍待驗收。"
@@ -5042,7 +5173,8 @@
       "ux_evidence": [
         "apps/web/tests/admin-music-erasure.spec.ts",
         "apps/web/tests/durable-erasures.spec.ts",
-        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md"
+        "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生管理成分刪除／重置、詞條保留與建立者清除、私人投影與找回證據清除、持久版本 2 意圖、SQL 故障恢復、回執核對、舊副本／成套匯入防復活與 bot 讀取差分已合成驗證；重置前成套備份、配對資產／歷史濾除、回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。 已直接差分有效 administration.erase：RESET 同時清空全部找搭子與趨勢，重播不清除後續新資料。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。"
@@ -5086,7 +5218,8 @@
         "apps/web/tests/music-shouts.spec.ts",
         "docs/unified-rebuild/44-music-shouts-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；完整備份／還原、舊入口與實際版本組合待驗收。"
@@ -5128,7 +5261,8 @@
         "apps/web/tests/appearance.spec.ts",
         "docs/unified-rebuild/47-appearance-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理 CRUD、排序／間隔、PNG／JPEG／WebP 完整解碼、2 MiB 邊界、交易回滾、未知結果與 schema 13 已隔離驗證；成套備份／配對恢復、正式資料卷與舊 adapters／實際版本組合待完成。"
@@ -5211,7 +5345,8 @@
         "apps/web/tests/admin-backups.spec.ts",
         "docs/unified-rebuild/48-backup-export-checkpoint.md",
         "apps/web/tests/legacy-backups.spec.ts",
-        "docs/unified-rebuild/101-legacy-history-checkpoint.md"
+        "docs/unified-rebuild/101-legacy-history-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生及舊配對／單 JSON 已接入統一管理下載，固定 capture manifest 與實際匯入來源、最新刪除／RESET／帳號關閉、關聯／明確空聯絡／目前 PIN、原稿保全、權限與晚回應已隔離驗證（檢查點 101）。舊 URL adapters、正式歷史來源／規模、完整恢復與實際候選版本組合尚待完成。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。"
@@ -5248,7 +5383,8 @@
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/durable-admin.spec.ts",
-        "docs/unified-rebuild/69-durable-admin-checkpoint.md"
+        "docs/unified-rebuild/69-durable-admin-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "會員角色登出清除此裝置會員及管理、救援管理登出保留會員登入、未知結果查狀態不重送，以及管理原稿／保全版本清除失敗重試、其他帳號本機原稿保留、無分頁訊號世代阻擋已隔離驗證。其餘管理 mutations 與含憑證原稿仍待遷移；其他實體裝置、全部管理入口、正式版本組合及回退驗收未完成，維持 in_progress，不構成切換核准。"
@@ -5447,7 +5583,8 @@
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生活動／報名／退出／安排／結算／投票 producer、卡片與公開指令已有 Python 差分及保留 Python worker 消費證據；TS outbox 已接入獨立於 Gateway 的隔離 runtime。全部業務 hook 成套追蹤、正式待送對帳、跨版本／QQ／切換與回退尚待驗收，見 22–34／53–57 號檢查點；不等於 B01–B15 通過。"
@@ -5498,7 +5635,8 @@
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-lifecycle.spec.ts",
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生報名／退出／審核 producer、待確認／拆組 hook、合併遞補及去重已有 Python 差分；保留 Python worker 消費及 TS consumer/runtime 接通。全部業務 hook 成套驗證、正式資料及 QQ／版本組合仍待完成，見 25／53／57 號檢查點。"
@@ -5594,7 +5732,8 @@
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
-        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。三種模式、通用群通知核對／明確新工作重送、原 UUID 回執查回、模擬不重播及 Python／TS consumer 差分已有隔離證據。相容投票 API 保留既有重新生成語意，未改成新核對 token 協議；正式待送對帳、QQ 與實際版本組合仍待驗收，見 52／53／57／58 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
@@ -5670,7 +5809,8 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。模板設定／預覽／版本恢復、TS consumer 最新模板重組與凍結事實、未來提醒重算已隔離驗證；公開回覆與 runtime 的 revision 套用已接通。完整瀏覽器驗收、正式資料及實際版本組合／QQ 尚待完成，見 52–54／57 號檢查點。"
@@ -5779,7 +5919,8 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
@@ -5870,7 +6011,8 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md"
+        "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。持久勿擾／間隔、頻控不耗失敗次數、提醒去重及公開回覆已有差分；runtime 驗證 Gateway 離線輪詢，新增 token 等待跨入勿擾時段的延後保全。QQ／版本組合及長期負載尚待驗收，見 53／54／57 號檢查點。"
@@ -5962,7 +6104,8 @@
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "apps/web/tests/bot-deliveries.spec.ts",
         "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
-        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md"
+        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
@@ -6049,7 +6192,8 @@
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生通知與公開指令 Markdown／普通文字、ACK／去重／11–12 回呼、外層 event_id、群及 token 後政策已有隔離證據；runtime 面板註冊按目前政策及 revision 更新。群內身份仍不推斷，個人操作留網站；QQ／版本組合尚待驗收，見 53／54／56／57 號檢查點。"
@@ -6271,7 +6415,8 @@
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
-        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md"
+        "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。"
@@ -6380,7 +6525,8 @@
         "apps/web/tests/time-polls.spec.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生 TS 結算文字／逐張凍結碼 consumer 與新網站 producer 已比對保留 Python 的 7 個合成請求；當前發布者權限、group_notice、版本、上傳後換群／撤權與獨立重試已測。正式資料、QQ／web-bot 實際組合、切換及回退驗收仍待完成，見 33／53 號檢查點。 公開結算查詢只回版本／總額／人數／當前結清狀態，未綁定的我的與款項操作只回網站入口；普通／Markdown／唯讀資料保全已完成 Python 差分，見 54 號檢查點。"
@@ -6440,7 +6586,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/legacy-navigation.spec.ts",
-        "docs/unified-rebuild/62-pwa-checkpoint.md"
+        "docs/unified-rebuild/62-pwa-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "舊 hash／HTML／bot 入口已轉原生流程，偽造代理 context 的舊 API 明確拒絕。精確 /music/ SW 註冊自然退役、原草稿及其他應用快取保全已有本機瀏覽器證據。舊 worker／cookie 最終退役、真實已安裝使用者、全量成分網址及正式切換／回退仍待驗收；未部署。"
@@ -6501,7 +6648,8 @@
         "docs/unified-rebuild/62-pwa-checkpoint.md",
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
-        "apps/web/tests/activity-sharing.spec.ts"
+        "apps/web/tests/activity-sharing.spec.ts",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。已補全部既有 bot action 的明確原生目標、四類活動 token、poll／裝置 fragment／QQ return、音樂八類 hash、管理／隱私／聯絡入口與 replace 返回；party／tentative／report／onsite 預設保留舊稿，無 URL 自動業務提交。Python bot 實際產生連結有交叉測試；完整使用手冊、舊已安裝 PWA、真實 QQ 回調與切換後實際版本組合仍待驗收。"
@@ -6737,7 +6885,8 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-settlement.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。其他領域無損轉換、非建立原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。時間投票、結算含圖片、正式包間、個人詞條、活動新增／編輯／再約／安排、帳務命令、收款碼原圖、活動狀態／逐人安排確認／出席與補錄／本人同行報名及逐人管理已接 IndexedDB。明確恢復、原 pending、分頁保全、原子轉移、清除世代、收件匣及新連結預選不覆蓋舊稿已測。其餘管理及其他領域表單、原 kanban-local-v1 同源遷移（舊 pending 先查結果、原 client intent／版本／圖片保全）、完整匯入／匯出及實際裝置／切換組合仍待完成。維持 in_progress，不構成正式切換核准，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
@@ -6986,7 +7135,8 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-settlement.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。詞庫／壁紙／找搭子管理已接 IndexedDB，十種命令的關頁收件匣查回、原授權／目標／UUID／body、原圖單份保存、交易 abort、明確恢復／確認重設、session 遷移與分頁版本保全已測，詳檢查點 70。管理使用者備註／人工 QQ／角色及刪除申請審核已接 IndexedDB；原管理授權／UUID／body、確認重設、分頁保全、管理清除世代、失效清除重試與其他帳號／會員原稿隔離已測。帳號稱呼、聯絡 QQ、成分資料及共用成分選擇已接 IndexedDB；關頁原稿、原 key／body 查回、成功後確認失敗、對象／epoch 防護、工作區導覽及最新結果已測。邀請／認領／管理分工已接 IndexedDB；八種命令關頁後以原 token 路由／UUID／body 查回，恢復後重新核對，拒絕或成功後本機確認失敗均保留原操作。音樂／隱私、活動建立／發布／安排／狀態／逐人回覆／報名及管理／出席補錄、帳務、結算、包間、投票及個人詞條已有原操作保存與明確重試；已遷移表單等待 IndexedDB 整筆交易完成，關頁後可由收件匣以原 UUID／body 查回，衝突與本機確認失敗不覆蓋原稿。新活動原稿原子轉移及目標編輯保全已測；未送出表單恢復後重做預覽及確認，乾淨原稿可接受新連結預選。仍需其餘 mutations、其他領域的伺服器跨裝置意圖、全部結果查詢、舊 IndexedDB pending 轉換及完整成套驗收。全域維持 in_progress，詳檢查點 64–69。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。"
@@ -7093,7 +7243,8 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
-        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md"
+        "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
@@ -7145,7 +7296,8 @@
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
         "apps/web/tests/durable-notifications.spec.ts",
-        "docs/unified-rebuild/75-durable-notifications-checkpoint.md"
+        "docs/unified-rebuild/75-durable-notifications-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "通知單筆／批量已讀原 UUID 與 ID 清單已接持久紀錄；關頁查回、交易失敗、拒絕確認、雙分頁與無訊號登出已補驗（檢查點 75），API／bot 契約不變。收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。十類動態待辦、分頁通知／總未讀、本人首次已讀、精確恢復、包間不可抵銷／原付款鍵、Python 差分與保留 worker 已測；完整財務／結算處理頁與寫入、全部舊入口及隔離正式副本驗收待完成。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"
@@ -7204,7 +7356,8 @@
         "apps/web/tests/music-share.spec.ts",
         "docs/unified-rebuild/94-display-fragments-checkpoint.md",
         "apps/web/tests/error-displays.spec.ts",
-        "docs/unified-rebuild/96-system-error-displays-checkpoint.md"
+        "docs/unified-rebuild/96-system-error-displays-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定與動態顯示片段、原生 template／原文、手冊／統一政策及同意已隔離實作。API／domain 361 個固定標記、例外身份／cause／stack／Zod issues、可選顯示欄位及舊回應相容、圖片／下載／原 UUID／payload／雙分頁刪除已補驗（檢查點 96）；原生完整 963 項與新增雙語瀏覽器 14 場景通過。全套 829 場景首輪＋修正後覆蓋通過，固定映像 runtime／24 shell／4 API 錯誤契約通過；未標記固定 helper／驗證訊息、持久系統 notes、API 通知／安排／結算顯示、實際候選 web／bot 組合、實體裝置與 QQ WebView 仍待完成，不轉換使用者或持久原文。"
@@ -7255,7 +7408,8 @@
         "apps/web/tests/guide.spec.ts",
         "docs/unified-rebuild/93-dynamic-language-guide-checkpoint.md",
         "apps/web/tests/privacy-consent.spec.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "統一 TSX 手冊、聯絡、既有回調與成分／活動／bot 用途政策已實作；獨立同意、原紀錄／歷史回執／恢復及不推定同意已隔離驗證（檢查點 95）。正式政策版本／公告、完整來源資料與候選組合、實體裝置及 QQ WebView 尚未验收。"
@@ -7289,7 +7443,8 @@
       ],
       "ux_evidence": [
         "apps/web/tests/analytics.spec.ts",
-        "docs/unified-rebuild/91-analytics-checkpoint.md"
+        "docs/unified-rebuild/91-analytics-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生路由／互動／寫入結果白名單與完整 production origin、payload 重建、密碼／hidden 原文排除及 bounded buffer 已測；攔截公開客戶端 transport、blocked／throw／插入失敗及既有 auth／分享／bot 舊入口回歸通過（檢查點 91）。全站簡繁、完整候選版本組合與實體裝置／QQ WebView／效能驗收待完成；統計客戶端更新須重新驗證。"
@@ -7653,7 +7808,8 @@
         "docs/unified-rebuild/105-rollback-identity-checkpoint.md",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "docs/unified-rebuild/107-rollback-state-checkpoint.md",
-        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 檢查點 114 已保全三 namespace／null 舊時間的私人 catalog，明確舊 HTTP overlay 經原 Handler 真 loopback HTTP 驗證清單／下載、原 proxy／admin 限制、目前 PIN／unlink／contact／erasure 與同程序 ledger 退回拒絕；普通 timestamp 流程不變，overlay 不是新版 runtime。固定 image／overlay 版本、gateway／browser、重啟後 durable erasure 權威及完整舊 web／music／bot／forward restore 尚未驗收，原 namespace adapter gate 仍保留。 檢查點 115 已補真 Docker Go-template／17 個未啟動容器的 23 項檢查、預設實際 Docker TS／無 label Python-command metadata 的 v3 封存與持鎖對帳；原 source inspector 環境值等號及跨命令 socket 身份已修正。只觀察宣告的指令與 label，沒有執行容器內 bot、認證版本或取得外部協調，所有原切換 gate 維持。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 120 號已有原 authority／完整 checkpoint 綁定的離線刪除投影、原 request／key／收據與 raw journal 保全、較早 native footprint 及獨立 Python 對帳；仍 recovery-blocked，完整舊／新業務 forward merge、structured reset、authority rebase／外部高水位、審計 activation 與實際版本組合未完成。 第 121 號已有固定原 baseline／舊最新／native 最新的 59 表三方 memory merge、signed 型別與高水位、append-only 歷史／bot 工作保全及全表獨立 Python 對帳；完整 source capture 認證、成分／身份／媒體／browser、跨 domain 引用及 authority-backed 私密 footprint／reset、epoch rebase／外部高水位與成套 activation 仍待完成，boardOnly／recovery-blocked。 第 123 號已有原 native 候選上的看板／成分實際差異重建、原 ID／rowid／歷史／收據／source documents／journal 保全、修訂／ownership epoch／排序／BigInt 高水位與獨立全 native-only Python 對帳；固定來源 518 項／28 檔相關回歸通過。原 proof 與最新來源 rebase、generated mode／audit cutoff／映射、最新 authority／跨域 receipt／closed account／structured reset、媒體／browser／capture／external custody／audited activation 及固定實際版本组合仍須完成，businessCandidateOnly／recovery-blocked，不部署。 第 124 號已有原生認領／OAuth／裝置 scope 與 old audit／override 的權限核對、真 Python unlink／relink／途中 owner 的 ABA 失效、completed 原證據與 used OAuth 保全、有效／無效 pending 分流、原成分私人 receipt 410／完整原 image 配對、schema／全表／storage class／sequence 與 native claim reads 核對；33 檔／619 項相關回歸通過。最新來源 rebase、原 generated mode／audit 映射／截點、最新 erasure／closed account／跨域 receipt／reset、私人外部保全、媒體／browser／capture／epoch custody／audited activation 及固定實際版本組合仍須完成，proofCandidateOnly／recovery-blocked，不部署。 第 125 號已有首次最新 source epoch 全表重整、原 generated ID／mode 保全、原 native audit 映射／sequence 截點、重複及後續原生寫入投影、原生刪除／關閉帳號 source cleanup 與原映像精確保全。最新原 authority／reset／跨域 receipt／closed-account 舊 footprint、保全映像 latest-erasure、再次 source epoch 的來源鏈、外部 custody／高水位、媒體／browser／capture／audited activation 與固定實際 web／bot／實機完整驗收仍待完成，recovery-blocked，不部署。 第 126 號新增原 HTTP reset 五容器的 versioned authority evidence；空會員也推進 chain，TS／Python scope 核對、native startup／forward-only／歷史匯出 gate、真程序中斷與來源／SQLite inode 保護已實作。完整 reset source generation／恢復和 latest reset 歷史過濾仍待驗證，不以停止 replay 取代功能驗收，不部署。 第 127 號新增已完成 closure 的離線私密 footprint 修復、原申請／回執核對與逐表獨立 reconciliation；完整 business／proof／source-rebase 候選上原 Python closure、generated ID／frozen audit／bot 工作保全及重跑已有隔離證據。跨域 receipt、舊 music history erasure 授權、完整 reset／ancestry／latest-erasure private retention、媒體／browser／capture／custody／audited activation 與實際固定 web／bot／全功能驗收仍待完成，recovery-blocked，不部署。 第 127 號固定 1,009 份來源的 70 檔／1,490 項相關回歸、strict／build／smoke 已通過，13 檔 TS bot 納入且全部 12 個運行 bundles 與第 126 號 bytes 相同；完整 145 檔 inventory 與全功能／實際版本組合未重新驗收，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。 第 128 號完整目前 TS／API／bot inventory 147 檔／2,221 項、strict／build／smoke／台帳通過；固定 1,013 份來源，只有 API start bundle 改變，全部 9 個 bot bundles 與第 127 號相同。完整瀏覽器、Linux 實際版本組合與 B01–B15 成套驗收仍待完成，不部署。 第 130 號接通原帳號關閉的三方成分／身份清理、完整 business／proof／再次 source rebase 與十份原來源 bytes 保留。完整最新 music erasure／reset generation、外部 ancestry／custody／高水位、latest-erasure 私人存取、browser／media／stopped capture、固定 Linux 版本組合及全功能／B01–B15 驗收仍待完成，recovery-blocked，不部署。"
@@ -7974,7 +8130,8 @@
         "docs/unified-rebuild/105-rollback-identity-checkpoint.md",
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "docs/unified-rebuild/107-rollback-state-checkpoint.md",
-        "docs/unified-rebuild/108-rollback-media-checkpoint.md"
+        "docs/unified-rebuild/108-rollback-media-checkpoint.md",
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "檢查點 112 提供完整 native source 私人封存 API／CLI：reviewed 原 input／external pin、停止服務 narrow evidence／bind／runtime 核對、持續 SQLite／owner 排除、raw journal／source tree／socket fences、v3 boundary 與 late partial 保全；v1／v2 仍可讀寫。合成 Docker response／真 Unix socket與跨程序 SQLite 鎖均有證據，未認證實際映像版本；無 label Python commit-record 僅保留 reference。所有套件 rollbackEligible=false。尚缺外部部署／retention 協調及完整停寫邊界、有效 bot override／實際配置與版本紀錄認證、固定舊 bot 完整恢復與有效配置、舊歷史入口 adapter、歷史看板 latest-erasure 恢復、browser pending／proof、固定舊 web／music／bot 全套讀寫與 forward restore、正式規模／實機 QQ／實際候選組合。166 IDs 尚未完整驗收，不部署。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 檢查點 114 已保全三 namespace／null 舊時間的私人 catalog，明確舊 HTTP overlay 經原 Handler 真 loopback HTTP 驗證清單／下載、原 proxy／admin 限制、目前 PIN／unlink／contact／erasure 與同程序 ledger 退回拒絕；普通 timestamp 流程不變，overlay 不是新版 runtime。固定 image／overlay 版本、gateway／browser、重啟後 durable erasure 權威及完整舊 web／music／bot／forward restore 尚未驗收，原 namespace adapter gate 仍保留。 檢查點 115 已補真 Docker Go-template／17 個未啟動容器的 23 項檢查、預設實際 Docker TS／無 label Python-command metadata 的 v3 封存與持鎖對帳；原 source inspector 環境值等號及跨命令 socket 身份已修正。只觀察宣告的指令與 label，沒有執行容器內 bot、認證版本或取得外部協調，所有原切換 gate 維持。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 120 號已有原 authority／完整 checkpoint 綁定的離線刪除投影、原 request／key／收據與 raw journal 保全、較早 native footprint 及獨立 Python 對帳；仍 recovery-blocked，完整舊／新業務 forward merge、structured reset、authority rebase／外部高水位、審計 activation 與實際版本組合未完成。 第 121 號已有固定原 baseline／舊最新／native 最新的 59 表三方 memory merge、signed 型別與高水位、append-only 歷史／bot 工作保全及全表獨立 Python 對帳；完整 source capture 認證、成分／身份／媒體／browser、跨 domain 引用及 authority-backed 私密 footprint／reset、epoch rebase／外部高水位與成套 activation 仍待完成，boardOnly／recovery-blocked。 第 123 號已有原 native 候選上的看板／成分實際差異重建、原 ID／rowid／歷史／收據／source documents／journal 保全、修訂／ownership epoch／排序／BigInt 高水位與獨立全 native-only Python 對帳；固定來源 518 項／28 檔相關回歸通過。原 proof 與最新來源 rebase、generated mode／audit cutoff／映射、最新 authority／跨域 receipt／closed account／structured reset、媒體／browser／capture／external custody／audited activation 及固定實際版本组合仍須完成，businessCandidateOnly／recovery-blocked，不部署。 第 124 號已有原生認領／OAuth／裝置 scope 與 old audit／override 的權限核對、真 Python unlink／relink／途中 owner 的 ABA 失效、completed 原證據與 used OAuth 保全、有效／無效 pending 分流、原成分私人 receipt 410／完整原 image 配對、schema／全表／storage class／sequence 與 native claim reads 核對；33 檔／619 項相關回歸通過。最新來源 rebase、原 generated mode／audit 映射／截點、最新 erasure／closed account／跨域 receipt／reset、私人外部保全、媒體／browser／capture／epoch custody／audited activation 及固定實際版本組合仍須完成，proofCandidateOnly／recovery-blocked，不部署。 第 125 號已有首次最新 source epoch 全表重整、原 generated ID／mode 保全、原 native audit 映射／sequence 截點、重複及後續原生寫入投影、原生刪除／關閉帳號 source cleanup 與原映像精確保全。最新原 authority／reset／跨域 receipt／closed-account 舊 footprint、保全映像 latest-erasure、再次 source epoch 的來源鏈、外部 custody／高水位、媒體／browser／capture／audited activation 與固定實際 web／bot／實機完整驗收仍待完成，recovery-blocked，不部署。 第 126 號新增原 HTTP reset 五容器的 versioned authority evidence；空會員也推進 chain，TS／Python scope 核對、native startup／forward-only／歷史匯出 gate、真程序中斷與來源／SQLite inode 保護已實作。完整 reset source generation／恢復和 latest reset 歷史過濾仍待驗證，不以停止 replay 取代功能驗收，不部署。 第 127 號新增已完成 closure 的離線私密 footprint 修復、原申請／回執核對與逐表獨立 reconciliation；完整 business／proof／source-rebase 候選上原 Python closure、generated ID／frozen audit／bot 工作保全及重跑已有隔離證據。跨域 receipt、舊 music history erasure 授權、完整 reset／ancestry／latest-erasure private retention、媒體／browser／capture／custody／audited activation 與實際固定 web／bot／全功能驗收仍待完成，recovery-blocked，不部署。 第 127 號固定 1,009 份來源的 70 檔／1,490 項相關回歸、strict／build／smoke 已通過，13 檔 TS bot 納入且全部 12 個運行 bundles 與第 126 號 bytes 相同；完整 145 檔 inventory 與全功能／實際版本組合未重新驗收，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。 第 128 號完整目前 TS／API／bot inventory 147 檔／2,221 項、strict／build／smoke／台帳通過；固定 1,013 份來源，只有 API start bundle 改變，全部 9 個 bot bundles 與第 127 號相同。完整瀏覽器、Linux 實際版本組合與 B01–B15 成套驗收仍待完成，不部署。 第 130 號接通原帳號關閉的三方成分／身份清理、完整 business／proof／再次 source rebase 與十份原來源 bytes 保留。完整最新 music erasure／reset generation、外部 ancestry／custody／高水位、latest-erasure 私人存取、browser／media／stopped capture、固定 Linux 版本組合及全功能／B01–B15 驗收仍待完成，recovery-blocked，不部署。"
