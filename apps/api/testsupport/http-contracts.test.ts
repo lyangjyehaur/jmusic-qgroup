@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import { createApp } from '../src/app';
 import { openDatabase } from '@qgroup/database';
 import { AuthResult,BotDeliveriesQuery,DeviceList,FinanceHistoryQuery,IssuedDeviceLink,Ok,PRIVACY_VERSION,Profile,SaveProfile,Session } from '@qgroup/contracts';
-import { createHttpClient,HttpOperations,type HttpContext } from '@qgroup/contracts/http';
+import { createHttpClient,HttpOperations,HttpResponses,type HttpContext } from '@qgroup/contracts/http';
 import { checkHttpOperations,sharedSchemaCatalog } from '../../../tools/rebuild/build-http-contracts';
 
 const observed=vi.hoisted(()=>new Set<string>());
@@ -24,6 +24,11 @@ it('matches every real v2 runtime operation and shared body to the generated con
   expect([...observed].sort()).toEqual(Object.keys(HttpOperations).sort());expect(source).toHaveLength(194);
   expect(source.filter(row=>row.body)).toHaveLength(85);expect(source.map(row=>row.id).sort()).toEqual([...observed].sort());
   expect(source.filter(row=>row.query)).toHaveLength(47);expect(source.every(row=>row.query===null||typeof row.query==='string')).toBe(true);
+  expect(Object.keys(HttpResponses).sort()).toEqual([...observed].sort());
+  expect(source.filter(row=>row.response.kind==='json')).toHaveLength(187);
+  expect(source.filter(row=>row.response.kind==='image')).toHaveLength(6);
+  expect(source.filter(row=>row.response.kind==='download')).toHaveLength(1);
+  expect(HttpResponses['GET /api/v2/me/music'].schema).toBe(Profile);
   expect(HttpOperations['GET /api/v2/admin/bot/deliveries'].query).toBe(BotDeliveriesQuery);
   expect(HttpOperations['GET /api/v2/activities/:id/finance'].query).toBe(FinanceHistoryQuery);
   expect(HttpOperations['PUT /api/v2/me/music'].body).toBe(SaveProfile);
@@ -35,6 +40,8 @@ it('exports all named schemas with wire semantics while retaining Zod refinement
  expect(profile.additionalProperties).toBe(false);expect(profile.properties.selections.maxItems).toBe(20);expect(profile.properties.selections.uniqueItems).not.toBe(true);
  expect(SaveProfile.safeParse({profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'e',level:1},{entryId:'e',level:2}]}).success).toBe(false);
  expect(catalog.zodRuntimeValidationRequired&&catalog.serverDomainValidationRequired).toBe(true);expect(catalog.openapiComplete).toBe(false);
+ expect(catalog.successResponsesBound).toBe(true);expect(catalog.structuredDownloadSchemaBound).toBe(false);
+ expect(catalog.responseSchemas).toHaveProperty('HttpWebVersion');
 });
 it('uses the generated client with the real HTTP application through registration, session change, devices and stale-scope rejection',async()=>{
  const db=openDatabase(':memory:'),origin='https://fixture.invalid',app=createApp({db,origin,musicTrendSampling:false,pairedBackupScheduling:false,adminCredentialHash:()=>'',publicAPIKeys:()=>''});

@@ -93,3 +93,28 @@ it('preserves the caller abort signal and binary response stream',async()=>{
   const response=await http.requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:'synthetic'},signal:controller.signal});
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);expect(captured!.signal).toBe(controller.signal);
 });
+it('uses the bound response at the UI boundary while keeping the saved write and abort signal',async()=>{
+  const controller=new AbortController();let captured:RequestInit|undefined;
+  const http=createWebHttpClient({context:()=>({scope,csrf:'csrf'}),fetch:async(_url,init)=>{
+    captured=init;return new Response(JSON.stringify({nickname:'新的稱呼',revision:1}));
+  }});
+  expect(await http.requestContract('PUT /api/v2/me/profile',{...input,signal:controller.signal})).toEqual({nickname:'新的稱呼',revision:1});
+  expect(captured!.signal).toBe(controller.signal);expect(JSON.parse(String(captured!.body))).toEqual(input.body);
+  expect(new Headers(captured!.headers).get('idempotency-key')).toBe(key);
+  expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',200,'success');
+});
+it.each(['unreadable','invalid','network','rejected'])('keeps canonical response %s failures and their observation without replay',async mode=>{
+  const original=mode==='unreadable'?new SyntaxError('original unreadable response'):new Error('original network failure');let calls=0;
+  const http=createWebHttpClient({context:()=>({scope}),fetch:async()=>{
+    calls++;if(mode==='network')throw original;
+    if(mode==='unreadable')return Object.assign(new Response('{'),{json:async()=>{throw original;}});
+    if(mode==='invalid')return new Response('{"nickname":7,"revision":1}');
+    return new Response('{"code":"CONFLICT","message":"請核對原操作"}',{status:409});
+  }});
+  const error=await http.requestContract('PUT /api/v2/me/profile',input).catch(error=>error);
+  if(mode==='unreadable'||mode==='network')expect(error).toBe(original);
+  else expect(error).toBeInstanceOf(mode==='invalid'?z.ZodError:ApiError);
+  expect(calls).toBe(1);
+  expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',mode==='network'?0:mode==='rejected'?409:200,
+    mode==='network'?'network_error':mode==='rejected'?'rejected':'parse_error');
+});

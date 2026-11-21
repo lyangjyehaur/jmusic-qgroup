@@ -1,4 +1,5 @@
 import { withApiError } from './error-display';
+import { registerHttpResponseValidation } from './http-responses';
 import { runtimeInfo } from '@qgroup/runtime';
 import { clientAddress } from './client-address';
 import { registerActivityAccess } from './activity-access';
@@ -119,6 +120,7 @@ export function createApp(options: AppOptions) {
   }
   // Register routes after plugins so their onRoute hooks enforce per-route limits.
   app.register(async function routes(app) {
+    registerHttpResponseValidation(app);
     app.addHook('onRequest', async (request, reply) => {
       if (request.url.startsWith('/api/') || /^\/music\/api(?:[/?]|$)/.test(request.url) || request.url.startsWith('/auth/')) reply.header('Cache-Control', 'no-store').header('Vary', 'Cookie');
       privacy.guard();

@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { createHttpClient, HttpApiError, HttpProtocolError, HttpScopeChangedError, type HttpContext, type HttpInput, HttpOperations } from '@qgroup/contracts/http';
+import { createHttpClient, HttpApiError, HttpProtocolError, HttpScopeChangedError, type HttpContext, type HttpInput, type HttpJsonKey, type HttpResult, HttpOperations } from '@qgroup/contracts/http';
 import { ApiError, apiFailureError } from './api-errors';
 import { analyticsRequest } from './analytics';
 import { displayError } from './language';
@@ -44,6 +44,9 @@ export function createWebHttpClient(options: { fetch?: typeof fetch; context?: (
     }
   }
   return {
+    requestContract<K extends HttpJsonKey>(key: K, input: HttpInput<K>): Promise<HttpResult<K>> {
+      return run(key, client => client.requestContract(key, input));
+    },
     request<K extends Key, T>(key: K, input: HttpInput<K>, schema: z.ZodType<T>): Promise<T> {
       return run(key, client => client.request(key, input, schema));
     },

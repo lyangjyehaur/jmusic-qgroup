@@ -2,6 +2,9 @@ import { z } from 'zod';
 import { ApiFailure } from '../index';
 import { HttpOperations } from './operations.generated';
 export { HttpOperations } from './operations.generated';
+import { HttpResponses, type HttpJsonKey, type HttpResult } from './responses';
+export { HttpResponses } from './responses';
+export type { HttpJsonKey, HttpResult } from './responses';
 
 type Operation=typeof HttpOperations[keyof typeof HttpOperations];
 type ParamNames<Path extends string>=Path extends `${string}:${infer Rest}`?Rest extends `${infer Name}/${infer Tail}`?Name|ParamNames<`/${Tail}`>:Rest:never;
@@ -81,6 +84,13 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
   return result;
  }
  return {
+  async requestContract<Key extends HttpJsonKey>(key:Key,input:HttpInput<Key>):Promise<HttpResult<Key>>{
+   const binding=HttpResponses[key];
+   if(!binding||binding.kind!=='json')throw new TypeError('This HTTP operation has no structured JSON response');
+   const result=await response(key,input);let value:unknown;
+   try{value=await result.json();}catch(error){throw new HttpProtocolError(result.status,'unreadable-json',{cause:error});}
+   return binding.schema.parse(value) as HttpResult<Key>;
+  },
   async request<Key extends keyof typeof HttpOperations,T>(key:Key,input:HttpInput<Key>,schema:z.ZodType<T>):Promise<T>{
    const result=await response(key,input);let value:unknown;
    try{value=await result.json();}catch(error){throw new HttpProtocolError(result.status,'unreadable-json',{cause:error});}
