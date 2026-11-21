@@ -32,7 +32,10 @@ service.upstream.save()
       native.prepare("INSERT INTO music_shouts VALUES('native-added-shout',?,'','native author','native body',8,NULL,999)").run(nativeProfile);
       native.prepare("INSERT INTO music_documents VALUES('trend_sample',0,'{\"t\":8,\"counts\":{\"native-added-entry\":1}}')").run();
     }
-    const image=native.serialize(),recoveryInput:LegacyResetRecoveryInput={erasures:{authorityRoot:s.authority,manifestSha256:s.pin,checkpoint:Buffer.from(s.input.checkpoint.bytes),nativeImage:image,nativeImageSha256:forwardHash(image),nativeJournal:Buffer.alloc(0),nativeJournalSha256:forwardHash(Buffer.alloc(0)),resetSourceVault:{vaultRoot:s.vault,vaultManifestSha256:s.input.vault.vaultManifestSha256}},latestMusic:pin(latest),latestIdentity:pin(identity),latestBoard:pin(s.state.boardImage),reconstructedAt:'2026-11-21T00:10:00.000Z',reconciledAt:'2026-11-21T00:11:00.000Z',rebasedAt:'2026-11-21T00:12:00.000Z'};
+    // Capture the candidate time after the real original reset and fixture writes.
+    // Equal stage times are valid; fixed future dates eventually predate resets.
+    const candidateAt=new Date().toISOString();
+    const image=native.serialize(),recoveryInput:LegacyResetRecoveryInput={erasures:{authorityRoot:s.authority,manifestSha256:s.pin,checkpoint:Buffer.from(s.input.checkpoint.bytes),nativeImage:image,nativeImageSha256:forwardHash(image),nativeJournal:Buffer.alloc(0),nativeJournalSha256:forwardHash(Buffer.alloc(0)),resetSourceVault:{vaultRoot:s.vault,vaultManifestSha256:s.input.vault.vaultManifestSha256}},latestMusic:pin(latest),latestIdentity:pin(identity),latestBoard:pin(s.state.boardImage),reconstructedAt:candidateAt,reconciledAt:candidateAt,rebasedAt:candidateAt};
     return {...s,latest,originalOpaqueLatest:s.latest,native,nativeProfile,recoveryInput,close(){native!.close();s.close();}};
   }catch(error){native?.close();s.close();throw error;}
 }
