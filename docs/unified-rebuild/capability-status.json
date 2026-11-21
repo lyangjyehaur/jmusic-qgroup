@@ -4490,19 +4490,25 @@
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/durable-music-shouts.spec.ts",
         "apps/api/testsupport/pending-operations.test.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "apps/web/tests/durable-music-shouts.spec.ts",
-        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md"
+        "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts",
-        "apps/web/tests/durable-music-shouts.spec.ts"
+        "apps/web/tests/durable-music-shouts.spec.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
@@ -4512,7 +4518,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。原生發布、140 code point／Python 空白、24 小時邊界、帳號隔離草稿及同操作編號恢復已隔離實作；完整副本對帳、併發、舊入口 adapter、實際 bot 組合與 QQ WebView 待驗收。"
+      "remaining": "找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。原生發布、140 code point／Python 空白、24 小時邊界、帳號隔離草稿及同操作編號恢復已隔離實作；跨程序併發發布／同 UUID 衝突、會員及管理身份邊界已補驗（檢查點 199）；完整副本對帳、舊入口 adapter、實際 bot 組合與 QQ WebView 待驗收。"
     },
     {
       "capability_id": "C02",
@@ -4535,11 +4541,15 @@
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
-        "apps/api/src/import-snapshot.test.ts"
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
-        "apps/web/tests/music-shouts.spec.ts"
+        "apps/web/tests/music-shouts.spec.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
@@ -4570,11 +4580,15 @@
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
-        "apps/api/src/import-snapshot.test.ts"
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
-        "apps/web/tests/music-shouts.spec.ts"
+        "apps/web/tests/music-shouts.spec.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
@@ -5203,19 +5217,25 @@
         "packages/domain/src/music-shouts.test.ts",
         "apps/api/src/music-shouts.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "apps/api/testsupport/shout-permission-matrix.test.ts",
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
@@ -5225,7 +5245,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；完整備份／還原、舊入口與實際版本組合待驗收。"
+      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；跨程序刪除只提交一次、原副本及 migration map 清理、管理／救援撤權及回執隔離已補驗（檢查點 199）；完整備份／還原、舊入口與實際版本組合待驗收。"
     },
     {
       "capability_id": "A13",
