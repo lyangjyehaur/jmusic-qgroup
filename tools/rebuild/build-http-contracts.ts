@@ -70,13 +70,13 @@ const methods=new Set(['get','post','put','patch','delete']);
 export type HttpResponseSource =
  | {kind:'json';status:200;schema:string}
  | {kind:'image';status:200;mediaTypes:readonly string[]}
- | {kind:'download';status:200;mediaTypes:readonly string[];disposition:'attachment';syntax:'json'};
+ | {kind:'download';status:200;mediaTypes:readonly string[];disposition:'attachment';syntax:'json';schema:string};
 export interface HttpOperationSource {id:string;method:string;path:string;body:string|null;query:string|null;file:string;line:number;response:HttpResponseSource}
 function responseSource(id:string):HttpResponseSource{
  if(!Object.hasOwn(HttpResponses,id))throw Error('Missing fixed HTTP success response: '+id);
  const response=HttpResponses[id as keyof typeof HttpResponses];
  if(response.kind==='json')return {kind:'json',status:response.status,schema:response.schemaName};
- if(response.kind==='download')return {kind:'download',status:response.status,mediaTypes:response.mediaTypes,disposition:response.disposition,syntax:response.syntax};
+ if(response.kind==='download')return {kind:'download',status:response.status,mediaTypes:response.mediaTypes,disposition:response.disposition,syntax:response.syntax,schema:response.schemaName};
  return {kind:'image',status:response.status,mediaTypes:response.mediaTypes};
 }
 
@@ -174,12 +174,12 @@ export function sharedSchemaCatalog(){
   schemas[name]=z.toJSONSchema(value,{io:'input',target:'draft-2020-12'});
  }
  const responseSchemas:Record<string,unknown>={};
- for(const response of Object.values(HttpResponses))if(response.kind==='json'){
+ for(const response of Object.values(HttpResponses))if(response.kind==='json'||response.kind==='download'){
   // Validate the unmodified wire value; defaults/transforms stay with callers.
   if(Object.hasOwn(responseSchemas,response.schemaName))continue;
   responseSchemas[response.schemaName]=z.toJSONSchema(response.schema,{io:'input',target:'draft-2020-12'});
  }
- return {version:1,io:'input',schemas,responseSchemas,zodRuntimeValidationRequired:true,serverDomainValidationRequired:true,successResponsesBound:true,structuredDownloadSchemaBound:false,openapiComplete:false};
+ return {version:1,io:'input',schemas,responseSchemas,zodRuntimeValidationRequired:true,serverDomainValidationRequired:true,successResponsesBound:true,structuredDownloadSchemaBound:true,openapiComplete:false};
 }
 export function checkHttpOperations(root:string){
  const rows=readHttpOperationSources(root),generated=join(root,'packages/contracts/src/http/operations.generated.ts');
@@ -200,7 +200,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    const path=join(defaultRoot,'packages/contracts/src/http/operations.generated.ts');mkdirSync(join(defaultRoot,'packages/contracts/src/http'),{recursive:true});
    writeFileSync(path,httpOperationsSource(readHttpOperationSources(defaultRoot)));
   }else if(args.length===1&&args[0]==='--check'){
-   const rows=checkHttpOperations(defaultRoot);process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,querySchemasBound:true,successResponsesBound:true,structuredDownloadSchemaBound:false,openapiComplete:false})+'\n');
+   const rows=checkHttpOperations(defaultRoot);process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,querySchemasBound:true,successResponsesBound:true,structuredDownloadSchemaBound:true,openapiComplete:false})+'\n');
   }else if(args.length===2&&args[0]==='--output'&&isAbsolute(args[1]!)&&!existsSync(args[1]!)){
    const rows=checkHttpOperations(defaultRoot),catalog=sharedSchemaCatalog(),hash=(path:string)=>createHash('sha256').update(readFileSync(join(defaultRoot,path))).digest('hex');
    mkdirSync(args[1]!,{mode:0o700});writeFileSync(join(args[1]!,'schemas.json'),JSON.stringify(catalog)+'\n',{flag:'wx'});
@@ -208,7 +208,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    const inputPaths=[...apiFiles,...sharedContractFiles(defaultRoot),'package.json','package-lock.json','packages/contracts/package.json','packages/domain/src/legacy-timezones.json','tools/rebuild/build-http-contracts.ts'];
    const inputs=[...new Set(inputPaths)].sort(order).map(path=>({path,sha256:hash(path)}));
    writeFileSync(join(args[1]!,'request-operations.json'),JSON.stringify({version:1,operations:rows,inputs,
-    requestBodiesBound:true,querySchemasBound:true,queryBindingMethod:'source-local-call-graph',queryWireValues:'strings',queryZodValidationRequired:true,permissionBindingsComplete:false,responseSchemasBound:true,successTransportBound:true,structuredDownloadSchemaBound:false,openapiComplete:false,releaseEligible:false})+'\n',{flag:'wx'});
+    requestBodiesBound:true,querySchemasBound:true,queryBindingMethod:'source-local-call-graph',queryWireValues:'strings',queryZodValidationRequired:true,permissionBindingsComplete:false,responseSchemasBound:true,successTransportBound:true,structuredDownloadSchemaBound:true,openapiComplete:false,releaseEligible:false})+'\n',{flag:'wx'});
    process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,schemas:Object.keys(catalog.schemas).length,querySchemasBound:true,openapiComplete:false,releaseEligible:false})+'\n');
   }else throw Error('Invalid arguments');
  }catch{process.stderr.write('HTTP contract generation failed; no services started or updated.\n');process.exitCode=1;}

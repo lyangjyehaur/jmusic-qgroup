@@ -50,12 +50,16 @@ it('preserves image bytes and media type while rejecting an empty or mislabeled 
   expect((await wire('/api/v2/me/payment-codes/:codeId/image', Buffer.alloc(0), 'image/png')).statusCode).toBe(500);
 });
 it('keeps a JSON attachment byte-for-byte and checks its syntax and attachment disposition', async () => {
-  const raw = '{\n  "legacy": {"arbitrary": "original user extension"}\n}\n';
+  const raw = '{\n  "entries": {}, "members": {}, "settings": {}, "shouts": [], "shoutHistory": [], "trend": [],\n  "legacy": {"arbitrary": "original user extension"}\n}\n';
   const response = await wire('/api/v2/admin/music-export', raw, 'application/json', 200, 'attachment; filename="fixture.json"');
   expect(response.statusCode).toBe(200);expect(response.body).toBe(raw);
   expect(response.headers['content-disposition']).toBe('attachment; filename="fixture.json"');
   expect((await wire('/api/v2/admin/music-export', raw, 'application/json')).statusCode).toBe(500);
   expect((await wire('/api/v2/admin/music-export', '<html>', 'application/json', 200, 'attachment')).statusCode).toBe(500);
+  for (const bad of ['{}', raw.replace('"settings": {}', '"settings": {"adminPasswordHash": "synthetic"}'), raw.replace('"trend": []', '"trend": [{"t":0,"counts":{"entry":"bad"}}]')]) {
+    const rejected = await wire('/api/v2/admin/music-export', bad, 'application/json', 200, 'attachment');
+    expect(rejected.statusCode).toBe(500);expect(rejected.json()).toEqual({ code: 'INTERNAL_ERROR' });
+  }
 });
 it('retains completed business records and the original receipt when its stored response is invalid', async () => {
   const db = openDatabase(':memory:');fixture(db);

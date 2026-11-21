@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import * as contracts from '../index';
+import { HttpMusicExport } from './music-export';
 import type { HttpOperations } from './operations.generated';
 
 export const HttpSavedProfile = contracts.Profile.unwrap();
@@ -15,7 +16,7 @@ export const HttpWebVersion = z.discriminatedUnion('source', [
 export type HttpSuccessResponse =
   | { readonly kind: 'json'; readonly status: 200; readonly schemaName: string; readonly schema: z.ZodType }
   | { readonly kind: 'image'; readonly status: 200; readonly mediaTypes: readonly string[] }
-  | { readonly kind: 'download'; readonly status: 200; readonly mediaTypes: readonly string[]; readonly disposition: 'attachment'; readonly syntax: 'json' };
+  | { readonly kind: 'download'; readonly status: 200; readonly mediaTypes: readonly string[]; readonly disposition: 'attachment'; readonly syntax: 'json'; readonly schemaName: string; readonly schema: z.ZodType };
 const json = <S extends z.ZodType>(schemaName: string, schema: S) => Object.freeze({ kind: 'json' as const, status: 200 as const, schemaName, schema });
 const image = (mediaTypes: readonly string[]) => Object.freeze({ kind: 'image' as const, status: 200 as const, mediaTypes: Object.freeze(mediaTypes) });
 
@@ -70,7 +71,7 @@ export const HttpResponses = Object.freeze({
   "GET /api/v2/admin/bot/deliveries": json("BotDeliveries", contracts.BotDeliveries),
   "GET /api/v2/admin/bot/deliveries/:deliveryId": json("BotDeliveryReview", contracts.BotDeliveryReview),
   "GET /api/v2/admin/music-entries": json("AdminMusicCatalog", contracts.AdminMusicCatalog),
-  "GET /api/v2/admin/music-export": Object.freeze({ kind: 'download' as const, status: 200 as const, mediaTypes: Object.freeze(['application/json']), disposition: 'attachment' as const, syntax: 'json' as const }),
+  "GET /api/v2/admin/music-export": Object.freeze({ kind: 'download' as const, status: 200 as const, mediaTypes: Object.freeze(['application/json']), disposition: 'attachment' as const, syntax: 'json' as const, schemaName: 'HttpMusicExport', schema: HttpMusicExport }),
   "GET /api/v2/admin/music-reset": json("AdminMusicErasurePreview", contracts.AdminMusicErasurePreview),
   "GET /api/v2/admin/music/:id": json("AdminMusicProfile", contracts.AdminMusicProfile),
   "GET /api/v2/admin/music/:id/erase": json("AdminMusicErasurePreview", contracts.AdminMusicErasurePreview),

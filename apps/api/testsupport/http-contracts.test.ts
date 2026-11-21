@@ -40,7 +40,11 @@ it('exports all named schemas with wire semantics while retaining Zod refinement
  expect(profile.additionalProperties).toBe(false);expect(profile.properties.selections.maxItems).toBe(20);expect(profile.properties.selections.uniqueItems).not.toBe(true);
  expect(SaveProfile.safeParse({profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'e',level:1},{entryId:'e',level:2}]}).success).toBe(false);
  expect(catalog.zodRuntimeValidationRequired&&catalog.serverDomainValidationRequired).toBe(true);expect(catalog.openapiComplete).toBe(false);
- expect(catalog.successResponsesBound).toBe(true);expect(catalog.structuredDownloadSchemaBound).toBe(false);
+ expect(catalog.successResponsesBound).toBe(true);expect(catalog.structuredDownloadSchemaBound).toBe(true);
+ expect(catalog.responseSchemas).toHaveProperty('HttpMusicExport');
+ expect(Object.keys(catalog.responseSchemas)).toHaveLength(127);
+ const download=checkHttpOperations(root).find(row=>row.id==='GET /api/v2/admin/music-export');
+ expect(download?.response).toMatchObject({kind:'download',schema:'HttpMusicExport'});
  expect(catalog.responseSchemas).toHaveProperty('HttpWebVersion');
 });
 it('uses the generated client with the real HTTP application through registration, session change, devices and stale-scope rejection',async()=>{

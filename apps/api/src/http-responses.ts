@@ -22,7 +22,7 @@ export function registerHttpResponseValidation(app: FastifyInstance) {
         if (!contract.mediaTypes.includes(media)) throw new HttpResponseContractError();
         if (contract.kind === 'download') {
           if (!/^attachment(?:;|$)/i.test(String(reply.getHeader('content-disposition') ?? '')) || typeof payload !== 'string') throw new HttpResponseContractError();
-          JSON.parse(payload);
+          contract.schema.parse(JSON.parse(payload));
         } else if (!(payload instanceof Uint8Array) || payload.byteLength === 0) throw new HttpResponseContractError();
       }
     } catch {
