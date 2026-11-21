@@ -48,3 +48,14 @@ test('receipt lookup failure preserves the original operation across reload',asy
   await page.route('**/api/v2/bot-delivery-results/*',async route=>{if(limited){limited=false;await route.fulfill({status:429,contentType:'application/json',body:JSON.stringify({code:'RATE_LIMIT',message:'請稍後再查回結果'})});}else await route.continue();});
   await page.goto('/activities/listen/bot-deliveries?delivery=1');await confirm(page);await page.getByRole('button',{name:'查回原重送結果',exact:true}).click();await expect(page.getByText('請稍後再查回結果',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'建立重送工作',exact:true})).toHaveCount(0);await page.reload();await page.getByRole('button',{name:'查回原重送結果',exact:true}).click();await expect(page.getByText(/已建立待送工作 #7/)).toBeVisible();expect(writes).toBe(1);
 });
+
+test('an invalid bookmarked filter uses the recovery controls without issuing an invalid API query',async({page,context})=>{
+  await login(context);const queries:string[]=[];
+  page.on('request',request=>{if(request.url().includes('/api/v2/activities/listen/bot-deliveries'))queries.push(request.url());});
+  await page.goto('/activities/listen/bot-deliveries?status=simulated&before=9223372036854775808');
+  await expect(page.getByText('篩選條件無效，請重新選擇通知條件。',{exact:true})).toBeVisible();expect(queries).toEqual([]);
+  await page.getByRole('combobox',{name:'投遞狀態',exact:true}).selectOption('failed');
+  await expect(page.getByRole('button',{name:'核對通知 #1',exact:true})).toBeVisible();
+  expect(queries).toHaveLength(1);expect(new URL(queries[0]!).searchParams.toString()).toBe('status=failed');
+  await expect(page.getByText('篩選條件無效，請重新選擇通知條件。',{exact:true})).toHaveCount(0);
+});

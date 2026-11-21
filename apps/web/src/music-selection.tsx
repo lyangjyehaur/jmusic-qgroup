@@ -5,7 +5,8 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface } from 'yahha-ui';
 import { z } from 'zod';
 import { MusicCatalog, Profile, SaveProfile, Selection, Session, type MusicProfile } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { createWebHttpClient } from './http';
 import { Failure, Notice, useSession } from './shared';
 import { musicPeopleReturn, musicTrendReturn } from './music-return';
 import { announceAccountChange } from './account-session';
@@ -17,6 +18,7 @@ const isWorkspace = (pathname: string) => pathname === '/music' || pathname === 
 const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
 type DraftValue = z.infer<typeof Draft>;
 function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initial: MusicProfile; entries: CatalogEntry[] }) {
+  const http=createWebHttpClient({context:()=>({scope:viewer.scope,csrf:viewer.csrf})});
   const storageKey = 'qgroup:rebuild:music:v1:' + viewer.scope;
   const [saved,setSaved]=useState(initial),[message,setMessage]=useState('');
   const fallback=(profile:MusicProfile):DraftValue=>({profileId:profile?.id??null,musicEpoch:viewer.musicEpoch,revision:profile?.revision??0,selections:profile?.selections??[]});
@@ -56,9 +58,9 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
     const pending={...draft,requestKey:draft.requestKey??crypto.randomUUID()};
     if(!begin())return;if(!await persist(pending)||!mounted.current){if(mounted.current)setSending(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
-      const result=await api('/me/music',Profile.unwrap(),{method:'PUT',headers:{'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'X-Account-Scope':viewer.scope,'Idempotency-Key':pending.requestKey},body:JSON.stringify(parsed.data)});accepted=true;
+      const result=await http.request('PUT /api/v2/me/music',{body:parsed.data,requestId:pending.requestKey,requestScope:viewer.scope},Profile.unwrap());accepted=true;
       await queryClient.cancelQueries({queryKey:['private',viewer.scope,'music',draft.musicEpoch]});
-      const latest=await api('/me/music',Profile.unwrap(),{headers:{'X-Account-Scope':viewer.scope}});
+      const latest=await http.request('GET /api/v2/me/music',{},Profile.unwrap());
       if(!mounted.current)return;const next=fallback(latest);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setSaved(latest);setDraft(next);queryClient.setQueryData(['private',viewer.scope,'music',draft.musicEpoch],latest);
       for(const key of ['music-catalog','music-trend'])void queryClient.invalidateQueries({queryKey:[key]});
@@ -73,7 +75,7 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   async function rebase(){
     if(locked||!begin())return;
     try{
-      const latest=await api('/me/music',Profile,{headers:{'X-Account-Scope':viewer.scope}}),session=await api('/session',Session);
+      const latest=await http.request('GET /api/v2/me/music',{},Profile),session=await http.request('GET /api/v2/session',{},Session);
       if(!mounted.current)return;if(!session.authenticated||session.scope!==viewer.scope)throw Error('目前帳號已變更，請重新整理');
       if(session.musicEpoch!==draft.musicEpoch||draft.profileId!==null&&(latest?.id??null)!==draft.profileId)throw Error('目前成分已改變，請保全原稿後重新開啟目前成分。');
       const next={...draft,profileId:latest?.id??null,revision:latest?.revision??0};if(!await persist(next))return;
@@ -91,9 +93,10 @@ const Context = createContext<Workspace>({ state: 'pending' });
 export const useMusicWorkspace = () => useContext(Context);
 export function MusicWorkspace() {
   const session = useSession(), viewer = session.data?.authenticated ? session.data : null;
+  const http=createWebHttpClient({context:()=>({scope:viewer?.scope})});
   const profile = useQuery({ queryKey: ['private', viewer?.scope, 'music', viewer?.musicEpoch],
-    queryFn: () => api('/me/music', Profile, { headers: { 'X-Account-Scope': viewer!.scope } }), enabled: !!viewer, refetchOnMount: 'always' });
-  const catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => api('/music/catalog', MusicCatalog) });
+    queryFn: () => http.request('GET /api/v2/me/music', {}, Profile), enabled: !!viewer, refetchOnMount: 'always' });
+  const catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => http.request('GET /api/v2/music/catalog', {}, MusicCatalog) });
   // A failed public background refresh must not unmount the draft/save controller.
   // Child pages show its read error and retry; private/session failures still gate access.
   const error = session.error ?? profile.error ?? (catalog.data ? null : catalog.error);

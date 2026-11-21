@@ -79,7 +79,7 @@ test('a held final batch cannot become a waiting version and leaves the complete
     await expect.poll(()=>gate.reached).toBe(true);
     expect(await page.evaluate(async()=>{const reg=await navigator.serviceWorker.getRegistration('/');return {installing:reg?.installing?.state,waiting:reg?.waiting?.state??null};})).toEqual({installing:'installing',waiting:null});
     expect(await version(page)).toBe(build);expect(await snapshot(page,build)).toEqual(original);
-    expect((await snapshot(page,next)).rows.filter(row=>'missing' in row).map(row=>row.path)).toEqual(['/icon-512.png']);
+    await expect.poll(()=>h.state.requests.length).toBe(paths.length);expect((await snapshot(page,next)).rows.filter(row=>'missing' in row).map(row=>row.path)).toEqual(h.state.requests.slice(Math.floor((paths.length-1)/4)*4).sort()); // Verify the actual final download batch, including its other resources.
     gate.release();await expect.poll(()=>page.evaluate(async()=>{const reg=await navigator.serviceWorker.getRegistration('/');return reg?.waiting?.state??'';})).toBe('installed');
     expect(await snapshot(page,next)).toEqual({keys:paths,rows:originals});expect(await version(page)).toBe(build);expect(h.state.peak).toBeLessThanOrEqual(4);
   }finally{await page.goto('about:blank');await h.close();}

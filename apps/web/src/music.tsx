@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface } from 'yahha-ui';
 import { MusicCatalog } from '@qgroup/contracts';
-import { api } from './api';
+import { createWebHttpClient } from './http';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicRanking } from './music-ranking';
 import { MusicSearch, useMusicSearch } from './music-search';
@@ -10,7 +10,8 @@ import { useMusicWorkspace } from './music-selection';
 import { SelectionPanel } from './music-editor';
 import { MusicEntryDetails } from './music-entry';
 export function Music() {
-  const query = useQuery({ queryKey: ['music-catalog'], queryFn: ({ signal }) => api('/music/catalog', MusicCatalog, { signal }), refetchInterval: 10000 });
+  const http=createWebHttpClient();
+  const query = useQuery({ queryKey: ['music-catalog'], queryFn: ({ signal }) => http.request('GET /api/v2/music/catalog', { signal }, MusicCatalog), refetchInterval: 10000 });
   const filters = useMusicSearch(query.data?.entries ?? []);
   const { params, search, category, kind, update } = filters;
   const entries = filters.filtered;
