@@ -168,7 +168,13 @@ try {
     assert.equal(spec.HostConfig.PidsLimit, 128); assert.deepEqual(spec.HostConfig.CapDrop, ['ALL']);
     assert(spec.HostConfig.SecurityOpt.includes('no-new-privileges:true'));
     assert.equal(spec.Mounts.find(m => m.Destination === '/var/lib/qgroup')?.Name, volume);
-    assert(!spec.Mounts.some(m => m.Type === 'bind'));
+    const binds = spec.Mounts.filter(m => m.Type === 'bind');
+    assert.equal(binds.length, i === 0 ? 1 : 0);
+    if (i === 0) {
+      assert.equal(binds[0].Source, nativeFixturePath);
+      assert.equal(binds[0].Destination, '/app/tools/rebuild/native-outbox-fixture.mjs');
+      assert.equal(binds[0].RW, false);
+    }
   }
   assert.equal(running[0].Mounts.find(m => m.Destination === '/var/lib/qgroup-checkpoint')?.RW, false);
   assert.equal(running[1].Mounts.filter(m => m.Type === 'volume').length, 1);

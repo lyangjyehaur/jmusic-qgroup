@@ -88,6 +88,13 @@ jobs:
           image_id="$(cat artifacts/ci/image.id)"
           docker image inspect "$image_id" > artifacts/ci/image-inspect.json
           node tools/rebuild/verify-image.mjs --image "$image_id" --commit "$GITHUB_SHA" > artifacts/ci/image-verification.json
+      - name: Cross-check candidate manifest against original image versions and resolved Compose
+        run: |
+          image_context="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/context"
+          manifest_output="$RUNNER_TEMP/qgroup-runtime-manifest-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          npx tsx tools/rebuild/prepare-runtime-manifest-evidence.ts --source "$image_context" --image-report "$GITHUB_WORKSPACE/artifacts/ci/image-verification.json" --image-inspect "$GITHUB_WORKSPACE/artifacts/ci/image-inspect.json" --output "$manifest_output" > artifacts/ci/runtime-manifest-receipt.json
+          cp "$manifest_output/runtime-evidence.json" artifacts/ci/runtime-evidence.json
+          cp "$manifest_output/runtime-verification.json" artifacts/ci/runtime-verification.json
       - name: Verify built bot through container-local synthetic platform
         run: |
           image_context="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/context"

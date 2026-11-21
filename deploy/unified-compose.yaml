@@ -70,6 +70,7 @@ services:
     environment:
       NODE_ENV: production
       KANBAN_DB: /var/lib/qgroup/kanban.sqlite3
+      KANBAN_BOT_BASE_URL: ${QGROUP_ORIGIN:?Set the approved public origin}
       KANBAN_BOT_LOG_DIR: /var/lib/qgroup/bot-logs
     command: [node, .rebuild-dist/bot/start.mjs]
     healthcheck:

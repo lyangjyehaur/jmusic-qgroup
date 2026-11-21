@@ -2,10 +2,18 @@ import { execFileSync } from 'node:child_process';
 import { isAbsolute,resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 const bytes=(v:unknown)=>typeof v==='number'&&Number.isSafeInteger(v)?v:typeof v==='string'&&/^[1-9][0-9]*$/.test(v)&&Number.isSafeInteger(Number(v))?Number(v):NaN;
+export function canonicalRuntimeOrigin(value:unknown):string{
+ if(typeof value!=='string')throw Error('An explicit canonical origin is required');
+ try{
+  const url=new URL(value);
+  if(url.origin!==value||url.username||url.password||!['https:','http:'].includes(url.protocol)||url.protocol==='http:'&&!['localhost','127.0.0.1','[::1]'].includes(url.hostname))throw Error();
+  return value;
+ }catch{throw Error('A canonical HTTPS or isolated loopback HTTP origin is required');}
+}
 export function checkRuntimeCompose(input:unknown){
  const obj=(value:unknown)=>{if(!value||typeof value!=='object'||Array.isArray(value))throw Error('Invalid Compose object');return value as Record<string,unknown>;},services=obj(obj(input).services),images:Record<string,string>={};
  if(Object.keys(services).sort().join(',')!=='bot,web')throw Error('Only the intended web and bot services are allowed');
- let data:string|undefined;
+ let data:string|undefined,origin:string|undefined;
  for(const name of ['web','bot']){
   const s=obj(services[name]),image=s.image;
   if(typeof image!=='string'||!(/^(?:sha256:[a-f0-9]{64}|[a-z0-9][a-z0-9.:/_-]*@sha256:[a-f0-9]{64})$/.test(image)))throw Error('An immutable image ID or digest is required');images[name]=image;
@@ -28,13 +36,15 @@ export function checkRuntimeCompose(input:unknown){
   const dataSource=mount.source as string;
   if(data&&dataSource!==data)throw Error('Web and bot must use the same approved data directory');data=dataSource;
   const env=obj(s.environment);if(env.NODE_ENV!=='production'||env[name==='web'?'REBUILD_DB':'KANBAN_DB']!=='/var/lib/qgroup/kanban.sqlite3')throw Error('Production mode and web/bot database paths must agree');
+  const serviceOrigin=canonicalRuntimeOrigin(env[name==='web'?'REBUILD_ORIGIN':'KANBAN_BOT_BASE_URL']);
+  if(origin&&origin!==serviceOrigin)throw Error('Web and bot origins must agree');origin=serviceOrigin;
   if(name==='web'){
    const sources=mounts.map(mount=>mount.source as string);
    for(const [i,source] of sources.entries())for(const other of sources.slice(i+1))if(source===other||source.startsWith(other+'/')||other.startsWith(source+'/'))throw Error('Data, retained authority and checkpoint sources must be separate');
    if(env.REBUILD_ERASURE_AUTHORITY_ROOT!=='/var/lib/qgroup-erasure'||env.REBUILD_ERASURE_AUTHORITY_CHECKPOINT!=='/var/lib/qgroup-checkpoint/unified.sqlite3'||typeof env.REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256!=='string'||!/^[a-f0-9]{64}$/.test(env.REBUILD_ERASURE_AUTHORITY_MANIFEST_SHA256))throw Error('Explicit retained authority and checkpoint configuration required');
   }
  }
- return {images,resources:'bounded',rootfs:'read-only',sourceVersions:'check independently',deploymentPerformed:false};
+ return {images,origin:origin!,resources:'bounded',rootfs:'read-only',sourceVersions:'check independently',deploymentPerformed:false};
 }
 if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
  try{
