@@ -7,6 +7,7 @@ import { z } from 'zod';
 import * as contracts from '@qgroup/contracts';
 import { HttpResponses } from '@qgroup/contracts/http';
 import { assertHttpOpenAPI,httpOpenAPI } from './http-openapi';
+import { readHttpAccessBindings,type HttpAccessSource } from './http-access';
 
 type SyntaxNode={type:string;[key:string]:unknown};
 const node=(value:unknown):SyntaxNode|undefined=>value!==null&&typeof value==='object'&&'type' in value&&typeof value.type==='string'?value as SyntaxNode:undefined;
@@ -72,7 +73,7 @@ export type HttpResponseSource =
  | {kind:'json';status:200;schema:string}
  | {kind:'image';status:200;mediaTypes:readonly string[]}
  | {kind:'download';status:200;mediaTypes:readonly string[];disposition:'attachment';syntax:'json';schema:string};
-export interface HttpOperationSource {id:string;method:string;path:string;body:string|null;query:string|null;file:string;line:number;response:HttpResponseSource}
+export interface HttpOperationSource {id:string;method:string;path:string;body:string|null;query:string|null;file:string;line:number;response:HttpResponseSource;access?:HttpAccessSource}
 function responseSource(id:string):HttpResponseSource{
  if(!Object.hasOwn(HttpResponses,id))throw Error('Missing fixed HTTP success response: '+id);
  const response=HttpResponses[id as keyof typeof HttpResponses];
@@ -186,7 +187,8 @@ export function checkHttpOperations(root:string){
  const rows=readHttpOperationSources(root),generated=join(root,'packages/contracts/src/http/operations.generated.ts');
  if(Object.keys(HttpResponses).sort(order).join('\n')!==rows.map(row=>row.id).join('\n'))throw Error('Success response bindings differ from HTTP routes');
  if(readFileSync(generated,'utf8')!==httpOperationsSource(rows))throw Error('Generated HTTP request contracts are stale');
- return rows;
+ const access=readHttpAccessBindings(root,rows);
+ return rows.map(row=>access.has(row.id)?{...row,access:access.get(row.id)!}:row);
 }
 function sharedContractFiles(root:string,directory='packages/contracts/src'):string[]{
  return readdirSync(join(root,directory),{withFileTypes:true}).flatMap(entry=>{
@@ -201,17 +203,17 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    const path=join(defaultRoot,'packages/contracts/src/http/operations.generated.ts');mkdirSync(join(defaultRoot,'packages/contracts/src/http'),{recursive:true});
    writeFileSync(path,httpOperationsSource(readHttpOperationSources(defaultRoot)));
   }else if(args.length===1&&args[0]==='--check'){
-   const rows=checkHttpOperations(defaultRoot);await assertHttpOpenAPI(httpOpenAPI(rows,sharedSchemaCatalog()));process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,querySchemasBound:true,successResponsesBound:true,structuredDownloadSchemaBound:true,openapiGenerated:true,openapiComplete:false})+'\n');
+   const rows=checkHttpOperations(defaultRoot);await assertHttpOpenAPI(httpOpenAPI(rows,sharedSchemaCatalog()));process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,querySchemasBound:true,successResponsesBound:true,structuredDownloadSchemaBound:true,boundaryReviewedOperations:rows.filter(row=>row.access).length,permissionBindingsComplete:false,openapiGenerated:true,openapiComplete:false})+'\n');
   }else if(args.length===2&&args[0]==='--output'&&isAbsolute(args[1]!)&&!existsSync(args[1]!)){
    const rows=checkHttpOperations(defaultRoot),catalog=sharedSchemaCatalog(),document=httpOpenAPI(rows,catalog),hash=(path:string)=>createHash('sha256').update(readFileSync(join(defaultRoot,path))).digest('hex');
    await assertHttpOpenAPI(document);
    mkdirSync(args[1]!,{mode:0o700});writeFileSync(join(args[1]!,'schemas.json'),JSON.stringify(catalog)+'\n',{flag:'wx'});
    writeFileSync(join(args[1]!,'openapi.json'),JSON.stringify(document)+'\n',{flag:'wx'});
    const apiFiles=readdirSync(join(defaultRoot,'apps/api/src')).filter(file=>file.endsWith('.ts')&&!file.endsWith('.test.ts')).map(file=>'apps/api/src/'+file);
-   const inputPaths=[...apiFiles,...sharedContractFiles(defaultRoot),'package.json','package-lock.json','packages/contracts/package.json','packages/domain/src/legacy-timezones.json','tools/rebuild/build-http-contracts.ts','tools/rebuild/http-openapi.ts','tools/rebuild/schemas/openapi-3.1.json'];
+   const inputPaths=[...apiFiles,...sharedContractFiles(defaultRoot),'package.json','package-lock.json','packages/contracts/package.json','packages/domain/src/legacy-timezones.json','tools/rebuild/build-http-contracts.ts','tools/rebuild/http-openapi.ts','tools/rebuild/http-access.ts','tools/rebuild/schemas/http-access-review.json','tools/rebuild/schemas/openapi-3.1.json'];
    const inputs=[...new Set(inputPaths)].sort(order).map(path=>({path,sha256:hash(path)}));
    writeFileSync(join(args[1]!,'request-operations.json'),JSON.stringify({version:1,operations:rows,inputs,
-    requestBodiesBound:true,querySchemasBound:true,queryBindingMethod:'source-local-call-graph',queryWireValues:'strings',queryZodValidationRequired:true,permissionBindingsComplete:false,responseSchemasBound:true,successTransportBound:true,structuredDownloadSchemaBound:true,openapiGenerated:true,openapiComplete:false,releaseEligible:false})+'\n',{flag:'wx'});
+    requestBodiesBound:true,querySchemasBound:true,queryBindingMethod:'source-local-call-graph',queryWireValues:'strings',queryZodValidationRequired:true,boundaryReviewedOperations:rows.filter(row=>row.access).length,permissionBindingsComplete:false,responseSchemasBound:true,successTransportBound:true,structuredDownloadSchemaBound:true,openapiGenerated:true,openapiComplete:false,releaseEligible:false})+'\n',{flag:'wx'});
    process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,schemas:Object.keys(catalog.schemas).length,querySchemasBound:true,openapiComplete:false,releaseEligible:false})+'\n');
   }else throw Error('Invalid arguments');
  }catch{process.stderr.write('HTTP contract generation failed; no services started or updated.\n');process.exitCode=1;}

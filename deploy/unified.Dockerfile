@@ -8,6 +8,8 @@ COPY apps/ ./apps/
 COPY packages/ ./packages/
 COPY tools/rebuild/build-api.mjs ./tools/rebuild/build-api.mjs
 COPY tools/rebuild/build-http-contracts.ts ./tools/rebuild/build-http-contracts.ts
+COPY tools/rebuild/http-openapi.ts tools/rebuild/http-access.ts ./tools/rebuild/
+COPY tools/rebuild/schemas/openapi-3.1.json tools/rebuild/schemas/http-access-review.json ./tools/rebuild/schemas/
 COPY tools/rebuild/build-analytics-manifest.ts ./tools/rebuild/build-analytics-manifest.ts
 COPY tools/rebuild/build-error-displays.ts ./tools/rebuild/build-error-displays.ts
 # Use the headers shipped with this exact Node base for native module builds.

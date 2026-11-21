@@ -27,6 +27,7 @@ jobs:
           npx tsx tools/rebuild/build-http-contracts.ts --output "$reference_output" > artifacts/ci/http-contracts-receipt.json
           cp "$reference_output/schemas.json" artifacts/ci/http-schemas.json
           cp "$reference_output/request-operations.json" artifacts/ci/http-request-operations.json
+          cp "$reference_output/openapi.json" artifacts/ci/http-openapi.json
       - run: npm run test:rebuild -- --maxWorkers=1 --testTimeout=30000 --reporter=default --reporter=json --outputFile=artifacts/ci/unit.json
       - uses: actions/upload-artifact@v4
         if: always()

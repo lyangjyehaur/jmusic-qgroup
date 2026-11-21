@@ -52,7 +52,7 @@ it('keeps path validation, authorization and release acceptance explicitly incom
   expect(spec['x-qgroup-path-validation-bound']).toBe(false);expect(spec['x-qgroup-release-eligible']).toBe(false);
   const operations = Object.values(spec.paths).flatMap(item => Object.values(item)).map(object);
   expect(operations.every(item => item['x-qgroup-permission-binding-complete'] === false && item['x-qgroup-server-domain-validation-required'] === true && item['x-qgroup-zod-validation-required'] === true)).toBe(true);
-  expect(operations.every(item => !Object.hasOwn(item, 'security'))).toBe(true);
+  expect(operations.filter(item => !Object.hasOwn(item, 'x-qgroup-access')).every(item => !Object.hasOwn(item, 'security'))).toBe(true);
 });
 it.each(['dangling reference', 'missing response description', 'missing request content'])('rejects a malformed generated document: %s', async mode => {
   const spec = document(), save = object(spec.paths['/api/v2/me/music']!.put);

@@ -1,0 +1,465 @@
+{
+  "version": 1,
+  "method": "manual-boundary-review-with-exact-source-pins",
+  "permissionBindingsComplete": false,
+  "sourcePins": {
+    "apps/api/src/activity-roster.ts": "769147e2eba0810a8d3b5c66641e312326e33f757953b9b7857216d9e9be8657",
+    "apps/api/src/admin-operations.ts": "19f6f68c1a17acc6020f37f0f4ef22d0d20cac58e22fa4d20f628cfafeae6b6a",
+    "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
+    "apps/api/src/admin-users.ts": "b259500d33e766d1482e78c28e30829a76d6f51fe221d190ee09cfebc50482d3",
+    "apps/api/src/app.ts": "6f972a8cdba081ed0fe9fec13a9232bf48a4682ef0697d828fcf8ac0ceff68ec",
+    "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
+    "apps/api/src/privacy.ts": "96757aa6e1dac2c04d4e64bf7c3c94c5603f49edd167253fae7bb5fc8f853043",
+    "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
+    "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
+    "apps/api/src/time-polls.ts": "d628563b98789015aa2e9b444f513c7fe7148b10ba33c56a9d587f90b053b5cc"
+  },
+  "operations": [
+    {
+      "id": "GET /api/v2/activities",
+      "file": "apps/api/src/app.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id",
+      "file": "apps/api/src/app.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "Without x-account-scope use the anonymous public view, even when a session cookie exists.",
+        "With scope validate the current device; visitors retain the anonymous view.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/attendees/:attendeeId/music",
+      "file": "apps/api/src/activity-roster.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity access is required; matching a name, contact QQ or manager identity does not grant music ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/roster",
+      "file": "apps/api/src/activity-roster.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "Without x-account-scope use the anonymous public view, even when a session cookie exists.",
+        "With scope validate the current device; visitors retain the anonymous view.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/operations/:key",
+      "file": "apps/api/src/admin-operations.ts",
+      "mode": "administrator-read",
+      "conditions": [
+        "x-admin-scope must equal current authority scope; derive receipt authority on the server."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": [
+        "x-admin-scope"
+      ]
+    },
+    {
+      "id": "GET /api/v2/admin/registration",
+      "file": "apps/api/src/registration-settings.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/session",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/users",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/users/:id",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/users/:id/role-history",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/auth/qq/status",
+      "file": "apps/api/src/auth.ts",
+      "mode": "scoped-device",
+      "conditions": [
+        "QQ provider must be configured; attempts belong to the current device and provider."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/health",
+      "file": "apps/api/src/app.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/accounts",
+      "file": "apps/api/src/auth.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Only the current account and this device’s previously authorized active accounts are returned."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/activities",
+      "file": "apps/api/src/app.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/music",
+      "file": "apps/api/src/app.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/privacy",
+      "file": "apps/api/src/privacy.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/entries",
+      "file": "apps/api/src/app.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/session",
+      "file": "apps/api/src/auth.ts",
+      "mode": "bootstrap",
+      "conditions": [
+        "Reuse a valid member or visitor session; otherwise issue a visitor session."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/time-polls",
+      "file": "apps/api/src/time-polls.ts",
+      "mode": "scoped-device",
+      "conditions": [
+        "A visitor device is permitted; an absent or stale scope is rejected."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/time-polls/:id",
+      "file": "apps/api/src/time-polls.ts",
+      "mode": "scoped-device",
+      "conditions": [
+        "A visitor device is permitted; an absent or stale scope is rejected."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/time-polls/:id/manage",
+      "file": "apps/api/src/time-polls.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "The current member must own the poll."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/version",
+      "file": "apps/api/src/app.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/login",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-login",
+      "conditions": [
+        "A scoped member or visitor device can submit the configured rescue credential; existing administrator authority is not required."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/logout",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-write",
+      "conditions": [
+        "Account administrator logout also revokes the account session; rescue logout preserves the device account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/registration",
+      "file": "apps/api/src/registration-settings.ts",
+      "mode": "administrator-write",
+      "conditions": [
+        "Revalidate settings revision; preserve the pre-write backup on change."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/users/:id/metadata",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-write",
+      "conditions": [
+        "Revalidate metadata revision and QQ uniqueness; scope operation receipts to current administrator authority."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/users/:id/role",
+      "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-write",
+      "conditions": [
+        "Revalidate current revision; prohibit self-revocation; scope operation receipts to current administrator authority."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/auth/logout",
+      "file": "apps/api/src/auth.ts",
+      "mode": "device-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/auth/qq/cancel",
+      "file": "apps/api/src/auth.ts",
+      "mode": "device-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/auth/qq/finish",
+      "file": "apps/api/src/auth.ts",
+      "mode": "device-write",
+      "conditions": [
+        "Use a verified unexpired attempt belonging to the current device and provider.",
+        "Binding requires a member and rejects another account’s identity; login does not merge accounts."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/auth/qq/start",
+      "file": "apps/api/src/auth.ts",
+      "mode": "device-write",
+      "conditions": [
+        "QQ provider must be configured.",
+        "Binding requires a member; login permits a visitor or member.",
+        "Current privacy version and required consent must be supplied."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/auth/register-name",
+      "file": "apps/api/src/auth.ts",
+      "mode": "device-write",
+      "conditions": [
+        "Device must be a visitor; name registration must be enabled; privacy confirmation is required."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/accounts/switch",
+      "file": "apps/api/src/auth.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Target must be an active account previously authorized on this device."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/privacy/erase",
+      "file": "apps/api/src/privacy.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Revalidate current profile and revision; active owned work can block account closure.",
+        "Durable erasure intent and proof-based receipts survive session revocation."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/privacy/receipt",
+      "file": "apps/api/src/privacy.ts",
+      "mode": "erasure-proof",
+      "conditions": [
+        "Match the stored requestId and secret hash; do not accept admin_music receipts.",
+        "No browser session, account scope, Origin or CSRF requirement; the proof is only in the JSON body."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "PUT /api/v2/me/music",
+      "file": "apps/api/src/app.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Revalidate the active member inside the write transaction before receipt replay or business writes."
+      ],
+      "dependencies": [
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    }
+  ]
+}

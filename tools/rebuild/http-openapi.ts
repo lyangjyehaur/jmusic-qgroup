@@ -2,6 +2,7 @@ import type { HttpOperationSource } from './build-http-contracts';
 import { hasSchema,registerSchema,unregisterSchema,validate,type Validator } from '@hyperjump/json-schema/draft-2020-12';
 import { z } from 'zod';
 import officialSchema from './schemas/openapi-3.1.json';
+import { httpAccessDescription,httpSecuritySchemes } from './http-access';
 
 type Catalog = { schemas: Record<string, unknown>; responseSchemas: Record<string, unknown> };
 type ObjectValue = Record<string, unknown>;
@@ -103,6 +104,7 @@ export function httpOpenAPI(rows: HttpOperationSource[], catalog: Catalog) {
       'x-qgroup-zod-validation-required': true,
       'x-qgroup-server-domain-validation-required': true,
       'x-qgroup-permission-binding-complete': false,
+      ...(row.access ? httpAccessDescription(row.access) : {}),
     };
     if (row.body) {
       if (!Object.hasOwn(schemas, row.body)) throw Error('Missing request schema');
@@ -113,7 +115,9 @@ export function httpOpenAPI(rows: HttpOperationSource[], catalog: Catalog) {
   }
   return {
     openapi: '3.1.0', jsonSchemaDialect: 'https://json-schema.org/draft/2020-12/schema',
-    info: { title: '群聚 API', version: '2' }, paths, components: { schemas },
+    info: { title: '群聚 API', version: '2' }, paths, components: { schemas, securitySchemes: httpSecuritySchemes },
+    'x-qgroup-erasure-recovery-gate-required': true,
+    'x-qgroup-boundary-reviewed-operations': rows.filter(row=>row.access).length,
     'x-qgroup-permission-bindings-complete': false,
     'x-qgroup-path-validation-bound': false,
     'x-qgroup-release-eligible': false,

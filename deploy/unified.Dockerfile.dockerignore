@@ -12,6 +12,11 @@
 !tools/rebuild/
 !tools/rebuild/build-api.mjs
 !tools/rebuild/build-http-contracts.ts
+!tools/rebuild/http-openapi.ts
+!tools/rebuild/http-access.ts
+!tools/rebuild/schemas/
+!tools/rebuild/schemas/openapi-3.1.json
+!tools/rebuild/schemas/http-access-review.json
 !tools/rebuild/build-analytics-manifest.ts
 !tools/rebuild/build-error-displays.ts
 !deploy/
