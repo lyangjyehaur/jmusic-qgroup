@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import type { DB } from '@qgroup/database';
-import { AcceptDeviceLink, IssueDeviceLink, ReadDeviceLink, RevokeDevice } from '@qgroup/contracts';
+import { AcceptDeviceLink, Confirm, IssueDeviceLink, ReadDeviceLink, RevokeDevice } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { hash, type Security } from './security';
 import { clearMusicClaims } from './music-claim-state';
@@ -74,7 +74,7 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
     return { ok: true };
   }).immediate());
   app.post('/api/v2/me/devices/revoke-link', async request => db.transaction(() => {
-    const viewer = security.memberWrite(request); z.object({ confirm: z.literal(true) }).strict().parse(request.body);
+    const viewer = security.memberWrite(request); Confirm.parse(request.body);
     db.prepare("UPDATE device_links SET status='revoked' WHERE user_id=? AND status='pending'").run(viewer.id);
     audit(viewer.id, 'device_links_revoked', {}); return { ok: true };
   }).immediate());

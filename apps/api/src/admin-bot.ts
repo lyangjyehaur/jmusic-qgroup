@@ -4,6 +4,7 @@ import type { FastifyInstance } from 'fastify';
 import {
   BOT_KINDS,
   BotPolicyCommand,
+  PreviewBotPolicy,
   BotPolicyResult,
   BotPolicyView,
   type BotPolicy,
@@ -159,13 +160,7 @@ export function registerAdminBot(
   app.post('/api/v2/admin/bot/preview', options, async (request) =>
     db.transaction(() => {
       admin.authority(request, true);
-      const input = z
-        .object({
-          config: BotPolicyCommand.options[0].shape.config,
-          kind: z.string(),
-        })
-        .strict()
-        .parse(request.body);
+      const input = PreviewBotPolicy.parse(request.body);
       const config = validateBotPolicy(input.config);
       return previewBotPolicy(
         config,

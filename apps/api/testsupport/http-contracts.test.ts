@@ -1,0 +1,59 @@
+import { it,expect,vi } from 'vitest';
+import { fileURLToPath } from 'node:url';
+import { createApp } from '../src/app';
+import { openDatabase } from '@qgroup/database';
+import { AuthResult,DeviceList,IssuedDeviceLink,Ok,PRIVACY_VERSION,SaveProfile,Session } from '@qgroup/contracts';
+import { createHttpClient,HttpOperations,type HttpContext } from '@qgroup/contracts/http';
+import { checkHttpOperations,sharedSchemaCatalog } from '../../../tools/rebuild/build-http-contracts';
+
+const observed=vi.hoisted(()=>new Set<string>());
+vi.mock('fastify',async load=>{
+ const original=await load<typeof import('fastify')>();
+ return {...original,default:(options:import('fastify').FastifyServerOptions)=>{
+  const app=original.default(options);app.addHook('onRoute',route=>{
+   if(!route.url.startsWith('/api/v2/'))return;
+   for(const method of Array.isArray(route.method)?route.method:[route.method])if(method!=='HEAD')observed.add(method+' '+route.url);
+  });return app;
+ }};
+});
+const root=fileURLToPath(new URL('../../..',import.meta.url));
+it('matches every real v2 runtime operation and shared body to the generated contract index',async()=>{
+ observed.clear();const db=openDatabase(':memory:'),app=createApp({db,origin:'https://fixture.invalid',musicTrendSampling:false,pairedBackupScheduling:false,adminCredentialHash:()=>'',publicAPIKeys:()=>''});
+ try{
+  await app.ready();const source=checkHttpOperations(root);
+  expect([...observed].sort()).toEqual(Object.keys(HttpOperations).sort());expect(source).toHaveLength(194);
+  expect(source.filter(row=>row.body)).toHaveLength(85);expect(source.map(row=>row.id).sort()).toEqual([...observed].sort());
+  expect(HttpOperations['PUT /api/v2/me/music'].body).toBe(SaveProfile);
+ }finally{await app.close();db.close();}
+});
+it('exports all named schemas with wire semantics while retaining Zod refinement and server policy requirements',()=>{
+ const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(273);
+ const profile=catalog.schemas.SaveProfile as {properties:{selections:{maxItems:number;uniqueItems?:boolean}},additionalProperties:boolean};
+ expect(profile.additionalProperties).toBe(false);expect(profile.properties.selections.maxItems).toBe(20);expect(profile.properties.selections.uniqueItems).not.toBe(true);
+ expect(SaveProfile.safeParse({profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'e',level:1},{entryId:'e',level:2}]}).success).toBe(false);
+ expect(catalog.zodRuntimeValidationRequired&&catalog.serverDomainValidationRequired).toBe(true);expect(catalog.openapiComplete).toBe(false);
+});
+it('uses the generated client with the real HTTP application through registration, session change, devices and stale-scope rejection',async()=>{
+ const db=openDatabase(':memory:'),origin='https://fixture.invalid',app=createApp({db,origin,musicTrendSampling:false,pairedBackupScheduling:false,adminCredentialHash:()=>'',publicAPIKeys:()=>''});
+ db.prepare('UPDATE site_settings SET allow_name_registration=1 WHERE id=1').run();
+ let cookie='',context:HttpContext={},calls=0;
+ const browserFetch:typeof fetch=async(url,init)=>{
+  calls++;expect(init?.credentials).toBe('same-origin');expect(init?.redirect).toBe('error');
+  const headers=new Headers(init?.headers);if(cookie)headers.set('cookie',cookie);if(init?.method!=='GET')headers.set('origin',origin);
+  const r=await app.inject({url:String(url),method:init?.method as 'GET'|'POST',headers:Object.fromEntries(headers),payload:init?.body as string|undefined});
+  const set=r.headers['set-cookie'];if(set)cookie=(Array.isArray(set)?set[0]!:String(set)).split(';')[0]!;
+  return new Response(new Uint8Array(r.rawPayload),{status:r.statusCode,headers:{'content-type':String(r.headers['content-type']??'application/json')}});
+ };
+ const client=createHttpClient({fetch:browserFetch,context:()=>context});
+ try{
+  await app.ready();const initial=await client.request('GET /api/v2/session',{},Session);expect(initial.authenticated).toBe(false);context={scope:initial.scope,csrf:initial.csrf};
+  const result=await client.request('POST /api/v2/auth/register-name',{body:{nickname:'合成測試帳號',confirm:true,acceptPrivacy:true,privacyVersion:PRIVACY_VERSION}},AuthResult);expect(result.newAccount).toBe(true);
+  const member=await client.request('GET /api/v2/session',{},Session);expect(member.authenticated).toBe(true);expect(member.scope).not.toBe(initial.scope);context={scope:member.scope,csrf:member.csrf};
+  const link=await client.request('POST /api/v2/me/devices/link',{body:{confirm:true,authorizeOwnDevice:true}},IssuedDeviceLink);expect(link.token).toHaveLength(32);
+  const devices=await client.request('GET /api/v2/me/devices',{},DeviceList);expect(devices.devices).toHaveLength(1);expect(devices.devices[0]!.current).toBe(true);
+  await client.request('POST /api/v2/me/devices/revoke-link',{body:{confirm:true}},Ok);
+  const before=calls;context={scope:'f'.repeat(64),csrf:member.csrf};
+  await expect(client.request('GET /api/v2/me/devices',{},DeviceList)).rejects.toMatchObject({status:409,code:'ACCOUNT_CHANGED'});expect(calls).toBe(before+1);
+  expect(db.prepare('SELECT count(*) n FROM users').get()).toEqual({n:1});
+ }finally{await app.close();db.close();}
+});

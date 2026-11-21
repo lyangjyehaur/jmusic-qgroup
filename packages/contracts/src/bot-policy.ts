@@ -113,3 +113,9 @@ export const BotPolicyView = z.object({
   }),
 });
 export type BotPolicyView = z.infer<typeof BotPolicyView>;
+
+// Preview keeps its existing validation order: body shape, policy, then kind.
+export const PreviewBotPolicy = /* @__PURE__ */ (() => z.object({
+  config: BotPolicyCommand.options[0].shape.config,
+  kind: z.string(),
+}).strict())();

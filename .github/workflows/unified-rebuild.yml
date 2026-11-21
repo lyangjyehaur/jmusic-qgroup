@@ -20,6 +20,13 @@ jobs:
       # SQLite images. A complete Linux report confirmed 55 default 5s timeouts;
       # allow bounded fixture assembly time while preserving every assertion.
       - run: mkdir -p artifacts/ci
+      - name: Verify generated request contracts and export schema references
+        run: |
+          npm run check:http-contracts:rebuild
+          reference_output="$RUNNER_TEMP/qgroup-http-contracts-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
+          npx tsx tools/rebuild/build-http-contracts.ts --output "$reference_output" > artifacts/ci/http-contracts-receipt.json
+          cp "$reference_output/schemas.json" artifacts/ci/http-schemas.json
+          cp "$reference_output/request-operations.json" artifacts/ci/http-request-operations.json
       - run: npm run test:rebuild -- --maxWorkers=1 --testTimeout=30000 --reporter=default --reporter=json --outputFile=artifacts/ci/unit.json
       - uses: actions/upload-artifact@v4
         if: always()
