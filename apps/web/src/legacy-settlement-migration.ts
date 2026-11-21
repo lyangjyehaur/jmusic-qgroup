@@ -3,11 +3,11 @@ import { scopedHttp } from './http';
 import type { Member } from './member-access';
 import { decodeSettlement,settlementDraft,type SettlementSource } from './legacy-settlement';
 import { openDraft,saveDraft,deviceDraftEpoch,type DraftHandle } from './draft-store';
-import { mapLegacySources,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
+import { legacyInventoryUsable,mapLegacySources,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 export type SettlementPlan={source:SettlementSource;row:LegacySnapshot;rows:LegacySnapshot[];raw:string;key:string;path:string;handle:DraftHandle;previous:string|null;pending:boolean;zone:string};
 async function freshInventory(scope:string,epoch:number){
  const inventory=await preserveLegacy(scope),deviceEpoch=await deviceDraftEpoch();
- if(inventory.disabled||inventory.epoch!==epoch)throw Error('原紀錄已因登出清除，不能完成轉換。');
+ if(!legacyInventoryUsable(inventory,epoch))throw Error('原紀錄已因登出清除，不能完成轉換。');
  return {...inventory,mappings:inventory.mappings.filter(m=>m.deviceEpoch===deviceEpoch)};
 }
 function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,source:SettlementSource){

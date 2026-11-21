@@ -5,7 +5,7 @@ import { authHttp } from './auth';
 import type { Member } from './member-access';
 import { authoringDraft,decodeAuthoring,type AuthoringSource } from './legacy-authoring';
 import { openDraft,saveDraft,deviceDraftEpoch,type DraftHandle } from './draft-store';
-import { mapLegacySources,preserveLegacy,type LegacyInventory,type LegacyMapping,type LegacySnapshot } from './legacy-local-store';
+import { legacyInventoryUsable,mapLegacySources,preserveLegacy,type LegacyInventory,type LegacyMapping,type LegacySnapshot } from './legacy-local-store';
 import { describeLegacy } from './legacy-local-record';
 export type AuthoringPlan={source:AuthoringSource;row:LegacySnapshot;rows:LegacySnapshot[];raw:string;key:string;path:string;handle:DraftHandle;previous:string|null;pending:boolean};
 const object=(value:unknown):Record<string,unknown>|null=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:null;
@@ -31,7 +31,7 @@ async function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,sourc
 }
 async function freshInventory(scope:string,epoch:number){
   const inventory=await preserveLegacy(scope),deviceEpoch=await deviceDraftEpoch();
-  if(inventory.disabled||inventory.epoch!==epoch)throw Error('原紀錄已因登出清除，不能完成轉換。');
+  if(!legacyInventoryUsable(inventory,epoch))throw Error('原紀錄已因登出清除，不能完成轉換。');
   return {...inventory,mappings:inventory.mappings.filter(m=>m.deviceEpoch===deviceEpoch)};
 }
 export async function prepareAuthoring(viewer:Member,inventory:LegacyInventory,row:LegacySnapshot,zone:string):Promise<AuthoringPlan>{

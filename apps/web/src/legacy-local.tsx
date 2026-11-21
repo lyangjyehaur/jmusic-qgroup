@@ -1,5 +1,5 @@
 import { errorText, uiText } from './language';
-import { useEffect,useRef,useState,type ReactNode } from 'react';
+import { useEffect,useId,useRef,useState,type ReactNode } from 'react';
 import { Link,useLocation } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
@@ -7,14 +7,15 @@ import { LegacyRequestReceipt } from '@qgroup/contracts';
 import { authHttp } from './auth';
 import { MemberAccess,type Member } from './member-access';
 import { Failure,Notice,PageIntro,sessionQuery,useSession } from './shared';
-import { describeLegacy,legacyBlocks,legacyCreateIntent } from './legacy-local-record';
+import { describeLegacy,hasLegacyCredentials as hasCredentials,legacyBlocks,legacyCreateIntent } from './legacy-local-record';
+import { decodeLegacyDraft,legacyImportMaxBytes } from './legacy-local-import';
 import { CreateIntentLookup } from './create-intents';
 import { LegacyAuthoringConversion } from './legacy-authoring-conversion';
 import { LegacyMoneyConversion } from './legacy-money-conversion';
 import { LegacySettlementConversion } from './legacy-settlement-conversion';
 import { LegacyFinanceRecovery } from './legacy-finance-recovery';
 import { deviceDraftEpoch } from './draft-store';
-import { checkLegacySnapshot,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
+import { checkLegacySnapshot,importLegacyDraft,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
 function useOriginals(viewer:Member){return useQuery({queryKey:['private',viewer.scope,'legacy-local'],queryFn:async()=>{const inventory=await preserveLegacy(viewer.scope),epoch=await deviceDraftEpoch();return {...inventory,mappings:inventory.mappings.filter(m=>m.deviceEpoch===epoch)};},refetchOnWindowFocus:'always',staleTime:0});}
 export function LegacyLocalLink(){return <Link to={endpoint}>舊看板本機紀錄</Link>;}
@@ -39,10 +40,48 @@ function Inventory({viewer}:{viewer:Member}){
   const query=useOriginals(viewer);
   return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。草稿先核對結果與時間，再明確帶入新版表單；原款項請求可核對並明確重試，其他原請求不重送。</Notice>
     {query.isPending?<Notice>正在讀取舊紀錄…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
-      {query.data.disabled?<Notice>已登出清除這台裝置的舊紀錄，舊分頁不能自動寫回。</Notice>:!query.data.rows.length?<Text>此帳號在這個瀏覽器沒有舊看板紀錄。</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
+      {query.data.disabled&&<Notice>已登出清除這台裝置的舊紀錄，舊分頁不能自動寫回。</Notice>}
+      {!query.data.rows.length?<Text>此帳號在這個瀏覽器沒有舊看板紀錄。</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
+      <ImportDraft viewer={viewer} inventory={query.data}/>
       <Button variant="secondary" disabled={query.isFetching} onClick={()=>void query.refetch()}>重新讀取舊紀錄</Button>
     </>}
   </Surface>;
+}
+function ImportDraft({viewer,inventory}:{viewer:Member;inventory:LegacyInventory}){
+  const [plan,setPlan]=useState<{raw:string;source:ReturnType<typeof decodeLegacyDraft>;epoch:number;deviceEpoch:number}|null>(null),[confirm,setConfirm]=useState(false),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+  const client=useQueryClient(),active=useRef(false),locked=useRef(false),help=useId();
+  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
+  async function validate(deviceEpoch:number){
+    const current=await client.fetchQuery({...sessionQuery,staleTime:0});
+    if(!active.current||!current.authenticated||current.scope!==viewer.scope)throw Error('帳號或頁面已變更，請重新選擇保全檔。');
+    if(await deviceDraftEpoch()!==deviceEpoch)throw Error('本機紀錄已因登出清除，請重新選擇保全檔。');
+  }
+  async function choose(file:File){
+    if(locked.current)return;locked.current=true;setBusy(true);setMessage('');setPlan(null);setConfirm(false);
+    try{
+      if(file.size>legacyImportMaxBytes)throw Error('保全檔超過 128 MiB，請保留原檔並分別處理草稿。');
+      const deviceEpoch=await deviceDraftEpoch();await validate(deviceEpoch);
+      let raw:string;try{raw=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(await file.arrayBuffer());}catch{throw Error('保全檔不是有效的 UTF-8，請保留原檔。');}
+      const source=decodeLegacyDraft(raw,viewer.scope);await validate(deviceEpoch);
+      if(active.current)setPlan({raw,source,epoch:inventory.epoch,deviceEpoch});
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText('無法讀取保全檔，請保留原檔。'));}
+    finally{locked.current=false;if(active.current)setBusy(false);}
+  }
+  async function restore(){
+    if(locked.current||!plan||!confirm)return;locked.current=true;setBusy(true);setMessage('');
+    try{
+      await validate(plan.deviceEpoch);
+      const result=await importLegacyDraft(viewer.scope,plan.epoch,plan.raw,()=>validate(plan.deviceEpoch),()=>active.current);
+      await validate(plan.deviceEpoch);
+      if(active.current){setPlan(null);setConfirm(false);setMessage(result.added?uiText('已匯入本機。請核對原結果，再帶入新版表單。'):uiText('這份原稿已在本機，未新增副本。'));await client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']});}
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText('匯入未完成，請保留原檔並重試。'));}
+    finally{locked.current=false;if(active.current)setBusy(false);}
+  }
+  return <div className="legacy-conversion"><label className="account-field">舊草稿保全檔<input type="file" accept="application/json,.json" disabled={busy} aria-describedby={help} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void choose(file);}}/></label>
+    <Text id={help}>限此帳號下載的草稿，最多 128 MiB。匯入只保全本機內容，原結果與權限仍須核對。</Text>
+    {plan&&<><Heading level={3}>{describeLegacy(plan.source,viewer.scope).label} · 待匯入</Heading><DraftContents data={plan.source.data}/><label className="checkbox"><input type="checkbox" checked={confirm} disabled={busy} onChange={event=>setConfirm(event.target.checked)}/>已核對原稿屬於目前帳號；只匯入本機，不送出</label><Button disabled={busy||!confirm} onClick={()=>void restore()}>匯入此舊草稿</Button></>}
+    {message&&<Notice>{message}</Notice>}
+  </div>;
 }
 function visibleData(value:unknown):ReactNode{
   if(value===null||value===undefined)return <span>未填</span>;
@@ -63,13 +102,6 @@ function DraftContents({data}:{data:Record<string,unknown>}){
     return visibleData(value);
   };
   return <div className="legacy-local-data">{['fields','value','dataset','slots','rooms','people','items','custom','paymentCodes','qr','revision','edit'].filter(key=>data[key]!==undefined).map(key=><details key={key}><summary>{key==='value'&&data.react===1?'表單內容':label(key)}</summary>{image(data[key])}</details>)}</div>;
-}
-function hasCredentials(value:unknown):boolean{
-  if(!value||typeof value!=='object')return false;
-  const credential=(key:string)=>/token|(?:^|_)pin(?:_|$)|csrf|cookie|secret|oauth|authorization/i.test(key);
-  if(Array.isArray(value))return value.some(hasCredentials);
-  if('name' in value&&'value' in value&&typeof value.name==='string'&&credential(value.name))return true;
-  return Object.entries(value).some(([key,item])=>credential(key)||hasCredentials(item));
 }
 function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventory;row:LegacySnapshot}){
   const description=describeLegacy(row.source,viewer.scope),intent=legacyCreateIntent(description),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[receipt,setReceipt]=useState<ReturnType<typeof LegacyRequestReceipt.parse>|null>(null),active=useRef(false),client=useQueryClient();

@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { CreateIntent,LegacyRequestCheck } from '@qgroup/contracts';
+export { encodeLegacy,legacyRaw } from './legacy-local-codec';
 export const legacyScope=(scope:string)=>z.string().regex(/^[a-f0-9]{64}$/).parse(scope);
 const object=z.record(z.string(),z.unknown());
 export const LegacyFields=z.array(z.object({name:z.string(),value:z.string(),checked:z.boolean().optional()}).strict());
@@ -57,18 +58,13 @@ export function describeLegacy(source:unknown,scope:string):LegacyDescription{
   }
   return {kind:'unknown',label:'尚未支援轉換的舊草稿'};
 }
-/** Tagged tree retains undefined fields, property order, -0 and embedded image strings.
- * Real BoardStore captures are plain structured values. Unsupported types remain in source. */
-export function encodeLegacy(value:unknown):unknown{
-  if(value===undefined)return ['undefined'];
-  if(value===null)return ['null'];
-  if(typeof value==='string'||typeof value==='boolean')return [typeof value,value];
-  if(typeof value==='number'&&Number.isFinite(value))return ['number',Object.is(value,-0)?'-0':String(value)];
-  if(Array.isArray(value))return ['array',Array.from({length:value.length},(_,i)=>i in value?encodeLegacy(value[i]):['hole'])];
-  if(typeof value==='object'&&value&&[Object.prototype,null].includes(Object.getPrototypeOf(value)))return ['object',Object.entries(value).map(([key,item])=>[key,encodeLegacy(item)])];
-  throw Error('舊紀錄包含未支援的資料類型；原儲存保留，不能轉換或發布。');
+export function hasLegacyCredentials(value:unknown):boolean{
+  if(!value||typeof value!=='object')return false;
+  const credential=(key:string)=>/token|(?:^|_)pin(?:_|$)|csrf|cookie|secret|oauth|authorization/i.test(key);
+  if(Array.isArray(value))return value.some(hasLegacyCredentials);
+  if('name' in value&&'value' in value&&typeof value.name==='string'&&credential(value.name))return true;
+  return Object.entries(value).some(([key,item])=>credential(key)||hasLegacyCredentials(item));
 }
-export function legacyRaw(value:unknown){return JSON.stringify({format:'kanban-local-v1-preserved',version:1,source:encodeLegacy(value)});}
 export function legacyBlocks(row:LegacyDescription,path:string){
   if(row.kind==='unknown')return true;
   if(row.request){const p=row.request.path;return path==='/activities/new'&&p==='/api/events'||path==='/time-polls/new'&&p==='/api/time-polls'||p.startsWith('/api/events/')&&path.startsWith('/activities/'+p.split('/')[3]+'/');}

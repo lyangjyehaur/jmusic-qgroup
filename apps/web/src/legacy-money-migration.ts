@@ -4,11 +4,11 @@ import { authHttp } from './auth';
 import type { Member } from './member-access';
 import { decodeMoney,moneyDraft,type MoneySource } from './legacy-money';
 import { openDraft,saveDraft,deviceDraftEpoch,type DraftHandle } from './draft-store';
-import { mapLegacySources,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
+import { legacyInventoryUsable,mapLegacySources,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 export type MoneyPlan={source:MoneySource;row:LegacySnapshot;rows:LegacySnapshot[];raw:string;key:string;path:string;handle:DraftHandle;previous:string|null;pending:boolean;zone:string;originState:string|null};
 async function freshInventory(scope:string,epoch:number){
  const inventory=await preserveLegacy(scope),deviceEpoch=await deviceDraftEpoch();
- if(inventory.disabled||inventory.epoch!==epoch)throw Error('原紀錄已因登出清除，不能完成轉換。');
+ if(!legacyInventoryUsable(inventory,epoch))throw Error('原紀錄已因登出清除，不能完成轉換。');
  return {...inventory,mappings:inventory.mappings.filter(m=>m.deviceEpoch===deviceEpoch)};
 }
 function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,source:MoneySource){
