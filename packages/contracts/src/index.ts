@@ -1,3 +1,4 @@
+export * from './legacy-detailed-settlement';
 import { ErasureProof } from './erasure-proof';
 export * from './legacy-local';
 export * from './legacy-finance';

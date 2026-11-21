@@ -208,6 +208,8 @@ export const analyticsManifest = {
     "/api/v2/me/legacy-requests/finance/retry",
     "/api/v2/me/legacy-requests/rooms/inspect",
     "/api/v2/me/legacy-requests/rooms/retry",
+    "/api/v2/me/legacy-requests/settlement/inspect",
+    "/api/v2/me/legacy-requests/settlement/retry",
     "/api/v2/me/music",
     "/api/v2/me/music/contact",
     "/api/v2/me/music/entries",

@@ -13,6 +13,7 @@ import { registerAppearance } from './appearance';
 import { registerLegacyLocal } from './legacy-local';
 import { registerLegacyFinance } from './legacy-finance';
 import { registerLegacyRooms } from './legacy-rooms';
+import { registerLegacyDetailedSettlement } from './legacy-detailed-settlement';
 import { registerCreateIntents } from './create-intents';
 import { registerAdminBackups } from './admin-backups';
 import { createPairedBackups } from './paired-backups';
@@ -184,6 +185,7 @@ export function createApp(options: AppOptions) {
     registerInbox(app, db, security, now);
     registerLegacyLocal(app, db, security);
     registerLegacyRooms(app, db, security, now);
+    registerLegacyDetailedSettlement(app, db, security, now, options.activityBot);
     registerLegacyFinance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerCreateIntents(app, db, security);
     registerActivityHistory(app, db, security);

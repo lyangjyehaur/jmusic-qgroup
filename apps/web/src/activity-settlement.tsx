@@ -28,8 +28,9 @@ const modeLabels = {
     duration: uiText("參與時長"),
   },
   kindLabels = { expense: uiText("消費"), refund: uiText("店家退款"), discount: uiText("減免") };
-export function SettlementSnapshotView({ snapshot: s }: { snapshot: Invoice }) {
-  const { id = '' } = useParams();
+export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Invoice; eventId?: string }) {
+  const { id: routeId = '' } = useParams();
+  const id = eventId ?? routeId;
   return (
     <>
       <Text>
@@ -1166,7 +1167,7 @@ function PaymentCodes({
     </details>
   );
 }
-function PreviewAssets({ viewer, id, value }: { viewer: Member; id: string; value: EditableInput }) {
+export function PreviewAssets({ viewer, id, value }: { viewer: Member; id: string; value: Pick<EditableInput, 'payment_codes' | 'rooms' | 'items'> }) {
   const library = useQuery({
     queryKey: ['private', viewer.scope, 'payment-codes'],
     queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/payment-codes', {}),

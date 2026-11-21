@@ -15,6 +15,7 @@ import { LegacyMoneyConversion } from './legacy-money-conversion';
 import { LegacySettlementConversion } from './legacy-settlement-conversion';
 import { LegacyFinanceRecovery } from './legacy-finance-recovery';
 import { LegacyRoomsRecovery } from './legacy-rooms-recovery';
+import { LegacyDetailedSettlementRecovery } from './legacy-detailed-settlement-recovery';
 import { deviceDraftEpoch } from './draft-store';
 import { checkLegacySnapshot,importLegacyDraft,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
@@ -130,6 +131,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text><Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button></>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {description.request?.method==='POST'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}\/finance$/.test(description.request.path)&&<LegacyFinanceRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
+    {description.request?.method==='PUT'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}\/settlement\/detailed$/.test(description.request.path)&&<LegacyDetailedSettlementRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
     {description.request?.method==='PUT'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}\/rooms$/.test(description.request.path)&&<LegacyRoomsRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
     {intent&&!hasCredentials(row.source)&&<CreateIntentLookup key={row.id} viewer={viewer} {...intent} disabled={busy} validate={async()=>{await original();}}/>}
     {description.kind==='draft'&&['舊包廂草稿','舊款項草稿'].includes(description.label)&&!hasCredentials(row.source)&&<LegacyMoneyConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}

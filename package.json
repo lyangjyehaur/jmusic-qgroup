@@ -37,7 +37,8 @@
     "test:build:rebuild": "node tools/rebuild/smoke-build.mjs",
     "test:retained-python:rebuild": "node tools/rebuild/smoke-retained-python.mjs",
     "check:capabilities": "node tools/rebuild/check-capabilities.mjs",
-    "check:http-contracts:rebuild": "tsx tools/rebuild/build-http-contracts.ts --check"
+    "check:http-contracts:rebuild": "tsx tools/rebuild/build-http-contracts.ts --check",
+    "test:legacy-settlement:rebuild": "node tools/rebuild/smoke-legacy-settlement.mjs"
   },
   "devDependencies": {
     "@hyperjump/json-schema": "1.18.1",

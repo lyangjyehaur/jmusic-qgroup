@@ -28,7 +28,7 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "ba20daf2b6df7cd603ad9d7656b750db2914bcf5e0f577b56504d25b598cc010",
+    "apps/api/src/app.ts": "acb8c96a82d125143727da4bb454d0949babcb840726b3db7bf6f32160a264b3",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "bf8789dd18fcd1adc4c3e6403494ff75f33661637c6ee7e117d96608b64ee445",
@@ -62,18 +62,23 @@
     "apps/api/src/search.ts": "62d69e955c64106d4dc81b513028b1ff35049b82cb9bf5e50453a17c3dcd62ee",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
     "apps/api/src/settlement-context.ts": "751453606c1076fdd994ed8e03ca3f424bdc2c7cf698b657ca785379cd4d3ddf",
-    "apps/api/src/settlements.ts": "57e4e942e5f9d5a430d04b10630d3599b5b8c0f4cfff397e7f21e259a73936d5",
+    "apps/api/src/settlements.ts": "7984d787b3d060a2d54f6962c31767b3ba0be5af418e61076345a86397d0bc8d",
     "apps/api/src/time-polls.ts": "3a812895e2d5e67454917538e79dd762d2a2a2f8be49f65385561868cbd92dc4",
     "packages/contracts/package.json": "2e51ee0e36eb1bc818ba07f4c410a57700aa6d9f959bc3c86f3f61cddd17dd89",
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "04aa99691fb3c8db9828cd3dd277fc30c9aee4bf90cc52f4be2d0922125a3ba1",
+    "packages/contracts/src/index.ts": "605ebeee6f36cc4cde03f3a91ddea1af397836e6805a18dba1bee1eaadd182ed",
     "packages/contracts/src/payment-assets.ts": "9c925b021cb16cfd188e6620a341efdba6570e4a72b7110ede85899c08c8d83c",
     "packages/database/src/music-retirements.ts": "f4ae47d2ab943ab7bafd376f9c1f461121b4a0fe580284fd76fcf0526d89af62",
     "packages/domain/src/music-circles.ts": "ce4b93a8d42faaba36a2f5c253e039e89832c9570a8bcfa027120c180e9b953f",
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-search.ts": "52da753f011f1400b09900daa8d46a164441cdf789bd21cb8f94cd60130c4d6e",
-    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
+    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc",
+    "apps/api/src/legacy-detailed-settlement.ts": "645ec087b25171709106d48e93bd53f70925a710c6408ab231bcafa7d92436cd",
+    "apps/api/src/legacy-settlement-token.ts": "42b4bc80c469dd5c3cf1a3653ab9b261eeaead8ee9f88dfc4629edb86a8f53a6",
+    "apps/api/src/settlement-command.ts": "9af2e0124cdb32086833ac89dfe2ac0b8492d57f13a51be9638718c8b7e46f78",
+    "apps/api/src/settlement-calculation.ts": "db291cd2267f03630b92d23854b406a0ac19aacdfc35bf7794b5854fed5f8c9d",
+    "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21"
   },
   "operations": [
     {
@@ -2433,7 +2438,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -3023,6 +3029,52 @@
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/settlement-context.ts",
         "apps/api/src/legacy-local.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/settlement/inspect",
+      "file": "apps/api/src/legacy-detailed-settlement.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current account, activity access and settlement authority are required for original receipts and uncommitted retries. Frozen private receipt contents are never returned.",
+        "Uncommitted retries preserve the original method, path, key, body and revision/version; the original Python preview proof and current recovery review must match. Explicit confirmation precedes the shared atomic publication and original receipt write."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlement-command.ts",
+        "apps/api/src/legacy-settlement-token.ts",
+        "apps/api/src/payment-codes.ts",
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-detailed-settlement.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/settlement/retry",
+      "file": "apps/api/src/legacy-detailed-settlement.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current account, activity access and settlement authority are required for original receipts and uncommitted retries. Frozen private receipt contents are never returned.",
+        "Uncommitted retries preserve the original method, path, key, body and revision/version; the original Python preview proof and current recovery review must match. Explicit confirmation precedes the shared atomic publication and original receipt write."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/settlement-context.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlement-command.ts",
+        "apps/api/src/legacy-settlement-token.ts",
+        "apps/api/src/payment-codes.ts",
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-detailed-settlement.ts"
       ],
       "additionalHeaders": []
     },
