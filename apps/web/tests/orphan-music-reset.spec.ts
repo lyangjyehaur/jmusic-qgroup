@@ -17,9 +17,10 @@ test.describe('anonymous and historical music reset',()=>{
 test.describe('trend-only music reset',()=>{
   test.use({orphanMusicReset:'trend'});
   test('recovers a lost trend-only reset response after reload and preserves the original single command',async({page,context})=>{
-    await login(context);let writes=0;await page.route('**/api/v2/admin/music-reset',async route=>{if(route.request().method()!=='POST')return route.continue();writes++;const response=await route.fetch();await route.fulfill({response,body:'{'});});
-    await page.goto('/admin/music-reset');await expect(review(page)).toContainText('0 份成分 · 0 項選擇 · 0 則找搭子');await expect(review(page)).toContainText('留言與趨勢相關紀錄：2 筆');await confirm(page);
-    await expect(page.getByRole('button',{name:'查詢刪除結果',exact:true})).toBeVisible();page.on('dialog',dialog=>void dialog.accept());await page.reload();await page.getByRole('button',{name:'查詢刪除結果',exact:true}).click();
+    await login(context);let writes=0;await page.route('**/api/v2/admin/music-reset',async route=>{if(route.request().method()!=='POST')return route.continue();writes++;const response=await route.fetch();expect(response.status()).toBe(200);await route.fulfill({response,body:'{'});});
+    await page.goto('/admin/music-reset');await expect(review(page)).toContainText('0 份成分 · 0 項選擇 · 0 則找搭子');await expect(review(page)).toContainText('留言與趨勢相關紀錄：2 筆');
+    const lostResponse=page.waitForResponse(response=>response.request().method()==='POST'&&response.url()===origin+'/api/v2/admin/music-reset');await confirm(page);expect(await(await lostResponse).text()).toBe('{');
+    await expect(page.getByRole('button',{name:'查詢刪除結果',exact:true})).toBeEnabled();page.on('dialog',dialog=>void dialog.accept());await page.reload();await page.getByRole('button',{name:'查詢刪除結果',exact:true}).click();
     await expect(page.getByText('成分與詞庫重置已完成。',{exact:true})).toBeVisible();expect(writes).toBe(1);expect((await(await context.request.get('/api/v2/session')).json()).authenticated).toBe(true);
   });
 });
