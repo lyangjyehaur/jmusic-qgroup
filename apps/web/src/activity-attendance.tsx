@@ -7,7 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { ActivityAttendance, AddOnsite, AttendanceResult, AttendanceState, ChangeAttendance, RegistrationPerson } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 const labels:Record<z.infer<typeof AttendanceState>,string>={unknown:uiText("未核對"),present:uiText("出席"),absent:uiText("缺席"),late:uiText("遲到"),left:uiText("早退／已離場")};
@@ -20,7 +22,6 @@ const Pending=z.discriminatedUnion('kind',[
 const Draft=z.object({revision:z.number().int().min(0),mode:z.enum(['observe','onsite']),personId:z.string(),attendance:AttendanceState,note:z.string(),arrivedAt:z.string(),leftAt:z.string(),people:z.array(RegistrationPerson).min(1).max(20),reason:z.string(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
 const empty=(revision=0):DraftValue=>({revision,mode:'observe',personId:'',attendance:'unknown',note:'',arrivedAt:'',leftAt:'',people:[guest()],reason:''});
-const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 function localTime(value:string|null){return value?new Date(Date.parse(value)+8*3600000).toISOString().slice(0,19):'';}
 function useDraft(viewer:Member,data:z.infer<typeof ActivityAttendance>){
   const [search]=useSearchParams(),{id,revision}=data;
@@ -47,14 +48,14 @@ export function ActivityAttendancePage(){
   const {id=''}=useParams();return <><PageIntro title="現場出席"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+'/delegation'}>管理分工</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>}</MemberAccess></>;
 }
 function Loader({viewer,id}:{viewer:Member;id:string}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-attendance',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/attendance',ActivityAttendance,{headers:scope(viewer)}),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-attendance',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/attendance', { params: { id: id } }, ActivityAttendance),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取出席名單…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Editor viewer={viewer} initial={query.data}/>;
 }
 function Editor({viewer,initial}:{viewer:Member;initial:z.infer<typeof ActivityAttendance>}){
-  const [data,setData]=useState(initial),s=useDraft(viewer,data),client=useQueryClient(),path='/activities/'+encodeURIComponent(data.id),stale=s.draft.revision!==data.revision;
+  const [data,setData]=useState(initial),s=useDraft(viewer,data),client=useQueryClient(),stale=s.draft.revision!==data.revision;
   const person=data.people.find(person=>person.id===s.draft.personId),onsite=s.draft.mode==='onsite',excess=!!data.capacity&&data.confirmed+s.draft.people.length>data.capacity;
   const blocked=onsite?!data.canAdd:!data.canObserve||!person,ready=s.confirm&&(!onsite||(s.conditions&&(!excess||s.excess)&&(!data.waiting||s.queue)));
-  const latest=()=>api(path+'/attendance',ActivityAttendance,{headers:scope(viewer)});
+  const latest=()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/attendance', { params: { id: data.id } }, ActivityAttendance);
   function choose(personId:string){const current=data.people.find(person=>person.id===personId);s.edit({mode:'observe',personId,attendance:current?.attendance??'unknown',note:current?.note??'',arrivedAt:localTime(current?.arrivedAt??null),leftAt:localTime(current?.leftAt??null),reason:''});}
   function update(fresh:typeof data){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-attendance',data.id],fresh);}
   async function rebase(){if(s.locked||!s.begin())return;try{const fresh=await latest();if(!s.active.current)return;const next={...s.draft,revision:fresh.revision};if(!await s.persist(next))return;update(fresh);s.setDraft(next);s.reset();s.setMessage(uiText("已取得最新出席與安排；原輸入保留，請重新核對。"));}catch(error){if(s.active.current)s.setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(s.active.current)s.setBusy(false);}}
@@ -65,7 +66,8 @@ function Editor({viewer,initial}:{viewer:Member;initial:z.infer<typeof ActivityA
       else{const input=ChangeAttendance.safeParse({revision:s.draft.revision,attendance:s.draft.attendance,note:s.draft.note,arrivedAt:s.draft.arrivedAt?s.draft.arrivedAt+'+08:00':null,leftAt:s.draft.leftAt?s.draft.leftAt+'+08:00':null,reason:s.draft.reason,confirm:true});if(!input.success||(data.reasonRequired&&!input.data.reason)){s.setMessage(uiText("請核對出席狀態、到離場時間及原因；出席備註與原因最多各 200 字，結束或取消後原因必填。"));return;}operation={kind:'observe',key:crypto.randomUUID(),personId:s.draft.personId,input:input.data};}
     }
     const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await api(path+(operation.kind==='onsite'?'/onsite':'/attendance/'+encodeURIComponent(operation.personId)),AttendanceResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.reset();s.setMessage(operation.kind==='onsite'?uiText("現場補錄已保存。"):uiText("出席紀錄已保存。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-registration','activity-claims','activity-delegation','activity-lifecycle'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});}
+    try{if(operation.kind==='onsite')await authHttp(viewer).request('POST /api/v2/activities/:id/onsite', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, AttendanceResult);
+      else await authHttp(viewer).request('POST /api/v2/activities/:id/attendance/:personId', { params: { id: data.id, personId: operation.personId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, AttendanceResult);accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.reset();s.setMessage(operation.kind==='onsite'?uiText("現場補錄已保存。"):uiText("出席紀錄已保存。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-registration','activity-claims','activity-delegation','activity-lifecycle'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認出席操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   return <><Surface className="detail"><Heading level={2}>{data.title}</Heading><Text>正式 {data.confirmed}／{data.capacity||'不限'} 人 · 候補 {data.waiting} 人</Text><Notice>出席與正式名額、付款責任分開；更正不改寫已發布帳單。</Notice>{!data.people.length?<Notice>目前沒有正式參加者或曾核對出席的人員；臨時加入請使用現場補錄。</Notice>:<ul className="invitation-list">{data.people.map(person=><li key={person.id}><Text>{person.name} · {statuses[person.status]??person.status} · {labels[person.attendance]}</Text><Text>付款歸屬：{person.payerName}（{person.payerKind==='manager'?'代報管理人':'參加者本人'}）</Text>{person.note&&<Text>出席備註：{person.note}</Text>}{person.arrivedAt&&<Text>到場：{localTime(person.arrivedAt).replace('T',' ')}（台北）</Text>}{person.leftAt&&<Text>離場：{localTime(person.leftAt).replace('T',' ')}（台北）</Text>}<Button variant="secondary" disabled={s.locked} onClick={()=>choose(person.id)}>核對出席（{person.name}）</Button></li>)}</ul>}</Surface>

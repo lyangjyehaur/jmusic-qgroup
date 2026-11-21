@@ -7,7 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AcceptActivityInvitation, ActivityInvitationPreview, ActivityInvitationResult, ActivityInvitations, IssueActivityInvitations, RegistrationPerson } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 const guest=()=>({isSelf:false,name:'',note:'',payerKind:'self' as const});
@@ -18,7 +20,6 @@ const Pending=z.discriminatedUnion('kind',[
 const Draft=z.object({revision:z.number().int().min(0),people:z.array(RegistrationPerson).min(1).max(20),reason:z.string(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
 const empty=(revision=0):DraftValue=>({revision,people:[guest()],reason:''});
-const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 function useDraft(viewer:Member,id:string,mode:string,revision=0){
   const storageKey='qgroup:rebuild:activity-draft:invitations:v1:'+viewer.scope+':'+id+':'+mode;
   const seed=():DraftValue=>empty(revision);
@@ -38,12 +39,12 @@ export function ActivityInvitationsPage(){
   const {id=''}=useParams();return <><PageIntro title="補報名邀請"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+'/registration'}>管理報名與撤銷邀請</Link></div><MemberAccess>{viewer=><InvitationLoader key={viewer.scope+':'+id} viewer={viewer} id={id}/>}</MemberAccess></>;
 }
 function InvitationLoader({viewer,id}:{viewer:Member;id:string}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-invitations',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/invitations',ActivityInvitations,{headers:scope(viewer)}),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-invitations',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/invitations', { params: { id: id } }, ActivityInvitations),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取邀請…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<InvitationEditor viewer={viewer} initial={query.data}/>;
 }
 function InvitationEditor({viewer,initial}:{viewer:Member;initial:z.infer<typeof ActivityInvitations>}){
-  const [data,setData]=useState(initial),s=useDraft(viewer,initial.id,'issue',initial.revision),client=useQueryClient(),path='/activities/'+encodeURIComponent(data.id)+'/invitations',stale=s.draft.revision!==data.revision;
-  const latest=()=>api(path,ActivityInvitations,{headers:scope(viewer)});
+  const [data,setData]=useState(initial),s=useDraft(viewer,initial.id,'issue',initial.revision),client=useQueryClient(),stale=s.draft.revision!==data.revision;
+  const latest=()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/invitations', { params: { id: data.id } }, ActivityInvitations);
   function update(fresh:typeof data){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-invitations',data.id],fresh);}
   async function rebase(){if(s.locked||!s.begin())return;try{const fresh=await latest();if(!s.active.current)return;const next={...s.draft,revision:fresh.revision};if(!await s.persist(next))return;update(fresh);s.setDraft(next);s.setConfirm(false);s.setMessage(uiText("已取得最新資料；原輸入保留，請重新確認。"));}catch(error){if(s.active.current)s.setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(s.active.current)s.setBusy(false);}}
   async function submit(){
@@ -52,7 +53,7 @@ function InvitationEditor({viewer,initial}:{viewer:Member;initial:z.infer<typeof
       if(!parsed.success){s.setMessage(uiText("請填寫 1–20 位受邀者稱呼、備註及邀請原因；稱呼最多 24 字、備註 100 字、原因 200 字。"));return;}operation={kind:'issue',key:crypto.randomUUID(),input:parsed.data};
     }
     if(operation.kind!=='issue')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await api(path,ActivityInvitationResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.setConfirm(false);s.setMessage(uiText("邀請已建立。"));void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-registration',data.id]});}
+    try{await authHttp(viewer).request('POST /api/v2/activities/:id/invitations', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityInvitationResult);accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.setConfirm(false);s.setMessage(uiText("邀請已建立。"));void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-registration',data.id]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.setConfirm(false);s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認邀請操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   return <><Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading>{data.blocker&&<Notice>{data.blocker}</Notice>}{!data.canIssue&&<Notice>只有名單管理者可以建立補報名邀請。</Notice>}
@@ -63,14 +64,14 @@ export function AcceptActivityInvitationPage(){
   const {id='',token=''}=useParams();return <><PageIntro title="接受補報名邀請"/><MemberAccess>{viewer=><InvitationRecipient key={viewer.scope+':'+id+':'+token} viewer={viewer} id={id} token={token}/>}</MemberAccess></>;
 }
 function InvitationRecipient({viewer,id,token}:{viewer:Member;id:string;token:string}){
-  const s=useDraft(viewer,id,'accept:'+token),[waiting,setWaiting]=useState(false),[done,setDone]=useState(false),client=useQueryClient(),path='/activities/'+encodeURIComponent(id)+'/invitations/'+encodeURIComponent(token);
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-invitation',id,token],queryFn:()=>api(path,ActivityInvitationPreview,{headers:scope(viewer)}),refetchOnWindowFocus:false,enabled:!done}),data=query.data;
+  const s=useDraft(viewer,id,'accept:'+token),[waiting,setWaiting]=useState(false),[done,setDone]=useState(false),client=useQueryClient();
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-invitation',id,token],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/invitations/:token', { params: { id, token } }, ActivityInvitationPreview),refetchOnWindowFocus:false,enabled:!done}),data=query.data;
   useEffect(()=>{s.setConfirm(false);setWaiting(false);},[data?.revision,data?.conditionsVersion,data?.status,s.epoch]);
   async function submit(){
     if(s.busy||s.unavailable)return;let operation=s.draft.pending;
     if(!operation){if(!data||!s.confirm||data.blocker||(data.status==='waiting'&&!waiting))return;operation={kind:'accept',key:crypto.randomUUID(),input:{revision:data.revision,conditionsVersion:data.conditionsVersion,acceptConditions:true,acceptWaiting:waiting,confirm:true}};}
     if(operation.kind!=='accept')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await api(path+'/accept',ActivityInvitationResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.setConfirm(false);setDone(true);s.setMessage(uiText("已接受邀請並保存報名。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-invitations','activity-registration'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,id]});}
+    try{await authHttp(viewer).request('POST /api/v2/activities/:id/invitations/:token/accept', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityInvitationResult);accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.setConfirm(false);setDone(true);s.setMessage(uiText("已接受邀請並保存報名。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-invitations','activity-registration'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,id]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.setConfirm(false);setWaiting(false);s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認邀請操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   async function refresh(){if(s.locked)return;s.setConfirm(false);setWaiting(false);await query.refetch();}

@@ -7,7 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { ActivityDraftResult, ActivityLifecycle, ActivityLifecycleAction, ChangeActivityLifecycle } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 
@@ -20,9 +22,8 @@ const Pending=z.object({key:z.string().uuid(),input:ChangeActivityLifecycle}).st
 const Draft=z.object({revision:z.number().int().min(0),action:ActivityLifecycleAction.or(z.literal('')),reason:z.string(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
 const empty=(data:State):DraftValue=>({revision:data.revision,action:'',reason:''});
-const headers=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 export function ActivityLifecycleLink({eventId,viewer}:{eventId:string;viewer:Member}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-lifecycle',eventId],queryFn:()=>api('/activities/'+encodeURIComponent(eventId)+'/lifecycle',ActivityLifecycle,{headers:headers(viewer)})});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-lifecycle',eventId],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/lifecycle', { params: { id: eventId } }, ActivityLifecycle)});
   return query.error?<Button variant="ghost" onClick={()=>void query.refetch()}>重試讀取活動狀態權限</Button>:query.data?.actions.length?<Link to={'/activities/'+encodeURIComponent(eventId)+'/lifecycle'}>管理活動狀態</Link>:null;
 }
 export function ActivityLifecyclePage(){
@@ -30,7 +31,7 @@ export function ActivityLifecyclePage(){
   return <><PageIntro title="管理活動狀態"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to="/activities">所有活動</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>}</MemberAccess></>;
 }
 function Loader({viewer,id}:{viewer:Member;id:string}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-lifecycle',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/lifecycle',ActivityLifecycle,{headers:headers(viewer)}),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-lifecycle',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/lifecycle', { params: { id: id } }, ActivityLifecycle),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取活動狀態…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Editor viewer={viewer} initial={query.data}/>;
 }
 function time(value:string|null){return value?new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Taipei'}).format(new Date(value))+'（台北）':uiText('尚未記錄');}
@@ -45,7 +46,7 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
   const choice=data.actions.find(item=>item.action===draft.action),available=!!choice&&!choice.blockedReason&&!data.removed;
   useEffect(()=>{setConfirm(false);},[record.epoch]);
   function edit(patch:Partial<DraftValue>){record.change({...draft,...patch});setConfirm(false);setMessage('');}
-  async function latest(){return api('/activities/'+encodeURIComponent(data.id)+'/lifecycle',ActivityLifecycle,{headers:headers(viewer)});}
+  async function latest(){return scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/lifecycle', { params: { id: data.id } }, ActivityLifecycle);}
   function update(fresh:State){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-lifecycle',data.id],fresh);}
   async function rebase(){
     if(locked||!record.begin())return;
@@ -63,7 +64,7 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
     }
     const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
-      const result=await api('/activities/'+encodeURIComponent(data.id)+'/lifecycle',ActivityDraftResult,{method:'POST',headers:{...headers(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
+      const result=await authHttp(viewer).request('POST /api/v2/activities/:id/lifecycle', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);accepted=true;
       const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setMessage(result.removed?uiText("活動已移除。"):uiText("活動狀態已保存。"));
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-arrangements','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
     }catch(error){

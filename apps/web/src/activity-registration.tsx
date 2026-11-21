@@ -7,7 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { ActivityDraftResult, ChangeRegistration, RegistrationAction, RegistrationContext, RegistrationPreview, RegistrationValues, SubmitRegistration } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 type Context=z.infer<typeof RegistrationContext>;
@@ -24,14 +26,13 @@ const Draft=z.object({revision:z.number().int().min(0),values:z.object({people:z
 type DraftValue=z.infer<typeof Draft>;
 const companion=()=>({isSelf:false,name:'',note:'',payerKind:'manager' as const});
 const empty=(data:Context):DraftValue=>({revision:data.revision,values:{people:data.selfRegistered?[companion()]:[{isSelf:true,name:'',note:'',payerKind:'self'}],queueMode:'individual',intent:'registered'},personId:'',action:'edit',name:'',note:'',payerKind:'self',reason:''});
-const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 function actions(person:Person|undefined):Action[]{return person?[...(person.canChange?['edit' as const,...(person.status==='tentative'?['confirm' as const]:[]),...(person.status==='waiting'&&person.queueMode==='together'?['split' as const]:[])]:[]),...(person.canWithdraw?['withdraw' as const]:[]),...(person.canDecide?['approve' as const,'reject' as const]:[])]:[];}
 export function ActivityRegistrationPage({manage=false}:{manage?:boolean}){
   const {id=''}=useParams();
   return <><PageIntro title={manage?'管理報名':'新增報名'}/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+(manage?'/signup':'/registration')}>{manage?'新增本人／同行報名':'管理現有報名'}</Link><Link to={'/activities/'+encodeURIComponent(id)+'/invitations'}>補報名邀請</Link><Link to={'/activities/'+encodeURIComponent(id)+'/claims'}>代報認領</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id+':'+manage} viewer={viewer} id={id} manage={manage}/>}</MemberAccess></>;
 }
 function Loader({viewer,id,manage}:{viewer:Member;id:string;manage:boolean}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-registration',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/registration',RegistrationContext,{headers:scope(viewer)}),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-registration',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/registration', { params: { id: id } }, RegistrationContext),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取報名資料…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Editor viewer={viewer} initial={query.data} manage={manage}/>;
 }
 function when(value:string,timezone:string|null){
@@ -59,7 +60,7 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
   useEffect(()=>{setConfirm(false);setPartial(false);setPreview(null);},[record.epoch]);
   function edit(patch:Partial<DraftValue>){record.change({...draft,...patch});setConfirm(false);setPartial(false);setPreview(null);setMessage('');}
   function choose(personId:string){const person=data.people.find(item=>item.id===personId);edit({personId,name:person?.name??'',note:person?.note??'',payerKind:person?.payerKind??'self',action:search.get('preset')==='withdraw'&&person?.canWithdraw?'withdraw':actions(person)[0]??'edit',reason:''});}
-  async function latest(){return api('/activities/'+encodeURIComponent(data.id)+'/registration',RegistrationContext,{headers:scope(viewer)});}
+  async function latest(){return scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/registration', { params: { id: data.id } }, RegistrationContext);}
   function update(fresh:Context){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-registration',data.id],fresh);}
   async function rebase(){
     if(locked||!record.begin())return;
@@ -69,7 +70,7 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
   async function makePreview(){
     if(locked||stale)return;const values=RegistrationValues.safeParse(draft.values);if(!values.success){setMessage(uiText("請填寫 1–20 位參加者；稱呼最多 24 字、備註最多 100 字，本人只能一位。"));return;}
     if(!record.begin())return;if(!await persist(draft)||!active.current){if(active.current)setBusy(false);return;}setConfirm(false);setPartial(false);setPreview(null);setMessage('');
-    try{const result=await api('/activities/'+encodeURIComponent(data.id)+'/registration/preview',RegistrationPreview,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf},body:JSON.stringify({...values.data,revision:draft.revision})});if(active.current)setPreview(result);}
+    try{const result=await authHttp(viewer).request('POST /api/v2/activities/:id/registration/preview', { params: { id: data.id }, body: {...values.data,revision:draft.revision} }, RegistrationPreview);if(active.current)setPreview(result);}
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("預覽失敗"));}finally{if(active.current)setBusy(false);}
   }
   async function submit(){
@@ -91,8 +92,8 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
     }
     const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
-      const path=operation.kind==='signup'?'/registration':'/attendees/'+encodeURIComponent(operation.personId)+'/registration';
-      await api('/activities/'+encodeURIComponent(data.id)+path,ActivityDraftResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
+      if(operation.kind==='signup')await authHttp(viewer).request('POST /api/v2/activities/:id/registration', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);
+      else await authHttp(viewer).request('POST /api/v2/activities/:id/attendees/:personId/registration', { params: { id: data.id, personId: operation.personId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);accepted=true;
       const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?uiText("報名已保存。"):uiText("報名操作已保存。"));
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-lifecycle','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
     }catch(error){

@@ -7,7 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AttendeeClaimContext, AttendeeClaimPreview, AttendeeClaimResult, DecideAttendeeClaim, IssueAttendeeClaim, RequestAttendeeClaim } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 const Pending=z.discriminatedUnion('kind',[
@@ -18,7 +20,6 @@ const Pending=z.discriminatedUnion('kind',[
 const Draft=z.object({revision:z.number().int().min(0),target:z.string(),decision:z.enum(['approve','reject','revoke']),reason:z.string(),pending:Pending.optional()}).strict();
 type DraftValue=z.infer<typeof Draft>;
 const empty=(revision=0):DraftValue=>({revision,target:'',decision:'approve',reason:''});
-const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
 const statuses:Record<string,string>={invited:uiText("待本人申請"),requested:uiText("待管理人核對"),approved:uiText("已通過"),rejected:uiText("已拒絕"),revoked:uiText("已撤銷"),expired:uiText("已過期")};
 const rosterStatuses:Record<string,string>={confirmed:uiText("正式"),waiting:uiText("候補"),tentative:uiText("待確認")};
 function useClaimDraft(viewer:Member,id:string,mode:string,revision=0,presetTarget=''){
@@ -40,15 +41,15 @@ export function ActivityClaimsPage(){
   const {id=''}=useParams();return <><PageIntro title="代報認領"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+'/registration'}>管理報名</Link></div><MemberAccess>{viewer=><ClaimLoader key={viewer.scope+':'+id} viewer={viewer} id={id}/>}</MemberAccess></>;
 }
 function ClaimLoader({viewer,id}:{viewer:Member;id:string}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-claims',id],queryFn:()=>api('/activities/'+encodeURIComponent(id)+'/claims',AttendeeClaimContext,{headers:scope(viewer)}),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-claims',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/claims', { params: { id: id } }, AttendeeClaimContext),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取認領資料…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<ClaimManager viewer={viewer} initial={query.data}/>;
 }
 function ClaimManager({viewer,initial}:{viewer:Member;initial:z.infer<typeof AttendeeClaimContext>}){
   const [search]=useSearchParams(),preset=initial.people.find(person=>person.id===search.get('person'));
-  const [data,setData]=useState(initial),s=useClaimDraft(viewer,initial.id,'manage',initial.revision,preset?'person:'+preset.id:''),client=useQueryClient(),path='/activities/'+encodeURIComponent(data.id)+'/claims',stale=s.draft.revision!==data.revision;
+  const [data,setData]=useState(initial),s=useClaimDraft(viewer,initial.id,'manage',initial.revision,preset?'person:'+preset.id:''),client=useQueryClient(),stale=s.draft.revision!==data.revision;
   const person=data.people.find(person=>'person:'+person.id===s.draft.target),claim=data.claims.find(claim=>'claim:'+claim.id===s.draft.target),choices=claim?[...(claim.canDecide?['approve' as const,'reject' as const]:[]),...(claim.canRevoke?['revoke' as const]:[])]:[],available=person?!person.blocker:choices.includes(s.draft.decision),reasonLabel=uiText('認領原因');
   function choose(target:string){const next=data.claims.find(claim=>'claim:'+claim.id===target);s.edit({target,decision:next?.canDecide?'approve':'revoke',reason:''});}
-  const latest=()=>api(path,AttendeeClaimContext,{headers:scope(viewer)});
+  const latest=()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/claims', { params: { id: data.id } }, AttendeeClaimContext);
   function update(fresh:typeof data){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-claims',data.id],fresh);}
   async function rebase(){if(s.locked||!s.begin())return;try{const fresh=await latest();if(!s.active.current)return;const next={...s.draft,revision:fresh.revision};if(!await s.persist(next))return;update(fresh);s.setDraft(next);s.resetConfirm();s.setMessage(uiText("已取得最新名單與認領狀態；原輸入保留，請重新核對。"));}catch(error){if(s.active.current)s.setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(s.active.current)s.setBusy(false);}}
   async function submit(){
@@ -59,7 +60,8 @@ function ClaimManager({viewer,initial}:{viewer:Member;initial:z.infer<typeof Att
       else if(claim){const input=DecideAttendeeClaim.safeParse({revision:s.draft.revision,decision:s.draft.decision,reason:s.draft.reason,confirmPerson:s.identity,confirm:true});if(!input.success){s.setMessage(uiText("請填寫 1–200 字的認領原因；通過前須核對申請人身分。"));return;}operation={kind:'decide',key:crypto.randomUUID(),claimId:claim.id,input:input.data};}else return;
     }
     if(operation.kind==='request')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await api(path+(operation.kind==='decide'?'/'+encodeURIComponent(operation.claimId):''),AttendeeClaimResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.resetConfirm();s.setMessage(operation.kind==='issue'?uiText("認領邀請已建立。"):uiText("認領處理已保存。"));for(const key of ['activity','activity-roster','activity-registration'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});}
+    try{if(operation.kind==='issue')await authHttp(viewer).request('POST /api/v2/activities/:id/claims', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, AttendeeClaimResult);
+      else await authHttp(viewer).request('POST /api/v2/activities/:id/claims/:claimId', { params: { id: data.id, claimId: operation.claimId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, AttendeeClaimResult);accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.resetConfirm();s.setMessage(operation.kind==='issue'?uiText("認領邀請已建立。"):uiText("認領處理已保存。"));for(const key of ['activity','activity-roster','activity-registration'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.resetConfirm();s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認認領操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   return <><Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading>{!data.people.length&&!data.claims.some(claim=>claim.canDecide||claim.canRevoke)&&!s.draft.pending&&<Notice>目前沒有可由此帳號邀請或處理的代報認領。</Notice>}
@@ -72,14 +74,14 @@ function ClaimManager({viewer,initial}:{viewer:Member;initial:z.infer<typeof Att
 }
 export function RequestAttendeeClaimPage(){const {id='',token=''}=useParams();return <><PageIntro title="認領代報名"/><MemberAccess>{viewer=><ClaimRequester key={viewer.scope+':'+id+':'+token} viewer={viewer} id={id} token={token}/>}</MemberAccess></>;}
 function ClaimRequester({viewer,id,token}:{viewer:Member;id:string;token:string}){
-  const s=useClaimDraft(viewer,id,'request:'+token),[payment,setPayment]=useState(false),client=useQueryClient(),path='/activities/'+encodeURIComponent(id)+'/claims/preview/'+encodeURIComponent(token),query=useQuery({queryKey:['private',viewer.scope,'activity-claim-preview',id,token],queryFn:()=>api(path,AttendeeClaimPreview,{headers:scope(viewer)}),refetchOnWindowFocus:false}),data=query.data,available=data?.state==='open'&&data.claimStatus==='invited'&&!data.duplicate&&!data.isManager;
+  const s=useClaimDraft(viewer,id,'request:'+token),[payment,setPayment]=useState(false),client=useQueryClient(),query=useQuery({queryKey:['private',viewer.scope,'activity-claim-preview',id,token],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/claims/preview/:token', { params: { id, token } }, AttendeeClaimPreview),refetchOnWindowFocus:false}),data=query.data,available=data?.state==='open'&&data.claimStatus==='invited'&&!data.duplicate&&!data.isManager;
   useEffect(()=>{s.resetConfirm();setPayment(false);},[data?.state,data?.state==='open'?data.revision:undefined,s.epoch]);
   async function refresh(){if(s.locked)return;s.resetConfirm();setPayment(false);await query.refetch();}
   async function submit(){
     if(s.busy||s.unavailable)return;let operation=s.draft.pending;
     if(!operation){if(!s.confirm||!s.identity||!payment||!available||data?.state!=='open')return;operation={kind:'request',key:crypto.randomUUID(),input:{revision:data.revision,confirmIdentity:true,keepPayment:true,confirm:true}};}
     if(operation.kind!=='request')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await api(path+'/request',AttendeeClaimResult,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.resetConfirm();setPayment(false);s.setMessage(uiText("認領申請已提交，請等待管理人核對。"));await query.refetch();void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-claims',id]});}
+    try{await authHttp(viewer).request('POST /api/v2/activities/:id/claims/preview/:token/request', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, AttendeeClaimResult);accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.resetConfirm();setPayment(false);s.setMessage(uiText("認領申請已提交，請等待管理人核對。"));await query.refetch();void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-claims',id]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.resetConfirm();setPayment(false);s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認認領操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   return <Surface className="detail activity-editor">{query.isPending&&<Notice>正在讀取認領資料…</Notice>}{query.error&&!s.draft.pending&&<Failure error={query.error} retry={()=>void refresh()}/>}{data&&<><Heading level={2}>{data.title}</Heading>{data.state==='claimed'?<><Text>已認領為 {data.name}，原隊位與付款責任保留。</Text><Link to={'/activities/'+encodeURIComponent(id)}>查看活動與報名</Link></>:<><dl><dt>原報名者</dt><dd>{data.name} · {rosterStatuses[data.status]??data.status}</dd><dt>申請帳號</dt><dd>{viewer.nickname}</dd><dt>原付款歸屬</dt><dd>{data.payerName}（{data.payerKind==='manager'?'原代報管理人':'參加者本人'}）</dd><dt>認領期限</dt><dd>{data.expiresAt.replace('T',' ')}</dd></dl>{data.duplicate&&<Notice>你已有本人報名，請先與管理人核對重複項；名額與款項不會自動合併。</Notice>}{data.isManager&&<Notice>請由被代報者自己的帳號申請認領。</Notice>}{data.claimStatus==='requested'&&<Notice>{data.requestedByMe?'你的申請正在等待管理人核對。':'此連結已有認領申請，請聯絡管理人核對。'}</Notice>}<Notice>申請認領不授予私人活動、名單或帳務存取，須待管理人通過。</Notice></>}</>}

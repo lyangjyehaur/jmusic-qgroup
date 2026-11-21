@@ -4,8 +4,9 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { Activity, ActivityAccessPreview, ActivityAccessResult, ActivityShare, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
-import { authHeaders } from './auth';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { useDurableValue } from './durable-record';
@@ -19,13 +20,13 @@ export function ActivityAccessPage(){
   return <><PageIntro title="接受活動可見邀請"/><MemberAccess>{viewer=><Access key={viewer.scope+':'+id+':'+token} viewer={viewer} id={id} token={token}/>}</MemberAccess></>;
 }
 function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
-  const path=base(id)+'/access/'+encodeURIComponent(token),key='qgroup:rebuild:activity-draft:access:v1:'+viewer.scope+':'+id+':'+token,client=useQueryClient();
+  const key='qgroup:rebuild:activity-draft:access:v1:'+viewer.scope+':'+id+':'+token,client=useQueryClient();
   const record=useDurableValue<Pending|null>({key,scope:viewer.scope,seed:()=>null,parse:raw=>Pending.nullable().parse(JSON.parse(raw)),dirty:value=>!!value,pending:value=>!!value});
   const {value:pending,busy,locked,unavailable,begin,persist,replace,setBusy}=record;
   const active=useRef(true),cancel=useRef(new AbortController());
   useEffect(()=>{active.current=true;cancel.current=new AbortController();return()=>{active.current=false;cancel.current.abort();};},[]);
   const [confirmed,setConfirmed]=useState(false),[done,setDone]=useState(false),[message,setMessage]=useState(''),[authorityLost,setAuthorityLost]=useState(false);
-  const view=useQuery({queryKey:['private',viewer.scope,'activity-access',id,token],queryFn:({signal})=>api(path,ActivityAccessPreview,{headers:{'X-Account-Scope':viewer.scope},signal}),gcTime:0,refetchOnWindowFocus:false});
+  const view=useQuery({queryKey:['private',viewer.scope,'activity-access',id,token],queryFn:({signal})=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/access/:token', { params: { id, token }, signal }, ActivityAccessPreview),gcTime:0,refetchOnWindowFocus:false});
   useEffect(()=>{setConfirmed(false);},[view.dataUpdatedAt]);
   useEffect(()=>{setConfirmed(false);setDone(false);setMessage('');},[record.epoch]);
   const denied=authorityLost||view.error instanceof ApiError&&([401,403].includes(view.error.status)||view.error.code==='ACCOUNT_CHANGED');
@@ -36,7 +37,7 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
     try{
       if(!await persist(operation,false,uiText("無法保存邀請操作編號，尚未送出授權。"))||!active.current)return;
       replace(operation);
-      const result=await api(path+'/accept',ActivityAccessResult,{method:'POST',headers:{...authHeaders(viewer),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input),signal:cancel.current.signal});accepted=true;
+      const result=await authHttp(viewer).request('POST /api/v2/activities/:id/access/:token/accept', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope, signal: cancel.current.signal }, ActivityAccessResult);accepted=true;
       if(!active.current)return;
       if(result.id!==id)throw Error('原邀請回執的活動不符，請保全紀錄後核對。');
       if(!await persist(null,false,uiText("已取得查看權限，但無法保存本機確認狀態；請保留原操作並核對結果。"))||!active.current)return;
@@ -62,8 +63,8 @@ export function ActivitySharePage(){const {id=''}=useParams(),session=useSession
 function Share({viewer,id}:{viewer:Viewer;id:string}){
   const [search,setSearch]=useSearchParams(),kind=search.get('kind')==='conditions'?'conditions':'activity';
   const view=useQuery({queryKey:['private',viewer.scope,'activity-share',id],queryFn:async({signal})=>{
-    const headers={'X-Account-Scope':viewer.scope},share=await api(base(id)+'/share',ActivityShare,{headers,signal});
-    const event=await api(base(id),Activity,{headers,signal}),link=activityShareURL(location.origin,id,share);
+    const share=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/share', { params: { id }, signal }, ActivityShare);
+    const event=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id', { params: { id }, signal }, Activity),link=activityShareURL(location.origin,id,share);
     if(event.id!==id)throw Error('活動摘要不符，請重新讀取。');
     return {...share,event,link};
   },gcTime:0});
