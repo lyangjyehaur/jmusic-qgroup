@@ -9,6 +9,7 @@ import { fixture } from '../testsupport/fixture';
 import { adminCatalogFixture, catalogProfiles } from '../testsupport/admin-catalog-fixture';
 import { createApp } from './app';
 import { createRoomJobs } from './music-room-jobs';
+import { atRoomWorkerResult } from '../testsupport/room-worker-boundary';
 const origin = 'https://rebuild.example',
   cleanup: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -223,22 +224,26 @@ describe('scoped music room source and CPU jobs', () => {
         sourceVersion: source.sourceVersion,
         selected: [catalogProfiles.alice, catalogProfiles.bob],
       };
-    const request = s.calculate(payload).then((response) => response);
-    await new Promise((resolve) => setTimeout(resolve, 15));
-    s.db
-      .prepare("UPDATE music_profile_fields SET name='changed-during-job' WHERE profile_id=?")
-      .run(catalogProfiles.bob);
-    const late = await request;
-    expect(late.statusCode, late.body).toBe(409);
-    expect(late.json().message).toContain('這次結果已失效');
+    const changedBoundary = atRoomWorkerResult(source.sourceVersion, () => {
+      s.db.prepare("UPDATE music_profile_fields SET name='changed-during-job' WHERE profile_id=?").run(catalogProfiles.bob);
+    });
+    try {
+      const late = await s.calculate(payload);
+      expect(changedBoundary.calls).toBe(1);
+      expect(late.statusCode, late.body).toBe(409);
+      expect(late.json().message).toContain('這次結果已失效');
+    } finally { changedBoundary.restore(); }
     const changed = await s.read();
     expect(changed.body).not.toMatch(/note|gender|contact|私人|不可匯出|token|pin|selections|userId/);
     expect(changed.headers['cache-control']).toBe('no-store');
-    const revoked = s.calculate({ ...payload, sourceVersion: RoomLabSource.parse(changed.json()).sourceVersion })
-      .then(response => response);
-    await new Promise(resolve => setTimeout(resolve, 15));
-    s.db.prepare("DELETE FROM browser_sessions WHERE user_id='alice'").run();
-    expect((await revoked).statusCode).toBe(401);
+    const version = RoomLabSource.parse(changed.json()).sourceVersion;
+    const revokedBoundary = atRoomWorkerResult(version, () => {
+      s.db.prepare("DELETE FROM browser_sessions WHERE user_id='alice'").run();
+    });
+    try {
+      expect((await s.calculate({ ...payload, sourceVersion: version })).statusCode).toBe(401);
+      expect(revokedBoundary.calls).toBe(1);
+    } finally { revokedBoundary.restore(); }
 
   });
 
