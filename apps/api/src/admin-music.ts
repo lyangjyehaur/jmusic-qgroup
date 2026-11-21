@@ -2,7 +2,7 @@ import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { AdminMusicSearch, PreviewMusicLink, SaveMusicLink, type AdminMusicProfile } from '@qgroup/contracts';
+import { SignedCursorQuery, AdminMusicSearch, PreviewMusicLink, SaveMusicLink, type AdminMusicProfile } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import type { AdminSecurity } from './admin-security';
@@ -86,7 +86,7 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
   }).immediate());
   app.get('/api/v2/admin/music/:id/history', async request => {
     admin.authority(request); const id = musicAdminProfileId(request.params); adminMusicProfile(db, id);
-    const { before } = z.object({ before: z.coerce.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER).default(Number.MAX_SAFE_INTEGER) }).strict().parse(request.query);
+    const { before } = SignedCursorQuery.parse(request.query);
     return musicOwnershipHistory(db, id, before);
   });
 }

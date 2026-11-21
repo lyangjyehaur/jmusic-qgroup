@@ -2,7 +2,7 @@ import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
-import { SavePrivacyReview } from '@qgroup/contracts';
+import { OffsetQuery, SavePrivacyReview } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import type { AdminSecurity } from './admin-security';
 import { sharedRecords } from './privacy';
@@ -25,7 +25,7 @@ function project(db: DB, row: Row) {
 export function registerAdminPrivacy(app: FastifyInstance, db: DB, admin: AdminSecurity, now: () => Date) {
   app.get('/api/v2/admin/privacy', async request => {
     admin.authority(request);
-    const { offset } = z.object({ offset: z.coerce.number().int().min(0).max(1000000).default(0) }).strict().parse(request.query);
+    const { offset } = OffsetQuery.parse(request.query);
     const total = (db.prepare('SELECT count(*) n FROM privacy_requests').get() as { n: number }).n;
     const rows = db.prepare('SELECT * FROM privacy_requests ORDER BY created_at DESC,id LIMIT 20 OFFSET ?').all(offset) as Row[];
     return { requests: rows.map(row => project(db, row)), total, offset, limit: 20 };

@@ -1,7 +1,7 @@
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { MusicPinResultRequest, ResetMusicPin } from '@qgroup/contracts';
+import { PositiveCursorQuery, MusicPinResultRequest, ResetMusicPin } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import type { AdminSecurity } from './admin-security';
@@ -43,7 +43,7 @@ export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: Admi
   });
   app.get('/api/v2/admin/music/:id/pin-history', async request => {
     admin.authority(request); const id = musicAdminProfileId(request.params); adminMusicProfile(db, id);
-    const { before } = z.object({ before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).default(Number.MAX_SAFE_INTEGER) }).strict().parse(request.query);
+    const { before } = PositiveCursorQuery.parse(request.query);
     const rows = db.prepare(`SELECT h.id,h.revision,h.reason,h.created_at AS createdAt,
       CASE WHEN h.actor_ref LIKE 'account:%' THEN COALESCE(u.nickname,'帳號管理員') ELSE '救援憑證' END AS actor
       FROM music_pin_history h LEFT JOIN users u ON h.actor_ref='account:'||u.id

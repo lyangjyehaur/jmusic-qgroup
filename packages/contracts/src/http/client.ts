@@ -7,9 +7,11 @@ type Operation=typeof HttpOperations[keyof typeof HttpOperations];
 type ParamNames<Path extends string>=Path extends `${string}:${infer Rest}`?Rest extends `${infer Name}/${infer Tail}`?Name|ParamNames<`/${Tail}`>:Rest:never;
 type Params<D extends Operation>=ParamNames<D['path']> extends never?{params?:never}:{params:Record<ParamNames<D['path']>,string>};
 type Body<D extends Operation>=D extends {body:infer S extends z.ZodType}?{body:z.input<S>}:{body?:never};
+type QueryValue=string|number|boolean|undefined;
+type WireQuery<S extends z.ZodType>={[K in keyof z.input<S>]:unknown extends z.input<S>[K]?QueryValue:z.input<S>[K]};
+type Query<D extends Operation>=D extends {query:infer S extends z.ZodType}?{query?:WireQuery<S>}:{query?:Readonly<Record<string,QueryValue>>};
 type RequestIdentity={requestId?:never;requestScope?:string}|{requestId:string;requestScope:string};
-export type HttpInput<Key extends keyof typeof HttpOperations>=Params<typeof HttpOperations[Key]>&Body<typeof HttpOperations[Key]>&RequestIdentity&{
- query?:Readonly<Record<string,string|number|boolean|undefined>>;
+export type HttpInput<Key extends keyof typeof HttpOperations>=Params<typeof HttpOperations[Key]>&Body<typeof HttpOperations[Key]>&Query<typeof HttpOperations[Key]>&RequestIdentity&{
  signal?:AbortSignal;
 };
 // Receipt namespaces can differ from the current device/account header scope.
@@ -30,7 +32,7 @@ const object=(value:unknown)=>{
  if(value===null||typeof value!=='object'||Array.isArray(value))throw new TypeError('Invalid HTTP request input');
  return value as Record<string,unknown>;
 };
-function requestPath(path:string,input:Record<string,unknown>){
+function requestPath(path:string,input:Record<string,unknown>,schema:z.ZodType|null){
  const names=[...path.matchAll(/:([^/]+)/g)].map(match=>match[1]!),params=object(input.params??{});
  if(Object.keys(params).sort().join(',')!==[...names].sort().join(','))throw new TypeError('HTTP route parameters differ');
  // Fetch normalizes whole dot segments, even when the dots are percent-encoded.
@@ -41,19 +43,22 @@ function requestPath(path:string,input:Record<string,unknown>){
   if(!['string','boolean','number'].includes(typeof value)||typeof value==='number'&&!Number.isFinite(value))throw new TypeError('Invalid HTTP query parameter');
   query.set(key,String(value));
  }
+ // Validate the actual wire strings. Keep the caller's URL intact: server
+ // defaults and transforms (including BigInt cursors) are not URL values.
+ schema?.parse(Object.fromEntries(query));
  return pathname+(query.size?'?'+query.toString():'');
 }
 
 /** Fixed same-origin routes and shared request-body schemas. The caller keeps
  * durable request IDs and pending outcomes; this transport never retries.
- * Query semantics, membership and authorization remain server-authoritative. */
+ * Shared queries validate the wire; membership and authorization remain server-authoritative. */
 export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpContext}={}){
  const send=options.fetch??globalThis.fetch;
  async function response<Key extends keyof typeof HttpOperations>(key:Key,input:HttpInput<Key>):Promise<Response>{
   if(!Object.hasOwn(HttpOperations,key))throw new TypeError('Unknown HTTP operation');
   const operation=HttpOperations[key],values=object(input);
   if(Object.keys(values).some(name=>!['params','query','body','requestId','requestScope','signal'].includes(name)))throw new TypeError('Unexpected HTTP request option');
-  const url=requestPath(operation.path,values),headers=new Headers({Accept:'application/json'}),context=options.context?.()??{};
+  const url=requestPath(operation.path,values,operation.query),headers=new Headers({Accept:'application/json'}),context=options.context?.()??{};
   if(values.requestId!==undefined||values.requestScope!==undefined){
    if(typeof values.requestScope!=='string'||!values.requestScope||values.requestScope!==(context.receiptScope??context.scope))throw new HttpScopeChangedError();
   }

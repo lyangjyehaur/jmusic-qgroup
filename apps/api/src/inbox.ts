@@ -2,7 +2,7 @@ import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
-import { MarkNotificationsRead, NotificationId, type InboxTodos } from '@qgroup/contracts';
+import { NotificationsQuery,TodosQuery, MarkNotificationsRead, type InboxTodos } from '@qgroup/contracts';
 import { activityState, DomainError } from '@qgroup/domain';
 import { hash, type Security } from './security';
 import { requireActivityAccess } from './activity-access';
@@ -13,7 +13,7 @@ export function registerInbox(app:FastifyInstance,db:DB,security:Security,now:()
   app.get('/api/v2/me/operations/:key',async request=>{const user=security.scopedMember(request),{key}=z.object({key:z.string().uuid()}).parse(request.params);return {committed:!!db.prepare('SELECT 1 FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key)};});
   app.get('/api/v2/me/notifications/count',async request=>({unreadCount:unread(security.scopedMember(request).id)}));
   app.get('/api/v2/me/notifications',async request=>db.transaction(()=>{
-    const user=security.scopedMember(request),{before}=z.object({before:NotificationId.optional()}).strict().parse(request.query);
+    const user=security.scopedMember(request),{before}=NotificationsQuery.parse(request.query);
     const rows=db.prepare("SELECT CAST(n.id AS TEXT) AS id,n.event_id,n.kind,n.message,n.created_at,n.read_at FROM notifications n JOIN events e ON e.id=n.event_id WHERE n.user_id=? AND e.status!='deleted' AND n.id<? ORDER BY n.id DESC LIMIT 101").all(user.id,before?BigInt(before):9223372036854775807n) as {id:string;event_id:string;kind:string;message:string;created_at:string;read_at:string|null}[];
     return {notifications:rows.slice(0,100).map(row=>({id:row.id,eventId:row.event_id,kind:row.kind,message:row.message,createdAt:row.created_at,readAt:row.read_at})),unreadCount:unread(user.id),nextBefore:rows.length>100?rows[99]!.id:null};
   })());
@@ -28,7 +28,7 @@ export function registerInbox(app:FastifyInstance,db:DB,security:Security,now:()
     }).immediate();
   });
   app.get('/api/v2/me/todos',async request=>db.transaction(()=>{
-    const user=security.scopedMember(request),{event:filter}=z.object({event:z.string().min(1).max(80).optional()}).strict().parse(request.query),time=now(),todos:z.infer<typeof InboxTodos>['todos']=[];
+    const user=security.scopedMember(request),{event:filter}=TodosQuery.parse(request.query),time=now(),todos:z.infer<typeof InboxTodos>['todos']=[];
     if(filter)requireActivityAccess(db,filter,user.id);
     const events=filter?[eventRow(db,filter)!]:db.prepare("SELECT * FROM events WHERE status!='deleted' ORDER BY starts_at,id").all() as EventRow[];
     for(const event of events){

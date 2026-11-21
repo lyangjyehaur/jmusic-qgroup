@@ -1,9 +1,8 @@
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { BackupId, MusicBackups } from '@qgroup/contracts';
+import { EmptyHttpQuery,MusicBackupQuery, MusicBackups } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
-import { z } from 'zod';
 import type { AdminSecurity } from './admin-security';
 import type { PairedBackups } from './paired-backups';
 import { readVerifiedErasureJournal, type ErasureJournal } from './erasure-journal';
@@ -13,12 +12,12 @@ import type { LegacyMusicHistory } from './legacy-music-history';
 
 export function registerAdminBackups(app: FastifyInstance, db: DB, admin: AdminSecurity, journal: ErasureJournal, backups: PairedBackups | undefined, now: () => Date, history?: LegacyMusicHistory) {
   app.get('/api/v2/admin/backups', async request => {
-    admin.authority(request); z.object({}).strict().parse(request.query);
+    admin.authority(request); EmptyHttpQuery.parse(request.query);
     try { return MusicBackups.parse({ available: !!backups || !!history, backups: [...(backups?.list() ?? []), ...(history?.list() ?? [])] }); }
     catch { throw withApiError(new DomainError('BACKUP_UNAVAILABLE', '備份清單無法驗證，請維運人員核對備份目錄；原始檔仍保留', 503)); }
   });
   app.get('/api/v2/admin/music-export', { exposeHeadRoute: false, config: { rateLimit: { max: 12, timeWindow: '1 minute' } } }, async (request, reply) => {
-    const { backup } = z.object({ backup: BackupId.optional() }).strict().parse(request.query);
+    const { backup } = MusicBackupQuery.parse(request.query);
     const raw = db.transaction(() => {
       admin.authority(request);
       let entries;

@@ -1,6 +1,6 @@
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
-import {
+import { PositiveVersionQuery,
   RoomPlanView,
   SaveRoomPlan,
   SaveSettlement,
@@ -105,7 +105,7 @@ export function registerSettlements(
   app.get('/api/v2/activities/:id/settlement/history', async (request) =>
     db.transaction(() => {
       const { event } = access(request),
-        query = z.object({ before: version.optional() }).strict().parse(request.query),
+        query = PositiveVersionQuery.parse(request.query),
         rows = db
           .prepare(
             'SELECT version FROM settlement_history WHERE event_id=? AND version<? ORDER BY version DESC LIMIT 51',

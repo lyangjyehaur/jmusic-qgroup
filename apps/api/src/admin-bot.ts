@@ -1,7 +1,7 @@
 import { withApiError } from './error-display';
 import { z } from 'zod';
 import type { FastifyInstance } from 'fastify';
-import {
+import { EmptyHttpQuery,
   BOT_KINDS,
   BotPolicyCommand,
   PreviewBotPolicy,
@@ -153,7 +153,7 @@ export function registerAdminBot(
   app.get('/api/v2/admin/bot', async (request) =>
     db.transaction(() => {
       admin.authority(request);
-      z.object({}).strict().parse(request.query);
+      EmptyHttpQuery.parse(request.query);
       return adminBotView(db, defaults);
     })(),
   );

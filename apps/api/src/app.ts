@@ -18,7 +18,7 @@ import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
-import { ANALYTICS_HOST, ANALYTICS_ORIGIN, displayLanguage } from '@qgroup/contracts';
+import { ActivitiesQuery,PageQuery, ANALYTICS_HOST, ANALYTICS_ORIGIN, displayLanguage } from '@qgroup/contracts';
 import { readFileSync } from 'node:fs';
 import { join,resolve } from 'node:path';
 import rateLimit from '@fastify/rate-limit';
@@ -180,11 +180,11 @@ export function createApp(options: AppOptions) {
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/me/activities', async request => {
-      const user=security.scopedMember(request),query=z.object({page:z.coerce.number().int().min(1).max(10000).default(1)}).strict().parse(request.query);
+      const user=security.scopedMember(request),query=PageQuery.parse(request.query);
       return db.transaction(()=>listMyActivities(db,user.id,query.page,now()))();
     });
     app.get('/api/v2/activities', async request => {
-      const query = z.object({ page: z.coerce.number().int().min(1).max(10000).default(1), period: z.enum(['upcoming', 'history']).default('upcoming') }).strict().parse(request.query);
+      const query = ActivitiesQuery.parse(request.query);
       return listActivities(db, query.page, query.period, now());
     });
     app.get('/api/v2/activities/:id', async request => {

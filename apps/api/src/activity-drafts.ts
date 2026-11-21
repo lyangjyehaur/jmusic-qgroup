@@ -2,7 +2,7 @@ import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
+import { PageQuery, CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
@@ -41,7 +41,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
   }
   app.get('/api/v2/me/activity-drafts',async request=>db.transaction(()=>{
     const user=security.scopedMember(request);
-    const {page}=z.object({page:z.coerce.number().int().min(1).max(10000).default(1)}).strict().parse(request.query);
+    const {page}=PageQuery.parse(request.query);
     const rows=db.prepare(`SELECT e.id,e.title,e.starts_at,e.owner_id,e.revision,u.nickname AS owner_name,r.permissions_json
       FROM events e JOIN users u ON u.id=e.owner_id LEFT JOIN event_roles r ON r.event_id=e.id AND r.user_id=?
       WHERE e.lifecycle='draft' AND e.status!='deleted' AND (e.owner_id=? OR json_array_length(r.permissions_json)>0)

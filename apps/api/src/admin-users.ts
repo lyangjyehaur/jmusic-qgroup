@@ -2,7 +2,7 @@ import { withApiError } from './error-display';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
-import { AdminLogin, Confirm, SaveAdminMetadata, SaveAdminRole } from '@qgroup/contracts';
+import { AdminUsersQuery,PositiveCursorQuery, AdminLogin, Confirm, SaveAdminMetadata, SaveAdminRole } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { hash } from './security';
 import type { AdminSecurity } from './admin-security';
@@ -39,7 +39,7 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
   app.post('/api/v2/admin/logout', async (request, reply) => db.transaction(() => { Confirm.parse(request.body); return admin.logout(request, reply); }).immediate());
   app.get('/api/v2/admin/users', async request => {
     admin.authority(request);
-    const query = z.object({ search: z.string().trim().refine(value => Array.from(value).length <= 100).default(''), offset: z.coerce.number().int().min(0).max(1000000).default(0), unionid: z.enum(['all', 'bound', 'missing', 'unbound']).default('all') }).strict().parse(request.query);
+    const query = AdminUsersQuery.parse(request.query);
     const hasQQ = "EXISTS(SELECT 1 FROM external_identities q WHERE q.user_id=u.id AND q.provider='qq')";
     const missing = `EXISTS(SELECT 1 FROM external_identities q WHERE q.user_id=u.id AND q.provider='qq' AND NOT EXISTS(
       SELECT 1 FROM external_unionids x WHERE x.provider=q.provider AND x.client_id=q.client_id AND x.subject=q.subject))`;
@@ -55,7 +55,7 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
   app.get('/api/v2/admin/users/:id', async request => { admin.authority(request); return user(db, UserId.parse((request.params as { id: string }).id)); });
   app.get('/api/v2/admin/users/:id/role-history', async request => {
     admin.authority(request); const id = UserId.parse((request.params as { id: string }).id); user(db, id);
-    const { before } = z.object({ before: z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER).default(Number.MAX_SAFE_INTEGER) }).strict().parse(request.query);
+    const { before } = PositiveCursorQuery.parse(request.query);
     const rows = db.prepare(`SELECT h.id,h.before_value,h.after_value,h.revision,h.created_at,h.actor_ref,u.nickname AS actor_name
       FROM admin_role_history h LEFT JOIN users u ON h.actor_ref='account:'||u.id WHERE h.user_id=? AND h.id<? ORDER BY h.id DESC LIMIT 51`).all(id, before) as { id: number; before_value: number; after_value: number; revision: number; created_at: string; actor_ref: string; actor_name: string | null }[];
     return { history: rows.slice(0, 50).map(row => ({ id: row.id, before: !!row.before_value, after: !!row.after_value, revision: row.revision, createdAt: row.created_at,

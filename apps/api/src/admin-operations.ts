@@ -1,3 +1,4 @@
+import { EmptyHttpQuery } from '@qgroup/contracts';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -9,7 +10,7 @@ export function registerAdminOperations(app: FastifyInstance, db: DB, admin: Adm
   app.get('/api/v2/admin/operations/:key', async request => db.transaction(() => {
     const access = admin.authority(request);
     const { key } = z.object({ key: z.string().uuid() }).strict().parse(request.params);
-    z.object({}).strict().parse(request.query);
+    EmptyHttpQuery.parse(request.query);
     const scope = z.string().regex(/^[a-f0-9]{64}$/).parse(request.headers['x-admin-scope']);
     if (scope !== access.scope)
       throw withApiError(new DomainError('ADMIN_CHANGED', '原操作的管理授權已變更，請回原頁核對管理狀態。', 409));

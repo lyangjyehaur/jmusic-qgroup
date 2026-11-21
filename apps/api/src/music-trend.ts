@@ -2,8 +2,7 @@ import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { z } from 'zod';
-import { MusicTrend, MusicTrendMembers, MusicTrendPoint } from '@qgroup/contracts';
+import { EmptyHttpQuery, MusicTrend, MusicTrendMembers, MusicTrendPoint } from '@qgroup/contracts';
 import { DomainError, musicTrendPoints, type TrendPoint } from '@qgroup/domain';
 import type { Security } from './security';
 import { getProfile } from './repositories';
@@ -76,11 +75,11 @@ export function startMusicTrendSampler(db: DB, now: () => Date, onError: (error:
 }
 export function registerMusicTrend(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
   app.get('/api/v2/music/trend', async request => db.transaction(() => {
-    z.object({}).strict().parse(request.query);
+    EmptyHttpQuery.parse(request.query);
     return readMusicTrend(db, now());
   })());
   app.get('/api/v2/music/trend/members', async request => db.transaction(() => {
-    const viewer = security.scopedMember(request); z.object({}).strict().parse(request.query);
+    const viewer = security.scopedMember(request); EmptyHttpQuery.parse(request.query);
     if (!getProfile(db, viewer.id)) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看新增同好', 403));
     return MusicTrendMembers.parse({ members: profiles(db).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8) });
   })());

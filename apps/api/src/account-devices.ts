@@ -1,9 +1,8 @@
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
-import { z } from 'zod';
 import type { DB } from '@qgroup/database';
-import { AcceptDeviceLink, Confirm, IssueDeviceLink, ReadDeviceLink, RevokeDevice } from '@qgroup/contracts';
+import { OptionalPositiveCursorQuery, AcceptDeviceLink, Confirm, IssueDeviceLink, ReadDeviceLink, RevokeDevice } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { hash, type Security } from './security';
 import { clearMusicClaims } from './music-claim-state';
@@ -41,7 +40,7 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
   });
   app.get('/api/v2/me/account-history', async request => {
     const viewer = security.scopedMember(request);
-    const query = z.object({ before: z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER).optional() }).strict().parse(request.query);
+    const query = OptionalPositiveCursorQuery.parse(request.query);
     const rows = db.prepare(`SELECT id,action,created_at FROM account_audit WHERE user_id=? AND id<? ORDER BY id DESC LIMIT 26`)
       .all(viewer.id, query.before ?? Number.MAX_SAFE_INTEGER) as { id: number; action: string; created_at: string }[];
     const page = rows.slice(0, 25);

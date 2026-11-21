@@ -2,7 +2,7 @@ import { it,expect,vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { createApp } from '../src/app';
 import { openDatabase } from '@qgroup/database';
-import { AuthResult,DeviceList,IssuedDeviceLink,Ok,PRIVACY_VERSION,Profile,SaveProfile,Session } from '@qgroup/contracts';
+import { AuthResult,BotDeliveriesQuery,DeviceList,FinanceHistoryQuery,IssuedDeviceLink,Ok,PRIVACY_VERSION,Profile,SaveProfile,Session } from '@qgroup/contracts';
 import { createHttpClient,HttpOperations,type HttpContext } from '@qgroup/contracts/http';
 import { checkHttpOperations,sharedSchemaCatalog } from '../../../tools/rebuild/build-http-contracts';
 
@@ -23,11 +23,14 @@ it('matches every real v2 runtime operation and shared body to the generated con
   await app.ready();const source=checkHttpOperations(root);
   expect([...observed].sort()).toEqual(Object.keys(HttpOperations).sort());expect(source).toHaveLength(194);
   expect(source.filter(row=>row.body)).toHaveLength(85);expect(source.map(row=>row.id).sort()).toEqual([...observed].sort());
+  expect(source.filter(row=>row.query)).toHaveLength(47);expect(source.every(row=>row.query===null||typeof row.query==='string')).toBe(true);
+  expect(HttpOperations['GET /api/v2/admin/bot/deliveries'].query).toBe(BotDeliveriesQuery);
+  expect(HttpOperations['GET /api/v2/activities/:id/finance'].query).toBe(FinanceHistoryQuery);
   expect(HttpOperations['PUT /api/v2/me/music'].body).toBe(SaveProfile);
  }finally{await app.close();db.close();}
 });
 it('exports all named schemas with wire semantics while retaining Zod refinement and server policy requirements',()=>{
- const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(273);
+ const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(296);
  const profile=catalog.schemas.SaveProfile as {properties:{selections:{maxItems:number;uniqueItems?:boolean}},additionalProperties:boolean};
  expect(profile.additionalProperties).toBe(false);expect(profile.properties.selections.maxItems).toBe(20);expect(profile.properties.selections.uniqueItems).not.toBe(true);
  expect(SaveProfile.safeParse({profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'e',level:1},{entryId:'e',level:2}]}).success).toBe(false);
@@ -51,6 +54,9 @@ it('uses the generated client with the real HTTP application through registratio
   const member=await client.request('GET /api/v2/session',{},Session);expect(member.authenticated).toBe(true);expect(member.scope).not.toBe(initial.scope);context={scope:member.scope,csrf:member.csrf};
   const link=await client.request('POST /api/v2/me/devices/link',{body:{confirm:true,authorizeOwnDevice:true}},IssuedDeviceLink);expect(link.token).toHaveLength(32);
   const devices=await client.request('GET /api/v2/me/devices',{},DeviceList);expect(devices.devices).toHaveLength(1);expect(devices.devices[0]!.current).toBe(true);
+  const history=await client.requestRaw('GET /api/v2/me/account-history',{query:{before:1}});expect(await history.json()).toEqual({history:[],nextCursor:null});
+  const priorCalls=calls;await expect(client.requestRaw('GET /api/v2/me/account-history',{query:{before:0}})).rejects.toBeInstanceOf(Error);expect(calls).toBe(priorCalls);
+  const invalid=await app.inject({url:'/api/v2/me/account-history?before=0',headers:{cookie,'x-account-scope':member.scope}});expect(invalid.statusCode).toBe(400);
   // Exercise the actual durable header protocol, including a lost-response retry.
   db.prepare("INSERT INTO music_entries(id,name,kind) VALUES('fixture-song','合成詞條','main')").run();
   const save={body:{profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'fixture-song',level:1}]},requestId:'33333333-3333-4333-8333-333333333333',requestScope:member.scope};

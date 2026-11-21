@@ -4,7 +4,7 @@ import { clientAddress } from './client-address';
 import { timingSafeEqual } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { ConfirmMusicClaim, StartMusicClaim, type MusicClaimStatus } from '@qgroup/contracts';
+import { MusicClaimQuery, ConfirmMusicClaim, StartMusicClaim, type MusicClaimStatus } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import { getProfile } from './repositories';
@@ -116,7 +116,7 @@ export function createMusicClaims(db: DB, now: () => Date) {
 }
 export type MusicClaims = ReturnType<typeof createMusicClaims>;
 export function registerMusicClaims(app: FastifyInstance, db: DB, security: Security, claims: MusicClaims) {
-  app.get('/api/v2/music/claim', async request => {const device=security.scoped(request),query=z.object({requestId:z.string().uuid().optional()}).strict().parse(request.query);return claims.status(device,query.requestId);});
+  app.get('/api/v2/music/claim', async request => {const device=security.scoped(request),query=MusicClaimQuery.parse(request.query);return claims.status(device,query.requestId);});
   app.post('/api/v2/music/claim/start', { config: { rateLimit: { max: 40, timeWindow: '1 minute' } } }, async request => {
     security.write(request); const input = StartMusicClaim.parse(request.body); claims.charge(input.legacyQQ, clientAddress(request));
     return claims.start(security.write(request), input);

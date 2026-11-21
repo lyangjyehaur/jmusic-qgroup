@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { FinancePayload, FinancePreview, FinancePreviewInput, FinanceSaveInput, FinanceResult, ViewFinanceOrigin, FinanceOriginResult, type FinanceCommand, type FinancePrepared, type FinanceTransaction } from '@qgroup/contracts';
+import { FinanceHistoryQuery, FinancePayload, FinancePreview, FinancePreviewInput, FinanceSaveInput, FinanceResult, ViewFinanceOrigin, FinanceOriginResult, type FinanceCommand, type FinancePrepared, type FinanceTransaction } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
@@ -93,9 +93,9 @@ export function executeFinance(db:DB,event:EventRow,user:User,input:{revision:nu
  return {id,revision:eventRow(db,id)!.revision};
 }
 export function registerFinance(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),cursor=z.string().regex(/^[1-9][0-9]{0,17}$/).transform(BigInt),bot=createActivityBot(db,now,defaults),limits={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
+  const params=z.object({id:z.string().min(1).max(80)}),bot=createActivityBot(db,now,defaults),limits={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function access(id:string,userId:string|null){requireActivityAccess(db,id,userId);return eventRow(db,id)!;}
-  app.get('/api/v2/activities/:id/finance',async request=>db.transaction(()=>{const {id}=params.parse(request.params),query=z.object({before:cursor.optional(),before_report:cursor.optional()}).strict().parse(request.query),device=security.read(request);if(request.headers['x-account-scope']||device)security.scoped(request);return financeView(db,access(id,device?.kind==='member'?device.id:null),device?.kind==='member'?device.id:null,query.before,query.before_report);})());
+  app.get('/api/v2/activities/:id/finance',async request=>db.transaction(()=>{const {id}=params.parse(request.params),query=FinanceHistoryQuery.parse(request.query),device=security.read(request);if(request.headers['x-account-scope']||device)security.scoped(request);return financeView(db,access(id,device?.kind==='member'?device.id:null),device?.kind==='member'?device.id:null,query.before,query.before_report);})());
   app.post('/api/v2/activities/:id/finance/origin',limits,async request=>db.transaction(()=>{
     const {id}=params.parse(request.params),user=security.memberWrite(request),event=access(id,user.id),input=ViewFinanceOrigin.parse(request.body),manager=eventScopes(db,event,user.id).has('settlement');
     if(event.lifecycle==='draft'||event.status==='deleted')fail('找不到可核對的活動帳本',404);

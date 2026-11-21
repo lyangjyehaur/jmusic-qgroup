@@ -1,7 +1,7 @@
 import { withApiError } from './error-display';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { ActivityDraftResult, RespondActivityConditions, SaveActivityDraft } from '@qgroup/contracts';
+import { PageQuery, ActivityDraftResult, RespondActivityConditions, SaveActivityDraft } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
@@ -60,7 +60,7 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
   }
   app.get('/api/v2/activities/:id/arrangements',async request=>db.transaction(()=>activityArrangements(db,params.parse(request.params).id,security.scopedMember(request).id))());
   app.get('/api/v2/activities/:id/conditions',async request=>db.transaction(()=>{
-    const {page}=z.object({page:z.coerce.number().int().min(1).max(10000).default(1)}).strict().parse(request.query);
+    const {page}=PageQuery.parse(request.query);
     return activityConditions(db,params.parse(request.params).id,activityViewer(security,request),page);
   })());
   app.get('/api/v2/activities/management-results/:requestId',async request=>db.transaction(()=>{

@@ -1,3 +1,4 @@
+import { ActivityHistoryQuery } from '@qgroup/contracts';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { z } from 'zod';
@@ -26,7 +27,7 @@ function snapshot(raw:string,privateFinance:boolean):Record<string,Json>{
 }
 export function registerActivityHistory(app:FastifyInstance,db:DB,security:Security){
   app.get('/api/v2/activities/:id/history',async request=>db.transaction(()=>{
-    const {id}=z.object({id:z.string().min(1).max(80)}).parse(request.params),{before}=z.object({before:z.string().regex(/^[0-9]{1,18}$/).optional()}).strict().parse(request.query);
+    const {id}=z.object({id:z.string().min(1).max(80)}).parse(request.params),{before}=ActivityHistoryQuery.parse(request.query);
     requireActivityAccess(db,id,activityViewer(security,request));
     const rows=db.prepare('SELECT CAST(id AS TEXT) AS id,version,actor_name,action,before_json,after_json,reason,created_at FROM event_audit WHERE event_id=? AND id<? ORDER BY event_audit.id DESC LIMIT 51').all(id,before?BigInt(before):9223372036854775807n) as {id:string;version:number;actor_name:string;action:string;before_json:string;after_json:string;reason:string;created_at:string}[];
     return {id,title:eventRow(db,id)!.title,entries:rows.slice(0,50).map(row=>{const privateFinance=['finance_report','finance_reject','finance_withdraw'].includes(row.action);return {id:row.id,version:row.version,actorName:row.actor_name,action:row.action,before:snapshot(row.before_json,privateFinance),after:snapshot(row.after_json,privateFinance),reason:privateFinance?'':row.reason,createdAt:row.created_at};}),nextBefore:rows.length>50?rows[49]!.id:null};

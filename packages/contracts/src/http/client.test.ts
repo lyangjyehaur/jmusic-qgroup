@@ -71,3 +71,24 @@ it('keeps generated routing metadata immutable',()=>{
  expect(Object.isFrozen(HttpOperations)).toBe(true);const operation=HttpOperations['GET /api/v2/session'];
  expect(Object.isFrozen(operation)).toBe(true);expect(Reflect.set(operation,'path','https://other.invalid')).toBe(false);expect(operation.path).toBe('/api/v2/session');
 });
+it('validates query wire values without rewriting server defaults, whitespace or BigInt cursors',async()=>{
+ const calls:string[]=[];const client=createHttpClient({fetch:async url=>{calls.push(String(url));return new Response('{"ok":true}');}});
+ await client.request('GET /api/v2/activities',{query:{page:2,period:'history'}},Ok);
+ await client.request('GET /api/v2/activities',{},Ok);
+ await client.request('GET /api/v2/activities/:id/finance',{params:{id:'synthetic'},query:{before:'9007199254740993',before_report:'999999999999999999'}},Ok);
+ await client.request('GET /api/v2/admin/users',{query:{search:'  𠮷  '}},Ok);
+ expect(calls).toEqual(['/api/v2/activities?page=2&period=history','/api/v2/activities','/api/v2/activities/synthetic/finance?before=9007199254740993&before_report=999999999999999999','/api/v2/admin/users?search=++%F0%A0%AE%B7++']);
+});
+it.each(['zero page','page limit','wrong period','zero account cursor','zero finance cursor','overflow bot cursor','wrong bot status','unexpected empty-query field','unexpected page field','Unicode search limit'])('rejects %s query before transport',async mode=>{
+ let count=0;const client=createHttpClient({fetch:async()=>{count++;return new Response('{"ok":true}');}});let key:string='GET /api/v2/activities',input:unknown={query:{page:0}};
+ if(mode==='page limit')input={query:{page:10001}};
+ if(mode==='wrong period')input={query:{period:'active'}};
+ if(mode==='zero account cursor'){key='GET /api/v2/me/account-history';input={query:{before:0}};}
+ if(mode==='zero finance cursor'){key='GET /api/v2/activities/:id/finance';input={params:{id:'synthetic'},query:{before:'0'}};}
+ if(mode==='overflow bot cursor'){key='GET /api/v2/admin/bot/deliveries';input={query:{before:'9223372036854775808'}};}
+ if(mode==='wrong bot status'){key='GET /api/v2/admin/bot/deliveries';input={query:{status:'simulated'}};}
+ if(mode==='unexpected empty-query field'){key='GET /api/v2/admin/bot';input={query:{unrecognized:'1'}};}
+ if(mode==='unexpected page field')input={query:{unrecognized:'1'}};
+ if(mode==='Unicode search limit'){key='GET /api/v2/admin/users';input={query:{search:'𠮷'.repeat(101)}};}
+ await expect(client.request(key as keyof typeof HttpOperations,input as never,Ok)).rejects.toBeInstanceOf(z.ZodError);expect(count).toBe(0);
+});

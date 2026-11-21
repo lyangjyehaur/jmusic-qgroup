@@ -2,7 +2,7 @@ import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import sharp from 'sharp';
-import { Appearance,AppearanceCommand,AppearanceResult } from '@qgroup/contracts';
+import { EmptyHttpQuery, Appearance,AppearanceCommand,AppearanceResult } from '@qgroup/contracts';
 import { wallpaperDigest,type DB } from '@qgroup/database';
 import { DomainError,musicText } from '@qgroup/domain';
 import { z } from 'zod';
@@ -27,8 +27,8 @@ export async function wallpaperImage(data:string,mime:string){
   return raw;
 }
 export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity,now:()=>Date){
-  app.get('/api/v2/appearance',async request=>db.transaction(()=>{z.object({}).strict().parse(request.query);return appearance(db,true);})());
-  app.get('/api/v2/admin/appearance',async request=>db.transaction(()=>{admin.authority(request);z.object({}).strict().parse(request.query);return appearance(db);})());
+  app.get('/api/v2/appearance',async request=>db.transaction(()=>{EmptyHttpQuery.parse(request.query);return appearance(db,true);})());
+  app.get('/api/v2/admin/appearance',async request=>db.transaction(()=>{admin.authority(request);EmptyHttpQuery.parse(request.query);return appearance(db);})());
   app.post('/api/v2/admin/appearance',{bodyLimit:3*1024*1024,config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async request=>{
     const access=admin.authority(request,true),input=AppearanceCommand.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']);
     const signature=hash('v2:appearance:'+JSON.stringify(input));

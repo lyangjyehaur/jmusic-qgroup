@@ -3,7 +3,7 @@ import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { musicCreatedIds,type DB } from '@qgroup/database';
-import { AdminMusicCatalog,AdminMusicEntryCommand,AdminMusicEntryResult } from '@qgroup/contracts';
+import { EmptyHttpQuery, AdminMusicCatalog,AdminMusicEntryCommand,AdminMusicEntryResult } from '@qgroup/contracts';
 import { DomainError,musicEntryKey,musicText,mergeMusicAliases,mergeMusicSelections,replaceMusicId } from '@qgroup/domain';
 import { z } from 'zod';
 import type { AdminSecurity } from './admin-security';
@@ -54,7 +54,7 @@ function replaceReferences(db:DB,source:string,target:string|undefined,stamp:str
 }
 export function registerAdminMusicCatalog(app:FastifyInstance,db:DB,admin:AdminSecurity,now:()=>Date){
   app.get('/api/v2/admin/music-entries',{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    admin.authority(request);z.object({}).strict().parse(request.query);return adminMusicCatalog(db,now());
+    admin.authority(request);EmptyHttpQuery.parse(request.query);return adminMusicCatalog(db,now());
   })());
   app.post('/api/v2/admin/music-entries',{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async request=>db.transaction(()=>{
     const access=admin.authority(request,true),input=AdminMusicEntryCommand.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']);

@@ -1,7 +1,7 @@
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { ArchivePaymentCode, CreatePaymentCode, PaymentCode, PaymentCodeId, PaymentKind, PaymentCodeSource, SettlementPaymentChoices, SettlementReceiptChoice } from '@qgroup/contracts';
+import { MinVersionQuery, ArchivePaymentCode, CreatePaymentCode, PaymentCode, PaymentCodeId, PaymentKind, PaymentCodeSource, SettlementPaymentChoices, SettlementReceiptChoice } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { legacyStamp } from './activity-arrangements';
@@ -118,7 +118,7 @@ export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Se
     return { codes: paymentCodeDescriptors(db, id, version), receipts, can_save: !!userId && settlementPublishedBy(db, id, version, userId) };
   })());
   app.get('/api/v2/activities/:id/settlement/asset-versions', async request => db.transaction(() => {
-    const { id } = eventAccess(request), query = z.object({ before: version.optional() }).strict().parse(request.query);
+    const { id } = eventAccess(request), query = MinVersionQuery.parse(request.query);
     const rows = db.prepare('SELECT version,total_cents,headcount,actor_name,updated_at FROM settlement_history WHERE event_id=? AND version<? ORDER BY version DESC LIMIT 51').all(id, query.before ?? Number.MAX_SAFE_INTEGER) as { version: number; total_cents: number; headcount: number; actor_name: string; updated_at: string }[];
     return { versions: rows.slice(0, 50), next_before: rows.length > 50 ? rows[49]!.version : null };
   })());

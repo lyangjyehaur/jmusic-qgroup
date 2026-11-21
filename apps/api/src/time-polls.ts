@@ -2,7 +2,7 @@ import { withApiError } from './error-display';
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
-import {
+import { TimePollsQuery,
   CreateTimePoll,
   ManageTimePoll,
   PollHistoryDetails,
@@ -163,12 +163,7 @@ export function registerTimePolls(
     db.transaction(() => {
       const device = viewer(request),
         user = device.kind === 'member' ? device.id : null;
-      const { page, period } = z
-        .object({
-          page: z.coerce.number().int().min(1).max(10000).default(1),
-          period: z.enum(['active', 'history']).default('active'),
-        })
-        .strict()
+      const { page, period } = TimePollsQuery
         .parse(request.query);
       // Explicit history offers a permanent route to every public retained result.
       const clause = period === 'active' ? "status IN ('open','closed')" : "status IN ('finalized','cancelled')";

@@ -15,6 +15,7 @@ export * from './settlements';
 export * from './time-polls';
 export * from './activity-rooms';
 export * from './music-catalog';
+export * from './http-queries';
 
 export const Selection = z.object({ entryId: z.string().min(1).max(80), level: z.number().int().min(1).max(4) }).strict();
 export const SaveProfile = z.object({

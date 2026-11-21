@@ -3,7 +3,7 @@ import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { removeMusicShout, type DB } from '@qgroup/database';
-import { MusicShout, MusicShouts, PublishMusicShout, AdminMusicShouts, DeleteMusicShout } from '@qgroup/contracts';
+import { AdminMusicShoutsQuery,EmptyHttpQuery,MusicShoutsQuery, MusicShout, MusicShouts, PublishMusicShout, AdminMusicShouts, DeleteMusicShout } from '@qgroup/contracts';
 import { DomainError, shoutTTL, shoutCooldown, shoutHistoryMax, shoutText } from '@qgroup/domain';
 import { z } from 'zod';
 import { getProfile } from './repositories';
@@ -11,7 +11,7 @@ import { musicNameJoins, musicNameSQL } from './music-fields';
 import { hash, type Security } from './security';
 import type { AdminSecurity } from './admin-security';
 type Row={id:string;profile_id:string|null;legacy_key:string;name:string;body:string;created_at:number;archived_at:number|null;ordinal:number};
-const pageSchema=z.object({offset:z.coerce.number().int().min(0).max(1000000).default(0),limit:z.coerce.number().int().min(1).max(50).default(10)}).strict();
+
 function ordinal(db:DB){return (db.prepare('SELECT COALESCE(max(ordinal),-1)+1 n FROM music_shouts').get() as {n:number}).n;}
 export function archiveMusicShouts(db:DB,time:number,replaceProfile?:string){
   const expired=db.prepare('SELECT id FROM music_shouts WHERE archived_at IS NULL AND (created_at<=? OR profile_id=?) ORDER BY ordinal').all(time-shoutTTL,replaceProfile??null) as {id:string}[];
@@ -31,11 +31,11 @@ function listing(db:DB,viewer:string,history:boolean,offset:number,limit:number,
 }
 export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,admin:AdminSecurity,now:()=>Date){
   for(const history of [false,true])app.get('/api/v2/music/shouts'+(history?'/history':''),{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    const member=security.scopedMember(request),profile=mine(db,member.id),page=pageSchema.parse(request.query),time=now().getTime()/1000;
+    const member=security.scopedMember(request),profile=mine(db,member.id),page=MusicShoutsQuery.parse(request.query),time=now().getTime()/1000;
     archiveMusicShouts(db,time);return listing(db,profile.id,history,page.offset,page.limit,time);
   }).immediate());
   app.get('/api/v2/music/shouts/:id',{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    const profile=mine(db,security.scopedMember(request).id),{id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);z.object({}).strict().parse(request.query);
+    const profile=mine(db,security.scopedMember(request).id),{id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);EmptyHttpQuery.parse(request.query);
     archiveMusicShouts(db,now().getTime()/1000);const row=db.prepare(`SELECT s.* FROM music_shouts s WHERE s.id=? AND (s.archived_at IS NOT NULL OR ${currentShoutSQL})`).get(id) as Row|undefined;
     if(!row)throw withApiError(new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404));return view(db,row,profile.id);
   }).immediate());
@@ -54,7 +54,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
     db.prepare('INSERT INTO music_profile_receipts VALUES(?,?,?)').run(member.id,key,profile.id);return result;
   }).immediate());
   app.get('/api/v2/admin/shouts',{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    admin.authority(request);const {period,...page}=pageSchema.extend({period:z.enum(['active','history']).default('active')}).parse(request.query),time=now().getTime()/1000;archiveMusicShouts(db,time);
+    admin.authority(request);const {period,...page}=AdminMusicShoutsQuery.parse(request.query),time=now().getTime()/1000;archiveMusicShouts(db,time);
     const result=listing(db,'',period==='history',page.offset,page.limit,time);
     return AdminMusicShouts.parse({...result,items:result.items.map(item=>({...item,revision:hash(JSON.stringify(db.prepare('SELECT * FROM music_shouts WHERE id=?').get(item.id)))}))});
   }).immediate());
@@ -69,7 +69,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
     db.prepare('INSERT INTO auth_requests VALUES(?,?,?,?,?)').run(access.receiptScope,key,signature,'{"ok":true}',now().toISOString());return{ok:true};
   }).immediate());
   app.get('/api/v2/admin/shouts/:id',{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    admin.authority(request);z.object({}).strict().parse(request.query);const {id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);
+    admin.authority(request);EmptyHttpQuery.parse(request.query);const {id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);
     archiveMusicShouts(db,now().getTime()/1000);const row=db.prepare('SELECT * FROM music_shouts WHERE id=?').get(id) as Row|undefined;
     if(!row)throw withApiError(new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404));return{...view(db,row),revision:hash(JSON.stringify(row))};
   }).immediate());

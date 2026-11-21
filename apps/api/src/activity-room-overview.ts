@@ -1,7 +1,7 @@
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { ActivityRoomOverview, RoomPlanHistory, SettlementRoom } from '@qgroup/contracts';
+import { PositiveVersionQuery, ActivityRoomOverview, RoomPlanHistory, SettlementRoom } from '@qgroup/contracts';
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import { activityRoster, activityViewer } from './activity-roster';
@@ -115,7 +115,7 @@ export function registerActivityRooms(app: FastifyInstance, db: DB, security: Se
   app.get('/api/v2/activities/:id/rooms/history', async (request) =>
     db.transaction(() => {
       const { id } = params.parse(request.params),
-        { before } = z.object({ before: version.optional() }).strict().parse(request.query);
+        { before } = PositiveVersionQuery.parse(request.query);
       requireActivityAccess(db, id, activityViewer(security, request));
       const rows = db
         .prepare(

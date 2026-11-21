@@ -1,9 +1,8 @@
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { AdminMusicErasureInput,AdminMusicErasurePreview,AdminMusicErasureResult,ErasureProof } from '@qgroup/contracts';
+import { EmptyHttpQuery, AdminMusicErasureInput,AdminMusicErasurePreview,AdminMusicErasureResult,ErasureProof } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
-import { z } from 'zod';
 import type { AdminSecurity } from './admin-security';
 import type { PrivacyService } from './privacy';
 import { adminMusicProfile,musicAdminProfileId } from './admin-music';
@@ -27,7 +26,7 @@ export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminS
   for(const reset of [false,true]){
     const path=reset?'/api/v2/admin/music-reset':'/api/v2/admin/music/:id/erase';
     app.get(path,{exposeHeadRoute:false},async request=>db.transaction(()=>{
-      admin.authority(request);z.object({}).strict().parse(request.query);
+      admin.authority(request);EmptyHttpQuery.parse(request.query);
       return musicErasureScope(db,reset?undefined:musicAdminProfileId(request.params)).preview;
     })());
     app.post(path,{config:{rateLimit:{max:6,timeWindow:'1 minute'}}},async request=>{

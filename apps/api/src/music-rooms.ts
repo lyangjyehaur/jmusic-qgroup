@@ -1,20 +1,19 @@
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
-import { RoomLabCommand } from '@qgroup/contracts';
+import { RoomContextQuery, RoomLabCommand } from '@qgroup/contracts';
 import { DomainError } from '@qgroup/domain';
-import { z } from 'zod';
 import type { Security } from './security';
 import { musicRoomSource } from './music-room-source';
 import { createRoomJobs } from './music-room-jobs';
 export function registerMusicRooms(app: FastifyInstance, db: DB, security: Security) {
   const jobs = createRoomJobs();
   app.addHook('onClose', async () => jobs.close());
-  const query = z.object({ eventId: z.string().min(1).max(80).optional() }).strict();
+
   app.get('/api/v2/music/rooms/source', async (request) =>
     db.transaction(() => {
       const user = security.scopedMember(request),
-        { eventId } = query.parse(request.query);
+        { eventId } = RoomContextQuery.parse(request.query);
       return musicRoomSource(db, user.id, eventId ?? null).source;
     })(),
   );
@@ -27,7 +26,7 @@ export function registerMusicRooms(app: FastifyInstance, db: DB, security: Secur
     async (request) => {
       const snapshot = db.transaction(() => {
         const user = security.memberWrite(request),
-          { eventId } = query.parse(request.query),
+          { eventId } = RoomContextQuery.parse(request.query),
           input = RoomLabCommand.parse(request.body),
           snapshot = musicRoomSource(db, user.id, eventId ?? null);
         if (input.sourceVersion !== snapshot.source.sourceVersion)
