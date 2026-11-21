@@ -11,7 +11,8 @@ import {
   RoomSuggestionTransfer,
   RoomLabSource,
 } from '@qgroup/contracts';
-import { api } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { useReviewedDraft } from './reviewed-draft';
@@ -40,9 +41,7 @@ function Loader({ viewer, id }: { viewer: Member; id: string }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'room-plan', id],
     queryFn: () =>
-      api(base(id) + '/rooms', RoomPlanView, {
-        headers: { 'X-Account-Scope': viewer.scope },
-      }),
+      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms', { params: { id } }, RoomPlanView),
     refetchOnWindowFocus: false,
   });
   return query.isPending ? (
@@ -66,10 +65,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       queryKey: ['private', viewer.scope, 'room-lab-adoption', initial.id, suggestion?.sourceVersion],
       enabled: !!suggestion && !imported,
       queryFn: ({ signal }) =>
-        api('/music/rooms/source?' + new URLSearchParams({ eventId: initial.id }), RoomLabSource, {
-          signal,
-          headers: { 'X-Account-Scope': viewer.scope },
-        }),
+        scopedHttp(viewer.scope).request('GET /api/v2/music/rooms/source', { signal, query: { eventId: initial.id } }, RoomLabSource),
       staleTime: 0,
       refetchOnMount: 'always',
       refetchOnWindowFocus: 'always',
@@ -93,13 +89,10 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
       }),
       valueSchema: Editable,
       saveSchema: SaveRoomPlan,
-      resultSchema: SettlementResult,
-      endpoint,
+      send: (input, requestId) => authHttp(viewer).request('POST /api/v2/activities/:id/rooms', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }, SettlementResult),
       beforeSubmit:()=>requireLegacyAvailable(viewer.scope,endpoint),
       latest: () =>
-        api(endpoint, RoomPlanView, {
-          headers: { 'X-Account-Scope': viewer.scope },
-        }),
+        scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms', { params: { id: initial.id } }, RoomPlanView),
       fromPending: ({ confirm, ...value }): z.infer<typeof Editable> => {
         void confirm;
         return value;

@@ -6,7 +6,8 @@ import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { MusicCatalog, MyMusicEntries, MusicEntryCommand, MusicEntryResult } from '@qgroup/contracts';
 import { musicEntryKey } from '@qgroup/domain';
 import { z } from 'zod';
-import { api } from './api';
+import { createWebHttpClient, scopedHttp } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { useReviewedDraft } from './reviewed-draft';
@@ -18,7 +19,6 @@ const endpoint = '/me/music/entries',
   path = (id: string) => endpoint + '/' + encodeURIComponent(id);
 export const categoryLabel = (value: string) =>
   ({ 领域: uiText("領域"), 乐队: uiText("樂隊"), 组合: uiText("組合"), 社团: uiText("社團"), 企划: uiText("企劃") })[value] ?? value;
-const headers = (viewer: Member) => ({ 'X-Account-Scope': viewer.scope });
 export function MyMusicEntriesPage() {
   return (
     <>
@@ -37,7 +37,7 @@ export function MyMusicEntriesPage() {
 function MineLoader({ viewer }: { viewer: Member }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'music-entries', viewer.musicEpoch],
-    queryFn: () => api(endpoint, MyMusicEntries, { headers: headers(viewer) }),
+    queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/entries', {}, MyMusicEntries),
   });
   return query.isPending ? (
     <Notice>正在讀取我的詞條…</Notice>
@@ -99,10 +99,10 @@ export function MusicEntryEditorPage({ command }: { command: Command }) {
 function EditorLoader({ viewer, command, id }: { viewer: Member; command: Command; id: string }) {
   const mine = useQuery({
       queryKey: ['private', viewer.scope, 'music-entries', viewer.musicEpoch],
-      queryFn: () => api(endpoint, MyMusicEntries, { headers: headers(viewer) }),
+      queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/entries', {}, MyMusicEntries),
       refetchOnWindowFocus: false,
     }),
-    catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => api('/music/catalog', MusicCatalog) });
+    catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => createWebHttpClient().request('GET /api/v2/music/catalog', {}, MusicCatalog) });
   if (mine.isPending || catalog.isPending) return <Notice>正在讀取詞條…</Notice>;
   if (mine.error || catalog.error)
     return (
@@ -178,9 +178,8 @@ function EntryEditor({
       blank,
       valueSchema: Editable,
       saveSchema: MusicEntryCommand,
-      resultSchema: MusicEntryResult,
-      endpoint,
-      latest: () => api(endpoint, MyMusicEntries, { headers: headers(viewer) }),
+      send: (input, requestId) => authHttp(viewer).request('POST /api/v2/me/music/entries', { body: input, requestId, requestScope: viewer.scope }, MusicEntryResult),
+      latest: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/entries', {}, MyMusicEntries),
       fromPending: ({ confirm, ...input }) => ({
         ...blank(initial),
         ...input,

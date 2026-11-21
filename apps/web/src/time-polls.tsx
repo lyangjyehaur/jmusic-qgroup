@@ -15,7 +15,8 @@ import {
   VoteTimePoll,
   type Viewer,
 } from '@qgroup/contracts';
-import { api } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
@@ -26,8 +27,7 @@ import { PollCalendar } from './poll-calendar';
 import { CreateIntentLookup } from './create-intents';
 import { EditablePollDefinition as EditableDefinition,pollCreateInput as createInput } from './poll-create-record';
 type Poll = z.infer<typeof TimePoll>;
-const base = (id: string) => '/time-polls/' + encodeURIComponent(id),
-  scoped = (v: Viewer) => ({ 'X-Account-Scope': v.scope });
+const base = (id: string) => '/time-polls/' + encodeURIComponent(id);
 const choices = { yes: uiText("可以"), maybe: uiText("勉強可以"), no: uiText("不行") } as const;
 const states = { open: uiText("投票中"), closed: uiText("已截止"), cancelled: uiText("已取消"), finalized: uiText("已定案"), deleted: uiText("已移除") };
 const label = (o: Poll['options'][number], p: Poll) =>
@@ -47,9 +47,7 @@ export function TimePollsPage() {
     queryKey: ['private', session.data?.scope, 'time-polls', period, page],
     enabled: !!session.data,
     queryFn: () =>
-      api('/time-polls?' + new URLSearchParams({ period, page: String(page) }), TimePollList, {
-        headers: scoped(session.data!),
-      }),
+      scopedHttp(session.data!.scope).request('GET /api/v2/time-polls', { query: { period, page } }, TimePollList),
   });
   return (
     <>
@@ -141,8 +139,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
     blank: emptyDefinition,
     valueSchema: EditableDefinition,
     saveSchema: CreateTimePoll,
-    resultSchema: TimePollResult,
-    endpoint: '/time-polls',
+    send: (input, requestId) => authHttp(viewer).request('POST /api/v2/time-polls', { body: input, requestId, requestScope: viewer.scope }, TimePollResult),
     beforeSubmit: () => requireLegacyAvailable(viewer.scope,'/time-polls/new'),
     latest: async (result) => ({ id: result ? TimePollResult.parse(result).id : null }),
     fromPending: (input) => ({
@@ -307,7 +304,7 @@ export function TimePollPage({ manage = false }: { manage?: boolean }) {
   const query = useQuery({
     queryKey: ['private', viewer?.scope, 'time-poll', id, ...(manage ? ['manage'] : [])],
     enabled: !!viewer,
-    queryFn: () => api(base(id) + (manage ? '/manage' : ''), TimePoll, { headers: scoped(viewer!) }),
+    queryFn: () => scopedHttp(viewer!.scope).request(manage ? 'GET /api/v2/time-polls/:id/manage' : 'GET /api/v2/time-polls/:id', { params: { id } }, TimePoll),
     refetchOnWindowFocus: false,
   });
   // Re-read as a candidate or deadline expires, without modifying an editable ballot.
@@ -437,10 +434,9 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
     blank: (p) => ({ revision: p.revision, choices: p.my_choices }),
     valueSchema: EditableVotes,
     saveSchema: VoteTimePoll,
-    resultSchema: TimePollResult,
-    endpoint: base(initial.id) + '/votes',
+    send: (input, requestId) => authHttp(viewer).request('POST /api/v2/time-polls/:id/votes', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }, TimePollResult),
     latest: async () => {
-      const p = await api(base(initial.id), TimePoll, { headers: scoped(viewer) });
+      const p = await scopedHttp(viewer.scope).request('GET /api/v2/time-polls/:id', { params: { id: initial.id } }, TimePoll);
       return p;
     },
     fromPending: (input) => ({
@@ -615,11 +611,10 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
     blank: managerBlank,
     valueSchema: ManagerEditable,
     saveSchema: ManageTimePoll,
-    resultSchema: TimePollResult,
-    endpoint: base(initial.id) + '/manage',
+    send: (input, requestId) => authHttp(viewer).request('POST /api/v2/time-polls/:id/manage', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }, TimePollResult),
     latest: async (result) => {
       if (result && TimePollResult.parse(result).removed) return initial;
-      const p = await api(base(initial.id) + '/manage', TimePoll, { headers: scoped(viewer) });
+      const p = await scopedHttp(viewer.scope).request('GET /api/v2/time-polls/:id/manage', { params: { id: initial.id } }, TimePoll);
       return p;
     },
     fromPending: (input) => ({ ...managerBlank(initial), ...input }),

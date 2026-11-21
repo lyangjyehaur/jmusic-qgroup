@@ -3,14 +3,14 @@ import { useEffect, useRef, useState } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { z } from 'zod';
 import type { Member } from './member-access';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
 import { DraftConflict, DraftExpired, draftVersions, openDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
 /** Persist the exact account-scoped payload before sending; uncertain delivery requires an explicit retry. */
 export function useReviewedDraft<T, S, F>(options: {
   key: string; viewer: Member; initial: F;
   blank: (fresh: F) => T;
-  valueSchema: z.ZodType<T>; saveSchema: z.ZodType<S>; resultSchema: z.ZodType;
-  endpoint: string; latest: (result?: unknown) => Promise<F>;
+  valueSchema: z.ZodType<T>; saveSchema: z.ZodType<S>;
+  send: (input: S, requestId: string) => Promise<unknown>; latest: (result?: unknown) => Promise<F>;
   matches: (value: T, input: S) => boolean; fromPending: (input: S) => T;
   after?: (fresh: F, result?: unknown) => void; afterRefresh?: (fresh: F) => void;
   beforeSubmit?: () => Promise<void>;
@@ -132,11 +132,7 @@ export function useReviewedDraft<T, S, F>(options: {
       // This retains dormant inputs without duplicating active image bytes in pending.
       if (!await persist(next, !draft.pending && !!options.preserveBeforeSubmit) || !active.current) return false;
       setDraft(next);
-      const result = await api(options.endpoint, options.resultSchema, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': pending.key },
-        body: JSON.stringify(pending.input),
-      });
+      const result = await options.send(pending.input, pending.key);
       accepted = true;
       const fresh = await options.latest(result);
       if (!active.current) return false;
