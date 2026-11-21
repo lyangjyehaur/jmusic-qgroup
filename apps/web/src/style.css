@@ -158,6 +158,16 @@ select { max-width: 100%; border: 1px solid var(--app-line); border-radius: 6px;
 .account-field input, .account-field select, .account-field textarea { display: block; width: 100%; min-width: 0; padding: 10px 12px; margin-top: 8px; border: 1px solid var(--app-line); border-radius: 8px; background: var(--app-surface); color: inherit; }
 .account-field textarea { resize: vertical; }
 .directory-search { display: grid; gap: 16px; }
+.global-search-link { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; white-space: nowrap; }
+.global-search-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 12px; max-width: 48rem; }
+.search-groups { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); gap: 24px; margin-block: 24px; }
+.search-groups section { min-width: 0; }
+.search-groups ul { list-style: none; padding: 0; margin: 0; }
+.search-groups li { padding-block: 12px; border-bottom: 1px solid var(--app-line); overflow-wrap: anywhere; }
+.search-groups li p { margin-block: 4px 0; }
+.search-filters { gap: 8px; margin-block: 16px 24px; }
+.search-filters a { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding-inline: 8px; border-radius: 6px; }
+.search-filters a[aria-current=page] { font-weight: 700; color: var(--app-accent); background: var(--app-soft); }
 .preserve-lines { white-space: pre-wrap; overflow-wrap: anywhere; }
 .qq-avatar { display: inline-flex; flex-shrink: 0; width: 48px; height: 48px; border-radius: 50%; object-fit: cover; vertical-align: middle; margin-top: 16px; }
 .avatar-fallback { align-items: center; justify-content: center; background: var(--app-soft); color: var(--app-accent); }

@@ -83,6 +83,7 @@ const PrivacyConsentPage = lazyPage(() => import('./privacy-consent').then(modul
 const MusicContactPage = lazyPage(() => import('./music-contact').then(module => ({ default: module.MusicContactPage })));
 const MusicComparisonPage = lazyPage(() => import('./music-matches').then(module => ({ default: module.MusicComparisonPage })));
 const People = lazyPage(() => import('./people').then(module => ({ default: module.People })));
+const SearchPage = lazyPage(() => import('./search').then(module => ({ default: module.SearchPage })));
 const PersonMusic = lazyPage(() => import('./people').then(module => ({ default: module.PersonMusic })));
 const MusicRecovery = lazyPage(() => import('./music-recovery').then(module => ({ default: module.MusicRecovery })));
 const MusicFieldsPage = lazyPage(() => import('./music-fields').then(module => ({ default: module.MusicFieldsPage })));
@@ -119,7 +120,7 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'activities/:id/invitations', element: <ActivityInvitationsPage /> }, { path: 'activities/:id/invitations/:token', element: <AcceptActivityInvitationPage /> },
   { path: 'activities/:id/lifecycle', element: <ActivityLifecyclePage /> },
   { path: 'activities/:id/signup', element: <ActivityRegistrationPage /> }, { path: 'activities/:id/registration', element: <ActivityRegistrationPage manage /> },
-  { element: <MusicWorkspace />, children: [{ path: 'music', element: <Music /> }, { path: 'music/trends', element: <MusicTrendPage /> }, { path: 'music/entries/:id', element: <MusicEntryPage /> }, { path: 'me/music', element: <MyMusic /> }, { path: 'me/music/share', element: <MusicSharePage /> }] }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> },
+  { element: <MusicWorkspace />, children: [{ path: 'search', element: <SearchPage /> }, { path: 'music', element: <Music /> }, { path: 'music/trends', element: <MusicTrendPage /> }, { path: 'music/entries/:id', element: <MusicEntryPage /> }, { path: 'me/music', element: <MyMusic /> }, { path: 'me/music/share', element: <MusicSharePage /> }] }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> },
   { path: 'me/music/entries', element: <MyMusicEntriesPage /> }, { path: 'me/music/entries/new', element: <MusicEntryEditorPage command="create" /> },
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
   { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },

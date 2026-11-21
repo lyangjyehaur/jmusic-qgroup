@@ -23,6 +23,7 @@ const image = (mediaTypes: readonly string[]) => Object.freeze({ kind: 'image' a
 /** Success wire contracts. Domain permissions and completed receipts remain
  * server-authoritative; validation must never replace or truncate wire data. */
 export const HttpResponses = Object.freeze({
+  "GET /api/v2/search": json("SearchResults", contracts.SearchResults),
   "DELETE /api/v2/me/payment-codes/:codeId": json("Ok", contracts.Ok),
   "GET /api/v2/activities": json("ActivityList", contracts.ActivityList),
   "GET /api/v2/activities/:id": json("Activity", contracts.Activity),

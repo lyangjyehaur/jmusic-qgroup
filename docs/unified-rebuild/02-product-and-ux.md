@@ -1,6 +1,6 @@
 # 統一產品與操作流程
 
-狀態：新產品規格；未實作。發布範圍：`none`。既有能力以[功能矩陣](01-capability-inventory.md)為保留基線。
+狀態：新產品規格；實作與驗收依[功能台帳](capability-status.json)及[整合需求台帳](integration-status.json)追蹤。發布範圍：`none`。既有能力以[功能矩陣](01-capability-inventory.md)為保留基線。
 
 ## 1. 產品中心
 

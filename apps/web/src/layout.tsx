@@ -9,9 +9,11 @@ import { InboxLink } from './inbox';
 import { QQReauthReminder } from './qq-profile';
 import { analyticsPage, startAnalytics } from './analytics';
 import { uiText } from './language';
+import { searchReturn } from './search-return';
 export function Layout() {
   const session = useQuery(sessionQuery);
   const location = useLocation();
+  const searchBack = searchReturn(new URLSearchParams(location.search).get('from'));
   useEffect(() => startAnalytics(), []);
   useEffect(() => { analyticsPage(location.pathname); }, [location.pathname]);
   const heading = useRef<HTMLElement>(null);
@@ -35,8 +37,9 @@ export function Layout() {
   return <><WallpaperLayer/><a className="skip" href="#main">跳至主要內容</a>
     <header className="header"><Link to="/" className="brand" aria-label="群聚首頁">群聚</Link>
       <nav aria-label="主要導覽">{[['/activities', uiText('活動')], ['/music', uiText('音樂')], ['/people', uiText('同好')], ['/me', uiText('我的')]].map(([to, label]) => <NavLink key={to} to={to!}>{label}</NavLink>)}</nav>
+      <Link className="global-search-link" to="/search" aria-label="全站搜尋">搜尋</Link>
       {session.data?.authenticated&&<InboxLink key={session.data.scope} viewer={session.data}/>}<span className="viewer">{session.data?.authenticated ? session.data.nickname : '訪客'}</span>
     </header>
-    <main id="main" ref={heading} tabIndex={-1} className="main"><div className="preview">開發預覽</div><PWAUpdateNotice/>{typeof location.state?.accountMessage === 'string' && <Notice>{location.state.accountMessage}</Notice>}{session.data?.authenticated && ['/', '/activities', '/me'].includes(location.pathname) && !location.search && !location.hash && <QQReauthReminder key={session.data.scope} viewer={session.data} returnTo={location.pathname} />}<Outlet /></main>
+    <main id="main" ref={heading} tabIndex={-1} className="main"><div className="preview">開發預覽</div><PWAUpdateNotice/>{typeof location.state?.accountMessage === 'string' && <Notice>{location.state.accountMessage}</Notice>}{session.data?.authenticated && ['/', '/activities', '/me'].includes(location.pathname) && !location.search && !location.hash && <QQReauthReminder key={session.data.scope} viewer={session.data} returnTo={location.pathname} />}{searchBack && <Link className="back" to={searchBack}>← 回到搜尋</Link>}<Outlet /></main>
   </>;
 }

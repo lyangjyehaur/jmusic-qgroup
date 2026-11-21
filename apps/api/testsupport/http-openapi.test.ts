@@ -15,9 +15,9 @@ it('generates a valid OpenAPI document for every actual v2 operation with reques
   const spec = document();await expect(assertHttpOpenAPI(spec)).resolves.toBeUndefined();
   const operations = Object.values(spec.paths).flatMap(item => Object.values(item)).map(object);
   expect(operations.map(item => item.operationId).sort()).toEqual(rows.map(row => row.id).sort());
-  expect(operations).toHaveLength(194);expect(operations.filter(item => item.requestBody)).toHaveLength(85);
-  expect(operations.filter(item => item['x-qgroup-query-schema'])).toHaveLength(47);
-  expect(Object.keys(spec.components.schemas)).toHaveLength(442);
+  expect(operations).toHaveLength(195);expect(operations.filter(item => item.requestBody)).toHaveLength(85);
+  expect(operations.filter(item => item['x-qgroup-query-schema'])).toHaveLength(48);
+  expect(Object.keys(spec.components.schemas)).toHaveLength(445);
   const download = object(spec.paths['/api/v2/admin/music-export']!.get), response = object(object(download.responses)['200']);
   expect(response.content).toEqual({ 'application/json': { schema: { $ref: '#/components/schemas/Response_HttpMusicExport' } } });
   expect(response.headers).toMatchObject({ 'Content-Disposition': { required: true, 'x-qgroup-disposition': 'attachment' } });

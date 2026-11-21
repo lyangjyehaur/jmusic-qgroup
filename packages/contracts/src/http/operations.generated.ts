@@ -106,6 +106,7 @@ export const HttpOperations = Object.freeze({
   "GET /api/v2/music/shouts/history": Object.freeze({ method: "GET", path: "/api/v2/music/shouts/history", query: contracts.MusicShoutsQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/music/trend": Object.freeze({ method: "GET", path: "/api/v2/music/trend", query: contracts.EmptyHttpQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/music/trend/members": Object.freeze({ method: "GET", path: "/api/v2/music/trend/members", query: contracts.EmptyHttpQuery, params: Object.freeze([] as const) } as const),
+  "GET /api/v2/search": Object.freeze({ method: "GET", path: "/api/v2/search", query: contracts.SearchQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/session": Object.freeze({ method: "GET", path: "/api/v2/session", query: null, params: Object.freeze([] as const) } as const),
   "GET /api/v2/time-polls": Object.freeze({ method: "GET", path: "/api/v2/time-polls", query: contracts.TimePollsQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/time-polls/:id": Object.freeze({ method: "GET", path: "/api/v2/time-polls/:id", query: null, params: Object.freeze([pathContracts.ActivityPath] as const) } as const),

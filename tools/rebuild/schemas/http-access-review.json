@@ -6,6 +6,7 @@
     "apps/api/src/account-devices.ts": "80183897d31d3fe3532706fbcc8567ea467f81f3f0c6edbfad791de93cd3c35f",
     "apps/api/src/account-profile.ts": "b19626ffdeb15974e0016b3efd7f388d7bdd0e2828860d6145d94baa7198c0ab",
     "apps/api/src/activity-access.ts": "470811af82ce784174e5f50012780cfbec31be28a7cd0412d3467972a493ad5f",
+    "apps/api/src/activity-arrangements.ts": "cb184e28225a9cd5cb92c16ea225ab643ea41c6578e31c4907a8836dfa86addc",
     "apps/api/src/activity-attendance.ts": "2062cc7ce3530fd70ab9b4bb7509a41b893232a31a8bfc7f1767db325f4b95eb",
     "apps/api/src/activity-claims.ts": "88a2c3f244f5e0fa9d67d95dee7bf20ecddfef131689a549609bed5d2992f156",
     "apps/api/src/activity-delegation.ts": "642160490a399a48a70e06cca92e7529faca26bb5fd7a6423e49746740d9c61c",
@@ -27,7 +28,7 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "69717b8a6fa59a9a9ce795c10adbf472624a318249e8142262e1b7a5f79a6d7f",
+    "apps/api/src/app.ts": "e6ea5f485f07c4d2582725b581abe87d3fd7079f9375a6a90edbe182ab9fb0ed",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "bf8789dd18fcd1adc4c3e6403494ff75f33661637c6ee7e117d96608b64ee445",
@@ -49,14 +50,19 @@
     "apps/api/src/privacy-consent.ts": "f296772294485e7eeefe2dc95b37f304c41aa3d2c0913469b3448316961c2e85",
     "apps/api/src/privacy.ts": "96757aa6e1dac2c04d4e64bf7c3c94c5603f49edd167253fae7bb5fc8f853043",
     "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
+    "apps/api/src/repositories.ts": "000eac65cc65b1fa5a5187384943e74a1a925d2711d7ab29586dfa5cbcea5574",
+    "apps/api/src/search.ts": "62d69e955c64106d4dc81b513028b1ff35049b82cb9bf5e50453a17c3dcd62ee",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
     "apps/api/src/settlements.ts": "50de52370d4f7c2b2ae1b32e5a2f8a758bbca1108d8919882b33986039097ce4",
     "apps/api/src/time-polls.ts": "3a812895e2d5e67454917538e79dd762d2a2a2f8be49f65385561868cbd92dc4",
-    "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
+    "packages/contracts/package.json": "2e51ee0e36eb1bc818ba07f4c410a57700aa6d9f959bc3c86f3f61cddd17dd89",
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
+    "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
+    "packages/contracts/src/index.ts": "c1e4a2ced1daeae8dba30b6efa15ab7581286410d7b17f5ca1151de84c356efe",
     "packages/contracts/src/payment-assets.ts": "9c925b021cb16cfd188e6620a341efdba6570e4a72b7110ede85899c08c8d83c",
-    "packages/contracts/src/index.ts": "c047d8a6347bf82d87989fa49ab330dacd229c0d896df10d653a2d329adfb3d8",
-    "packages/contracts/package.json": "2e51ee0e36eb1bc818ba07f4c410a57700aa6d9f959bc3c86f3f61cddd17dd89"
+    "packages/database/src/music-retirements.ts": "f4ae47d2ab943ab7bafd376f9c1f461121b4a0fe580284fd76fcf0526d89af62",
+    "packages/domain/src/music-search.ts": "52da753f011f1400b09900daa8d46a164441cdf789bd21cb8f94cd60130c4d6e",
+    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
   },
   "operations": [
     {
@@ -1812,6 +1818,29 @@
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/search",
+      "file": "apps/api/src/search.ts",
+      "mode": "scoped-device",
+      "dependencies": [
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/repositories.ts",
+        "apps/api/src/music-catalog.ts",
+        "apps/api/src/music-fields.ts",
+        "packages/domain/src/music-search.ts",
+        "packages/domain/src/music-text.ts",
+        "packages/database/src/music-retirements.ts"
+      ],
+      "conditions": [
+        "Current device scope is required for every result group.",
+        "Activity results and totals use current detail visibility; administration does not replace an invitation or draft duty.",
+        "Music names and aliases remain public; original name/pinyin/kana search normalization is preserved.",
+        "Member names are searched only after current saved-music qualification. Contacts, identity values, private notes and gender are excluded from matching and projections."
       ],
       "additionalHeaders": []
     },

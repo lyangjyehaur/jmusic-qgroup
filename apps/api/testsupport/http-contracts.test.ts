@@ -21,11 +21,11 @@ it('matches every real v2 runtime operation and shared body to the generated con
  observed.clear();const db=openDatabase(':memory:'),app=createApp({db,origin:'https://fixture.invalid',musicTrendSampling:false,pairedBackupScheduling:false,adminCredentialHash:()=>'',publicAPIKeys:()=>''});
  try{
   await app.ready();const source=checkHttpOperations(root);
-  expect([...observed].sort()).toEqual(Object.keys(HttpOperations).sort());expect(source).toHaveLength(194);
+  expect([...observed].sort()).toEqual(Object.keys(HttpOperations).sort());expect(source).toHaveLength(195);
   expect(source.filter(row=>row.body)).toHaveLength(85);expect(source.map(row=>row.id).sort()).toEqual([...observed].sort());
-  expect(source.filter(row=>row.query)).toHaveLength(47);expect(source.every(row=>row.query===null||typeof row.query==='string')).toBe(true);
+  expect(source.filter(row=>row.query)).toHaveLength(48);expect(source.every(row=>row.query===null||typeof row.query==='string')).toBe(true);
   expect(Object.keys(HttpResponses).sort()).toEqual([...observed].sort());
-  expect(source.filter(row=>row.response.kind==='json')).toHaveLength(187);
+  expect(source.filter(row=>row.response.kind==='json')).toHaveLength(188);
   expect(source.filter(row=>row.response.kind==='image')).toHaveLength(6);
   expect(source.filter(row=>row.response.kind==='download')).toHaveLength(1);
   expect(HttpResponses['GET /api/v2/me/music'].schema).toBe(Profile);
@@ -35,14 +35,14 @@ it('matches every real v2 runtime operation and shared body to the generated con
  }finally{await app.close();db.close();}
 });
 it('exports all named schemas with wire semantics while retaining Zod refinement and server policy requirements',()=>{
- const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(315);
+ const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(317);
  const profile=catalog.schemas.SaveProfile as {properties:{selections:{maxItems:number;uniqueItems?:boolean}},additionalProperties:boolean};
  expect(profile.additionalProperties).toBe(false);expect(profile.properties.selections.maxItems).toBe(20);expect(profile.properties.selections.uniqueItems).not.toBe(true);
  expect(SaveProfile.safeParse({profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'e',level:1},{entryId:'e',level:2}]}).success).toBe(false);
  expect(catalog.zodRuntimeValidationRequired&&catalog.serverDomainValidationRequired).toBe(true);expect(catalog.openapiComplete).toBe(false);
  expect(catalog.successResponsesBound).toBe(true);expect(catalog.structuredDownloadSchemaBound).toBe(true);
  expect(catalog.responseSchemas).toHaveProperty('HttpMusicExport');
- expect(Object.keys(catalog.responseSchemas)).toHaveLength(127);
+ expect(Object.keys(catalog.responseSchemas)).toHaveLength(128);
  const download=checkHttpOperations(root).find(row=>row.id==='GET /api/v2/admin/music-export');
  expect(download?.response).toMatchObject({kind:'download',schema:'HttpMusicExport'});
  expect(catalog.responseSchemas).toHaveProperty('HttpWebVersion');
