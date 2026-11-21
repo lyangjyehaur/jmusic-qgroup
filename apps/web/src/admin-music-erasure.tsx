@@ -5,8 +5,8 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AdminSession,AdminMusicErasureInput,AdminMusicErasurePreview,AdminMusicErasureResult,type Viewer } from '@qgroup/contracts';
-import { AdminGate,adminHeaders,type Access } from './admin';
-import { api,ApiError } from './api';
+import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
+import { ApiError } from './api';
 import { Failure,Notice,PageIntro,sessionQuery } from './shared';
 import { announceAccountChange } from './account-session';
 
@@ -15,16 +15,18 @@ import { ErasureStorageFeedback,useErasureLocal } from './erasure-local';
 const Pending=z.object({path:z.string(),input:AdminMusicErasureInput}).strict();
 export function AdminMusicErasurePage({reset=false}:{reset?:boolean}){
   const {id=''}=useParams(),path=reset?'/admin/music-reset':'/admin/music/'+encodeURIComponent(id)+'/erase';
-  return <><PageIntro title={reset?'重置全部成分與詞庫':'刪除成分'}/><div className="page-actions"><Link to="/admin">管理後台</Link><Link to="/admin/music">成分關聯</Link></div><AdminGate>{(viewer,access)=><Manager key={viewer.scope+':'+access.scope+':'+path} viewer={viewer} access={access} path={path} reset={reset}/>}</AdminGate></>;
+  return <><PageIntro title={reset?'重置全部成分與詞庫':'刪除成分'}/><div className="page-actions"><Link to="/admin">管理後台</Link><Link to="/admin/music">成分關聯</Link></div><AdminGate>{(viewer,access)=><Manager key={viewer.scope+':'+access.scope+':'+path} viewer={viewer} access={access} path={path} id={id} reset={reset}/>}</AdminGate></>;
 }
-function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:string;reset:boolean}){
+function Manager({viewer,access,path,id,reset}:{viewer:Viewer;access:Access;path:string;id:string;reset:boolean}){
   const client=useQueryClient(),storageKey='qgroup:rebuild:admin-music-erasure:v1:'+viewer.scope+':'+access.scope+':'+path;
   const [legacyKey]=useState(()=>{try{return Object.keys(sessionStorage).find(key=>key.startsWith('qgroup:rebuild:admin-music-erasure:v1:'+viewer.scope+':')&&key.endsWith(':'+path))??storageKey;}catch{return storageKey;}});
   const record=useErasureLocal<AdminErasureValue>('admin:'+viewer.scope+':'+path,legacyKey,raw=>AdminErasure.parse({...Pending.parse(JSON.parse(raw)),kind:'admin',scope:viewer.scope,authority:legacyKey.split(':')[5],result:null}));
   const pending=record.value,busy=record.busy,readError=record.error,done=record.value?.result;
   const [word,setWord]=useState(''),[consent,setConsent]=useState(false),[message,setMessage]=useState(''),[notFound,setNotFound]=useState(false);
   const active=useRef(true);useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
-  const preview=useQuery({queryKey:['private',viewer.scope,'admin-music-erasure',access.scope,path],queryFn:({signal})=>api(path,AdminMusicErasurePreview,{signal,headers:{'X-Account-Scope':viewer.scope}}),enabled:!done,refetchOnMount:'always'});
+  const preview=useQuery({queryKey:['private',viewer.scope,'admin-music-erasure',access.scope,path],queryFn:({signal})=>reset
+    ?adminReadHttp(viewer).request('GET /api/v2/admin/music-reset',{signal},AdminMusicErasurePreview)
+    :adminReadHttp(viewer).request('GET /api/v2/admin/music/:id/erase',{signal,params:{id}},AdminMusicErasurePreview),enabled:!done,refetchOnMount:'always'});
   const dirty=!!pending&&!done||!!word||consent,blocker=useBlocker(({nextLocation,currentLocation})=>dirty&&nextLocation.pathname!==currentLocation.pathname);
   useEffect(()=>{if(!dirty)return;const leave=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',leave);return()=>window.removeEventListener('beforeunload',leave);},[dirty]);
   useEffect(()=>{if(preview.error instanceof ApiError&&[401,403].includes(preview.error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});setWord('');setConsent(false);},[preview.data?.revision,preview.error,client,viewer.scope]);
@@ -45,10 +47,10 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
   async function authority(original:AdminErasureValue,replay:boolean){
     const current=await client.fetchQuery({...sessionQuery,staleTime:0});
     if(current.scope!==original.scope)throw Error('請登入原帳號，不會使用目前帳號提交原刪除。');
-    const admin=await api('/admin/session',AdminSession,{headers:{'X-Account-Scope':current.scope}});
+    const admin=await adminReadHttp(current).request('GET /api/v2/admin/session',{},AdminSession);
     if(replay&&admin.scope!==original.authority)throw Error('原管理授權已變更，只能查詢原回執；不會重新提交刪除。');
     await record.assertCurrent();
-    return adminHeaders(current,admin);
+    return adminHttp(current,admin);
   }
   async function submit(replay=false){
     if(!record.ready||done||(!replay&&(pending||!preview.data||preview.error||!consent||word!==(reset?'RESET':'DELETE')))||replay&&(!pending||!notFound)||!record.begin())return;
@@ -57,8 +59,12 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
     setMessage('');setNotFound(false);let sent=false;
     try{
       await record.save(operation);
-      const headers=await authority(operation,true);if(!active.current)return;
-      sent=true;await completed(await api(path,AdminMusicErasureResult,{method:'POST',headers,body:JSON.stringify(operation.input)}),operation);
+      const http=await authority(operation,true);if(!active.current)return;
+      sent=true;
+      const result=reset
+        ?await http.request('POST /api/v2/admin/music-reset',{body:operation.input},AdminMusicErasureResult)
+        :await http.request('POST /api/v2/admin/music/:id/erase',{params:{id},body:operation.input},AdminMusicErasureResult);
+      await completed(result,operation);
     }catch(error){
       if(active.current&&sent&&error instanceof ApiError&&error.status<500&&![401,403,429].includes(error.status)){
         try{await record.save(null);}catch{/* Preserve original proof on transaction failure. */}
@@ -70,8 +76,8 @@ function Manager({viewer,access,path,reset}:{viewer:Viewer;access:Access;path:st
   async function check(){
     if(!pending||!record.begin())return;setMessage('');setNotFound(false);
     try{
-      const headers=await authority(pending,false);if(!active.current)return;
-      await completed(await api('/admin/music-erasure/receipt',AdminMusicErasureResult,{method:'POST',headers,body:JSON.stringify({requestId:pending.input.requestId,secret:pending.input.secret})}),pending);
+      const http=await authority(pending,false);if(!active.current)return;
+      await completed(await http.request('POST /api/v2/admin/music-erasure/receipt',{body:{requestId:pending.input.requestId,secret:pending.input.secret}},AdminMusicErasureResult),pending);
     }catch(error){if(active.current&&error instanceof ApiError&&error.status===404){setNotFound(true);setMessage(uiText("尚未找到完成紀錄。可稍後再查，或以原操作編號重新提交；資料有變更時會拒絕刪除。"));}else if(active.current){failed(error);if(error instanceof z.ZodError)setMessage(uiText("刪除回執不符原操作；原紀錄仍保留，請重新查詢。"));else if(error instanceof Error&&!(error instanceof ApiError))setMessage(errorText(error));}}finally{record.end();}
   }
   async function dismiss(){

@@ -5,8 +5,8 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
 import { Appearance,AppearanceCommand,AppearanceResult,type Viewer } from '@qgroup/contracts';
-import { AdminGate,adminHeaders,type Access } from './admin';
-import { api,ApiError } from './api';
+import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
+import { ApiError } from './api';
 import { Failure,Notice,PageIntro } from './shared';
 import { Field } from './settlement-controls';
 import { useDurableRecord } from './durable-record';
@@ -31,7 +31,7 @@ function Manager({viewer,access}:{viewer:Viewer;access:Access}){
     serialize,dirty:value=>value.dirty,pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin:start,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
-  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-appearance',access.scope],queryFn:({signal})=>api('/admin/appearance',Appearance,{signal,headers:{'X-Account-Scope':viewer.scope}}),refetchOnMount:'always',refetchOnWindowFocus:'always'});
+  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-appearance',access.scope],queryFn:({signal})=>adminReadHttp(viewer).request('GET /api/v2/admin/appearance',{signal},Appearance),refetchOnMount:'always',refetchOnWindowFocus:'always'});
   const stale=!!catalog.data&&catalog.data.revision!==draft.value.revision;
   useEffect(()=>{if(catalog.error instanceof ApiError&&[401,403].includes(catalog.error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[catalog.error,client,viewer.scope]);
   function edit(patch:Partial<Value>){if(locked)return;record.change({...draft,value:{...draft.value,...patch},dirty:true});setConfirmed(false);setMessage('');}
@@ -56,7 +56,7 @@ function Manager({viewer,access}:{viewer:Viewer;access:Access}){
     const pending={...draft,pending:operation};if(!start())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try{
-      await api('/admin/appearance',AppearanceResult,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
+      await adminHttp(viewer,access).request('POST /api/v2/admin/appearance',{body:operation.input,requestId:operation.key,requestScope:viewer.scope},AppearanceResult);accepted=true;
       if(!active.current)return;const clean=blank();if(!await persist(clean,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;
       setDraft(clean);setConfirmed(false);setMessage(uiText("壁紙設定已保存。"));void catalog.refetch();void client.invalidateQueries({queryKey:['appearance']});
       try{const channel=new BroadcastChannel('qgroup:appearance');channel.postMessage('refresh');channel.close();}catch{/* Focus refetch remains available. */}

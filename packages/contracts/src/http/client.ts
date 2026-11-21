@@ -27,7 +27,7 @@ export class HttpApiError extends Error {
 }
 export class HttpProtocolError extends Error {
  readonly name='HttpProtocolError';
- constructor(readonly status:number,readonly reason:'unreadable-json'|'unverified'='unverified'){super('回應資料尚未核對，請先確認操作結果再重試。');}
+ constructor(readonly status:number,readonly reason:'unreadable-json'|'unverified'='unverified',options?:ErrorOptions){super('回應資料尚未核對，請先確認操作結果再重試。',options);}
 }
 const object=(value:unknown)=>{
  if(value===null||typeof value!=='object'||Array.isArray(value))throw new TypeError('Invalid HTTP request input');
@@ -74,7 +74,7 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
   else if(Object.hasOwn(values,'body'))throw new TypeError('This HTTP operation has no request body');
   const result=await send(url,{method:operation.method,headers,body,signal:input.signal,credentials:'same-origin',redirect:'error',...input.cache?{cache:input.cache}:{}});
   if(!result.ok){
-   let value:unknown;try{value=await result.json();}catch{throw new HttpProtocolError(result.status,'unreadable-json');}
+   let value:unknown;try{value=await result.json();}catch(error){throw new HttpProtocolError(result.status,'unreadable-json',{cause:error});}
    const failure=ApiFailure.safeParse(value);if(!failure.success)throw new HttpProtocolError(result.status);
    throw new HttpApiError(result.status,failure.data.code,failure.data.message,failure.data.messageDisplay);
   }
@@ -83,7 +83,7 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
  return {
   async request<Key extends keyof typeof HttpOperations,T>(key:Key,input:HttpInput<Key>,schema:z.ZodType<T>):Promise<T>{
    const result=await response(key,input);let value:unknown;
-   try{value=await result.json();}catch{throw new HttpProtocolError(result.status,'unreadable-json');}
+   try{value=await result.json();}catch(error){throw new HttpProtocolError(result.status,'unreadable-json',{cause:error});}
    return schema.parse(value);
   },
   // Assets and attachment downloads keep their response stream; no JSON guess.

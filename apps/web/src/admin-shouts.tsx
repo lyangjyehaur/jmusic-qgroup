@@ -5,9 +5,9 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AdminMusicShout,AdminMusicShouts,DeleteMusicShout,Ok,type Viewer } from '@qgroup/contracts';
-import { AdminGate,adminHeaders,type Access } from './admin';
+import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
 import { Failure,Notice,PageIntro } from './shared';
-import { api,ApiError } from './api';
+import { ApiError } from './api';
 import { announceAccountChange } from './account-session';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -22,8 +22,8 @@ function Shouts({viewer,access}:{viewer:Viewer;access:Access}){
     dirty:value=>!!value.id,pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin:start,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
-  const list=useQuery({queryKey:['private',viewer.scope,'admin-shouts',access.scope,period,offset],queryFn:({signal})=>api('/admin/shouts?'+new URLSearchParams({period,offset:String(offset),limit:'10'}),AdminMusicShouts,{signal,headers:{'X-Account-Scope':viewer.scope}}),refetchOnMount:'always',refetchInterval:30000});
-  const target=useQuery({queryKey:['private',viewer.scope,'admin-shout',access.scope,draft.id],queryFn:({signal})=>api('/admin/shouts/'+encodeURIComponent(draft.id),AdminMusicShout,{signal,headers:{'X-Account-Scope':viewer.scope}}),enabled:!!draft.id,refetchOnMount:'always'});
+  const list=useQuery({queryKey:['private',viewer.scope,'admin-shouts',access.scope,period,offset],queryFn:({signal})=>adminReadHttp(viewer).request('GET /api/v2/admin/shouts',{signal,query:{period,offset,limit:10}},AdminMusicShouts),refetchOnMount:'always',refetchInterval:30000});
+  const target=useQuery({queryKey:['private',viewer.scope,'admin-shout',access.scope,draft.id],queryFn:({signal})=>adminReadHttp(viewer).request('GET /api/v2/admin/shouts/:id',{signal,params:{id:draft.id}},AdminMusicShout),enabled:!!draft.id,refetchOnMount:'always'});
   useEffect(()=>{if([list.error,target.error].some(error=>error instanceof ApiError&&[401,403].includes(error.status)))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[list.error,target.error,client,viewer.scope]);
   useEffect(()=>setConfirmed(false),[target.data?.revision]);
   async function remove(){
@@ -32,7 +32,7 @@ function Shouts({viewer,access}:{viewer:Viewer;access:Access}){
     if(!start())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try{
-      await api('/admin/shouts/'+encodeURIComponent(draft.id)+'/delete',Ok,{method:'POST',headers:{...adminHeaders(viewer,access),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input)});accepted=true;
+      await adminHttp(viewer,access).request('POST /api/v2/admin/shouts/:id/delete',{params:{id:draft.id},body:operation.input,requestId:operation.key,requestScope:viewer.scope},Ok);accepted=true;
       if(!active.current)return;const clear={id:''};if(!await persist(clear,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;setDraft(clear);setConfirmed(false);setMessage(uiText("已刪除找搭子內容。"));
       void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-shouts']});void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shouts']});void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shout']});announceAccountChange();
     }catch(error){if(!active.current)return;

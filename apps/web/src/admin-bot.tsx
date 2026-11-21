@@ -14,8 +14,8 @@ import {
   type Viewer,
 } from '@qgroup/contracts';
 import { BOT_DEFAULT_TEMPLATE, BOT_TEMPLATE_LIMITS, validateBotPolicy } from '@qgroup/domain';
-import { AdminGate, adminHeaders, type Access } from './admin';
-import { api, ApiError } from './api';
+import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
+import { ApiError } from './api';
 import { Failure, Notice, PageIntro } from './shared';
 import { Field } from './settlement-controls';
 import { useDurableRecord } from './durable-record';
@@ -159,10 +159,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
   const catalog = useQuery({
     queryKey: ['private', viewer.scope, 'admin-bot', access.scope],
     queryFn: ({ signal }) =>
-      api('/admin/bot', BotPolicyView, {
-        signal,
-        headers: { 'X-Account-Scope': viewer.scope },
-      }),
+      adminReadHttp(viewer).request('GET /api/v2/admin/bot', { signal }, BotPolicyView),
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always',
   });
@@ -206,7 +203,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
   async function rebase() {
     if (locked || !draft || !begin()) return;
     try {
-      const latest = await api('/admin/bot', BotPolicyView, { headers: { 'X-Account-Scope': viewer.scope } });
+      const latest = await adminReadHttp(viewer).request('GET /api/v2/admin/bot', {}, BotPolicyView);
       const next = { ...draft, revision: latest.revision };
       if (!active.current || !await persist(next)) return;
       setDraft(next); client.setQueryData(['private', viewer.scope, 'admin-bot', access.scope], latest);
@@ -231,12 +228,11 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     try {
       if (!await persist(pending) || !active.current) return;
       setDraft(pending); setMessage('');
-      await api('/admin/bot', BotPolicyResult, { method: 'POST',
-        headers: { ...adminHeaders(viewer, access), 'Idempotency-Key': operation.key },
-        body: JSON.stringify(operation.input),
-      });
+      await adminHttp(viewer, access).request('POST /api/v2/admin/bot', {
+        body: operation.input, requestId: operation.key, requestScope: viewer.scope,
+      }, BotPolicyResult);
       accepted = true;
-      const latest = await api('/admin/bot', BotPolicyView, { headers: { 'X-Account-Scope': viewer.scope } });
+      const latest = await adminReadHttp(viewer).request('GET /api/v2/admin/bot', {}, BotPolicyView);
       if (!active.current) return;
       const next = blank(latest);
       if (!await persist(next, false, uiText("設定已保存，但無法保存本機確認狀態；請保留原操作並核對結果。"))) return;
@@ -272,15 +268,9 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     const stamp = signature;
     try {
       if (!await persist(draft) || !active.current) return;
-      const result = await api(
-        '/admin/bot/preview',
-        z.object({ text: z.string(), markdown: z.string().nullable() }),
-        {
-          method: 'POST',
-          headers: adminHeaders(viewer, access),
-          body: JSON.stringify({ config: policyOf(draft.value), kind }),
-        },
-      );
+      const result = await adminHttp(viewer, access).request('POST /api/v2/admin/bot/preview',
+        { body: { config: policyOf(draft.value), kind } },
+        z.object({ text: z.string(), markdown: z.string().nullable() }));
       if (active.current && currentSignature.current === stamp) setPreview({ ...result, signature: stamp });
     } catch (error) {
       if (active.current)

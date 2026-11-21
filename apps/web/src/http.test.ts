@@ -34,17 +34,19 @@ it.each([401,403,409,429,503])('keeps %s errors recognizable by existing UI chec
   expect(calls).toBe(1);expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',status,'rejected');
 });
 it.each(['unreadable success','wrong success shape','unreadable failure','wrong failure shape','network failure'])('keeps %s uncertain, without an ApiError rejection or an automatic second write',async mode=>{
-  let calls=0;const network=new Error('synthetic network interruption');
+  let calls=0;const network=new Error('synthetic network interruption'),json=new SyntaxError('synthetic unreadable JSON');
   const http=createWebHttpClient({context:()=>({scope}),fetch:async()=>{
     calls++;if(mode==='network failure')throw network;
-    if(mode==='unreadable success')return new Response('{');
+    if(mode==='unreadable success')return Object.assign(new Response('{'),{json:async()=>{throw json;}});
     if(mode==='wrong success shape')return new Response('{"nickname":3}');
-    return new Response(mode==='unreadable failure'?'{':'{}',{status:409});
+    const response=new Response(mode==='unreadable failure'?'{':'{}',{status:409});
+    return mode==='unreadable failure'?Object.assign(response,{json:async()=>{throw json;}}):response;
   }});
   const error=await http.request('PUT /api/v2/me/profile',input,AccountProfile).catch(error=>error);
   expect(error).toBeInstanceOf(Error);expect(error).not.toBeInstanceOf(ApiError);expect(calls).toBe(1);
   if(mode==='network failure'){expect(error).toBe(network);expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',0,'network_error');}
-  else{expect(error).toBeInstanceOf(mode==='wrong success shape'?z.ZodError:HttpProtocolError);expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',mode.includes('failure')?409:200,'parse_error');}
+  else{expect(error).toBeInstanceOf(mode==='wrong success shape'?z.ZodError:mode.startsWith('unreadable')?SyntaxError:HttpProtocolError);expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',mode.includes('failure')?409:200,'parse_error');}
+  if(mode.startsWith('unreadable'))expect(error).toBe(json);
   if (mode !== 'network failure') {
     const unreadable=mode.startsWith('unreadable'),wrongShape=mode==='wrong success shape';
     // Literal display pairs are injected by the Vite build. Browser cases

@@ -31,7 +31,10 @@ export function createWebHttpClient(options: { fetch?: typeof fetch; context?: (
       if (error instanceof Error) {
         if (!started) throw displayError(error, '操作資料無法驗證，請核對原操作後再繼續。');
         if (!response) throw displayError(error, '連線未完成，請先核對結果後重試。');
-        if (error instanceof HttpProtocolError && error.reason === 'unreadable-json') throw displayError(error, '伺服器回應無法讀取，請先核對結果後重試。');
+        if (error instanceof HttpProtocolError && error.reason === 'unreadable-json') {
+          const original = 'cause' in error ? error.cause : error;
+          throw original instanceof Error ? displayError(original, '伺服器回應無法讀取，請先核對結果後重試。') : original;
+        }
         if (error instanceof z.ZodError) throw displayError(error, '回應資料格式不符，請先核對結果後重試。');
         throw displayError(error, '回應資料尚未核對，請先確認操作結果再重試。');
       }

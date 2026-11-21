@@ -1,10 +1,11 @@
 import { AdminMusicProfile, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { adminReadHttp } from './admin';
 
 /** Missing music must not hide an administrator's pending acknowledgement. */
-export async function readAdminMusicProfile(path: string, viewer: Viewer, signal?: AbortSignal) {
+export async function readAdminMusicProfile(id: string, viewer: Viewer, signal?: AbortSignal) {
   try {
-    return await api(path, AdminMusicProfile, { signal, headers: { 'X-Account-Scope': viewer.scope } });
+    return await adminReadHttp(viewer).request('GET /api/v2/admin/music/:id', { params: { id }, signal }, AdminMusicProfile);
   } catch (error) {
     if (error instanceof ApiError && error.status === 404 && error.code === 'PROFILE_NOT_FOUND') return null;
     throw error;

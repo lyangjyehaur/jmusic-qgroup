@@ -5,13 +5,16 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AdminSession, Ok, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
-import { authHeaders } from './auth';
+import { ApiError } from './api';
+import { createWebHttpClient } from './http';
+import { authHeaders, authHttp } from './auth';
 import { announceAccountChange, clearDeviceDrafts } from './account-session';
 import { clearDurableAdminDrafts } from './draft-store';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 export type Access = z.infer<typeof AdminSession>;
 export const adminHeaders = (viewer: Viewer, access: Access) => ({ ...authHeaders(viewer), 'X-Admin-CSRF': access.adminCsrf });
+export const adminReadHttp = (viewer: Viewer) => createWebHttpClient({ context: () => ({ scope: viewer.scope }) });
+export const adminHttp = (viewer: Viewer, access: Access) => createWebHttpClient({ context: () => ({ scope: viewer.scope, csrf: viewer.csrf, adminCsrf: access.adminCsrf }) });
 export async function clearAdminDrafts(scope: string) {
   let sessionFailed=false;
   try { for (const key of Object.keys(sessionStorage)) if (key.startsWith('qgroup:rebuild:admin-') && !key.startsWith('qgroup:rebuild:admin-music-erasure:v1:') && key.includes(':' + scope + ':')) sessionStorage.removeItem(key); }
@@ -25,7 +28,7 @@ export function AdminGate({ children }: { children: (viewer: Viewer, access: Acc
 }
 function AdminAuthority({ viewer, children }: { viewer: Viewer; children: (viewer: Viewer, access: Access) => ReactNode }) {
   const client = useQueryClient();
-  const access = useQuery({ queryKey: ['private', viewer.scope, 'admin-session'], queryFn: () => api('/admin/session', AdminSession, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: 'always', refetchInterval: 30000 });
+  const access = useQuery({ queryKey: ['private', viewer.scope, 'admin-session'], queryFn: () => adminReadHttp(viewer).request('GET /api/v2/admin/session', {}, AdminSession), refetchOnWindowFocus: 'always', refetchInterval: 30000 });
   const denied = access.error instanceof ApiError && [401, 403].includes(access.error.status);
   useEffect(() => { if (denied) { client.removeQueries({ queryKey: ['private', viewer.scope], predicate: query => String(query.queryKey[2]).startsWith('admin-') && query.queryKey[2] !== 'admin-session' }); } }, [denied, client, viewer.scope]);
   return access.isPending ? <Notice>正在確認管理權限…</Notice> : denied ? <RevokedAdmin viewer={viewer} reload={async () => { const result = await access.refetch(); return result.isSuccess || result.error instanceof ApiError && [401, 403].includes(result.error.status); }} /> : access.error ? <Failure error={access.error} retry={() => void access.refetch()} /> : <>{children(viewer, access.data)}</>;
@@ -42,7 +45,7 @@ function RescueLogin({ viewer, reload }: { viewer: Viewer; reload: () => Promise
   const [key, setKey] = useState(''); const [busy, setBusy] = useState(false); const [unknown, setUnknown] = useState(false); const [message, setMessage] = useState('');
   async function login() {
     setBusy(true); setMessage('');
-    try { await api('/admin/login', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ key, confirm: true }) }); if (!await reload()) { setUnknown(true); setMessage(uiText("尚未確認登入結果，請先重新確認管理狀態。")); } announceAccountChange(); }
+    try { await authHttp(viewer).request('POST /api/v2/admin/login', { body: { key, confirm: true } }, Ok); if (!await reload()) { setUnknown(true); setMessage(uiText("尚未確認登入結果，請先重新確認管理狀態。")); } announceAccountChange(); }
     catch (error) { setUnknown(!(error instanceof ApiError) || error.status >= 500); setMessage(error instanceof ApiError ? errorText(error) : uiText("尚未確認登入結果，請先重新確認管理狀態。")); }
     finally { setKey(''); setBusy(false); }
   }
@@ -70,7 +73,7 @@ function AdminMenu({ viewer, access, onCleanupFailure }: { viewer: Viewer; acces
     setBusy(true); setError('');
     let accountLoggedOut = false;
     try {
-      const result = await api('/admin/logout', z.object({ logoutAccount: z.boolean() }), { method: 'POST', headers: adminHeaders(viewer, access), body: JSON.stringify({ confirm: true }) });
+      const result = await adminHttp(viewer, access).request('POST /api/v2/admin/logout', { body: { confirm: true } }, z.object({ logoutAccount: z.boolean() }));
       accountLoggedOut = result.logoutAccount;
       try { if (result.logoutAccount) { try { await clearDeviceDrafts(); } catch (error) { onCleanupFailure(); throw error; } } } finally { announceAccountChange(result.logoutAccount); }
       await client.cancelQueries({ queryKey: ['private'] });

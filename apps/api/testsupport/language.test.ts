@@ -12,7 +12,8 @@ import { displayText, uiText, withErrorText, errorText, displayError } from '../
 import { offlinePage } from '../../web/src/pwa/offline';
 import { transformUILanguage } from '../../web/ui-language';
 import { z } from 'zod';
-import { ApiFailure } from '@qgroup/contracts';
+import * as contracts from '@qgroup/contracts';
+import * as httpContracts from '@qgroup/contracts/http';
 const require = createRequire(import.meta.url);
 afterEach(() => vi.unstubAllGlobals());
 function render(source: string, language: string, original = false) {
@@ -118,17 +119,29 @@ it('explicit displayError preserves the original ZodError and issue data and rej
     expect(()=>transformUILanguage(source,'/src/example.ts')).toThrow('one static display literal');
 });
 it('compiled API network, JSON and successful-response validation failures retain original exceptions and analytics outcomes', async () => {
-  const source=readFileSync(new URL('../../web/src/api.ts',import.meta.url),'utf8');
-  const code=ts.transpileModule(transformUILanguage(source,'/src/api.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
   const events:unknown[][]=[],output={api:undefined as unknown as (path:string,schema:z.ZodType,init?:RequestInit)=>Promise<unknown>};
-  new Function('require','exports',code)((name:string)=>name==='./language'?{displayText,withErrorText,displayError}:name==='./analytics'?{analyticsRequest:(...args:unknown[])=>events.push(args)}:name==='@qgroup/contracts'?{ApiFailure}:require(name),output);
+  const modules=new Map<string,Record<string,unknown>>();
+  function load(name:string):unknown{
+    if(name==='./language')return {displayText,withErrorText,displayError};
+    if(name==='./analytics')return {analyticsRequest:(...args:unknown[])=>events.push(args)};
+    if(name==='@qgroup/contracts')return contracts;
+    if(name==='@qgroup/contracts/http')return httpContracts;
+    if(name==='zod')return {z};
+    if(!['./api','./api-errors','./http','./http-path'].includes(name))throw Error('Unexpected compiled API dependency: '+name);
+    const prior=modules.get(name);if(prior)return prior;
+    const value:Record<string,unknown>=name==='./api'?output:{};modules.set(name,value);
+    const source=readFileSync(new URL('../../web/src/'+name.slice(2)+'.ts',import.meta.url),'utf8');
+    const code=ts.transpileModule(transformUILanguage(source,'/src/'+name.slice(2)+'.ts'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+    new Function('require','exports',code)(load,value);return value;
+  }
+  load('./api');
   for(const language of ['zh-Hans','zh-Hant']){
     vi.stubGlobal('document',{documentElement:{lang:language}});
     const network=new TypeError('canonical network failure'),json=new SyntaxError('canonical JSON failure');
     for(const [failure,status,prompt,simplified] of [[network,0,'連線未完成，請先核對結果後重試。','连线未完成，请先核对结果后重试。'],[json,200,'伺服器回應無法讀取，請先核對結果後重試。','伺服器回应无法读取，请先核对结果后重试。']] as const){
       const stack=failure.stack,message=failure.message;
       vi.stubGlobal('fetch',status===0?async()=>{throw failure;}:async()=>({status,ok:true,json:async()=>{throw failure;}}));
-      await expect(output.api('/me/profile',z.object({nickname:z.string()}),{method:'PUT'})).rejects.toBe(failure);
+      await expect(output.api('/me/profile',z.object({nickname:z.string()}),{method:'PUT',body:JSON.stringify({nickname:'原稱呼',revision:0})})).rejects.toBe(failure);
       expect(failure.message).toBe(message);expect(failure.stack).toBe(stack);
       expect(errorText(failure)).toBe(language==='zh-Hans'?simplified:prompt);
       expect(events.at(-1)).toEqual(['/api/v2/me/profile','PUT',status,status===0?'network_error':'parse_error']);
