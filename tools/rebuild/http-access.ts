@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import reviewed from './schemas/http-access-review.json';
 import type { HttpOperationSource } from './build-http-contracts';
 
-export type HttpBoundaryMode = 'public' | 'bootstrap' | 'optional-scoped-member' | 'scoped-device' | 'scoped-member'
+export type HttpBoundaryMode = 'public' | 'bootstrap' | 'optional-scoped-member' | 'optional-scoped-device' | 'scoped-device' | 'scoped-member'
   | 'device-write' | 'member-write' | 'administrator-read' | 'administrator-write' | 'administrator-login' | 'erasure-proof';
 export interface HttpAccessSource {
   mode: HttpBoundaryMode;
@@ -14,7 +14,7 @@ export interface HttpAccessSource {
   boundaryReviewed: true;
   domainAuthorizationComplete: false;
 }
-const modes = new Set<HttpBoundaryMode>(['public', 'bootstrap', 'optional-scoped-member', 'scoped-device', 'scoped-member', 'device-write', 'member-write', 'administrator-read', 'administrator-write', 'administrator-login', 'erasure-proof']);
+const modes = new Set<HttpBoundaryMode>(['public', 'bootstrap', 'optional-scoped-member', 'optional-scoped-device', 'scoped-device', 'scoped-member', 'device-write', 'member-write', 'administrator-read', 'administrator-write', 'administrator-login', 'erasure-proof']);
 
 /** These are reviewed boundary descriptions, not inferred call-graph policies.
  * Source drift requires review; ownership, role and state acceptance stays separate. */
@@ -32,6 +32,7 @@ export function readHttpAccessBindings(root: string, rows: readonly HttpOperatio
     if (files.some(file => !Object.hasOwn(reviewed.sourcePins, file))) throw Error('Missing HTTP access review source pin');
     bindings.set(entry.id, { mode, conditions: entry.conditions, additionalHeaders: entry.additionalHeaders, reviewedSourceFiles: files, boundaryReviewed: true, domainAuthorizationComplete: false });
   }
+  if (reviewed.requireAllOperations && rows.some(row => !bindings.has(row.id))) throw Error('HTTP operation has no reviewed identity boundary');
   return bindings;
 }
 
@@ -56,7 +57,7 @@ export function httpAccessDescription(access: HttpAccessSource) {
   let security: Requirement[] | undefined;
   switch (access.mode) {
     case 'public': case 'bootstrap': security = [{}]; break;
-    case 'optional-scoped-member': security = [{}, deviceRead()]; break;
+    case 'optional-scoped-member': case 'optional-scoped-device': security = [{}, deviceRead()]; break;
     case 'scoped-device': security = [deviceRead()]; break;
     case 'scoped-member': security = [requirement('MemberSession', 'AccountScope')]; break;
     case 'device-write': case 'administrator-login': security = [deviceWrite()]; break;

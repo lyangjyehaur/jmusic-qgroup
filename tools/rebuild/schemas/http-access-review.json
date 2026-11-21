@@ -3,18 +3,70 @@
   "method": "manual-boundary-review-with-exact-source-pins",
   "permissionBindingsComplete": false,
   "sourcePins": {
+    "apps/api/src/account-devices.ts": "80183897d31d3fe3532706fbcc8567ea467f81f3f0c6edbfad791de93cd3c35f",
+    "apps/api/src/account-profile.ts": "b19626ffdeb15974e0016b3efd7f388d7bdd0e2828860d6145d94baa7198c0ab",
+    "apps/api/src/activity-access.ts": "ad0d373eb295294d038ec7ad365279964984792e47f0234a16a648660a9981ea",
+    "apps/api/src/activity-attendance.ts": "86274697d3c26e6a08977c1b8c5bc9e21cfec50607531722056fb8e135129c4b",
+    "apps/api/src/activity-claims.ts": "ea6f8347725a4fed6f728bcaa7d0219aabeb34ad769662966ce524623999245c",
+    "apps/api/src/activity-delegation.ts": "e6172d6867439a4d44ef0764f74beff374040cb9f633c2552e41c75c4a4d8495",
+    "apps/api/src/activity-drafts.ts": "36cf18e8054cf94a9b2b558a1c0040dfd522f7cfb3f44673d7225d48afd7928d",
+    "apps/api/src/activity-history.ts": "cabd209a0204558692a0d4717f2f80c9350624c2760a8e6c2472bd40ab4cede4",
+    "apps/api/src/activity-invitations.ts": "0a50aaad1d76046b288af771566bdb670e328a28eb0b834addaf556cf38ef8b1",
+    "apps/api/src/activity-lifecycle.ts": "43095be4f497311dd4474a8785a1560118a5d87487a67c43c18c801d00077cb8",
+    "apps/api/src/activity-management.ts": "7196b98d526c47909fff3d522bda0952eb13ec78d875273471440dc656050345",
+    "apps/api/src/activity-registration.ts": "49a686482753b72d9f57bc0dbb930e49c54b4a3566953c7798289a6341b67ebe",
+    "apps/api/src/activity-room-overview.ts": "f26b9302605fc1ab75ece4fbc7f3ce1b2a1dc59b7fd93f2f4b7659998e9fe758",
     "apps/api/src/activity-roster.ts": "769147e2eba0810a8d3b5c66641e312326e33f757953b9b7857216d9e9be8657",
+    "apps/api/src/admin-backups.ts": "4063f8b3c1c3d0a6a695c6b56a9010fc14ec13d66244361b561af033ab3427a9",
+    "apps/api/src/admin-bot.ts": "5a6207bd769086439c3b59052557eb310c2491ed953fbeae043065649cb2021d",
+    "apps/api/src/admin-music-catalog.ts": "7fc4118c4f1ddc4071e73a2e83671709ff345363f47e36f659c60578c0f7f2de",
+    "apps/api/src/admin-music-erasure.ts": "03cbef5a0abddaa7822e67fdb3da40d2a77c479ae61155a00a794c2df105106d",
+    "apps/api/src/admin-music-pins.ts": "ed24a451a5c53603441b333e83fca4f53e6288bad6af8a10585d4febc67afda7",
+    "apps/api/src/admin-music.ts": "d4e952e78f2ce2e5db20e14fb4c71e549c0f121cde4726a92c754248880847cc",
     "apps/api/src/admin-operations.ts": "19f6f68c1a17acc6020f37f0f4ef22d0d20cac58e22fa4d20f628cfafeae6b6a",
+    "apps/api/src/admin-privacy.ts": "adf36ac4c0fb825cd0bc61934b5c3f5c5ee4710865c2177e948a8f17a982e8a6",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "b259500d33e766d1482e78c28e30829a76d6f51fe221d190ee09cfebc50482d3",
     "apps/api/src/app.ts": "6f972a8cdba081ed0fe9fec13a9232bf48a4682ef0697d828fcf8ac0ceff68ec",
+    "apps/api/src/appearance.ts": "c3c35635081b294e4e03a660052d6430fe91996e1ecc26090f6a985f721e4a31",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
+    "apps/api/src/bot-deliveries.ts": "2de96f411c74acd6b0e4cdf5bb22b7352c3f8f3ce6b9501385398cc2ca0be7cd",
+    "apps/api/src/create-intents.ts": "95c2ea774269b4f4b4e5b81a9f66122cc90fc83a0774b1f84da62bd7030cc1bd",
+    "apps/api/src/finance.ts": "47e5da82247e78537af105cbcfa56095eff7fadaed9298fc6c70b3fadb7cf6e2",
+    "apps/api/src/inbox.ts": "b1ccfab3a56a7a39cd7bfb783d72821f8031929e91ae5a14a98c49b679c94348",
+    "apps/api/src/legacy-finance.ts": "124ca44439fb44a4e1d70d3668ca6e4d05d9adb66e71a729455ce4aba682af1e",
+    "apps/api/src/legacy-local.ts": "a65e2ccf033d34f81f57754b413e777793eb519d42498d862bca2346f7c05fcb",
+    "apps/api/src/music-catalog.ts": "ede9e363eace6e75b0df840256224086d69975998ebed9f28fd9c9d1d7d3e0b9",
+    "apps/api/src/music-circles.ts": "3413f4f6589eba1140ffd24ee110ab9052a6ab1a8b1abf641b747b5dcdc3d786",
+    "apps/api/src/music-claim.ts": "ac89e7905919dd170019d755f3afd27a6a25cc778746f40ea0e0d5382ac37979",
+    "apps/api/src/music-contact.ts": "2d4cc3a5e76bf2788b0650d0fabdab4352e70eca4aa2e2d0151410a1944c6947",
+    "apps/api/src/music-fields.ts": "c783c34c9fc26680e327b00a7a7f0f23374fd551a2c2379775ee51c64b699479",
+    "apps/api/src/music-matches.ts": "11fc3228338e4b1af5fd3af43be0323f8652d3cf09c1794767ac1b43bdadbc04",
+    "apps/api/src/music-rooms.ts": "9c82ee825b755731a57026740a7a8caecbf7d8f12676875a5e038ab6d7a01c79",
+    "apps/api/src/music-shouts.ts": "4100fe1b983998979f60a8928374b474cfdf0e95ed3fe0597d61d2ee6e77a187",
+    "apps/api/src/music-trend.ts": "4c6e6d43b4ed065ec9502aeda261497820b2c9611c1868036bf3af021b83bf9a",
+    "apps/api/src/payment-codes.ts": "4e99d36f3cac4dba561e16a3134789c1af3ec696347eb187cb68423947b40fb1",
+    "apps/api/src/privacy-consent.ts": "c0a970abebb706ebab180222261f577ba793dbd891536ab406bf0857c3682ba4",
     "apps/api/src/privacy.ts": "96757aa6e1dac2c04d4e64bf7c3c94c5603f49edd167253fae7bb5fc8f853043",
     "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
+    "apps/api/src/settlements.ts": "1517d9c228694374d6f0d72610dfe51bcf0fdaf44e934822b5dc077ca66ff180",
     "apps/api/src/time-polls.ts": "d628563b98789015aa2e9b444f513c7fe7148b10ba33c56a9d587f90b053b5cc"
   },
   "operations": [
+    {
+      "id": "DELETE /api/v2/me/payment-codes/:codeId",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
     {
       "id": "GET /api/v2/activities",
       "file": "apps/api/src/app.ts",
@@ -39,6 +91,45 @@
       "additionalHeaders": []
     },
     {
+      "id": "GET /api/v2/activities/:id/access/:token",
+      "file": "apps/api/src/activity-access.ts",
+      "mode": "public",
+      "conditions": [
+        "The token must identify a currently valid invitation; preview does not grant access or consume it."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/arrangements",
+      "file": "apps/api/src/activity-management.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/attendance",
+      "file": "apps/api/src/activity-attendance.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Attendance management scope is required; onsite additions also require roster management scope."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/activities/:id/attendees/:attendeeId/music",
       "file": "apps/api/src/activity-roster.ts",
       "mode": "scoped-member",
@@ -48,6 +139,285 @@
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/bot-deliveries",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/bot-deliveries/:deliveryId",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/claims",
+      "file": "apps/api/src/activity-claims.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/claims/preview/:token",
+      "file": "apps/api/src/activity-claims.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/conditions",
+      "file": "apps/api/src/activity-management.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/copy-source",
+      "file": "apps/api/src/activity-access.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/delegation",
+      "file": "apps/api/src/activity-delegation.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/delegation/preview/:token",
+      "file": "apps/api/src/activity-delegation.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection.",
+        "A recipient-bound invitation requires the intended member; anonymous and other members are rejected for that invitation."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/draft",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/finance",
+      "file": "apps/api/src/finance.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/history",
+      "file": "apps/api/src/activity-history.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/invitations",
+      "file": "apps/api/src/activity-invitations.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/invitations/:token",
+      "file": "apps/api/src/activity-invitations.ts",
+      "mode": "public",
+      "conditions": [
+        "The token must identify a currently valid invitation; preview does not grant access or consume it."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/lifecycle",
+      "file": "apps/api/src/activity-lifecycle.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/payment-code",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/registration",
+      "file": "apps/api/src/activity-registration.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/rooms",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/rooms/history",
+      "file": "apps/api/src/activity-room-overview.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/rooms/history/:version",
+      "file": "apps/api/src/activity-room-overview.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/rooms/overview",
+      "file": "apps/api/src/activity-room-overview.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
       ],
       "additionalHeaders": []
     },
@@ -63,6 +433,357 @@
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/asset-versions",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/context",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/history",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/history/:version",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/history/:version/assets",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/history/:version/payment-code",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/history/:version/payment-codes/:kind",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/settlement/history/:version/receipts/:itemId",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "optional-scoped-device",
+      "conditions": [
+        "A valid member or visitor session, or a nonempty account scope header, requires current device scope validation.",
+        "Only requests without a valid session and without a nonempty scope use the anonymous projection.",
+        "Activity visibility and access remain server domain checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/:id/share",
+      "file": "apps/api/src/activity-access.ts",
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/activity-roster.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/draft-results/:requestId",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/lifecycle-results/:requestId",
+      "file": "apps/api/src/activity-lifecycle.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/management-results/:requestId",
+      "file": "apps/api/src/activity-management.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/activities/registration-results/:requestId",
+      "file": "apps/api/src/activity-registration.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/appearance",
+      "file": "apps/api/src/appearance.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/backups",
+      "file": "apps/api/src/admin-backups.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/bot",
+      "file": "apps/api/src/admin-bot.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/bot/deliveries",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "administrator-read",
+      "conditions": [
+        "Administrator delivery views are read-only; retry must use the authorized activity or poll entry."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/bot/deliveries/:deliveryId",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "administrator-read",
+      "conditions": [
+        "Administrator delivery views are read-only; retry must use the authorized activity or poll entry."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music-entries",
+      "file": "apps/api/src/admin-music-catalog.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music-export",
+      "file": "apps/api/src/admin-backups.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music-reset",
+      "file": "apps/api/src/admin-music-erasure.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music/:id",
+      "file": "apps/api/src/admin-music.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music/:id/erase",
+      "file": "apps/api/src/admin-music-erasure.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music/:id/history",
+      "file": "apps/api/src/admin-music.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/music/:id/pin-history",
+      "file": "apps/api/src/admin-music-pins.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
       ],
       "additionalHeaders": []
     },
@@ -83,6 +804,30 @@
       ]
     },
     {
+      "id": "GET /api/v2/admin/privacy",
+      "file": "apps/api/src/admin-privacy.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/privacy/:id",
+      "file": "apps/api/src/admin-privacy.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/admin/registration",
       "file": "apps/api/src/registration-settings.ts",
       "mode": "administrator-read",
@@ -97,6 +842,30 @@
     {
       "id": "GET /api/v2/admin/session",
       "file": "apps/api/src/admin-users.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/shouts",
+      "file": "apps/api/src/music-shouts.ts",
+      "mode": "administrator-read",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/admin/shouts/:id",
+      "file": "apps/api/src/music-shouts.ts",
       "mode": "administrator-read",
       "conditions": [],
       "dependencies": [
@@ -143,6 +912,28 @@
       "additionalHeaders": []
     },
     {
+      "id": "GET /api/v2/appearance",
+      "file": "apps/api/src/appearance.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/appearance/walls/:id/image",
+      "file": "apps/api/src/appearance.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/auth/qq/status",
       "file": "apps/api/src/auth.ts",
       "mode": "scoped-device",
@@ -156,11 +947,38 @@
       "additionalHeaders": []
     },
     {
+      "id": "GET /api/v2/bot-delivery-results/:requestId",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/health",
       "file": "apps/api/src/app.ts",
       "mode": "public",
       "conditions": [],
       "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/account-history",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
       "additionalHeaders": []
     },
     {
@@ -187,11 +1005,148 @@
       "additionalHeaders": []
     },
     {
+      "id": "GET /api/v2/me/activity-drafts",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/devices",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/me/music",
       "file": "apps/api/src/app.ts",
       "mode": "scoped-member",
       "conditions": [],
       "dependencies": [
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/music/contact",
+      "file": "apps/api/src/music-contact.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/music/entries",
+      "file": "apps/api/src/music-catalog.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/music/fields",
+      "file": "apps/api/src/music-fields.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/music/share",
+      "file": "apps/api/src/music-matches.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/notifications",
+      "file": "apps/api/src/inbox.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/notifications/count",
+      "file": "apps/api/src/inbox.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/operations/:key",
+      "file": "apps/api/src/inbox.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/payment-codes",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/payment-codes/:codeId/image",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
         "apps/api/src/security.ts"
       ],
       "additionalHeaders": []
@@ -208,11 +1163,218 @@
       "additionalHeaders": []
     },
     {
+      "id": "GET /api/v2/me/privacy/consent",
+      "file": "apps/api/src/privacy-consent.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/privacy/consent/receipts/:key",
+      "file": "apps/api/src/privacy-consent.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/profile",
+      "file": "apps/api/src/account-profile.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/me/todos",
+      "file": "apps/api/src/inbox.ts",
+      "mode": "scoped-member",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/catalog",
+      "file": "apps/api/src/music-catalog.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/circles",
+      "file": "apps/api/src/music-circles.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/claim",
+      "file": "apps/api/src/music-claim.ts",
+      "mode": "scoped-device",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/music/entries",
       "file": "apps/api/src/app.ts",
       "mode": "public",
       "conditions": [],
       "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/entries/:id/members",
+      "file": "apps/api/src/music-catalog.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/matches",
+      "file": "apps/api/src/music-matches.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/profiles/:id",
+      "file": "apps/api/src/music-contact.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/profiles/:id/comparison",
+      "file": "apps/api/src/music-matches.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/rooms/source",
+      "file": "apps/api/src/music-rooms.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/shouts",
+      "file": "apps/api/src/music-shouts.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/shouts/:id",
+      "file": "apps/api/src/music-shouts.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/shouts/history",
+      "file": "apps/api/src/music-shouts.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/trend",
+      "file": "apps/api/src/music-trend.ts",
+      "mode": "public",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/music/trend/members",
+      "file": "apps/api/src/music-trend.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
       "additionalHeaders": []
     },
     {
@@ -255,6 +1417,34 @@
       "additionalHeaders": []
     },
     {
+      "id": "GET /api/v2/time-polls/:id/bot-deliveries",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "GET /api/v2/time-polls/:id/bot-deliveries/:deliveryId",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "scoped-member",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "GET /api/v2/time-polls/:id/manage",
       "file": "apps/api/src/time-polls.ts",
       "mode": "scoped-member",
@@ -273,6 +1463,392 @@
       "mode": "public",
       "conditions": [],
       "dependencies": [],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/access/:token/accept",
+      "file": "apps/api/src/activity-access.ts",
+      "mode": "member-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/attendance/:personId",
+      "file": "apps/api/src/activity-attendance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Attendance management scope is required; onsite additions also require roster management scope."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/attendees/:personId/conditions",
+      "file": "apps/api/src/activity-management.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/attendees/:personId/registration",
+      "file": "apps/api/src/activity-registration.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/bot-deliveries/:deliveryId/retry",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/claims",
+      "file": "apps/api/src/activity-claims.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/claims/:claimId",
+      "file": "apps/api/src/activity-claims.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/claims/preview/:token/request",
+      "file": "apps/api/src/activity-claims.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/delegation/invitations",
+      "file": "apps/api/src/activity-delegation.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/delegation/invitations/:itemId/revoke",
+      "file": "apps/api/src/activity-delegation.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/delegation/preview/:token/accept",
+      "file": "apps/api/src/activity-delegation.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/delegation/roles/:itemId/revoke",
+      "file": "apps/api/src/activity-delegation.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/draft/publish",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/draft/remove",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/finance",
+      "file": "apps/api/src/finance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/finance/origin",
+      "file": "apps/api/src/finance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/finance/preview",
+      "file": "apps/api/src/finance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/invitations",
+      "file": "apps/api/src/activity-invitations.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/invitations/:token/accept",
+      "file": "apps/api/src/activity-invitations.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/lifecycle",
+      "file": "apps/api/src/activity-lifecycle.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/onsite",
+      "file": "apps/api/src/activity-attendance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Attendance management scope is required; onsite additions also require roster management scope."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/registration",
+      "file": "apps/api/src/activity-registration.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/registration/preview",
+      "file": "apps/api/src/activity-registration.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/rooms",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/settlement",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/:id/settlement/preview",
+      "file": "apps/api/src/settlements.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/activities/drafts",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/appearance",
+      "file": "apps/api/src/appearance.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/bot",
+      "file": "apps/api/src/admin-bot.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/bot/preview",
+      "file": "apps/api/src/admin-bot.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
       "additionalHeaders": []
     },
     {
@@ -304,12 +1880,152 @@
       "additionalHeaders": []
     },
     {
+      "id": "POST /api/v2/admin/music-entries",
+      "file": "apps/api/src/admin-music-catalog.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music-erasure/receipt",
+      "file": "apps/api/src/admin-music-erasure.ts",
+      "mode": "administrator-write",
+      "conditions": [
+        "Current administrator write authority and a matching ErasureProof body are both required; only admin_music receipts are returned."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts",
+        "apps/api/src/privacy.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music-reset",
+      "file": "apps/api/src/admin-music-erasure.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music/:id/erase",
+      "file": "apps/api/src/admin-music-erasure.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music/:id/link",
+      "file": "apps/api/src/admin-music.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music/:id/link-preview",
+      "file": "apps/api/src/admin-music.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music/:id/pin",
+      "file": "apps/api/src/admin-music-pins.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music/:id/pin-result",
+      "file": "apps/api/src/admin-music-pins.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts",
+        "apps/api/src/admin-music.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/music/search",
+      "file": "apps/api/src/admin-music.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/privacy/:id/review",
+      "file": "apps/api/src/admin-privacy.ts",
+      "mode": "administrator-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "POST /api/v2/admin/registration",
       "file": "apps/api/src/registration-settings.ts",
       "mode": "administrator-write",
       "conditions": [
         "Revalidate settings revision; preserve the pre-write backup on change."
       ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/admin-security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/admin/shouts/:id/delete",
+      "file": "apps/api/src/music-shouts.ts",
+      "mode": "administrator-write",
+      "conditions": [],
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
@@ -410,12 +2126,190 @@
       "additionalHeaders": []
     },
     {
+      "id": "POST /api/v2/device-links/accept",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/device-links/view",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "device-write",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "POST /api/v2/me/accounts/switch",
       "file": "apps/api/src/auth.ts",
       "mode": "member-write",
       "conditions": [
         "Target must be an active account previously authorized on this device."
       ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/create-intents/view",
+      "file": "apps/api/src/create-intents.ts",
+      "mode": "member-write",
+      "conditions": [
+        "The original request or intent must belong to the current account; receipt presence does not bypass current command authority."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/devices/link",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/devices/revoke",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/devices/revoke-link",
+      "file": "apps/api/src/account-devices.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Device grants, link status and account ownership are checked independently; viewing a link does not authorize an account."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/check",
+      "file": "apps/api/src/legacy-local.ts",
+      "mode": "member-write",
+      "conditions": [
+        "The original request or intent must belong to the current account; receipt presence does not bypass current command authority."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/finance/inspect",
+      "file": "apps/api/src/legacy-finance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "The original request or intent must belong to the current account; receipt presence does not bypass current command authority."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/finance/retry",
+      "file": "apps/api/src/legacy-finance.ts",
+      "mode": "member-write",
+      "conditions": [
+        "The original request or intent must belong to the current account; receipt presence does not bypass current command authority."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/music/entries",
+      "file": "apps/api/src/music-catalog.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/music/shouts",
+      "file": "apps/api/src/music-shouts.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/notifications/read",
+      "file": "apps/api/src/inbox.ts",
+      "mode": "member-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/payment-codes",
+      "file": "apps/api/src/payment-codes.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity access, command permissions and ownership of payment or settlement assets remain required server checks."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/privacy/consent",
+      "file": "apps/api/src/privacy-consent.ts",
+      "mode": "member-write",
+      "conditions": [],
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts"
@@ -437,6 +2331,80 @@
       "additionalHeaders": []
     },
     {
+      "id": "POST /api/v2/music/claim/cancel",
+      "file": "apps/api/src/music-claim.ts",
+      "mode": "device-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/music/claim/finish",
+      "file": "apps/api/src/music-claim.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/music/claim/start",
+      "file": "apps/api/src/music-claim.ts",
+      "mode": "device-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/music/compare",
+      "file": "apps/api/src/music-matches.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/music/profiles/lookup",
+      "file": "apps/api/src/music-contact.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/music/rooms/calculate",
+      "file": "apps/api/src/music-rooms.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "POST /api/v2/privacy/receipt",
       "file": "apps/api/src/privacy.ts",
       "mode": "erasure-proof",
@@ -446,6 +2414,79 @@
       ],
       "dependencies": [
         "apps/api/src/app.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/time-polls",
+      "file": "apps/api/src/time-polls.ts",
+      "mode": "member-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/time-polls/:id/bot-deliveries/:deliveryId/retry",
+      "file": "apps/api/src/bot-deliveries.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity delivery access requires owner scope or settlement scope limited to settlement_updated; poll delivery access requires the poll owner.",
+        "Receipt lookup rechecks current entity authority; retries also require an unchanged review token and an eligible original delivery."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/time-polls/:id/manage",
+      "file": "apps/api/src/time-polls.ts",
+      "mode": "member-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/time-polls/:id/votes",
+      "file": "apps/api/src/time-polls.ts",
+      "mode": "member-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "PUT /api/v2/activities/:id/arrangements",
+      "file": "apps/api/src/activity-management.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "PUT /api/v2/activities/:id/draft",
+      "file": "apps/api/src/activity-drafts.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
       ],
       "additionalHeaders": []
     },
@@ -460,6 +2501,45 @@
         "apps/api/src/security.ts"
       ],
       "additionalHeaders": []
+    },
+    {
+      "id": "PUT /api/v2/me/music/contact",
+      "file": "apps/api/src/music-contact.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "PUT /api/v2/me/music/fields",
+      "file": "apps/api/src/music-fields.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "PUT /api/v2/me/profile",
+      "file": "apps/api/src/account-profile.ts",
+      "mode": "member-write",
+      "conditions": [],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
     }
-  ]
+  ],
+  "requireAllOperations": true,
+  "boundaryCoverageComplete": true
 }

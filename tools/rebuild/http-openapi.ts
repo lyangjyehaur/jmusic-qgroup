@@ -118,6 +118,7 @@ export function httpOpenAPI(rows: HttpOperationSource[], catalog: Catalog) {
     info: { title: '群聚 API', version: '2' }, paths, components: { schemas, securitySchemes: httpSecuritySchemes },
     'x-qgroup-erasure-recovery-gate-required': true,
     'x-qgroup-boundary-reviewed-operations': rows.filter(row=>row.access).length,
+    'x-qgroup-boundary-coverage-complete': rows.every(row=>row.access?.boundaryReviewed),
     'x-qgroup-permission-bindings-complete': false,
     'x-qgroup-path-validation-bound': false,
     'x-qgroup-release-eligible': false,
