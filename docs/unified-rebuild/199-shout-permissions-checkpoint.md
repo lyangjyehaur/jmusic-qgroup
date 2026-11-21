@@ -22,6 +22,10 @@
 
 ## 196 原完整 CI
 
-原提交 `013c6e724e9d09bf70c51c757832e28f6a3b421d`／CI `44928466193` 的 unit、browser、Linux image 三個工作及全部步驟均為 success。原 195 檔／3,479 個 unit、81 檔／844 個 browser 案例一次通過，0 重試／跳過。原 ZIP 的 API digest、大小、CRC 及解包 hashes 已核對；固定 inventory、145 個契約來源輸入／54 個權限來源 pins、84 個 PWA 資源／1,777,913 bytes 相符。image 與 browser Python 的完整來源及 runtime 配對核對另行持續。
+原提交 `013c6e724e9d09bf70c51c757832e28f6a3b421d`／CI `44928466193` 的 unit、browser、Linux image 三個工作及全部步驟均為 success。原 195 檔／3,479 個 unit、81 檔／844 個 browser 案例一次通過，0 重試／跳過。原 ZIP 的 API digest、大小、CRC 及解包 hashes 已核對；固定 inventory、145 個契約來源輸入／54 個權限來源 pins、84 個 PWA 資源／1,777,913 bytes 相符。
+
+從乾淨提交封存明確 196 來源，重新生成並核對原 browser 的 2 個 API bundle／184 個輸入、3 個 native bundle／107 個輸入，以及 image 的 Python source manifest 與 bot harness；沒有重建 image 或重跑原 CI。原 Python 的 55 個 blobs、原 Dockerfile、依賴與 harness pins 均對應精確來源。一般 browser runtime 為 development，由原 CI 提交與 bundle pins 綁定；actual image 的 web runtime 明確對應該提交與 tree `8bf72c78f0c29ebef254b377dff1f58c64c29a9a`。
+
+原隔離 image 組合為 web `sha256:571b9a8a2fe3c0a57be64ed1ee92b33e63b6f5d98e75d911c3eb6380c56012f5`、Python `sha256:3d13b5ac54d3041be0335ec295ae6dfcde2569efa2beeb1e2e4fcddd1db5f1ee`。image 與 browser 的配對報告各包含 71 次原 worker、9 次 native consumer、314 個深連結與 532 次 HTTP 呼叫，其中 2 次限流延後；原重試、不確定投遞、模擬及順序交接語意已獨立核對。證據：`payment-permissions-196/`。外部投遞仍為 synthetic 且 transport 被拒絕，這不是線上 bot 實際版本組合或完整 B01–B15 驗收。
 
 這仍是部分領域驗收。166 capabilities 仍為 0 fully accepted，`permissionBindingsComplete=false`、`releaseEligible=false`；C01／C02／C03／A12 只補入本輪證據及已驗證的併發項目。完整來源對帳、舊入口、備份／還原、QQ WebView、實際線上 bot 版本組合及 B01–B15 仍需驗收，依使用者要求，不部署。
