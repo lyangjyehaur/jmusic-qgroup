@@ -5,8 +5,9 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { AuthResult, RegisterName, RegistrationSettings, type Viewer } from '@qgroup/contracts';
 import { z } from 'zod';
-import { api, ApiError } from './api';
-import { authHeaders, localReturn, loginLink, useAccountChange } from './auth';
+import { ApiError } from './api';
+import { createWebHttpClient } from './http';
+import { authHttp, localReturn, loginLink, useAccountChange } from './auth';
 import { AdminGate, type Access } from './admin';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 
@@ -30,7 +31,7 @@ function NameForm({ viewer, returnTo }: { viewer: Viewer; returnTo: string }) {
     if (!parsed.success || busy || uncertain) return;
     setBusy(true); setError('');
     try {
-      const done = await api('/auth/register-name', AuthResult, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify(parsed.data) });
+      const done = await authHttp(viewer).request('POST /api/v2/auth/register-name', { body: parsed.data }, AuthResult);
       await changed(done.returnTo);
     } catch (failure) {
       const unknown = !(failure instanceof ApiError) || failure.status >= 500;
@@ -54,7 +55,7 @@ export function RegistrationAdmin() {
   return <><PageIntro title="註冊設定" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <SettingsLoader key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
 }
 function SettingsLoader({ viewer, access }: { viewer: Viewer; access: Access }) {
-  const settings = useQuery({ queryKey: ['private', viewer.scope, 'admin-registration-settings', access.scope], queryFn: () => api('/admin/registration', RegistrationSettings, { headers: { 'X-Account-Scope': viewer.scope } }), refetchOnWindowFocus: false });
+  const settings = useQuery({ queryKey: ['private', viewer.scope, 'admin-registration-settings', access.scope], queryFn: () => createWebHttpClient({ context: () => ({ scope: viewer.scope }) }).request('GET /api/v2/admin/registration', {}, RegistrationSettings), refetchOnWindowFocus: false });
   const [readVersion, setReadVersion] = useState(0);
   const reload = async () => { const result = await settings.refetch(); if (result.isSuccess) setReadVersion(value => value + 1); };
   return settings.isPending ? <Notice>正在讀取設定…</Notice> : settings.error ? <Failure error={settings.error} retry={() => void reload()} /> : <SettingsForm key={settings.data.revision + ':' + settings.data.adminCsrf + ':' + readVersion} viewer={viewer} initial={settings.data} reload={reload} />;
@@ -68,7 +69,7 @@ function SettingsForm({ viewer, initial, reload }: { viewer: Viewer; initial: z.
     if (!confirmed || busy || blocked) return;
     setBusy(true); setError('');
     try {
-      await api('/admin/registration', RegistrationSettings, { method: 'POST', headers: { ...authHeaders(viewer), 'X-Admin-CSRF': initial.adminCsrf }, body: JSON.stringify({ enabled: !initial.enabled, revision: initial.revision, confirm: true }) });
+      await createWebHttpClient({ context: () => ({ scope: viewer.scope, csrf: viewer.csrf, adminCsrf: initial.adminCsrf }) }).request('POST /api/v2/admin/registration', { body: { enabled: !initial.enabled, revision: initial.revision, confirm: true } }, RegistrationSettings);
       await reload();
     } catch (failure) {
       setBlocked(true);

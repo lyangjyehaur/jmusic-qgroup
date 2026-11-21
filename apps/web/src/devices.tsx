@@ -4,8 +4,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { AccountHistory, DeviceLinkView, DeviceList, IssuedDeviceLink, Ok, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
-import { authHeaders, loginLink } from './auth';
+import { ApiError } from './api';
+import { createWebHttpClient } from './http';
+import { authHttp, loginLink } from './auth';
 import { announceAccountChange } from './account-session';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 
@@ -32,9 +33,9 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
-  const devices = useQuery({ queryKey: ['private', viewer.scope, 'devices'], queryFn: () => api('/me/devices', DeviceList, { headers: { 'X-Account-Scope': viewer.scope } }) });
+  const devices = useQuery({ queryKey: ['private', viewer.scope, 'devices'], queryFn: () => createWebHttpClient({ context: () => ({ scope: viewer.scope }) }).request('GET /api/v2/me/devices', {}, DeviceList) });
   const history = useInfiniteQuery({ queryKey: ['private', viewer.scope, 'account-history'], initialPageParam: null as number | null,
-    queryFn: ({ pageParam }) => api('/me/account-history' + (pageParam ? '?before=' + pageParam : ''), AccountHistory, { headers: { 'X-Account-Scope': viewer.scope } }),
+    queryFn: ({ pageParam }) => createWebHttpClient({ context: () => ({ scope: viewer.scope }) }).request('GET /api/v2/me/account-history', { query: { before: pageParam ? pageParam : undefined } }, AccountHistory),
     getNextPageParam: page => page.nextCursor ?? undefined });
   async function refresh() {
     await Promise.all([queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'devices'] }), queryClient.invalidateQueries({ queryKey: ['private', viewer.scope, 'account-history'] })]);
@@ -52,7 +53,7 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
       // Reserve issuance before HTTP: another tab cannot generate a competing link.
       await record.save({token:null,capturedAt,expiresAt:capturedAt+600000});
       const fresh=await current();if(!active.current)return;sent=true;
-      const result=await api('/me/devices/link',IssuedDeviceLink,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify({confirm:true,authorizeOwnDevice:true})});
+      const result=await authHttp(fresh).request('POST /api/v2/me/devices/link',{body:{confirm:true,authorizeOwnDevice:true}},IssuedDeviceLink);
       if(!active.current)return;
       await record.save({token:result.token,capturedAt,expiresAt:Math.min(Date.parse(result.expiresAt),capturedAt+600000)});
       setAuthorize(false);await refresh();
@@ -64,7 +65,8 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
     if(!record.begin())return;setBusy(true);setMessage('');
     try {
       const fresh=await current();if(!active.current)return;
-      await api(deviceId?'/me/devices/revoke':'/me/devices/revoke-link',Ok,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify({confirm:true,...deviceId?{deviceId}:{}})});
+      if(deviceId)await authHttp(fresh).request('POST /api/v2/me/devices/revoke',{body:{confirm:true,deviceId}},Ok);
+      else await authHttp(fresh).request('POST /api/v2/me/devices/revoke-link',{body:{confirm:true}},Ok);
       if(!active.current)return;
       await record.save(null);setSelected(null);setAuthorize(false);setMessage(deviceId?uiText("已撤銷該裝置的此帳號授權；其他帳號保留。"):uiText("已撤銷此帳號的未使用連結。"));await refresh();
     } catch(error) {if(active.current)setMessage(error instanceof ApiError&&error.status<500?errorText(error):uiText("尚未確認撤銷結果，請重新讀取裝置與紀錄再核對。"));}
@@ -146,7 +148,7 @@ function AcceptContent({viewer,record}:{viewer:Viewer;record:ReturnType<typeof u
   const [viewKey]=useState(()=>crypto.randomUUID());
   useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
   const view=useQuery({queryKey:['private',viewer.scope,'device-link',viewKey],staleTime:0,gcTime:0,
-    queryFn:async({signal})=>{await record.check();return api('/device-links/view',DeviceLinkView,{signal,method:'POST',headers:authHeaders(viewer),body:JSON.stringify({token})});}});
+    queryFn:async({signal})=>{await record.check();return authHttp(viewer).request('POST /api/v2/device-links/view',{signal,body:{token}},DeviceLinkView);}});
   useEffect(()=>{if(view.error instanceof ApiError&&[401,403,409].includes(view.error.status))void queryClient.invalidateQueries({queryKey:['session']});},[view.error]);
   useEffect(()=>{
     if(!view.data||!record.value)return;const expiresAt=Math.min(Date.parse(view.data.expiresAt),record.value.expiresAt);
@@ -160,7 +162,7 @@ function AcceptContent({viewer,record}:{viewer:Viewer;record:ReturnType<typeof u
       if(!active.current)return;
       if(!current.authenticated||current.scope!==viewer.scope)throw Error('帳號已變更，請重新核對目前帳號及裝置授權。');
       await record.check();if(!active.current)return;sent=true;
-      await api('/device-links/accept',Ok,{method:'POST',headers:authHeaders(current),body:JSON.stringify({token,confirm:true,acceptAccess:true})});
+      await authHttp(current).request('POST /api/v2/device-links/accept',{body:{token,confirm:true,acceptAccess:true}},Ok);
       if(!active.current)return;announceAccountChange();await queryClient.invalidateQueries({queryKey:['private',viewer.scope,'accounts']});await view.refetch();
     }catch(error){if(active.current){const unknown=sent&&(!(error instanceof ApiError)||error.status>=500);setUncertain(unknown);setAccepted(false);setMessage(unknown?uiText("尚未確認授權結果，請先核對授權。"):error instanceof Error?errorText(error):uiText("無法確認授權，請重新讀取。"));}}
     finally{record.end();if(active.current)setBusy(false);}

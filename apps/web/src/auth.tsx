@@ -5,12 +5,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { AccountList, AuthResult, Ok, QQStartResult, QQStatus, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { createWebHttpClient } from './http';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 import { announceAccountChange, clearDeviceDrafts } from './account-session';
 import { QQAvatar, stampQQReminder } from './qq-profile';
 
 export const authHeaders = (viewer: Viewer) => ({ 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf });
+export const authHttp = (viewer: Viewer) => createWebHttpClient({ context: () => ({ scope: viewer.scope, csrf: viewer.csrf }) });
 export const loginLink = (returnTo: string) => '/login?returnTo=' + encodeURIComponent(returnTo);
 export function localReturn(value: string | null) { return value?.startsWith('/') && !value.startsWith('//') && !/[\\\x00-\x20]/.test(value) ? value : '/'; }
 export function useAccountChange() {
@@ -38,7 +40,7 @@ export function Login() {
     setBusy(true); setError('');
     try {
       if (session.data.authenticated && session.data.qq.needsReauth) stampQQReminder(session.data.scope);
-      const result = await api('/auth/qq/start', QQStartResult, { method: 'POST', headers: authHeaders(session.data), body: JSON.stringify({ mode, confirm: true, returnTo, acceptPrivacy: accepted, privacyVersion: session.data.privacyVersion }) });
+      const result = await authHttp(session.data).request('POST /api/v2/auth/qq/start', { body: { mode, confirm: true, returnTo, acceptPrivacy: accepted, privacyVersion: session.data.privacyVersion } }, QQStartResult);
       window.location.assign(result.authorizeUrl);
     } catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("無法開始授權")); setBusy(false); }
   }
@@ -61,13 +63,13 @@ export function AuthConfirm() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [uncertain, setUncertain] = useState(false);
-  const status = useQuery({ queryKey: ['private', viewer?.scope, 'qq-status'], enabled: !!viewer?.qqEnabled && !params.has('status'), queryFn: () => api('/auth/qq/status', QQStatus, { headers: { 'X-Account-Scope': viewer!.scope } }) });
+  const status = useQuery({ queryKey: ['private', viewer?.scope, 'qq-status'], enabled: !!viewer?.qqEnabled && !params.has('status'), queryFn: () => createWebHttpClient({ context: () => ({ scope: viewer!.scope }) }).request('GET /api/v2/auth/qq/status', {}, QQStatus) });
   const result = status.data;
   async function finish() {
     if (!viewer || result?.status !== 'verified') return;
     setBusy(true); setError('');
     try {
-      const done = await api('/auth/qq/finish', AuthResult, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true, attemptId: result.attemptId }) });
+      const done = await authHttp(viewer).request('POST /api/v2/auth/qq/finish', { body: { confirm: true, attemptId: result.attemptId } }, AuthResult);
       const message = result.mode === 'bind' && viewer.authenticated && viewer.qq.needsReauth ? done.qqUnionidBound ? uiText('QQ 資料已更新；bot 個人功能仍依實際開放狀態。') : uiText('尚未取得 UnionID；原帳號已保留，可在帳號頁重新授權。') : undefined;
       await changed(done.returnTo, false, message);
     } catch (failure) {
@@ -81,7 +83,7 @@ export function AuthConfirm() {
     if (!viewer) return;
     setBusy(true); setError('');
     try {
-      const done = await api('/auth/qq/cancel', z.object({ returnTo: z.string() }), { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true }) });
+      const done = await authHttp(viewer).request('POST /api/v2/auth/qq/cancel', { body: { confirm: true } }, z.object({ returnTo: z.string() }));
       await changed(done.returnTo);
     } catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("取消失敗")); setBusy(false); }
   }
@@ -108,17 +110,17 @@ export function Accounts() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [params] = useSearchParams();
-  const accounts = useQuery({ queryKey: ['private', viewer?.scope, 'accounts'], enabled: !!viewer?.authenticated, queryFn: () => api('/me/accounts', AccountList, { headers: { 'X-Account-Scope': viewer!.scope } }) });
+  const accounts = useQuery({ queryKey: ['private', viewer?.scope, 'accounts'], enabled: !!viewer?.authenticated, queryFn: () => createWebHttpClient({ context: () => ({ scope: viewer!.scope }) }).request('GET /api/v2/me/accounts', {}, AccountList) });
   async function switchTo(scope: string) {
     if (!viewer) return; setBusy(true); setError('');
-    try { await api('/me/accounts/switch', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ scope, confirm: true }) }); await changed('/me/accounts'); }
+    try { await authHttp(viewer).request('POST /api/v2/me/accounts/switch', { body: { scope, confirm: true } }, Ok); await changed('/me/accounts'); }
     catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("切換失敗")); } finally { setBusy(false); }
   }
   async function logout() {
     if (!viewer) return; setBusy(true); setError('');
     let committed = false, cleaned = false;
     try {
-      await api('/auth/logout', Ok, { method: 'POST', headers: authHeaders(viewer), body: JSON.stringify({ confirm: true }) });
+      await authHttp(viewer).request('POST /api/v2/auth/logout', { body: { confirm: true } }, Ok);
       committed = true;
       try { await clearDeviceDrafts(); cleaned = true; } finally { announceAccountChange(true); }
       await changed('/me', true);

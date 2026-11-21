@@ -5,7 +5,9 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { InboxTodos, MarkNotificationsRead, NotificationCount, Notifications, Ok, OperationReceipt } from '@qgroup/contracts';
-import { api, ApiError } from './api';
+import { ApiError } from './api';
+import { createWebHttpClient } from './http';
+import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { pendingOperations, type PendingOperation } from './pending-operations';
@@ -15,7 +17,7 @@ import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { LegacyLocalLink } from './legacy-local';
 const ReadOperation=z.object({key:z.string().uuid(),input:MarkNotificationsRead}).strict();
-const scope=(viewer:Member)=>({'X-Account-Scope':viewer.scope});
+const scopedHttp=(viewer:Member)=>createWebHttpClient({context:()=>({scope:viewer.scope})});
 const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:uiText("確認變更後的安排"),claims:uiText("核對報名認領"),withdrawal:uiText("處理退出申請"),formation:uiText("決定是否成團"),finish:uiText("確認活動結束／延長"),settlement:uiText("核對並發布結算"),reports:uiText("款項申報待核對"),payment:uiText("我的款項待補"),refund:uiText("我的退款／墊付待收回"),reconcile:uiText("核對收退款與結清")};
 const destinations:Record<keyof typeof labels,string>={conditions:'conditions',claims:'claims',withdrawal:'registration',formation:'lifecycle',finish:'lifecycle',settlement:'?task=settlement',reports:'finance',payment:'finance',refund:'finance',reconcile:'finance'};
 function TodoList({todos}:{todos:z.infer<typeof InboxTodos>['todos']}){
@@ -23,7 +25,7 @@ function TodoList({todos}:{todos:z.infer<typeof InboxTodos>['todos']}){
   return <>{[...groups].map(([id,items])=><div key={id}><Heading level={3} className="inbox-event-title"><Link to={'/activities/'+encodeURIComponent(id)}>{items[0]!.title}</Link></Heading><ul className="inbox-list">{items.map(todo=>{const suffix=destinations[todo.kind],money=todo.amountCents===undefined?'':' · ¥'+(todo.amountCents/100).toFixed(2);return <li key={todo.kind}><Link to={'/activities/'+encodeURIComponent(id)+(suffix.startsWith('?')?'':'/')+suffix}>{todo.count?todo.count+' 筆':''}{labels[todo.kind]}{money}</Link></li>;})}</ul></div>)}</>;
 }
 export function InboxLink({viewer}:{viewer:Member}){
-  const query=useQuery({queryKey:['private',viewer.scope,'notification-count'],queryFn:()=>api('/me/notifications/count',NotificationCount,{headers:scope(viewer)}),refetchInterval:30000});
+  const query=useQuery({queryKey:['private',viewer.scope,'notification-count'],queryFn:()=>scopedHttp(viewer).request('GET /api/v2/me/notifications/count',{},NotificationCount),refetchInterval:30000});
   return <Link to="/inbox">收件匣{query.error?'（讀取失敗）':query.data?.unreadCount?'（'+query.data.unreadCount+' 未讀）':''}</Link>;
 }
 export function InboxPage(){return <><PageIntro title="收件匣"/><LegacyLocalLink/><MemberAccess>{viewer=><Inbox key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
@@ -46,7 +48,7 @@ function PendingOperations({viewer}:{viewer:Member}){
   async function check(row:PendingOperation){
     if(!row.requestKey||busy)return;setBusy(row.id);setResults(prior=>({...prior,[row.id]:''}));
     try{
-      const receipt=await api((row.adminScope?'/admin':'/me')+'/operations/'+encodeURIComponent(row.requestKey),OperationReceipt,{headers:{...scope(viewer),...row.adminScope?{'X-Admin-Scope':row.adminScope}:{}}});
+      const receipt=await createWebHttpClient({context:()=>({scope:viewer.scope,adminScope:row.adminScope||undefined})}).request(row.adminScope?'GET /api/v2/admin/operations/:key':'GET /api/v2/me/operations/:key',{params:{key:row.requestKey}},OperationReceipt);
       if(active.current)setResults(prior=>({...prior,[row.id]:receipt.committed?uiText('此操作編號已有回執，請回原頁核對內容及目前權限。'):uiText('尚未查到此操作編號的回執，請回原頁確認原操作結果。')}));
     }catch(error){if(active.current)setResults(prior=>({...prior,[row.id]:error instanceof ApiError?errorText(error):uiText('無法讀取操作回執，請稍後重試。')}));}
     finally{if(active.current)setBusy('');}
@@ -62,8 +64,8 @@ function Inbox({viewer}:{viewer:Member}){
   const {value:operation,replace:setOperation,busy,setBusy,active,locked,unavailable,begin,persist}=record;
   const [message,setMessage]=useState('');
   useEffect(()=>{setMessage('');},[record.epoch]);
-  const notifications=useInfiniteQuery({queryKey:['private',viewer.scope,'notifications'],initialPageParam:null as string|null,queryFn:({pageParam})=>api('/me/notifications'+(pageParam?'?before='+pageParam:''),Notifications,{headers:scope(viewer)}),getNextPageParam:last=>last.nextBefore??undefined});
-  const todos=useQuery({queryKey:['private',viewer.scope,'inbox-todos',event],queryFn:()=>api('/me/todos'+(event?'?'+new URLSearchParams({event}):''),InboxTodos,{headers:scope(viewer)}),refetchInterval:30000});
+  const notifications=useInfiniteQuery({queryKey:['private',viewer.scope,'notifications'],initialPageParam:null as string|null,queryFn:({pageParam})=>scopedHttp(viewer).request('GET /api/v2/me/notifications',{query:{before:pageParam||undefined}},Notifications),getNextPageParam:last=>last.nextBefore??undefined});
+  const todos=useQuery({queryKey:['private',viewer.scope,'inbox-todos',event],queryFn:()=>scopedHttp(viewer).request('GET /api/v2/me/todos',{query:{event:event||undefined}},InboxTodos),refetchInterval:30000});
   const messages=notifications.data?.pages.flatMap(page=>page.notifications)??[];
   async function mark(ids:string[]){
     const pending=operation??{key:crypto.randomUUID(),input:MarkNotificationsRead.parse({ids})};if(!begin())return;
@@ -71,7 +73,7 @@ function Inbox({viewer}:{viewer:Member}){
     try{
       if(!await persist(pending,false,uiText("無法保存已讀操作編號，尚未送出。"))||!active.current)return;
       setOperation(pending);
-      await api('/me/notifications/read',Ok,{method:'POST',headers:{...scope(viewer),'Content-Type':'application/json','X-CSRF-Token':viewer.csrf,'Idempotency-Key':pending.key},body:JSON.stringify(pending.input)});committed=true;
+      await authHttp(viewer).request('POST /api/v2/me/notifications/read',{body:pending.input,requestId:pending.key,requestScope:viewer.scope},Ok);committed=true;
       if(!active.current||!await persist(null,false,uiText("已讀操作已送出，但無法保存本機確認狀態；請保留原操作並核對結果。")))return;
       setOperation(null);setMessage(uiText("通知已標為已讀；待辦仍按目前狀態計算。"));
       await client.invalidateQueries({queryKey:['private',viewer.scope,'notifications']});void client.invalidateQueries({queryKey:['private',viewer.scope,'notification-count']});
