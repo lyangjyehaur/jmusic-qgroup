@@ -2,7 +2,7 @@ import { uiText } from './language';
 import type { ReactNode } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Profile, type Viewer } from '@qgroup/contracts';
+import { type Viewer } from '@qgroup/contracts';
 import { loginLink } from './auth';
 import { createWebHttpClient } from './http';
 import { Failure, Notice, useSession } from './shared';
@@ -19,7 +19,7 @@ export function MusicMemberAccess({ children, purpose = uiText('查看同好成�
 }
 function MusicGate({ viewer, children, purpose }: { viewer: Member; children: (viewer: Member) => ReactNode; purpose: string }) {
   const http=createWebHttpClient({context:()=>({scope:viewer.scope})});
-  const profile = useQuery({ queryKey: ['private', viewer.scope, 'music', viewer.musicEpoch], queryFn: () => http.request('GET /api/v2/me/music', {}, Profile) });
+  const profile = useQuery({ queryKey: ['private', viewer.scope, 'music', viewer.musicEpoch], queryFn: () => http.requestContract('GET /api/v2/me/music', {}) });
   if (profile.isPending) return <Notice>正在確認成分…</Notice>;
   if (profile.error) return <Failure error={profile.error} retry={() => void profile.refetch()} />;
   if (!profile.data) return <Notice>請先<Link to="/me/music">保存成分</Link>，再{purpose}。</Notice>;

@@ -4,7 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { AdminMusicHistory, AdminMusicLinkPreview, AdminMusicProfile, AdminMusicProfiles, AdminMusicSearch, Ok, SaveMusicLink, type Viewer } from '@qgroup/contracts';
+import { AdminMusicLinkPreview, AdminMusicProfile, AdminMusicSearch, SaveMusicLink, type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
 import { ApiError } from './api';
 import { announceAccountChange } from './account-session';
@@ -28,7 +28,7 @@ function Directory({ viewer, access }: { viewer: Viewer; access: Access }) {
   const query = useQuery({ queryKey: ['private', viewer.scope, 'admin-music', access.scope, search], queryFn: ({signal}) => {
     const parsed = AdminMusicSearch.safeParse(search);
     if (!parsed.success) throw displayError(parsed.error, '操作資料無法驗證，請核對原操作後再繼續。');
-    return adminHttp(viewer, access).request('POST /api/v2/admin/music/search', { signal, body: parsed.data }, AdminMusicProfiles);
+    return adminHttp(viewer, access).requestContract('POST /api/v2/admin/music/search', { signal, body: parsed.data });
   } });
   useAdminFailure(query.error,viewer);
   return <><Surface className="detail"><form className="directory-search" onSubmit={event => { event.preventDefault(); setSearch({ search: input, status: filter, offset: 0 }); }}>
@@ -67,7 +67,7 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
     setPreview(null); setConfirmed(false); setMessage('');
     try {
       if(!await persist(draft)||!active.current)return;
-      const result = await adminHttp(viewer, access).request('POST /api/v2/admin/music/:id/link-preview', { params: { id }, body: { targetUserId: draft.target.trim() || null } }, AdminMusicLinkPreview);
+      const result = await adminHttp(viewer, access).requestContract('POST /api/v2/admin/music/:id/link-preview', { params: { id }, body: { targetUserId: draft.target.trim() || null } });
       if(active.current){setCurrent(result.profile);setPreview(result);}
     }catch(error){if(active.current){setMessage(error instanceof Error ? errorText(error) : uiText("無法取得預覽"));failed(error);}}finally{if(active.current)setBusy(false);}
   }
@@ -79,7 +79,7 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try {
-      await adminHttp(viewer, access).request('POST /api/v2/admin/music/:id/link', { params: { id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, Ok);accepted=true;
+      await adminHttp(viewer, access).requestContract('POST /api/v2/admin/music/:id/link', { params: { id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;
       if(!active.current)return;
       const latest = await readAdminMusicProfile(id, viewer);if(!active.current)return;
       const next = { target: latest?.owner?.id ?? '', reason: '' };if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;
@@ -110,7 +110,7 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
 }
 function History({ id, viewer, access }: { id: string; viewer: Viewer; access: Access }) {
   const history = useInfiniteQuery({ queryKey: ['private', viewer.scope, 'admin-music-history', access.scope, id], initialPageParam: Number.MAX_SAFE_INTEGER,
-    queryFn: ({ pageParam,signal }) => adminReadHttp(viewer).request('GET /api/v2/admin/music/:id/history', { params: { id }, signal, query: { before: pageParam } }, AdminMusicHistory), getNextPageParam: page => page.nextCursor ?? undefined });
+    queryFn: ({ pageParam,signal }) => adminReadHttp(viewer).requestContract('GET /api/v2/admin/music/:id/history', { params: { id }, signal, query: { before: pageParam } }), getNextPageParam: page => page.nextCursor ?? undefined });
   useAdminFailure(history.error,viewer);
   return <Surface className="detail auth-panel"><Heading level={2}>關聯變更紀錄</Heading>{history.isPending ? <Notice>正在讀取紀錄…</Notice> : history.error ? <Failure error={history.error} retry={() => void history.refetch()} /> : <>
     {history.data.pages.flatMap(page => page.history).map(row => <div key={row.id}><Text>{row.createdAt} · {row.actor}</Text><Text>{row.beforeUserId ?? uiText('未關聯')} → {row.afterUserId ?? uiText('未關聯')}</Text><Text>{row.source === 'legacy' ? `${uiText("原關聯紀錄 #")}${row.legacyId}` : `${uiText("成分版本 ")}${row.revision}`}</Text>{row.reason && <Text className="preserve-lines">{row.reason}</Text>}</div>)}

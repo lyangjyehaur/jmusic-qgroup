@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
-import { MusicCatalog, MyMusicEntries, MusicEntryCommand, MusicEntryResult } from '@qgroup/contracts';
+import { MusicCatalog, MyMusicEntries, MusicEntryCommand } from '@qgroup/contracts';
 import { musicEntryKey } from '@qgroup/domain';
 import { z } from 'zod';
 import { createWebHttpClient, scopedHttp } from './http';
@@ -37,7 +37,7 @@ export function MyMusicEntriesPage() {
 function MineLoader({ viewer }: { viewer: Member }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'music-entries', viewer.musicEpoch],
-    queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/entries', {}, MyMusicEntries),
+    queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/entries', {}),
   });
   return query.isPending ? (
     <Notice>正在讀取我的詞條…</Notice>
@@ -99,10 +99,10 @@ export function MusicEntryEditorPage({ command }: { command: Command }) {
 function EditorLoader({ viewer, command, id }: { viewer: Member; command: Command; id: string }) {
   const mine = useQuery({
       queryKey: ['private', viewer.scope, 'music-entries', viewer.musicEpoch],
-      queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/entries', {}, MyMusicEntries),
+      queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/entries', {}),
       refetchOnWindowFocus: false,
     }),
-    catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => createWebHttpClient().request('GET /api/v2/music/catalog', {}, MusicCatalog) });
+    catalog = useQuery({ queryKey: ['music-catalog'], queryFn: () => createWebHttpClient().requestContract('GET /api/v2/music/catalog', {}) });
   if (mine.isPending || catalog.isPending) return <Notice>正在讀取詞條…</Notice>;
   if (mine.error || catalog.error)
     return (
@@ -178,8 +178,8 @@ function EntryEditor({
       blank,
       valueSchema: Editable,
       saveSchema: MusicEntryCommand,
-      send: (input, requestId) => authHttp(viewer).request('POST /api/v2/me/music/entries', { body: input, requestId, requestScope: viewer.scope }, MusicEntryResult),
-      latest: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/entries', {}, MyMusicEntries),
+      send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/me/music/entries', { body: input, requestId, requestScope: viewer.scope }),
+      latest: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/entries', {}),
       fromPending: ({ confirm, ...input }) => ({
         ...blank(initial),
         ...input,

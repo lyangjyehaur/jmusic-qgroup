@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { z } from 'zod';
-import { AccountProfile, BotDeliveryResult, BotDeliveryReceipt, Ok } from '@qgroup/contracts';
+import { AccountProfile, BotDeliveryResult, BotDeliveryReceipt, Ok, Profile } from '@qgroup/contracts';
 import { HttpProtocolError } from '@qgroup/contracts/http';
 import { createWebHttpClient } from './http';
 import { ApiError } from './api';
@@ -117,4 +117,11 @@ it.each(['unreadable','invalid','network','rejected'])('keeps canonical response
   expect(calls).toBe(1);
   expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',mode==='network'?0:mode==='rejected'?409:200,
     mode==='network'?'network_error':mode==='rejected'?'rejected':'parse_error');
+});
+it('keeps a missing post-save profile as a parse failure inside the UI observation boundary',async()=>{
+  let calls=0;const http=createWebHttpClient({fetch:async()=>{calls++;return new Response('null');}});
+  const error=await http.requestNarrowed('GET /api/v2/me/music',{},Profile.unwrap()).catch(error=>error);
+  expect(error).toBeInstanceOf(z.ZodError);expect(calls).toBe(1);
+  expect(errorText(error)).toBe('回應資料格式不符，請先核對結果後重試。');
+  expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/music','GET',200,'parse_error');
 });

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { AdminMusicPinHistory, AdminMusicProfile, MusicPinResult, Ok, ResetMusicPin, type Viewer } from '@qgroup/contracts';
+import { AdminMusicProfile, ResetMusicPin, type Viewer } from '@qgroup/contracts';
 import { adminHttp, adminReadHttp, type Access } from './admin';
 import { ApiError } from './api';
 import { Failure, Notice } from './shared';
@@ -34,7 +34,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
   useEffect(() => { onDirty(!!pending || !!pin || !!reason || !!record.readError || legacyInvalid!==null || busy || record.loading || record.saving);onBusy(busy||record.loading||record.saving); }, [pending, pin, reason, record.readError, legacyInvalid, busy, record.loading,record.saving,onDirty,onBusy]);
   const failed=(error:unknown)=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});};
   const history = useInfiniteQuery({ queryKey: ['private', viewer.scope, 'admin-music-pin-history', access.scope, id], initialPageParam: Number.MAX_SAFE_INTEGER, enabled: expanded && !!profile,
-    queryFn: ({ pageParam,signal }) => adminReadHttp(viewer).request('GET /api/v2/admin/music/:id/pin-history', { params: { id }, signal, query: { before: pageParam } }, AdminMusicPinHistory), getNextPageParam: page => page.nextCursor ?? undefined });
+    queryFn: ({ pageParam,signal }) => adminReadHttp(viewer).requestContract('GET /api/v2/admin/music/:id/pin-history', { params: { id }, signal, query: { before: pageParam } }), getNextPageParam: page => page.nextCursor ?? undefined });
   useEffect(()=>{failed(history.error);},[history.error,client,viewer.scope]);
   async function refreshProfile() {
     const latest = await readAdminMusicProfile(id, viewer);
@@ -54,7 +54,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
     if(!await persist(operation,false,uiText("無法保存口令操作編號，尚未送出口令。"))||!active.current){if(active.current)setBusy(false);return;}
     setPending(operation);setMessage('');setPin('');setConfirm(false);let accepted=false;
     try{
-      await adminHttp(viewer,access).request('POST /api/v2/admin/music/:id/pin',{params:{id},body:parsed.data,requestId:operation.requestId,requestScope:viewer.scope},Ok);accepted=true;
+      await adminHttp(viewer,access).requestContract('POST /api/v2/admin/music/:id/pin',{params:{id},body:parsed.data,requestId:operation.requestId,requestScope:viewer.scope});accepted=true;
       if(active.current)await completed();
     }catch(error){if(!active.current)return;
       if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){if(await persist(null))setPending(null);setMessage(errorText(error));}
@@ -64,7 +64,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
   async function check() {
     if(legacyInvalid!==null||!pending||!begin())return;setMessage('');setNotFound(false);
     try{
-      const result=await adminHttp(viewer,access).request('POST /api/v2/admin/music/:id/pin-result',{params:{id},body:pending},MusicPinResult);if(!active.current)return;
+      const result=await adminHttp(viewer,access).requestContract('POST /api/v2/admin/music/:id/pin-result',{params:{id},body:pending});if(!active.current)return;
       if(result.status==='completed')await completed();else{setNotFound(true);setMessage(profile ? uiText("尚未查到完成紀錄。可稍後再查，或核對目前版本後重新輸入口令。") : uiText("尚未查到完成紀錄。可稍後再查，或保全操作編號後結束核對。"));}
     }catch(error){if(active.current){setMessage(error instanceof Error?errorText(error):uiText("仍無法確認口令重設結果，請稍後再查。"));failed(error);}}finally{if(active.current)setBusy(false);}
   }

@@ -1,4 +1,4 @@
-import { FinanceOriginResult,FinanceView,RoomPlanView } from '@qgroup/contracts';
+
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import type { Member } from './member-access';
@@ -22,12 +22,12 @@ function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,source:Mone
 }
 async function lookup(viewer:Member,source:MoneySource){
  if(source.kind!=='finance'||source.command!=='record'&&source.command!=='report')return null;
- return authHttp(viewer).request('POST /api/v2/activities/:id/finance/origin', { params: { id: source.eventId }, body: {kind:source.command,id:source.value.recordId} }, FinanceOriginResult);
+ return authHttp(viewer).requestContract('POST /api/v2/activities/:id/finance/origin', { params: { id: source.eventId }, body: {kind:source.command,id:source.value.recordId} });
 }
 export async function prepareMoney(viewer:Member,inventory:LegacyInventory,row:LegacySnapshot,zone:string):Promise<MoneyPlan>{
  const source=decodeMoney(row,viewer.scope),path='/activities/'+encodeURIComponent(source.eventId)+'/'+source.kind;
- if(source.kind==='rooms'){const current=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms', { params: { id: source.eventId } }, RoomPlanView);if(!current.can_manage)throw Error('目前不能修改預分包間；原稿保留。');}
- else {const current=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/finance', { params: { id: source.eventId } }, FinanceView);if(!current.summary.can_manage&&!['report','withdraw'].includes(source.command))throw Error('目前沒有此款項操作的管理權限；原稿保留。');}
+ if(source.kind==='rooms'){const current=await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/rooms', { params: { id: source.eventId } });if(!current.can_manage)throw Error('目前不能修改預分包間；原稿保留。');}
+ else {const current=await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/finance', { params: { id: source.eventId } });if(!current.summary.can_manage&&!['report','withdraw'].includes(source.command))throw Error('目前沒有此款項操作的管理權限；原稿保留。');}
  const origin=await lookup(viewer,source),originState=origin?.state==='existing'?origin.status:origin?.state??null;
  const raw=moneyDraft(row,source,zone,origin?.state==='existing'),key='qgroup:rebuild:activity-draft:'+source.kind+':v1:'+viewer.scope+':'+source.eventId,saved=await openDraft(key,viewer.scope);
  let pending=false;try{pending=!!JSON.parse(saved.raw??'null')?.pending;}catch{/* Existing unreadable bytes require explicit preservation. */}

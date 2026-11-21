@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
-import { Session } from '@qgroup/contracts';
+
 import { createWebHttpClient } from './http';
 import { errorText } from './language';
-export const sessionQuery = { queryKey: ['session'], queryFn: () => createWebHttpClient().request('GET /api/v2/session', {}, Session), refetchOnWindowFocus: 'always' as const, refetchOnReconnect: 'always' as const, refetchInterval: 30000 };
+export const sessionQuery = { queryKey: ['session'], queryFn: () => createWebHttpClient().requestContract('GET /api/v2/session', {}), refetchOnWindowFocus: 'always' as const, refetchOnReconnect: 'always' as const, refetchInterval: 30000 };
 export const useSession = () => useQuery(sessionQuery);
 export function Notice({ children }: { children: ReactNode }) { return <div className="notice" role="status">{children}</div>; }
 export function Failure({ error, retry }: { error: Error; retry: () => void }) {

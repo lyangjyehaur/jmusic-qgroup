@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
-import { AdminMusicCatalog,AdminMusicEntryCommand,AdminMusicEntryResult,type Viewer } from '@qgroup/contracts';
+import { AdminMusicCatalog, AdminMusicEntryCommand, type Viewer } from '@qgroup/contracts';
 import { musicText } from '@qgroup/domain';
 import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
 import { ApiError } from './api';
@@ -35,7 +35,7 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
     dirty:value=>value.dirty,pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin:start,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
-  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-catalog',access.scope],queryFn:({signal})=>adminReadHttp(viewer).request('GET /api/v2/admin/music-entries',{signal},AdminMusicCatalog),refetchOnMount:'always'});
+  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-catalog',access.scope],queryFn:({signal})=>adminReadHttp(viewer).requestContract('GET /api/v2/admin/music-entries',{signal}),refetchOnMount:'always'});
   const filters=useMusicSearch(catalog.data?.entries??[]);
   const pageParam=filters.params.get('page')??'1',page=/^[1-9]\d{0,5}$/.test(pageParam)?Number(pageParam):1;
   const visible=filters.filtered.slice((page-1)*20,page*20),searchFilters={...filters,update:(key:string,value:string)=>{filters.update('page','');filters.update(key,value);}};
@@ -59,7 +59,7 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
     const pending={...draft,pending:operation};if(!start())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try{
-      const result=await adminHttp(viewer,access).request('POST /api/v2/admin/music-entries',{body:operation.input,requestId:operation.key,requestScope:viewer.scope},AdminMusicEntryResult);accepted=true;
+      const result=await adminHttp(viewer,access).requestContract('POST /api/v2/admin/music-entries',{body:operation.input,requestId:operation.key,requestScope:viewer.scope});accepted=true;
       if(!active.current)return;const clean=blank();if(!await persist(clean,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))return;
       setDraft(clean);setConfirmed(false);setMessage((result.command==='merge'?uiText("已合併詞條"):result.command==='delete'?uiText("已刪除詞條"):result.command==='create'?uiText("已建立詞條"):uiText("已保存詞條"))+(result.affectedProfiles?uiText("，更新 ")+result.affectedProfiles+uiText(" 份成分。"):'。'));
       void client.invalidateQueries({queryKey:['music-catalog']});void client.invalidateQueries({queryKey:['catalog']});void client.invalidateQueries({queryKey:['music-trend']});void client.invalidateQueries({queryKey:['private',viewer.scope]});announceAccountChange();

@@ -1,6 +1,7 @@
 import { expect, expectTypeOf, it } from 'vitest';
 import { z } from 'zod';
 import { createHttpClient, HttpProtocolError, HttpResponses, type HttpResult } from './client';
+import { AccountProfile, Profile } from '../index';
 
 it('infers and validates the response from the fixed operation without accepting a caller-selected schema', async () => {
   const client = createHttpClient({ fetch: async () => new Response('{"nickname":"原文字","revision":3}') });
@@ -31,4 +32,19 @@ it('keeps success binding metadata immutable', () => {
   expect(Object.isFrozen(HttpResponses)).toBe(true);expect(Object.isFrozen(HttpResponses['GET /api/v2/me/profile'])).toBe(true);
   expect(Reflect.set(HttpResponses['GET /api/v2/me/profile'], 'schemaName', 'weaker')).toBe(false);
   expect(Object.isFrozen(HttpResponses['GET /api/v2/appearance/walls/:id/image'].mediaTypes)).toBe(true);
+});
+it('narrows an existing music read while still rejecting absence at the original caller invariant', async () => {
+  const value={id:'synthetic',revision:1,selections:[{entryId:'song',level:1}],updatedAt:'2026-11-21T08:00:00Z'};
+  const client=createHttpClient({fetch:async()=>new Response(JSON.stringify(value))});
+  const result=await client.requestNarrowed('GET /api/v2/me/music',{},Profile.unwrap());
+  expectTypeOf(result).not.toBeNullable();expect(result).toEqual(Profile.unwrap().parse(value));
+  const absent=createHttpClient({fetch:async()=>new Response('null')});
+  await expect(absent.requestNarrowed('GET /api/v2/me/music',{},Profile.unwrap())).rejects.toBeInstanceOf(z.ZodError);
+});
+it('rejects malformed wire data before evaluating an additional caller invariant', async () => {
+  let refinements=0,calls=0;
+  const additional=AccountProfile.superRefine(()=>{refinements++;});
+  const client=createHttpClient({fetch:async()=>{calls++;return new Response('{"nickname":7,"revision":1}');}});
+  await expect(client.requestNarrowed('GET /api/v2/me/profile',{},additional)).rejects.toBeInstanceOf(z.ZodError);
+  expect(refinements).toBe(0);expect(calls).toBe(1);
 });

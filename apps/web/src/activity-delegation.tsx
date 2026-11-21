@@ -6,7 +6,7 @@ import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { AcceptActivityManager, ActivityDelegation, ActivityDelegationPreview, ActivityDelegationResult, ActivityScope, InviteActivityManager, RevokeActivityManager } from '@qgroup/contracts';
+import { AcceptActivityManager, ActivityDelegation, ActivityScope, InviteActivityManager, RevokeActivityManager } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
@@ -41,12 +41,12 @@ export function ActivityDelegationPage(){
   const {id=''}=useParams();return <><PageIntro title="管理分工"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to="/me/activities/drafts">活動草稿</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>}</MemberAccess></>;
 }
 function Loader({viewer,id}:{viewer:Member;id:string}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-delegation',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/delegation', { params: { id: id } }, ActivityDelegation),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-delegation',id],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/delegation', { params: { id: id } }),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取管理分工…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Editor viewer={viewer} initial={query.data}/>;
 }
 function Editor({viewer,initial}:{viewer:Member;initial:z.infer<typeof ActivityDelegation>}){
   const [data,setData]=useState(initial),s=useDraft(viewer,initial.id,'manage',initial.revision),client=useQueryClient(),stale=s.draft.revision!==data.revision;
-  const latest=()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/delegation', { params: { id: data.id } }, ActivityDelegation);
+  const latest=()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/delegation', { params: { id: data.id } });
   const selected=s.draft.target.startsWith('roles:')?data.roles.find(item=>'roles:'+item.id===s.draft.target):data.invitations.find(item=>'invitations:'+item.id===s.draft.target);
   const blocked=!data.isOwner||(s.draft.action==='revoke'?!selected:!!data.blocker);
   function update(fresh:typeof data){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-delegation',data.id],fresh);}
@@ -65,9 +65,9 @@ function Editor({viewer,initial}:{viewer:Member;initial:z.infer<typeof ActivityD
       }
     }
     if(operation.kind==='accept')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{if(operation.kind==='invite')await authHttp(viewer).request('POST /api/v2/activities/:id/delegation/invitations', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDelegationResult);
-      else if(operation.target==='invitations')await authHttp(viewer).request('POST /api/v2/activities/:id/delegation/invitations/:itemId/revoke', { params: { id: data.id, itemId: operation.itemId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDelegationResult);
-      else await authHttp(viewer).request('POST /api/v2/activities/:id/delegation/roles/:itemId/revoke', { params: { id: data.id, itemId: operation.itemId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDelegationResult);accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.reset();s.setMessage(operation.kind==='invite'?uiText("管理邀請已建立。"):uiText("管理權限或邀請已撤銷。"));void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});}
+    try{if(operation.kind==='invite')await authHttp(viewer).requestContract('POST /api/v2/activities/:id/delegation/invitations', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });
+      else if(operation.target==='invitations')await authHttp(viewer).requestContract('POST /api/v2/activities/:id/delegation/invitations/:itemId/revoke', { params: { id: data.id, itemId: operation.itemId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });
+      else await authHttp(viewer).requestContract('POST /api/v2/activities/:id/delegation/roles/:itemId/revoke', { params: { id: data.id, itemId: operation.itemId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;const fresh=await latest();if(!s.active.current)return;const next=empty(fresh.revision);if(!await s.persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(next);update(fresh);s.reset();s.setMessage(operation.kind==='invite'?uiText("管理邀請已建立。"):uiText("管理權限或邀請已撤銷。"));void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認管理操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   return <><Surface className="detail"><Heading level={2}>{data.title}</Heading><Text>發起者：{data.ownerName}</Text><Heading level={2}>現有協辦</Heading>{!data.roles.length?<Notice>目前沒有協辦。</Notice>:<ul className="invitation-list">{data.roles.map(role=><li key={role.id}><Text>{role.name} · {duties(role.permissions)}</Text>{data.isOwner&&<Button variant="secondary" disabled={s.locked} onClick={()=>choose('roles:'+role.id)}>撤銷職責（{role.name}）</Button>}</li>)}</ul>}</Surface>
@@ -85,13 +85,13 @@ export function AcceptActivityDelegationPage(){
 }
 function Recipient({viewer,id,token}:{viewer:Member;id:string;token:string}){
   const s=useDraft(viewer,id,'accept:'+token),[done,setDone]=useState(false),client=useQueryClient();
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-delegation-preview',id,token],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/delegation/preview/:token', { params: { id, token } }, ActivityDelegationPreview),refetchOnWindowFocus:false,enabled:!done}),data=query.data;
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-delegation-preview',id,token],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/delegation/preview/:token', { params: { id, token } }),refetchOnWindowFocus:false,enabled:!done}),data=query.data;
   useEffect(()=>{s.reset();},[data?.revision]);
   async function submit(){
     if(s.busy||s.unavailable)return;let operation=s.draft.pending;
     if(!operation){if(!data||data.isOwner||!s.confirm||!s.responsibility)return;operation={kind:'accept',key:crypto.randomUUID(),input:{revision:data.revision,acceptResponsibility:true,confirm:true}};}
     if(operation.kind!=='accept')return;const pending={...s.draft,pending:operation};if(!s.begin())return;if(!await s.persist(pending)||!s.active.current){if(s.active.current)s.setBusy(false);return;}s.setDraft(pending);s.setMessage('');let accepted=false;
-    try{await authHttp(viewer).request('POST /api/v2/activities/:id/delegation/preview/:token/accept', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDelegationResult);accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.reset();setDone(true);s.setMessage(uiText("已接受管理邀請。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-drafts','activity-delegation','activity-arrangements','activity-lifecycle','activity-attendance','activity-registration','activity-roster'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,...(key==='activity-drafts'?[]:[id])]});}
+    try{await authHttp(viewer).requestContract('POST /api/v2/activities/:id/delegation/preview/:token/accept', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;if(!s.active.current)return;if(!await s.persist(empty(),false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');s.setDraft(empty());s.reset();setDone(true);s.setMessage(uiText("已接受管理邀請。"));void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-drafts','activity-delegation','activity-arrangements','activity-lifecycle','activity-attendance','activity-registration','activity-roster'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,...(key==='activity-drafts'?[]:[id])]});}
     catch(error){if(!s.active.current)return;if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await s.persist(next))s.setDraft(next);s.reset();s.setMessage(errorText(error));}else s.setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認管理操作結果」安全重試。"));}finally{if(s.active.current)s.setBusy(false);}
   }
   async function refresh(){if(s.locked)return;s.reset();await query.refetch();}

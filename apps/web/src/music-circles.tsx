@@ -17,7 +17,7 @@ function Circles({ viewer }: { viewer: Member }) {
   const [params, setParams] = useSearchParams(), raw = params.get('minLink');
   const minLink = raw !== null && /^\d+$/.test(raw) && Number(raw) >= 1 && Number(raw) <= 100 ? Number(raw) : 40;
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-circles', viewer.musicEpoch, minLink],
-    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/circles', { signal, query: { minLink } }, MusicCircles),
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/circles', { signal, query: { minLink } }),
     refetchOnMount: 'always', refetchInterval: 30000 });
   return <><label className="match-sort">連結門檻<select aria-label="圈子連結門檻" value={minLink} onChange={event => setParams(old => { const next = new URLSearchParams(old); next.set('minLink', event.target.value); return next; }, { replace: true })}>
     {[...new Set([20, 40, 60, 80, 100, minLink])].sort((a, b) => a - b).map(value => <option key={value} value={value}>嚴格重合 {value}%</option>)}

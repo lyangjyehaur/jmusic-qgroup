@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { AdminSession, Ok, type Viewer } from '@qgroup/contracts';
+import { AdminSession, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { createWebHttpClient } from './http';
 import { authHeaders, authHttp } from './auth';
@@ -28,7 +28,7 @@ export function AdminGate({ children }: { children: (viewer: Viewer, access: Acc
 }
 function AdminAuthority({ viewer, children }: { viewer: Viewer; children: (viewer: Viewer, access: Access) => ReactNode }) {
   const client = useQueryClient();
-  const access = useQuery({ queryKey: ['private', viewer.scope, 'admin-session'], queryFn: () => adminReadHttp(viewer).request('GET /api/v2/admin/session', {}, AdminSession), refetchOnWindowFocus: 'always', refetchInterval: 30000 });
+  const access = useQuery({ queryKey: ['private', viewer.scope, 'admin-session'], queryFn: () => adminReadHttp(viewer).requestContract('GET /api/v2/admin/session', {}), refetchOnWindowFocus: 'always', refetchInterval: 30000 });
   const denied = access.error instanceof ApiError && [401, 403].includes(access.error.status);
   useEffect(() => { if (denied) { client.removeQueries({ queryKey: ['private', viewer.scope], predicate: query => String(query.queryKey[2]).startsWith('admin-') && query.queryKey[2] !== 'admin-session' }); } }, [denied, client, viewer.scope]);
   return access.isPending ? <Notice>正在確認管理權限…</Notice> : denied ? <RevokedAdmin viewer={viewer} reload={async () => { const result = await access.refetch(); return result.isSuccess || result.error instanceof ApiError && [401, 403].includes(result.error.status); }} /> : access.error ? <Failure error={access.error} retry={() => void access.refetch()} /> : <>{children(viewer, access.data)}</>;
@@ -45,7 +45,7 @@ function RescueLogin({ viewer, reload }: { viewer: Viewer; reload: () => Promise
   const [key, setKey] = useState(''); const [busy, setBusy] = useState(false); const [unknown, setUnknown] = useState(false); const [message, setMessage] = useState('');
   async function login() {
     setBusy(true); setMessage('');
-    try { await authHttp(viewer).request('POST /api/v2/admin/login', { body: { key, confirm: true } }, Ok); if (!await reload()) { setUnknown(true); setMessage(uiText("尚未確認登入結果，請先重新確認管理狀態。")); } announceAccountChange(); }
+    try { await authHttp(viewer).requestContract('POST /api/v2/admin/login', { body: { key, confirm: true } }); if (!await reload()) { setUnknown(true); setMessage(uiText("尚未確認登入結果，請先重新確認管理狀態。")); } announceAccountChange(); }
     catch (error) { setUnknown(!(error instanceof ApiError) || error.status >= 500); setMessage(error instanceof ApiError ? errorText(error) : uiText("尚未確認登入結果，請先重新確認管理狀態。")); }
     finally { setKey(''); setBusy(false); }
   }
@@ -73,7 +73,7 @@ function AdminMenu({ viewer, access, onCleanupFailure }: { viewer: Viewer; acces
     setBusy(true); setError('');
     let accountLoggedOut = false;
     try {
-      const result = await adminHttp(viewer, access).request('POST /api/v2/admin/logout', { body: { confirm: true } }, z.object({ logoutAccount: z.boolean() }));
+      const result = await adminHttp(viewer, access).requestContract('POST /api/v2/admin/logout', { body: { confirm: true } });
       accountLoggedOut = result.logoutAccount;
       try { if (result.logoutAccount) { try { await clearDeviceDrafts(); } catch (error) { onCleanupFailure(); throw error; } } } finally { announceAccountChange(result.logoutAccount); }
       await client.cancelQueries({ queryKey: ['private'] });

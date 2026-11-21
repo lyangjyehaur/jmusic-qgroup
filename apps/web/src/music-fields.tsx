@@ -26,7 +26,7 @@ export function MusicFieldsPage() {
   return <><PageIntro title="成分資料" /><div className="page-actions"><Link to="/me/music">回到我的成分</Link><Link to="/me/music/contact">聯絡 QQ</Link></div><MusicMemberAccess purpose={uiText("編輯成分資料")}>{viewer => <Loader key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
 }
 function Loader({ viewer }: { viewer: Member }) {
-  const query = useQuery({ queryKey: ['private', viewer.scope, 'music-fields', viewer.musicEpoch], queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/fields', {}, MusicFields), refetchOnWindowFocus: false });
+  const query = useQuery({ queryKey: ['private', viewer.scope, 'music-fields', viewer.musicEpoch], queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/fields', {}), refetchOnWindowFocus: false });
   return query.isPending ? <Notice>正在讀取成分資料…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <Editor viewer={viewer} initial={query.data} />;
 }
 function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
@@ -46,8 +46,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try {
-      const result = await authHttp(viewer).request('PUT /api/v2/me/music/fields', { body: operation.input, requestId: operation.key, requestScope: viewer.scope }, MusicFields); accepted = true;
-      const latest = await scopedHttp(viewer.scope).request('GET /api/v2/me/music/fields', {}, MusicFields);
+      const result = await authHttp(viewer).requestContract('PUT /api/v2/me/music/fields', { body: operation.input, requestId: operation.key, requestScope: viewer.scope }); accepted = true;
+      const latest = await scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/fields', {});
       const next = draftFor(latest, viewer.musicEpoch);if(!active.current)return;if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage'); setDraft(next); setSaved(latest); setComparison(false);
       client.setQueryData(['private', viewer.scope, 'music-fields', viewer.musicEpoch], latest);
       void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'music'] });
@@ -69,7 +69,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
   async function rebase() {
     if(locked||!begin())return;
     try {
-      const latest = await scopedHttp(viewer.scope).request('GET /api/v2/me/music/fields', {}, MusicFields);
+      const latest = await scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/fields', {});
       if (latest.profileId !== draft.profileId) throw new Error('目前成分已改變，請保留原稿後重新開啟目前成分。');
       const next = { ...draft, revision: latest.revision }; if(!active.current||!await persist(next))return;setDraft(next); setSaved(latest); setComparison(true); setMessage(uiText("已取得目前資料；輸入仍保留，請核對後再保存。"));
     } catch (error) { if(active.current)setMessage(error instanceof Error ? errorText(error) : uiText("讀取失敗")); } finally { if(active.current)setBusy(false); }

@@ -2,12 +2,12 @@ import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Surface,Text } from 'yahha-ui';
-import { Appearance } from '@qgroup/contracts';
+
 import { createWebHttpClient } from './http';
 import { Failure,Notice,PageIntro } from './shared';
 import { Field } from './settlement-controls';
 import { useAppearance } from './appearance-preferences';
-export const appearanceQuery={queryKey:['appearance'],queryFn:({signal}:{signal:AbortSignal})=>createWebHttpClient().request('GET /api/v2/appearance',{signal},Appearance),refetchOnWindowFocus:'always' as const};
+export const appearanceQuery={queryKey:['appearance'],queryFn:({signal}:{signal:AbortSignal})=>createWebHttpClient().requestContract('GET /api/v2/appearance',{signal}),refetchOnWindowFocus:'always' as const};
 export function AppearancePage(){
   const prefs=useAppearance(),walls=useQuery(appearanceQuery);
   return <><PageIntro title="外觀"/><Link className="back" to="/me">我的</Link><Surface className="detail auth-panel">

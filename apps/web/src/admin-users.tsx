@@ -4,7 +4,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { AdminRoleHistory, AdminUser, AdminUsers, AdminUsersQuery, Ok, SaveAdminMetadata, SaveAdminRole, type Viewer } from '@qgroup/contracts';
+import { AdminUser, AdminUsersQuery, SaveAdminMetadata, SaveAdminRole, type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
 import { ApiError } from './api';
 import { useDurableRecord } from './durable-record';
@@ -20,7 +20,7 @@ function Directory({ viewer, access }: { viewer: Viewer; access: Access }) {
   const users = useQuery({ queryKey: ['private', viewer.scope, 'admin-users', access.scope, query.toString()], queryFn: () => {
     const parsed = AdminUsersQuery.safeParse({ search, unionid, offset: String(offset) });
     if (!parsed.success) throw displayError(parsed.error, '操作資料無法驗證，請核對原操作後再繼續。');
-    return adminReadHttp(viewer).request('GET /api/v2/admin/users', { query: { search, unionid: parsed.data.unionid, offset } }, AdminUsers);
+    return adminReadHttp(viewer).requestContract('GET /api/v2/admin/users', { query: { search, unionid: parsed.data.unionid, offset } });
   } });
   function navigate(nextOffset = 0, nextSearch = input, nextFilter = unionid) { setParams({ search: nextSearch, unionid: nextFilter, offset: String(nextOffset) }); }
   return <><Surface className="detail"><form className="directory-search" onSubmit={event => { event.preventDefault(); navigate(); }}><label className="account-field">搜尋使用者<input type="search" value={input} onChange={event => setInput(event.target.value)} /></label><div className="account-field"><label htmlFor="admin-union-status">QQ／UnionID 狀態</label><select id="admin-union-status" value={unionid} onChange={event => navigate(0, search, event.target.value)}>{[['all', uiText('全部')], ['bound', uiText('已取得 UnionID')], ['missing', uiText('QQ 已綁定、缺少 UnionID')], ['unbound', uiText('未綁定 QQ')]].map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></div><Button type="submit" disabled={Array.from(input.trim()).length > 100}>搜尋</Button></form></Surface>
@@ -32,7 +32,7 @@ export function AdminUserPage() {
   return <><PageIntro title="帳號管理" /><Link to="/admin/music">核對成分關聯</Link><Link className="back" to="/admin/users">回到使用者管理</Link><AdminGate>{(viewer, access) => <UserLoader key={access.scope + ':' + id} id={id} viewer={viewer} access={access} />}</AdminGate></>;
 }
 function UserLoader({ id, viewer, access }: { id: string; viewer: Viewer; access: Access }) {
-  const user = useQuery({ queryKey: ['private', viewer.scope, 'admin-user', access.scope, id], queryFn: () => adminReadHttp(viewer).request('GET /api/v2/admin/users/:id', { params: { id } }, AdminUser), refetchOnWindowFocus: false });
+  const user = useQuery({ queryKey: ['private', viewer.scope, 'admin-user', access.scope, id], queryFn: () => adminReadHttp(viewer).requestContract('GET /api/v2/admin/users/:id', { params: { id } }), refetchOnWindowFocus: false });
   return user.isPending ? <Notice>正在讀取帳號…</Notice> : user.error ? <Failure error={user.error} retry={() => void user.refetch()} /> : <UserEditor viewer={viewer} access={access} initial={user.data} />;
 }
 const Pending = z.discriminatedUnion('kind', [z.object({ kind: z.literal('role'), input: SaveAdminRole, key: z.string().uuid() }).strict(), z.object({ kind: z.literal('metadata'), input: SaveAdminMetadata, key: z.string().uuid() }).strict()]);
@@ -47,7 +47,7 @@ function UserEditor({ viewer, access, initial }: { viewer: Viewer; access: Acces
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
   const history = useInfiniteQuery({ queryKey: ['private', viewer.scope, 'admin-role-history', access.scope, initial.id], initialPageParam: null as number | null,
-    queryFn: ({ pageParam }) => adminReadHttp(viewer).request('GET /api/v2/admin/users/:id/role-history', { params: { id: initial.id }, query: { before: pageParam || undefined } }, AdminRoleHistory), getNextPageParam: page => page.nextCursor ?? undefined });
+    queryFn: ({ pageParam }) => adminReadHttp(viewer).requestContract('GET /api/v2/admin/users/:id/role-history', { params: { id: initial.id }, query: { before: pageParam || undefined } }), getNextPageParam: page => page.nextCursor ?? undefined });
   async function save(kind:'role'|'metadata'){
     if(busy||unavailable)return;
     if(!draft.pending&&kind==='role'&&(!confirmed||access.currentUserId===user.id))return;
@@ -58,10 +58,10 @@ function UserEditor({ viewer, access, initial }: { viewer: Viewer; access: Acces
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try{
-      if(operation.kind==='role')await adminHttp(viewer,access).request('POST /api/v2/admin/users/:id/role',{params:{id:initial.id},body:operation.input,requestId:operation.key,requestScope:viewer.scope},Ok);
-      else await adminHttp(viewer,access).request('POST /api/v2/admin/users/:id/metadata',{params:{id:initial.id},body:operation.input,requestId:operation.key,requestScope:viewer.scope},Ok);
+      if(operation.kind==='role')await adminHttp(viewer,access).requestContract('POST /api/v2/admin/users/:id/role',{params:{id:initial.id},body:operation.input,requestId:operation.key,requestScope:viewer.scope});
+      else await adminHttp(viewer,access).requestContract('POST /api/v2/admin/users/:id/metadata',{params:{id:initial.id},body:operation.input,requestId:operation.key,requestScope:viewer.scope});
       accepted=true;
-      const latest=await adminReadHttp(viewer).request('GET /api/v2/admin/users/:id',{params:{id:initial.id}},AdminUser);
+      const latest=await adminReadHttp(viewer).requestContract('GET /api/v2/admin/users/:id',{params:{id:initial.id}});
       const updated=operation.kind==='metadata'?{note:latest.note,manualQQ:latest.manualQQ,revision:latest.metadataRevision}:{...draft,pending:undefined};
       if(!active.current)return;if(!await persist(updated,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setDraft(updated);setUser(latest);setConfirmed(false);
@@ -77,7 +77,7 @@ function UserEditor({ viewer, access, initial }: { viewer: Viewer; access: Acces
   async function rebase(){
     if(locked||!begin())return;
     try{
-      const latest=await adminReadHttp(viewer).request('GET /api/v2/admin/users/:id',{params:{id:initial.id}},AdminUser),next={...draft,revision:latest.metadataRevision};
+      const latest=await adminReadHttp(viewer).requestContract('GET /api/v2/admin/users/:id',{params:{id:initial.id}}),next={...draft,revision:latest.metadataRevision};
       if(!active.current||!await persist(next))return;setUser(latest);setDraft(next);setConfirmed(false);setMessage(uiText("已取得目前資料，你的備註輸入仍保留；請核對後再保存。"));
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }

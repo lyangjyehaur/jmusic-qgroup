@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
-import { Activity, ActivityAccessPreview, ActivityAccessResult, ActivityShare, type Viewer } from '@qgroup/contracts';
+import { type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
@@ -26,7 +26,7 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
   const active=useRef(true),cancel=useRef(new AbortController());
   useEffect(()=>{active.current=true;cancel.current=new AbortController();return()=>{active.current=false;cancel.current.abort();};},[]);
   const [confirmed,setConfirmed]=useState(false),[done,setDone]=useState(false),[message,setMessage]=useState(''),[authorityLost,setAuthorityLost]=useState(false);
-  const view=useQuery({queryKey:['private',viewer.scope,'activity-access',id,token],queryFn:({signal})=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/access/:token', { params: { id, token }, signal }, ActivityAccessPreview),gcTime:0,refetchOnWindowFocus:false});
+  const view=useQuery({queryKey:['private',viewer.scope,'activity-access',id,token],queryFn:({signal})=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/access/:token', { params: { id, token }, signal }),gcTime:0,refetchOnWindowFocus:false});
   useEffect(()=>{setConfirmed(false);},[view.dataUpdatedAt]);
   useEffect(()=>{setConfirmed(false);setDone(false);setMessage('');},[record.epoch]);
   const denied=authorityLost||view.error instanceof ApiError&&([401,403].includes(view.error.status)||view.error.code==='ACCOUNT_CHANGED');
@@ -37,7 +37,7 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
     try{
       if(!await persist(operation,false,uiText("無法保存邀請操作編號，尚未送出授權。"))||!active.current)return;
       replace(operation);
-      const result=await authHttp(viewer).request('POST /api/v2/activities/:id/access/:token/accept', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope, signal: cancel.current.signal }, ActivityAccessResult);accepted=true;
+      const result=await authHttp(viewer).requestContract('POST /api/v2/activities/:id/access/:token/accept', { params: { id: id, token }, body: operation.input, requestId: operation.key, requestScope: viewer.scope, signal: cancel.current.signal });accepted=true;
       if(!active.current)return;
       if(result.id!==id)throw Error('原邀請回執的活動不符，請保全紀錄後核對。');
       if(!await persist(null,false,uiText("已取得查看權限，但無法保存本機確認狀態；請保留原操作並核對結果。"))||!active.current)return;
@@ -63,8 +63,8 @@ export function ActivitySharePage(){const {id=''}=useParams(),session=useSession
 function Share({viewer,id}:{viewer:Viewer;id:string}){
   const [search,setSearch]=useSearchParams(),kind=search.get('kind')==='conditions'?'conditions':'activity';
   const view=useQuery({queryKey:['private',viewer.scope,'activity-share',id],queryFn:async({signal})=>{
-    const share=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/share', { params: { id }, signal }, ActivityShare);
-    const event=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id', { params: { id }, signal }, Activity),link=activityShareURL(location.origin,id,share);
+    const share=await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/share', { params: { id }, signal });
+    const event=await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id', { params: { id }, signal }),link=activityShareURL(location.origin,id,share);
     if(event.id!==id)throw Error('活動摘要不符，請重新讀取。');
     return {...share,event,link};
   },gcTime:0});

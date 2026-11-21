@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { PrivacyConsent, PrivacyConsentReceipt } from '@qgroup/contracts';
+import { PrivacyConsentReceipt } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { createWebHttpClient } from './http';
 import { authHttp } from './auth';
@@ -22,7 +22,7 @@ export function PrivacyConsentPage() {
 }
 function ConsentForm({ viewer }: { viewer: Member }) {
   const client = useQueryClient(), [checkedVersion, setCheckedVersion] = useState<string | null>(null), [missing, setMissing] = useState(false);
-  const status = useQuery({ queryKey: ['private', viewer.scope, 'privacy-consent'], queryFn: () => createWebHttpClient({ context: () => ({ scope: viewer.scope }) }).request('GET /api/v2/me/privacy/consent', {}, PrivacyConsent) });
+  const status = useQuery({ queryKey: ['private', viewer.scope, 'privacy-consent'], queryFn: () => createWebHttpClient({ context: () => ({ scope: viewer.scope }) }).requestContract('GET /api/v2/me/privacy/consent', {}) });
   const record = useDurableRecord<Intent | null>({ key: 'qgroup:rebuild:privacy-consent:v1:' + viewer.scope, scope: viewer.scope, seed: () => null,
     parse: raw => parsePrivacyConsent(raw, viewer.scope), dirty: value => !!value, pending: value => !!value });
   const pending = record.value;
@@ -54,7 +54,7 @@ function ConsentForm({ viewer }: { viewer: Member }) {
       if (!record.active.current) return;
       if (current.privacyVersion !== intent.input.privacyVersion) throw Error('隱私政策版本已變更；請先查詢原同意結果，再閱讀目前版本並重新確認。');
       sent = true;
-      const done = await authHttp(current).request('POST /api/v2/me/privacy/consent', { body: intent.input, requestId: intent.key, requestScope: intent.scope }, PrivacyConsentReceipt);
+      const done = await authHttp(current).requestContract('POST /api/v2/me/privacy/consent', { body: intent.input, requestId: intent.key, requestScope: intent.scope });
       await finish(done, intent);
     } catch (failure) {
       if (record.active.current) record.setMessage(sent ? uiText('尚未確認同意結果。原操作已保留，請先查詢結果。') + (failure instanceof ApiError && failure.status < 500 ? ' ' + errorText(failure) : '') : failure instanceof Error ? errorText(failure) : uiText('尚未送出同意，請核對原紀錄。'));
@@ -67,7 +67,7 @@ function ConsentForm({ viewer }: { viewer: Member }) {
       if (!await record.persist(pending) || !record.active.current) return;
       const current = await originalAccount(pending);
       if (!record.active.current) return;
-      const done = await createWebHttpClient({ context: () => ({ scope: current.scope }) }).request('GET /api/v2/me/privacy/consent/receipts/:key', { params: { key: pending.key } }, PrivacyConsentReceipt);
+      const done = await createWebHttpClient({ context: () => ({ scope: current.scope }) }).requestContract('GET /api/v2/me/privacy/consent/receipts/:key', { params: { key: pending.key } });
       await finish(done, pending);
     } catch (failure) {
       if (!record.active.current) return;

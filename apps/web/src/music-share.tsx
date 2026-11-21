@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
-import { MusicShareContext } from '@qgroup/contracts';
+
 import { musicSharePicks, musicSelectionText } from '@qgroup/domain';
 import { useMusicMatchSort } from './music-match-sort';
 import { scopedHttp } from './http';
@@ -23,7 +23,7 @@ function ShareEditor({ selection }: { selection: MusicSelection }) {
   const [params] = useSearchParams(), { sort, change } = useMusicMatchSort();
   const viewer = selection.viewer;
   const context = useQuery({ queryKey: ['private', viewer.scope, 'music-share', viewer.musicEpoch, sort],
-    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/me/music/share', { signal, query: { sort } }, MusicShareContext),
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/share', { signal, query: { sort } }),
     refetchOnMount: 'always', refetchOnWindowFocus: 'always', staleTime: 0, refetchInterval: 10000 });
   const picks = musicSharePicks(selection.draft.selections, selection.entries), text = musicSelectionText(picks);
   const [contact, setContact] = useState(false), [topMatch, setTopMatch] = useState(true), [topContact, setTopContact] = useState(false), [dark, setDark] = useState(false);

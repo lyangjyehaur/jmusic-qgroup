@@ -83,7 +83,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     if(busy||!description.request)return;setBusy(true);setMessage('');setReceipt(null);
     try{
       const fresh=await original();if(!active.current)return;
-      const result=await authHttp(fresh).request('POST /api/v2/me/legacy-requests/check', { body: description.request }, LegacyRequestReceipt);
+      const result=await authHttp(fresh).requestContract('POST /api/v2/me/legacy-requests/check', { body: description.request });
       await original();if(active.current){setReceipt(result);setMessage(result.committed?uiText("原操作已提交。請查看目前資料與權限；不會重送。"):uiText("尚未查到原回執。原 payload 與編號保留，不能據此認定未建立。"));}
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法查詢原結果，請保留原紀錄。"));}
     finally{if(active.current)setBusy(false);}

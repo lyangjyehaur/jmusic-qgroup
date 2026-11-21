@@ -6,19 +6,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import {
-  SaveSettlement,
-  SettlementBill,
-  SettlementContext,
-  SettlementHistory,
-  SettlementInput,
-  SettlementPreview,
-  SettlementResult,
-  SettlementSnapshot,
-  SettlementView,
-  type Viewer,
-  PaymentCodeLibrary,
-} from '@qgroup/contracts';
+import { SaveSettlement, SettlementBill, SettlementContext, SettlementHistory, SettlementInput, SettlementPreview, SettlementSnapshot, type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import { Failure, Notice, PageIntro, useSession } from './shared';
@@ -195,11 +183,11 @@ export function ActivitySettlementPage() {
 function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
   const query = useQuery({
       queryKey: ['private', viewer.scope, 'settlement', id],
-      queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement', { params: { id } }, SettlementView),
+      queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement', { params: { id } }),
     }),
     history = useQuery({
       queryKey: ['private', viewer.scope, 'settlement-history', id],
-      queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/history', { params: { id } }, SettlementHistory),
+      queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement/history', { params: { id } }),
     }),
     [search, setSearch] = useSearchParams(),
     [extra, setExtra] = useState<z.infer<typeof SettlementHistory>['revisions']>([]),
@@ -209,7 +197,7 @@ function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
     version = Number(search.get('version')),
     selected = useQuery({
       queryKey: ['private', viewer.scope, 'settlement-version', id, version],
-      queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/history/:version', { params: { id, version: String(version) } }, SettlementBill),
+      queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement/history/:version', { params: { id, version: String(version) } }),
       enabled: !!search.get('version') && Number.isSafeInteger(version) && version > 0,
     });
   async function more() {
@@ -217,7 +205,7 @@ function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
     if (!cursor || busy) return;
     setBusy(true);
     try {
-      const page = await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/history', { params: { id }, query: { before: cursor } }, SettlementHistory);
+      const page = await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement/history', { params: { id }, query: { before: cursor } });
       setExtra([...extra, ...page.revisions]);
       setNext(page.next_before);
       setError('');
@@ -381,7 +369,7 @@ export function ActivitySettlementEditor() {
 function ContextLoader({ id, viewer }: { id: string; viewer: Member }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'settlement-context', id],
-    queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/context', { params: { id } }, SettlementContext),
+    queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement/context', { params: { id } }),
     refetchOnWindowFocus: false,
   });
   return query.isPending ? (
@@ -402,10 +390,10 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
       blank,
       valueSchema: Editable,
       saveSchema: SaveSettlement,
-      send: (input, requestId) => authHttp(viewer).request('POST /api/v2/activities/:id/settlement', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }, SettlementResult),
+      send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/activities/:id/settlement', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }),
       beforeSubmit:()=>requireLegacyAvailable(viewer.scope,endpoint+'/edit'),
       preserveBeforeSubmit:true,
-      latest: () => scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/context', { params: { id: initial.id } }, SettlementContext),
+      latest: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement/context', { params: { id: initial.id } }),
       fromPending: ({ preview_token, confirm, ...value }):EditableInput => {
         void preview_token;
         void confirm;
@@ -469,7 +457,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
     setPreview(null);
     setConfirmed(false);
     try {
-      const p = await authHttp(viewer).request('POST /api/v2/activities/:id/settlement/preview', { params: { id: initial.id }, body: parsed.data }, SettlementPreview);
+      const p = await authHttp(viewer).requestContract('POST /api/v2/activities/:id/settlement/preview', { params: { id: initial.id }, body: parsed.data });
       if (form.active.current) {
         setPreview(p);
         form.setMessage('');
@@ -1103,7 +1091,7 @@ function PaymentCodes({
 }) {
   const library = useQuery({
     queryKey: ['private', viewer.scope, 'payment-codes'],
-    queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/payment-codes', {}, PaymentCodeLibrary),
+    queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/payment-codes', {}),
   });
   return (
     <details>
@@ -1181,7 +1169,7 @@ function PaymentCodes({
 function PreviewAssets({ viewer, id, value }: { viewer: Member; id: string; value: EditableInput }) {
   const library = useQuery({
     queryKey: ['private', viewer.scope, 'payment-codes'],
-    queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/payment-codes', {}, PaymentCodeLibrary),
+    queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/payment-codes', {}),
   });
   return (
     <>

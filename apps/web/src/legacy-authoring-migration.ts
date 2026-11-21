@@ -1,4 +1,4 @@
-import { ActivityArrangements,ActivityDraft,CreateIntentResult,TimePoll } from '@qgroup/contracts';
+
 import { ApiError } from './api';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
@@ -38,17 +38,17 @@ export async function prepareAuthoring(viewer:Member,inventory:LegacyInventory,r
   const source=decodeAuthoring(row,viewer.scope);
   let target:{id:string;route:'draft'|'arrangements'|'poll'}|null=null;
   if(source.creation){
-    const result=await authHttp(viewer).request('POST /api/v2/me/create-intents/view', { body: {kind:source.kind,intent:source.intent!} }, CreateIntentResult);
+    const result=await authHttp(viewer).requestContract('POST /api/v2/me/create-intents/view', { body: {kind:source.kind,intent:source.intent!} });
     if(result.state==='existing'){if(source.kind==='activity'&&source.value.id&&source.value.id!==result.id)throw Error('原稿編號與建立結果不同，請保留並核對。');target={id:result.id,route:result.route};}
     else if(source.kind==='activity'&&source.value.id)throw Error('原稿標示活動已建立，但原回執缺失；不能當成新活動。');
   }else{
     const id=source.value.id;
-    try{await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/draft', { params: { id } }, ActivityDraft);target={id,route:'draft'};}
+    try{await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/draft', { params: { id } });target={id,route:'draft'};}
     catch(error){if(!(error instanceof ApiError)||error.code!=='NOT_A_DRAFT')throw error;target={id,route:'arrangements'};}
   }
   if(target){
-    if(source.kind==='activity'){const current=await (target.route==='draft'?scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/draft', { params: { id: target.id } }, ActivityDraft):scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/arrangements', { params: { id: target.id } }, ActivityArrangements));if(!current.canEdit)throw Error('目前不能編輯原活動；原稿保留，不能另建。');}
-    else {const poll=await scopedHttp(viewer.scope).request('GET /api/v2/time-polls/:id/manage', { params: { id: target.id } }, TimePoll);if(!poll.is_owner)throw Error('目前不能管理原投票，原稿保留。');}
+    if(source.kind==='activity'){const current=await (target.route==='draft'?scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/draft', { params: { id: target.id } }):scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: target.id } }));if(!current.canEdit)throw Error('目前不能編輯原活動；原稿保留，不能另建。');}
+    else {const poll=await scopedHttp(viewer.scope).requestContract('GET /api/v2/time-polls/:id/manage', { params: { id: target.id } });if(!poll.is_owner)throw Error('目前不能管理原投票，原稿保留。');}
   }
   const converted=authoringDraft(row,source,target,zone),suffix=row.sourceKey.slice(('draft:'+viewer.scope+':').length);
   const key=source.kind==='poll'?'qgroup:rebuild:activity-draft:poll-create:v1:'+viewer.scope+':new':'qgroup:rebuild:activity-draft:'+(target?.route==='arrangements'?'arrangements:v1:':'v1:')+viewer.scope+':'+(target?.id??(suffix.startsWith('copy:')?suffix:'new'));

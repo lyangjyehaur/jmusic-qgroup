@@ -20,7 +20,7 @@ export function MusicContactPage() {
   return <><PageIntro title="聯絡 QQ" /><Link className="back" to="/me/music">回到我的成分</Link><MemberAccess>{viewer => <Loader key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MemberAccess></>;
 }
 function Loader({ viewer }: { viewer: Member }) {
-  const contact = useQuery({ queryKey: ['private', viewer.scope, 'music-contact', viewer.musicEpoch], queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/music/contact', {}, MusicContact) });
+  const contact = useQuery({ queryKey: ['private', viewer.scope, 'music-contact', viewer.musicEpoch], queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/contact', {}) });
   return contact.isPending ? <Notice>正在讀取聯絡 QQ…</Notice> : contact.error ? <Failure error={contact.error} retry={() => void contact.refetch()} /> : <Editor viewer={viewer} initial={contact.data} />;
 }
 function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
@@ -39,8 +39,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}
     setDraft(pending);setMessage('');let accepted=false;
     try {
-      const result = await authHttp(viewer).request('PUT /api/v2/me/music/contact', { body: input.data, requestId: pending.requestKey, requestScope: viewer.scope }, MusicContact);accepted=true;
-      const latest = await scopedHttp(viewer.scope).request('GET /api/v2/me/music/contact', {}, MusicContact);
+      const result = await authHttp(viewer).requestContract('PUT /api/v2/me/music/contact', { body: input.data, requestId: pending.requestKey, requestScope: viewer.scope });accepted=true;
+      const latest = await scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/contact', {});
       const next = { ...latest, musicEpoch: viewer.musicEpoch }; const nextDraft = SaveMusicContact.parse({ profileId: next.profileId, musicEpoch: next.musicEpoch, revision: next.revision, contactQQ: next.contactQQ });
       if(!active.current)return;if(!await persist(nextDraft,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(nextDraft); setSaved(latest);
       client.setQueryData(['private', viewer.scope, 'music-contact', viewer.musicEpoch], latest);
@@ -60,7 +60,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
   async function rebase() {
     if(locked||!begin())return;
     try {
-      const latest = await scopedHttp(viewer.scope).request('GET /api/v2/me/music/contact', {}, MusicContact);
+      const latest = await scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/contact', {});
       if(latest.profileId!==draft.profileId)throw Error('目前成分已改變，請保全原稿後重新開啟目前成分。');
       const next={...draft,revision:latest.revision};if(!active.current||!await persist(next))return;setSaved(latest);setDraft(next);
       setMessage(uiText("已取得目前聯絡 QQ；輸入仍保留，請核對後再保存。"));

@@ -47,6 +47,9 @@ export function createWebHttpClient(options: { fetch?: typeof fetch; context?: (
     requestContract<K extends HttpJsonKey>(key: K, input: HttpInput<K>): Promise<HttpResult<K>> {
       return run(key, client => client.requestContract(key, input));
     },
+    requestNarrowed<K extends HttpJsonKey,T extends HttpResult<K>>(key: K, input: HttpInput<K>, schema: z.ZodType<T>): Promise<T> {
+      return run(key, client => client.requestNarrowed(key, input, schema));
+    },
     request<K extends Key, T>(key: K, input: HttpInput<K>, schema: z.ZodType<T>): Promise<T> {
       return run(key, client => client.request(key, input, schema));
     },

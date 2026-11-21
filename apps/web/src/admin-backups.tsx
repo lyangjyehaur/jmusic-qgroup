@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
-import { AdminSession, MusicBackups, type Viewer } from '@qgroup/contracts';
+import { type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminReadHttp, type Access } from './admin';
 import { ApiError } from './api';
 import { createWebHttpClient } from './http';
@@ -16,7 +16,7 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
   const client = useQueryClient(), active = useRef(true), controller = useRef<AbortController | undefined>(undefined);
   const urls = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [confirmed, setConfirmed] = useState(false);
-  const list = useQuery({ queryKey: ['private', viewer.scope, 'admin-backups', access.scope], queryFn: ({ signal }) => adminReadHttp(viewer).request('GET /api/v2/admin/backups', { signal }, MusicBackups), refetchOnMount: 'always', refetchOnWindowFocus: 'always' });
+  const list = useQuery({ queryKey: ['private', viewer.scope, 'admin-backups', access.scope], queryFn: ({ signal }) => adminReadHttp(viewer).requestContract('GET /api/v2/admin/backups', { signal }), refetchOnMount: 'always', refetchOnWindowFocus: 'always' });
   const backupLabel = (item: NonNullable<typeof list.data>['backups'][number]) => item.createdAt ? new Date(item.createdAt).toLocaleString('zh-TW') : item.sourceStamp ?? item.id;
   useEffect(() => { active.current = true; return () => { active.current = false; controller.current?.abort(); for (const [url, timer] of urls.current) { clearTimeout(timer); URL.revokeObjectURL(url); } urls.current.clear(); }; }, []);
   function denied(error: unknown) {
@@ -33,7 +33,7 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
       if (!response.headers.get('content-type')?.startsWith('application/json')) throw new Error('下載格式不符，請稍後重試。');
       const blob = await response.blob();
       // A late download must not survive an account switch or revoked authority.
-      const fresh = await adminReadHttp(viewer).request('GET /api/v2/admin/session', { signal: request.signal }, AdminSession);
+      const fresh = await adminReadHttp(viewer).requestContract('GET /api/v2/admin/session', { signal: request.signal });
       if (!active.current || request.signal.aborted) return;
       if (fresh.scope !== access.scope) { void client.invalidateQueries({ queryKey: ['private', viewer.scope, 'admin-session'] }); throw new Error('管理授權已變更，請重新確認後下載。'); }
       const url = URL.createObjectURL(blob), anchor = document.createElement('a');

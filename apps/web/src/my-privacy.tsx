@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { EraseData, ErasureResult, PrivacySummary, type Viewer } from '@qgroup/contracts';
+import { EraseData, ErasureResult, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { authHttp, loginLink } from './auth';
 import { createWebHttpClient, scopedHttp } from './http';
@@ -57,7 +57,7 @@ export function MyPrivacy() {
       await record.assertCurrent();
       if (!record.active.current) return;
       sent = true;
-      const done = await authHttp(current).request('POST /api/v2/me/privacy/erase', { body: original.input }, ErasureResult);
+      const done = await authHttp(current).requestContract('POST /api/v2/me/privacy/erase', { body: original.input });
       await finished(done, original);
     } catch (failure) {
       if (!record.active.current) return;
@@ -73,7 +73,7 @@ export function MyPrivacy() {
     try {
       await record.assertCurrent();
       if (!record.active.current) return;
-      const done = await createWebHttpClient().request('POST /api/v2/privacy/receipt', { body: { requestId: original.input.requestId, secret: original.input.secret } }, ErasureResult);
+      const done = await createWebHttpClient().requestContract('POST /api/v2/privacy/receipt', { body: { requestId: original.input.requestId, secret: original.input.secret } });
       await finished(done, original);
     } catch (failure) {
       if (!record.active.current) return;
@@ -95,7 +95,7 @@ export function MyPrivacy() {
   </>;
 }
 function PrivacyOptions({ viewer, busy, submit }: { viewer: Extract<Viewer, { authenticated: true }>; busy: boolean; submit: (value: PendingValue) => void }) {
-  const summary = useQuery({ queryKey: ['private', viewer.scope, 'privacy'], queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/privacy', {}, PrivacySummary) });
+  const summary = useQuery({ queryKey: ['private', viewer.scope, 'privacy'], queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/privacy', {}) });
   const [target, setTarget] = useState<'music' | 'account' | 'both'>('music');
   const [confirmed, setConfirmed] = useState(false);
   if (summary.isPending) return <Notice>正在確認資料範圍…</Notice>;

@@ -2,7 +2,7 @@ import { uiText } from './language';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
-import { MusicCatalog, MusicEntryMembers } from '@qgroup/contracts';
+import { MusicCatalog } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { createWebHttpClient, scopedHttp } from './http';
 import { Failure, Notice, PageIntro } from './shared';
@@ -54,8 +54,8 @@ export function MusicEntryDetails({ entry, close }: {
 }
 function EntryMembers({ viewer, id, returnTo }: { viewer: Member; id: string; returnTo: string }) {
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-entry-members', viewer.musicEpoch, id],
-    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/entries/:id/members',
-      { signal, params: { id } }, MusicEntryMembers), refetchOnMount: 'always' });
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/entries/:id/members',
+      { signal, params: { id } }), refetchOnMount: 'always' });
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在讀取選取者…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   if (!query.data.members.length) return <Notice>尚無人選用此詞條。</Notice>;
@@ -71,7 +71,7 @@ function EntryMembers({ viewer, id, returnTo }: { viewer: Member; id: string; re
 }
 export function MusicEntryPage() {
   const { id = '' } = useParams(), [params] = useSearchParams(), workspace = useMusicWorkspace();
-  const query = useQuery({ queryKey: ['music-catalog'], queryFn: () => createWebHttpClient().request('GET /api/v2/music/catalog', {}, MusicCatalog) });
+  const query = useQuery({ queryKey: ['music-catalog'], queryFn: () => createWebHttpClient().requestContract('GET /api/v2/music/catalog', {}) });
   const entry = query.data?.entries.find(value => value.id === id);
   const back = new URLSearchParams(params); back.delete('entry');
   const selection = workspace.state === 'ready' ? workspace.selection : null;

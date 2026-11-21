@@ -4,14 +4,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import {
-  MemberMusicProfile,
-  RoomLabAnalysis,
-  RoomLabCommand,
-  RoomLabResult,
-  RoomLabRoomInput,
-  RoomLabSource,
-} from '@qgroup/contracts';
+import { RoomLabAnalysis, RoomLabCommand, RoomLabRoomInput, RoomLabSource } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
@@ -69,7 +62,7 @@ function Loader({ viewer, eventId }: { viewer: Member; eventId: string }) {
   const query = useQuery({
       queryKey: ['private', viewer.scope, 'room-lab-source', eventId, viewer.musicEpoch],
       queryFn: async ({ signal }) => {
-        const source=await scopedHttp(viewer.scope).request('GET /api/v2/music/rooms/source', { query: eventId?{eventId}:{}, signal: signal }, RoomLabSource);
+        const source=await scopedHttp(viewer.scope).requestContract('GET /api/v2/music/rooms/source', { query: eventId?{eventId}:{}, signal: signal });
         if(source.eventId!==(eventId||null))throw Error('分房來源與目前活動不符，請重新核對。');
         return source;
       },
@@ -184,7 +177,7 @@ function Editor({
     setMessage('');
     try {
       if(!await persist(draft)||!active.current||generation.current!==attempt)return;
-      const value = await authHttp(viewer).request('POST /api/v2/music/rooms/calculate', { query: eventId?{eventId}:{}, body: parsed.data, signal: abort.signal }, RoomLabResult);
+      const value = await authHttp(viewer).requestContract('POST /api/v2/music/rooms/calculate', { query: eventId?{eventId}:{}, body: parsed.data, signal: abort.signal });
       if(!active.current||generation.current!==attempt)return;
       if(value.sourceVersion!==parsed.data.sourceVersion||JSON.stringify(value.selected)!==JSON.stringify(parsed.data.selected))throw Error('試算回應與原名單不符，原安排仍保留。');
       if(command==='recalc'&&JSON.stringify(value.rooms.map(({id,capacity,members})=>({id,capacity,members})))!==JSON.stringify(draft.rooms))throw Error('試算回應與原包間不符，原安排仍保留。');
@@ -207,7 +200,7 @@ function Editor({
     setMessage('');
     try {
       if(!await persist(draft)||!active.current||generation.current!==attempt)return;
-      const profile = await authHttp(viewer).request('POST /api/v2/music/profiles/lookup', { body: {query:lookup}, signal: abort.signal }, MemberMusicProfile);
+      const profile = await authHttp(viewer).requestContract('POST /api/v2/music/profiles/lookup', { body: {query:lookup}, signal: abort.signal });
       if (!active.current || generation.current !== attempt) return;
       const member = source.members.find((person) => person.profileId === profile.id);
       if (!member) {

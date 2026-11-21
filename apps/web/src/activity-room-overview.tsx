@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
-import { ActivityRoomOverview, RoomPlanHistory, type Viewer } from '@qgroup/contracts';
+import { ActivityRoomOverview, type Viewer } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { scopedHttp } from './http';
 import { Failure, Notice, PageIntro, useSession } from './shared';
@@ -81,7 +81,7 @@ export function ActivityRoomOverviewSection({ eventId, viewer }: { eventId: stri
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'room-overview', eventId],
     queryFn: () =>
-      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms/overview', { params: { id: eventId } }, ActivityRoomOverview),
+      scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/rooms/overview', { params: { id: eventId } }),
   });
   return (
     <Surface className="detail" id="rooms" role="region" aria-label="包間安排">
@@ -136,13 +136,13 @@ function History({ id, viewer }: { id: string; viewer: Viewer }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'room-plan-history', id, before],
     queryFn: () =>
-      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms/history', { params: { id }, query: { before: before || undefined } }, RoomPlanHistory),
+      scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/rooms/history', { params: { id }, query: { before: before || undefined } }),
   });
   const snapshot = useQuery({
     queryKey: ['private', viewer.scope, 'room-plan-version', id, selected],
     enabled: selected !== undefined,
     queryFn: () =>
-      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms/history/:version', { params: { id, version: String(selected) } }, ActivityRoomOverview),
+      scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/rooms/history/:version', { params: { id, version: String(selected) } }),
   });
   return (
     <>

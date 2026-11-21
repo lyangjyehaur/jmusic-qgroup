@@ -27,7 +27,7 @@ export function CreateIntentLookup({viewer,kind,intent,disabled=false,validate}:
     setBusy(true);setMessage('');setResult(null);
     try {
       const fresh=await current();if(!active.current)return;
-      const found=await authHttp(fresh).request('POST /api/v2/me/create-intents/view', { body: {kind,intent} }, CreateIntentResult);
+      const found=await authHttp(fresh).requestContract('POST /api/v2/me/create-intents/view', { body: {kind,intent} });
       await current();if(!active.current)return;
       setResult(found);setMessage(found.state==='missing'?uiText("尚未查到回執，不能據此認定未建立；原稿保留。"):kind==='poll'?uiText("原投票已建立，建立後不能改寫候選；本機後續編輯仍保留。"):uiText("原活動已建立；本機後續編輯仍保留，請開啟原活動核對。"));
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法查詢原結果，請保留原稿。"));}

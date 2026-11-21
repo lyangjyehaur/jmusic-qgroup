@@ -1,4 +1,4 @@
-import { SettlementContext } from '@qgroup/contracts';
+
 import { scopedHttp } from './http';
 import type { Member } from './member-access';
 import { decodeSettlement,settlementDraft,type SettlementSource } from './legacy-settlement';
@@ -20,7 +20,7 @@ function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,source:Sett
  });
 }
 async function context(viewer:Member,source:SettlementSource){
- const current=await scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/context', { params: { id: source.eventId } }, SettlementContext);
+ const current=await scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement/context', { params: { id: source.eventId } });
  if(!current.can_manage)throw Error('目前沒有結算管理權限，原稿保留。');
  if(source.collectorId!==null&&source.collectorId!==current.collector.id)throw Error('原結算發布帳號已改變，請先核對收款人與款項；原稿保留。');
  return current;

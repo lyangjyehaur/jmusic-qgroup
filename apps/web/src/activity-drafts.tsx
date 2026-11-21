@@ -8,7 +8,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { ActivityCopy, ActivityArrangementInput, ActivityArrangements, ActivityDraft, ActivityDraftList, ActivityDraftResult, ActivityDraftOperationResult } from '@qgroup/contracts';
+import { ActivityCopy, ActivityArrangementInput, ActivityDraft, ActivityDraftResult } from '@qgroup/contracts';
 import { CreateIntentLookup } from './create-intents';
 import { ActivityEditorForm as Form,ActivityEditorDraft as Draft } from './activity-draft-record';
 import { ApiError } from './api';
@@ -34,7 +34,7 @@ function inputValues(form:FormValue){
 export function ActivityDraftsPage(){return <><PageIntro title="活動草稿"/><div className="page-actions"><Link to="/activities">所有活動</Link><Link to="/activities/new">新增活動草稿</Link></div><MemberAccess>{viewer=><DraftList key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function DraftList({viewer}:{viewer:Member}){
   const [search,setSearch]=useSearchParams();const page=Math.max(1,Math.min(10000,Number(search.get('page'))||1));
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-drafts',page],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/me/activity-drafts', { query: {page} }, ActivityDraftList)});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-drafts',page],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/me/activity-drafts', { query: {page} })});
   return query.isPending?<Notice>正在讀取活動草稿…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>{query.data.drafts.length?<div className="event-grid">{query.data.drafts.map(draft=><Surface key={draft.id}><h2><Link to={'/activities/'+encodeURIComponent(draft.id)+'/edit'}>{draft.title}</Link></h2><Text>{draft.isOwner?'由我發起':'發起者：'+draft.ownerName}</Text><Link to={'/activities/'+encodeURIComponent(draft.id)+'/edit'}>{draft.canEdit?'編輯草稿':'查看草稿'}</Link></Surface>)}</div>:<Notice>沒有可存取的活動草稿。</Notice>}<div className="pagination">{page>1&&<Button variant="secondary" onClick={()=>setSearch({page:String(page-1)})}>上一頁</Button>}{query.data.hasMore&&<Button variant="secondary" onClick={()=>setSearch({page:String(page+1)})}>下一頁</Button>}</div></>;
 }
 export function ActivityDraftPage(){
@@ -44,7 +44,7 @@ export function ActivityDraftPage(){
 function CopyLoader({viewer,id}:{viewer:Member;id:string}){
   const probe=useQuery({queryKey:['private',viewer.scope,'activity-copy-local',id],queryFn:async()=>{const saved=await openDraft('qgroup:rebuild:activity-draft:v1:'+viewer.scope+':copy:'+id,viewer.scope);return saved.raw!==null;},refetchOnWindowFocus:false});
   const restorable=probe.data===true;
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-copy',id],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/copy-source', { params: { id } }, ActivityCopy),enabled:probe.isSuccess&&!probe.isFetching&&!restorable,refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-copy',id],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/copy-source', { params: { id } }),enabled:probe.isSuccess&&!probe.isFetching&&!restorable,refetchOnWindowFocus:false});
   if(probe.isPending||probe.isFetching)return <Notice>正在讀取本機原稿…</Notice>;
   if(probe.error)return <Failure error={probe.error} retry={()=>void probe.refetch()}/>;
   if(restorable)return <Editor viewer={viewer} initial={null} copyId={id}/>;
@@ -55,7 +55,7 @@ export function ActivityArrangementPage(){
   return <><PageIntro title="編輯活動安排"/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+'/conditions'}>安排版本與確認</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id} viewer={viewer} id={id} published/>}</MemberAccess></>;
 }
 function Loader({viewer,id,published=false}:{viewer:Member;id:string;published?:boolean}){
-  const query=useQuery({queryKey:['private',viewer.scope,published?'activity-arrangements':'activity-draft',id],queryFn:()=>(published?scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/arrangements', { params: { id: id } }, ActivityArrangements):scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/draft', { params: { id: id } }, ActivityDraft)),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,published?'activity-arrangements':'activity-draft',id],queryFn:()=>(published?scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: id } }):scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/draft', { params: { id: id } })),refetchOnWindowFocus:false});
   return query.isPending?<Notice>{published?'正在讀取活動安排…':'正在讀取活動草稿…'}</Notice>:query.error?<><Failure error={query.error} retry={()=>void query.refetch()}/><PendingResult viewer={viewer} id={id} published={published}/></>:<Editor viewer={viewer} initial={query.data} published={published}/>;
 }
 function PendingResult({viewer,id,published=false}:{viewer:Member;id:string;published?:boolean}){
@@ -67,7 +67,7 @@ function PendingResult({viewer,id,published=false}:{viewer:Member;id:string;publ
   if(!pending)return null;
   async function check(){
     if(!pending||!record.begin())return;
-    try{const result=await scopedHttp(viewer.scope).request(published?'GET /api/v2/activities/management-results/:requestId':'GET /api/v2/activities/draft-results/:requestId', { params: { requestId: pending.key } }, ActivityDraftOperationResult);
+    try{const result=await scopedHttp(viewer.scope).requestContract(published?'GET /api/v2/activities/management-results/:requestId':'GET /api/v2/activities/draft-results/:requestId', { params: { requestId: pending.key } });
       if(!active.current)return;
       if(result.state==='completed'&&result.result.id===id&&result.result.removed){if(!await record.retire())return;void navigate('/me/activities/drafts',{replace:true});}
       else if(result.state==='completed'&&result.result.id===id&&pending.kind==='publish'){if(!await record.retire())return;void navigate('/activities/'+encodeURIComponent(id),{replace:true});}
@@ -113,16 +113,16 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
     if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       let result:z.infer<typeof ActivityDraftResult>;
-      if(operation.kind==='create')result=await authHttp(viewer).request('POST /api/v2/activities/drafts', { body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);
-      else if(operation.kind==='remove')result=await authHttp(viewer).request('POST /api/v2/activities/:id/draft/remove', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);
-      else if(operation.kind==='publish')result=await authHttp(viewer).request('POST /api/v2/activities/:id/draft/publish', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);
-      else result=await authHttp(viewer).request(published?'PUT /api/v2/activities/:id/arrangements':'PUT /api/v2/activities/:id/draft', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);accepted=true;
+      if(operation.kind==='create')result=await authHttp(viewer).requestContract('POST /api/v2/activities/drafts', { body: operation.input, requestId: operation.key, requestScope: viewer.scope });
+      else if(operation.kind==='remove')result=await authHttp(viewer).requestContract('POST /api/v2/activities/:id/draft/remove', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });
+      else if(operation.kind==='publish')result=await authHttp(viewer).requestContract('POST /api/v2/activities/:id/draft/publish', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });
+      else result=await authHttp(viewer).requestContract(published?'PUT /api/v2/activities/:id/arrangements':'PUT /api/v2/activities/:id/draft', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;
       if(!active.current)return;
       if(result.removed){if(!await record.retire())throw Error('storage');setDestination('/me/activities/drafts');}
       else if(operation.kind==='publish'){if(!await record.retire())throw Error('storage');void client.invalidateQueries({queryKey:['activities']});setDestination('/activities/'+encodeURIComponent(result.id));}
       else{
         let latest:Saved;
-        try{latest=await (published?scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/arrangements', { params: { id: result.id } }, ActivityArrangements):scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/draft', { params: { id: result.id } }, ActivityDraft));}
+        try{latest=await (published?scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: result.id } }):scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/draft', { params: { id: result.id } }));}
         catch(error){
           if(!active.current)return;
           if(error instanceof ApiError&&[404,409].includes(error.status)){setCompletedId(result.id);setMessage(uiText("原操作已保存；活動目前無法以草稿開啟，原稿與操作編號已保留。"));return;}
@@ -148,7 +148,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   }
   async function rebase(){
     if(!saved||draft.pending||readError||busy)return;setBusy(true);
-    try{const latest=await (published?scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/arrangements', { params: { id: initial?.id??'' } }, ActivityArrangements):scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/draft', { params: { id: initial?.id??'' } }, ActivityDraft));if(!active.current)return;const next={...draft,revision:latest.revision,...(draft.legacySource?{legacySource:{...draft.legacySource,reviewRequired:false}}:{})};if(!await persist(next))return;setDraft(next);setSaved(latest);setComparison(true);setConfirmRemove(false);setConfirmPublish(false);setMessage(uiText("已取得目前安排；輸入仍保留，請核對後再保存。"));}
+    try{const latest=await (published?scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: initial?.id??'' } }):scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/draft', { params: { id: initial?.id??'' } }));if(!active.current)return;const next={...draft,revision:latest.revision,...(draft.legacySource?{legacySource:{...draft.legacySource,reviewRequired:false}}:{})};if(!await persist(next))return;setDraft(next);setSaved(latest);setComparison(true);setConfirmRemove(false);setConfirmPublish(false);setMessage(uiText("已取得目前安排；輸入仍保留，請核對後再保存。"));}
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   const f=draft.form;const owner=saved?.isOwner??true;

@@ -6,7 +6,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { ActivityArrangements, ActivityConditions, ActivityDraftResult, RespondActivityConditions, type ConditionVersion, type Viewer } from '@qgroup/contracts';
+import { ActivityConditions, RespondActivityConditions, type ConditionVersion, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
@@ -28,7 +28,7 @@ function Version({value,heading}:{value:z.infer<typeof ConditionVersion>;heading
   return <Surface role="region" aria-label={heading} className="detail"><Heading level={2}>{heading} · 第 {value.version} 版</Heading><Text>{value.summary}</Text>{value.actorName&&<Text tone="muted">{value.actorName} · {dateLabel(value.createdAt,'Asia/Taipei')}（台北）</Text>}<dl><dt>類型</dt><dd>{a.category}</dd><dt>時間</dt><dd>{dateLabel(a.starts_at,a.timezone)}（{a.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd><ActivityLocation value={a.location}/></dd><dt>退出期限</dt><dd>{dateLabel(a.withdrawal_deadline,a.timezone)}</dd>{a.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{a.fee_policy}</dd></>}{a.description&&<><dt>注意事項</dt><dd className="preserve-lines">{a.description}</dd></>}</dl></Surface>;
 }
 export function ActivityManagementLink({eventId,viewer}:{eventId:string;viewer:Member}){
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-arrangements',eventId],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/arrangements', { params: { id: eventId } }, ActivityArrangements)});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-arrangements',eventId],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: eventId } })});
   return query.error?<Button variant="ghost" onClick={()=>void query.refetch()}>重試讀取活動管理權限</Button>:query.data?.canEdit?<Link to={'/activities/'+encodeURIComponent(eventId)+'/arrangements'}>編輯活動安排</Link>:null;
 }
 export function ActivityConditionsPage(){
@@ -38,7 +38,7 @@ export function ActivityConditionsPage(){
 function ConditionsContent({viewer,id}:{viewer:Viewer;id:string}){
   const client=useQueryClient();
   const [search,setSearch]=useSearchParams(),page=Math.max(1,Math.min(10000,Number(search.get('page'))||1));
-  const query=useQuery({queryKey:['private',viewer.scope,'activity-conditions',id,page],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/conditions', { params: { id: id }, query: { page } }, ActivityConditions),refetchOnWindowFocus:false});
+  const query=useQuery({queryKey:['private',viewer.scope,'activity-conditions',id,page],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/conditions', { params: { id: id }, query: { page } }),refetchOnWindowFocus:false});
   if(query.isPending)return <Notice>正在讀取活動安排…</Notice>;
   if(query.error)return <Failure error={query.error} retry={()=>void query.refetch()}/>;
   const data=query.data;
@@ -57,7 +57,7 @@ function ConsentEditor({viewer,initial,preferred,update}:{viewer:Member;initial:
   const locked=record.locked,stale=draft.revision!==data.revision||draft.conditionsVersion!==data.current.version;
   useEffect(()=>{setConfirm(false);},[record.epoch]);
   function edit(patch:Partial<DraftValue>){record.change({...draft,...patch});setConfirm(false);setMessage('');}
-  async function latest(){return scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/conditions', { params: { id: data.id } }, ActivityConditions);}
+  async function latest(){return scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/conditions', { params: { id: data.id } });}
   async function rebase(){
     if(locked||!record.begin())return;
     try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision,conditionsVersion:fresh.current.version};if(!await persist(next))return;setData(fresh);setDraft(next);setConfirm(false);update(fresh);setMessage(uiText("已取得最新安排；選擇與原因仍保留，請重新核對後確認。"));}
@@ -73,7 +73,7 @@ function ConsentEditor({viewer,initial,preferred,update}:{viewer:Member;initial:
     }
     const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
-      await authHttp(viewer).request('POST /api/v2/activities/:id/attendees/:personId/conditions', { params: { id: data.id, personId: operation.personId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope }, ActivityDraftResult);accepted=true;
+      await authHttp(viewer).requestContract('POST /api/v2/activities/:id/attendees/:personId/conditions', { params: { id: data.id, personId: operation.personId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;
       const fresh=await latest();if(!active.current)return;const next=original(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);setData(fresh);setConfirm(false);update(fresh);setMessage(uiText("安排確認已保存。"));
       void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-roster',data.id]});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity',data.id]});
     }catch(error){

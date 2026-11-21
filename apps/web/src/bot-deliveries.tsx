@@ -5,7 +5,7 @@ import { Link,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
-import { BotDeliveriesQuery,BotDeliveries,BotDeliveryReceipt,BotDeliveryResult,BotDeliveryReview,type Viewer } from '@qgroup/contracts';
+import { BotDeliveriesQuery, BotDeliveryResult, type Viewer } from '@qgroup/contracts';
 import { AdminGate,type Access } from './admin';
 import { MemberAccess } from './member-access';
 import { ApiError } from './api';
@@ -46,13 +46,13 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
     catch(error){throw error instanceof Error?displayError(error,'篩選條件無效，請重新選擇通知條件。'):error;}
   };
   const list=useQuery({queryKey:[...cache,before,status,kind],queryFn:({signal})=>context?
-    context.entity==='activity'?http.request('GET /api/v2/activities/:id/bot-deliveries',{params:{id:context.id},query:filters(),signal},BotDeliveries):
-      http.request('GET /api/v2/time-polls/:id/bot-deliveries',{params:{id:context.id},query:filters(),signal},BotDeliveries):
-    http.request('GET /api/v2/admin/bot/deliveries',{query:filters(),signal},BotDeliveries),staleTime:0,refetchOnWindowFocus:'always'});
+    context.entity==='activity'?http.requestContract('GET /api/v2/activities/:id/bot-deliveries',{params:{id:context.id},query:filters(),signal}):
+      http.requestContract('GET /api/v2/time-polls/:id/bot-deliveries',{params:{id:context.id},query:filters(),signal}):
+    http.requestContract('GET /api/v2/admin/bot/deliveries',{query:filters(),signal}),staleTime:0,refetchOnWindowFocus:'always'});
   const review=useQuery({queryKey:[...cache,'review',selected],enabled:!!selected,queryFn:({signal})=>context?
-    context.entity==='activity'?http.request('GET /api/v2/activities/:id/bot-deliveries/:deliveryId',{params:{id:context.id,deliveryId:selected},signal},BotDeliveryReview):
-      http.request('GET /api/v2/time-polls/:id/bot-deliveries/:deliveryId',{params:{id:context.id,deliveryId:selected},signal},BotDeliveryReview):
-    http.request('GET /api/v2/admin/bot/deliveries/:deliveryId',{params:{deliveryId:selected},signal},BotDeliveryReview),staleTime:0,refetchOnWindowFocus:'always'});
+    context.entity==='activity'?http.requestContract('GET /api/v2/activities/:id/bot-deliveries/:deliveryId',{params:{id:context.id,deliveryId:selected},signal}):
+      http.requestContract('GET /api/v2/time-polls/:id/bot-deliveries/:deliveryId',{params:{id:context.id,deliveryId:selected},signal}):
+    http.requestContract('GET /api/v2/admin/bot/deliveries/:deliveryId',{params:{deliveryId:selected},signal}),staleTime:0,refetchOnWindowFocus:'always'});
   useEffect(()=>{setConfirmed(false);},[review.dataUpdatedAt,selected]);
   useEffect(()=>{setConfirmed(false);setCanResend(false);setMessage('');},[record?.epoch]);
   const denied=authorityLost||[list.error,review.error].some(error=>error instanceof ApiError&&([401,403].includes(error.status)||error.code==='ACCOUNT_CHANGED'));
@@ -70,8 +70,8 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
   async function post(work:Pending){
     if(!context)throw Error('Missing bot delivery context');
     const input={params:{id:context.id,deliveryId:work.id},body:work.input,requestId:work.key,requestScope:viewer.scope,signal:cancel.current.signal};
-    return context.entity==='activity'?http.request('POST /api/v2/activities/:id/bot-deliveries/:deliveryId/retry',input,BotDeliveryResult):
-      http.request('POST /api/v2/time-polls/:id/bot-deliveries/:deliveryId/retry',input,BotDeliveryResult);
+    return context.entity==='activity'?http.requestContract('POST /api/v2/activities/:id/bot-deliveries/:deliveryId/retry',input):
+      http.requestContract('POST /api/v2/time-polls/:id/bot-deliveries/:deliveryId/retry',input);
   }
   async function rejected(error:ApiError){
     if(!record)return;
@@ -92,7 +92,7 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
     if(denied||!record||!pending||resend&&!canResend||!record.begin())return;setMessage('');setCanResend(false);let resubmitted=false,accepted=false;
     try{
       if(!await record.persist(pending)||!active.current)return;
-      const receipt=await http.request('GET /api/v2/bot-delivery-results/:requestId',{params:{requestId:pending.key},requestScope:viewer.scope,signal:cancel.current.signal},BotDeliveryReceipt);
+      const receipt=await http.requestContract('GET /api/v2/bot-delivery-results/:requestId',{params:{requestId:pending.key},requestScope:viewer.scope,signal:cancel.current.signal});
       if(!active.current)return;
       if(receipt.state==='completed')await completed(pending,receipt.result);
       else if(resend){resubmitted=true;const result=await post(pending);accepted=true;await completed(pending,result);}

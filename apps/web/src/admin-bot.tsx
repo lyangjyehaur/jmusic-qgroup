@@ -5,14 +5,7 @@ import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import {
-  BotPolicy,
-  BotPolicyCommand,
-  BotPolicyResult,
-  BotPolicyView,
-  type BotKind,
-  type Viewer,
-} from '@qgroup/contracts';
+import { BotPolicy, BotPolicyCommand, BotPolicyView, type BotKind, type Viewer } from '@qgroup/contracts';
 import { BOT_DEFAULT_TEMPLATE, BOT_TEMPLATE_LIMITS, validateBotPolicy } from '@qgroup/domain';
 import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
 import { ApiError } from './api';
@@ -159,7 +152,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
   const catalog = useQuery({
     queryKey: ['private', viewer.scope, 'admin-bot', access.scope],
     queryFn: ({ signal }) =>
-      adminReadHttp(viewer).request('GET /api/v2/admin/bot', { signal }, BotPolicyView),
+      adminReadHttp(viewer).requestContract('GET /api/v2/admin/bot', { signal }),
     refetchOnMount: 'always',
     refetchOnWindowFocus: 'always',
   });
@@ -203,7 +196,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
   async function rebase() {
     if (locked || !draft || !begin()) return;
     try {
-      const latest = await adminReadHttp(viewer).request('GET /api/v2/admin/bot', {}, BotPolicyView);
+      const latest = await adminReadHttp(viewer).requestContract('GET /api/v2/admin/bot', {});
       const next = { ...draft, revision: latest.revision };
       if (!active.current || !await persist(next)) return;
       setDraft(next); client.setQueryData(['private', viewer.scope, 'admin-bot', access.scope], latest);
@@ -228,11 +221,11 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     try {
       if (!await persist(pending) || !active.current) return;
       setDraft(pending); setMessage('');
-      await adminHttp(viewer, access).request('POST /api/v2/admin/bot', {
+      await adminHttp(viewer, access).requestContract('POST /api/v2/admin/bot', {
         body: operation.input, requestId: operation.key, requestScope: viewer.scope,
-      }, BotPolicyResult);
+      });
       accepted = true;
-      const latest = await adminReadHttp(viewer).request('GET /api/v2/admin/bot', {}, BotPolicyView);
+      const latest = await adminReadHttp(viewer).requestContract('GET /api/v2/admin/bot', {});
       if (!active.current) return;
       const next = blank(latest);
       if (!await persist(next, false, uiText("設定已保存，但無法保存本機確認狀態；請保留原操作並核對結果。"))) return;
@@ -268,9 +261,8 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     const stamp = signature;
     try {
       if (!await persist(draft) || !active.current) return;
-      const result = await adminHttp(viewer, access).request('POST /api/v2/admin/bot/preview',
-        { body: { config: policyOf(draft.value), kind } },
-        z.object({ text: z.string(), markdown: z.string().nullable() }));
+      const result = await adminHttp(viewer, access).requestContract('POST /api/v2/admin/bot/preview',
+        { body: { config: policyOf(draft.value), kind } });
       if (active.current && currentSignature.current === stamp) setPreview({ ...result, signature: stamp });
     } catch (error) {
       if (active.current)

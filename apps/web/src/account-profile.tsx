@@ -21,7 +21,7 @@ export function AccountProfilePage() {
 }
 function ProfileLoader({ viewer }: { viewer: Viewer }) {
   const http=createWebHttpClient({context:()=>({scope:viewer.scope})});
-  const profile = useQuery({ queryKey: ['private', viewer.scope, 'account-profile'], queryFn: () => http.request('GET /api/v2/me/profile', {}, AccountProfile) });
+  const profile = useQuery({ queryKey: ['private', viewer.scope, 'account-profile'], queryFn: () => http.requestContract('GET /api/v2/me/profile', {}) });
   return profile.isPending ? <Notice>正在讀取稱呼…</Notice> : profile.error ? <Failure error={profile.error} retry={() => void profile.refetch()} /> : <NicknameEditor viewer={viewer} initial={profile.data} />;
 }
 function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value }) {
@@ -40,8 +40,8 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
     if(!begin())return;if(!await persist(pending)||!active.current){if(active.current)setSending(false);return;}
     setDraft(pending); setMessage('');let accepted=false;
     try {
-      const result = await http.request('PUT /api/v2/me/profile', { body:parsed.data, requestId:pending.requestKey, requestScope:viewer.scope }, AccountProfile);accepted=true;
-      const latest = await http.request('GET /api/v2/me/profile', {}, AccountProfile);
+      const result = await http.requestContract('PUT /api/v2/me/profile', { body:parsed.data, requestId:pending.requestKey, requestScope:viewer.scope });accepted=true;
+      const latest = await http.requestContract('GET /api/v2/me/profile', {});
       if(!active.current)return;if(!await persist(latest,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setSaved(latest); setDraft(latest);
       queryClient.setQueryData(['private', viewer.scope, 'account-profile'], latest);
@@ -62,7 +62,7 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
   async function rebase() {
     if(locked||!begin())return;
     try {
-      const latest = await http.request('GET /api/v2/me/profile', {}, AccountProfile);
+      const latest = await http.requestContract('GET /api/v2/me/profile', {});
       const next = { nickname: draft.nickname, revision: latest.revision };
       if(!active.current||!await persist(next))return;
       setSaved(latest); setDraft(next); setMessage(uiText("已取得目前稱呼；你的輸入仍保留，請核對後再保存。"));

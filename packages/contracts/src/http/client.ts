@@ -83,13 +83,18 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
   }
   return result;
  }
- return {
-  async requestContract<Key extends HttpJsonKey>(key:Key,input:HttpInput<Key>):Promise<HttpResult<Key>>{
+ async function structured<Key extends HttpJsonKey>(key:Key,input:HttpInput<Key>):Promise<HttpResult<Key>>{
    const binding=HttpResponses[key];
    if(!binding||binding.kind!=='json')throw new TypeError('This HTTP operation has no structured JSON response');
    const result=await response(key,input);let value:unknown;
    try{value=await result.json();}catch(error){throw new HttpProtocolError(result.status,'unreadable-json',{cause:error});}
    return binding.schema.parse(value) as HttpResult<Key>;
+ }
+ return {
+  requestContract:structured,
+  async requestNarrowed<Key extends HttpJsonKey,T extends HttpResult<Key>>(key:Key,input:HttpInput<Key>,schema:z.ZodType<T>):Promise<T>{
+   // Additional caller invariants can narrow a bound response, never bypass it.
+   return schema.parse(await structured(key,input));
   },
   async request<Key extends keyof typeof HttpOperations,T>(key:Key,input:HttpInput<Key>,schema:z.ZodType<T>):Promise<T>{
    const result=await response(key,input);let value:unknown;
