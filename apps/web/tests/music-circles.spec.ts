@@ -102,3 +102,7 @@ test('same-name tags retain their separate term links and long names wrap on mob
   await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toContainText('圈子詞 chain-b');
   await page.getByRole('link', { name: '回到同好圈子', exact: true }).click(); await expect(page).toHaveURL('/people/circles?minLink=40');
 });
+
+// Circle computation now runs asynchronously. Finish intercepted background
+// reads before closing their request context, keeping callback errors visible.
+test.afterEach(async ({ page }) => { await page.unrouteAll({ behavior: 'wait' }); });

@@ -73,6 +73,28 @@ try {
     assert.deepEqual(result.result.rooms.flatMap(room => room.members).sort(), ['one', 'three', 'two']);
     assert(result.result.rooms.every(room => room.members.length <= room.capacity));
   } finally { await worker.terminate(); }
+  const circleWorker = new Worker(new URL('../../.rebuild-dist/api/music-circle-worker.mjs', import.meta.url), {
+    env: {}, execArgv: [],
+    workerData: {
+      minLink: 40, entries: [{ id: 'synthetic-term', name: '合成詞條', kind: 'sub', count: 0 }],
+      members: ['one', 'two', 'three'].map(id => ({ id, name: id, selections: id === 'three' ? [{ entryId: 'other', level: 3 }] : [{ entryId: 'synthetic-term', level: 3 }] })),
+    },
+    resourceLimits: { maxOldGenerationSizeMb: 128, maxYoungGenerationSizeMb: 16, stackSizeMb: 2 },
+  });
+  try {
+    const result = await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => reject(Error('Built circle worker timed out')), 5000);
+      circleWorker.once('message', message => { clearTimeout(timer); resolve(message); });
+      circleWorker.once('error', error => { clearTimeout(timer); reject(error); });
+    });
+    assert.equal(result.ok, true);
+    assert.equal(result.result.membersWithSelection, 3);
+    assert.deepEqual(result.result.clusters[0].members, [{ id: 'one', name: 'one' }, { id: 'two', name: 'two' }]);
+    assert.equal(result.result.clusters.length, 1);
+    assert.equal(result.result.singles, 1);
+    assert.equal(result.result.singleMembers[0].id, 'three');
+    console.log('Built bounded circle worker: complete clusters and singles passed without a database or transport client');
+  } finally { await circleWorker.terminate(); }
   const unknown = await fetch(base + '/api/v2/missing'); assert.equal(unknown.status, 404);
   const activities = await fetch(base + '/api/v2/activities'); assert.equal(activities.headers.get('cache-control'), 'no-store');
   assert.deepEqual((await activities.json()).events, []);

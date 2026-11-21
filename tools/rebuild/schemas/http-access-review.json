@@ -38,7 +38,9 @@
     "apps/api/src/legacy-finance.ts": "124ca44439fb44a4e1d70d3668ca6e4d05d9adb66e71a729455ce4aba682af1e",
     "apps/api/src/legacy-local.ts": "a65e2ccf033d34f81f57754b413e777793eb519d42498d862bca2346f7c05fcb",
     "apps/api/src/music-catalog.ts": "27afeafcae22dad16da81f5bc89b290a4ff10febe13c9e586efa9e20ce4e9572",
-    "apps/api/src/music-circles.ts": "3413f4f6589eba1140ffd24ee110ab9052a6ab1a8b1abf641b747b5dcdc3d786",
+    "apps/api/src/music-circle-jobs.ts": "40c841e3d00a13551b77ebea53ae2fae1bb4bb176a3b74eb116ada65b04abac1",
+    "apps/api/src/music-circle-task.ts": "d33f7a6d57e7439167db2f0fc1e5229a31d8051424159570c64003cfa828016b",
+    "apps/api/src/music-circles.ts": "fb0addb4780acda5824b1288ea37945cc71106777bf59c9d289c6e4336f41bd9",
     "apps/api/src/music-claim.ts": "ac89e7905919dd170019d755f3afd27a6a25cc778746f40ea0e0d5382ac37979",
     "apps/api/src/music-contact.ts": "b37d2e7c594f201b5c06cf951288060a29994013e7b86fd131e268e17266dbf7",
     "apps/api/src/music-fields.ts": "c783c34c9fc26680e327b00a7a7f0f23374fd551a2c2379775ee51c64b699479",
@@ -61,6 +63,8 @@
     "packages/contracts/src/index.ts": "c1e4a2ced1daeae8dba30b6efa15ab7581286410d7b17f5ca1151de84c356efe",
     "packages/contracts/src/payment-assets.ts": "9c925b021cb16cfd188e6620a341efdba6570e4a72b7110ede85899c08c8d83c",
     "packages/database/src/music-retirements.ts": "f4ae47d2ab943ab7bafd376f9c1f461121b4a0fe580284fd76fcf0526d89af62",
+    "packages/domain/src/music-circles.ts": "ce4b93a8d42faaba36a2f5c253e039e89832c9570a8bcfa027120c180e9b953f",
+    "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-search.ts": "52da753f011f1400b09900daa8d46a164441cdf789bd21cb8f94cd60130c4d6e",
     "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
   },
@@ -1625,11 +1629,21 @@
       "file": "apps/api/src/music-circles.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Current scoped membership and saved-music qualification are checked before computation and again before returning any result.",
+        "Only active profile names, selections and term projections enter the worker; credentials, DB handles, contact QQ, gender and notes are excluded.",
+        "Changes to ownership, membership, names, selections or terms invalidate the completed result; worker output does not confer access."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "apps/api/src/repositories.ts",
+        "apps/api/src/music-fields.ts",
+        "packages/database/src/music-retirements.ts",
+        "apps/api/src/music-circle-jobs.ts",
+        "apps/api/src/music-circle-task.ts",
+        "packages/domain/src/music-circles.ts",
+        "packages/domain/src/music-matching.ts"
       ],
       "additionalHeaders": []
     },

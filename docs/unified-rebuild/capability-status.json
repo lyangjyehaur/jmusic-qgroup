@@ -4447,26 +4447,32 @@
         "packages/domain/src/music-circles.ts",
         "apps/api/src/music-circles.ts",
         "apps/web/src/music-circles.tsx",
-        "apps/web/src/music-return.ts"
+        "apps/web/src/music-return.ts",
+        "apps/api/src/music-circle-jobs.ts",
+        "apps/api/src/music-circle-task.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/music-circles.test.ts",
-        "apps/api/src/music-circles.test.ts"
+        "apps/api/src/music-circles.test.ts",
+        "apps/api/src/music-circle-jobs.test.ts",
+        "apps/api/src/music-circle-freshness.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-circles.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/music-circles.test.ts",
-        "apps/web/tests/music-circles.spec.ts"
+        "apps/web/tests/music-circles.spec.ts",
+        "apps/api/src/music-circle-freshness.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-circles.spec.ts",
         "docs/unified-rebuild/43-music-circles-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/201-circle-isolation-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生完整圈子／可調門檻／間接連結／獨立成員、原 Handler 多門檻順序差分、同好／比較／共用選詞動線與 bot 唯讀保全已隔離實作；正式副本完整對帳、正式規模與併發效能、舊入口 adapter、實際切換版本組合仍待驗收。"
+      "remaining": "原生完整圈子、原 Handler 多門檻順序差分、同好／比較／共用選詞及 bot 唯讀保全已有隔離證據；圈子計算已移至有界 worker，計算後資格／來源重驗與取消亦已驗證。正式副本完整對帳、正式規模／併發及包含分房的程序總資源、舊入口 adapter、實際切換版本組合仍待驗收。"
     },
     {
       "capability_id": "C01",

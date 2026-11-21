@@ -15,6 +15,9 @@ await build({entryPoints:['packages/database/src/index.ts'],outfile:'.rebuild-di
 await build({ entryPoints: ['apps/api/src/music-room-task.ts'], outfile: '.rebuild-dist/api/music-room-worker.mjs',
   bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), logLevel: 'info' });
 
+await build({ entryPoints: ['apps/api/src/music-circle-task.ts'], outfile: '.rebuild-dist/api/music-circle-worker.mjs',
+  bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), logLevel: 'info' });
+
 const bot = await build({ entryPoints: ['apps/bot/src/index.ts'], outfile: '.rebuild-dist/bot/transport.mjs',
   bundle: true, platform: 'node', format: 'esm', external: Object.keys(pkg.dependencies), metafile: true, logLevel: 'info' });
 for (const path of Object.keys(bot.metafile.inputs)) {

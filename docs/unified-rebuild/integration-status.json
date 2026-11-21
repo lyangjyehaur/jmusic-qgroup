@@ -28,11 +28,28 @@
       "state": "in_progress",
       "new_entry": "/people/circles",
       "required_behavior": "既有圈子能力提供可達的 React UI，保留門檻、間接連結與成員順序；圈子、同好、比較及詞條能攜帶上下文往返，資格撤銷後不得保留私人结果。",
-      "implementation": ["apps/web/src/music-circles.tsx", "apps/api/src/music-circles.ts"],
-      "behavior_evidence": ["docs/unified-rebuild/43-music-circles-checkpoint.md"],
-      "permission_evidence": ["docs/unified-rebuild/43-music-circles-checkpoint.md"],
-      "ux_evidence": ["apps/web/tests/music-circles.spec.ts"],
-      "remaining": ["正式規模平方配對成本、並發與刷新資源驗收", "正式來源完整內容對帳與完整候選版本成套驗收"]
+      "implementation": [
+        "apps/web/src/music-circles.tsx",
+        "apps/api/src/music-circles.ts",
+        "apps/api/src/music-circle-jobs.ts",
+        "apps/api/src/music-circle-task.ts"
+      ],
+      "behavior_evidence": [
+        "docs/unified-rebuild/43-music-circles-checkpoint.md",
+        "apps/api/src/music-circle-jobs.test.ts",
+        "docs/unified-rebuild/201-circle-isolation-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "docs/unified-rebuild/43-music-circles-checkpoint.md",
+        "apps/api/src/music-circle-freshness.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-circles.spec.ts"
+      ],
+      "remaining": [
+        "正式規模的 DB 讀取、複製、平方計算成本及多副本資源驗收；含圈子與分房的程序總預算",
+        "正式來源完整內容對帳與完整候選版本成套驗收"
+      ]
     }
   ]
 }
