@@ -40,6 +40,9 @@
     "check:http-contracts:rebuild": "tsx tools/rebuild/build-http-contracts.ts --check"
   },
   "devDependencies": {
+    "@hyperjump/json-schema": "1.18.1",
+    "ajv": "8.20.0",
+    "ajv-formats": "3.0.1",
     "@babel/parser": "8.1.0",
     "@playwright/test": "1.65.1",
     "@types/node": "22.20.5",
