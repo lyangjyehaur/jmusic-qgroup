@@ -4,6 +4,7 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Surface,Text } from 'yahha-ui';
 import { Appearance } from '@qgroup/contracts';
 import { api } from './api';
+import { createWebHttpClient } from './http';
 import { Failure,Notice,PageIntro } from './shared';
 import { Field } from './settlement-controls';
 import { useAppearance } from './appearance-preferences';
@@ -30,7 +31,7 @@ export function WallpaperLayer(){
     async function show(next:number){
       if(busy||controller.signal.aborted)return;busy=true;let objectURL='';
       try{
-        const response=await fetch(items[next]!.url,{signal:controller.signal,cache:'no-store'});if(!response.ok)throw Error();
+        const response=await createWebHttpClient().requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:items[next]!.id},signal:controller.signal,cache:'no-store'});
         const blob=await response.blob();if(controller.signal.aborted)return;
         objectURL=URL.createObjectURL(blob);urls.add(objectURL);
         const image=new Image();image.src=objectURL;

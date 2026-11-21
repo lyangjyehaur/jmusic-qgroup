@@ -13,9 +13,10 @@ type Query<D extends Operation>=D extends {query:infer S extends z.ZodType}?{que
 type RequestIdentity={requestId?:never;requestScope?:string}|{requestId:string;requestScope:string};
 export type HttpInput<Key extends keyof typeof HttpOperations>=Params<typeof HttpOperations[Key]>&Body<typeof HttpOperations[Key]>&Query<typeof HttpOperations[Key]>&RequestIdentity&{
  signal?:AbortSignal;
+ cache?:'no-store';
 };
 // Receipt namespaces can differ from the current device/account header scope.
-export interface HttpContext {scope?:string;csrf?:string;adminCsrf?:string;receiptScope?:string}
+export interface HttpContext {scope?:string;csrf?:string;adminCsrf?:string;adminScope?:string;receiptScope?:string}
 export class HttpScopeChangedError extends Error {
  readonly code='ACCOUNT_CHANGED';
  constructor(){super('操作身分已變更，請核對原操作結果再繼續。');}
@@ -26,7 +27,7 @@ export class HttpApiError extends Error {
 }
 export class HttpProtocolError extends Error {
  readonly name='HttpProtocolError';
- constructor(readonly status:number){super('回應資料尚未核對，請先確認操作結果再重試。');}
+ constructor(readonly status:number,readonly reason:'unreadable-json'|'unverified'='unverified'){super('回應資料尚未核對，請先確認操作結果再重試。');}
 }
 const object=(value:unknown)=>{
  if(value===null||typeof value!=='object'||Array.isArray(value))throw new TypeError('Invalid HTTP request input');
@@ -57,7 +58,8 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
  async function response<Key extends keyof typeof HttpOperations>(key:Key,input:HttpInput<Key>):Promise<Response>{
   if(!Object.hasOwn(HttpOperations,key))throw new TypeError('Unknown HTTP operation');
   const operation=HttpOperations[key],values=object(input);
-  if(Object.keys(values).some(name=>!['params','query','body','requestId','requestScope','signal'].includes(name)))throw new TypeError('Unexpected HTTP request option');
+  if(Object.keys(values).some(name=>!['params','query','body','requestId','requestScope','signal','cache'].includes(name)))throw new TypeError('Unexpected HTTP request option');
+  if(values.cache!==undefined&&values.cache!=='no-store')throw new TypeError('Invalid HTTP cache option');
   const url=requestPath(operation.path,values,operation.query),headers=new Headers({Accept:'application/json'}),context=options.context?.()??{};
   if(values.requestId!==undefined||values.requestScope!==undefined){
    if(typeof values.requestScope!=='string'||!values.requestScope||values.requestScope!==(context.receiptScope??context.scope))throw new HttpScopeChangedError();
@@ -65,13 +67,14 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
   if(context.scope!==undefined)headers.set('x-account-scope',context.scope);
   if(context.csrf!==undefined)headers.set('x-csrf-token',context.csrf);
   if(context.adminCsrf!==undefined)headers.set('x-admin-csrf',context.adminCsrf);
+  if(context.adminScope!==undefined)headers.set('x-admin-scope',context.adminScope);
   if(values.requestId!==undefined)headers.set('idempotency-key',z.string().uuid().parse(values.requestId));
   let body:string|undefined;
   if('body' in operation){body=JSON.stringify(operation.body.parse(values.body));headers.set('Content-Type','application/json');}
   else if(Object.hasOwn(values,'body'))throw new TypeError('This HTTP operation has no request body');
-  const result=await send(url,{method:operation.method,headers,body,signal:input.signal,credentials:'same-origin',redirect:'error'});
+  const result=await send(url,{method:operation.method,headers,body,signal:input.signal,credentials:'same-origin',redirect:'error',...input.cache?{cache:input.cache}:{}});
   if(!result.ok){
-   let value:unknown;try{value=await result.json();}catch{throw new HttpProtocolError(result.status);}
+   let value:unknown;try{value=await result.json();}catch{throw new HttpProtocolError(result.status,'unreadable-json');}
    const failure=ApiFailure.safeParse(value);if(!failure.success)throw new HttpProtocolError(result.status);
    throw new HttpApiError(result.status,failure.data.code,failure.data.message,failure.data.messageDisplay);
   }
@@ -80,7 +83,7 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
  return {
   async request<Key extends keyof typeof HttpOperations,T>(key:Key,input:HttpInput<Key>,schema:z.ZodType<T>):Promise<T>{
    const result=await response(key,input);let value:unknown;
-   try{value=await result.json();}catch{throw new HttpProtocolError(result.status);}
+   try{value=await result.json();}catch{throw new HttpProtocolError(result.status,'unreadable-json');}
    return schema.parse(value);
   },
   // Assets and attachment downloads keep their response stream; no JSON guess.

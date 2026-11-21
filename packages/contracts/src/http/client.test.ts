@@ -67,6 +67,15 @@ it('pins a separate receipt namespace without substituting it for the account or
  await client.request('POST /api/v2/admin/music/:id/pin',{params:{id:'synthetic'},body:{pin:'1234',revision:0,reason:'synthetic verification',confirm:true},requestId:'11111111-1111-4111-8111-111111111111',requestScope:'original-receipt-scope'},Ok);
  const headers=new Headers(captured!.headers);expect(headers.get('x-account-scope')).toBe('account-scope');expect(headers.get('x-csrf-token')).toBe('csrf');expect(headers.get('x-admin-csrf')).toBe('admin-csrf');
 });
+it('preserves an explicitly supplied original admin scope without inferring current administrative authority',async()=>{
+ let captured:RequestInit|undefined;const client=createHttpClient({context:()=>({scope:'account-scope',adminScope:'original-admin-scope'}),fetch:async(_url,init)=>{captured=init;return new Response('{"ok":true}');}});
+ await client.request('GET /api/v2/admin/operations/:key',{params:{key:'11111111-1111-4111-8111-111111111111'}},Ok);
+ const headers=new Headers(captured!.headers);expect(headers.get('x-account-scope')).toBe('account-scope');expect(headers.get('x-admin-scope')).toBe('original-admin-scope');expect(headers.has('x-admin-csrf')).toBe(false);expect(headers.has('idempotency-key')).toBe(false);
+});
+it.each(['reload','force-cache'])('rejects the unsupported %s cache mode before fetch',async cache=>{
+ let calls=0;const client=createHttpClient({fetch:async()=>{calls++;return new Response('{"ok":true}');}});
+ await expect(client.request('GET /api/v2/session',{cache} as never,Ok)).rejects.toBeInstanceOf(TypeError);expect(calls).toBe(0);
+});
 it('keeps generated routing metadata immutable',()=>{
  expect(Object.isFrozen(HttpOperations)).toBe(true);const operation=HttpOperations['GET /api/v2/session'];
  expect(Object.isFrozen(operation)).toBe(true);expect(Reflect.set(operation,'path','https://other.invalid')).toBe(false);expect(operation.path).toBe('/api/v2/session');

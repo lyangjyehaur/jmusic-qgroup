@@ -45,6 +45,13 @@ it.each(['unreadable success','wrong success shape','unreadable failure','wrong 
   expect(error).toBeInstanceOf(Error);expect(error).not.toBeInstanceOf(ApiError);expect(calls).toBe(1);
   if(mode==='network failure'){expect(error).toBe(network);expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',0,'network_error');}
   else{expect(error).toBeInstanceOf(mode==='wrong success shape'?z.ZodError:HttpProtocolError);expect(analyticsRequest).toHaveBeenCalledExactlyOnceWith('/api/v2/me/profile','PUT',mode.includes('failure')?409:200,'parse_error');}
+  if (mode !== 'network failure') {
+    const unreadable=mode.startsWith('unreadable'),wrongShape=mode==='wrong success shape';
+    // Literal display pairs are injected by the Vite build. Browser cases
+    // verify both languages; unbuilt unit source retains canonical text.
+    vi.stubGlobal('document',{documentElement:{lang:'zh-Hant'}});
+    expect(errorText(error)).toBe(unreadable?'伺服器回應無法讀取，請先核對結果後重試。':wrongShape?'回應資料格式不符，請先核對結果後重試。':'回應資料尚未核對，請先確認操作結果再重試。');
+  }
 });
 it('rejects a changed request scope before fetch and reports no server outcome',async()=>{
   let current=scope,calls=0;

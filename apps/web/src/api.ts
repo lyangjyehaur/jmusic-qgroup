@@ -1,27 +1,26 @@
 import { z } from 'zod';
-import { ApiFailure } from '@qgroup/contracts';
-import { analyticsRequest } from './analytics';
-import { displayError, withErrorText } from './language';
-export class ApiError extends Error {
-  constructor(public readonly status: number, public readonly code: string, message: string) { super(message); }
-}
-export function apiFailureError(status:number,failure:z.infer<typeof ApiFailure>) {
-  const error=new ApiError(status,failure.code,failure.message),pair=failure.messageDisplay;
-  return pair?withErrorText(error,pair.hans,pair.hant):error;
-}
-export async function api<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
-  const method=init?.method??'GET',fullPath='/api/v2'+path;
-  let response:Response;
-  try { response = await fetch(fullPath, { credentials: 'same-origin', ...init }); }
-  catch(error) { analyticsRequest(fullPath,method,0,'network_error');throw error instanceof Error?displayError(error,'連線未完成，請先核對結果後重試。'):error; }
-  let body:unknown;
-  try { body=await response.json(); } catch(error) { analyticsRequest(fullPath,method,response.status,'parse_error');throw error instanceof Error?displayError(error,'伺服器回應無法讀取，請先核對結果後重試。'):error; }
-  if (!response.ok) {
-    const failure = ApiFailure.safeParse(body);
-    analyticsRequest(fullPath,method,response.status,'rejected');
-    if (failure.success) throw apiFailureError(response.status, failure.data);
-    throw new ApiError(response.status, 'UNKNOWN_ERROR', '暫時無法讀取資料');
+import { displayError } from './language';
+import { createWebHttpClient } from './http';
+import { resolveApiRequest } from './http-path';
+export { ApiError, apiFailureError } from './api-errors';
+
+function request(path: string, init?: RequestInit) {
+  try { return resolveApiRequest(path, init); }
+  catch (error) {
+    throw error instanceof Error ? displayError(error, '操作資料無法驗證，請核對原操作後再繼續。') : error;
   }
-  try { const result=schema.parse(body);analyticsRequest(fullPath,method,response.status,'success');return result; }
-  catch(error) { analyticsRequest(fullPath,method,response.status,'parse_error');throw error instanceof z.ZodError?displayError(error,'回應資料格式不符，請先核對結果後重試。'):error; }
+}
+
+/** Existing path callers share the same transport as fixed operation callers.
+ * Callers retain their drafts, request IDs, result schemas and recovery flows. */
+export async function api<T>(path: string, schema: z.ZodType<T>, init?: RequestInit): Promise<T> {
+  const resolved = request(path, init);
+  return createWebHttpClient({ context: () => resolved.context }).request(resolved.key, resolved.input, schema);
+}
+
+/** Keep successful attachment bodies as streams; the caller checks MIME and
+ * authority before creating a visible image or a downloadable object URL. */
+export async function apiRaw(path: string, init?: RequestInit): Promise<Response> {
+  const resolved = request(path, init);
+  return createWebHttpClient({ context: () => resolved.context }).requestRaw(resolved.key, resolved.input);
 }
