@@ -6,8 +6,9 @@ import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { z } from 'zod';
 import { MusicShouts,MusicShout,Profile,PublishMusicShout,PublishedMusicShout } from '@qgroup/contracts';
 import { musicText } from '@qgroup/domain';
-import { api,ApiError } from './api';
-import { authHeaders } from './auth';
+import { ApiError } from './api';
+import { authHttp } from './auth';
+import { scopedHttp } from './http';
 import { MusicMemberAccess,type Member } from './member-access';
 import { Failure,Notice,PageIntro } from './shared';
 import { announceAccountChange } from './account-session';
@@ -26,8 +27,8 @@ export function MusicShoutsPage({history=false}:{history?:boolean}){
 function Shouts({viewer,history}:{viewer:Member;history:boolean}){
   const location=useLocation(),[params,setParams]=useSearchParams(),raw=params.get('offset'),[denied,setDenied]=useState(false);
   const offset=raw&&/^\d+$/.test(raw)&&Number(raw)<=1000000?Number(raw):0;
-  const query=useQuery({queryKey:['private',viewer.scope,'music-shouts',viewer.musicEpoch,history,offset],queryFn:({signal})=>api('/music/shouts'+(history?'/history':'')+'?offset='+offset+'&limit=10',MusicShouts,{signal,headers:{'X-Account-Scope':viewer.scope}}),refetchOnMount:'always',refetchInterval:30000});
-  const profile=useQuery({queryKey:['private',viewer.scope,'music',viewer.musicEpoch],queryFn:()=>api('/me/music',Profile,{headers:{'X-Account-Scope':viewer.scope}})});
+  const query=useQuery({queryKey:['private',viewer.scope,'music-shouts',viewer.musicEpoch,history,offset],queryFn:({signal})=>scopedHttp(viewer.scope).request(history?'GET /api/v2/music/shouts/history':'GET /api/v2/music/shouts',{signal,query:{offset,limit:10}},MusicShouts),refetchOnMount:'always',refetchInterval:30000});
+  const profile=useQuery({queryKey:['private',viewer.scope,'music',viewer.musicEpoch],queryFn:()=>scopedHttp(viewer.scope).request('GET /api/v2/me/music',{},Profile)});
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
   return <>{query.isPending||!query.isFetchedAfterMount?<Notice>正在讀取找搭子…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
     {!history&&profile.data&&<Compose key={profile.data.id} viewer={viewer} profileId={profile.data.id} nextAllowedAt={query.data.nextAllowedAt} serverTime={query.data.now} onDenied={()=>setDenied(true)}/>}
@@ -59,7 +60,7 @@ function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Me
     try{
       if(!await persist(pending,false,uiText("無法保存原稿及操作編號，尚未發布。"))||!active.current)return;
       replace(pending);
-      await api('/me/music/shouts',PublishedMusicShout,{method:'POST',headers:{...authHeaders(viewer),'Idempotency-Key':operation.key},body:JSON.stringify(operation.input),signal:cancel.current.signal});accepted=true;
+      await authHttp(viewer).request('POST /api/v2/me/music/shouts',{body:operation.input,requestId:operation.key,requestScope:viewer.scope,signal:cancel.current.signal},PublishedMusicShout);accepted=true;
       if(!active.current||!await persist({text:''},false,uiText("已發布，但無法保存本機確認狀態；請保留原操作並核對結果。"))||!active.current)return;
       replace({text:''});setMessage(uiText("已發布。"));
       void client.invalidateQueries({queryKey:['private',viewer.scope,'music-shouts']});announceAccountChange();
@@ -88,7 +89,7 @@ export function MusicShoutPage(){
   return <><PageIntro title="找搭子詳情"/><Link className="back" to={back}>{back.startsWith('/people/shouts/history')?'回到找搭子歷史':'回到找搭子'}</Link><MusicMemberAccess purpose={uiText("查看找搭子")}>{viewer=><ShoutDetail key={viewer.scope+':'+viewer.musicEpoch+':'+id} viewer={viewer} id={id}/>}</MusicMemberAccess></>;
 }
 function ShoutDetail({viewer,id}:{viewer:Member;id:string}){
-  const location=useLocation(),query=useQuery({queryKey:['private',viewer.scope,'music-shout',viewer.musicEpoch,id],queryFn:({signal})=>api('/music/shouts/'+encodeURIComponent(id),MusicShout,{signal,headers:{'X-Account-Scope':viewer.scope}}),refetchOnMount:'always',refetchInterval:30000});
+  const location=useLocation(),query=useQuery({queryKey:['private',viewer.scope,'music-shout',viewer.musicEpoch,id],queryFn:({signal})=>scopedHttp(viewer.scope).request('GET /api/v2/music/shouts/:id',{signal,params:{id}},MusicShout),refetchOnMount:'always',refetchInterval:30000});
   return query.isPending||!query.isFetchedAfterMount?<Notice>正在讀取找搭子…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Surface className="shout-card" role="region" aria-label="找搭子內容">
     <Text className="shout-body">{query.data.text}</Text><Text>{query.data.name} · {shoutDate(query.data.createdAt)}</Text><Text>{query.data.archivedAt===null?'有效至 '+shoutDate(query.data.expiresAt):'已歸檔 · '+shoutDate(query.data.archivedAt)}</Text>
     <CopyMusicValue value={query.data.text} label="找搭子內容"/>{query.data.author?<><Link className="back" to={'/people/'+query.data.author.id+'?'+new URLSearchParams({from:location.pathname+location.search})}>查看發布者成分</Link><ContactValue number={query.data.author.contactQQ} source={query.data.author.contactSource}/><Text size="sm">固定成分 ID：{query.data.author.id}</Text><CopyMusicValue value={query.data.author.id} label="成分 ID"/></>:<Text>發布者成分已不存在，無法提供目前聯絡資料。</Text>}

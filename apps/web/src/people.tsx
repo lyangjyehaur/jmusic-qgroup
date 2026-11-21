@@ -4,7 +4,8 @@ import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'reac
 import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text, TextField } from 'yahha-ui';
 import { MusicComparison, MemberMusicProfile } from '@qgroup/contracts';
-import { api } from './api';
+import { authHttp } from './auth';
+import { scopedHttp } from './http';
 import { MusicMemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { ContactValue } from './music-contact-value';
@@ -18,9 +19,8 @@ function Lookup({ viewer }: { viewer: Member }) {
   async function find(compare = false) {
     setBusy(true); setError('');
     try {
-      const init = { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf }, body: JSON.stringify({ query }) };
-      const id = compare ? (await api('/music/compare', MusicComparison, init)).other.id
-        : (await api('/music/profiles/lookup', MemberMusicProfile, init)).id;
+      const id = compare ? (await authHttp(viewer).request('POST /api/v2/music/compare', { body: { query } }, MusicComparison)).other.id
+        : (await authHttp(viewer).request('POST /api/v2/music/profiles/lookup', { body: { query } }, MemberMusicProfile)).id;
       navigate('/people/' + id + (compare ? '/compare' : ''));
     }
     catch (failure) { setError(failure instanceof Error ? errorText(failure) : uiText("查詢失敗")); } finally { setBusy(false); }
@@ -40,7 +40,7 @@ export function PersonMusic() {
 function Person({ viewer, id }: { viewer: Member; id: string }) {
   const location = useLocation(), [params] = useSearchParams(), back = peopleReturn(params.get('from')) ?? musicTrendReturn(params.get('from')) ?? musicCircleReturn(params.get('from')) ?? musicShoutReturn(params.get('from'));
   const profile = useQuery({ queryKey: ['private', viewer.scope, 'member-music', viewer.musicEpoch, id],
-    queryFn: ({ signal }) => api('/music/profiles/' + encodeURIComponent(id), MemberMusicProfile, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always' });
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/profiles/:id', { signal, params: { id } }, MemberMusicProfile), refetchOnMount: 'always' });
   if (profile.isPending || !profile.isFetchedAfterMount) return <Notice>正在讀取成分…</Notice>;
   if (profile.error) return <Failure error={profile.error} retry={() => void profile.refetch()} />;
   return <Surface className="detail auth-panel"><Heading level={2}>{profile.data.name}</Heading><Text>固定成分 ID：{profile.data.id}</Text>

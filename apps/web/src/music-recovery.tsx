@@ -5,8 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { MusicClaimStatus, QQStartResult, StartMusicClaim, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
-import { authHeaders } from './auth';
+import { ApiError } from './api';
+import { authHttp } from './auth';
+import { scopedHttp } from './http';
 import { announceAccountChange } from './account-session';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { MusicRecoveryRecord as Draft } from './music-recovery-record';
@@ -30,7 +31,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
   useEffect(()=>{setDownloaded(false);},[damaged]);
   useEffect(()=>{if(record.expired){setPin('');setConsent(false);setConfirm(false);}},[record.expired]);
   const queryKey=['private',viewer.scope,'music-claim',pending?.requestId??'current'];
-  const claim=useQuery({queryKey,enabled:!blocked,queryFn:async({signal})=>{const result=await api('/music/claim'+(pending?'?'+new URLSearchParams({requestId:pending.requestId}):''),MusicClaimStatus,{headers:{'X-Account-Scope':viewer.scope},signal});if(pending)check(result,pending);return result;},refetchOnWindowFocus:'always'});
+  const claim=useQuery({queryKey,enabled:!blocked,queryFn:async({signal})=>{const result=await scopedHttp(viewer.scope).request('GET /api/v2/music/claim',{query:{requestId:pending?.requestId},signal},MusicClaimStatus);if(pending)check(result,pending);return result;},refetchOnWindowFocus:'always'});
   const status=claim.data;
   useEffect(()=>{if(status&&status.status!=='none'&&!pending?.action)setUncertain(false);},[claim.dataUpdatedAt]);
   function check(result:z.infer<typeof MusicClaimStatus>,operation:z.infer<typeof Draft>){if(result.status!=='none'&&(result.claimId!==operation.requestId||result.legacyQQ&&result.legacyQQ!==operation.legacyQQ))throw Error('找回回執與原操作不符，請保留紀錄後核對。');}
@@ -46,7 +47,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
     if(blocked||denied||!begin())return;setPin('');setConfirm(false);setMessage('');
     try{
       if(!await persist(pending)||!active.current)return;
-      const result=await api('/music/claim'+(pending?'?'+new URLSearchParams({requestId:pending.requestId}):''),MusicClaimStatus,{headers:{'X-Account-Scope':viewer.scope},signal:cancel.current.signal});
+      const result=await scopedHttp(viewer.scope).request('GET /api/v2/music/claim',{query:{requestId:pending?.requestId},signal:cancel.current.signal},MusicClaimStatus);
       if(!active.current)return;if(pending)check(result,pending);update(result,pending?.requestId);
       if(pending&&(result.status==='completed'||pending.action==='cancel'&&result.status==='none')){if(await complete(result))setMessage(result.status==='completed'?uiText("已關聯原成分。"):uiText("已取消找回，原成分與目前帳號均保留。"));}
       else{setUncertain(false);setMessage(uiText("已重新核對找回狀態；尚未建立關聯時可輸入原口令安全重試。"));}
@@ -61,7 +62,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
     try{
       if(!await persist(operation,false,uiText("無法保存找回操作編號，尚未送出口令。"))||!active.current)return;
       setPending(operation);
-      const result=await api('/music/claim/start',MusicClaimStatus,{method:'POST',headers:authHeaders(viewer),body:JSON.stringify(parsed.data),signal:cancel.current.signal});accepted=true;
+      const result=await authHttp(viewer).request('POST /api/v2/music/claim/start',{body:parsed.data,signal:cancel.current.signal},MusicClaimStatus);accepted=true;
       if(!active.current)return;check(result,operation);if(result.status==='none')throw Error('missing claim');update(result,operation.requestId);setPin('');setConsent(false);setUncertain(false);
     }catch(error){if(!active.current)return;setPin('');setConsent(false);failed(error);
       if(!accepted&&error instanceof ApiError&&error.status<500&&![401,429].includes(error.status)&&error.code!=='ACCOUNT_CHANGED'){
@@ -75,7 +76,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
     try{
       if(pending)check(status,pending);
       if(!await persist(operation)||!active.current)return;setPending(operation);
-      const result=await api('/auth/qq/start',QQStartResult,{method:'POST',headers:authHeaders(viewer),body:JSON.stringify({mode:viewer.authenticated?'bind':'login',confirm:true,musicClaimId:operation.requestId,returnTo:'/me/music/recover',acceptPrivacy:privacy,privacyVersion:viewer.privacyVersion}),signal:cancel.current.signal});
+      const result=await authHttp(viewer).request('POST /api/v2/auth/qq/start',{body:{mode:viewer.authenticated?'bind':'login',confirm:true,musicClaimId:operation.requestId,returnTo:'/me/music/recover',acceptPrivacy:privacy,privacyVersion:viewer.privacyVersion},signal:cancel.current.signal},QQStartResult);
       if(active.current)window.location.assign(result.authorizeUrl);
     }catch(error){if(active.current){failed(error);setMessage(error instanceof Error?errorText(error):uiText("無法開始 QQ 授權"));}}finally{if(active.current)setBusy(false);}
   }
@@ -85,7 +86,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
     try{
       if(pending)check(status,pending);
       if(!await persist(operation)||!active.current)return;setPending(operation);setConfirm(false);
-      const result=await api('/music/claim/'+action,MusicClaimStatus,{method:'POST',headers:authHeaders(viewer),body:JSON.stringify({claimId:operation.requestId,confirm:true}),signal:cancel.current.signal});
+      const result=await authHttp(viewer).request(action==='finish'?'POST /api/v2/music/claim/finish':'POST /api/v2/music/claim/cancel',{body:{claimId:operation.requestId,confirm:true},signal:cancel.current.signal},MusicClaimStatus);
       if(!active.current)return;check(result,operation);
       if(action==='finish'&&result.status!=='completed'||action==='cancel'&&result.status!=='none'&&result.status!=='completed')throw Error('unexpected claim result');
       if(await complete(result))setMessage(result.status==='completed'?uiText("已關聯原成分。"):uiText("已取消找回，原成分與目前帳號均保留。"));

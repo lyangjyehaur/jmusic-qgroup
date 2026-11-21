@@ -7,6 +7,8 @@ import { displayError } from './language';
 type Key = keyof typeof HttpOperations;
 type Client = ReturnType<typeof createHttpClient>;
 
+export const scopedHttp = (scope: string) => createWebHttpClient({ context: () => ({ scope }) });
+
 /** Keep the UI's error and analytics boundaries around the shared transport.
  * Drafts, request identity, permission checks and recovery stay with the caller. */
 export function createWebHttpClient(options: { fetch?: typeof fetch; context?: () => HttpContext } = {}) {

@@ -6,7 +6,7 @@ import type { z } from 'zod';
 import { MusicMatches, MusicComparison } from '@qgroup/contracts';
 import { peopleReturn, musicTrendReturn, musicCircleReturn, musicShoutReturn } from './music-return';
 import { useMusicMatchSort } from './music-match-sort';
-import { api } from './api';
+import { scopedHttp } from './http';
 import { MusicMemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { ContactValue } from './music-contact-value';
@@ -15,7 +15,7 @@ import { ComparedPicks, MatchStats } from './music-match-view';
 export function MusicRecommendations({ viewer }: { viewer: Member }) {
   const { sort, change } = useMusicMatchSort();
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-matches', viewer.musicEpoch, sort],
-    queryFn: ({ signal }) => api('/music/matches?sort=' + sort, MusicMatches, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always', refetchInterval: 10000 });
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/matches', { signal, query: { sort } }, MusicMatches), refetchOnMount: 'always', refetchInterval: 10000 });
   return <section aria-label="同好推薦" className="music-recommendations"><Heading level={2}>同好推薦</Heading>
     <label className="match-sort">排序<select aria-label="排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}>
       <option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option>
@@ -56,7 +56,7 @@ export function MusicComparisonPage() {
 }
 function Comparison({ viewer, id }: { viewer: Member; id: string }) {
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-comparison', viewer.musicEpoch, id],
-    queryFn: ({ signal }) => api('/music/profiles/' + encodeURIComponent(id) + '/comparison', MusicComparison, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always', refetchInterval: 10000 });
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/profiles/:id/comparison', { signal, params: { id } }, MusicComparison), refetchOnMount: 'always', refetchInterval: 10000 });
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在比較成分…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   const result = query.data;

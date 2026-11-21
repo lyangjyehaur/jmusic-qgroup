@@ -5,8 +5,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { EraseData, ErasureResult, PrivacySummary, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
-import { authHeaders, loginLink } from './auth';
+import { ApiError } from './api';
+import { authHttp, loginLink } from './auth';
+import { createWebHttpClient, scopedHttp } from './http';
 import { announceAccountChange, announceMusicErasure, clearDeviceDrafts } from './account-session';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 import { MemberErasure, type MemberErasureValue } from './erasure-record';
@@ -56,7 +57,7 @@ export function MyPrivacy() {
       await record.assertCurrent();
       if (!record.active.current) return;
       sent = true;
-      const done = await api('/me/privacy/erase', ErasureResult, { method: 'POST', headers: authHeaders(current), body: JSON.stringify(original.input) });
+      const done = await authHttp(current).request('POST /api/v2/me/privacy/erase', { body: original.input }, ErasureResult);
       await finished(done, original);
     } catch (failure) {
       if (!record.active.current) return;
@@ -72,7 +73,7 @@ export function MyPrivacy() {
     try {
       await record.assertCurrent();
       if (!record.active.current) return;
-      const done = await api('/privacy/receipt', ErasureResult, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ requestId: original.input.requestId, secret: original.input.secret }) });
+      const done = await createWebHttpClient().request('POST /api/v2/privacy/receipt', { body: { requestId: original.input.requestId, secret: original.input.secret } }, ErasureResult);
       await finished(done, original);
     } catch (failure) {
       if (!record.active.current) return;
@@ -94,7 +95,7 @@ export function MyPrivacy() {
   </>;
 }
 function PrivacyOptions({ viewer, busy, submit }: { viewer: Extract<Viewer, { authenticated: true }>; busy: boolean; submit: (value: PendingValue) => void }) {
-  const summary = useQuery({ queryKey: ['private', viewer.scope, 'privacy'], queryFn: () => api('/me/privacy', PrivacySummary, { headers: { 'X-Account-Scope': viewer.scope } }) });
+  const summary = useQuery({ queryKey: ['private', viewer.scope, 'privacy'], queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/privacy', {}, PrivacySummary) });
   const [target, setTarget] = useState<'music' | 'account' | 'both'>('music');
   const [confirmed, setConfirmed] = useState(false);
   if (summary.isPending) return <Notice>正在確認資料範圍…</Notice>;

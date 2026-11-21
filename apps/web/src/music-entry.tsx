@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { MusicCatalog, MusicEntryMembers } from '@qgroup/contracts';
 import type { z } from 'zod';
-import { api } from './api';
+import { createWebHttpClient, scopedHttp } from './http';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicMemberAccess, type Member } from './member-access';
 import { categoryLabel } from './music-entries';
@@ -54,8 +54,8 @@ export function MusicEntryDetails({ entry, close }: {
 }
 function EntryMembers({ viewer, id, returnTo }: { viewer: Member; id: string; returnTo: string }) {
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-entry-members', viewer.musicEpoch, id],
-    queryFn: ({ signal }) => api('/music/entries/' + encodeURIComponent(id) + '/members', MusicEntryMembers,
-      { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always' });
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/entries/:id/members',
+      { signal, params: { id } }, MusicEntryMembers), refetchOnMount: 'always' });
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在讀取選取者…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   if (!query.data.members.length) return <Notice>尚無人選用此詞條。</Notice>;
@@ -71,7 +71,7 @@ function EntryMembers({ viewer, id, returnTo }: { viewer: Member; id: string; re
 }
 export function MusicEntryPage() {
   const { id = '' } = useParams(), [params] = useSearchParams(), workspace = useMusicWorkspace();
-  const query = useQuery({ queryKey: ['music-catalog'], queryFn: () => api('/music/catalog', MusicCatalog) });
+  const query = useQuery({ queryKey: ['music-catalog'], queryFn: () => createWebHttpClient().request('GET /api/v2/music/catalog', {}, MusicCatalog) });
   const entry = query.data?.entries.find(value => value.id === id);
   const back = new URLSearchParams(params); back.delete('entry');
   const selection = workspace.state === 'ready' ? workspace.selection : null;

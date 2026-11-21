@@ -6,7 +6,7 @@ import { Heading, Surface, Text } from 'yahha-ui';
 import { MusicTrend, MusicTrendMembers } from '@qgroup/contracts';
 import { musicTrendSeries } from '@qgroup/domain';
 import type { z } from 'zod';
-import { api } from './api';
+import { createWebHttpClient, scopedHttp } from './http';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicMemberAccess, type Member } from './member-access';
 import { useMusicWorkspace } from './music-selection';
@@ -21,7 +21,7 @@ function Created({ time }: { time: number | null }) {
   return time && validDate(time) ? <time dateTime={new Date(time * 1000).toISOString()}>{date(time)}</time> : <>時間未記錄</>;
 }
 export function MusicTrendPage() {
-  const query = useQuery({ queryKey: ['music-trend'], queryFn: ({ signal }) => api('/music/trend', MusicTrend, { signal }), refetchInterval: 30000, refetchOnMount: 'always' });
+  const query = useQuery({ queryKey: ['music-trend'], queryFn: ({ signal }) => createWebHttpClient().request('GET /api/v2/music/trend', { signal }, MusicTrend), refetchInterval: 30000, refetchOnMount: 'always' });
   const workspace = useMusicWorkspace(), selection = workspace.state === 'ready' ? workspace.selection : null, location = useLocation();
   const back = '/music' + location.search, from = new URLSearchParams(location.search); from.set('from', '/music/trends' + location.search);
   const entryPath = (id: string) => musicEntryPath(id, from.toString());
@@ -44,7 +44,7 @@ export function MusicTrendPage() {
 function RecentMembers({ viewer }: { viewer: Member }) {
   const location = useLocation();
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-trend-members', viewer.musicEpoch],
-    queryFn: ({ signal }) => api('/music/trend/members', MusicTrendMembers, { signal, headers: { 'X-Account-Scope': viewer.scope } }), refetchOnMount: 'always', refetchInterval: 30000 });
+    queryFn: ({ signal }) => scopedHttp(viewer.scope).request('GET /api/v2/music/trend/members', { signal }, MusicTrendMembers), refetchOnMount: 'always', refetchInterval: 30000 });
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在讀取新增同好…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   return query.data.members.length ? <ul className="music-entry-members">{query.data.members.map(member => <li key={member.id}>
