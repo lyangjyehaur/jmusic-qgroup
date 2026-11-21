@@ -2137,20 +2137,29 @@
         "apps/web/src/activity-rooms.tsx",
         "packages/contracts/src/activity-rooms.ts",
         "apps/api/src/activity-room-overview.ts",
-        "apps/web/src/activity-room-overview.tsx"
+        "apps/web/src/activity-room-overview.tsx",
+        "apps/api/src/room-plan-command.ts",
+        "apps/api/src/legacy-rooms.ts",
+        "packages/contracts/src/legacy-rooms.ts",
+        "apps/web/src/legacy-rooms-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/music-rooms.test.ts"
+        "apps/api/src/music-rooms.test.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/legacy-rooms.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2159,7 +2168,9 @@
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -2177,20 +2188,29 @@
         "apps/web/src/activity-rooms.tsx",
         "packages/contracts/src/activity-rooms.ts",
         "apps/api/src/activity-room-overview.ts",
-        "apps/web/src/activity-room-overview.tsx"
+        "apps/web/src/activity-room-overview.tsx",
+        "apps/api/src/room-plan-command.ts",
+        "apps/api/src/legacy-rooms.ts",
+        "packages/contracts/src/legacy-rooms.ts",
+        "apps/web/src/legacy-rooms-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/music-rooms.test.ts"
+        "apps/api/src/music-rooms.test.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/legacy-rooms.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2199,7 +2219,9 @@
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -2248,20 +2270,29 @@
         "apps/web/src/activity-rooms.tsx",
         "packages/contracts/src/activity-rooms.ts",
         "apps/api/src/activity-room-overview.ts",
-        "apps/web/src/activity-room-overview.tsx"
+        "apps/web/src/activity-room-overview.tsx",
+        "apps/api/src/room-plan-command.ts",
+        "apps/api/src/legacy-rooms.ts",
+        "packages/contracts/src/legacy-rooms.ts",
+        "apps/web/src/legacy-rooms-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/music-rooms.test.ts"
+        "apps/api/src/music-rooms.test.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/legacy-rooms.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2270,7 +2301,9 @@
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -6830,7 +6863,11 @@
         "apps/web/src/legacy-finance-recovery.tsx",
         "apps/web/src/finance-details.tsx",
         "apps/web/src/legacy-local-import.ts",
-        "apps/web/src/legacy-local-codec.ts"
+        "apps/web/src/legacy-local-codec.ts",
+        "apps/api/src/room-plan-command.ts",
+        "apps/api/src/legacy-rooms.ts",
+        "packages/contracts/src/legacy-rooms.ts",
+        "apps/web/src/legacy-rooms-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -6872,7 +6909,9 @@
         "apps/api/testsupport/legacy-settlement.test.ts",
         "apps/api/src/legacy-finance.test.ts",
         "apps/web/src/legacy-local-import.test.ts",
-        "apps/web/tests/legacy-import.spec.ts"
+        "apps/web/tests/legacy-import.spec.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -6909,7 +6948,8 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/api/src/legacy-finance.test.ts",
         "apps/web/src/legacy-local-import.test.ts",
-        "apps/web/tests/legacy-import.spec.ts"
+        "apps/web/tests/legacy-import.spec.ts",
+        "apps/api/src/legacy-rooms.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -6940,7 +6980,9 @@
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/api/src/legacy-finance.test.ts",
-        "apps/web/tests/legacy-import.spec.ts"
+        "apps/web/tests/legacy-import.spec.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
@@ -6992,10 +7034,12 @@
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-import.spec.ts",
-        "docs/unified-rebuild/203-legacy-draft-import-checkpoint.md"
+        "docs/unified-rebuild/203-legacy-draft-import-checkpoint.md",
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原 kanban-local-v1 的同源保全、原 scope／ID／版本／圖片、六種草稿轉換、原財務請求恢復、持久原稿與原操作查回均有隔離證據。第 203 號補齊既有下載格式的同帳號重新匯入、strict commit、去重、登出世代／離頁／切帳號封鎖及明確恢復。其他舊命令的精確 adapters、失效／未知或不同意圖競爭資料分類與明確退休、來源及目的版本退休後查回、其餘未映射領域與特殊授權的無損轉換、完整匯出／匯入、實際裝置／QQ WebView、正式來源對帳、候選 web／bot 實際組合與新寫入回退成套驗收仍待完成。"
+      "remaining": "原 kanban-local-v1 的同源保全、原 scope／ID／版本／圖片、六種草稿轉換、原財務與包間請求恢復、持久原稿與原操作查回均有隔離證據。第 203 號補齊既有下載格式的同帳號重新匯入、strict commit、去重、登出世代／離頁／切帳號封鎖及明確恢復。第 204 號補齊原包間請求核對、原編號重試與回執／本機去重；其他舊命令的精確 adapters、失效／未知或不同意圖競爭資料分類與明確退休、來源及目的版本退休後查回、其餘未映射領域與特殊授權的無損轉換、完整匯出／匯入、實際裝置／QQ WebView、正式來源對帳、候選 web／bot 實際組合與新寫入回退成套驗收仍待完成。"
     },
     {
       "capability_id": "O05",
@@ -7081,7 +7125,11 @@
         "apps/web/src/legacy-finance-recovery.tsx",
         "apps/web/src/finance-details.tsx",
         "apps/web/src/legacy-local-import.ts",
-        "apps/web/src/legacy-local-codec.ts"
+        "apps/web/src/legacy-local-codec.ts",
+        "apps/api/src/room-plan-command.ts",
+        "apps/api/src/legacy-rooms.ts",
+        "packages/contracts/src/legacy-rooms.ts",
+        "apps/web/src/legacy-rooms-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -7125,7 +7173,9 @@
         "apps/api/testsupport/legacy-settlement.test.ts",
         "apps/api/src/legacy-finance.test.ts",
         "apps/web/src/legacy-local-import.test.ts",
-        "apps/web/tests/legacy-import.spec.ts"
+        "apps/web/tests/legacy-import.spec.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7163,7 +7213,8 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/api/src/legacy-finance.test.ts",
         "apps/web/src/legacy-local-import.test.ts",
-        "apps/web/tests/legacy-import.spec.ts"
+        "apps/web/tests/legacy-import.spec.ts",
+        "apps/api/src/legacy-rooms.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7196,7 +7247,9 @@
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/api/src/legacy-finance.test.ts",
-        "apps/web/tests/legacy-import.spec.ts"
+        "apps/web/tests/legacy-import.spec.ts",
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/web/tests/legacy-rooms-request.spec.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -7251,10 +7304,12 @@
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-import.spec.ts",
-        "docs/unified-rebuild/203-legacy-draft-import-checkpoint.md"
+        "docs/unified-rebuild/203-legacy-draft-import-checkpoint.md",
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原 kanban-local-v1 的同源保全、原 scope／ID／版本／圖片、六種草稿轉換、原財務請求恢復、持久原稿與原操作查回均有隔離證據。第 203 號補齊既有下載格式的同帳號重新匯入、strict commit、去重、登出世代／離頁／切帳號封鎖及明確恢復。其他舊命令的精確 adapters、失效／未知或不同意圖競爭資料分類與明確退休、來源及目的版本退休後查回、其餘未映射領域與特殊授權的無損轉換、完整匯出／匯入、實際裝置／QQ WebView、正式來源對帳、候選 web／bot 實際組合與新寫入回退成套驗收仍待完成。"
+      "remaining": "原 kanban-local-v1 的同源保全、原 scope／ID／版本／圖片、六種草稿轉換、原財務與包間請求恢復、持久原稿與原操作查回均有隔離證據。第 203 號補齊既有下載格式的同帳號重新匯入、strict commit、去重、登出世代／離頁／切帳號封鎖及明確恢復。第 204 號補齊原包間請求核對、原編號重試與回執／本機去重；其他舊命令的精確 adapters、失效／未知或不同意圖競爭資料分類與明確退休、來源及目的版本退休後查回、其餘未映射領域與特殊授權的無損轉換、完整匯出／匯入、實際裝置／QQ WebView、正式來源對帳、候選 web／bot 實際組合與新寫入回退成套驗收仍待完成。"
     },
     {
       "capability_id": "O06",

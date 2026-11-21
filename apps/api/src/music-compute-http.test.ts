@@ -8,7 +8,7 @@ import { createApp } from './app';
 import * as roomJobs from './music-room-jobs';
 
 const cleanup: (() => Promise<void>)[] = [];
-afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); vi.restoreAllMocks(); });
+afterEach(async () => { vi.useRealTimers(); for (const close of cleanup.splice(0).reverse()) await close(); vi.restoreAllMocks(); });
 async function setup() {
   const db = openDatabase(':memory:'); fixture(db); musicCircleFixture(db);
   const app = createApp({ db, origin: 'https://rebuild.example' }); await app.ready();
@@ -29,30 +29,46 @@ function snapshot(db: ReturnType<typeof openDatabase>) {
 /** Hold actual worker completion events at the parent boundary. Results and
  * exits come from native threads; no fake result or runtime hook is installed. */
 function holdResults(count: number) {
-  const original = Worker.prototype.emit, held = new Set<Worker>();
-  const events: [Worker, string | symbol, unknown[]][] = [];
-  let seen!: () => void;
+  const original = Worker.prototype.emit, held = new Set<Worker>(), exits = new Set<Worker>(), nativeExits = new Set<Worker>();
+  const events: [Worker, unknown[], ReturnType<Worker['rawListeners']>][] = [];
+  let seen!: () => void, stopped!: () => void, nativeStopped!: () => void;
+  const nativeExited = new Promise<void>(resolve => { nativeStopped = resolve; });
+  const exited = new Promise<void>(resolve => { stopped = resolve; });
   const started = new Promise<void>(resolve => { seen = resolve; });
   const spy = vi.spyOn(Worker.prototype, 'emit').mockImplementation(function (this: Worker, event: string | symbol, ...args: unknown[]) {
     const message = args[0] as { ok?: boolean; result?: { sourceVersion?: string; membersWithSelection?: number } } | undefined;
-    if (event === 'message' && message?.ok && (message.result?.sourceVersion || message.result?.membersWithSelection)) held.add(this);
+    if (event === 'message' && message?.ok && (message.result?.sourceVersion || message.result?.membersWithSelection) && !held.has(this)) {
+      held.add(this);
+      this.once('exit', () => { exits.add(this); if (exits.size >= count) stopped(); });
+    }
     if (held.has(this) && (event === 'message' || event === 'exit')) {
-      events.push([this, event, args]);
+      // Native Worker exit cleanup removes listeners even when emit is held.
+      // Preserve the callbacks belonging to this real event for later delivery.
+      events.push([this, args, this.rawListeners(event)]);
+      if (event === 'exit') { nativeExits.add(this); if (nativeExits.size >= count) nativeStopped(); }
       if (held.size >= count) seen();
       return true;
     }
     return original.call(this, event, ...args);
   });
-  const release = () => { spy.mockRestore(); for (const [worker, event, args] of events.splice(0)) original.call(worker, event, ...args); };
+  const release = () => {
+    spy.mockRestore();
+    for (const [worker, args, listeners] of events.splice(0)) for (const listener of listeners) listener.apply(worker, args);
+  };
   cleanup.push(async () => { release(); });
-  return { started, release };
+  return { started, nativeExited, exited, release, listenersRemoved: () => [...held].every(worker => !worker.rawListeners('message').length && !worker.rawListeners('exit').length) };
 }
 for (const kind of ['circles', 'rooms'] as const) it(kind + ': API saturation rejects both features, preserves auth checks and data, and leaves health available', async () => {
-  const s = await setup(), before = snapshot(s.db), gate = holdResults(2);
+  const s = await setup(), before = snapshot(s.db);
+  // Only the test's held parent events pause timeout scheduling. Native threads
+  // and their results/exits remain real; deadline behavior has separate clock-driven tests.
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+  const gate = holdResults(2);
   const request = () => kind === 'circles'
     ? s.app.inject({ url: '/api/v2/music/circles', headers: s.headers })
     : s.app.inject({ method: 'POST', url: '/api/v2/music/rooms/calculate', headers: s.headers, payload: s.payload });
-  const first = request(), second = request(); await gate.started;
+  const first = request(), second = request(); await gate.started; await gate.nativeExited;
+  expect(gate.listenersRemoved()).toBe(true);
   const reads = vi.spyOn(s.db, 'prepare');
   expect((await s.app.inject({ url: '/api/v2/music/circles', headers: s.headers })).json()).toMatchObject({ code: 'CIRCLE_BUSY' });
   expect((await s.app.inject({ method: 'POST', url: '/api/v2/music/rooms/calculate', headers: s.headers, payload: s.payload })).json()).toMatchObject({ code: 'ROOM_BUSY' });
@@ -61,8 +77,9 @@ for (const kind of ['circles', 'rooms'] as const) it(kind + ': API saturation re
   expect((await s.app.inject('/api/v2/health')).statusCode).toBe(200);
   expect(reads.mock.calls.map(([sql]) => sql).some(sql => /FROM music_entries|FROM music_selections/.test(sql))).toBe(false);
   reads.mockRestore();
-  gate.release();
-  expect((await first).statusCode).toBe(200); expect((await second).statusCode).toBe(200);
+  gate.release(); await gate.exited;
+  expect((await first).statusCode, (await first).body).toBe(200); expect((await second).statusCode, (await second).body).toBe(200);
+  vi.useRealTimers();
   expect((await s.app.inject({ method: 'POST', url: '/api/v2/music/rooms/calculate', headers: s.headers, payload: s.payload })).statusCode).toBe(200);
   expect((await s.app.inject({ url: '/api/v2/music/circles', headers: s.headers })).statusCode).toBe(200);
   expect(snapshot(s.db)).toEqual(before);
@@ -83,7 +100,7 @@ it('actual HTTP room disconnect aborts the native worker, then permits both feat
   const pending = fetch(url + '/api/v2/music/rooms/calculate', { method: 'POST', headers: { ...s.headers, 'content-type': 'application/json' },
     body: JSON.stringify(s.payload), signal: controller.signal });
   const rejected = expect(pending).rejects.toMatchObject({ name: 'AbortError' });
-  await gate.started; controller.abort(); await rejected; await aborted; gate.release();
+  await gate.started; controller.abort(); await rejected; await aborted; gate.release(); await gate.exited;
   expect((await fetch(url + '/api/v2/health')).status).toBe(200);
   expect((await s.app.inject({ method: 'POST', url: '/api/v2/music/rooms/calculate', headers: s.headers, payload: s.payload })).statusCode).toBe(200);
   expect((await s.app.inject({ url: '/api/v2/music/circles', headers: s.headers })).statusCode).toBe(200);

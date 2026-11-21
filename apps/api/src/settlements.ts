@@ -28,19 +28,16 @@ import { financeEntries } from './finance-context';
 import { projectJournal } from './finance-projection';
 import { canonicalSettlement, calculateSettlement, settlementToken, storedSettlement } from './settlement-calculation';
 import {
-  journalRoomIds,
   money,
-  normalizeRooms,
   requireSettlement,
   roomPlan,
   settlementBill,
   settlementDetail,
   settlementFail as fail,
   settlementRoster,
-  settlementVersion,
 } from './settlement-context';
 import { settlementNotice } from './settlement-notice';
-import { musicRoomSource } from './music-room-source';
+import { executeRoomPlan, requireRoomOwner, roomPlanBlocker } from './room-plan-command';
 import { attachPaymentCodes } from './payment-codes';
 import { putPaymentImage } from './payment-media';
 export function registerSettlements(
@@ -60,10 +57,7 @@ export function registerSettlements(
     return { event: eventRow(db, id)!, viewer };
   }
   const canManage = (event: EventRow, id: string | null) => !!id && eventScopes(db, event, id).has('settlement');
-  const planBlocker = (event: EventRow) =>
-    event.archived_at || ['draft', 'cancelled'].includes(event.lifecycle) || settlementVersion(db, event.id)
-      ? '目前不能修改預分包間；已發布帳單請在結算中更正實際包間'
-      : '';
+  const planBlocker = (event: EventRow) => roomPlanBlocker(db, event);
   app.get('/api/v2/activities/:id/settlement', async (request) =>
     db.transaction(() => {
       const { event, viewer } = access(request);
@@ -309,7 +303,7 @@ export function registerSettlements(
           input = SaveRoomPlan.parse(request.body),
           key = z.string().uuid().parse(request.headers['idempotency-key']),
           signature = 'rooms:' + encodeURIComponent(event.id) + ':' + hash(JSON.stringify(input));
-        if (event.owner_id !== user.id) fail('只有發起者可以分配包間及指定付款人', 403);
+        requireRoomOwner(event, user.id);
         const old = db
           .prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?')
           .get(user.id, key) as { signature: string; response_json: string } | undefined;
@@ -317,30 +311,7 @@ export function registerSettlements(
           if (old.signature !== signature) fail('這個操作編號已用於另一份內容', 409);
           return SettlementResult.parse(JSON.parse(old.response_json));
         }
-        requireEventRevision(event, input.revision);
-        if (planBlocker(event)) fail(planBlocker(event), 409);
-        if (
-          input.music_source_version &&
-          musicRoomSource(db, user.id, event.id).source.sourceVersion !== input.music_source_version
-        )
-          fail('分房試算來源已變更；請重新試算，或明確轉為手動安排後核對保存', 409);
-        const ctx = settlementRoster(db, event, user),
-          before = roomPlan(db, event.id),
-          rooms = normalizeRooms(
-            input.rooms,
-            new Map(ctx.people.filter((p) => p.status !== 'withdrawn').map((p) => [p.id, p])),
-            new Map(ctx.payers.map((p) => [p.id, p.name])),
-          ).map((r) => ({ ...r, payer_label: ctx.payers.find((p) => p.id === r.payer_id)!.label })),
-          changed = canonicalSettlement(before.rooms) !== canonicalSettlement(rooms),
-          next = before.version + (changed ? 1 : 0),
-          stamp = legacyStamp(now());
-        if (changed) {
-          if ([...journalRoomIds(db, event.id)].some((id) => !rooms.some((r) => r.id === id)))
-            fail('已有款項的包間須保留；先在帳本核對並沖正錯誤款項', 409);
-          db.prepare('INSERT INTO event_room_plans VALUES(?,?,?,?)').run(event.id, next, JSON.stringify(rooms), stamp);
-          appendEventAudit(db, event, user, 'rooms_updated', { rooms: before.rooms }, { rooms }, input.reason, stamp);
-        }
-        const result = { id: event.id, revision: eventRow(db, event.id)!.revision, version: next, changed };
+        const time = now(), result = executeRoomPlan(db, event, user, input, time), stamp = legacyStamp(time);
         db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(
           user.id,
           key,

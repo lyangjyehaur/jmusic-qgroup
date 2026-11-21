@@ -14,6 +14,7 @@ import { LegacyAuthoringConversion } from './legacy-authoring-conversion';
 import { LegacyMoneyConversion } from './legacy-money-conversion';
 import { LegacySettlementConversion } from './legacy-settlement-conversion';
 import { LegacyFinanceRecovery } from './legacy-finance-recovery';
+import { LegacyRoomsRecovery } from './legacy-rooms-recovery';
 import { deviceDraftEpoch } from './draft-store';
 import { checkLegacySnapshot,importLegacyDraft,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
@@ -38,7 +39,7 @@ function Guard({viewer,path,children}:{viewer:Member;path:string;children:ReactN
 export function LegacyLocalPage(){return <><PageIntro title="舊看板本機紀錄"/><MemberAccess>{viewer=><Inventory key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function Inventory({viewer}:{viewer:Member}){
   const query=useOriginals(viewer);
-  return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。草稿先核對結果與時間，再明確帶入新版表單；原款項請求可核對並明確重試，其他原請求不重送。</Notice>
+  return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。草稿先核對結果與時間，再明確帶入新版表單；原款項與包間請求可核對並明確重試，其他原請求不重送。</Notice>
     {query.isPending?<Notice>正在讀取舊紀錄…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
       {query.data.disabled&&<Notice>已登出清除這台裝置的舊紀錄，舊分頁不能自動寫回。</Notice>}
       {!query.data.rows.length?<Text>此帳號在這個瀏覽器沒有舊看板紀錄。</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
@@ -129,6 +130,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text><Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button></>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {description.request?.method==='POST'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}\/finance$/.test(description.request.path)&&<LegacyFinanceRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
+    {description.request?.method==='PUT'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}\/rooms$/.test(description.request.path)&&<LegacyRoomsRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
     {intent&&!hasCredentials(row.source)&&<CreateIntentLookup key={row.id} viewer={viewer} {...intent} disabled={busy} validate={async()=>{await original();}}/>}
     {description.kind==='draft'&&['舊包廂草稿','舊款項草稿'].includes(description.label)&&!hasCredentials(row.source)&&<LegacyMoneyConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
     {description.kind==='draft'&&description.label==='舊結算草稿'&&!hasCredentials(row.source)&&<LegacySettlementConversion viewer={viewer} inventory={inventory} row={row} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}

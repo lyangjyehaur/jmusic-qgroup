@@ -12,6 +12,7 @@ import { createMusicComputeBudget } from './music-compute-budget';
 import { registerAppearance } from './appearance';
 import { registerLegacyLocal } from './legacy-local';
 import { registerLegacyFinance } from './legacy-finance';
+import { registerLegacyRooms } from './legacy-rooms';
 import { registerCreateIntents } from './create-intents';
 import { registerAdminBackups } from './admin-backups';
 import { createPairedBackups } from './paired-backups';
@@ -182,6 +183,7 @@ export function createApp(options: AppOptions) {
     registerAdminMusicCatalog(app, db, admin, now);
     registerInbox(app, db, security, now);
     registerLegacyLocal(app, db, security);
+    registerLegacyRooms(app, db, security, now);
     registerLegacyFinance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerCreateIntents(app, db, security);
     registerActivityHistory(app, db, security);
