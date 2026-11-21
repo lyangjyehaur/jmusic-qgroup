@@ -11,6 +11,7 @@
 !tools/
 !tools/rebuild/
 !tools/rebuild/build-api.mjs
+!tools/rebuild/build-http-contracts.ts
 !tools/rebuild/build-analytics-manifest.ts
 !tools/rebuild/build-error-displays.ts
 !deploy/

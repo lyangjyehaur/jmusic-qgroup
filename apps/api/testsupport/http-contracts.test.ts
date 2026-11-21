@@ -2,7 +2,7 @@ import { it,expect,vi } from 'vitest';
 import { fileURLToPath } from 'node:url';
 import { createApp } from '../src/app';
 import { openDatabase } from '@qgroup/database';
-import { AuthResult,DeviceList,IssuedDeviceLink,Ok,PRIVACY_VERSION,SaveProfile,Session } from '@qgroup/contracts';
+import { AuthResult,DeviceList,IssuedDeviceLink,Ok,PRIVACY_VERSION,Profile,SaveProfile,Session } from '@qgroup/contracts';
 import { createHttpClient,HttpOperations,type HttpContext } from '@qgroup/contracts/http';
 import { checkHttpOperations,sharedSchemaCatalog } from '../../../tools/rebuild/build-http-contracts';
 
@@ -51,6 +51,13 @@ it('uses the generated client with the real HTTP application through registratio
   const member=await client.request('GET /api/v2/session',{},Session);expect(member.authenticated).toBe(true);expect(member.scope).not.toBe(initial.scope);context={scope:member.scope,csrf:member.csrf};
   const link=await client.request('POST /api/v2/me/devices/link',{body:{confirm:true,authorizeOwnDevice:true}},IssuedDeviceLink);expect(link.token).toHaveLength(32);
   const devices=await client.request('GET /api/v2/me/devices',{},DeviceList);expect(devices.devices).toHaveLength(1);expect(devices.devices[0]!.current).toBe(true);
+  // Exercise the actual durable header protocol, including a lost-response retry.
+  db.prepare("INSERT INTO music_entries(id,name,kind) VALUES('fixture-song','合成詞條','main')").run();
+  const save={body:{profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'fixture-song',level:1}]},requestId:'33333333-3333-4333-8333-333333333333',requestScope:member.scope};
+  const saved=await client.request('PUT /api/v2/me/music',save,Profile);expect(saved).toMatchObject({revision:1});
+  expect(await client.request('PUT /api/v2/me/music',save,Profile)).toEqual(saved);
+  await expect(client.request('PUT /api/v2/me/music',{...save,body:{...save.body,selections:[{entryId:'fixture-song',level:2}]}},Profile)).rejects.toMatchObject({status:409,code:'REQUEST_CONFLICT'});
+  expect(db.prepare('SELECT count(*) n FROM music_profile_audit').get()).toEqual({n:1});expect(db.prepare('SELECT count(*) n FROM request_results').get()).toEqual({n:1});
   await client.request('POST /api/v2/me/devices/revoke-link',{body:{confirm:true}},Ok);
   const before=calls;context={scope:'f'.repeat(64),csrf:member.csrf};
   await expect(client.request('GET /api/v2/me/devices',{},DeviceList)).rejects.toMatchObject({status:409,code:'ACCOUNT_CHANGED'});expect(calls).toBe(before+1);

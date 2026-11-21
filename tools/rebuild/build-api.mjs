@@ -1,5 +1,8 @@
-import { build } from 'esbuild';
+import { build as esbuild } from 'esbuild';
 import { readFileSync } from 'node:fs';
+// The archive build stage omits the legacy root tsconfig. Use the same explicit
+// compiler settings in the checkout, archive and image for every runtime entry.
+const build = options => esbuild({ ...options, tsconfig: 'tsconfig.rebuild.json' });
 const pkg = JSON.parse(readFileSync(new URL('../../package.json', import.meta.url), 'utf8'));
 const result = await build({ entryPoints: ['apps/api/src/start.ts'], outfile: '.rebuild-dist/api/start.mjs', bundle: true, platform: 'node', format: 'esm', metafile: true,
   // Bundle our TS workspace; keep native modules and server dependencies external.

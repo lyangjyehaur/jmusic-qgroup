@@ -60,7 +60,7 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
   if(context.scope!==undefined)headers.set('x-account-scope',context.scope);
   if(context.csrf!==undefined)headers.set('x-csrf-token',context.csrf);
   if(context.adminCsrf!==undefined)headers.set('x-admin-csrf',context.adminCsrf);
-  if(values.requestId!==undefined)headers.set('x-request-id',z.string().uuid().parse(values.requestId));
+  if(values.requestId!==undefined)headers.set('idempotency-key',z.string().uuid().parse(values.requestId));
   let body:string|undefined;
   if('body' in operation){body=JSON.stringify(operation.body.parse(values.body));headers.set('Content-Type','application/json');}
   else if(Object.hasOwn(values,'body'))throw new TypeError('This HTTP operation has no request body');

@@ -13,7 +13,7 @@ it('uses a fixed operation with normalized shared body, current context and a du
  expect(calls).toHaveLength(2);expect(calls[0]!.url).toBe('/api/v2/auth/register-name');
  expect(calls[0]!.init.credentials).toBe('same-origin');expect(calls[0]!.init.redirect).toBe('error');expect(calls[0]!.init.method).toBe('POST');
  expect(JSON.parse(String(calls[0]!.init.body))).toEqual(RegisterName.parse(input.body));
- expect(new Headers(calls[0]!.init.headers).get('x-request-id')).toBe(input.requestId);
+ expect(new Headers(calls[0]!.init.headers).get('idempotency-key')).toBe(input.requestId);
  expect(new Headers(calls[0]!.init.headers).get('x-account-scope')).toBe('a'.repeat(64));expect(new Headers(calls[1]!.init.headers).get('x-account-scope')).toBe('d'.repeat(64));
 });
 it('encodes route values and query values without letting them add a path or override options',async()=>{
@@ -59,7 +59,7 @@ it('keeps binary streams, the caller signal and caller-owned request identifiers
  const client=createHttpClient({fetch:async(url,init)=>{captured=init;return String(url).includes('/appearance/')?new Response(bytes,{headers:{'content-type':'image/png'}}):new Response('{"ok":true}');}});
  const response=await client.requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:'synthetic-wall'},signal:controller.signal});expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
  expect(captured!.signal).toBe(controller.signal);
- await client.request('POST /api/v2/me/devices/revoke-link',{body:{confirm:true}},Ok);expect(new Headers(captured!.headers).has('x-request-id')).toBe(false);
+ await client.request('POST /api/v2/me/devices/revoke-link',{body:{confirm:true}},Ok);expect(new Headers(captured!.headers).has('idempotency-key')).toBe(false);
  expect(Confirm.safeParse({confirm:true,unexpected:1}).success).toBe(false);
 });
 it('pins a separate receipt namespace without substituting it for the account or CSRF headers',async()=>{
