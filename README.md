@@ -1,6 +1,6 @@
 # 群聚看板
 
-重構最新進度：[時間投票身份、狀態與重播驗證](docs/unified-rebuild/194-time-poll-permissions-checkpoint.md)。目前仍在功能分支實作與驗收，尚未部署。
+重構最新進度：[結算、付款責任與歷史憑證權限](docs/unified-rebuild/195-settlement-permissions-checkpoint.md)。目前仍在功能分支實作與驗收，尚未部署。
 
 看板與成分的單一產品重構規劃（2026-11-20，隔離實作中、尚未發布；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
 
