@@ -27,6 +27,14 @@
 
 證據保存在本機 `unified-search-200/`，包含固定 inventory、獨立 unit／browser／契約／Python oracle、初始失敗報告、原 trace 及五種寬度 PNG。新增[整合需求台帳](integration-status.json)分別追蹤 U01 全站搜尋、U02 正式採用分房、U03 圈子 UI，發布資格檢查同時核對這三項與原 166 個能力，沒有以新入口替代舊功能驗收。
 
-首次完整 unit 使用 Vitest 預設並行／5 秒設定，結果 3,597 通過、138 失敗、11 跳過；133 個失敗為逾時，其餘包含原 fixture 來源核對失敗及新增操作後漏改的 194 總數預期。已修正總數為 195，29 個路由案例通過，原案例名稱與覆蓋保留。完整測試改依既有 CI 的 `--maxWorkers=1 --testTimeout=30000` 重驗，保留首次失敗報告；結果核對完成前不宣稱全套通過。
+首次完整 unit 使用 Vitest 預設並行／5 秒設定，結果 3,597 通過、138 失敗、11 跳過；133 個失敗為逾時，其餘包含原 fixture 來源核對失敗及新增操作後漏改的 194 總數預期。已修正總數為 195，29 個路由案例通過，原案例名稱與覆蓋保留。依既有 CI 的 `--maxWorkers=1 --testTimeout=30000` 完整重驗後，200 檔／3,746 個案例全部通過，0 失敗／跳過，結果與獨立固定 inventory 逐項一致。首次失敗報告保留，沒有移除任何案例或修改業務斷言。
+
+## 198／199 原完整 CI 核對
+
+原 198 提交 `fa4795a6fdc9a8fb82dd41ec75eaaabc61e77734`／CI `44932165086`，以及原 199 提交 `7efca077375ecff185cb3585890944ef5055437c`／CI `44935056257`，三個工作與所有步驟皆 success。原 unit 分別為 197 檔／3,639 個案例與 198 檔／3,717 個案例；各自的 81 檔／844 個 browser 案例一次通過，0 重試／跳過。原 ZIP 的 API digest、大小、CRC 與解包 hashes 核對完成；固定 inventory、145 個契約來源 inputs／54 個權限 pins，以及原 84 個 PWA 資源／1,777,913 bytes 相符。
+
+原 198 image 組合為 web `sha256:fe646aeb3abf8ef432aafbced0c22bd420b2cbe40f67154dd7aadebc57ed25b2`、Python `sha256:cfcc8105a737d5c6ac14346bc8ee0a6573ef0def9f211dd16e492177ea2bfe7c`；原 199 為 web `sha256:a10b9de6779509f90c48f7f89b853f7cbcca35f5e7a46dd7f02dc0a2f279e212`、Python `sha256:91981425b006c3ca561af55126913c037795e59a64a73d0274161c582ae036fe`。兩輪 browser／image 的原 Python blobs、隔離投遞、重試、未知結果、模擬及順序交接均經獨立 oracle 核對；199 image 為 531 次 HTTP／1 次限流延後，其餘三份組合報告各 532 次／2 次延後。
+
+從兩個明確提交的七個 public harness／配置 blobs 重建最小 context，重新生成 Python image source manifest 與 bot harness；184 個 API／107 個 native inputs 逐一確認與已獨立重現的 196 bundles 相同，依賴鎖定與建置設定亦相同，並核對原 bundle digests。沒有重建 image、取消或重跑原 CI。證據分別保存在 `room-permissions-198/` 與 `shout-permissions-199/`。這些原隔離組合仍不是線上 bot 的實際版本或完整 B01–B15 驗收。
 
 U01–U03 保持實作中；166 項既有能力仍為 0 fully accepted，發布資格為 false。完整候選版本驗收、正式規模與併發資源、完整來源對帳、QQ WebView、實際 bot 版本組合及 B01–B15 仍待完成。依使用者要求，繼續實作與驗收，不部署。
