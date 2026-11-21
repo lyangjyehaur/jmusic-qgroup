@@ -5,11 +5,10 @@ import { useQuery } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { ActivityRoomOverview, RoomPlanHistory, type Viewer } from '@qgroup/contracts';
 import type { z } from 'zod';
-import { api } from './api';
+import { scopedHttp } from './http';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 type Overview = z.infer<typeof ActivityRoomOverview>;
-const base = (id: string) => '/activities/' + encodeURIComponent(id),
-  scoped = (viewer: Viewer) => ({ 'X-Account-Scope': viewer.scope });
+const base = (id: string) => '/activities/' + encodeURIComponent(id);
 const statuses: Record<string, string> = {
   waiting: uiText("候補"),
   tentative: uiText("待確認"),
@@ -82,9 +81,7 @@ export function ActivityRoomOverviewSection({ eventId, viewer }: { eventId: stri
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'room-overview', eventId],
     queryFn: () =>
-      api(base(eventId) + '/rooms/overview', ActivityRoomOverview, {
-        headers: scoped(viewer),
-      }),
+      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms/overview', { params: { id: eventId } }, ActivityRoomOverview),
   });
   return (
     <Surface className="detail" id="rooms" role="region" aria-label="包間安排">
@@ -139,17 +136,13 @@ function History({ id, viewer }: { id: string; viewer: Viewer }) {
   const query = useQuery({
     queryKey: ['private', viewer.scope, 'room-plan-history', id, before],
     queryFn: () =>
-      api(base(id) + '/rooms/history' + (before ? '?before=' + before : ''), RoomPlanHistory, {
-        headers: scoped(viewer),
-      }),
+      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms/history', { params: { id }, query: { before: before || undefined } }, RoomPlanHistory),
   });
   const snapshot = useQuery({
     queryKey: ['private', viewer.scope, 'room-plan-version', id, selected],
     enabled: selected !== undefined,
     queryFn: () =>
-      api(base(id) + '/rooms/history/' + selected, ActivityRoomOverview, {
-        headers: scoped(viewer),
-      }),
+      scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/rooms/history/:version', { params: { id, version: String(selected) } }, ActivityRoomOverview),
   });
   return (
     <>

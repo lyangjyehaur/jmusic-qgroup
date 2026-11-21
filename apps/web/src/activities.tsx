@@ -3,7 +3,7 @@ import { Navigate, Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Button, EmptyState, Heading, Surface, Text } from 'yahha-ui';
 import { Activity, ActivityList, type ActivityView } from '@qgroup/contracts';
-import { api } from './api';
+import { createWebHttpClient, scopedHttp } from './http';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { ActivityRoomOverviewSection } from './activity-room-overview';
@@ -29,7 +29,9 @@ function ActivityListing({viewer}:{viewer?:Member}) {
   const period = search.get('period') === 'history' ? 'history' : 'upcoming';
   const page = Math.max(1, Math.min(10000, Number(search.get('page')) || 1));
   const rooms=search.get('task')==='rooms',mine=!!viewer;
-  const query = useQuery({ queryKey: mine?['private',viewer.scope,'my-activities',page]:['activities', period, page], queryFn: () => api(mine?`/me/activities?page=${page}`:`/activities?period=${period}&page=${page}`, ActivityList,viewer?{headers:{'X-Account-Scope':viewer.scope}}:undefined) });
+  const query = useQuery({ queryKey: mine?['private',viewer.scope,'my-activities',page]:['activities', period, page], queryFn: () => viewer
+    ? scopedHttp(viewer.scope).request('GET /api/v2/me/activities', { query: { page } }, ActivityList)
+    : createWebHttpClient().request('GET /api/v2/activities', { query: { period, page } }, ActivityList) });
   const change=(params:Record<string,string>)=>setSearch({...params,...(rooms?{task:'rooms'}:{})});
   return <><PageIntro title={mine?'我的活動':rooms?'選擇活動分析成分':'活動'} /><div className="page-actions"><Link to={mine?'/activities':'/me/activities'}>{mine?'所有活動':'我的活動'}</Link><Link to="/activities/new">新增活動草稿</Link><Link to="/time-polls">時間投票</Link><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link></div>
     <section aria-label="活動列表">{!mine&&<div className="tabs" aria-label="活動篩選">{[['upcoming', uiText('近期活動')], ['history', uiText('往期與歸檔')]].map(([key, label]) => <Button key={key} variant={period === key ? 'primary' : 'ghost'} aria-pressed={period === key} onClick={() => change({ period: key! })}>{label}</Button>)}</div>}
@@ -41,7 +43,7 @@ export function ActivityDetail() {
   const { id = '' } = useParams();
   const [search]=useSearchParams();const task=search.get('task');
   const session = useSession(); const viewer = session.data;
-  const query = useQuery({ queryKey: ['private', viewer?.scope, 'activity', id], queryFn: () => api('/activities/' + encodeURIComponent(id), Activity, {headers:{'X-Account-Scope':viewer!.scope}}), enabled:!!viewer });
+  const query = useQuery({ queryKey: ['private', viewer?.scope, 'activity', id], queryFn: () => scopedHttp(viewer!.scope).request('GET /api/v2/activities/:id', { params: { id } }, Activity), enabled:!!viewer });
   if(task==='settlement')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/settlement'}/>;
   if(task==='finance')return <Navigate replace to={'/activities/'+encodeURIComponent(id)+'/finance'}/>;
   if (session.error) return <Failure error={session.error} retry={()=>void session.refetch()}/>;
