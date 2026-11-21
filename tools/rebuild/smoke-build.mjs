@@ -58,6 +58,7 @@ try {
     const response=await fetch(base+path,{headers:{'X-Music-Proxy-Key':'forged','X-Music-Identity':'forged'}});assert.equal(response.status,404);assert.equal((await response.json()).code,'NOT_FOUND');
   }
   const worker = new Worker(new URL('../../.rebuild-dist/api/music-room-worker.mjs', import.meta.url), {
+    env: {}, execArgv: [],
     workerData: {
       input: { command: 'split', sourceVersion: 'a'.repeat(64), selected: ['one', 'two', 'three'], config: { mode: 'sizes', sizes: [1, 2] }, sameGender: false },
       members: ['one', 'two', 'three'].map(id => ({ id, name: id, selections: [] })), entries: [],

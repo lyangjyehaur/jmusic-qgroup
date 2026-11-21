@@ -5,15 +5,18 @@ import type { DB } from '@qgroup/database';
 import { legacyMusicFields } from '@qgroup/database';
 import { RoomLabSource } from '@qgroup/contracts';
 import { DomainError, musicMatches, type MatchEntry, type RoomMember } from '@qgroup/domain';
-import { getProfile } from './repositories';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 import { activityRoster } from './activity-roster';
 import { eventRow } from './activity-arrangements';
 import { settlementVersion } from './settlement-context';
 /** Minimal projection: private notes/contact/credentials never enter room work. */
-export function musicRoomSource(db: DB, userId: string, eventId: string | null) {
-  const own = getProfile(db, userId);
+export function musicRoomSource(db: DB, userId: string, eventId: string | null, admit?: () => void) {
+  const own = db.prepare(`SELECT id FROM music_profiles WHERE user_id=? AND ${musicProfileActiveSQL('music_profiles')}`).get(userId) as { id: string } | undefined;
   if (!own) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再使用分房試算', 403));
+  // Validate event visibility before admission, and reject saturated calculation
+  // requests before loading the full music projection. Reads need no CPU slot.
+  const context = eventId ? { roster: activityRoster(db, eventId, userId), event: eventRow(db, eventId)! } : null;
+  admit?.();
   const entries = db
     .prepare(
       `SELECT e.id,e.name,e.kind,count(p.id) count FROM music_entries e LEFT JOIN music_selections s ON s.entry_id=e.id
@@ -66,9 +69,8 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null) 
     revision: number | null = null,
     title = '自由分房',
     canAdopt = false;
-  if (eventId) {
-    const roster = activityRoster(db, eventId, userId),
-      event = eventRow(db, eventId)!;
+  if (eventId && context) {
+    const { roster, event } = context;
     revision = roster.revision;
     title = event.title;
     const links = new Map(

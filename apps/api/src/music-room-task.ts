@@ -33,6 +33,7 @@ export function runRoomTask({ input, members, entries }: RoomTask) {
 }
 if (parentPort) {
   try {
+    if (Object.keys(process.env).length > 0) throw new Error('Worker environment is not isolated');
     parentPort.postMessage({
       ok: true,
       result: runRoomTask(workerData as RoomTask),

@@ -6,8 +6,9 @@ import { DomainError } from '@qgroup/domain';
 import type { Security } from './security';
 import { musicRoomSource } from './music-room-source';
 import { createRoomJobs } from './music-room-jobs';
-export function registerMusicRooms(app: FastifyInstance, db: DB, security: Security) {
-  const jobs = createRoomJobs();
+import type { MusicComputeBudget } from './music-compute-budget';
+export function registerMusicRooms(app: FastifyInstance, db: DB, security: Security, budget: MusicComputeBudget) {
+  const jobs = createRoomJobs(budget);
   app.addHook('onClose', async () => jobs.close());
 
   app.get('/api/v2/music/rooms/source', async (request) =>
@@ -23,12 +24,12 @@ export function registerMusicRooms(app: FastifyInstance, db: DB, security: Secur
       bodyLimit: 128 * 1024,
       config: { rateLimit: { max: 30, timeWindow: '1 minute' } },
     },
-    async (request) => {
+    async (request, reply) => {
       const snapshot = db.transaction(() => {
         const user = security.memberWrite(request),
           { eventId } = RoomContextQuery.parse(request.query),
           input = RoomLabCommand.parse(request.body),
-          snapshot = musicRoomSource(db, user.id, eventId ?? null);
+          snapshot = musicRoomSource(db, user.id, eventId ?? null, jobs.available);
         if (input.sourceVersion !== snapshot.source.sourceVersion)
           throw withApiError(new DomainError('ROOM_SOURCE_CHANGED', '名單或成分已變更，請核對最新來源；原試算仍保留', 409));
         const allowed = new Map(snapshot.source.members.map((member) => [member.id, member]));
@@ -70,15 +71,25 @@ export function registerMusicRooms(app: FastifyInstance, db: DB, security: Secur
           userId: user.id,
         };
       })();
-      const result = await jobs.run({ input: snapshot.input, members: snapshot.members, entries: snapshot.entries });
-      // Recheck current credentials, role, membership and source after CPU work.
-      return db.transaction(() => {
-        const user = security.memberWrite(request),
-          current = musicRoomSource(db, user.id, snapshot.eventId);
-        if (user.id !== snapshot.userId || current.source.sourceVersion !== result.sourceVersion)
-          throw withApiError(new DomainError('ROOM_SOURCE_CHANGED', '來源或身份已變更，這次結果已失效，請核對最新來源', 409));
-        return result;
-      })();
+      const controller = new AbortController();
+      const abort = () => controller.abort();
+      const disconnected = () => { if (!reply.raw.writableEnded) abort(); };
+      request.raw.once('aborted', abort);
+      reply.raw.once('close', disconnected);
+      try {
+        const result = await jobs.run({ input: snapshot.input, members: snapshot.members, entries: snapshot.entries }, controller.signal);
+        // Recheck current credentials, role, membership and source after CPU work.
+        return db.transaction(() => {
+          const user = security.memberWrite(request),
+            current = musicRoomSource(db, user.id, snapshot.eventId);
+          if (user.id !== snapshot.userId || current.source.sourceVersion !== result.sourceVersion)
+            throw withApiError(new DomainError('ROOM_SOURCE_CHANGED', '來源或身份已變更，這次結果已失效，請核對最新來源', 409));
+          return result;
+        })();
+      } finally {
+        request.raw.removeListener('aborted', abort);
+        reply.raw.removeListener('close', disconnected);
+      }
     },
   );
 }

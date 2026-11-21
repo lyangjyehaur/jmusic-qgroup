@@ -2298,7 +2298,9 @@
       "behavior_evidence": [
         "packages/domain/src/music-rooms.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "apps/api/src/music-compute-jobs.test.ts",
+        "apps/api/src/music-compute-http.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
@@ -2341,7 +2343,9 @@
       "behavior_evidence": [
         "packages/domain/src/music-rooms.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "apps/api/src/music-compute-jobs.test.ts",
+        "apps/api/src/music-compute-http.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
@@ -2384,7 +2388,9 @@
       "behavior_evidence": [
         "packages/domain/src/music-rooms.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "apps/api/src/music-compute-jobs.test.ts",
+        "apps/api/src/music-compute-http.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
@@ -2435,7 +2441,9 @@
         "apps/api/src/activity-roster.test.ts",
         "packages/domain/src/music-rooms.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "apps/api/src/music-compute-jobs.test.ts",
+        "apps/api/src/music-compute-http.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/activity-roster.test.ts",
@@ -2482,7 +2490,9 @@
       "behavior_evidence": [
         "packages/domain/src/music-rooms.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "apps/api/src/music-compute-jobs.test.ts",
+        "apps/api/src/music-compute-http.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
@@ -4455,7 +4465,9 @@
         "packages/domain/src/music-circles.test.ts",
         "apps/api/src/music-circles.test.ts",
         "apps/api/src/music-circle-jobs.test.ts",
-        "apps/api/src/music-circle-freshness.test.ts"
+        "apps/api/src/music-circle-freshness.test.ts",
+        "apps/api/src/music-compute-jobs.test.ts",
+        "apps/api/src/music-compute-http.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/music-circles.test.ts"
@@ -4472,7 +4484,7 @@
         "docs/unified-rebuild/201-circle-isolation-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生完整圈子、原 Handler 多門檻順序差分、同好／比較／共用選詞及 bot 唯讀保全已有隔離證據；圈子計算已移至有界 worker，計算後資格／來源重驗與取消亦已驗證。正式副本完整對帳、正式規模／併發及包含分房的程序總資源、舊入口 adapter、實際切換版本組合仍待驗收。"
+      "remaining": "原生完整圈子、原 Handler 多門檻差分、工作區往返及 bot 唯讀保全已有隔離證據；圈子與分房共用兩個 worker 名額、資格／來源重驗與取消已驗證。正式副本完整對帳、正式規模／併發、程序 RSS／CPU 及多副本資源、舊入口 adapter、實際切換版本組合仍待驗收。"
     },
     {
       "capability_id": "C01",

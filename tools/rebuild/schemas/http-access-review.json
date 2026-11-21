@@ -28,7 +28,7 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "e6ea5f485f07c4d2582725b581abe87d3fd7079f9375a6a90edbe182ab9fb0ed",
+    "apps/api/src/app.ts": "f0c6f7ca9f35c2fca0648acaee73e72d59e569102a5b339c4550817f591d5b67",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "bf8789dd18fcd1adc4c3e6403494ff75f33661637c6ee7e117d96608b64ee445",
@@ -38,14 +38,14 @@
     "apps/api/src/legacy-finance.ts": "124ca44439fb44a4e1d70d3668ca6e4d05d9adb66e71a729455ce4aba682af1e",
     "apps/api/src/legacy-local.ts": "a65e2ccf033d34f81f57754b413e777793eb519d42498d862bca2346f7c05fcb",
     "apps/api/src/music-catalog.ts": "27afeafcae22dad16da81f5bc89b290a4ff10febe13c9e586efa9e20ce4e9572",
-    "apps/api/src/music-circle-jobs.ts": "40c841e3d00a13551b77ebea53ae2fae1bb4bb176a3b74eb116ada65b04abac1",
+    "apps/api/src/music-circle-jobs.ts": "8af7a3e56c921a14fb7c255596b0a5eee3f03037ebaf3ae74365c824208cc9af",
     "apps/api/src/music-circle-task.ts": "d33f7a6d57e7439167db2f0fc1e5229a31d8051424159570c64003cfa828016b",
-    "apps/api/src/music-circles.ts": "fb0addb4780acda5824b1288ea37945cc71106777bf59c9d289c6e4336f41bd9",
+    "apps/api/src/music-circles.ts": "b13538a0247a9571947c372d797de9b859c671fd7ea96a02c7be124e28e5605c",
     "apps/api/src/music-claim.ts": "ac89e7905919dd170019d755f3afd27a6a25cc778746f40ea0e0d5382ac37979",
     "apps/api/src/music-contact.ts": "b37d2e7c594f201b5c06cf951288060a29994013e7b86fd131e268e17266dbf7",
     "apps/api/src/music-fields.ts": "c783c34c9fc26680e327b00a7a7f0f23374fd551a2c2379775ee51c64b699479",
     "apps/api/src/music-matches.ts": "77f9a3f758a7057168d2487d72a5b36188c25ac7da8e200a301a22c0259d3bdb",
-    "apps/api/src/music-rooms.ts": "9c82ee825b755731a57026740a7a8caecbf7d8f12676875a5e038ab6d7a01c79",
+    "apps/api/src/music-rooms.ts": "993a5ecd2cac2320dbd68ce5af4a7af956eee80176f8f1e3c6e3e18de9c5d674",
     "apps/api/src/music-shouts.ts": "1a130dc73041ae6e6464165b5f0fe7a3a6ca2abc1557a4b75aaa76b002d947da",
     "apps/api/src/music-trend.ts": "4c6e6d43b4ed065ec9502aeda261497820b2c9611c1868036bf3af021b83bf9a",
     "apps/api/src/payment-codes.ts": "b34a36b2e55021250c2c5391bb9b9e82884c5b57b732d3186f6a7775dab48169",
@@ -66,7 +66,11 @@
     "packages/domain/src/music-circles.ts": "ce4b93a8d42faaba36a2f5c253e039e89832c9570a8bcfa027120c180e9b953f",
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-search.ts": "52da753f011f1400b09900daa8d46a164441cdf789bd21cb8f94cd60130c4d6e",
-    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
+    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc",
+    "apps/api/src/music-room-jobs.ts": "3451a509a67a04f9c4f225170238a6427edb3e216ee1c8e139f787c0f6a39fe9",
+    "apps/api/src/music-room-task.ts": "1ea9522dae7432e415f027672f50e4b13dd1899ecef54cbff3969ae197bb6bb2",
+    "apps/api/src/music-compute-budget.ts": "bad2ab05eaff74baaad4b5ebcd929d98e9229dbec6eccbac6f3d797ceead2223",
+    "apps/api/src/music-room-source.ts": "3e9da72fea16a3072edc50dfb29bec7358889074d0341a213e630ff2226e576b"
   },
   "operations": [
     {
@@ -1632,7 +1636,8 @@
         "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
         "Current scoped membership and saved-music qualification are checked before computation and again before returning any result.",
         "Only active profile names, selections and term projections enter the worker; credentials, DB handles, contact QQ, gender and notes are excluded.",
-        "Changes to ownership, membership, names, selections or terms invalidate the completed result; worker output does not confer access."
+        "Changes to ownership, membership, names, selections or terms invalidate the completed result; worker output does not confer access.",
+        "Circles and rooms share two worker slots per API instance; saturation rejects before the full music projection, after scope and active-profile checks. A disconnected client cancels its worker."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -1643,7 +1648,8 @@
         "apps/api/src/music-circle-jobs.ts",
         "apps/api/src/music-circle-task.ts",
         "packages/domain/src/music-circles.ts",
-        "packages/domain/src/music-matching.ts"
+        "packages/domain/src/music-matching.ts",
+        "apps/api/src/music-compute-budget.ts"
       ],
       "additionalHeaders": []
     },
@@ -1753,7 +1759,8 @@
       ],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "apps/api/src/music-room-source.ts"
       ],
       "additionalHeaders": []
     },
@@ -3153,11 +3160,16 @@
       "file": "apps/api/src/music-rooms.ts",
       "mode": "member-write",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Circles and rooms share two worker slots per API instance; saturation rejects before the full music projection, after member-write, active-profile and event-access checks. A disconnected client cancels its worker; completed results recheck current authority and source."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "apps/api/src/music-compute-budget.ts",
+        "apps/api/src/music-room-jobs.ts",
+        "apps/api/src/music-room-task.ts",
+        "apps/api/src/music-room-source.ts"
       ],
       "additionalHeaders": []
     },
