@@ -5,28 +5,26 @@ import { Link } from 'react-router-dom';
 import { Button,Text } from 'yahha-ui';
 import { LegacyFinanceInspection,LegacyRequestReceipt,decodeLegacyFinance,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
-import { api } from './api';
-import { authHeaders } from './auth';
+import { authHttp } from './auth';
 import { Notice } from './shared';
 import type { Member } from './member-access';
 import { deviceDraftEpoch } from './draft-store';
 import { describeLegacy } from './legacy-local-record';
 import { mapLegacySources,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 type Request=z.infer<typeof LegacyRequestCheck>;
-const endpoint='/me/legacy-requests/finance';
 export function LegacyFinanceRecovery({viewer,inventory,row,request,validate,refresh}:{viewer:Member;inventory:LegacyInventory;row:LegacySnapshot;request:Request;validate:()=>Promise<Member>;refresh:()=>Promise<unknown>}){
  const preparedEpoch=useRef<number|null>(null),active=useRef(false),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[plan,setPlan]=useState<z.infer<typeof LegacyFinanceInspection>|null>(null),[confirm,setConfirm]=useState(false);
  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
  let decoded:ReturnType<typeof decodeLegacyFinance>;try{decoded=decodeLegacyFinance(request);}catch{return <Notice>原款項請求欄位尚未完成對應；請保全並核對原結果，不能重試。</Notice>;}
  const path='/activities/'+encodeURIComponent(decoded.eventId)+'/finance',mapped=inventory.mappings.find(m=>m.id===row.id);
  async function original(){const fresh=await validate(),digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(request.method+' '+request.path+' '+JSON.stringify(request.data))),fingerprint=Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');if(row.sourceKey!=='request:'+viewer.scope+':'+fingerprint)throw Error('原請求的本機內容識別不一致，請保留並核對，不能重試。');return fresh;}
- async function check(){if(busy)return;setBusy(true);setMessage('');setPlan(null);setConfirm(false);preparedEpoch.current=null;try{const epoch=await deviceDraftEpoch(),fresh=await original();if(!active.current)return;const result=await api(endpoint+'/inspect',LegacyFinanceInspection,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify(request)});await original();if(await deviceDraftEpoch()!==epoch)throw Error('本機紀錄已變更，請重新檢查原請求。');if(active.current){preparedEpoch.current=epoch;setPlan(result);}}catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("原請求尚未確認，請保留紀錄。"));}finally{if(active.current)setBusy(false);}}
+ async function check(){if(busy)return;setBusy(true);setMessage('');setPlan(null);setConfirm(false);preparedEpoch.current=null;try{const epoch=await deviceDraftEpoch(),fresh=await original();if(!active.current)return;const result=await authHttp(fresh).request('POST /api/v2/me/legacy-requests/finance/inspect', { body: request }, LegacyFinanceInspection);await original();if(await deviceDraftEpoch()!==epoch)throw Error('本機紀錄已變更，請重新檢查原請求。');if(active.current){preparedEpoch.current=epoch;setPlan(result);}}catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("原請求尚未確認，請保留紀錄。"));}finally{if(active.current)setBusy(false);}}
  async function finish(){if(busy||!plan||!confirm)return;setBusy(true);setMessage('');
   let deviceEpoch:number|null=null;const guard=async()=>{const fresh=await original();if(!active.current||fresh.scope!==viewer.scope||deviceEpoch===null||await deviceDraftEpoch()!==deviceEpoch)throw Error('帳號、頁面或本機紀錄已變更，不能確認原請求恢復。');return fresh;};
   try{
    deviceEpoch=preparedEpoch.current;if(deviceEpoch===null)throw Error('請重新檢查原請求。');const fresh=await guard();let receipt:z.infer<typeof LegacyRequestReceipt>;
-   if(plan.state==='retryable')receipt=await api(endpoint+'/retry',LegacyRequestReceipt,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify({...request,confirm:true})});
-   else {const current=await api(endpoint+'/inspect',LegacyFinanceInspection,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify(request)});if(current.state!=='committed')throw Error('原請求結果已改變，請重新核對。');receipt=current.receipt;}
+   if(plan.state==='retryable')receipt=await authHttp(fresh).request('POST /api/v2/me/legacy-requests/finance/retry', { body: {...request,confirm:true} }, LegacyRequestReceipt);
+   else {const current=await authHttp(fresh).request('POST /api/v2/me/legacy-requests/finance/inspect', { body: request }, LegacyFinanceInspection);if(current.state!=='committed')throw Error('原請求結果已改變，請重新核對。');receipt=current.receipt;}
    if(!receipt.committed)throw Error('原請求結果已改變，請重新核對。');
    await guard();const current=await preserveLegacy(viewer.scope);if(current.disabled||current.epoch!==inventory.epoch)throw Error('原紀錄已因登出清除，不能確認恢復。');
    const resolved=new Set(current.mappings.filter(m=>m.deviceEpoch===deviceEpoch).map(m=>m.id)),rows=current.rows.filter(candidate=>candidate.sourceKey===row.sourceKey&&!resolved.has(candidate.id)&&JSON.stringify(describeLegacy(candidate.source,viewer.scope).request)===JSON.stringify(request));

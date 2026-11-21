@@ -12,7 +12,9 @@ import {
   RoomLabRoomInput,
   RoomLabSource,
 } from '@qgroup/contracts';
-import { api,ApiError } from './api';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp } from './auth';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { musicRoomDraftKey,parseMusicRoomDraft,MusicRoomDraft as Draft } from './music-room-record';
@@ -64,14 +66,10 @@ export function MusicRoomsPage() {
   );
 }
 function Loader({ viewer, eventId }: { viewer: Member; eventId: string }) {
-  const suffix = eventId ? '?' + new URLSearchParams({ eventId }) : '',
-    query = useQuery({
+  const query = useQuery({
       queryKey: ['private', viewer.scope, 'room-lab-source', eventId, viewer.musicEpoch],
       queryFn: async ({ signal }) => {
-        const source=await api('/music/rooms/source' + suffix, RoomLabSource, {
-          signal,
-          headers: { 'X-Account-Scope': viewer.scope },
-        });
+        const source=await scopedHttp(viewer.scope).request('GET /api/v2/music/rooms/source', { query: eventId?{eventId}:{}, signal: signal }, RoomLabSource);
         if(source.eventId!==(eventId||null))throw Error('分房來源與目前活動不符，請重新核對。');
         return source;
       },
@@ -93,7 +91,7 @@ function Loader({ viewer, eventId }: { viewer: Member; eventId: string }) {
       fresh={query.data}
       readError={query.error}
       refresh={() => query.refetch()}
-      suffix={suffix}
+      eventId={eventId}
     />
   );
 }
@@ -102,13 +100,13 @@ function Editor({
   fresh,
   readError,
   refresh,
-  suffix,
+  eventId,
 }: {
   viewer: Member;
   fresh: Source;
   readError: Error | null;
   refresh: () => Promise<{ data?: Source; error: Error | null }>;
-  suffix: string;
+  eventId: string;
 }) {
   const storageKey = musicRoomDraftKey(viewer.scope,viewer.musicEpoch,fresh.eventId),
     navigate = useNavigate();
@@ -186,16 +184,7 @@ function Editor({
     setMessage('');
     try {
       if(!await persist(draft)||!active.current||generation.current!==attempt)return;
-      const value = await api('/music/rooms/calculate' + suffix, RoomLabResult, {
-        signal: abort.signal,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Account-Scope': viewer.scope,
-          'X-CSRF-Token': viewer.csrf,
-        },
-        body: JSON.stringify(parsed.data),
-      });
+      const value = await authHttp(viewer).request('POST /api/v2/music/rooms/calculate', { query: eventId?{eventId}:{}, body: parsed.data, signal: abort.signal }, RoomLabResult);
       if(!active.current||generation.current!==attempt)return;
       if(value.sourceVersion!==parsed.data.sourceVersion||JSON.stringify(value.selected)!==JSON.stringify(parsed.data.selected))throw Error('試算回應與原名單不符，原安排仍保留。');
       if(command==='recalc'&&JSON.stringify(value.rooms.map(({id,capacity,members})=>({id,capacity,members})))!==JSON.stringify(draft.rooms))throw Error('試算回應與原包間不符，原安排仍保留。');
@@ -218,16 +207,7 @@ function Editor({
     setMessage('');
     try {
       if(!await persist(draft)||!active.current||generation.current!==attempt)return;
-      const profile = await api('/music/profiles/lookup', MemberMusicProfile, {
-        signal: abort.signal,
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Account-Scope': viewer.scope,
-          'X-CSRF-Token': viewer.csrf,
-        },
-        body: JSON.stringify({ query: lookup }),
-      });
+      const profile = await authHttp(viewer).request('POST /api/v2/music/profiles/lookup', { body: {query:lookup}, signal: abort.signal }, MemberMusicProfile);
       if (!active.current || generation.current !== attempt) return;
       const member = source.members.find((person) => person.profileId === profile.id);
       if (!member) {

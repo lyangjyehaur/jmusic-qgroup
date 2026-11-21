@@ -4,8 +4,7 @@ import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from 'yahha-ui';
 import { CreateIntentResult } from '@qgroup/contracts';
-import { api } from './api';
-import { authHeaders } from './auth';
+import { authHttp } from './auth';
 import type { Member } from './member-access';
 import { Notice, sessionQuery } from './shared';
 import { deviceDraftEpoch } from './draft-store';
@@ -28,7 +27,7 @@ export function CreateIntentLookup({viewer,kind,intent,disabled=false,validate}:
     setBusy(true);setMessage('');setResult(null);
     try {
       const fresh=await current();if(!active.current)return;
-      const found=await api('/me/create-intents/view',CreateIntentResult,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify({kind,intent})});
+      const found=await authHttp(fresh).request('POST /api/v2/me/create-intents/view', { body: {kind,intent} }, CreateIntentResult);
       await current();if(!active.current)return;
       setResult(found);setMessage(found.state==='missing'?uiText("尚未查到回執，不能據此認定未建立；原稿保留。"):kind==='poll'?uiText("原投票已建立，建立後不能改寫候選；本機後續編輯仍保留。"):uiText("原活動已建立；本機後續編輯仍保留，請開啟原活動核對。"));
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法查詢原結果，請保留原稿。"));}

@@ -4,8 +4,7 @@ import { Link,useLocation } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Button,Heading,Surface,Text } from 'yahha-ui';
 import { LegacyRequestReceipt } from '@qgroup/contracts';
-import { api } from './api';
-import { authHeaders } from './auth';
+import { authHttp } from './auth';
 import { MemberAccess,type Member } from './member-access';
 import { Failure,Notice,PageIntro,sessionQuery,useSession } from './shared';
 import { describeLegacy,legacyBlocks,legacyCreateIntent } from './legacy-local-record';
@@ -84,7 +83,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     if(busy||!description.request)return;setBusy(true);setMessage('');setReceipt(null);
     try{
       const fresh=await original();if(!active.current)return;
-      const result=await api('/me/legacy-requests/check',LegacyRequestReceipt,{method:'POST',headers:authHeaders(fresh),body:JSON.stringify(description.request)});
+      const result=await authHttp(fresh).request('POST /api/v2/me/legacy-requests/check', { body: description.request }, LegacyRequestReceipt);
       await original();if(active.current){setReceipt(result);setMessage(result.committed?uiText("原操作已提交。請查看目前資料與權限；不會重送。"):uiText("尚未查到原回執。原 payload 與編號保留，不能據此認定未建立。"));}
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法查詢原結果，請保留原紀錄。"));}
     finally{if(active.current)setBusy(false);}

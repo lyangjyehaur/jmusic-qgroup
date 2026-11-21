@@ -7,8 +7,9 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
 import { ArchivePaymentCode, CreatePaymentCode, Ok, PaymentCode, PaymentCodeId, PaymentCodeLibrary, PaymentCodeSource, PaymentKind, SettlementAssets, type Viewer } from '@qgroup/contracts';
-import { api, ApiError } from './api';
-import { authHeaders, loginLink } from './auth';
+import { ApiError } from './api';
+import { scopedHttp } from './http';
+import { authHttp, loginLink } from './auth';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
 import { PaymentAssetImage, preparePaymentImage } from './payment-image';
 
@@ -36,14 +37,14 @@ function Library({ viewer }: { viewer: Viewer }) {
   const [search] = useSearchParams();
   const source = PaymentCodeSource.safeParse({ event_id: search.get('event'), version: Number(search.get('version')), kind: search.get('kind') });
   const queryClient = useQueryClient(), key = 'qgroup:rebuild:payment-codes:v1:' + viewer.scope, queryKey = ['private', viewer.scope, 'payment-codes'];
-  const library = useQuery({ queryKey, queryFn: () => api('/me/payment-codes', PaymentCodeLibrary, { headers: { 'X-Account-Scope': viewer.scope } }) });
+  const library = useQuery({ queryKey, queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/me/payment-codes', {  }, PaymentCodeLibrary) });
   const record = useDurableRecord({ key, scope:viewer.scope, seed:blank, parse:raw=>Draft.parse(JSON.parse(raw)), serialize,
     dirty:value=>!!value.form.image||!!value.form.name||!!value.form.source, pending:value=>!!value.pending });
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,blocker} = record;
   const [error,setError]=useState(''),[message,setMessage]=useState(''),[remove,setRemove]=useState<z.infer<typeof PaymentCode>>();
   const blocked=record.locked;
   const requestedSource = source.success ? source.data : undefined;
-  const importQuery = useQuery({ queryKey: ['private', viewer.scope, 'payment-code-import', requestedSource], queryFn: () => api('/activities/' + encodeURIComponent(requestedSource!.event_id) + '/settlement/history/' + requestedSource!.version + '/assets', SettlementAssets, { headers: { 'X-Account-Scope': viewer.scope } }), enabled: !!requestedSource });
+  const importQuery = useQuery({ queryKey: ['private', viewer.scope, 'payment-code-import', requestedSource], queryFn: () => scopedHttp(viewer.scope).request('GET /api/v2/activities/:id/settlement/history/:version/assets', { params: { id: requestedSource!.event_id, version: String(requestedSource!.version) } }, SettlementAssets), enabled: !!requestedSource });
   function change(form: DraftValue['form']) { record.change({ form }); setError(''); setMessage(''); }
   async function upload(file: File) {
     if (blocked) return; setBusy(true); setError('');
@@ -60,8 +61,8 @@ function Library({ viewer }: { viewer: Viewer }) {
     setDraft(next); setBusy(true); setError(''); setMessage(''); setRemove(undefined);
     let accepted=false;
     try {
-      const input = pending.input, init = { headers: { ...authHeaders(viewer), 'Idempotency-Key': pending.key }, body: JSON.stringify(input.data) };
-      const result = input.command === 'create' ? await api('/me/payment-codes', PaymentCode, { ...init, method: 'POST' }) : await api('/me/payment-codes/' + input.id, Ok, { ...init, method: 'DELETE' });
+      const input = pending.input;
+      const result = input.command === 'create' ? await authHttp(viewer).request('POST /api/v2/me/payment-codes', { body: input.data, requestId: pending.key, requestScope: viewer.scope }, PaymentCode) : await authHttp(viewer).request('DELETE /api/v2/me/payment-codes/:codeId', { params: { codeId: input.id }, body: input.data, requestId: pending.key, requestScope: viewer.scope }, Ok);
       accepted=true;
       if (!active.current) return;
       const cleared = input.command === 'create' ? blank() : { form: draft.form };
