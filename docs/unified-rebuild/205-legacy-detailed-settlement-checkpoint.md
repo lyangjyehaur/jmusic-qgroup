@@ -18,7 +18,7 @@
 
 ## 驗證
 
-9 個 unit 檔案／104 個案例通過。新 adapter 16 個案例包含原 Python 五種分攤與憑證差分、原排序、原簽名、已知無效 operand、圖片與省略選擇、原碼庫優先順序、浮點約定及超過 2^53 的帳本序號、paid／unpaid 包間、隨單墊付、no-op、並行去重、native 憑證拒絕、過期版本、確認及身份限制、私密／損壞回執與全交易回滾。另重跑既有結算、碼庫、bot 通知、原款項與包間恢復及 HTTP 契約。
+10 個 unit 檔案／133 個案例通過。新 adapter 16 個案例包含原 Python 五種分攤與憑證差分、原排序、原簽名、已知無效 operand、圖片與省略選擇、原碼庫優先順序、浮點約定及超過 2^53 的帳本序號、paid／unpaid 包間、隨單墊付、no-op、並行去重、native 憑證拒絕、過期版本、確認及身份限制、私密／損壞回執與全交易回滾。另重跑既有結算、碼庫、bot 通知、原款項與包間恢復及 HTTP 契約。
 
 6 個 browser 檔案／87 個案例通過，0 重試／跳過；其中新 13 個；既有 74 個案例的 ID、名稱及行列位置與固定 CI 200／第 204 號原報告一致。涵蓋兩種原 body、完整原圖與群通知確認、正確帳本入口、相同原 pending／done 快照、回應遺失、映射 abort、過期版本、fingerprint／來源／帳號／世代限制、登出與 hash 期間離頁。360px 核對畫面及無水平溢出檢查通過。
 
@@ -36,6 +36,6 @@ strict TypeScript、建置、check:ui、built smoke 通過。199 個 HTTP 操作
 
 HTTP 新增操作後更新精確 inventory 斷言。亦修正上一份來源 OpenAPI 測試仍停在 195 操作／85 body／445 components 的舊數字；完整保留原失敗。專用 compiled fixture 首次 Git blob buffer 太小、其次暫存來源名稱不符隔離規則，修正工具容量與 fixture 名稱後通過。
 
-證據目錄：`/Users/danersaka/.codex/rebuild-verification/legacy-detailed-settlement-205/`。原 CI 204 的 image 已通過，unit／browser 在本輪核對時仍進行中；沒有取消或重啟原 run。
+證據目錄：`/Users/danersaka/.codex/rebuild-verification/legacy-detailed-settlement-205/`。原 CI 203 已全部通過。原 CI 204 的 image 通過，unit 3,793 passed／2 failed／0 skip，browser 在本輪核對時仍進行中；沒有取消或重啟原 run。兩個原失敗均為 HTTP 盤點斷言仍停在 195，而該份固定來源已有 197 操作：OpenAPI 與前端路徑解析。原報告及雜湊保留，已更新到本輪 199 操作；這兩份原失敗檔案共 37 個案例通過，原測試名稱與功能案例均保留。
 
 其他原命令 adapters、完整來源與資料對帳、正式規模、多副本、實際裝置／QQ WebView、切換後實際 bot 版本組合與 P6／P7 仍待完成。沒有合入 main，也沒有正式部署。
