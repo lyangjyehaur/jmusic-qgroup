@@ -1,3 +1,4 @@
+import { ActivityPath } from '@qgroup/contracts/http-paths';
 import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
@@ -161,7 +162,7 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
     const viewer = security.scopedMember(request);
     if (!getProfile(db, viewer.id))
       throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看選取者', 403));
-    const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
+    const { id } = ActivityPath.parse(request.params);
     if (!db.prepare('SELECT 1 FROM music_entries WHERE id=?').get(id))
       throw withApiError(new DomainError('ENTRY_NOT_FOUND', '詞條不存在或已刪除', 404));
     const members = db.prepare(`SELECT p.id,${musicNameSQL} AS name,

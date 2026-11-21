@@ -1,3 +1,4 @@
+import { ActivityPath } from '@qgroup/contracts/http-paths';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -93,11 +94,11 @@ export function executeFinance(db:DB,event:EventRow,user:User,input:{revision:nu
  return {id,revision:eventRow(db,id)!.revision};
 }
 export function registerFinance(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),bot=createActivityBot(db,now,defaults),limits={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
+  const bot=createActivityBot(db,now,defaults),limits={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function access(id:string,userId:string|null){requireActivityAccess(db,id,userId);return eventRow(db,id)!;}
-  app.get('/api/v2/activities/:id/finance',async request=>db.transaction(()=>{const {id}=params.parse(request.params),query=FinanceHistoryQuery.parse(request.query),device=security.read(request);if(request.headers['x-account-scope']||device)security.scoped(request);return financeView(db,access(id,device?.kind==='member'?device.id:null),device?.kind==='member'?device.id:null,query.before,query.before_report);})());
+  app.get('/api/v2/activities/:id/finance',async request=>db.transaction(()=>{const {id}=ActivityPath.parse(request.params),query=FinanceHistoryQuery.parse(request.query),device=security.read(request);if(request.headers['x-account-scope']||device)security.scoped(request);return financeView(db,access(id,device?.kind==='member'?device.id:null),device?.kind==='member'?device.id:null,query.before,query.before_report);})());
   app.post('/api/v2/activities/:id/finance/origin',limits,async request=>db.transaction(()=>{
-    const {id}=params.parse(request.params),user=security.memberWrite(request),event=access(id,user.id),input=ViewFinanceOrigin.parse(request.body),manager=eventScopes(db,event,user.id).has('settlement');
+    const {id}=ActivityPath.parse(request.params),user=security.memberWrite(request),event=access(id,user.id),input=ViewFinanceOrigin.parse(request.body),manager=eventScopes(db,event,user.id).has('settlement');
     if(event.lifecycle==='draft'||event.status==='deleted')fail('找不到可核對的活動帳本',404);
     if(input.kind==='record'&&!manager)fail('沒有款項管理權限',403);
     const entry=db.prepare('SELECT event_id,source_report_id,kind FROM finance_entries WHERE id=?').get(input.id) as {event_id:string;source_report_id:string|null;kind:string}|undefined;
@@ -108,9 +109,9 @@ export function registerFinance(app:FastifyInstance,db:DB,security:Security,now:
     const decision=report?(db.prepare('SELECT decision FROM finance_report_actions WHERE report_id=?').get(input.id) as {decision:string}|undefined)?.decision:null;
     return FinanceOriginResult.parse({state:'existing',id:input.id,kind:input.kind,status:input.kind==='record'?'recorded':decision??'pending'});
   })());
-  app.post('/api/v2/activities/:id/finance/preview',limits,async request=>db.transaction(()=>{const {id}=params.parse(request.params),input=FinancePreviewInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id);requireEventRevision(event,input.revision);return previewFinance(db,event,user,input.operation,now());})());
+  app.post('/api/v2/activities/:id/finance/preview',limits,async request=>db.transaction(()=>{const {id}=ActivityPath.parse(request.params),input=FinancePreviewInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id);requireEventRevision(event,input.revision);return previewFinance(db,event,user,input.operation,now());})());
   app.post('/api/v2/activities/:id/finance',limits,async request=>db.transaction(()=>{
-    const {id}=params.parse(request.params),input=FinanceSaveInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='finance:'+encodeURIComponent(id)+':'+hash(JSON.stringify(input));
+    const {id}=ActivityPath.parse(request.params),input=FinanceSaveInput.parse(request.body),user=security.memberWrite(request),event=access(id,user.id),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='finance:'+encodeURIComponent(id)+':'+hash(JSON.stringify(input));
     // Current command authority is checked before returning an old receipt; revisions are checked for new writes.
     requireFinanceAuthority(db,event,user,input.operation);
     const old=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;if(old){if(old.signature!==signature)fail('這個操作編號已用於另一份內容',409);return FinanceResult.parse(JSON.parse(old.response_json));}

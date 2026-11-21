@@ -1,3 +1,4 @@
+import { Identifier128Path } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -7,7 +8,6 @@ import { DomainError } from '@qgroup/domain';
 import { hash } from './security';
 import type { AdminSecurity } from './admin-security';
 
-const UserId = z.string().min(1).max(128);
 type UserRow = { id: string; nickname: string; created_at: string; is_admin: number; revision: number; note: string; manual_qq: string; metadata_revision: number; metadata_updated_at: string | null };
 const projection = `SELECT u.id,u.nickname,u.created_at,COALESCE(r.is_admin,0) AS is_admin,COALESCE(r.revision,0) AS revision,
   COALESCE(m.note,'') AS note,COALESCE(m.manual_qq,'') AS manual_qq,COALESCE(m.revision,0) AS metadata_revision,m.updated_at AS metadata_updated_at
@@ -52,9 +52,9 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
     const rows = db.prepare(projection + ' WHERE ' + where + ' ORDER BY u.created_at DESC,u.id LIMIT 20 OFFSET ?').all(...params, query.offset) as UserRow[];
     return { users: rows.map(row => serialize(db, row)), total, offset: query.offset, limit: 20 };
   });
-  app.get('/api/v2/admin/users/:id', async request => { admin.authority(request); return user(db, UserId.parse((request.params as { id: string }).id)); });
+  app.get('/api/v2/admin/users/:id', async request => { admin.authority(request); return user(db, Identifier128Path.parse(request.params).id); });
   app.get('/api/v2/admin/users/:id/role-history', async request => {
-    admin.authority(request); const id = UserId.parse((request.params as { id: string }).id); user(db, id);
+    admin.authority(request); const id = Identifier128Path.parse(request.params).id; user(db, id);
     const { before } = PositiveCursorQuery.parse(request.query);
     const rows = db.prepare(`SELECT h.id,h.before_value,h.after_value,h.revision,h.created_at,h.actor_ref,u.nickname AS actor_name
       FROM admin_role_history h LEFT JOIN users u ON h.actor_ref='account:'||u.id WHERE h.user_id=? AND h.id<? ORDER BY h.id DESC LIMIT 51`).all(id, before) as { id: number; before_value: number; after_value: number; revision: number; created_at: string; actor_ref: string; actor_name: string | null }[];
@@ -63,7 +63,7 @@ export function registerAdminUsers(app: FastifyInstance, db: DB, admin: AdminSec
   });
   function mutate(request: FastifyRequest, path: string, input: object, action: (access: ReturnType<AdminSecurity['authority']>, id: string) => void) {
     return db.transaction(() => {
-      const access = admin.authority(request, true); const id = UserId.parse((request.params as { id: string }).id);
+      const access = admin.authority(request, true); const id = Identifier128Path.parse(request.params).id;
       const key = z.string().uuid().parse(request.headers['idempotency-key']); const signature = hash('v2:admin:' + path + ':' + id + ':' + JSON.stringify(input));
       const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
       if (prior) { if (prior.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409)); return { ok: true }; }

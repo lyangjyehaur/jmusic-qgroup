@@ -1,3 +1,4 @@
+import { ActivityPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -42,11 +43,11 @@ export function activityLifecycle(db:DB,id:string,userId:string,now:Date){
   return {id,title:event.title,revision:event.revision,lifecycle:event.lifecycle,registrationOpen:!!event.registration_open,formationState:event.formation_state,actualStartedAt:event.actual_started_at,actualEndedAt:event.actual_ended_at,archivedAt:event.archived_at,cancellationReason:event.cancellation_reason,removed:event.status==='deleted',actions:actions.filter(action=>scopes.has(ownerActions.has(action)?'owner':'schedule')).map(action=>({action,blockedReason:blocker(db,event,action,now),requiresReason:needsReason(db,event,action)}))};
 }
 export function registerActivityLifecycle(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),bot=createActivityBot(db,now,defaults);
+  const bot=createActivityBot(db,now,defaults);
   const hookError=(id:string)=>app.log.error({eventId:id},'Activity lifecycle bot hook failed; business write preserved');
-  app.get('/api/v2/activities/:id/lifecycle',async request=>db.transaction(()=>activityLifecycle(db,params.parse(request.params).id,security.scopedMember(request).id,now()))());
+  app.get('/api/v2/activities/:id/lifecycle',async request=>db.transaction(()=>activityLifecycle(db,ActivityPath.parse(request.params).id,security.scopedMember(request).id,now()))());
   app.get('/api/v2/activities/lifecycle-results/:requestId',async request=>db.transaction(()=>{
-    const user=security.scopedMember(request),key=z.string().uuid().parse((request.params as {requestId:string}).requestId);
+    const user=security.scopedMember(request),key=RequestIdPath.parse(request.params).requestId;
     const row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
     if(!row||!row.signature.startsWith('activity-lifecycle:'))return {state:'not_found' as const};
     const [,id,action]=row.signature.split(':'),result=ActivityDraftResult.parse(JSON.parse(row.response_json));
@@ -54,7 +55,7 @@ export function registerActivityLifecycle(app:FastifyInstance,db:DB,security:Sec
     authorize(db,result.id,user.id,ActivityLifecycleAction.parse(action));return {state:'completed' as const,result};
   })());
   app.post('/api/v2/activities/:id/lifecycle',{config:{rateLimit:{max:30,timeWindow:'1 minute'}}},async request=>{
-    const id=params.parse(request.params).id,input=ChangeActivityLifecycle.parse(request.body);
+    const id=ActivityPath.parse(request.params).id,input=ChangeActivityLifecycle.parse(request.body);
     return db.transaction(()=>{
       const user=security.memberWrite(request),event=authorize(db,id,user.id,input.action),key=z.string().uuid().parse(request.headers['idempotency-key']);
       const signature='activity-lifecycle:'+encodeURIComponent(id)+':'+input.action+':'+hash(JSON.stringify(input));

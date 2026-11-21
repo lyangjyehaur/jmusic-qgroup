@@ -57,14 +57,14 @@ it.each(['invalid success JSON','invalid error JSON','invalid error shape','inva
 it('keeps binary streams, the caller signal and caller-owned request identifiers intact',async()=>{
  const bytes=new Uint8Array([137,80,78,71]),controller=new AbortController();let captured:RequestInit|undefined;
  const client=createHttpClient({fetch:async(url,init)=>{captured=init;return String(url).includes('/appearance/')?new Response(bytes,{headers:{'content-type':'image/png'}}):new Response('{"ok":true}');}});
- const response=await client.requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:'synthetic-wall'},signal:controller.signal});expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
+ const response=await client.requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:'w_'+'a'.repeat(24)},signal:controller.signal});expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
  expect(captured!.signal).toBe(controller.signal);
  await client.request('POST /api/v2/me/devices/revoke-link',{body:{confirm:true}},Ok);expect(new Headers(captured!.headers).has('idempotency-key')).toBe(false);
  expect(Confirm.safeParse({confirm:true,unexpected:1}).success).toBe(false);
 });
 it('pins a separate receipt namespace without substituting it for the account or CSRF headers',async()=>{
  let captured:RequestInit|undefined;const client=createHttpClient({context:()=>({scope:'account-scope',receiptScope:'original-receipt-scope',csrf:'csrf',adminCsrf:'admin-csrf'}),fetch:async(_url,init)=>{captured=init;return new Response('{"ok":true}');}});
- await client.request('POST /api/v2/admin/music/:id/pin',{params:{id:'synthetic'},body:{pin:'1234',revision:0,reason:'synthetic verification',confirm:true},requestId:'11111111-1111-4111-8111-111111111111',requestScope:'original-receipt-scope'},Ok);
+ await client.request('POST /api/v2/admin/music/:id/pin',{params:{id:'m_'+'a'.repeat(24)},body:{pin:'1234',revision:0,reason:'synthetic verification',confirm:true},requestId:'11111111-1111-4111-8111-111111111111',requestScope:'original-receipt-scope'},Ok);
  const headers=new Headers(captured!.headers);expect(headers.get('x-account-scope')).toBe('account-scope');expect(headers.get('x-csrf-token')).toBe('csrf');expect(headers.get('x-admin-csrf')).toBe('admin-csrf');
 });
 it('preserves an explicitly supplied original admin scope without inferring current administrative authority',async()=>{

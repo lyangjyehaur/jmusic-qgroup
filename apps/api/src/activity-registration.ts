@@ -1,3 +1,4 @@
+import { ActivityPath, ActivityPersonPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -51,7 +52,7 @@ export function registrationContext(db:DB,id:string,user:User,now:Date){
   })};
 }
 export function registerActivityRegistration(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),personParams=params.extend({personId:z.string().min(1).max(80)}),bot=createActivityBot(db,now,defaults);
+  const bot=createActivityBot(db,now,defaults);
   const hookError=(eventId:string)=>app.log.error({eventId},'Registration bot hook failed; business write preserved');
   function optional(id:string,run:()=>unknown){try{db.transaction(run)();}catch{hookError(id);}}
   function notify(id:string,userId:string,kind:'withdrawal_request'|'withdrawal_decision'|'removed',message:string,stamp:string){db.prepare('INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,?,?,?)').run(userId,id,kind,message,stamp);optional(id,()=>bot.personal(id,userId,kind));}
@@ -71,9 +72,9 @@ export function registerActivityRegistration(app:FastifyInstance,db:DB,security:
       db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,JSON.stringify(result),200,legacyStamp(now()));return result;
     }).immediate();
   }
-  app.get('/api/v2/activities/:id/registration',async request=>db.transaction(()=>registrationContext(db,params.parse(request.params).id,security.scopedMember(request),now()))());
+  app.get('/api/v2/activities/:id/registration',async request=>db.transaction(()=>registrationContext(db,ActivityPath.parse(request.params).id,security.scopedMember(request),now()))());
   app.get('/api/v2/activities/registration-results/:requestId',async request=>db.transaction(()=>{
-    const user=security.scopedMember(request),key=z.string().uuid().parse((request.params as {requestId:string}).requestId),row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
+    const user=security.scopedMember(request),key=RequestIdPath.parse(request.params).requestId,row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
     if(!row||!row.signature.startsWith('activity-registration:'))return {state:'not_found' as const};
     const [,id,personId,action]=row.signature.split(':'),result=ActivityDraftResult.parse(JSON.parse(row.response_json));if(decodeURIComponent(id!)!==result.id)throw Error('Invalid registration receipt');
     const event=authorize(db,result.id,user.id,personId?decodeURIComponent(personId):undefined);
@@ -82,10 +83,10 @@ export function registerActivityRegistration(app:FastifyInstance,db:DB,security:
   })());
   const routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   app.post('/api/v2/activities/:id/registration/preview',routeOptions,async request=>db.transaction(()=>{
-    const user=security.memberWrite(request),id=params.parse(request.params).id,event=authorize(db,id,user.id),input=PreviewRegistration.parse(request.body);requireEventRevision(event,input.revision);return prepareRegistration(db,event,user,input,now()).preview;
+    const user=security.memberWrite(request),id=ActivityPath.parse(request.params).id,event=authorize(db,id,user.id),input=PreviewRegistration.parse(request.body);requireEventRevision(event,input.revision);return prepareRegistration(db,event,user,input,now()).preview;
   })());
   app.post('/api/v2/activities/:id/registration',routeOptions,async request=>{
-    const id=params.parse(request.params).id,input=SubmitRegistration.parse(request.body);
+    const id=ActivityPath.parse(request.params).id,input=SubmitRegistration.parse(request.body);
     return write(request,id,'signup',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);ensureMutable(db,event);
       if(input.conditionsVersion!==event.conditions_version)throw withApiError(new DomainError('CONDITIONS_CHANGED','安排已有變更，請重新預覽並確認',409));
@@ -102,7 +103,7 @@ export function registerActivityRegistration(app:FastifyInstance,db:DB,security:
     });
   });
   app.post('/api/v2/activities/:id/attendees/:personId/registration',routeOptions,async request=>{
-    const {id,personId}=personParams.parse(request.params),input=ChangeRegistration.parse(request.body);
+    const {id,personId}=ActivityPersonPath.parse(request.params),input=ChangeRegistration.parse(request.body);
     // Decision scope must precede receipt replay as well as the actual write.
     return write(request,id,input.action,input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);ensureMutable(db,event);const person=lookup(db,event,personId);if(person.status==='withdrawn')throw withApiError(new DomainError('ATTENDEE_NOT_FOUND','這條報名不存在或已退出',404));

@@ -1,3 +1,4 @@
+import { ActivityPath, ActivityVersionPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -99,22 +100,21 @@ export function activityRoomOverview(db: DB, id: string, viewer: string | null, 
   });
 }
 export function registerActivityRooms(app: FastifyInstance, db: DB, security: Security) {
-  const params = z.object({ id: z.string().min(1).max(80) }),
-    version = z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER);
+
   app.get('/api/v2/activities/:id/rooms/overview', async (request) =>
     db.transaction(() =>
-      activityRoomOverview(db, params.parse(request.params).id, activityViewer(security, request)),
+      activityRoomOverview(db, ActivityPath.parse(request.params).id, activityViewer(security, request)),
     )(),
   );
   app.get('/api/v2/activities/:id/rooms/history/:version', async (request) =>
     db.transaction(() => {
-      const input = params.extend({ version }).parse(request.params);
+      const input = ActivityVersionPath.parse(request.params);
       return activityRoomOverview(db, input.id, activityViewer(security, request), input.version);
     })(),
   );
   app.get('/api/v2/activities/:id/rooms/history', async (request) =>
     db.transaction(() => {
-      const { id } = params.parse(request.params),
+      const { id } = ActivityPath.parse(request.params),
         { before } = PositiveVersionQuery.parse(request.query);
       requireActivityAccess(db, id, activityViewer(security, request));
       const rows = db

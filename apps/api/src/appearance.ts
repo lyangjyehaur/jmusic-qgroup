@@ -1,3 +1,4 @@
+import { WallpaperPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
@@ -82,7 +83,7 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
     if(!valid)throw withApiError(new DomainError('WALLPAPER_UNAVAILABLE','壁紙格式無法讀取，請管理員重新上傳',503));return asset;
   };
   app.get('/api/v2/appearance/walls/:id/image',async(request,reply)=>{
-    const {id}=z.object({id:z.string().regex(/^w_(?:[a-f0-9]{24}|[a-f0-9]{32})$/)}).parse(request.params),asset=serve(id);
+    const {id}=WallpaperPath.parse(request.params),asset=serve(id);
     return reply.type(asset.mime).header('Cache-Control','no-store').header('X-Content-Type-Options','nosniff').send(asset.data);
   });
   // Preserve existing public image links. Manifest discovery uses the unified API.

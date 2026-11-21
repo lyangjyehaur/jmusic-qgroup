@@ -1,3 +1,4 @@
+import { RequestKeyPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -10,7 +11,7 @@ import { eventRow, eventScopes, legacyStamp, type EventRow } from './activity-ar
 import { financeTodoSummary } from './finance-projection';
 export function registerInbox(app:FastifyInstance,db:DB,security:Security,now:()=>Date){
   const unread=(userId:string)=>(db.prepare("SELECT COUNT(*) AS count FROM notifications n JOIN events e ON e.id=n.event_id WHERE n.user_id=? AND n.read_at IS NULL AND e.status!='deleted'").get(userId) as {count:number}).count;
-  app.get('/api/v2/me/operations/:key',async request=>{const user=security.scopedMember(request),{key}=z.object({key:z.string().uuid()}).parse(request.params);return {committed:!!db.prepare('SELECT 1 FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key)};});
+  app.get('/api/v2/me/operations/:key',async request=>{const user=security.scopedMember(request),{key}=RequestKeyPath.parse(request.params);return {committed:!!db.prepare('SELECT 1 FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key)};});
   app.get('/api/v2/me/notifications/count',async request=>({unreadCount:unread(security.scopedMember(request).id)}));
   app.get('/api/v2/me/notifications',async request=>db.transaction(()=>{
     const user=security.scopedMember(request),{before}=NotificationsQuery.parse(request.query);

@@ -1,3 +1,4 @@
+import { ActivityClaimPath, ActivityPath, ActivityTokenPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -33,7 +34,7 @@ function tokenLookup(db:DB,event:EventRow,token:string,now:Date){
 }
 function duplicate(db:DB,id:string,userId:string|null){return !!userId&&!!db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND user_id=? AND status!='withdrawn'").get(id,userId);}
 export function registerActivityClaims(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),tokenParams=params.extend({token:z.string().regex(/^[A-Za-z0-9_-]{32}$/)}),claimParams=params.extend({claimId:z.string().regex(/^[a-f0-9]{16}$/)}),bot=createActivityBot(db,now,defaults),routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
+  const bot=createActivityBot(db,now,defaults),routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function append(event:EventRow,user:{id:string;nickname:string},action:string,before:unknown,after:unknown,reason:string,stamp:string){
     if(appendEventAudit(db,event,user,action,before,after,reason,stamp))try{db.transaction(()=>bot.rosterUpdated(event.id,action,[],[]))();}catch{app.log.error({eventId:event.id},'Claim bot audit hook failed; business write preserved');}
   }
@@ -58,20 +59,20 @@ export function registerActivityClaims(app:FastifyInstance,db:DB,security:Securi
     }).immediate();
   }
   app.get('/api/v2/activities/:id/claims',async request=>db.transaction(()=>{
-    const {id}=params.parse(request.params),user=security.scopedMember(request),event=getEvent(db,id);requireActivityAccess(db,id,user.id);const people=activityPeople(db,id),claims=db.prepare('SELECT c.*,u.nickname AS requester_name FROM attendee_claims c LEFT JOIN users u ON u.id=c.requester_id WHERE c.event_id=? ORDER BY c.created_at DESC').all(id) as (Claim&{requester_name:string|null})[];
+    const {id}=ActivityPath.parse(request.params),user=security.scopedMember(request),event=getEvent(db,id);requireActivityAccess(db,id,user.id);const people=activityPeople(db,id),claims=db.prepare('SELECT c.*,u.nickname AS requester_name FROM attendee_claims c LEFT JOIN users u ON u.id=c.requester_id WHERE c.event_id=? ORDER BY c.created_at DESC').all(id) as (Claim&{requester_name:string|null})[];
     return {id,title:event.title,revision:event.revision,people:people.filter(person=>!person.user_id&&['confirmed','waiting','tentative'].includes(person.status)&&mayIssue(db,event,person,user.id)).map(person=>({id:person.id,name:person.nickname,status:person.status,payerName:person.payer_kind==='manager'?person.manager_name:person.nickname,blocker:claimBlocker(event,person)})),claims:claims.flatMap(claim=>{
       const person=people.find(person=>person.id===claim.attendee_id),manager=!!person&&mayIssue(db,event,person,user.id);if(!manager&&claim.requester_id!==user.id)return [];
       const usable=active(claim,now());return [{id:claim.id,attendeeId:claim.attendee_id,name:person?.nickname??'',status:!usable&&['invited','requested'].includes(claim.status)?'expired':claim.status,requesterName:claim.requester_name,expiresAt:claim.expires_at,token:manager&&usable&&claim.status==='invited'?claim.token:null,canDecide:manager&&usable&&claim.status==='requested'&&person?.status!=='withdrawn',canRevoke:manager&&usable&&person?.status!=='withdrawn'}];
     })};
   })());
   app.get('/api/v2/activities/:id/claims/preview/:token',routeOptions,async request=>db.transaction(()=>{
-    const {id,token}=tokenParams.parse(request.params),event=getEvent(db,id),viewer=activityViewer(security,request);
+    const {id,token}=ActivityTokenPath.parse(request.params),event=getEvent(db,id),viewer=activityViewer(security,request);
     const completed=db.prepare("SELECT attendee_id FROM attendee_claims WHERE event_id=? AND token=? AND status='approved' AND requester_id=?").get(id,token,viewer??'') as {attendee_id:string}|undefined;
     if(completed){const person=personRow(db,event,completed.attendee_id);return {state:'claimed' as const,id,title:event.title,name:person.nickname};}
     const {claim,person}=tokenLookup(db,event,token,now());return {state:'open' as const,id,title:event.title,name:person.nickname,status:person.status,payerName:person.payer_kind==='manager'?person.manager_name:person.nickname,payerKind:person.payer_kind,revision:event.revision,expiresAt:claim.expires_at,claimStatus:claim.status,requestedByMe:!!viewer&&claim.requester_id===viewer,duplicate:duplicate(db,id,viewer),isManager:person.manager_id===viewer};
   })());
   app.post('/api/v2/activities/:id/claims',routeOptions,async request=>{
-    const {id}=params.parse(request.params),input=IssueAttendeeClaim.parse(request.body);
+    const {id}=ActivityPath.parse(request.params),input=IssueAttendeeClaim.parse(request.body);
     return write(request,id,'issue',input.attendeeId,input,(event,userId)=>management(db,event,personRow(db,event,input.attendeeId),userId),(event,user,stamp)=>{
       requireEventRevision(event,input.revision);const person=personRow(db,event,input.attendeeId);eligible(event,person);
       const superseded=(db.prepare("SELECT id FROM attendee_claims WHERE attendee_id=? AND status IN ('invited','requested')").all(person.id) as {id:string}[]).map(row=>row.id);
@@ -82,7 +83,7 @@ export function registerActivityClaims(app:FastifyInstance,db:DB,security:Securi
     });
   });
   app.post('/api/v2/activities/:id/claims/preview/:token/request',routeOptions,async request=>{
-    const {id,token}=tokenParams.parse(request.params),input=RequestAttendeeClaim.parse(request.body);
+    const {id,token}=ActivityTokenPath.parse(request.params),input=RequestAttendeeClaim.parse(request.body);
     return write(request,id,'request',token,input,(event)=>{tokenLookup(db,event,token,now());},(event,user,stamp)=>{
       requireEventRevision(event,input.revision);const {claim,person}=tokenLookup(db,event,token,now());
       if(claim.status!=='invited')throw withApiError(new DomainError('CLAIM_PENDING','已有認領申請，請等待管理人核對',409));
@@ -95,7 +96,7 @@ export function registerActivityClaims(app:FastifyInstance,db:DB,security:Securi
     });
   });
   app.post('/api/v2/activities/:id/claims/:claimId',routeOptions,async request=>{
-    const {id,claimId}=claimParams.parse(request.params),input=DecideAttendeeClaim.parse(request.body);
+    const {id,claimId}=ActivityClaimPath.parse(request.params),input=DecideAttendeeClaim.parse(request.body);
     return write(request,id,input.decision,claimId,input,(event,userId)=>{const claim=claimById(db,event,claimId);management(db,event,personRow(db,event,claim.attendee_id),userId);},(event,user,stamp)=>{
       requireEventRevision(event,input.revision);const claim=claimById(db,event,claimId),person=personRow(db,event,claim.attendee_id);
       if(!active(claim,now()))throw withApiError(new DomainError('CLAIM_INACTIVE','認領邀請已失效',409));

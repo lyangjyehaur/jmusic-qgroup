@@ -1,3 +1,4 @@
+import { StrictRequestKeyPath } from '@qgroup/contracts/http-paths';
 import { EmptyHttpQuery } from '@qgroup/contracts';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
@@ -9,7 +10,7 @@ import type { AdminSecurity } from './admin-security';
 export function registerAdminOperations(app: FastifyInstance, db: DB, admin: AdminSecurity) {
   app.get('/api/v2/admin/operations/:key', async request => db.transaction(() => {
     const access = admin.authority(request);
-    const { key } = z.object({ key: z.string().uuid() }).strict().parse(request.params);
+    const { key } = StrictRequestKeyPath.parse(request.params);
     EmptyHttpQuery.parse(request.query);
     const scope = z.string().regex(/^[a-f0-9]{64}$/).parse(request.headers['x-admin-scope']);
     if (scope !== access.scope)

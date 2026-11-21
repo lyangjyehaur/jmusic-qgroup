@@ -1,3 +1,4 @@
+import { ActivityPath, ActivityVersionPath } from '@qgroup/contracts/http-paths';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { PositiveVersionQuery,
@@ -49,12 +50,9 @@ export function registerSettlements(
   now: () => Date,
   defaults: ActivityBotDefaults = {},
 ) {
-  const params = z.object({ id: z.string().min(1).max(80) }),
-    version = z.coerce.number().int().positive().max(Number.MAX_SAFE_INTEGER),
-    bot = createActivityBot(db, now, defaults),
-    limits = { config: { rateLimit: { max: 30, timeWindow: '1 minute' } }, bodyLimit: 10 * 1024 * 1024 };
+  const bot = createActivityBot(db, now, defaults),limits = { config: { rateLimit: { max: 30, timeWindow: '1 minute' } }, bodyLimit: 10 * 1024 * 1024 };
   function access(request: FastifyRequest) {
-    const { id } = params.parse(request.params),
+    const { id } = ActivityPath.parse(request.params),
       device = security.read(request);
     if (request.headers['x-account-scope'] || device) security.scoped(request);
     const viewer = device?.kind === 'member' ? device.id : null;
@@ -120,7 +118,7 @@ export function registerSettlements(
   app.get('/api/v2/activities/:id/settlement/history/:version', async (request) =>
     db.transaction(() => {
       const { event } = access(request),
-        input = params.extend({ version }).parse(request.params),
+        input = ActivityVersionPath.parse(request.params),
         bill = settlementBill(db, event.id, input.version);
       if (!bill) fail('結算版本不存在', 404);
       return bill;

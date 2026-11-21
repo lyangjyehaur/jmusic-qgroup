@@ -36,11 +36,12 @@ const object=(value:unknown)=>{
  if(value===null||typeof value!=='object'||Array.isArray(value))throw new TypeError('Invalid HTTP request input');
  return value as Record<string,unknown>;
 };
-function requestPath(path:string,input:Record<string,unknown>,schema:z.ZodType|null){
+function requestPath(path:string,input:Record<string,unknown>,schema:z.ZodType|null,pathSchemas:readonly z.ZodType[]){
  const names=[...path.matchAll(/:([^/]+)/g)].map(match=>match[1]!),params=object(input.params??{});
  if(Object.keys(params).sort().join(',')!==[...names].sort().join(','))throw new TypeError('HTTP route parameters differ');
  // Fetch normalizes whole dot segments, even when the dots are percent-encoded.
  for(const name of names)if(typeof params[name]!=='string'||params[name]===''||params[name]==='.'||params[name]==='..')throw new TypeError('Invalid HTTP route parameter');
+ for(const pathSchema of pathSchemas)pathSchema.parse(params);
  const pathname=path.replace(/:([^/]+)/g,(_,name:string)=>encodeURIComponent(params[name] as string)),query=new URLSearchParams();
  for(const [key,value] of Object.entries(object(input.query??{}))){
   if(value===undefined)continue;
@@ -63,7 +64,7 @@ export function createHttpClient(options:{fetch?:typeof fetch;context?:()=>HttpC
   const operation=HttpOperations[key],values=object(input);
   if(Object.keys(values).some(name=>!['params','query','body','requestId','requestScope','signal','cache'].includes(name)))throw new TypeError('Unexpected HTTP request option');
   if(values.cache!==undefined&&values.cache!=='no-store')throw new TypeError('Invalid HTTP cache option');
-  const url=requestPath(operation.path,values,operation.query),headers=new Headers({Accept:'application/json'}),context=options.context?.()??{};
+  const url=requestPath(operation.path,values,operation.query,operation.params),headers=new Headers({Accept:'application/json'}),context=options.context?.()??{};
   if(values.requestId!==undefined||values.requestScope!==undefined){
    if(typeof values.requestScope!=='string'||!values.requestScope||values.requestScope!==(context.receiptScope??context.scope))throw new HttpScopeChangedError();
   }

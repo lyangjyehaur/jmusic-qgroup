@@ -1,3 +1,4 @@
+import { ActivityPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { registerHttpResponseValidation } from './http-responses';
 import { runtimeInfo } from '@qgroup/runtime';
@@ -190,7 +191,7 @@ export function createApp(options: AppOptions) {
       return listActivities(db, query.page, query.period, now());
     });
     app.get('/api/v2/activities/:id', async request => {
-      const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params);
+      const { id } = ActivityPath.parse(request.params);
       return db.transaction(()=>getActivity(db, id, now(), activityViewer(security, request)))();
     });
     app.get('/api/v2/music/entries', async () => ({ entries: catalog(db) }));

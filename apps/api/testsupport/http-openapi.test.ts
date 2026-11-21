@@ -17,7 +17,7 @@ it('generates a valid OpenAPI document for every actual v2 operation with reques
   expect(operations.map(item => item.operationId).sort()).toEqual(rows.map(row => row.id).sort());
   expect(operations).toHaveLength(194);expect(operations.filter(item => item.requestBody)).toHaveLength(85);
   expect(operations.filter(item => item['x-qgroup-query-schema'])).toHaveLength(47);
-  expect(Object.keys(spec.components.schemas)).toHaveLength(423);
+  expect(Object.keys(spec.components.schemas)).toHaveLength(442);
   const download = object(spec.paths['/api/v2/admin/music-export']!.get), response = object(object(download.responses)['200']);
   expect(response.content).toEqual({ 'application/json': { schema: { $ref: '#/components/schemas/Response_HttpMusicExport' } } });
   expect(response.headers).toMatchObject({ 'Content-Disposition': { required: true, 'x-qgroup-disposition': 'attachment' } });
@@ -46,10 +46,10 @@ it('does not reinterpret literal JSON values as references or confuse a property
   await expect(assertHttpOpenAPI(spec)).resolves.toBeUndefined();
   expect(before.schemas['Fixture']).toEqual({ type: 'object', default: literal, const: literal, examples: [literal], properties: { default: { $ref: '#/$defs/item' } }, $defs: { item: { type: 'string' } } });
 });
-it('keeps path validation, authorization and release acceptance explicitly incomplete', () => {
+it('binds existing path validators while keeping authorization and release acceptance incomplete', () => {
   const spec = document();
   expect(spec['x-qgroup-permission-bindings-complete']).toBe(false);
-  expect(spec['x-qgroup-path-validation-bound']).toBe(false);expect(spec['x-qgroup-release-eligible']).toBe(false);
+  expect(spec['x-qgroup-path-validation-bound']).toBe(true);expect(spec['x-qgroup-release-eligible']).toBe(false);
   const operations = Object.values(spec.paths).flatMap(item => Object.values(item)).map(object);
   expect(operations.every(item => item['x-qgroup-permission-binding-complete'] === false && item['x-qgroup-server-domain-validation-required'] === true && item['x-qgroup-zod-validation-required'] === true)).toBe(true);
   expect(operations.filter(item => !Object.hasOwn(item, 'x-qgroup-access')).every(item => !Object.hasOwn(item, 'security'))).toBe(true);

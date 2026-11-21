@@ -1,3 +1,4 @@
+import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -5,7 +6,7 @@ import { EmptyHttpQuery, AdminMusicErasureInput,AdminMusicErasurePreview,AdminMu
 import { DomainError } from '@qgroup/domain';
 import type { AdminSecurity } from './admin-security';
 import type { PrivacyService } from './privacy';
-import { adminMusicProfile,musicAdminProfileId } from './admin-music';
+import { adminMusicProfile } from "./admin-music";
 import { hash } from './security';
 
 export function musicErasureScope(db:DB,id?:string){
@@ -27,12 +28,12 @@ export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminS
     const path=reset?'/api/v2/admin/music-reset':'/api/v2/admin/music/:id/erase';
     app.get(path,{exposeHeadRoute:false},async request=>db.transaction(()=>{
       admin.authority(request);EmptyHttpQuery.parse(request.query);
-      return musicErasureScope(db,reset?undefined:musicAdminProfileId(request.params)).preview;
+      return musicErasureScope(db,reset?undefined:MusicProfilePath.parse(request.params).id).preview;
     })());
     app.post(path,{config:{rateLimit:{max:6,timeWindow:'1 minute'}}},async request=>{
       const input=AdminMusicErasureInput.parse(request.body);
       db.transaction(()=>{
-        const access=admin.authority(request,true),id=reset?undefined:musicAdminProfileId(request.params);
+        const access=admin.authority(request,true),id=reset?undefined:MusicProfilePath.parse(request.params).id;
         if(input.confirm!==(reset?'RESET':'DELETE'))throw withApiError(new DomainError('ERASURE_CONFIRM','請輸入正確的刪除確認字詞'));
         const signature=hash('v2:admin-music-erasure:'+access.actorRef+':'+(id??'reset')+':'+JSON.stringify(input));
         const prior=db.prepare('SELECT signature FROM privacy_receipts WHERE request_id=?').get(input.requestId) as {signature:string}|undefined;

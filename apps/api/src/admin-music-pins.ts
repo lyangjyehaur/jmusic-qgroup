@@ -1,3 +1,4 @@
+import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -5,13 +6,13 @@ import { PositiveCursorQuery, MusicPinResultRequest, ResetMusicPin } from '@qgro
 import { z } from 'zod';
 import { DomainError } from '@qgroup/domain';
 import type { AdminSecurity } from './admin-security';
-import { adminMusicProfile, musicAdminProfileId } from './admin-music';
+import { adminMusicProfile } from "./admin-music";
 import { invalidateMusicClaimProofs } from './music-ownership';
 import { hash } from './security';
 
 export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: AdminSecurity, now: () => Date) {
   app.post('/api/v2/admin/music/:id/pin', { config: { rateLimit: { max: 10, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
-    const access = admin.authority(request, true); const id = musicAdminProfileId(request.params); const input = ResetMusicPin.parse(request.body);
+    const access = admin.authority(request, true); const id = MusicProfilePath.parse(request.params).id; const input = ResetMusicPin.parse(request.body);
     const key = z.string().uuid().parse(request.headers['idempotency-key']);
     const signature = hash('v2:POST:/admin/music/' + id + '/pin:' + JSON.stringify(input));
     const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
@@ -34,7 +35,7 @@ export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: Admi
     return { ok: true };
   }).immediate());
   app.post('/api/v2/admin/music/:id/pin-result', async request => {
-    const access = admin.authority(request, true); const id = musicAdminProfileId(request.params); const input = MusicPinResultRequest.parse(request.body);
+    const access = admin.authority(request, true); const id = MusicProfilePath.parse(request.params).id; const input = MusicPinResultRequest.parse(request.body);
     const prior = db.prepare('SELECT response_json FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, input.requestId) as { response_json: string } | undefined;
     if (!prior) return { status: 'not_found' };
     const result = JSON.parse(prior.response_json) as { operation?: string; profileId?: string };
@@ -42,7 +43,7 @@ export function registerAdminMusicPins(app: FastifyInstance, db: DB, admin: Admi
     return { status: 'completed' };
   });
   app.get('/api/v2/admin/music/:id/pin-history', async request => {
-    admin.authority(request); const id = musicAdminProfileId(request.params); adminMusicProfile(db, id);
+    admin.authority(request); const id = MusicProfilePath.parse(request.params).id; adminMusicProfile(db, id);
     const { before } = PositiveCursorQuery.parse(request.query);
     const rows = db.prepare(`SELECT h.id,h.revision,h.reason,h.created_at AS createdAt,
       CASE WHEN h.actor_ref LIKE 'account:%' THEN COALESCE(u.nickname,'帳號管理員') ELSE '救援憑證' END AS actor

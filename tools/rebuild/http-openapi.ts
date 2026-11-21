@@ -4,7 +4,7 @@ import { z } from 'zod';
 import officialSchema from './schemas/openapi-3.1.json';
 import { httpAccessDescription,httpSecuritySchemes } from './http-access';
 
-type Catalog = { schemas: Record<string, unknown>; responseSchemas: Record<string, unknown> };
+type Catalog = { schemas: Record<string, unknown>; responseSchemas: Record<string, unknown>; pathOutputSchemas: Record<string, unknown> };
 type ObjectValue = Record<string, unknown>;
 const object = (value: unknown): ObjectValue => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw Error('Expected an object schema');
@@ -74,9 +74,17 @@ export function httpOpenAPI(rows: HttpOperationSource[], catalog: Catalog) {
     const path = row.path.replace(/:([A-Za-z][A-Za-z0-9_]*)/g, '{$1}');
     const item = paths[path] ??= {}, method = row.method.toLowerCase();
     if (!['get', 'post', 'put', 'patch', 'delete'].includes(method) || Object.hasOwn(item, method)) throw Error('Duplicate or unsupported OpenAPI operation');
-    const parameters: ObjectValue[] = [...row.path.matchAll(/:([A-Za-z][A-Za-z0-9_]*)/g)].map(match => ({
-      name: match[1]!, in: 'path', required: true, schema: { type: 'string' }, 'x-qgroup-server-validation-required': true,
-    }));
+    const parameters: ObjectValue[] = [...row.path.matchAll(/:([A-Za-z][A-Za-z0-9_]*)/g)].map(match => {
+      const name=match[1]!,bindings=row.params.filter(binding=>Object.hasOwn(object(object(catalog.schemas[binding]).properties),name));
+      if(!bindings.length)throw Error('Missing OpenAPI path contract');
+      const fields=bindings.map(binding=>{
+        const input=object(object(object(catalog.schemas[binding]).properties)[name]);
+        if(input.type!=='string')throw Error('Unsupported decoded path contract');
+        return {$ref:schemaPath(binding)+'/properties/'+pointer(name)};
+      });
+      const unique=[...new Map(fields.map(field=>[JSON.stringify(field),field])).values()];
+      return {name,in:'path',required:true,schema:unique.length===1?unique[0]:{allOf:unique},'x-qgroup-server-validation-required':true,'x-qgroup-zod-validation-required':true};
+    });
     if (row.query) {
       const query = object(catalog.schemas[row.query]);
       if (query.type !== 'object') throw Error('Query schema must describe an object');
@@ -102,6 +110,7 @@ export function httpOpenAPI(rows: HttpOperationSource[], catalog: Catalog) {
       responses: { '200': success, default: { description: 'Request rejected or unavailable', content: { 'application/json': { schema: reference('ApiFailure') } } } },
       'x-qgroup-source': { file: row.file, line: row.line },
       'x-qgroup-zod-validation-required': true,
+      'x-qgroup-path-schemas': row.params.map(reference),
       'x-qgroup-server-domain-validation-required': true,
       'x-qgroup-permission-binding-complete': false,
       ...(row.access ? httpAccessDescription(row.access) : {}),
@@ -120,7 +129,7 @@ export function httpOpenAPI(rows: HttpOperationSource[], catalog: Catalog) {
     'x-qgroup-boundary-reviewed-operations': rows.filter(row=>row.access).length,
     'x-qgroup-boundary-coverage-complete': rows.every(row=>row.access?.boundaryReviewed),
     'x-qgroup-permission-bindings-complete': false,
-    'x-qgroup-path-validation-bound': false,
+    'x-qgroup-path-validation-bound': true,
     'x-qgroup-release-eligible': false,
   };
 }

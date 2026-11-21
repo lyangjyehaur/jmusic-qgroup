@@ -1,3 +1,4 @@
+import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -74,7 +75,7 @@ export function registerMusicContact(app: FastifyInstance, db: DB, security: Sec
   app.get('/api/v2/music/profiles/:id', async request => db.transaction(() => {
     const viewer = security.scopedMember(request);
     if (!getProfile(db, viewer.id)) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403));
-    const { id } = z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(request.params);
+    const { id } = MusicProfilePath.parse(request.params);
     return memberProfile(db, id, viewer.id);
   })());
 }

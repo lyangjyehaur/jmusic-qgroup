@@ -1,3 +1,4 @@
+import { ActivityPath, ActivityPersonPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -14,7 +15,7 @@ type User={id:string;nickname:string};
 function observationBlocker(event:EventRow,now:Date){return !['ongoing','ended','cancelled'].includes(activityState(event,now).phase)||event.archived_at?'活動開始後才能核對出席；歸檔後請先取消歸檔':'';}
 function onsiteBlocker(db:DB,event:EventRow,now:Date){if(!['ongoing','ended'].includes(activityState(event,now).phase)||event.archived_at)return '只有進行中或已結束待核對的活動可以現場補錄';return db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(event.id)?'已有結算，不能補錄正式名額；請先按結算流程核對':'';}
 export function registerActivityAttendance(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),personParams=params.extend({personId:z.string().min(1).max(80)}),bot=createActivityBot(db,now,defaults),routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
+  const bot=createActivityBot(db,now,defaults),routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function authorize(id:string,user:User,onsite=false){requireActivityAccess(db,id,user.id);const event=eventRow(db,id)!,scopes=eventScopes(db,event,user.id);if(!scopes.has('attendance')||(onsite&&!scopes.has('roster')))throw withApiError(new DomainError('ATTENDANCE_PERMISSION',onsite?'現場補錄需要名單及出席管理權限':'沒有出席管理權限',403));return event;}
   function record(event:EventRow,user:User,action:string,before:ReturnType<typeof activityPeopleSnapshot>,reason:string,stamp:string){const delta=rosterDelta(before,activityPeopleSnapshot(db,event.id));if(appendEventAudit(db,event,user,action,{participants:delta.prior},{participants:delta.current},reason,stamp))try{db.transaction(()=>bot.rosterUpdated(event.id,action,delta.prior as {id:string;status:string}[],delta.current as {id:string;status:string}[]))();}catch{app.log.error({eventId:event.id},'Attendance bot hook failed; business write preserved');}}
   function write(request:FastifyRequest,id:string,personId:string|null,input:unknown,run:(event:EventRow,user:User,stamp:string)=>void){
@@ -24,11 +25,11 @@ export function registerActivityAttendance(app:FastifyInstance,db:DB,security:Se
     }).immediate();
   }
   app.get('/api/v2/activities/:id/attendance',async request=>db.transaction(()=>{
-    const {id}=params.parse(request.params),user=security.scopedMember(request),event=authorize(id,user),people=activityPeople(db,id),scopes=eventScopes(db,event,user.id),observation=observationBlocker(event,now()),onsite=onsiteBlocker(db,event,now()),phase=activityState(event,now()).phase;
+    const {id}=ActivityPath.parse(request.params),user=security.scopedMember(request),event=authorize(id,user),people=activityPeople(db,id),scopes=eventScopes(db,event,user.id),observation=observationBlocker(event,now()),onsite=onsiteBlocker(db,event,now()),phase=activityState(event,now()).phase;
     return {id,title:event.title,revision:event.revision,conditionsVersion:event.conditions_version,arrangement:arrangementSnapshot(event),phase,serverTime:legacyStamp(now()),canObserve:!observation,canAdd:scopes.has('roster')&&!onsite,observationBlocker:observation,onsiteBlocker:!scopes.has('roster')?'現場補錄另需名單管理權限':onsite,reasonRequired:['ended','cancelled'].includes(phase),nickname:user.nickname,selfRegistered:people.some(person=>person.user_id===user.id&&person.status!=='withdrawn'),capacity:event.capacity,confirmed:people.filter(person=>person.status==='confirmed').length,waiting:people.filter(person=>person.status==='waiting').length,people:people.filter(person=>person.status==='confirmed'||person.attendance!=='unknown').map(person=>{const origin=db.prepare('SELECT payer_name FROM attendee_payment_origins WHERE attendee_id=?').get(person.id) as {payer_name:string}|undefined;return {id:person.id,name:person.nickname,status:person.status,isGuest:!person.user_id,payerKind:person.payer_kind,payerName:origin?.payer_name??(person.payer_kind==='self'?person.nickname:person.manager_name),attendance:person.attendance,note:person.attendance_note,arrivedAt:person.arrived_at,leftAt:person.left_at};})};
   })());
   app.post('/api/v2/activities/:id/attendance/:personId',routeOptions,async request=>{
-    const {id,personId}=personParams.parse(request.params),input=ChangeAttendance.parse(request.body);
+    const {id,personId}=ActivityPersonPath.parse(request.params),input=ChangeAttendance.parse(request.body);
     return write(request,id,personId,input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);const blocker=observationBlocker(event,now());if(blocker)throw new DomainError('ATTENDANCE_LOCKED',blocker,409);
       const person=activityPeople(db,id).find(person=>person.id===personId);if(!person||(person.status!=='confirmed'&&person.attendance==='unknown'))throw withApiError(new DomainError('ATTENDANCE_PERSON','請先確認正式名額，臨時加入請使用現場補錄',409));
@@ -41,7 +42,7 @@ export function registerActivityAttendance(app:FastifyInstance,db:DB,security:Se
     });
   });
   app.post('/api/v2/activities/:id/onsite',routeOptions,async request=>{
-    const {id}=params.parse(request.params),input=AddOnsite.parse(request.body);
+    const {id}=ActivityPath.parse(request.params),input=AddOnsite.parse(request.body);
     return write(request,id,null,input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);const blocker=onsiteBlocker(db,event,now());if(blocker)throw new DomainError('ONSITE_LOCKED',blocker,409);
       if(input.conditionsVersion!==event.conditions_version)throw withApiError(new DomainError('CONDITIONS_CHANGED','請載入最新安排並確認現場人員已接受目前費用規則',409));

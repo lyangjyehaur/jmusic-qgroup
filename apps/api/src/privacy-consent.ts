@@ -1,3 +1,4 @@
+import { StrictRequestKeyPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -24,7 +25,7 @@ export function registerPrivacyConsent(app: FastifyInstance, db: DB, security: S
   app.get('/api/v2/me/privacy/consent', async request => consentState(db, security.scopedMember(request).id));
   app.get('/api/v2/me/privacy/consent/receipts/:key', async request => {
     const member = security.scopedMember(request);
-    const { key } = z.object({ key: z.string().uuid() }).strict().parse(request.params);
+    const { key } = StrictRequestKeyPath.parse(request.params);
     return receipt(db, member.id, key);
   });
   app.post('/api/v2/me/privacy/consent', { config: { rateLimit: { max: 12, timeWindow: '1 minute' } } }, async request => db.transaction(() => {

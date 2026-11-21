@@ -1,1 +1,1 @@
-{"name":"@qgroup/contracts","private":true,"type":"module","exports":{".":"./src/index.ts","./language":"./src/language.ts","./http":"./src/http/client.ts"}}
+{"name":"@qgroup/contracts","private":true,"type":"module","exports":{".":"./src/index.ts","./language":"./src/language.ts","./http":"./src/http/client.ts","./http-paths":"./src/http-paths.ts"}}

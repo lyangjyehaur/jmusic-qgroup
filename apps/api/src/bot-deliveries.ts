@@ -1,8 +1,9 @@
+import { BotDeliveryEntityPath, BotDeliveryPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FastifyInstance,FastifyRequest } from 'fastify';
-import { BotDeliveriesQuery,EmptyHttpQuery, BotDeliveries,BotDelivery,BotDeliveryId,BotDeliveryReview,BotDeliveryResult,RetryBotDelivery } from '@qgroup/contracts';
+import { BotDeliveriesQuery, EmptyHttpQuery, BotDeliveries, BotDelivery, BotDeliveryReview, BotDeliveryResult, RetryBotDelivery } from "@qgroup/contracts";
 import { currentBotTarget,deploymentBotGroup,type DB } from '@qgroup/database';
 import { DomainError } from '@qgroup/domain';
 import { activityBotPolicy,type ActivityBotDefaults } from './activity-bot';
@@ -17,7 +18,6 @@ type Context={entity:'activity'|'poll';id:string};
 type Row=DeliveryIntent & {id:string;status:'pending'|'sending'|'sent'|'failed'|'skipped';attempts:number;last_error:string;created_at:string;retry_at:string|null;sent_at:string|null;simulated_at:string|null;delivered_payload_json:string|null;claimed_at:string|null;claim_token:string;title:string};
 const columns=`CAST(o.id AS TEXT) id,o.event_id,o.poll_id,o.kind,o.channel,o.target,o.payload_json,o.due_at,o.status,o.attempts,o.last_error,o.created_at,o.retry_at,o.sent_at,o.simulated_at,o.delivered_payload_json,o.claimed_at,o.claim_token,COALESCE(e.title,p.title,'') title`;
 const tables='bot_outbox o LEFT JOIN events e ON e.id=o.event_id LEFT JOIN time_polls p ON p.id=o.poll_id';
-const identifier=z.string().min(1).max(80);
 
 const object=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==='object'&&!Array.isArray(value);
 const json=(value:string|null)=>{try{const data:unknown=JSON.parse(value??'null');return object(data)?data:null;}catch{return null;}};
@@ -72,16 +72,16 @@ export function registerBotDeliveries(app:FastifyInstance,db:DB,security:Securit
     return BotDeliveries.parse({entries:rows.slice(0,50).map(summary),nextBefore:rows.length>50?rows[49]!.id:null,mode:mode===null?'inherit':mode?'simulate':'live'});
   }
   app.get('/api/v2/admin/bot/deliveries',async request=>db.transaction(()=>list(request))());
-  app.get('/api/v2/admin/bot/deliveries/:deliveryId',async request=>db.transaction(()=>{admin.authority(request);EmptyHttpQuery.parse(request.query);return review(load(BotDeliveryId.parse((request.params as {deliveryId:string}).deliveryId)),true).view;})());
+  app.get('/api/v2/admin/bot/deliveries/:deliveryId',async request=>db.transaction(()=>{admin.authority(request);EmptyHttpQuery.parse(request.query);return review(load(BotDeliveryPath.parse(request.params).deliveryId),true).view;})());
   for(const [segment,entity] of [['activities','activity'],['time-polls','poll']] as const){
-    const params=z.object({id:identifier,deliveryId:BotDeliveryId.optional()});
-    const context=(request:FastifyRequest):Context=>({entity,id:params.parse(request.params).id});
+
+    const context=(request:FastifyRequest):Context=>({entity,id:BotDeliveryEntityPath.parse(request.params).id});
     app.get(`/api/v2/${segment}/:id/bot-deliveries`,async request=>db.transaction(()=>list(request,context(request)))());
     app.get(`/api/v2/${segment}/:id/bot-deliveries/:deliveryId`,async request=>db.transaction(()=>{
-      const row=load(params.parse(request.params).deliveryId!);authorize(context(request),security.scopedMember(request).id,row);EmptyHttpQuery.parse(request.query);return review(row).view;
+      const row=load(BotDeliveryEntityPath.parse(request.params).deliveryId!);authorize(context(request),security.scopedMember(request).id,row);EmptyHttpQuery.parse(request.query);return review(row).view;
     })());
     app.post(`/api/v2/${segment}/:id/bot-deliveries/:deliveryId/retry`,{config:{rateLimit:{max:20,timeWindow:'1 minute'}}},async request=>db.transaction(()=>{
-      const user=security.memberWrite(request),scope=context(request),row=load(params.parse(request.params).deliveryId!);authorize(scope,user.id,row);
+      const user=security.memberWrite(request),scope=context(request),row=load(BotDeliveryEntityPath.parse(request.params).deliveryId!);authorize(scope,user.id,row);
       const input=RetryBotDelivery.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='bot-delivery:'+hash(JSON.stringify({scope,id:row.id,input}));
       const previous=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
       if(previous){if(previous.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return BotDeliveryResult.parse(JSON.parse(previous.response_json));}
@@ -96,7 +96,7 @@ export function registerBotDeliveries(app:FastifyInstance,db:DB,security:Securit
     }).immediate());
   }
   app.get('/api/v2/bot-delivery-results/:requestId',async request=>db.transaction(()=>{
-    EmptyHttpQuery.parse(request.query);const user=security.scopedMember(request),key=z.string().uuid().parse((request.params as {requestId:string}).requestId);
+    EmptyHttpQuery.parse(request.query);const user=security.scopedMember(request),key=RequestIdPath.parse(request.params).requestId;
     const previous=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
     if(!previous?.signature.startsWith('bot-delivery:'))return {state:'not_found' as const};
     const result=BotDeliveryResult.parse(JSON.parse(previous.response_json));authorize({entity:result.entity,id:result.entityId},user.id,load(result.originalId));return {state:'completed' as const,result};

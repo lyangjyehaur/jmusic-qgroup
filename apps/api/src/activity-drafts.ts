@@ -1,3 +1,4 @@
+import { ActivityPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -12,7 +13,6 @@ import { publishActivityDraft } from './activity-publish';
 import { activityBotPolicy, type ActivityBotDefaults } from './activity-bot';
 import { priorCreateIntent,recordCreateIntent } from './create-intents';
 
-const params=z.object({id:z.string().min(1).max(80)});
 function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allowDeleted=false,allowPublished=false){
   const event=eventRow(db,id);
   if(!event||(!allowDeleted&&event.status==='deleted'))throw withApiError(new DomainError('NOT_FOUND','找不到活動草稿',404));
@@ -48,9 +48,9 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
       ORDER BY e.created_at DESC,e.id DESC LIMIT 21 OFFSET ?`).all(user.id,user.id,(page-1)*20) as {id:string;title:string;starts_at:string;owner_id:string;revision:number;owner_name:string;permissions_json:string|null}[];
     return {page,hasMore:rows.length>20,drafts:rows.slice(0,20).map(row=>{const scopes=eventScopes(db,eventRow(db,row.id)!,user.id);return {id:row.id,title:row.title,startsAt:row.starts_at,ownerName:row.owner_name,isOwner:row.owner_id===user.id,canEdit:scopes.has('schedule'),revision:row.revision};})};
   })());
-  app.get('/api/v2/activities/:id/draft',async request=>db.transaction(()=>activityDraft(db,params.parse(request.params).id,security.scopedMember(request).id))());
+  app.get('/api/v2/activities/:id/draft',async request=>db.transaction(()=>activityDraft(db,ActivityPath.parse(request.params).id,security.scopedMember(request).id))());
   app.get('/api/v2/activities/draft-results/:requestId',async request=>db.transaction(()=>{
-    const user=security.scopedMember(request);const {requestId}=z.object({requestId:z.string().uuid()}).parse(request.params);
+    const user=security.scopedMember(request);const {requestId}=RequestIdPath.parse(request.params);
     const row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,requestId) as {signature:string;response_json:string}|undefined;
     if(!row||!row.signature.startsWith('activity-draft:'))return {state:'not_found' as const};
     // A global receipt can also belong to another domain. Only expose the minimal draft result.
@@ -94,7 +94,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     });
   });
   app.put('/api/v2/activities/:id/draft',routeOptions,async request=>{
-    const {id}=params.parse(request.params);const input=SaveActivityDraft.parse(request.body);
+    const {id}=ActivityPath.parse(request.params);const input=SaveActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/'+id+'/draft',input,(user,stamp)=>{
       const event=authorize(db,id,user.id,'schedule');requireEventRevision(event,input.revision);
       if(event.archived_at||db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(id))throw withApiError(new DomainError('ACTIVITY_LOCKED','活動已有歸檔或結算記錄，不能重寫安排',409));
@@ -112,7 +112,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     },{id,scope:'schedule'});
   });
   app.post('/api/v2/activities/:id/draft/remove',routeOptions,async request=>{
-    const {id}=params.parse(request.params);const input=RemoveActivityDraft.parse(request.body);
+    const {id}=ActivityPath.parse(request.params);const input=RemoveActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/'+id+'/draft/remove',input,(user,stamp)=>{
       const event=authorize(db,id,user.id,'owner');requireEventRevision(event,input.revision);
       const blocked=removalBlocker(db,event);if(blocked)throw new DomainError('ACTIVITY_HAS_RECORDS',blocked,409);
@@ -123,7 +123,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     },{id,scope:'owner'});
   });
   app.post('/api/v2/activities/:id/draft/publish',routeOptions,async request=>{
-    const {id}=params.parse(request.params);const input=PublishActivityDraft.parse(request.body);
+    const {id}=ActivityPath.parse(request.params);const input=PublishActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/'+id+'/draft/publish',input,user=>{
       const event=authorize(db,id,user.id,'owner');requireEventRevision(event,input.revision);
       const arrangement=arrangementValues(storedArrangement(event) as z.infer<typeof CreateActivityDraft>['values'],now(),true,event);

@@ -1,3 +1,4 @@
+import { ActivityPath, ActivityPersonPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -11,7 +12,6 @@ import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eve
 import { activityPeopleSnapshot, rebalanceActivity, rosterDelta } from './activity-publish';
 import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
 
-const params=z.object({id:z.string().min(1).max(80)});
 const fields=['category','starts_at','duration_hours','location','description','withdrawal_deadline','timezone','fee_policy'] as const;
 const labels={category:'类型',starts_at:'时间',duration_hours:'时长',location:'地点',description:'注意事项',withdrawal_deadline:'退出期限',timezone:'时区',fee_policy:'费用规则'};
 function canAssist(db:DB,event:EventRow,userId:string){return ['scheduled','ongoing'].includes(event.lifecycle)&&!event.archived_at&&!!db.prepare('SELECT 1 FROM user_admin_roles WHERE user_id=? AND is_admin=1 AND NOT EXISTS(SELECT 1 FROM privacy_requests WHERE user_id=?)').get(userId,userId);}
@@ -58,13 +58,13 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
       const result=run(event,user,legacyStamp(now()));db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,JSON.stringify(result),200,legacyStamp(now()));return result;
     }).immediate();
   }
-  app.get('/api/v2/activities/:id/arrangements',async request=>db.transaction(()=>activityArrangements(db,params.parse(request.params).id,security.scopedMember(request).id))());
+  app.get('/api/v2/activities/:id/arrangements',async request=>db.transaction(()=>activityArrangements(db,ActivityPath.parse(request.params).id,security.scopedMember(request).id))());
   app.get('/api/v2/activities/:id/conditions',async request=>db.transaction(()=>{
     const {page}=PageQuery.parse(request.query);
-    return activityConditions(db,params.parse(request.params).id,activityViewer(security,request),page);
+    return activityConditions(db,ActivityPath.parse(request.params).id,activityViewer(security,request),page);
   })());
   app.get('/api/v2/activities/management-results/:requestId',async request=>db.transaction(()=>{
-    const user=security.scopedMember(request),key=z.string().uuid().parse((request.params as {requestId:string}).requestId);
+    const user=security.scopedMember(request),key=RequestIdPath.parse(request.params).requestId;
     const row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string;response_json:string}|undefined;
     if(!row||!row.signature.startsWith('activity-management:'))return {state:'not_found' as const};
     const [,kind,id,personId]=row.signature.split(':');if(kind!=='arrangement'&&kind!=='consent')return {state:'not_found' as const};
@@ -73,7 +73,7 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
   })());
   const routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   app.put('/api/v2/activities/:id/arrangements',routeOptions,async request=>{
-    const id=params.parse(request.params).id,input=SaveActivityDraft.parse(request.body);
+    const id=ActivityPath.parse(request.params).id,input=SaveActivityDraft.parse(request.body);
     return write(request,id,'arrangement',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);
       if(!activityArrangements(db,id,user.id).canEdit)throw withApiError(new DomainError('ACTIVITY_LOCKED','活動已結束、取消、歸檔或已有結算，不能重寫安排',409));
@@ -109,7 +109,7 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
     });
   });
   app.post('/api/v2/activities/:id/attendees/:personId/conditions',routeOptions,async request=>{
-    const {id,personId}=params.extend({personId:z.string().min(1).max(80)}).parse(request.params),input=RespondActivityConditions.parse(request.body);
+    const {id,personId}=ActivityPersonPath.parse(request.params),input=RespondActivityConditions.parse(request.body);
     return write(request,id,'consent',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);
       if(!['scheduled','ongoing'].includes(event.lifecycle)||event.archived_at)throw withApiError(new DomainError('CONDITIONS_CLOSED','活動已結束、取消或歸檔，不能再確認新安排',409));

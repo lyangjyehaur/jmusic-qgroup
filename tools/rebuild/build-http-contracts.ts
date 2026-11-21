@@ -4,10 +4,12 @@ import { existsSync,mkdirSync,readFileSync,readdirSync,writeFileSync } from 'nod
 import { isAbsolute,join,resolve } from 'node:path';
 import { fileURLToPath,pathToFileURL } from 'node:url';
 import { z } from 'zod';
-import * as contracts from '@qgroup/contracts';
+import * as baseContracts from '@qgroup/contracts';
+import * as pathContracts from '@qgroup/contracts/http-paths';
 import { HttpResponses } from '@qgroup/contracts/http';
 import { assertHttpOpenAPI,httpOpenAPI } from './http-openapi';
 import { readHttpAccessBindings,type HttpAccessSource } from './http-access';
+const contracts = { ...baseContracts, ...pathContracts };
 
 type SyntaxNode={type:string;[key:string]:unknown};
 const node=(value:unknown):SyntaxNode|undefined=>value!==null&&typeof value==='object'&&'type' in value&&typeof value.type==='string'?value as SyntaxNode:undefined;
@@ -73,7 +75,7 @@ export type HttpResponseSource =
  | {kind:'json';status:200;schema:string}
  | {kind:'image';status:200;mediaTypes:readonly string[]}
  | {kind:'download';status:200;mediaTypes:readonly string[];disposition:'attachment';syntax:'json';schema:string};
-export interface HttpOperationSource {id:string;method:string;path:string;body:string|null;query:string|null;file:string;line:number;response:HttpResponseSource;access?:HttpAccessSource}
+export interface HttpOperationSource {id:string;method:string;path:string;body:string|null;query:string|null;params:readonly string[];file:string;line:number;response:HttpResponseSource;access?:HttpAccessSource}
 function responseSource(id:string):HttpResponseSource{
  if(!Object.hasOwn(HttpResponses,id))throw Error('Missing fixed HTTP success response: '+id);
  const response=HttpResponses[id as keyof typeof HttpResponses];
@@ -96,23 +98,24 @@ function localFunction(name:string,parents:SyntaxNode[]):SyntaxNode|undefined{
  }
  return undefined;
 }
-function queryBindings(value:unknown,parents:SyntaxNode[],imports:Map<string,string>,file:string,covered:Set<SyntaxNode>,seen=new Set<SyntaxNode>()):Set<string>{
+function requestBindings(value:unknown,parents:SyntaxNode[],imports:Map<string,string>,file:string,field:'query'|'params',covered:Set<SyntaxNode>,seen=new Set<SyntaxNode>()):Set<string>{
  const bindings=new Set<string>();
  if(seen.size>256)throw Error('Local query call graph exceeds capacity');
  walk(value,(child,inside)=>{
   const ancestors=[...parents,...inside];
-  if(child.type==='MemberExpression'&&node(child.object)?.name==='request'&&node(child.property)?.name==='query'){
+  if(child.type==='MemberExpression'&&node(child.object)?.name==='request'&&node(child.property)?.name===field){
    covered.add(child);
    const parent=ancestors.at(-1),call=node(parent?.callee),schema=node(call?.object),method=node(call?.property);
-   if(parent?.type!=='CallExpression'||(parent.arguments as unknown[])[0]!==child||!['parse','safeParse'].includes(String(method?.name))||schema?.type!=='Identifier'||typeof schema.name!=='string'||!imports.has(schema.name))throw Error('Query must use a named shared contract: '+file);
+   if(parent?.type!=='CallExpression'||(parent.arguments as unknown[])[0]!==child||!['parse','safeParse'].includes(String(method?.name))||schema?.type!=='Identifier'||typeof schema.name!=='string'||!imports.has(schema.name))throw Error(field+' must use a named shared contract: '+file);
    const name=imports.get(schema.name)!;
-   if(!(contracts[name as keyof typeof contracts] instanceof z.ZodType))throw Error('Query contract is not an exported Zod schema');
+   if(!(contracts[name as keyof typeof contracts] instanceof z.ZodType))throw Error('Request contract is not an exported Zod schema');
+   if(field==='params'&&!(contracts[name as keyof typeof contracts] instanceof z.ZodObject))throw Error('Path contract must be an object');
    bindings.add(name);
   }
   if(child.type==='CallExpression'){
    const callee=node(child.callee);if(callee?.type!=='Identifier'||typeof callee.name!=='string')return;
    const helper=localFunction(callee.name,ancestors);if(!helper||seen.has(helper))return;
-   seen.add(helper);for(const name of queryBindings(helper.body,[...ancestors,helper],imports,file,covered,seen))bindings.add(name);
+   seen.add(helper);for(const name of requestBindings(helper.body,[...ancestors,helper],imports,file,field,covered,seen))bindings.add(name);
   }
  });
  return bindings;
@@ -122,9 +125,13 @@ function queryBindings(value:unknown,parents:SyntaxNode[],imports:Map<string,str
 export function readHttpOperationSources(root:string):HttpOperationSource[]{
  const rows:HttpOperationSource[]=[];
  for(const file of readdirSync(join(root,'apps/api/src')).filter(name=>name.endsWith('.ts')&&!name.endsWith('.test.ts')).sort(order)){
-  const text=readFileSync(join(root,'apps/api/src',file),'utf8'),ast=parse(text,{sourceType:'module',plugins:['typescript']}),imports=new Map<string,string>(),coveredQueries=new Set<SyntaxNode>(),externalQueries=new Set<SyntaxNode>();
-  for(const statement of ast.program.body)if(statement.type==='ImportDeclaration'&&statement.source.value==='@qgroup/contracts'){
-   for(const spec of statement.specifiers)if(spec.type==='ImportSpecifier')imports.set(spec.local.name,spec.imported.type==='Identifier'?spec.imported.name:spec.imported.value);
+  const text=readFileSync(join(root,'apps/api/src',file),'utf8'),ast=parse(text,{sourceType:'module',plugins:['typescript']}),imports=new Map<string,string>(),coveredQueries=new Set<SyntaxNode>(),externalQueries=new Set<SyntaxNode>(),coveredPaths=new Set<SyntaxNode>(),externalPaths=new Set<SyntaxNode>();
+  for(const statement of ast.program.body)if(statement.type==='ImportDeclaration'&&['@qgroup/contracts','@qgroup/contracts/http-paths'].includes(statement.source.value)){
+   const exports=statement.source.value==='@qgroup/contracts'?baseContracts:pathContracts;
+   for(const spec of statement.specifiers)if(spec.type==='ImportSpecifier'){
+    const name=spec.imported.type==='Identifier'?spec.imported.name:spec.imported.value;
+    if(Object.hasOwn(exports,name))imports.set(spec.local.name,name);
+   }
   }
   walk(ast,(n,parents)=>{
    if(n.type!=='CallExpression')return;
@@ -133,7 +140,7 @@ export function readHttpOperationSources(root:string):HttpOperationSource[]{
    const paths=routeStrings(args[0],parents).filter(path=>path.startsWith('/api/v2/'));
    if(!paths.length){
     // Non-v2 OAuth/provider handlers retain their own query protocol.
-    walk(args.slice(1),child=>{if(child.type==='MemberExpression'&&node(child.object)?.name==='request'&&node(child.property)?.name==='query')externalQueries.add(child);});
+    walk(args.slice(1),child=>{if(child.type==='MemberExpression'&&node(child.object)?.name==='request'){if(node(child.property)?.name==='query')externalQueries.add(child);if(node(child.property)?.name==='params')externalPaths.add(child);}});
     return;
    }
    const method=property.name.toUpperCase(),bindings=new Set<string>();
@@ -147,13 +154,19 @@ export function readHttpOperationSources(root:string):HttpOperationSource[]{
     bindings.add(name);
    });
    if(bindings.size>1||method!=='GET'&&bindings.size!==1||method==='GET'&&bindings.size!==0)throw Error('Ambiguous or missing request body binding: '+method);
-   const queries=queryBindings(args.slice(1),[...parents,n],imports,file,coveredQueries);
+   const queries=requestBindings(args.slice(1),[...parents,n],imports,file,'query',coveredQueries);
    if(queries.size>1)throw Error('Ambiguous query contract: '+file+' '+method);
+   const parameters=requestBindings(args.slice(1),[...parents,n],imports,file,'params',coveredPaths);
    const location=n.loc as {start:{line:number}};
-   for(const path of paths){const id=method+' '+path;rows.push({id,method,path,body:[...bindings][0]??null,query:[...queries][0]??null,file:'apps/api/src/'+file,line:location.start.line,response:responseSource(id)});}
+   for(const path of paths){
+    const names=[...path.matchAll(/:([^/]+)/g)].map(match=>match[1]!),params=names.length?[...parameters].sort(order):[];
+    if(names.some(name=>!params.some(schema=>Object.hasOwn((contracts[schema as keyof typeof contracts] as z.ZodObject).shape,name))))throw Error('Missing shared path validation: '+file+' '+path);
+    const id=method+' '+path;rows.push({id,method,path,body:[...bindings][0]??null,query:[...queries][0]??null,params,file:'apps/api/src/'+file,line:location.start.line,response:responseSource(id)});
+   }
   });
   walk(ast,child=>{
    if(child.type==='MemberExpression'&&node(child.object)?.name==='request'&&node(child.property)?.name==='query'&&!coveredQueries.has(child)&&!externalQueries.has(child))throw Error('Query read is outside the audited local route graph: '+file);
+   if(child.type==='MemberExpression'&&node(child.object)?.name==='request'&&node(child.property)?.name==='params'&&!coveredPaths.has(child)&&!externalPaths.has(child))throw Error('Path read is outside the audited local route graph: '+file);
   });
  }
  rows.sort((a,b)=>order(a.id,b.id));
@@ -163,17 +176,24 @@ export function readHttpOperationSources(root:string):HttpOperationSource[]{
 }
 export function httpOperationsSource(rows:HttpOperationSource[]){
  return '// Generated by tools/rebuild/build-http-contracts.ts. Do not edit.\n'+
-  "import * as contracts from '../index';\n\nexport const HttpOperations = Object.freeze({\n"+
-  rows.map(row=>'  '+JSON.stringify(row.id)+': Object.freeze({ method: '+JSON.stringify(row.method)+', path: '+JSON.stringify(row.path)+(row.body?', body: contracts.'+row.body:'')+(row.query?', query: contracts.'+row.query:', query: null')+' } as const),').join('\n')+
+  "import * as contracts from '../index';\nimport * as pathContracts from '../http-paths';\n\nexport const HttpOperations = Object.freeze({\n"+
+  rows.map(row=>'  '+JSON.stringify(row.id)+': Object.freeze({ method: '+JSON.stringify(row.method)+', path: '+JSON.stringify(row.path)+(row.body?', body: contracts.'+row.body:'')+(row.query?', query: contracts.'+row.query:', query: null')+', params: Object.freeze(['+row.params.map(name=>'pathContracts.'+name).join(', ')+'] as const) } as const),').join('\n')+
   '\n} as const);\n';
 }
 export function sharedSchemaCatalog(){
- const schemas:Record<string,unknown>={};
+ const schemas:Record<string,unknown>={},pathOutputSchemas:Record<string,unknown>={};
  for(const name of Object.keys(contracts).sort(order)){
   const value=contracts[name as keyof typeof contracts];if(!(value instanceof z.ZodType))continue;
   // Input describes HTTP wire values before parsing, including stripping-mode
   // objects. Custom refinements still require Zod and server domain checks.
   schemas[name]=z.toJSONSchema(value,{io:'input',target:'draft-2020-12'});
+  if(name.endsWith('Path')&&value instanceof z.ZodObject){
+   pathOutputSchemas[name]=z.toJSONSchema(value,{io:'output',target:'draft-2020-12'});
+   const wire=schemas[name] as {properties:Record<string,unknown>};
+   for(const [field,schema] of Object.entries(value.shape) as [string,z.ZodType][]){
+    if(schema instanceof z.ZodNumber&&schema.def.coerce)wire.properties[field]={type:'string','x-qgroup-number-coercion':'Number','x-qgroup-parsed-schema':z.toJSONSchema(schema,{io:'output',target:'draft-2020-12'})};
+   }
+  }
  }
  const responseSchemas:Record<string,unknown>={};
  for(const response of Object.values(HttpResponses))if(response.kind==='json'||response.kind==='download'){
@@ -181,7 +201,7 @@ export function sharedSchemaCatalog(){
   if(Object.hasOwn(responseSchemas,response.schemaName))continue;
   responseSchemas[response.schemaName]=z.toJSONSchema(response.schema,{io:'input',target:'draft-2020-12'});
  }
- return {version:1,io:'input',schemas,responseSchemas,zodRuntimeValidationRequired:true,serverDomainValidationRequired:true,successResponsesBound:true,structuredDownloadSchemaBound:true,openapiComplete:false};
+ return {version:1,io:'input',schemas,responseSchemas,pathOutputSchemas,zodRuntimeValidationRequired:true,serverDomainValidationRequired:true,successResponsesBound:true,structuredDownloadSchemaBound:true,pathValidationBound:true,openapiComplete:false};
 }
 export function checkHttpOperations(root:string){
  const rows=readHttpOperationSources(root),generated=join(root,'packages/contracts/src/http/operations.generated.ts');
@@ -203,7 +223,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    const path=join(defaultRoot,'packages/contracts/src/http/operations.generated.ts');mkdirSync(join(defaultRoot,'packages/contracts/src/http'),{recursive:true});
    writeFileSync(path,httpOperationsSource(readHttpOperationSources(defaultRoot)));
   }else if(args.length===1&&args[0]==='--check'){
-   const rows=checkHttpOperations(defaultRoot);await assertHttpOpenAPI(httpOpenAPI(rows,sharedSchemaCatalog()));process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,querySchemasBound:true,successResponsesBound:true,structuredDownloadSchemaBound:true,boundaryReviewedOperations:rows.filter(row=>row.access).length,boundaryCoverageComplete:rows.every(row=>row.access?.boundaryReviewed),permissionBindingsComplete:false,openapiGenerated:true,openapiComplete:false})+'\n');
+   const rows=checkHttpOperations(defaultRoot);await assertHttpOpenAPI(httpOpenAPI(rows,sharedSchemaCatalog()));process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,pathOperations:rows.filter(row=>row.params.length).length,pathValidationBound:true,querySchemasBound:true,successResponsesBound:true,structuredDownloadSchemaBound:true,boundaryReviewedOperations:rows.filter(row=>row.access).length,boundaryCoverageComplete:rows.every(row=>row.access?.boundaryReviewed),permissionBindingsComplete:false,openapiGenerated:true,openapiComplete:false})+'\n');
   }else if(args.length===2&&args[0]==='--output'&&isAbsolute(args[1]!)&&!existsSync(args[1]!)){
    const rows=checkHttpOperations(defaultRoot),catalog=sharedSchemaCatalog(),document=httpOpenAPI(rows,catalog),hash=(path:string)=>createHash('sha256').update(readFileSync(join(defaultRoot,path))).digest('hex');
    await assertHttpOpenAPI(document);
@@ -213,7 +233,7 @@ if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).hr
    const inputPaths=[...apiFiles,...sharedContractFiles(defaultRoot),'package.json','package-lock.json','packages/contracts/package.json','packages/domain/src/legacy-timezones.json','tools/rebuild/build-http-contracts.ts','tools/rebuild/http-openapi.ts','tools/rebuild/http-access.ts','tools/rebuild/schemas/http-access-review.json','tools/rebuild/schemas/openapi-3.1.json'];
    const inputs=[...new Set(inputPaths)].sort(order).map(path=>({path,sha256:hash(path)}));
    writeFileSync(join(args[1]!,'request-operations.json'),JSON.stringify({version:1,operations:rows,inputs,
-    requestBodiesBound:true,querySchemasBound:true,queryBindingMethod:'source-local-call-graph',queryWireValues:'strings',queryZodValidationRequired:true,boundaryReviewedOperations:rows.filter(row=>row.access).length,boundaryCoverageComplete:rows.every(row=>row.access?.boundaryReviewed),permissionBindingsComplete:false,responseSchemasBound:true,successTransportBound:true,structuredDownloadSchemaBound:true,openapiGenerated:true,openapiComplete:false,releaseEligible:false})+'\n',{flag:'wx'});
+    requestBodiesBound:true,pathOperations:rows.filter(row=>row.params.length).length,pathValidationBound:true,pathBindingMethod:'source-local-call-graph',pathWireValues:'decoded-strings',pathZodValidationRequired:true,querySchemasBound:true,queryBindingMethod:'source-local-call-graph',queryWireValues:'strings',queryZodValidationRequired:true,boundaryReviewedOperations:rows.filter(row=>row.access).length,boundaryCoverageComplete:rows.every(row=>row.access?.boundaryReviewed),permissionBindingsComplete:false,responseSchemasBound:true,successTransportBound:true,structuredDownloadSchemaBound:true,openapiGenerated:true,openapiComplete:false,releaseEligible:false})+'\n',{flag:'wx'});
    process.stdout.write(JSON.stringify({operations:rows.length,requestBodies:rows.filter(row=>row.body).length,queryOperations:rows.filter(row=>row.query).length,schemas:Object.keys(catalog.schemas).length,querySchemasBound:true,openapiComplete:false,releaseEligible:false})+'\n');
   }else throw Error('Invalid arguments');
  }catch{process.stderr.write('HTTP contract generation failed; no services started or updated.\n');process.exitCode=1;}

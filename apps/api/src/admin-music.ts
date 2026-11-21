@@ -1,3 +1,4 @@
+import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
@@ -13,7 +14,7 @@ import { musicOwnershipHistory } from './music-admin-history';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 
 type Profile = z.infer<typeof AdminMusicProfile>;
-export const musicAdminProfileId = (params: unknown) => z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(params).id;
+export const musicAdminProfileId = (params: unknown) => MusicProfilePath.parse(params).id;
 const projection = `SELECT p.id,${musicNameSQL} AS name,COALESCE(l.legacy_key,'') AS legacyKey,
   CASE WHEN l.pin_hash!='' THEN 1 ELSE 0 END AS hasPin,p.user_id AS userId,u.nickname,p.revision,
   CASE WHEN p.user_id IS NULL THEN 'unlinked' WHEN l.ownership_source='oauth' THEN 'oauth'
@@ -53,12 +54,12 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
     const rows = db.prepare(sql + ' ORDER BY id LIMIT 20 OFFSET ?').all(...bindings, input.offset) as Parameters<typeof serialize>[1][];
     return { profiles: rows.map(row => serialize(db, row)), total, offset: input.offset, limit: 20 };
   });
-  app.get('/api/v2/admin/music/:id', async request => { admin.authority(request); return adminMusicProfile(db, musicAdminProfileId(request.params)); });
+  app.get('/api/v2/admin/music/:id', async request => { admin.authority(request); return adminMusicProfile(db, MusicProfilePath.parse(request.params).id); });
   app.post('/api/v2/admin/music/:id/link-preview', async request => db.transaction(() => {
-    admin.authority(request, true); return preview(db, musicAdminProfileId(request.params), PreviewMusicLink.parse(request.body).targetUserId);
+    admin.authority(request, true); return preview(db, MusicProfilePath.parse(request.params).id, PreviewMusicLink.parse(request.body).targetUserId);
   }).deferred());
   app.post('/api/v2/admin/music/:id/link', async request => db.transaction(() => {
-    const access = admin.authority(request, true); const id = musicAdminProfileId(request.params); const input = SaveMusicLink.parse(request.body);
+    const access = admin.authority(request, true); const id = MusicProfilePath.parse(request.params).id; const input = SaveMusicLink.parse(request.body);
     const key = z.string().uuid().parse(request.headers['idempotency-key']); const signature = hash('v2:admin:music-link:' + id + ':' + JSON.stringify(input));
     const prior = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
     if (prior) { if (prior.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於其他內容', 409)); return { ok: true }; }
@@ -85,7 +86,7 @@ export function registerAdminMusic(app: FastifyInstance, db: DB, admin: AdminSec
     return { ok: true };
   }).immediate());
   app.get('/api/v2/admin/music/:id/history', async request => {
-    admin.authority(request); const id = musicAdminProfileId(request.params); adminMusicProfile(db, id);
+    admin.authority(request); const id = MusicProfilePath.parse(request.params).id; adminMusicProfile(db, id);
     const { before } = SignedCursorQuery.parse(request.query);
     return musicOwnershipHistory(db, id, before);
   });

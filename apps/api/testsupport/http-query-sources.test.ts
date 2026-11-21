@@ -10,11 +10,11 @@ function inventory(source:string){
  finally{rmSync(root,{recursive:true,force:true});}
 }
 it('binds shared query contracts through lexical helpers and loop-generated routes',()=>{
- const rows=inventory(`import { BotDeliveriesQuery } from '@qgroup/contracts';
+ const rows=inventory(`import { BotDeliveriesQuery } from '@qgroup/contracts';import { ActivityPath } from '@qgroup/contracts/http-paths';
  function register(app){
   function list(request){return BotDeliveriesQuery.parse(request.query);}
   app.get('/api/v2/admin/bot/deliveries',request=>list(request));
-  for(const segment of ['activities','time-polls'])app.get('/api/v2/'+segment+'/:id/bot-deliveries',request=>list(request));
+  for(const segment of ['activities','time-polls'])app.get('/api/v2/'+segment+'/:id/bot-deliveries',request=>{ActivityPath.parse(request.params);return list(request);});
  }`);
  expect(rows.map(row=>row.id)).toEqual(['GET /api/v2/activities/:id/bot-deliveries','GET /api/v2/admin/bot/deliveries','GET /api/v2/time-polls/:id/bot-deliveries']);
  expect(rows.every(row=>row.query==='BotDeliveriesQuery'&&row.body===null)).toBe(true);

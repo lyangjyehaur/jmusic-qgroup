@@ -1,3 +1,4 @@
+import { ActivityPath, PaymentHistoryKindPath, PaymentHistoryPath, PaymentHistoryReceiptPath, PaymentLibraryPath } from '@qgroup/contracts/http-paths';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -67,11 +68,10 @@ function sourceAuthority(db: DB, userId: string, source: z.infer<typeof PaymentC
   if (!event || !settlementPublishedBy(db, source.event_id, source.version, userId)) fail('只能保存自己發布結算時使用的收款碼', 403);
 }
 export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
-  const libraryId = z.object({ codeId: PaymentCodeId }), version = z.coerce.number().int().min(1).max(Number.MAX_SAFE_INTEGER);
-  const historyParams = z.object({ id: z.string().min(1).max(80), version });
+
   const limits = { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } };
   function eventAccess(request: FastifyRequest, legacy = false) {
-    const { id } = z.object({ id: z.string().min(1).max(80) }).parse(request.params), device = security.read(request);
+    const { id } = ActivityPath.parse(request.params), device = security.read(request);
     if (request.headers['x-account-scope'] || (!legacy && device)) security.scoped(request);
     requireActivityAccess(db, id, device?.kind === 'member' ? device.id : null);
     return { id, userId: device?.kind === 'member' ? device.id : null };
@@ -96,7 +96,7 @@ export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Se
     const result = codeView(row); db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id, key, signature, JSON.stringify(result), 200, stamp); return result;
   }).immediate());
   app.delete('/api/v2/me/payment-codes/:codeId', limits, async request => db.transaction(() => {
-    const user = security.memberWrite(request), { codeId } = libraryId.parse(request.params), input = ArchivePaymentCode.parse(request.body), key = z.string().uuid().parse(request.headers['idempotency-key']);
+    const user = security.memberWrite(request), { codeId } = PaymentLibraryPath.parse(request.params), input = ArchivePaymentCode.parse(request.body), key = z.string().uuid().parse(request.headers['idempotency-key']);
     const row = ownedPaymentCode(db, user.id, codeId, true), signature = 'payment-code:archive:' + codeId + ':' + hash(JSON.stringify(input));
     const old = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id, key) as { signature: string; response_json: string } | undefined;
     if (old) { if (old.signature !== signature) fail('這個操作編號已用於另一份內容', 409); return { ok: true }; }
@@ -105,11 +105,11 @@ export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Se
     db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id, key, signature, '{"ok":true}', 200, stamp); return { ok: true };
   }).immediate());
   app.get('/api/v2/me/payment-codes/:codeId/image', async (request, reply) => {
-    const user = security.scopedMember(request), { codeId } = libraryId.parse(request.params), row = ownedPaymentCode(db, user.id, codeId);
+    const user = security.scopedMember(request), { codeId } = PaymentLibraryPath.parse(request.params), row = ownedPaymentCode(db, user.id, codeId);
     return reply.header('Vary', 'Cookie, X-Account-Scope').header('Content-Disposition', 'inline; filename="payment-code.png"').type('image/png').send(readPaymentImage(db, row.digest));
   });
   app.get('/api/v2/activities/:id/settlement/history/:version/assets', async request => db.transaction(() => {
-    const { id, userId } = eventAccess(request), { version } = historyParams.parse(request.params);
+    const { id, userId } = eventAccess(request), { version } = PaymentHistoryPath.parse(request.params);
     if (!db.prepare('SELECT 1 FROM settlement_history WHERE event_id=? AND version=?').get(id, version)) fail('結算版本不存在', 404);
     const row = db.prepare('SELECT snapshot_json FROM settlement_details WHERE event_id=? AND version=?').get(id, version) as { snapshot_json: string } | undefined;
     const items = row ? z.object({ items: z.array(z.object({ id: z.string(), name: z.string().optional() })).optional() }).parse(JSON.parse(row.snapshot_json)).items ?? [] : [];
@@ -125,16 +125,16 @@ export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Se
   for (const legacy of [false, true]) {
     const prefix = legacy ? '/api/events/:id' : '/api/v2/activities/:id';
     app.get(prefix + '/settlement/history/:version/payment-codes/:kind', async (request, reply) => {
-      const { id } = eventAccess(request, legacy), { version, kind } = historyParams.extend({ kind: PaymentKind }).parse(request.params);
+      const { id } = eventAccess(request, legacy), { version, kind } = PaymentHistoryKindPath.parse(request.params);
       const code = frozenPaymentCodes(db, id, version).find(row => row.kind === kind); if (!code) fail('收款碼不存在', 404);
       return reply.type('image/png').header('Content-Disposition', 'inline; filename="payment-code.png"').send(readPaymentImage(db, code.digest));
     });
     app.get(prefix + '/settlement/history/:version/payment-code', async (request, reply) => {
-      const { id } = eventAccess(request, legacy), { version } = historyParams.parse(request.params), code = existingPaymentCodes(db, id, version)[0];
+      const { id } = eventAccess(request, legacy), { version } = PaymentHistoryPath.parse(request.params), code = existingPaymentCodes(db, id, version)[0];
       if (!code) fail('收款碼不存在', 404); return reply.type('image/png').header('Content-Disposition', 'inline; filename="payment-code.png"').send(code.raw);
     });
     app.get(prefix + '/settlement/history/:version/receipts/:itemId', async (request, reply) => {
-      const { id } = eventAccess(request, legacy), { version, itemId } = historyParams.extend({ itemId: PaymentCodeId }).parse(request.params), raw = settlementReceipt(db, id, version, itemId);
+      const { id } = eventAccess(request, legacy), { version, itemId } = PaymentHistoryReceiptPath.parse(request.params), raw = settlementReceipt(db, id, version, itemId);
       if (!raw) fail('消費憑證不存在', 404); return reply.type('image/png').header('Content-Disposition', 'inline; filename="receipt.png"').send(raw);
     });
     app.get(prefix + '/payment-code', async (request, reply) => {

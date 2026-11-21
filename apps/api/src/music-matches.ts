@@ -1,9 +1,10 @@
+import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { MusicSortQuery, MusicMatches, MusicComparison, MusicShareContext, LookupMusicProfile } from '@qgroup/contracts';
 import { DomainError, musicComparison, musicMatches } from '@qgroup/domain';
-import { z } from 'zod';
+
 import type { Security } from './security';
 import { getProfile } from './repositories';
 import { matchingIdentity, musicMatchData } from './music-match-data';
@@ -48,7 +49,7 @@ export function registerMusicMatches(app: FastifyInstance, db: DB, security: Sec
   })());
   app.get('/api/v2/music/profiles/:id/comparison', async request => db.transaction(() => {
     const viewer = security.scopedMember(request); viewerProfile(db, viewer.id);
-    const { id } = z.object({ id: z.string().regex(/^m_[a-f0-9]{24,40}$/) }).parse(request.params);
+    const { id } = MusicProfilePath.parse(request.params);
     return compare(db, viewer.id, id);
   })());
 }

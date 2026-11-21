@@ -1,3 +1,4 @@
+import { ActivityAttendeePath, ActivityPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -9,7 +10,7 @@ import { getProfile } from './repositories';
 import { profileFields } from './music-fields';
 import { safeAvatar } from './qq-provider';
 import type { Security } from './security';
-const params = z.object({id:z.string().min(1).max(80)});
+
 /** An absent scope always receives the anonymous public view, even with a cookie. */
 export function activityViewer(security: Security, request: Parameters<Security['scoped']>[0]) {
   if (!request.headers['x-account-scope']) return null;
@@ -48,10 +49,10 @@ export function attendeeMusic(db: DB, eventId: string, attendeeId: string, viewe
 }
 export function registerActivityRoster(app: FastifyInstance, db: DB, security: Security, qqClientId?: string) {
   app.get('/api/v2/activities/:id/roster',async request => {
-    const {id}=params.parse(request.params);return db.transaction(()=>activityRoster(db,id,activityViewer(security,request),qqClientId))();
+    const {id}=ActivityPath.parse(request.params);return db.transaction(()=>activityRoster(db,id,activityViewer(security,request),qqClientId))();
   });
   app.get('/api/v2/activities/:id/attendees/:attendeeId/music',async request => {
-    const {id,attendeeId}=params.extend({attendeeId:z.string().min(1).max(80)}).parse(request.params);
+    const {id,attendeeId}=ActivityAttendeePath.parse(request.params);
     return db.transaction(()=>attendeeMusic(db,id,attendeeId,security.scopedMember(request).id))();
   });
 }

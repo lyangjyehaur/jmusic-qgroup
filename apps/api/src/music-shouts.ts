@@ -1,3 +1,4 @@
+import { Identifier128Path } from '@qgroup/contracts/http-paths';
 import {musicProfileActiveSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
@@ -35,7 +36,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
     archiveMusicShouts(db,time);return listing(db,profile.id,history,page.offset,page.limit,time);
   }).immediate());
   app.get('/api/v2/music/shouts/:id',{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    const profile=mine(db,security.scopedMember(request).id),{id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);EmptyHttpQuery.parse(request.query);
+    const profile=mine(db,security.scopedMember(request).id),{id}=Identifier128Path.parse(request.params);EmptyHttpQuery.parse(request.query);
     archiveMusicShouts(db,now().getTime()/1000);const row=db.prepare(`SELECT s.* FROM music_shouts s WHERE s.id=? AND (s.archived_at IS NOT NULL OR ${currentShoutSQL})`).get(id) as Row|undefined;
     if(!row)throw withApiError(new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404));return view(db,row,profile.id);
   }).immediate());
@@ -59,7 +60,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
     return AdminMusicShouts.parse({...result,items:result.items.map(item=>({...item,revision:hash(JSON.stringify(db.prepare('SELECT * FROM music_shouts WHERE id=?').get(item.id)))}))});
   }).immediate());
   app.post('/api/v2/admin/shouts/:id/delete',async request=>db.transaction(()=>{
-    const access=admin.authority(request,true),{id}=z.object({id:z.string().min(1).max(128)}).parse(request.params),input=DeleteMusicShout.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']),signature=hash('v2:delete-shout:'+id+':'+JSON.stringify(input));
+    const access=admin.authority(request,true),{id}=Identifier128Path.parse(request.params),input=DeleteMusicShout.parse(request.body),key=z.string().uuid().parse(request.headers['idempotency-key']),signature=hash('v2:delete-shout:'+id+':'+JSON.stringify(input));
     const prior=db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope,key) as {signature:string}|undefined;
     if(prior){if(prior.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於其他內容',409));return{ok:true};}
     const row=db.prepare('SELECT * FROM music_shouts WHERE id=?').get(id);if(!row)throw withApiError(new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404));
@@ -69,7 +70,7 @@ export function registerMusicShouts(app:FastifyInstance,db:DB,security:Security,
     db.prepare('INSERT INTO auth_requests VALUES(?,?,?,?,?)').run(access.receiptScope,key,signature,'{"ok":true}',now().toISOString());return{ok:true};
   }).immediate());
   app.get('/api/v2/admin/shouts/:id',{exposeHeadRoute:false},async request=>db.transaction(()=>{
-    admin.authority(request);EmptyHttpQuery.parse(request.query);const {id}=z.object({id:z.string().min(1).max(128)}).parse(request.params);
+    admin.authority(request);EmptyHttpQuery.parse(request.query);const {id}=Identifier128Path.parse(request.params);
     archiveMusicShouts(db,now().getTime()/1000);const row=db.prepare('SELECT * FROM music_shouts WHERE id=?').get(id) as Row|undefined;
     if(!row)throw withApiError(new DomainError('SHOUT_NOT_FOUND','這則找搭子內容不存在或已移除',404));return{...view(db,row),revision:hash(JSON.stringify(row))};
   }).immediate());

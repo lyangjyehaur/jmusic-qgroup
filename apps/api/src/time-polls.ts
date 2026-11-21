@@ -1,3 +1,4 @@
+import { ActivityPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -39,7 +40,7 @@ import {
   pollView,
   type PollRow,
 } from './time-poll-context';
-const identifier = z.object({ id: z.string().min(1).max(80) });
+
 function changed(poll: PollRow, revision: number) {
   if (poll.revision !== revision)
     throw withApiError(new DomainError('POLL_CHANGED', '投票安排已有更新，請保留輸入並核對最新版', 409));
@@ -182,7 +183,7 @@ export function registerTimePolls(
       const device = viewer(request);
       return pollView(
         db,
-        pollRow(db, identifier.parse(request.params).id),
+        pollRow(db, ActivityPath.parse(request.params).id),
         device.kind === 'member' ? device.id : null,
         now(),
         defaults,
@@ -192,7 +193,7 @@ export function registerTimePolls(
   app.get('/api/v2/time-polls/:id/manage', async (request) =>
     db.transaction(() => {
       const user = security.scopedMember(request),
-        poll = pollRow(db, identifier.parse(request.params).id, true);
+        poll = pollRow(db, ActivityPath.parse(request.params).id, true);
       if (poll.owner_id !== user.id) throw withApiError(new DomainError('POLL_PERMISSION', '只有發起者可以管理時間投票', 403));
       return pollView(db, poll, user.id, now(), defaults);
     })(),
@@ -323,7 +324,7 @@ export function registerTimePolls(
     });
   });
   app.post('/api/v2/time-polls/:id/votes', limited, async (request) => {
-    const { id } = identifier.parse(request.params),
+    const { id } = ActivityPath.parse(request.params),
       input = VoteTimePoll.parse(request.body);
     return write(request, input, id, false, (user) => {
       const poll = pollRow(db, id);
@@ -354,7 +355,7 @@ export function registerTimePolls(
     });
   });
   app.post('/api/v2/time-polls/:id/manage', limited, async (request) => {
-    const { id } = identifier.parse(request.params),
+    const { id } = ActivityPath.parse(request.params),
       input = ManageTimePoll.parse(request.body);
     return write(request, input, id, true, (user, hook) => {
       const poll = pollRow(db, id);

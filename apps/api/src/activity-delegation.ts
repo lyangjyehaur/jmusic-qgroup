@@ -1,3 +1,4 @@
+import { ActivityItemPath, ActivityPath, ActivityTokenPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
@@ -24,7 +25,7 @@ function lookup(db:DB,event:EventRow,token:string,now:Date){
 }
 function recipient(invitation:Invitation,userId:string|null){if(invitation.recipient_id&&invitation.recipient_id!==userId)throw withApiError(new DomainError('MANAGEMENT_RECIPIENT','這份交接邀請屬於另一位報名者，請使用受邀帳號',403));}
 export function registerActivityDelegation(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const params=z.object({id:z.string().min(1).max(80)}),tokenParams=params.extend({token:z.string().regex(/^[A-Za-z0-9_-]{32}$/)}),itemParams=params.extend({itemId:z.string().min(1).max(80)}),bot=createActivityBot(db,now,defaults),routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
+  const bot=createActivityBot(db,now,defaults),routeOptions={config:{rateLimit:{max:30,timeWindow:'1 minute'}}};
   function optional(id:string,run:()=>unknown){try{db.transaction(run)();}catch{app.log.error({eventId:id},'Delegation bot hook failed; business write preserved');}}
   function append(event:EventRow,user:User,action:string,before:unknown,after:unknown,reason:string,stamp:string){if(appendEventAudit(db,event,user,action,before,after,reason,stamp))optional(event.id,()=>{bot.rosterUpdated(event.id,action,[],[]);if(action==='ownership_transferred')bot.broadcast(eventRow(db,event.id)!,'ownership_changed');});}
   function notify(event:EventRow,userId:string,kind:'ownership_transferred'|'cohost_accepted'|'cohost_removed',message:string,stamp:string){db.prepare('INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,?,?,?)').run(userId,event.id,kind,message,stamp);optional(event.id,()=>bot.personal(event.id,userId,kind));}
@@ -45,16 +46,16 @@ export function registerActivityDelegation(app:FastifyInstance,db:DB,security:Se
     }).immediate();
   }
   app.get('/api/v2/activities/:id/delegation',async request=>db.transaction(()=>{
-    const {id}=params.parse(request.params),user=security.scopedMember(request),event=getEvent(db,id);requireActivityAccess(db,id,user.id);const isOwner=event.owner_id===user.id;
+    const {id}=ActivityPath.parse(request.params),user=security.scopedMember(request),event=getEvent(db,id);requireActivityAccess(db,id,user.id);const isOwner=event.owner_id===user.id;
     const invitations=isOwner?(db.prepare("SELECT * FROM management_invitations WHERE event_id=? AND status='pending' AND expires_at>? ORDER BY created_at").all(id,legacyStamp(now())) as Invitation[]).map(invitation=>({id:invitation.id,token:invitation.token,kind:invitation.kind,targetName:invitation.target_name,permissions:JSON.parse(invitation.permissions_json),expiresAt:invitation.expires_at})):[];
     return {id,title:event.title,revision:event.revision,ownerName:snapshot(db,event).owner_name,isOwner,blocker:event.archived_at?'請先取消歸檔再邀請管理者':'',myScopes:[...eventScopes(db,event,user.id)],roles:roles(db,id),targets:isOwner?activityPeople(db,id).filter(person=>person.user_id&&person.user_id!==user.id&&person.status!=='withdrawn').map(person=>({id:person.id,name:person.nickname})):[],invitations};
   })());
   app.get('/api/v2/activities/:id/delegation/preview/:token',routeOptions,async request=>db.transaction(()=>{
-    const {id,token}=tokenParams.parse(request.params),event=getEvent(db,id),invitation=lookup(db,event,token,now()),viewer=activityViewer(security,request);recipient(invitation,viewer);
+    const {id,token}=ActivityTokenPath.parse(request.params),event=getEvent(db,id),invitation=lookup(db,event,token,now()),viewer=activityViewer(security,request);recipient(invitation,viewer);
     return {id,title:event.title,ownerName:snapshot(db,event).owner_name,kind:invitation.kind,targetName:invitation.target_name,permissions:JSON.parse(invitation.permissions_json),expiresAt:invitation.expires_at,revision:event.revision,isOwner:event.owner_id===viewer};
   })());
   app.post('/api/v2/activities/:id/delegation/invitations',routeOptions,async request=>{
-    const {id}=params.parse(request.params),input=InviteActivityManager.parse(request.body);
+    const {id}=ActivityPath.parse(request.params),input=InviteActivityManager.parse(request.body);
     return write(request,id,'invite','',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);if(event.archived_at)throw withApiError(new DomainError('ACTIVITY_ARCHIVED','請先取消歸檔再邀請管理者',409));
       let recipientId:string|null=null;
@@ -67,7 +68,7 @@ export function registerActivityDelegation(app:FastifyInstance,db:DB,security:Se
     });
   });
   app.post('/api/v2/activities/:id/delegation/preview/:token/accept',routeOptions,async request=>{
-    const {id,token}=tokenParams.parse(request.params),input=AcceptActivityManager.parse(request.body);
+    const {id,token}=ActivityTokenPath.parse(request.params),input=AcceptActivityManager.parse(request.body);
     return write(request,id,'accept',token,input,(event,user,stamp)=>{
       const invitation=lookup(db,event,token,now());recipient(invitation,user.id);requireEventRevision(event,input.revision);
       if(event.owner_id===user.id)throw withApiError(new DomainError('MANAGEMENT_SELF','發起者不能接受自己的交接邀請',409));
@@ -93,11 +94,11 @@ export function registerActivityDelegation(app:FastifyInstance,db:DB,security:Se
     });
   });
   app.post('/api/v2/activities/:id/delegation/invitations/:itemId/revoke',routeOptions,async request=>{
-    const {id,itemId}=itemParams.parse(request.params),input=RevokeActivityManager.parse(request.body);
+    const {id,itemId}=ActivityItemPath.parse(request.params),input=RevokeActivityManager.parse(request.body);
     return write(request,id,'revoke-invitation',itemId,input,(event,user,stamp)=>{requireEventRevision(event,input.revision);const invitation=db.prepare("SELECT * FROM management_invitations WHERE event_id=? AND id=? AND status='pending'").get(id,itemId) as Invitation|undefined;if(!invitation)throw withApiError(new DomainError('MANAGEMENT_INVITATION_NOT_FOUND','沒有這份待接受邀請',404));db.prepare("UPDATE management_invitations SET status='revoked' WHERE id=?").run(itemId);append(event,user,'management_invitation_revoked',{invitation_id:itemId,target_name:invitation.target_name,kind:invitation.kind},{},input.reason,stamp);return itemId;});
   });
   app.post('/api/v2/activities/:id/delegation/roles/:itemId/revoke',routeOptions,async request=>{
-    const {id,itemId}=itemParams.parse(request.params),input=RevokeActivityManager.parse(request.body);
+    const {id,itemId}=ActivityItemPath.parse(request.params),input=RevokeActivityManager.parse(request.body);
     return write(request,id,'revoke-role',itemId,input,(event,user,stamp)=>{requireEventRevision(event,input.revision);const role=db.prepare('SELECT r.*,u.nickname FROM event_roles r JOIN users u ON u.id=r.user_id WHERE r.event_id=? AND r.id=?').get(id,itemId) as (Role&{nickname:string})|undefined;if(!role)throw withApiError(new DomainError('MANAGEMENT_ROLE_NOT_FOUND','沒有這位協辦',404));const before=roles(db,id);db.prepare('DELETE FROM event_roles WHERE id=?').run(itemId);append(event,user,'cohost_removed',{roles:before},{roles:roles(db,id)},input.reason,stamp);notify(event,role.user_id,'cohost_removed',event.title+' 的协办权限已撤销：'+input.reason,stamp);return itemId;});
   });
 }

@@ -35,7 +35,7 @@ it('matches every real v2 runtime operation and shared body to the generated con
  }finally{await app.close();db.close();}
 });
 it('exports all named schemas with wire semantics while retaining Zod refinement and server policy requirements',()=>{
- const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(296);
+ const catalog=sharedSchemaCatalog();expect(Object.keys(catalog.schemas)).toHaveLength(315);
  const profile=catalog.schemas.SaveProfile as {properties:{selections:{maxItems:number;uniqueItems?:boolean}},additionalProperties:boolean};
  expect(profile.additionalProperties).toBe(false);expect(profile.properties.selections.maxItems).toBe(20);expect(profile.properties.selections.uniqueItems).not.toBe(true);
  expect(SaveProfile.safeParse({profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'e',level:1},{entryId:'e',level:2}]}).success).toBe(false);

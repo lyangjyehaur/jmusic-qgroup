@@ -1,3 +1,4 @@
+import { Identifier128Path } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -9,7 +10,7 @@ import { sharedRecords } from './privacy';
 import { hash } from './security';
 
 type Row = { id: string; user_id: string; status: string; created_at: string; updated_at: string; note: string };
-const Id = z.string().min(1).max(128);
+
 function entry(db: DB, id: string) {
   const row = db.prepare('SELECT * FROM privacy_requests WHERE id=?').get(id) as Row | undefined;
   if (!row) throw withApiError(new DomainError('PRIVACY_REQUEST_NOT_FOUND', '刪除申請不存在', 404));
@@ -30,11 +31,11 @@ export function registerAdminPrivacy(app: FastifyInstance, db: DB, admin: AdminS
     const rows = db.prepare('SELECT * FROM privacy_requests ORDER BY created_at DESC,id LIMIT 20 OFFSET ?').all(offset) as Row[];
     return { requests: rows.map(row => project(db, row)), total, offset, limit: 20 };
   });
-  app.get('/api/v2/admin/privacy/:id', async request => { admin.authority(request); return entry(db, Id.parse((request.params as { id: string }).id)); });
+  app.get('/api/v2/admin/privacy/:id', async request => { admin.authority(request); return entry(db, Identifier128Path.parse(request.params).id); });
   app.post('/api/v2/admin/privacy/:id/review', async request => {
     const input = SavePrivacyReview.parse(request.body);
     return db.transaction(() => {
-      const access = admin.authority(request, true); const id = Id.parse((request.params as { id: string }).id);
+      const access = admin.authority(request, true); const id = Identifier128Path.parse(request.params).id;
       const key = z.string().uuid().parse(request.headers['idempotency-key']);
       const signature = hash('v2:privacy-review:' + id + ':' + JSON.stringify(input));
       const receipt = db.prepare('SELECT signature FROM auth_requests WHERE token_hash=? AND request_key=?').get(access.receiptScope, key) as { signature: string } | undefined;
