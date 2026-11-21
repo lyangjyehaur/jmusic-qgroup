@@ -90,7 +90,7 @@ it('queries a bot receipt independently of retry submission, keeping the saved U
 it('preserves the caller abort signal and binary response stream',async()=>{
   const controller=new AbortController(),bytes=new Uint8Array([137,80,78,71]);let captured:RequestInit|undefined;
   const http=createWebHttpClient({fetch:async(_url,init)=>{captured=init;return new Response(bytes,{headers:{'Content-Type':'image/png'}});}});
-  const response=await http.requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:'synthetic'},signal:controller.signal});
+  const response=await http.requestRaw('GET /api/v2/appearance/walls/:id/image',{params:{id:'w_'+'a'.repeat(24)},signal:controller.signal});
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);expect(captured!.signal).toBe(controller.signal);
 });
 it('uses the bound response at the UI boundary while keeping the saved write and abort signal',async()=>{

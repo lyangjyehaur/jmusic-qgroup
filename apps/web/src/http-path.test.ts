@@ -95,6 +95,6 @@ it('uses actual shared query validation before fetch and preserves caller-owned 
 it('retains successful binary streams, no-store and abort cancellation through the same transport',async()=>{
   const bytes=new Uint8Array([137,80,78,71]),controller=new AbortController();let captured:RequestInit|undefined;
   vi.stubGlobal('fetch',async(_url:RequestInfo|URL,init?:RequestInit)=>{captured=init;return new Response(bytes,{headers:{'Content-Type':'image/png'}});});
-  const response=await apiRaw('/appearance/walls/synthetic/image',{signal:controller.signal,cache:'no-store'});
+  const response=await apiRaw('/appearance/walls/w_'+'a'.repeat(24)+'/image',{signal:controller.signal,cache:'no-store'});
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);expect(captured!.signal).toBe(controller.signal);expect(captured!.cache).toBe('no-store');
 });
