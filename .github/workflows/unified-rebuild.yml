@@ -65,6 +65,8 @@ jobs:
         run: |
           git fetch --no-tags origin 07defc429d619a7558ab7218372886f531813ae3
           npm run test:legacy-activity-create:rebuild --silent > artifacts/ci/legacy-activity-create-pair.json
+      - name: Verify original activity changes with the observed Python bot source
+        run: npm run test:legacy-activity-patch:rebuild --silent > artifacts/ci/legacy-activity-patch-pair.json
       - run: npx playwright install --with-deps chromium
       - name: Pin public analytics client for intercepted transport test
         run: |

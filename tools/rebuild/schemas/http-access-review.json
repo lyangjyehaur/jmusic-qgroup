@@ -12,12 +12,12 @@
     "apps/api/src/activity-claims.ts": "88a2c3f244f5e0fa9d67d95dee7bf20ecddfef131689a549609bed5d2992f156",
     "apps/api/src/activity-create-command.ts": "57c3b0a0cedda4ac755a29a03d7bb35189369ad15b280d82941298b1031e3a57",
     "apps/api/src/activity-delegation.ts": "642160490a399a48a70e06cca92e7529faca26bb5fd7a6423e49746740d9c61c",
-    "apps/api/src/activity-drafts.ts": "0648e2b6d9ad2d3bb62e12a07b28fea737fbcb0d7c8aa85ab1baebe7623cfd6f",
+    "apps/api/src/activity-drafts.ts": "343d43426046bc984bd88be4090b7cd6ad6d4d87d79eeb3c1f7d38d0662f4a36",
     "apps/api/src/activity-history.ts": "90fd4d47951b77e75c5fc40d8bea759b2bbcfdc83b6a551d6f388ca4a5950178",
     "apps/api/src/activity-invitations.ts": "fc46f0664cfb6e497f63f7ddb94184d8a5cff7943e0d7aea199f24e807abd522",
-    "apps/api/src/activity-lifecycle.ts": "eb438b08178a18982132e7f18313de50adcdc352534d35491de98694ccb7b117",
-    "apps/api/src/activity-management.ts": "4dcae95cd002e7e529483b8c6f87cb3c7ac3ca88e194eb08ed2eb629c992ecd9",
-    "apps/api/src/activity-publish.ts": "4451c61db10ab9868d26ecbfc58b193f4d8d7ab6449900a619db7ec0145e7b2d",
+    "apps/api/src/activity-lifecycle.ts": "d65f01b7850ed74a0e8a13e5ae6dd7309346e9685bcd1b0e658cba9d7a95a88b",
+    "apps/api/src/activity-management.ts": "3109415bbe16474d7b42a3269581851a7a2de4acc7f63732e4b490777e390946",
+    "apps/api/src/activity-publish.ts": "5f34518b170e64bc5b0a2762f4c4c744905f3b1b3c9c5b1de257baf80a6817a5",
     "apps/api/src/activity-registration.ts": "960484a3a9570d988d1b93b4efa72d54d4e6e54b2e216fb2f7d0e2dcf96ddcfc",
     "apps/api/src/activity-room-overview.ts": "30974dab9ac7d3b1c0309c41cb5e62304462cfaf4964f15d66ff991bba973ba4",
     "apps/api/src/activity-roster.ts": "493375bed2487523ce383a65bd3e7250fd4840c9a836932b780e883f8062c212",
@@ -31,10 +31,10 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "1bd9778704599d02e07718cd4fb9513967dc7dc9fbd08ff691cc255d068fce80",
+    "apps/api/src/app.ts": "c437c1a191327408281986561472ecc53d3d847301fd37db0831c5e34c33dabd",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
-    "apps/api/src/bot-deliveries.ts": "bf8789dd18fcd1adc4c3e6403494ff75f33661637c6ee7e117d96608b64ee445",
+    "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
     "apps/api/src/create-intents.ts": "87a0eebeccfeee1c9b8c2350f1824b92676e44c8c058d99ed14d0b5b7d6b767a",
     "apps/api/src/finance.ts": "5bceb61f94b73d80c33877023580e91042bfdb6456cd8aa5fdcd254a2516b078",
     "apps/api/src/inbox.ts": "303d9cefb1ba4da27b7d82110432834e4e9c103b877a24705940a931a5f87d8d",
@@ -81,7 +81,7 @@
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "506129190fa9ac4235a4a5fb4019fe15fd8eb788fb8bde5ce0e443f14d24093b",
+    "packages/contracts/src/index.ts": "ac237bb5504258ac8fbc48a0d3cbc67dfbbb7c3d942dcf440cf14d1526fd86b2",
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
@@ -93,7 +93,12 @@
     "packages/domain/src/music-circles.ts": "ce4b93a8d42faaba36a2f5c253e039e89832c9570a8bcfa027120c180e9b953f",
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-search.ts": "52da753f011f1400b09900daa8d46a164441cdf789bd21cb8f94cd60130c4d6e",
-    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
+    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc",
+    "apps/api/src/activity-edit-command.ts": "61bcef307c06ce9477e97714728ab56abcbe541ef8151fbeb910a42029012f1d",
+    "apps/api/src/bot-delivery-command.ts": "ba4ab71fe0d06e54ac030c64b91b4ad630a9c1c4f96df61da68ebbcb1c7dd87a",
+    "packages/contracts/src/legacy-activity-patch.ts": "c9431c02e9ddc9d95510b9808c4e8e11deabcd67ea4a598714d088fd7d697f25",
+    "packages/contracts/src/activity-arrangements.ts": "4002dd18740c80078b4eda166f2bb45f7f36a1d4b9aff11e7ef7689fa0e50149",
+    "apps/api/src/legacy-activity-patch.ts": "5cbd54b4ed5971a8bcc0f01d1cfc5dd622dd8f1dba4b86aa659c36e558ece979"
   },
   "operations": [
     {
@@ -180,7 +185,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -235,7 +241,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -254,7 +261,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -312,7 +320,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -387,7 +396,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -835,7 +845,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -871,7 +882,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -949,7 +961,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -968,7 +981,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -1313,7 +1327,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -1388,7 +1403,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -1962,7 +1978,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -1981,7 +1998,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -2068,7 +2086,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -2105,7 +2124,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -2251,7 +2271,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -2271,7 +2292,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -2509,7 +2531,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -3038,6 +3061,52 @@
       "additionalHeaders": []
     },
     {
+      "id": "POST /api/v2/me/legacy-requests/activity/inspect",
+      "file": "apps/api/src/legacy-activity-patch.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and device CSRF are mandatory. Original method/path/key/body signature must match. Current event access and original action authority apply before receipt acknowledgement. New execution is fenced by reviewed event, roster, policy and retry payload; preparation is read-only."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/bot-delivery-command.ts",
+        "packages/contracts/src/legacy-activity-patch.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/activity/retry",
+      "file": "apps/api/src/legacy-activity-patch.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and device CSRF are mandatory. Original method/path/key/body signature must match. Current event access and original action authority apply before receipt acknowledgement. New execution is fenced by reviewed event, roster, policy and retry payload; preparation is read-only."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/api/src/activity-lifecycle.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/bot-delivery-command.ts",
+        "packages/contracts/src/legacy-activity-patch.ts",
+        "packages/contracts/src/activity-arrangements.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "POST /api/v2/me/legacy-requests/check",
       "file": "apps/api/src/legacy-local.ts",
       "mode": "member-write",
@@ -3491,7 +3560,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/bot-delivery-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -3549,7 +3619,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },
@@ -3569,7 +3640,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/activity-edit-command.ts"
       ],
       "additionalHeaders": []
     },

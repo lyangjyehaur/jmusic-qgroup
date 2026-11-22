@@ -1,3 +1,4 @@
+import { prepareActivityEdit,executeActivityEdit } from './activity-edit-command';
 import { prepareActivityCreation, executeActivityCreation } from './activity-create-command';
 import { ActivityPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
@@ -8,9 +9,9 @@ import { DomainError } from '@qgroup/domain';
 import { z } from 'zod';
 import { hash, type Security } from './security';
 import { requireActivityAccess } from './activity-access';
-import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventScopes, eventSnapshot, legacyStamp, removalBlocker, requireEventRevision, storedArrangement } from './activity-arrangements';
+import { appendEventAudit, arrangementValues, eventRow, eventScopes, eventSnapshot, legacyStamp, removalBlocker, requireEventRevision, storedArrangement } from './activity-arrangements';
 import { publishActivityDraft } from './activity-publish';
-import { activityBotPolicy, type ActivityBotDefaults } from './activity-bot';
+import { type ActivityBotDefaults } from './activity-bot';
 import { priorCreateIntent,recordCreateIntent } from './create-intents';
 
 function authorize(db:DB,id:string,userId:string,scope?:'schedule'|'owner',allowDeleted=false,allowPublished=false){
@@ -30,15 +31,6 @@ export function activityDraft(db:DB,id:string,userId:string){
   return {id,revision:event.revision,ownerName:owner.nickname,isOwner:scopes.has('owner'),canEdit:scopes.has('schedule'),canRemove:scopes.has('owner')&&!blocker,removalBlocker:blocker,values:storedArrangement(event)};
 }
 export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Security,now:()=>Date,botDefaults:ActivityBotDefaults={}){
-  function reconcileDraftBot(request:FastifyRequest,id:string){
-    // The original event hook cancels obsolete work even for a draft. It never
-    // queues broadcasts / reminders or alters immutable payloads in this state.
-    try{db.transaction(()=>{
-      if(!activityBotPolicy(db,botDefaults).config.enabled)return;
-      db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(id);
-      db.prepare("UPDATE bot_outbox SET status='skipped',last_error='安排或群同步设置已变更，旧提醒作废' WHERE event_id=? AND kind IN ('deadline_reminder','estimated_over_reminder') AND status IN ('pending','sending')").run(id);
-    })();}catch{request.log.error({eventId:id},'Draft bot reconciliation failed; business write preserved');}
-  }
   app.get('/api/v2/me/activity-drafts',async request=>db.transaction(()=>{
     const user=security.scopedMember(request);
     const {page}=PageQuery.parse(request.query);
@@ -89,20 +81,11 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
   });
   app.put('/api/v2/activities/:id/draft',routeOptions,async request=>{
     const {id}=ActivityPath.parse(request.params);const input=SaveActivityDraft.parse(request.body);
-    return write(request,'/api/v2/activities/'+id+'/draft',input,(user,stamp)=>{
+    return write(request,'/api/v2/activities/'+id+'/draft',input,user=>{
       const event=authorize(db,id,user.id,'schedule');requireEventRevision(event,input.revision);
       if(event.archived_at||db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(id))throw withApiError(new DomainError('ACTIVITY_LOCKED','活動已有歸檔或結算記錄，不能重寫安排',409));
-      const v=arrangementValues(input.values,now(),true,event);const owner=event.owner_id===user.id;
-      if(!owner&&(v.botEnabled!==!!event.bot_enabled||v.feePolicy!==event.fee_policy||v.visibility!==event.visibility||(v.withdrawalDeadline||v.deadline)!==(event.withdrawal_deadline||event.deadline)))throw withApiError(new DomainError('OWNER_SETTINGS','群同步、費用規則、退出期限及可見性需由發起者修改',403));
-      const count=(db.prepare("SELECT count(*) AS n FROM attendees WHERE event_id=? AND status='confirmed'").get(id) as {n:number}).n;
-      if(v.capacity&&v.capacity<count)throw withApiError(new DomainError('CAPACITY_BELOW_ROSTER','人數上限低於正式報名人數，請先處理超額人員',409));
-      const proposed={...event,category:v.category,starts_at:v.startsAt,duration_hours:v.durationHours,location:v.location,description:v.description,withdrawal_deadline:v.withdrawalDeadline,deadline:v.deadline,timezone:v.timezone,fee_policy:v.feePolicy};
-      if(JSON.stringify(arrangementSnapshot(event))!==JSON.stringify(arrangementSnapshot(proposed))&&!input.reason&&db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status IN ('confirmed','waiting','tentative') LIMIT 1").get(id))throw withApiError(new DomainError('ARRANGEMENT_REASON_REQUIRED','重要安排變更請填寫原因，參加者需要重新確認',400));
-      db.prepare(`UPDATE events SET title=?,category=?,location=?,starts_at=?,deadline=?,capacity=?,description=?,duration_hours=?,withdrawal_deadline=?,visibility=?,timezone=?,minimum_participants=?,fee_policy=?,draft_join_owner=?,bot_enabled=? WHERE id=?`).run(v.title,v.category,v.location,v.startsAt,v.deadline,v.capacity,v.description,v.durationHours,v.withdrawalDeadline,v.visibility,v.timezone,v.minimumParticipants,v.feePolicy,Number(v.joinOwner),Number(v.botEnabled),id);
-      const updated=eventRow(db,id)!;
-      const changed=appendEventAudit(db,event,user,'event_updated',{event:eventSnapshot(event),participants:[],draft_join_owner:event.draft_join_owner},{event:eventSnapshot(updated),participants:[],draft_join_owner:updated.draft_join_owner},input.reason,stamp);
-      if(changed)reconcileDraftBot(request,id);
-      return {id,revision:eventRow(db,id)!.revision,removed:false};
+      const time=now(),plan=prepareActivityEdit(db,event,user,input.values,input.reason,time);
+      return executeActivityEdit(db,plan,user,time,botDefaults,eventId=>request.log.error({eventId},'Draft bot hook failed; business write preserved'),true);
     },{id,scope:'schedule'});
   });
   app.post('/api/v2/activities/:id/draft/remove',routeOptions,async request=>{

@@ -878,7 +878,11 @@
         "apps/web/src/legacy-local-availability.ts",
         "apps/web/src/activity-draft-record.ts",
         "apps/api/src/legacy-activity-create.ts",
-        "apps/web/src/legacy-activity-create-recovery.tsx"
+        "apps/web/src/legacy-activity-create-recovery.tsx",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -889,7 +893,9 @@
         "apps/api/testsupport/legacy-authoring.test.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "apps/api/src/legacy-activity-create.test.ts",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -899,7 +905,8 @@
         "apps/web/tests/create-intents.spec.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -907,7 +914,8 @@
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/create-intents.test.ts",
         "apps/web/tests/create-intents.spec.ts",
-        "apps/web/tests/legacy-authoring.spec.ts"
+        "apps/web/tests/legacy-authoring.spec.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
@@ -919,7 +927,8 @@
         "apps/web/tests/legacy-authoring.spec.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-activity-create.spec.ts"
+        "apps/web/tests/legacy-activity-create.spec.ts",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 草稿及已發布安排已可在同一 TSX 表單編輯，原欄位、UTC 秒驗證、revision／比較、scope／owner 限制與狀態／結算鎖已測；完整時區輸入、日期防誤、舊入口與全部場景驗收仍待完成。 第 208 號補齊原建立活動請求（草稿／直接發布、邀請／公開、本人報名）、原 key／回執／alias 原子恢復與目前權限路徑；完整驗收條件仍保留。"
@@ -938,27 +947,36 @@
         "apps/api/src/activity-publish.ts",
         "apps/api/src/activity-bot.ts",
         "apps/api/src/legacy-activity-create.ts",
-        "apps/web/src/legacy-activity-create-recovery.tsx"
+        "apps/web/src/legacy-activity-create-recovery.tsx",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "apps/api/src/legacy-activity-create.test.ts",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
-        "apps/api/src/activity-publish.test.ts"
+        "apps/api/src/activity-publish.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
-        "apps/api/src/activity-publish.test.ts"
+        "apps/api/src/activity-publish.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-activity-create.spec.ts"
+        "apps/web/tests/legacy-activity-create.spec.ts",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "已實作既有草稿發布、明確本人同意、初始條件、本人自動報名、嚴格 FIFO／整組阻塞、原子稽核／收據與最終名單 bot 卡片；原 Python 全紀錄差分與現有 worker 無網路消費已測。發起者發布後退出、舊 API 直接建立 scheduled 的明確 join_owner=false、全部恢復與完整入口仍待完成。 第 208 號補齊原建立活動請求（草稿／直接發布、邀請／公開、本人報名）、原 key／回執／alias 原子恢復與目前權限路徑；完整驗收條件仍保留。"
@@ -985,7 +1003,11 @@
         "apps/web/src/legacy-authoring-migration.ts",
         "apps/web/src/legacy-authoring-conversion.tsx",
         "apps/web/src/legacy-local-availability.ts",
-        "apps/web/src/activity-draft-record.ts"
+        "apps/web/src/activity-draft-record.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-access.test.ts",
@@ -995,7 +1017,9 @@
         "apps/api/src/create-intents.test.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/api/testsupport/legacy-authoring.test.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-access.test.ts",
@@ -1005,7 +1029,8 @@
         "apps/web/tests/create-intents.spec.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-access.test.ts",
@@ -1013,7 +1038,8 @@
         "apps/web/tests/legacy-local.spec.ts",
         "apps/api/src/create-intents.test.ts",
         "apps/web/tests/create-intents.spec.ts",
-        "apps/web/tests/legacy-authoring.spec.ts"
+        "apps/web/tests/legacy-authoring.spec.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/legacy-navigation.spec.ts",
@@ -1022,7 +1048,8 @@
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、建立結果與目的稿的轉換確認、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 已補只讀安排白名單、重填所有日期／截止、通知明確重選、獨立帳號／來源草稿、來源失效時恢復本機再約稿及另建草稿；沒有複製名冊、金流、圖片、角色或歷史。IndexedDB 持久保存、舊稿遷移、完整未知結果及 P6／P7 成套驗收仍待完成。"
@@ -1083,20 +1110,29 @@
         "apps/api/src/activity-lifecycle.ts",
         "apps/web/src/activity-lifecycle.tsx",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-lifecycle.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "暫停／恢復、截止阻擋與只在實際開放時嚴格 FIFO 遞補已實作，已做原 Python 完整資料／bot 差分；完整報名／退出、舊 API 與正式副本驗收待完成。"
@@ -1111,20 +1147,29 @@
         "apps/api/src/activity-lifecycle.ts",
         "apps/web/src/activity-lifecycle.tsx",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-lifecycle.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "發起者成團確認、低於門檻原因、通知及無操作去重已實作並差分；全站待辦、全部舊入口與正式副本驗收待完成。"
@@ -1141,21 +1186,30 @@
         "apps/api/src/activity-lifecycle.ts",
         "apps/web/src/activity-lifecycle.tsx",
         "packages/contracts/src/activity-arrangements.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/domain.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-lifecycle.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "實際開始／結束、原時間保留與明確確認已實作，預定時間不自動轉實際；安排可延長並保留條件版本。當地時區完整 UI、待辦、舊入口、跨日與正式副本驗收待完成。"
@@ -1173,24 +1227,33 @@
         "apps/web/src/activity-drafts.tsx",
         "apps/api/src/activity-lifecycle.ts",
         "apps/web/src/activity-lifecycle.tsx",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
-        "apps/api/src/activity-lifecycle.test.ts"
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-lifecycle.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "已發布活動取消、歸檔／取消歸檔、受限移除及原 key 恢復已實作，保留名單／帳務，必要寫入回滾；取消損失／結算流程、全部舊入口與正式副本驗收待完成。"
@@ -1205,20 +1268,29 @@
         "apps/api/src/activity-management.ts",
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-arrangements.ts"
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "重要欄位變更追加條件快照、原因、有效報名標 pending、保留原接受版本與財務、FIFO 遞補／通知、Python 全紀錄及 outbox 差分已測；完整報名／狀態／收件匣、舊入口與正式版本組合驗收仍待完成。"
@@ -5718,7 +5790,11 @@
         "apps/api/src/time-polls.ts",
         "apps/api/src/time-poll-context.ts",
         "apps/api/src/time-poll-bot.ts",
-        "apps/web/src/time-polls.tsx"
+        "apps/web/src/time-polls.tsx",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5734,7 +5810,9 @@
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
         "tools/rebuild/retained-python-scenarios.mjs",
         "docs/unified-rebuild/167-retained-bot-domains-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5745,14 +5823,16 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/settlements.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -5762,7 +5842,8 @@
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/time-polls.spec.ts",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原生活動／報名／退出／安排／結算／投票 producer、卡片與公開指令已有 Python 差分及保留 Python worker 消費證據；TS outbox 已接入獨立於 Gateway 的隔離 runtime。全部業務 hook 成套追蹤、正式待送對帳、跨版本／QQ／切換與回退尚待驗收，見 22–34／53–57 號檢查點；不等於 B01–B15 通過。 第 167 號已新增固定舊 bot 與編譯網站的六類狀態、投票及結算收款碼隔離流程；正式版本組合與全項驗收仍未完成。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
@@ -5854,7 +5935,11 @@
         "apps/web/src/pending-operations.ts",
         "apps/api/src/admin-operations.ts",
         "packages/contracts/src/operations.ts",
-        "apps/web/src/bot-delivery-record.ts"
+        "apps/web/src/bot-delivery-record.ts",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "packages/domain/src/bot-policy.test.ts",
@@ -5878,7 +5963,9 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -5894,7 +5981,8 @@
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -5907,7 +5995,8 @@
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
-        "apps/web/tests/durable-bot-deliveries.spec.ts"
+        "apps/web/tests/durable-bot-deliveries.spec.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -5921,7 +6010,8 @@
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。三種模式、通用群通知核對／明確新工作重送、原 UUID 回執查回、模擬不重播及 Python／TS consumer 差分已有隔離證據。相容投票 API 保留既有重新生成語意，未改成新核對 token 協議；正式待送對帳、QQ 與實際版本組合仍待驗收，見 52／53／57／58 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
@@ -6972,7 +7062,11 @@
         "apps/api/src/legacy-settlement-token.ts",
         "apps/api/src/settlement-command.ts",
         "packages/contracts/src/legacy-detailed-settlement.ts",
-        "apps/web/src/legacy-detailed-settlement-recovery.tsx"
+        "apps/web/src/legacy-detailed-settlement-recovery.tsx",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -7019,7 +7113,9 @@
         "apps/web/tests/legacy-rooms-request.spec.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -7059,7 +7155,8 @@
         "apps/web/tests/legacy-import.spec.ts",
         "apps/api/src/legacy-rooms.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-drafts.test.ts",
@@ -7094,7 +7191,8 @@
         "apps/api/src/legacy-rooms.test.ts",
         "apps/web/tests/legacy-rooms-request.spec.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "apps/web/tests/legacy-detailed-settlement-request.spec.ts"
+        "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-drafts.spec.ts",
@@ -7150,7 +7248,8 @@
         "apps/web/tests/legacy-rooms-request.spec.ts",
         "docs/unified-rebuild/204-legacy-room-request-checkpoint.md",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md"
+        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原 kanban-local-v1 的同源保全、原 scope／ID／版本／圖片、六種草稿轉換、原財務與包間請求恢復、持久原稿與原操作查回均有隔離證據。第 203 號補齊既有下載格式的同帳號重新匯入、strict commit、去重、登出世代／離頁／切帳號封鎖及明確恢復。第 204 號補齊原包間請求核對、原編號重試與回執／本機去重；其他舊命令的精確 adapters、失效／未知或不同意圖競爭資料分類與明確退休、來源及目的版本退休後查回、其餘未映射領域與特殊授權的無損轉換、完整匯出／匯入、實際裝置／QQ WebView、正式來源對帳、候選 web／bot 實際組合與新寫入回退成套驗收仍待完成。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。"
@@ -7250,7 +7349,11 @@
         "packages/contracts/src/legacy-detailed-settlement.ts",
         "apps/web/src/legacy-detailed-settlement-recovery.tsx",
         "apps/api/src/legacy-activity-create.ts",
-        "apps/web/src/legacy-activity-create-recovery.tsx"
+        "apps/web/src/legacy-activity-create-recovery.tsx",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/web/tests/unified.spec.ts",
@@ -7301,7 +7404,9 @@
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
         "tools/rebuild/smoke-legacy-settlement.mjs",
         "apps/api/src/legacy-activity-create.test.ts",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7342,7 +7447,8 @@
         "apps/web/tests/legacy-import.spec.ts",
         "apps/api/src/legacy-rooms.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7379,7 +7485,8 @@
         "apps/api/src/legacy-rooms.test.ts",
         "apps/web/tests/legacy-rooms-request.spec.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "apps/web/tests/legacy-detailed-settlement-request.spec.ts"
+        "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -7439,7 +7546,8 @@
         "docs/unified-rebuild/204-legacy-room-request-checkpoint.md",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
         "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
-        "apps/web/tests/legacy-activity-create.spec.ts"
+        "apps/web/tests/legacy-activity-create.spec.ts",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原 kanban-local-v1 的同源保全、原 scope／ID／版本／圖片、六種草稿轉換、原財務與包間請求恢復、持久原稿與原操作查回均有隔離證據。第 203 號補齊既有下載格式的同帳號重新匯入、strict commit、去重、登出世代／離頁／切帳號封鎖及明確恢復。第 204 號補齊原包間請求核對、原編號重試與回執／本機去重；其他舊命令的精確 adapters、失效／未知或不同意圖競爭資料分類與明確退休、來源及目的版本退休後查回、其餘未映射領域與特殊授權的無損轉換、完整匯出／匯入、實際裝置／QQ WebView、正式來源對帳、候選 web／bot 實際組合與新寫入回退成套驗收仍待完成。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。 第 208 號補齊原建立活動請求（草稿／直接發布、邀請／公開、本人報名）、原 key／回執／alias 原子恢復與目前權限路徑；完整驗收條件仍保留。"
@@ -7486,7 +7594,11 @@
         "packages/contracts/src/legacy-finance.ts",
         "apps/api/src/legacy-finance.ts",
         "apps/web/src/legacy-finance-recovery.tsx",
-        "apps/web/src/finance-details.tsx"
+        "apps/web/src/finance-details.tsx",
+        "apps/api/src/legacy-activity-patch.ts",
+        "apps/api/src/activity-edit-command.ts",
+        "apps/web/src/legacy-activity-recovery.tsx",
+        "packages/contracts/src/legacy-activity-patch.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
@@ -7503,7 +7615,9 @@
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7517,7 +7631,8 @@
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -7529,7 +7644,8 @@
         "apps/web/tests/legacy-authoring.spec.ts",
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "apps/api/src/legacy-activity-patch.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -7547,7 +7663,8 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-activity-patch.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 音樂、稱呼、活動草稿／發布／已發布安排／逐人決定的原子版本、條件／報名／站內通知／audit／收據回滾與 optional bot savepoint 已測；其餘報名／狀態／財務等 mutations 的完整交易仍待完成。 統一收件匣的本人通知分頁／已讀恢復、十類待辦、原操作入口與 bot todos／attendance 入口已驗證；全域能力仍須後續成套驗收。 帳本原生寫入、私人申報、已確認記錄、動態待辦入口與恢復已補上，完整結算／分房及成套遷移驗收仍待完成。"

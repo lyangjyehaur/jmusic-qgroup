@@ -1,9 +1,10 @@
 import { z } from 'zod';
+import { originalString } from './legacy-values';
 import { CreateIntent } from './create-intents';
 
 // Values are part of the existing SQLite / Python bot protocol.
 export const ActivityCategory = z.enum(['约K', '聚餐', '运动', '出游', '游戏', '其他']);
-const text = (maximum: number, required = false) => z.string().trim().refine(value => Array.from(value).length <= maximum && (!required || value.length > 0));
+const text = (maximum: number, required = false) => z.string().transform(value=>originalString(value) as string).refine(value => Array.from(value).length <= maximum && (!required || value.length > 0));
 export const ActivityArrangementInput = z.object({
   title: text(60, true), category: ActivityCategory, location: text(120, true),
   startsAt: text(40, true), deadline: text(40, true), capacity: z.number().int().min(0).max(500),

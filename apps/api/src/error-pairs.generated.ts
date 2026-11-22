@@ -28,6 +28,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "请先取消归档再邀请管理者",
     "請先取消歸檔再邀請管理者"
   ],
+  "[\"ACTIVITY_CHANGED\",\"原移除請求缺少活動版本；原請求保留\"]": [
+    "原移除请求缺少活动版本；原请求保留",
+    "原移除請求缺少活動版本；原請求保留"
+  ],
   "[\"ACTIVITY_CHANGED\",\"活動或名單已有更新；輸入仍保留，請核對目前安排後再保存\"]": [
     "活动或名单已有更新；输入仍保留，请核对目前安排后再保存",
     "活動或名單已有更新；輸入仍保留，請核對目前安排後再保存"
@@ -532,6 +536,18 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "原建立识别尚未支援；原请求保留",
     "原建立識別尚未支援；原請求保留"
   ],
+  "[\"LEGACY_ACTIVITY_PATCH_UNSUPPORTED\",\"原活動方法或路徑尚未支援；原請求保留\"]": [
+    "原活动方法或路径尚未支援；原请求保留",
+    "原活動方法或路徑尚未支援；原請求保留"
+  ],
+  "[\"LEGACY_ACTIVITY_PATCH_UNSUPPORTED\",\"原活動欄位尚未支援或缺失；原請求保留\"]": [
+    "原活动栏位尚未支援或缺失；原请求保留",
+    "原活動欄位尚未支援或缺失；原請求保留"
+  ],
+  "[\"LEGACY_ACTIVITY_REVIEW_CHANGED\",\"活動、名單或通知核對資料已變更；請重新檢查\"]": [
+    "活动、名单或通知核对资料已变更；请重新检查",
+    "活動、名單或通知核對資料已變更；請重新檢查"
+  ],
   "[\"LEGACY_CONTACT_FIXED\",\"舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員\"]": [
     "旧成分的 QQ 是原资料查询标识，更正请联络管理员",
     "舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員"
@@ -615,6 +631,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執無法解析；原請求保留\"]": [
     "原回执无法解析；原请求保留",
     "原回執無法解析；原請求保留"
+  ],
+  "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執與活動不一致；原請求保留\"]": [
+    "原回执与活动不一致；原请求保留",
+    "原回執與活動不一致；原請求保留"
   ],
   "[\"LEGACY_REQUEST_UNSUPPORTED\",\"原款項欄位尚未支援或缺失；原請求保留，不能重試\"]": [
     "原款项栏位尚未支援或缺失；原请求保留，不能重试",
@@ -772,6 +792,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "请先保存成分，再查看选取者",
     "請先保存成分，再查看選取者"
   ],
+  "[\"NICKNAME_REQUIRED\",\"請先設定稱呼再操作\"]": [
+    "请先设定称呼再操作",
+    "請先設定稱呼再操作"
+  ],
   "[\"NICKNAME_REQUIRED\",\"請先設定自己的稱呼\"]": [
     "请先设定自己的称呼",
     "請先設定自己的稱呼"
@@ -783,6 +807,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"NOT_A_DRAFT\",\"活動已發布；草稿輸入仍保留，請回到活動核對\"]": [
     "活动已发布；草稿输入仍保留，请回到活动核对",
     "活動已發布；草稿輸入仍保留，請回到活動核對"
+  ],
+  "[\"NOT_FOUND\",\"找不到原活動\"]": [
+    "找不到原活动",
+    "找不到原活動"
   ],
   "[\"NOT_FOUND\",\"找不到活動或尚未公開\"]": [
     "找不到活动或尚未公开",
@@ -799,6 +827,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"NOT_FOUND\",\"找不到這個操作結果\"]": [
     "找不到这个操作结果",
     "找不到這個操作結果"
+  ],
+  "[\"NOT_FOUND\",\"活動已移除\"]": [
+    "活动已移除",
+    "活動已移除"
   ],
   "[\"NOT_FOUND\",\"草稿尚未公開\"]": [
     "草稿尚未公开",

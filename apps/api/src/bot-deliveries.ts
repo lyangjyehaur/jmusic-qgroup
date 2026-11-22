@@ -1,6 +1,6 @@
+import { insertBotRetry } from './bot-delivery-command';
 import { BotDeliveryEntityPath, BotDeliveryPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
-import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { FastifyInstance,FastifyRequest } from 'fastify';
 import { BotDeliveriesQuery, EmptyHttpQuery, BotDeliveries, BotDelivery, BotDeliveryReview, BotDeliveryResult, RetryBotDelivery } from "@qgroup/contracts";
@@ -88,7 +88,7 @@ export function registerBotDeliveries(app:FastifyInstance,db:DB,security:Securit
       const checked=review(row);
       if(checked.view.blocker)throw new DomainError('BOT_DELIVERY_BLOCKED',checked.view.blocker,409);
       if(checked.view.reviewToken!==input.reviewToken)throw withApiError(new DomainError('BOT_DELIVERY_CHANGED','通知、設定或權限已有變更，請重新核對',409));
-      const stamp=legacyStamp(now()),inserted=db.prepare("INSERT INTO bot_outbox(event_id,poll_id,kind,dedupe_key,channel,target,payload_json,due_at,status,created_at) VALUES(?,?,?,?,'group',?,?,?,'pending',?) RETURNING CAST(id AS TEXT) id").get(row.event_id,row.poll_id,row.kind,'retry:'+randomUUID().replaceAll('-',''),checked.target,row.poll_id?JSON.stringify(checked.prepared):row.payload_json,row.poll_id?null:row.due_at,stamp) as {id:string};
+      const stamp=legacyStamp(now()),inserted={id:insertBotRetry(db,{...row,target:checked.target,payload_json:row.poll_id?JSON.stringify(checked.prepared):row.payload_json,due_at:row.poll_id?null:row.due_at},now())};
       if(scope.entity==='activity')appendEventAudit(db,eventRow(db,scope.id)!,user,'bot_delivery_retry',{}, {original_id:row.id,outbox_id:inserted.id},'',stamp);
       else{db.prepare('UPDATE time_polls SET revision=revision+1 WHERE id=?').run(scope.id);db.prepare("INSERT INTO time_poll_history(poll_id,actor_id,action,details_json,created_at) VALUES(?,?,'bot_retry',?,?)").run(scope.id,user.id,JSON.stringify({original_id:row.id,outbox_id:inserted.id}),stamp);}
       const result=BotDeliveryResult.parse({originalId:row.id,queuedId:inserted.id,entity,entityId:scope.id});

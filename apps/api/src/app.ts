@@ -1,3 +1,4 @@
+import { registerLegacyActivityPatch } from './legacy-activity-patch';
 import { registerLegacyActivityCreation } from './legacy-activity-create';
 import { registerLegacyPollCreation } from './legacy-time-poll-create';
 import { ActivityPath } from '@qgroup/contracts/http-paths';
@@ -192,6 +193,7 @@ export function createApp(options: AppOptions) {
     registerLegacyTimePoll(app, db, security, now, legacyBotDefaults);
     registerLegacyPollCreation(app, db, security, now, legacyBotDefaults);
     registerLegacyActivityCreation(app, db, security, now, legacyBotDefaults);
+    registerLegacyActivityPatch(app, db, security, now, legacyBotDefaults);
     registerLegacyDetailedSettlement(app, db, security, now, legacyBotDefaults);
     registerLegacyFinance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerCreateIntents(app, db, security);

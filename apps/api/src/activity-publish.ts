@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import { DomainError } from '@qgroup/domain';
 import { activityState } from '@qgroup/domain';
-import { appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventSnapshot, legacyStamp, type EventRow } from './activity-arrangements';
+import { appendEventAudit, arrangementSnapshot, validateArrangementValues, eventRow, eventSnapshot, legacyStamp, type EventRow } from './activity-arrangements';
 import type { ActivityArrangementInput } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
@@ -32,15 +32,19 @@ export function rebalanceActivity(db:DB,event:EventRow,now:()=>Date,defaults:Act
   }
   return promoted;
 }
-export function publishActivityDraft(db:DB,event:EventRow,user:{id:string;nickname:string},now:()=>Date,values:z.infer<typeof ActivityArrangementInput>,defaults:ActivityBotDefaults,hookError:(eventId:string)=>void){
+export function prepareActivityPublication(db:DB,event:EventRow,user:{id:string;nickname:string},now:()=>Date,values:z.infer<typeof ActivityArrangementInput>){
   if(event.lifecycle!=='draft')throw withApiError(new DomainError('NOT_A_DRAFT','只有草稿可以發布',409));
   // Validate the stored arrangement as well as the revision supplied by the caller.
-  arrangementValues(values,now(),false,event);
-  const stamp=legacyStamp(now());
+  const arrangement=validateArrangementValues({...values},now(),false,event);
   if(Date.parse(event.starts_at)<=now().getTime())throw withApiError(new DomainError('ACTIVITY_START_PASSED','請先把草稿的活動時間調整到將來',409));
   if(Date.parse(event.deadline)<=now().getTime())throw withApiError(new DomainError('ACTIVITY_DEADLINE_PASSED','報名截止已過，請先調整截止時間',409));
   if(event.archived_at||db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(event.id))throw withApiError(new DomainError('ACTIVITY_LOCKED','活動已有歸檔或結算記錄，不能發布',409));
   if(db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND user_id=? AND status!='withdrawn'").get(event.id,user.id))throw withApiError(new DomainError('ALREADY_REGISTERED','你已報名或待確認，請先核對原報名',409));
+  return arrangement;
+}
+export function publishActivityDraft(db:DB,event:EventRow,user:{id:string;nickname:string},now:()=>Date,values:z.infer<typeof ActivityArrangementInput>,defaults:ActivityBotDefaults,hookError:(eventId:string)=>void){
+  prepareActivityPublication(db,event,user,now,values);
+  const stamp=legacyStamp(now());
   const before=eventSnapshot(event),rosterBefore=activityPeopleSnapshot(db,event.id);
   db.prepare("UPDATE events SET lifecycle='scheduled',registration_open=1,status='open',draft_join_owner=1 WHERE id=?").run(event.id);
   const published=eventRow(db,event.id)!;
