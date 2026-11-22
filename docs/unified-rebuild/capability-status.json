@@ -5,8 +5,11 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/219-current-copy-and-acceptance-checkpoint.md",
-    "full_parent_accepted": false
+    "checkpoint": "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md",
+    "full_parent_accepted": false,
+    "completed_parent_ids": [
+      "C04"
+    ]
   },
   "capabilities": [
     {
@@ -5041,21 +5044,25 @@
         "apps/web/src/music-trend.tsx"
       ],
       "behavior_evidence": [
-        "apps/web/tests/appearance.spec.ts"
+        "apps/web/tests/appearance.spec.ts",
+        "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/web/tests/appearance.spec.ts"
+        "apps/web/tests/appearance.spec.ts",
+        "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/web/tests/appearance.spec.ts"
+        "apps/web/tests/appearance.spec.ts",
+        "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/appearance.spec.ts",
         "docs/unified-rebuild/47-appearance-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "全站深淺／跟隨系統、舊偏好、跨分頁與儲存失敗已隔離驗證；所有正式裝置與舊瀏覽器草稿／PWA 切換的成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "C05",

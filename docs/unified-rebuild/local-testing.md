@@ -51,3 +51,5 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 單元完整回歸會啟動 Python 原行為讀取器；建議單一 worker。瀏覽器回歸自行管理 5082 端口，執行前先停止手動預覽，且先建置。macOS 有 Chrome 時預設使用 Chrome；其他環境先執行 `npx playwright install chromium`。bot 測試使用固定線上來源和受控投遞，不需要正式憑證。
 
 最新固定候選 `4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1` 的 Linux unit 4,063 項、browser 1,043 項與映像驗證均通過，沒有略過或重試；另與實際匯出的線上 Python bot 映像完成隔離組合。最新授權副本的重複匯入、新寫入回退／forward、成分與看板歷史、原 bot 外部 bytes／mtime 恢復及離線封存見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。使用說明兩句後續修正另做相關建置／瀏覽器驗證；原完整 CI 不冒稱包含該修改。P6 尚須完成父項台帳審核及原 web／music／bot 的回退後成套操作與錯誤恢復，不由本機合成預覽代替。真實 QQ／WebView 的平台驗收另行記錄；P7 正式切換不在本輪範圍。
+
+第 220 批已補固定舊版 HTTP 操作及新寫入 forward、30 份封存歷史的最新刪除／恢復／新程序重啟驗證；C04 的深淺主題與未保存跨領域草稿保全完成本機父項審核。其餘完整台帳仍未通過，詳見[驗收記錄](220-legacy-http-and-parent-acceptance.md)。

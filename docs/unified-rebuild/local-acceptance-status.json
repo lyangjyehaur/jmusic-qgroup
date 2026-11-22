@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 0,
+  "full_parents_accepted": 1,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification"
   ],
@@ -1487,14 +1487,15 @@
     },
     {
       "capability_id": "C04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "system/light/dark與舊jpm偏好跨領域、跨tab和reload保留，不因切頁還原。"
       ],
       "test_files": [
         "apps/web/tests/appearance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md"
     },
     {
       "capability_id": "C05",
@@ -2144,5 +2145,32 @@
     "skips": 0,
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
+  },
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md",
+  "supplemental_parent_checks": [
+    {
+      "capability_id": "C04",
+      "test_file": "apps/web/tests/appearance.spec.ts",
+      "test_name": "theme changes preserve both unfinished music choices and activity input without submitting either",
+      "execution": "local macOS Chrome; four relevant appearance cases passed, no retry/skip/flaky",
+      "runtime_commit": "d5363bde9505b5cfb28417a36010ff3415808e30"
+    }
+  ],
+  "legacy_http_rehearsal": {
+    "checkpoint": "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md",
+    "shared_typed_rowid_tables": 59,
+    "native_only_preserved_tables": 21,
+    "history_catalog_entries": 30,
+    "post_deletion_downloads": 244,
+    "fixed_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "fixed_music_commit": "be51e065bd0d64a2df3a783ca14672d92ba6d49a",
+    "full_rollback_acceptance": false
+  },
+  "latest_ci_image_verification": {
+    "commit": "d5363bde9505b5cfb28417a36010ff3415808e30",
+    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45049853048",
+    "image": "passed; raw artifacts downloaded and checked",
+    "full_unit_browser": "pending terminal result",
+    "actual_online_bot_image": false
   }
 }

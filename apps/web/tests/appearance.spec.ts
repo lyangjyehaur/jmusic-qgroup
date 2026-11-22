@@ -18,6 +18,22 @@ test('theme follows system, explicit preferences span routes and tabs, and legac
   await page.getByRole('link',{name:'音樂',exact:true}).click();await expect(page.locator('html')).toHaveAttribute('data-theme','light');await page.goto('/me/appearance');await expect(page.getByLabel('顯示壁紙',{exact:true})).not.toBeChecked();
   await page.getByLabel('主題',{exact:true}).selectOption('system');await expect(page.locator('html')).toHaveAttribute('data-theme','dark');await page.emulateMedia({colorScheme:'light'});await expect(page.locator('html')).toHaveAttribute('data-theme','light');await other.close();
 });
+test('theme changes preserve both unfinished music choices and activity input without submitting either',async({page,context})=>{
+  await login(context,'alice');const writes:string[]=[];
+  context.on('request',request=>{if(['POST','PUT','PATCH','DELETE'].includes(request.method())&&new URL(request.url()).pathname.startsWith('/api/v2/'))writes.push(request.url());});
+  await page.goto('/me/music');await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill('mijin');await page.getByRole('button',{name:'米津玄師',exact:true}).click();await page.getByLabel('米津玄師喜歡程度').selectOption('4');
+  const activity=await context.newPage();await activity.goto('/activities/new');await activity.getByLabel('活動名稱',{exact:true}).fill('仍未送出的活動');await activity.getByLabel('活動說明',{exact:true}).fill('保留原輸入與音樂選擇');
+  const preferences=await context.newPage();await preferences.goto('/me/appearance');
+  for(const theme of ['dark','light']){
+    await preferences.getByLabel('主題',{exact:true}).selectOption(theme);
+    await expect(page.locator('html')).toHaveAttribute('data-theme',theme);await expect(activity.locator('html')).toHaveAttribute('data-theme',theme);
+    await expect(page.getByLabel('米津玄師喜歡程度')).toHaveValue('4');await expect(activity.getByLabel('活動名稱',{exact:true})).toHaveValue('仍未送出的活動');await expect(activity.getByLabel('活動說明',{exact:true})).toHaveValue('保留原輸入與音樂選擇');
+  }
+  const musicBefore=(await durableRows(page)).filter(row=>row.key.includes('music:v1:'));const activityBefore=(await durableRows(activity)).filter(row=>row.key.includes('activity-draft:'));expect(musicBefore).toHaveLength(1);expect(activityBefore).toHaveLength(1);
+  page.on('dialog',dialog=>void dialog.accept());activity.on('dialog',dialog=>void dialog.accept());await page.reload();await activity.reload();
+  await expect(page.getByLabel('米津玄師喜歡程度')).toHaveValue('4');await expect(activity.getByLabel('活動名稱',{exact:true})).toHaveValue('仍未送出的活動');await expect(activity.getByLabel('活動說明',{exact:true})).toHaveValue('保留原輸入與音樂選擇');
+  expect((await durableRows(page)).filter(row=>row.key.includes('music:v1:'))).toEqual(musicBefore);expect((await durableRows(activity)).filter(row=>row.key.includes('activity-draft:'))).toEqual(activityBefore);expect(writes).toEqual([]);await preferences.close();await activity.close();
+});
 test('profile-free administrator manages original images, order, enabled status, interval and confirmed deletion on mobile',async({page,context})=>{
   await login(context);await page.setViewportSize({width:360,height:800});await page.goto('/admin');await page.getByRole('link',{name:'壁紙管理',exact:true}).click();await upload(page,'海');await upload(page,'山');
   await page.getByRole('button',{name:'上移 山',exact:true}).click();await expect(review(page)).toContainText('上移壁紙');await confirm(page);await expect(page.locator('.wallpaper-list h2').first()).toHaveText('山');
