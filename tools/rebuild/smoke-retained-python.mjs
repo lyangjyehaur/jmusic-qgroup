@@ -9,9 +9,10 @@ import Database from 'better-sqlite3';
 import { exerciseRetainedPython } from './retained-python-scenarios.mjs';
 import { openDatabase } from '../../.rebuild-dist/api/database.mjs';
 
-// This baseline is the original audited bot, not an assertion about the bot
-// currently online. Nothing from the working-tree Python implementation loads.
-const pythonCommit = '8da877857f163853c449474e168534e2e493121b';
+// Only audited immutable public sources load; neither choice imports working-tree Python.
+// The older source was independently matched to the online bot on 2026-11-22.
+const pythonCommit = process.env.REBUILD_RETAINED_PYTHON_COMMIT ?? '8da877857f163853c449474e168534e2e493121b';
+assert(['8da877857f163853c449474e168534e2e493121b','07defc429d619a7558ab7218372886f531813ae3'].includes(pythonCommit), 'Unreviewed retained Python source');
 assert(process.argv.length === 2 || (process.argv.length === 3 && process.argv[2] === '--handoff-only'));
 const onlyHandoff = process.argv[2] === '--handoff-only';
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');

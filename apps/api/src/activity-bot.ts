@@ -61,11 +61,12 @@ export function renderActivityBot(config:Policy,kind:Kind,context:Context,now:Da
   if(countdown&&botLength(text)>BOT_MAX_CHARS)return renderActivityBot(config,kind,{...context,_countdown_event:null},now,true);
   text=withBotRoster(text,roster,true);return botContentProblem(text)?null:text;
 }
-export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Policy,now:Date,defaults:ActivityBotDefaults={},attendeeIds?:string[]){
+export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Policy,now:Date,defaults:ActivityBotDefaults={},attendeeIds?:string[],creationPreview?:{joinOwner:boolean;ownerName:string;url:string}){
+  if(creationPreview&&kind!=='activity_published')throw Error('Only a new activity publication has planned roster facts');
   if(!botShareable(event))return null;
   const actions:Partial<Record<Kind,string>>={activity_published:'join',conditions_changed:'conditions',event_finished:'settlement',event_cancelled:'finance',deadline_reminder:'join',estimated_over_reminder:'manage',finance_closed:'finance',finance_reopened:'finance',settlement_updated:'settlement'};
-  const url=botActivityURL(event.id,actions[kind],defaults),when=botLocalTime(event.starts_at,event.timezone),deadline=botLocalTime(event.deadline,event.timezone),title=cut(event.title,40);
-  const {confirmed,waiting,pending}=counts(db,event.id);const head='【'+labels[kind]+'】'+title;
+  const url=creationPreview?.url??botActivityURL(event.id,actions[kind],defaults),when=botLocalTime(event.starts_at,event.timezone),deadline=botLocalTime(event.deadline,event.timezone),title=cut(event.title,40);
+  const {confirmed,waiting,pending}=creationPreview?{confirmed:Number(creationPreview.joinOwner),waiting:0,pending:0}:counts(db,event.id);const head='【'+labels[kind]+'】'+title;
   let lines:string[],buttons:Button[];
   const settlement=kind==='settlement_updated'?settlementDetail(db,event.id):null,settlementLines=settlement?.group_notice?settlementNotice(settlement):[],billVersion=kind==='settlement_updated'?settlementVersion(db,event.id):0;
   if(kind==='settlement_updated'){lines=[head+'（第 '+billVersion+' 版）','每人应付与付款归属已发布，请到站内查看。',...(settlementLines.length?['','逐人应付：',...settlementLines]:[]),'',url];buttons=[['查看我的','/我的',''],['活动页','',url]];
@@ -86,10 +87,10 @@ export function buildActivityBotMessage(db:DB,event:EventRow,kind:Kind,config:Po
     lines=[head,'时间：'+when,'地点：'+event.location,...names,'当前正式报名 '+confirmed+' 人，候补 '+waiting+' 人','',url];buttons=[['活动详情','',url],['看名额','/名额','']];
   }
   const original=lines.join('\n');lines=original.split('\n');let previous='';
-  try{const row=db.prepare('SELECT snapshot_json FROM event_conditions WHERE event_id=? AND version<? ORDER BY version DESC LIMIT 1').get(event.id,event.conditions_version) as {snapshot_json:string}|undefined;const prior=row?JSON.parse(row.snapshot_json):null;previous=prior?.starts_at?botLocalTime(prior.starts_at,event.timezone):'';}catch{/* Optional old comparison history never breaks composition. */}
+  if(!creationPreview)try{const row=db.prepare('SELECT snapshot_json FROM event_conditions WHERE event_id=? AND version<? ORDER BY version DESC LIMIT 1').get(event.id,event.conditions_version) as {snapshot_json:string}|undefined;const prior=row?JSON.parse(row.snapshot_json):null;previous=prior?.starts_at?botLocalTime(prior.starts_at,event.timezone):'';}catch{/* Optional old comparison history never breaks composition. */}
   const context:Context={heading:lines[0]!,details:botStrip(lines.slice(1,-1).join('\n')),url:lines.at(-1)!,title,starts_at:when,previous_starts_at:previous,deadline,location:event.location,confirmed:String(confirmed),waiting:String(waiting),fee_policy:cut(event.fee_policy||'',120),description:cut(event.description||'',120),version:String(billVersion||event.conditions_version),change_summary:cut(event.change_summary||'',120),cancellation_reason:cut(event.cancellation_reason||'',120),_default_text:original,_countdown_event:{starts_at:event.starts_at,timezone:event.timezone,lifecycle:event.lifecycle},_label:labels[kind],_details_lines:lines.slice(1,-1).filter(line=>botStrip(line))};
   if(settlementLines.length)context._settlement_notice=settlementLines.join('\n');
-  if(rosterKinds.has(kind))context._roster_lines=botRosterLines(db,event);
+  if(rosterKinds.has(kind))context._roster_lines=creationPreview?['正式报名（'+Number(creationPreview.joinOwner)+' 人）：'+(creationPreview.joinOwner?botRosterName(creationPreview.ownerName):'暂无'),'候补（0 人）：暂无']:botRosterLines(db,event);
   const text=renderActivityBot(config,kind,context,now)!;const markdown=renderActivityBot(config,kind,context,now,true);
   return {text,markdown,context,buttons};
 }

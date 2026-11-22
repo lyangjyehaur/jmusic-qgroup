@@ -6,22 +6,56 @@
       "state": "in_progress",
       "new_entry": "/search",
       "required_behavior": "共用導覽的全站搜尋，按活動、音樂詞條與同好分組，沿用目前權限、拼音／假名／別名搜尋及成分資格；不搜尋身份或私人欄位。保留返回查詢及同一成分選擇草稿，區分來源錯誤與空資料。",
-      "implementation": ["apps/api/src/search.ts", "apps/web/src/search.tsx", "apps/web/src/search-return.ts", "apps/web/src/music-selection.tsx", "packages/contracts/src/search.ts"],
-      "behavior_evidence": ["apps/api/src/search.test.ts", "apps/web/src/search-return.test.ts", "packages/domain/src/music-search.test.ts"],
-      "permission_evidence": ["apps/api/src/search.test.ts", "tools/rebuild/schemas/http-access-review.json"],
-      "ux_evidence": ["apps/web/tests/global-search.spec.ts"],
-      "remaining": ["正式規模來源與併發／資源驗收", "完整候選版本與舊入口／QQ WebView 的成套驗收"]
+      "implementation": [
+        "apps/api/src/search.ts",
+        "apps/web/src/search.tsx",
+        "apps/web/src/search-return.ts",
+        "apps/web/src/music-selection.tsx",
+        "packages/contracts/src/search.ts"
+      ],
+      "behavior_evidence": [
+        "apps/api/src/search.test.ts",
+        "apps/web/src/search-return.test.ts",
+        "packages/domain/src/music-search.test.ts",
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "apps/api/src/search.test.ts",
+        "tools/rebuild/schemas/http-access-review.json"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/global-search.spec.ts"
+      ],
+      "remaining": [
+        "已按目前線上選擇分布完成搜尋量測；完整候選版本的跨功能搜尋與資料對帳仍待驗收",
+        "完整候選版本與舊入口／QQ WebView 的成套驗收"
+      ]
     },
     {
       "integration_id": "U02",
       "state": "in_progress",
       "new_entry": "/tools/room-lab?eventId=:id → /activities/:id/rooms → /activities/:id/settlement",
       "required_behavior": "音樂建議保留完整活動名冊與無成分者，人工調整後僅發起者能預覽及採用；提交前再驗 revision 與來源，正式分房與實際結算各自確認，合作方與 bot 讀取同一正式版本。",
-      "implementation": ["apps/web/src/music-rooms.tsx", "apps/api/src/music-rooms.ts"],
-      "behavior_evidence": ["docs/unified-rebuild/50-music-rooms-checkpoint.md", "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md", "docs/unified-rebuild/202-shared-music-compute-checkpoint.md"],
-      "permission_evidence": ["docs/unified-rebuild/198-room-permissions-checkpoint.md"],
-      "ux_evidence": ["apps/web/tests/music-rooms.spec.ts"],
-      "remaining": ["正式規模與完整原名冊／帳務來源對帳", "切換後實際 bot 版本組合與完整分房→結算成套驗收"]
+      "implementation": [
+        "apps/web/src/music-rooms.tsx",
+        "apps/api/src/music-rooms.ts"
+      ],
+      "behavior_evidence": [
+        "docs/unified-rebuild/50-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/202-shared-music-compute-checkpoint.md",
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+      ],
+      "permission_evidence": [
+        "docs/unified-rebuild/198-room-permissions-checkpoint.md"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/music-rooms.spec.ts"
+      ],
+      "remaining": [
+        "已按目前線上選擇分布完成 40 人分房量測；完整原名冊／帳務來源對帳仍待驗收",
+        "切換後實際 bot 版本組合與完整分房→結算成套驗收"
+      ]
     },
     {
       "integration_id": "U03",
@@ -38,7 +72,8 @@
         "docs/unified-rebuild/43-music-circles-checkpoint.md",
         "apps/api/src/music-circle-jobs.test.ts",
         "docs/unified-rebuild/201-circle-isolation-checkpoint.md",
-        "docs/unified-rebuild/202-shared-music-compute-checkpoint.md"
+        "docs/unified-rebuild/202-shared-music-compute-checkpoint.md",
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
       ],
       "permission_evidence": [
         "docs/unified-rebuild/43-music-circles-checkpoint.md",
@@ -48,7 +83,7 @@
         "apps/web/tests/music-circles.spec.ts"
       ],
       "remaining": [
-        "跨功能 worker 名額已共用；正式規模的 DB 讀取、複製、平方計算成本、程序 RSS／CPU 與多副本總資源仍待驗收",
+        "已按目前線上 66 位會員、152 個詞條、681 筆選擇的分布完成圈子量測；完整候選整合驗收仍待完成",
         "正式來源完整內容對帳與完整候選版本成套驗收"
       ]
     }

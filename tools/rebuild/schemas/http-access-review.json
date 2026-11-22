@@ -6,15 +6,18 @@
     "apps/api/src/account-devices.ts": "80183897d31d3fe3532706fbcc8567ea467f81f3f0c6edbfad791de93cd3c35f",
     "apps/api/src/account-profile.ts": "b19626ffdeb15974e0016b3efd7f388d7bdd0e2828860d6145d94baa7198c0ab",
     "apps/api/src/activity-access.ts": "470811af82ce784174e5f50012780cfbec31be28a7cd0412d3467972a493ad5f",
-    "apps/api/src/activity-arrangements.ts": "cb184e28225a9cd5cb92c16ea225ab643ea41c6578e31c4907a8836dfa86addc",
+    "apps/api/src/activity-arrangements.ts": "3a459c758872b68305b8ea73bdf00f55b460d8e3aef898ad9f76e00e2fe75e9a",
     "apps/api/src/activity-attendance.ts": "2062cc7ce3530fd70ab9b4bb7509a41b893232a31a8bfc7f1767db325f4b95eb",
+    "apps/api/src/activity-bot.ts": "a54318436d85d2b28b5db3175d1ec6271e9318b351be9ed43ab52026933dbbaf",
     "apps/api/src/activity-claims.ts": "88a2c3f244f5e0fa9d67d95dee7bf20ecddfef131689a549609bed5d2992f156",
+    "apps/api/src/activity-create-command.ts": "57c3b0a0cedda4ac755a29a03d7bb35189369ad15b280d82941298b1031e3a57",
     "apps/api/src/activity-delegation.ts": "642160490a399a48a70e06cca92e7529faca26bb5fd7a6423e49746740d9c61c",
-    "apps/api/src/activity-drafts.ts": "571db76061dc7ce93e5a516d636e895fd995e81c8d64ab859fba8b30d18e58ed",
+    "apps/api/src/activity-drafts.ts": "0648e2b6d9ad2d3bb62e12a07b28fea737fbcb0d7c8aa85ab1baebe7623cfd6f",
     "apps/api/src/activity-history.ts": "90fd4d47951b77e75c5fc40d8bea759b2bbcfdc83b6a551d6f388ca4a5950178",
     "apps/api/src/activity-invitations.ts": "fc46f0664cfb6e497f63f7ddb94184d8a5cff7943e0d7aea199f24e807abd522",
     "apps/api/src/activity-lifecycle.ts": "eb438b08178a18982132e7f18313de50adcdc352534d35491de98694ccb7b117",
     "apps/api/src/activity-management.ts": "4dcae95cd002e7e529483b8c6f87cb3c7ac3ca88e194eb08ed2eb629c992ecd9",
+    "apps/api/src/activity-publish.ts": "4451c61db10ab9868d26ecbfc58b193f4d8d7ab6449900a619db7ec0145e7b2d",
     "apps/api/src/activity-registration.ts": "960484a3a9570d988d1b93b4efa72d54d4e6e54b2e216fb2f7d0e2dcf96ddcfc",
     "apps/api/src/activity-room-overview.ts": "30974dab9ac7d3b1c0309c41cb5e62304462cfaf4964f15d66ff991bba973ba4",
     "apps/api/src/activity-roster.ts": "493375bed2487523ce383a65bd3e7250fd4840c9a836932b780e883f8062c212",
@@ -28,13 +31,14 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "0c63cd182e94c016510b62a2156a3ffec9f8bcb669d47cd4920988b4020f5936",
+    "apps/api/src/app.ts": "1bd9778704599d02e07718cd4fb9513967dc7dc9fbd08ff691cc255d068fce80",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "bf8789dd18fcd1adc4c3e6403494ff75f33661637c6ee7e117d96608b64ee445",
-    "apps/api/src/create-intents.ts": "4e54173c0fc37f95fbc26348cf5a8bb5913eb6810da4e157204426627f3d0849",
+    "apps/api/src/create-intents.ts": "87a0eebeccfeee1c9b8c2350f1824b92676e44c8c058d99ed14d0b5b7d6b767a",
     "apps/api/src/finance.ts": "5bceb61f94b73d80c33877023580e91042bfdb6456cd8aa5fdcd254a2516b078",
     "apps/api/src/inbox.ts": "303d9cefb1ba4da27b7d82110432834e4e9c103b877a24705940a931a5f87d8d",
+    "apps/api/src/legacy-activity-create.ts": "6ab62748774965e51fe340aaa2fb90c28b77524850a81e91b4061c326496d33c",
     "apps/api/src/legacy-detailed-settlement.ts": "645ec087b25171709106d48e93bd53f70925a710c6408ab231bcafa7d92436cd",
     "apps/api/src/legacy-finance.ts": "124ca44439fb44a4e1d70d3668ca6e4d05d9adb66e71a729455ce4aba682af1e",
     "apps/api/src/legacy-local.ts": "a65e2ccf033d34f81f57754b413e777793eb519d42498d862bca2346f7c05fcb",
@@ -70,17 +74,19 @@
     "apps/api/src/settlement-context.ts": "751453606c1076fdd994ed8e03ca3f424bdc2c7cf698b657ca785379cd4d3ddf",
     "apps/api/src/settlements.ts": "7984d787b3d060a2d54f6962c31767b3ba0be5af418e61076345a86397d0bc8d",
     "apps/api/src/time-poll-bot.ts": "0d070b033f90dd68f8723a44c9d8cd3e7826f079a131287e2fd58d8d86f73cee",
-    "apps/api/src/time-poll-command.ts": "170c424671d50982080be6cc48071f39e74c04ae2f41eaffcf01157d8be9ab44",
+    "apps/api/src/time-poll-command.ts": "7161881069f7164b2a0c9e85fd9a7e0283d63e220898a3a3d82fa28e77a12232",
     "apps/api/src/time-poll-context.ts": "5efca57fb601cf93973921a0a7e3f531d278a7c13328e2d21e3915eb8d500a94",
     "apps/api/src/time-polls.ts": "452d546a9394fee2044e6705de17dbdd60de2541d956c435106e300d432e947e",
     "packages/contracts/package.json": "2e51ee0e36eb1bc818ba07f4c410a57700aa6d9f959bc3c86f3f61cddd17dd89",
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "27b89fe5a91869f515555ebe79612f7c1b1fa7687d7afe51b6eacffcd2b63f8b",
+    "packages/contracts/src/index.ts": "506129190fa9ac4235a4a5fb4019fe15fd8eb788fb8bde5ce0e443f14d24093b",
+    "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
-    "packages/contracts/src/legacy-time-poll-create.ts": "573420289982a7bb1371e163c0d39b1c3fad5780e4a75c08cbba58cb4b077f84",
+    "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
     "packages/contracts/src/legacy-time-poll.ts": "5a0b86cfcba35622cb0f990c8c3303e440c9ff10b0c33a507ef06df93d5f3c88",
+    "packages/contracts/src/legacy-values.ts": "6af476f4ae1ddf8609fb35a27c11cd7e2bcce49634670e4fed6a2125a9805514",
     "packages/contracts/src/payment-assets.ts": "9c925b021cb16cfd188e6620a341efdba6570e4a72b7110ede85899c08c8d83c",
     "packages/contracts/src/time-polls.ts": "6d6651d83ebcb90b282cb13ebe1e77d19d0ef34cdc8c5e6a47ee393c3040461f",
     "packages/database/src/music-retirements.ts": "f4ae47d2ab943ab7bafd376f9c1f461121b4a0fe580284fd76fcf0526d89af62",
@@ -373,12 +379,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -819,12 +827,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -1370,12 +1380,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -1903,12 +1915,14 @@
         "A visitor device is permitted; an absent or stale scope is rejected."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -1921,12 +1935,14 @@
         "A visitor device is permitted; an absent or stale scope is rejected."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -1977,14 +1993,16 @@
         "Current poll owner is required before receipt replay; uncommitted operations additionally validate arrangement/vote revisions and domain constraints."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-command.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/time-poll-command.ts"
+        "packages/contracts/src/legacy-activity-create.ts",
+        "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
     },
@@ -2225,12 +2243,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -2243,12 +2263,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -2479,12 +2501,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
@@ -2966,6 +2990,54 @@
       "additionalHeaders": []
     },
     {
+      "id": "POST /api/v2/me/legacy-requests/activity-create/inspect",
+      "file": "apps/api/src/legacy-activity-create.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member, account scope, origin and CSRF are required inside the transaction. Exact original signature and receipt are checked before current access and destination; deleted or inaccessible activities cannot be acknowledged. Canonical aliases block recreation; existing destinations do not invent original commitment. Retry revalidates original values, nickname, policy and review token, then saves activity, roster, conditions, audit and original keys atomically. Bot hook failure is optional and isolated."
+      ],
+      "dependencies": [
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-create-command.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/app.ts",
+        "apps/api/src/create-intents.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/security.ts",
+        "packages/contracts/package.json",
+        "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/activity-create/retry",
+      "file": "apps/api/src/legacy-activity-create.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member, account scope, origin and CSRF are required inside the transaction. Exact original signature and receipt are checked before current access and destination; deleted or inaccessible activities cannot be acknowledged. Canonical aliases block recreation; existing destinations do not invent original commitment. Retry revalidates original values, nickname, policy and review token, then saves activity, roster, conditions, audit and original keys atomically. Bot hook failure is optional and isolated."
+      ],
+      "dependencies": [
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-create-command.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/app.ts",
+        "apps/api/src/create-intents.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/security.ts",
+        "packages/contracts/package.json",
+        "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "POST /api/v2/me/legacy-requests/check",
       "file": "apps/api/src/legacy-local.ts",
       "mode": "member-write",
@@ -3099,14 +3171,15 @@
       ],
       "dependencies": [
         "apps/api/src/app.ts",
+        "apps/api/src/create-intents.ts",
+        "apps/api/src/legacy-local.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-bot.ts",
         "apps/api/src/time-poll-command.ts",
         "apps/api/src/time-poll-context.ts",
-        "apps/api/src/time-poll-bot.ts",
-        "apps/api/src/legacy-local.ts",
-        "apps/api/src/create-intents.ts",
-        "packages/contracts/src/legacy-time-poll-create.ts",
         "packages/contracts/src/create-intents.ts",
+        "packages/contracts/src/legacy-time-poll-create.ts",
+        "packages/contracts/src/legacy-values.ts",
         "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
@@ -3122,14 +3195,15 @@
       ],
       "dependencies": [
         "apps/api/src/app.ts",
+        "apps/api/src/create-intents.ts",
+        "apps/api/src/legacy-local.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-bot.ts",
         "apps/api/src/time-poll-command.ts",
         "apps/api/src/time-poll-context.ts",
-        "apps/api/src/time-poll-bot.ts",
-        "apps/api/src/legacy-local.ts",
-        "apps/api/src/create-intents.ts",
-        "packages/contracts/src/legacy-time-poll-create.ts",
         "packages/contracts/src/create-intents.ts",
+        "packages/contracts/src/legacy-time-poll-create.ts",
+        "packages/contracts/src/legacy-values.ts",
         "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
@@ -3143,12 +3217,14 @@
         "Preserve the exact original method, path, payload, revision and operation key. Matching receipts precede domain expiry/revision checks and return only a destination; uncommitted recovery requires explicit confirmation and unchanged current review."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
+        "apps/api/src/legacy-local.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-bot.ts",
         "apps/api/src/time-poll-command.ts",
         "apps/api/src/time-poll-context.ts",
-        "apps/api/src/time-poll-bot.ts",
-        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/legacy-time-poll.ts",
         "packages/contracts/src/time-polls.ts"
       ],
@@ -3163,12 +3239,14 @@
         "Preserve the exact original method, path, payload, revision and operation key. Matching receipts precede domain expiry/revision checks and return only a destination; uncommitted recovery requires explicit confirmation and unchanged current review."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
+        "apps/api/src/legacy-local.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-bot.ts",
         "apps/api/src/time-poll-command.ts",
         "apps/api/src/time-poll-context.ts",
-        "apps/api/src/time-poll-bot.ts",
-        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/legacy-time-poll.ts",
         "packages/contracts/src/time-polls.ts"
       ],
@@ -3382,6 +3460,7 @@
       "mode": "member-write",
       "conditions": [],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/create-intents.ts",
         "apps/api/src/security.ts",
@@ -3391,6 +3470,7 @@
         "packages/contracts/src/create-intents.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts",
         "packages/contracts/src/time-polls.ts"
       ],
@@ -3423,14 +3503,16 @@
         "Current poll owner is required before receipt replay; uncommitted operations additionally validate arrangement/vote revisions and domain constraints."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-command.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/time-poll-command.ts"
+        "packages/contracts/src/legacy-activity-create.ts",
+        "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
     },
@@ -3440,14 +3522,16 @@
       "mode": "member-write",
       "conditions": [],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-command.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/time-poll-command.ts"
+        "packages/contracts/src/legacy-activity-create.ts",
+        "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []
     },
@@ -3477,12 +3561,14 @@
         "Activity, target and command authority are server domain checks; being a member alone does not grant management or receipt replay access."
       ],
       "dependencies": [
+        "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
+        "packages/contracts/src/legacy-activity-create.ts",
         "packages/contracts/src/payment-assets.ts"
       ],
       "additionalHeaders": []

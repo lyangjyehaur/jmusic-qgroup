@@ -203,6 +203,8 @@ export const analyticsManifest = {
     "/api/v2/me/devices/link",
     "/api/v2/me/devices/revoke",
     "/api/v2/me/devices/revoke-link",
+    "/api/v2/me/legacy-requests/activity-create/inspect",
+    "/api/v2/me/legacy-requests/activity-create/retry",
     "/api/v2/me/legacy-requests/check",
     "/api/v2/me/legacy-requests/finance/inspect",
     "/api/v2/me/legacy-requests/finance/retry",

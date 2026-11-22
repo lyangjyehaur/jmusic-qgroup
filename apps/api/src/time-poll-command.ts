@@ -4,9 +4,9 @@ import { CreateTimePoll, PollHistoryDetails, type VoteTimePoll, type ManageTimeP
 import { DomainError } from '@qgroup/domain';
 import type { z } from 'zod';
 import { withApiError } from './error-display';
-import { activityDate, appendEventAudit, arrangementSnapshot, arrangementValues, eventRow, eventSnapshot, legacyStamp } from './activity-arrangements';
-import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
-import { allocateActivity } from './activity-publish';
+import { activityDate, arrangementValues, legacyStamp } from './activity-arrangements';
+import { type ActivityBotDefaults } from './activity-bot';
+import { prepareActivityCreation, executeActivityCreation } from './activity-create-command';
 import { announcePoll, preparePollAnnouncement, enqueuePollAnnouncement, pollShareable } from './time-poll-bot';
 import { deliveryRetryBlocker } from './bot-delivery-rules';
 import { pollAvailable, pollDate, pollDateStart, pollExpires, pollRow, pollDeadline, pollOptions, pollTotals, type PollRow } from './time-poll-context';
@@ -34,7 +34,7 @@ function finalizedEvent(
   defaults: ActivityBotDefaults,
   hook: (work: () => unknown) => void,
 ) {
-  const v = arrangementValues(
+  const plan = prepareActivityCreation(
     {
       title: poll.title,
       category: poll.category as z.infer<typeof CreateTimePoll>['category'],
@@ -53,63 +53,9 @@ function finalizedEvent(
       withdrawalDeadline: null,
     },
     now(),
-    false,
+    'scheduled',
   );
-  const id = randomBytes(8).toString('hex'),
-    stamp = legacyStamp(now());
-  db.prepare(
-    `INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,duration_hours,created_at,withdrawal_deadline,visibility,invite_token,lifecycle,registration_open,status,timezone,minimum_participants,fee_policy,draft_join_owner,bot_enabled)
-    VALUES(?,?,?,?,?,?,?,?,?,?,?,NULL,'public',?,'scheduled',1,'open',?,?,?,1,?)`,
-  ).run(
-    id,
-    user.id,
-    v.title,
-    v.category,
-    v.location,
-    v.startsAt,
-    v.deadline,
-    v.capacity,
-    v.description,
-    v.durationHours,
-    stamp,
-    randomBytes(24).toString('base64url'),
-    v.timezone,
-    v.minimumParticipants,
-    v.feePolicy,
-    Number(v.botEnabled),
-  );
-  db.prepare('INSERT INTO event_access VALUES(?,?,?)').run(id, user.id, stamp);
-  let event = eventRow(db, id)!;
-  db.prepare('INSERT INTO event_conditions VALUES(?,?,?,?,?,?)').run(
-    id,
-    1,
-    JSON.stringify(arrangementSnapshot(event)),
-    '初始安排',
-    user.nickname,
-    stamp,
-  );
-  appendEventAudit(db, event, user, 'event_created', {}, eventSnapshot(event), '', stamp);
-  const party = randomBytes(8).toString('hex'),
-    person = randomBytes(8).toString('hex'),
-    status = allocateActivity([], event.capacity, [person]).get(person)!;
-  db.prepare(
-    "INSERT INTO roster_parties(id,event_id,manager_id,queue_mode,created_at) VALUES(?,?,?,'individual',?)",
-  ).run(party, id, user.id, stamp);
-  db.prepare(
-    "INSERT INTO attendees(id,event_id,manager_id,user_id,party_id,name,note,payer_kind,status,created_at,updated_at,accepted_conditions_version,confirmation_state) VALUES(?,?,?,?,?,?,'','self',?,?,?,1,'accepted')",
-  ).run(person, id, user.id, user.id, party, user.nickname, status, stamp, stamp);
-  db.prepare(
-    "INSERT INTO attendee_consents(attendee_id,event_id,version,decision,actor_id,actor_name,reason,created_at) VALUES(?,?,1,'accepted',?,?,'报名时接受当前安排',?)",
-  ).run(person, id, user.id, user.nickname, stamp);
-  const participants = db
-    .prepare(
-      `SELECT a.id,COALESCE(u.nickname,a.name) AS nickname,a.note,a.status,a.payer_kind,m.nickname AS manager_name,a.withdrawal_requested,a.withdrawal_reason,a.created_at,a.updated_at,a.party_id,p.queue_mode,a.accepted_conditions_version,a.confirmation_state,a.attendance,a.attendance_note,a.arrived_at,a.left_at FROM attendees a LEFT JOIN users u ON u.id=a.user_id JOIN users m ON m.id=a.manager_id LEFT JOIN roster_parties p ON p.id=a.party_id WHERE a.id=?`,
-    )
-    .all(person);
-  event = eventRow(db, id)!;
-  appendEventAudit(db, event, user, 'signup', { participants: [] }, { participants }, '', stamp);
-  hook(() => createActivityBot(db, now, defaults).publication(id));
-  return id;
+  return executeActivityCreation(db,plan,user,now(),defaults,hook);
 }
 /** Preparation only reads; an inspection must never create trial events or jobs. */
 export function preparePollVote(db: DB, poll: PollRow, input: Vote, time: Date) {

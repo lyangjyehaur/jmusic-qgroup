@@ -88,12 +88,15 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>Draft.refine(value=>(!published||!value.pending||value.pending.kind==='save')&&value.id===(initial?.id??null)).parse(JSON.parse(raw)),
     dirty:value=>!!value.reason||JSON.stringify(value.form)!==JSON.stringify(original(saved).form),pending:value=>!!value.pending,blocking:!destination});
   const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist,dirty,blocker}=record;
-  const locked=record.locked||saved?.canEdit===false;
+  const [lookedUp,setLookedUp]=useState<{scope:string;intent:string;id:string;epoch:number}|null>(null);
+  const resolvedId=draft.legacySource?.resolvedId??(lookedUp&&lookedUp.scope===viewer.scope&&lookedUp.epoch===record.epoch&&lookedUp.intent===draft.clientIntent?lookedUp.id:undefined);
+  const alreadyCreated=!saved&&!!resolvedId;
+  const locked=record.locked||saved?.canEdit===false||alreadyCreated;
   useEffect(()=>{if(destination)void navigate(destination,{replace:!initial});},[destination,navigate,initial]);
   useEffect(()=>{setConfirmRemove(false);setConfirmPublish(false);},[record.epoch]);
   function edit(patch:Partial<FormValue>){if(locked)return;if(published&&saved?.assisted&&patch.deadline&&draft.form.withdrawalDeadline===draft.form.deadline)patch.withdrawalDeadline=patch.deadline;record.change({...draft,form:{...draft.form,...patch}});setMessage('');setConfirmRemove(false);setConfirmPublish(false);}
   async function submit(kind:'save'|'remove'|'publish'='save'){
-    if(busy||record.unavailable||(!draft.pending&&saved?.canEdit===false))return;
+    if(alreadyCreated||busy||record.unavailable||(!draft.pending&&saved?.canEdit===false))return;
     if(draft.legacySource?.reviewRequired){setMessage(uiText("請先核對目前安排與原稿，再保存或發布。"));return;}
     let operation=draft.pending;
     if(!operation){
@@ -173,11 +176,11 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
         <div className="account-field"><label htmlFor="activity-description">活動說明</label><textarea id="activity-description" rows={5} value={f.description} maxLength={6000} onChange={e=>edit({description:e.target.value})}/></div>
         {saved&&<label className="account-field">{published?'修改原因（重要安排或管理員協助必填）':'修改原因（選填）'}<input value={draft.reason} maxLength={400} onChange={e=>record.change({...draft,reason:e.target.value})}/></label>}
       </fieldset>
-      <Button type="submit" loading={busy} disabled={!!draft.legacySource?.reviewRequired||!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button>
+      <Button type="submit" loading={busy} disabled={alreadyCreated||!!draft.legacySource?.reviewRequired||!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button>
     </form>{saved&&saved.canEdit&&!draft.pending&&<Button variant="secondary" disabled={busy||!!readError} onClick={()=>void rebase()}>核對目前安排，保留輸入</Button>}
     {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!!draft.legacySource?.reviewRequired||!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!!draft.legacySource?.reviewRequired||!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
     {message&&<Text role="status">{message}</Text>}{completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
-    {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy}/>}
+    {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy} onExisting={id=>setLookedUp({id,scope:viewer.scope,intent:draft.clientIntent!,epoch:record.epoch})}/>}
     <DraftFeedback form={record} navigation={false}/>
     </Surface></>;
 }

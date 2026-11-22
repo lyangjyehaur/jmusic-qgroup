@@ -29,6 +29,7 @@ function target(db:DB,userId:string,kind:Kind,row:{signature:string;response_jso
   const poll=pollRow(db,id);if(poll.owner_id!==userId)throw withApiError(new DomainError('CREATE_INTENT_PERMISSION','原投票已建立，但目前無權管理；不能重建',403));
   return {state:'existing' as const,kind,id,revision:poll.revision,route:'poll' as const,canEdit:false};
 }
+export function viewActivityCreationKey(db:DB,userId:string,key:string){const row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(userId,key) as {signature:string;response_json:string}|undefined;return row?target(db,userId,'activity',row):undefined;}
 export function viewPollCreationKey(db:DB,userId:string,key:string){const row=db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(userId,key) as {signature:string;response_json:string}|undefined;return row?target(db,userId,'poll',row):undefined;}
 export function viewCreateIntent(db:DB,userId:string,kind:Kind,intent:string):z.infer<typeof CreateIntentResult>{const row=receipt(db,userId,kind,intent);return row?target(db,userId,kind,row):{state:'missing'};}
 /** Existing original protocol keys act as durable aliases. Never alter an imported receipt. */

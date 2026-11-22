@@ -37,7 +37,10 @@ export function activityDate(value:string):string {
   return legacyStamp(utc);
 }
 export function arrangementValues(raw:z.infer<typeof ActivityArrangementInput>,now:Date,draft:boolean,existing?:EventRow) {
-  const values=ActivityArrangementInput.parse(raw);
+  return validateArrangementValues(ActivityArrangementInput.parse(raw),now,draft,existing);
+}
+/** Business validation of already-decoded values; no additional string normalization. */
+export function validateArrangementValues(values:z.infer<typeof ActivityArrangementInput>,now:Date,draft:boolean,existing?:EventRow) {
   values.startsAt=activityDate(values.startsAt);values.deadline=activityDate(values.deadline);
   if(!draft&&Date.parse(values.startsAt)<=now.getTime()&&(!existing||values.startsAt!==existing.starts_at))throw withApiError(new DomainError('ACTIVITY_START_PASSED','新的活動開始時間需要晚於現在',400));
   if(values.deadline>values.startsAt)throw withApiError(new DomainError('INVALID_ACTIVITY_DEADLINE','報名截止時間不能晚於活動開始時間',400));

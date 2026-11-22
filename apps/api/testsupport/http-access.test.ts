@@ -25,7 +25,7 @@ const op = (id: string) => {
 };
 it('binds every actual v2 identity boundary while keeping full domain authorization unaccepted', async () => {
   const spec = document();await expect(assertHttpOpenAPI(spec)).resolves.toBeUndefined();
-  expect(rows.filter(row => row.access)).toHaveLength(203);expect(rows.filter(row => !row.access)).toHaveLength(0);
+  expect(rows.filter(row => row.access)).toHaveLength(205);expect(rows.filter(row => !row.access)).toHaveLength(0);
   expect(rows.filter(row => row.access).map(row => row.id)).toEqual(review.operations.map(row => row.id));
   expect(rows.every(row => !row.access || row.access.boundaryReviewed && !row.access.domainAuthorizationComplete)).toBe(true);
   expect(spec['x-qgroup-erasure-recovery-gate-required']).toBe(true);
@@ -67,7 +67,7 @@ it('rejects missing or relocated reviewed operations instead of silently assigni
 it.each(['apps/api/src/security.ts', 'apps/api/src/admin-security.ts', 'apps/api/src/time-polls.ts'])('requires renewed manual boundary review when a pinned source changes: %s', file => {
   const stage = mkdtempSync(join(tmpdir(), 'qgroup-http-access-'));cleanups.push(() => rmSync(stage, { recursive: true, force: true }));
   for (const source of Object.keys(review.sourcePins)) { const path = join(stage, source);mkdirSync(dirname(path), { recursive: true });writeFileSync(path, readFileSync(join(root, source))); }
-  expect(readHttpAccessBindings(stage, rows).size).toBe(203);
+  expect(readHttpAccessBindings(stage, rows).size).toBe(205);
   writeFileSync(join(stage, file), '\n// Changed synthetic source\n', { flag: 'a' });
   expect(() => readHttpAccessBindings(stage, rows)).toThrow('HTTP access source changed; review required: ' + file);
 });

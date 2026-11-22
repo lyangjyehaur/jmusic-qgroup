@@ -32,6 +32,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "活动或名单已有更新；输入仍保留，请核对目前安排后再保存",
     "活動或名單已有更新；輸入仍保留，請核對目前安排後再保存"
   ],
+  "[\"ACTIVITY_CREATE_DEADLINE\",\"報名截止已過，請調整截止時間\"]": [
+    "报名截止已过，请调整截止时间",
+    "報名截止已過，請調整截止時間"
+  ],
   "[\"ACTIVITY_DEADLINE_PASSED\",\"報名截止已過，請先調整截止時間\"]": [
     "报名截止已过，请先调整截止时间",
     "報名截止已過，請先調整截止時間"
@@ -508,6 +512,26 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "活动尚未发布，请从活动草稿编辑",
     "活動尚未發布，請從活動草稿編輯"
   ],
+  "[\"LEGACY_ACTIVITY_CREATE_NAME_REQUIRED\",\"請先設定稱呼，再核對建立活動\"]": [
+    "请先设定称呼，再核对建立活动",
+    "請先設定稱呼，再核對建立活動"
+  ],
+  "[\"LEGACY_ACTIVITY_CREATE_REVIEW_CHANGED\",\"建立活動核對資料已變更；請重新檢查後確認\"]": [
+    "建立活动核对资料已变更；请重新检查后确认",
+    "建立活動核對資料已變更；請重新檢查後確認"
+  ],
+  "[\"LEGACY_ACTIVITY_CREATE_UNSUPPORTED\",\"原建立活動方法或路徑尚未支援；原請求保留\"]": [
+    "原建立活动方法或路径尚未支援；原请求保留",
+    "原建立活動方法或路徑尚未支援；原請求保留"
+  ],
+  "[\"LEGACY_ACTIVITY_CREATE_UNSUPPORTED\",\"原建立活動欄位尚未支援或缺失；原請求保留，不能重試\"]": [
+    "原建立活动栏位尚未支援或缺失；原请求保留，不能重试",
+    "原建立活動欄位尚未支援或缺失；原請求保留，不能重試"
+  ],
+  "[\"LEGACY_ACTIVITY_CREATE_UNSUPPORTED\",\"原建立識別尚未支援；原請求保留\"]": [
+    "原建立识别尚未支援；原请求保留",
+    "原建立識別尚未支援；原請求保留"
+  ],
   "[\"LEGACY_CONTACT_FIXED\",\"舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員\"]": [
     "旧成分的 QQ 是原资料查询标识，更正请联络管理员",
     "舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員"
@@ -571,6 +595,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執不是建立投票結果；原請求保留\"]": [
     "原回执不是建立投票结果；原请求保留",
     "原回執不是建立投票結果；原請求保留"
+  ],
+  "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執不是建立活動結果；原請求保留\"]": [
+    "原回执不是建立活动结果；原请求保留",
+    "原回執不是建立活動結果；原請求保留"
   ],
   "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執投票與原請求不一致，請保留並核對原紀錄\"]": [
     "原回执投票与原请求不一致，请保留并核对原纪录",

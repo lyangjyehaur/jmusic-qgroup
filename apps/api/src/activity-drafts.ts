@@ -1,6 +1,6 @@
+import { prepareActivityCreation, executeActivityCreation } from './activity-create-command';
 import { ActivityPath, RequestIdPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
-import { randomBytes } from 'node:crypto';
 import type { FastifyInstance, FastifyRequest } from 'fastify';
 import type { DB } from '@qgroup/database';
 import { PageQuery, CreateActivityDraft, SaveActivityDraft, RemoveActivityDraft, PublishActivityDraft } from '@qgroup/contracts';
@@ -83,13 +83,7 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     const input=CreateActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/drafts',input,(user,stamp)=>{
       const previous=priorCreateIntent<{id:string;revision:number;removed:boolean}>(db,user.id,'activity',input.clientIntent,input);if(previous)return previous;
-      const v=arrangementValues(input.values,now(),true);const id=randomBytes(8).toString('hex');
-      db.prepare(`INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,duration_hours,created_at,withdrawal_deadline,visibility,invite_token,lifecycle,registration_open,status,timezone,minimum_participants,fee_policy,draft_join_owner,bot_enabled)
-        VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,'draft',0,'closed',?,?,?,?,?)`).run(id,user.id,v.title,v.category,v.location,v.startsAt,v.deadline,v.capacity,v.description,v.durationHours,stamp,v.withdrawalDeadline,v.visibility,randomBytes(24).toString('base64url'),v.timezone,v.minimumParticipants,v.feePolicy,Number(v.joinOwner),Number(v.botEnabled));
-      db.prepare('INSERT INTO event_access(event_id,user_id,created_at) VALUES(?,?,?)').run(id,user.id,stamp);
-      const event=eventRow(db,id)!;
-      appendEventAudit(db,event,user,'event_created',{},eventSnapshot(event),'',stamp);
-      // Drafts never publish conditions, register attendees, or enqueue bot messages.
+      const time=now(),id=executeActivityCreation(db,prepareActivityCreation(input.values,time,'draft'),user,time,botDefaults,()=>{});
       const result={id,revision:eventRow(db,id)!.revision,removed:false};recordCreateIntent(db,user.id,'activity',input.clientIntent,input,result,stamp);return result;
     });
   });
