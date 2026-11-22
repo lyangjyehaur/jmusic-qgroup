@@ -1,6 +1,6 @@
 import {musicProfileActiveSQL} from '@qgroup/database';
 import type { DB } from '@qgroup/database';
-import { keys, object, profileId, type Json, type ObjectValue } from '../../../packages/database/src/legacy-music-codec';
+import { keys, object, profileId, parseJson, stringifyJson, type Json, type ObjectValue } from '../../../packages/database/src/legacy-music-codec';
 import type { StoredIntent } from './erasure-journal';
 
 const memberFields = ['qq','name','consent','selection','created','createdAt','pinHash','lastJoinAt','boardUserId','gender','genderPublic','note','noteAt','lastShoutAt','contactQQ'];
@@ -9,7 +9,7 @@ function list(value: Json | undefined) { if (value === undefined) return []; if 
  * Legacy files have no unified applied markers: replay scoped IDs, never infer
  * completion from a filename, nickname, mtime or clock. */
 export function exportLegacyMusic(raw: Json, db: DB, intents: StoredIntent[], legacyErased: ReadonlySet<string>) {
-  const data = structuredClone(object(raw, 'historical music'));
+  const data = object(parseJson(stringifyJson(object(raw, 'historical music'))), 'historical music');
   keys(data, ['entries','members','settings','shouts','shoutHistory','trend'], 'historical music');
   const entries = object(data.entries, 'historical entries'), members = object(data.members, 'historical members');
   const erasedKeys = new Set([...legacyErased, ...(db.prepare('SELECT legacy_key FROM music_legacy_erasures').all() as {legacy_key:string}[]).map(row=>row.legacy_key)]);

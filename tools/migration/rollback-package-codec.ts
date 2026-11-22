@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import {z} from 'zod';
-import {digest,parseJson} from './music-codec';
+import {digest,parseJson,stringifyJson} from './music-codec';
 import {decodeErasureJournal} from '../../apps/api/src/erasure-journal';
 import type {RollbackState} from './rollback-state';
 import type {RollbackMedia,MediaSourceFile} from './rollback-media';
@@ -64,7 +64,7 @@ export function encodeRollbackPackage(input:RollbackPackage){
   if(input.version===3){save('private/latest/capture-boundary.json',encodeRollbackBoundary(input.boundary));save('private/latest/capture-input.json',input.captureInput);if(input.sourceJournal!==null)save('private/latest/source-unified.erasures.jsonl',input.sourceJournal);}
   save('private/latest/unified.sqlite3',state.checkpointImage);save('private/latest/unified.erasures.jsonl',Buffer.from(state.erasures.unifiedJournal));
   save('projection/board/board.sqlite3',state.boardImage);save('projection/board/erasures.jsonl',Buffer.from(state.erasures.boardJournal));
-  save('projection/music/data.json',json(state.music.data));save('projection/music/identity.sqlite3',state.identityImage);save('projection/music/erasures.jsonl',Buffer.from(state.erasures.musicJournal));
+  save('projection/music/data.json',Buffer.from(stringifyJson(state.music.data)+'\n'));save('projection/music/identity.sqlite3',state.identityImage);save('projection/music/erasures.jsonl',Buffer.from(state.erasures.musicJournal));
   save('private/latest/music-keys.json',json(state.music.keys));save('private/latest/identity-audit-mappings.json',json(state.identityAuditMappings));save('private/latest/erasure-scopes.json',json(state.erasures.scopes));
   for(const file of media.originalFiles)save('private/original-media/'+file.path,file.bytes);
   for(const file of media.boardImages)save('projection/board/images/'+file.digest.slice(0,2)+'/'+file.digest+'.png',file.bytes);
@@ -73,7 +73,7 @@ export function encodeRollbackPackage(input:RollbackPackage){
   save('private/legacy-capture/capture-manifest.json',history.sources.captureManifest);for(const file of history.sources.captureFiles)save('private/legacy-capture/'+file.path,file.bytes);
   for(const archive of history.sources.native){save('private/native-history/'+archive.id+'/manifest.json',archive.manifest);for(const file of archive.files)save('private/native-history/'+archive.id+'/'+file.path,file.bytes);}
   save('private/history-index.json',json({checkpointDigest:history.checkpointDigest,journalDigest:history.journalDigest,captureFiles:history.sources.captureFiles.map(file=>file.path),native:history.sources.native.map(row=>({id:row.id,files:row.files.map(file=>file.path)})),projections:history.projections.map(({data,...row})=>row)}));
-  for(const row of history.projections)save('projection/history/'+row.id+'/data.json',json(row.data));
+  for(const row of history.projections)save('projection/history/'+row.id+'/data.json',Buffer.from(stringifyJson(row.data)+'\n'));
   files.sort((a,b)=>a.path<b.path?-1:a.path>b.path?1:0);for(const file of descriptors(files))PackageFile.parse(file);return files;
 }
 const MediaIndex=z.object({originalFiles:z.array(z.string()),boardImages:z.array(sha),walls:z.object({mapping:z.array(z.object({id:z.string(),source:z.string(),digest:sha.nullable(),position:z.string(),missing:z.boolean()}).strict()),archivedFields:z.array(z.string()),files:z.array(z.object({source:z.string(),digest:sha}).strict())}).strict()}).strict();

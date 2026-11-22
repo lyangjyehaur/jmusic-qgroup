@@ -1,5 +1,5 @@
-import { digest, parseJson, type Json } from '../../runtime/src/strict-json';
-export { digest, parseJson, type Json, type ObjectValue } from '../../runtime/src/strict-json';
+import { digest, parseJson, jsonObjectKeys, type Json } from '../../runtime/src/strict-json';
+export { digest, parseJson, jsonObjectKeys, jsonObjectFromEntries, stringifyJson, type Json, type ObjectValue } from '../../runtime/src/strict-json';
 import { seedMusicFields, seedMusicShouts, type DB } from '@qgroup/database';
 import { assertIdentitySchema } from './legacy-identity-source';
 
@@ -86,7 +86,9 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
   const members = object(data.members, 'members'); const entries = object(data.entries, 'entries');
   const map = db.prepare('INSERT INTO migration_map VALUES(?,?,?,?,?,?,?)');
   let owned = 0; let selections = 0;let entrySourcePosition=0;
-  for (const [key, value] of Object.entries(entries)) {
+  for (const key of jsonObjectKeys(originalEntries)) {
+    if (!Object.hasOwn(entries, key)) continue;
+    const value = entries[key]!;
     const entry = object(value, 'entry'); keys(entry, ['id', 'text', 'kind', 'category', 'aliases', 'createdAt', 'updatedAt', 'createdBy'], 'entry');
     if (text(entry.id, 'entry id') !== key || !key || key.length > 80) throw new Error('Entry key does not match stable ID');
     const kind = ['main', 'sub'].includes(String(entry.kind)) ? entry.kind! : entry.category === '领域' ? 'main' : 'sub';
@@ -98,7 +100,10 @@ export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased:
     map.run('music', 'entry', key, key, '', digest(sourceEntry), sourceEntry === JSON.stringify(entry) ? 'preserved' : 'erasure_redacted');
   }
   const owners = new Set<string>(); const contacts = new Set<string>(); let sourcePosition=0;
-  for (const [key, value] of Object.entries(members)) {
+  const memberKeys = [...new Set([...jsonObjectKeys(originalMembers), ...sourceIdentity.native_profiles!.map(row => String(row.qq))])];
+  for (const key of memberKeys) {
+    if (!Object.hasOwn(members, key)) continue;
+    const value = members[key]!;
     const member = object(value, 'member');
     keys(member, memberFields, 'member');
     if (text(member.qq, 'member key') !== key || !/^(?:[0-9]{4,12}|m_[a-f0-9]{24})$/.test(key)) throw new Error('Unsupported legacy member key');

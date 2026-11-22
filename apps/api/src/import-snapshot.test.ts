@@ -13,7 +13,9 @@ import * as boardVerification from '../../../tools/migration/board-reconciliatio
 import * as musicVerification from '../../../tools/migration/music-reconciliation';
 import * as identityVerification from '../../../tools/migration/identity-reconciliation';
 import type { IdentitySourceEvidence } from '../../../tools/migration/identity-source';
-import { digest, parseJson, profileId } from '../../../tools/migration/music-codec';
+import { digest, parseJson, profileId, jsonObjectKeys, stringifyJson } from '../../../tools/migration/music-codec';
+import { projectRollbackMusic } from '../../../tools/migration/rollback-music';
+import { verifyRollbackMusic } from '../../../tools/migration/rollback-music-reconciliation';
 import { fixture } from '../testsupport/fixture';
 import { nicknameFixture } from '../testsupport/nickname-fixture';
 import { createApp, hash } from './app';
@@ -61,6 +63,45 @@ function setup() {
   return { root, source, destination, write, music };
 }
 describe('offline paired snapshot import', () => {
+  it('keeps the original numeric QQ discovery order, erasure filtering and later native additions through independent reconciliation and selector ties', async () => {
+    const s = setup();
+    s.music.members['10001'].name = s.music.members['10003'].name = '同名成分';
+    const identity = new Database(join(s.source, 'music/identity.sqlite3'));
+    identity.prepare('INSERT INTO native_profiles VALUES(?,?)').run('10002', JSON.stringify({ qq: '10002', name: '晚到原生成分', selection: ['e-one'], created: [] }));
+    identity.close();
+    const rest = Object.entries(s.music).filter(([key]) => key !== 'members').map(([key, value]) => JSON.stringify(key) + ':' + JSON.stringify(value));
+    const members = ['10003', '10001', '10004'].map(key => JSON.stringify(key) + ':' + JSON.stringify(s.music.members[key as keyof typeof s.music.members]));
+    s.write('music/data.json', '{' + rest.join(',') + ',"members":{' + members.join(',') + '}}');
+    const before = allFiles(s.source);
+    const result = await importSnapshot(s.source, s.destination, stamp);
+    expect(result.report).toMatchObject({ music: { profiles: 4 }, musicReconciliation: { nativeRecovered: 2 } });
+    expect(allFiles(s.source)).toEqual(before);
+    const db = openDatabase(join(s.destination, 'unified.sqlite3'));
+    const app = createApp({ db, origin: 'https://rebuild.example', pairedBackupScheduling: false, musicTrendSampling: false });
+    try {
+      await app.ready();
+      const order = ['10003', '10001', native, '10002'];
+      expect(db.prepare('SELECT l.legacy_key FROM music_profiles p JOIN music_legacy_profiles l ON l.profile_id=p.id ORDER BY p.rowid').all())
+        .toEqual(order.map(legacy_key => ({ legacy_key })));
+      expect(db.prepare("SELECT position,payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all())
+        .toEqual(order.map((_key, position) => ({ position, payload_json: expect.any(String) })));
+      const documents = db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as { payload_json: string }[];
+      expect(documents.map(row => JSON.parse(row.payload_json).legacyKey)).toEqual(order);
+      const exported = parseJson(stringifyJson(exportMusic(db))) as { members: object };
+      expect(jsonObjectKeys(exported.members)).toEqual(order);
+      const rollback = projectRollbackMusic(db, { read: () => [], append() { throw Error('Read-only test'); } });
+      const decoded = parseJson(stringifyJson(rollback.data)) as typeof rollback.data;
+      expect(jsonObjectKeys(decoded.members as object)).toEqual(order);
+      expect(verifyRollbackMusic(db, { ...rollback, data: decoded }, []).profiles).toBe(4);
+      expect(() => verifyRollbackMusic(db, { ...rollback, data: structuredClone(decoded) }, [])).toThrow('reconciliation failed');
+      const cookie = 'kanban_session=fixture-alice', session = (await app.inject({ url: '/api/v2/session', headers: { cookie } })).json();
+      const response = await app.inject({ url: '/api/v2/music/entries/e-one/members', headers: { cookie, 'x-account-scope': session.scope } });
+      expect(response.statusCode).toBe(200);
+      expect(response.json().members.filter((member: { name: string }) => member.name === '同名成分').map((member: { id: string }) => member.id))
+        .toEqual(['10003', '10001'].map(profileId));
+      expect(db.pragma('foreign_key_check')).toEqual([]);
+    } finally { await app.close(); db.close(); }
+  });
   it('preserves exact identity DDL, implicit indexes, signed rowids, storage classes and the deleted audit high-water without retaining erased row bodies', async () => {
     const s = setup(), source = new Database(join(s.source, 'music/identity.sqlite3'));
     const highWater = 9007199254740993n;
@@ -211,7 +252,7 @@ describe('offline paired snapshot import', () => {
       expect(db.prepare("SELECT created_by FROM music_entry_details WHERE entry_id='e-main'").get()).toEqual({created_by:''});
       expect(db.prepare("SELECT status FROM migration_map WHERE source='music' AND entity_type='entry' AND source_id='e-main'").get()).toEqual({status:'erasure_redacted'});
       const sources=(db.prepare("SELECT payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as {payload_json:string}[]).map(row=>JSON.parse(row.payload_json).legacyKey);
-      expect(sources).toEqual(['10000','10001','10003',native]);
+      expect(sources).toEqual(['10001','10003',native,'10000']);
     }finally{db.close();}
   });
   it('archives original term fields and clears creator references for ledger profile IDs absent from the older member snapshot',async()=>{

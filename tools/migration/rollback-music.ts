@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import {musicProfileActiveSQL,readMusicRetirements,type DB} from '@qgroup/database';
 import { readVerifiedErasureJournal, type ErasureJournal } from '../../apps/api/src/erasure-journal';
 import { assertRollbackSource } from './rollback-source';
-import { keys, object, parseJson, type Json, type ObjectValue } from './music-codec';
+import { keys, object, parseJson, jsonObjectFromEntries, type Json, type ObjectValue } from './music-codec';
 import { readSourceRebaseEvidence } from './source-rebase-evidence';
 import { verifyRollbackMusic } from './rollback-music-reconciliation';
 
@@ -74,7 +74,7 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
         keys(doc,['id','qq','name','text','createdAt','archivedAt'],'rollback shout');if(typeof doc.id!=='string'||originalShouts.has(doc.id))throw Error('Ambiguous rollback shout source');originalShouts.set(doc.id,{kind:row.kind,value:doc});
       }
     }
-    const entries: ObjectValue=Object.fromEntries((db.prepare(`SELECT e.id,e.name,e.kind,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json FROM music_entries e
+    const entries: ObjectValue=jsonObjectFromEntries((db.prepare(`SELECT e.id,e.name,e.kind,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json FROM music_entries e
       LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.rowid`).all() as {id:string;name:string;kind:string;category:string|null;aliases_json:string|null;created_by:string|null;created_at_json:string|null;updated_at_json:string|null}[]).map(row=>{
       strings([row.id,row.name,row.kind,row.category,row.aliases_json,row.created_by,row.created_at_json,row.updated_at_json]);
       if(typeof row.id!=='string'||!row.id)throw Error('Invalid rollback entry ID');
@@ -88,7 +88,7 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
       if(!old){entry.text=row.name;entry.kind=row.kind;entry.aliases=parseJson(row.aliases_json??'[]');}
       return [row.id,entry];
     }));
-    const members:ObjectValue={};
+    const memberPairs:[string,Json][]=[];
     for(const row of db.prepare(`SELECT p.id,p.user_id,l.consent,l.pin_hash,l.fields_json,l.created_entries_json,f.name,f.note,f.note_at,f.gender,f.gender_public,c.contact_qq,pc.created_at
       FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id LEFT JOIN music_profile_fields f ON f.profile_id=p.id
       LEFT JOIN music_profile_contacts c ON c.profile_id=p.id LEFT JOIN music_profile_creation pc ON pc.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as {
@@ -123,7 +123,7 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
       for(const field of ['createdAt','lastJoinAt','lastShoutAt'])if(fields[field]!==undefined&&!(field==='lastShoutAt'&&last))patch(member,field,fields[field]!,old?.[field]);
       if(row.created_at!==null){const time=Date.parse(row.created_at);if(!Number.isFinite(time))throw Error('Invalid rollback profile creation provenance');member.createdAt=time/1000;}
       if(last){time(last.last_post_at);patch(member,'lastShoutAt',last.last_post_at,Number(old?.lastShoutAt??0));}
-      Object.defineProperty(members,member.qq as string,{value:member,enumerable:true});
+      memberPairs.push([member.qq as string,member]);
     }
     const shouts:Json[]=[],shoutHistory:Json[]=[];
     for(const row of db.prepare('SELECT * FROM music_shouts ORDER BY ordinal').all() as {id:string;profile_id:string|null;legacy_key:string;name:string;body:string;created_at:number;archived_at:number|null}[]){
@@ -141,7 +141,7 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
     const trend=(db.prepare("SELECT payload_json FROM music_documents WHERE kind IN ('trend','trend_sample') ORDER BY CASE kind WHEN 'trend' THEN 0 ELSE 1 END,position").all() as {payload_json:string}[]).map(row=>{
       const point=object(parseJson(row.payload_json),'rollback trend');keys(point,['t','counts'],'rollback trend');return point;
     });
-    const result:RollbackMusic={data:{entries,members,settings:{},shouts,shoutHistory,trend},keys:mapping};
+    const result:RollbackMusic={data:{entries,members:jsonObjectFromEntries(memberPairs),settings:{},shouts,shoutHistory,trend},keys:mapping};
     const report=verifyRollbackMusic(db,result,intents);return {...result,report};
   }).immediate();
 }

@@ -14,6 +14,7 @@ import { erasureJournal, type ErasureJournal } from './erasure-journal';
 import { exportMusic } from './music-export';
 import { createPrivacy } from './privacy';
 import { putPaymentImage } from './payment-media';
+import { parseJson, jsonObjectKeys, type ObjectValue } from '../../../packages/runtime/src/strict-json';
 const origin = 'https://rebuild.example', stamp = '2026-11-17T08:00:00.000Z';
 const cleanup: (() => void | Promise<void>)[] = [];
 afterEach(async () => { for (const close of cleanup.splice(0).reverse()) await close(); });
@@ -41,6 +42,20 @@ function erase(db: DB, journal: ErasureJournal, reset = false) {
   privacy.guard();
 }
 describe('administrative music exports and native paired backups', () => {
+  it('keeps numeric profile discovery order in current and checkpoint downloads without changing stored data or bot rows', async () => {
+    const s = await setup();
+    s.db.prepare('UPDATE music_profiles SET rowid=-rowid').run();
+    const order = s.db.prepare('SELECT COALESCE(l.legacy_key,p.id) AS legacy_key FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id ORDER BY p.rowid').all() as {legacy_key:string}[];
+    const expected = order.map(row => row.legacy_key);
+    expect(expected.indexOf('10003')).toBeLessThan(expected.indexOf('10002'));
+    const item = s.backups.capture(), before = s.db.serialize();
+    for (const backup of [undefined, item.id]) {
+      const response = await s.read(backup); expect(response.statusCode).toBe(200);
+      const data = parseJson(response.body) as ObjectValue;
+      expect(jsonObjectKeys(data.members as ObjectValue)).toEqual(expected);
+    }
+    expect(s.db.serialize()).toEqual(before);
+  });
   it('creates startup/hourly checkpoints and stops the schedule on shutdown', async () => {
     const s = source(); vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
     const app = createApp({ db: s.db, origin, now: s.now });

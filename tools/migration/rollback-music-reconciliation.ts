@@ -3,6 +3,7 @@ import {musicProfileActiveSQL,readMusicRetirements,type DB} from '@qgroup/databa
 import {erasureRequestId, type  StoredIntent } from '../../apps/api/src/erasure-journal';
 import type { RollbackMusic } from './rollback-music';
 import {readSourceRebaseEvidence} from './source-rebase-evidence';
+import {jsonObjectKeys} from './music-codec';
 type RecordValue=Record<string,unknown>;
 const reject=():never=>{throw Error('Rollback music reconciliation failed; retain the complete latest source');};
 const obj=(value:unknown):RecordValue=>{if(!value||typeof value!=='object'||Array.isArray(value))return reject();return value as RecordValue;};
@@ -47,9 +48,11 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   for(const key of reserved)if(db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=?').get(key))erased.add(key);
   const creator=(value:string)=>erased.has(value)?'':map.get(value)?.legacyKey??value;
   equal(Object.keys(members).sort(),profiles.filter(p=>p.erased_at===null&&!retired.has(p.id)).map(p=>map.get(p.id)!.legacyKey).sort());
+  equal(jsonObjectKeys(members),profiles.filter(p=>p.erased_at===null&&!retired.has(p.id)).map(p=>map.get(p.id)!.legacyKey));
   const terms=db.prepare(`SELECT e.id,e.name,e.kind,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json FROM music_entries e
     LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.rowid`).all() as {id:string;name:string;kind:string;category:string|null;aliases_json:string|null;created_by:string|null;created_at_json:string|null;updated_at_json:string|null}[];
   equal(Object.keys(entries).sort(),terms.map(row=>row.id).sort());
+  equal(jsonObjectKeys(entries),terms.map(row=>row.id));
   for(const row of terms){
     const entry=obj(entries[row.id]);fields(entry,['id','text','kind','category','aliases','createdBy','createdAt','updatedAt']);equal(entry.id,row.id);equal(entry.text,row.name);
     equal(entry.kind==='main'||entry.kind==='sub'?entry.kind:entry.category==='领域'?'main':'sub',row.kind);

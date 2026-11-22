@@ -2,7 +2,7 @@ import type {DB} from '@qgroup/database';
 import {createPrivacy} from '../../apps/api/src/privacy';
 import {exportMusic} from '../../apps/api/src/music-export';
 import {exportLegacyMusic} from '../../apps/api/src/legacy-music-export';
-import {digest,object,parseJson,type Json,type ObjectValue} from './music-codec';
+import {digest,object,parseJson,stringifyJson,jsonObjectFromEntries,type Json,type ObjectValue} from './music-codec';
 import type {StoredIntent} from '../../apps/api/src/erasure-journal';
 import type {RollbackMusic} from './rollback-music';
 import {decodeHistory,openHistoryNative,type HistoryPins,type HistorySources} from './rollback-history-source';
@@ -23,14 +23,14 @@ export function projectNativeHistory(current:DB,music:RollbackMusic,archive:Hist
       if(!oldKey.test(key)||row.legacy_key!==null&&row.legacy_key!==key||reserved.has(key)&&reserved.get(key)!==row.id)throw Error('Historical rollback profile key collision');
       reserved.set(key,row.id);byId.set(row.id,key);keys.push({profileId:row.id,legacyKey:key});
     }
-    const data=object(parseJson(JSON.stringify(exportMusic(copy,current))),'native history export'),members=object(data.members,'native historical members'),active=object(music.data.members,'current rollback members');
-    const renamed:ObjectValue={};
-    for(const row of rows){const member=members[row.legacy_key??row.id];if(member===undefined)continue;const key=byId.get(row.id)!;if(Object.hasOwn(renamed,key))throw Error('Historical native member collision');
+    const data=object(parseJson(stringifyJson(exportMusic(copy,current))),'native history export'),members=object(data.members,'native historical members'),active=object(music.data.members,'current rollback members');
+    const renamedPairs:[string,Json][]=[],renamedKeys=new Set<string>();
+    for(const row of rows){const member=members[row.legacy_key??row.id];if(member===undefined)continue;const key=byId.get(row.id)!;if(renamedKeys.has(key))throw Error('Historical native member collision');renamedKeys.add(key);
       const value=object(member,'native historical member'),latest=active[key]===undefined?undefined:object(active[key],'current member');
       value.qq=key;value.boardUserId=latest?.boardUserId??'';value.pinHash=latest?.pinHash??'';value.contactQQ=latest?.contactQQ??'';
-      Object.defineProperty(renamed,key,{value,enumerable:true});
+      renamedPairs.push([key,value]);
     }
-    data.members=renamed;
+    data.members=jsonObjectFromEntries(renamedPairs);
     const translate=(value:Json|undefined)=>{if(typeof value!=='string')throw Error('Invalid historical creator');return byId.get(value)??value;};
     for(const value of Object.values(object(data.entries,'native historical entries'))){const entry=object(value,'native historical entry');entry.createdBy=translate(entry.createdBy);}
     for(const kind of ['shouts','shoutHistory']){if(!Array.isArray(data[kind]))throw Error('Invalid native history shouts');for(const raw of data[kind]){const value=object(raw,'native history shout');value.qq=translate(value.qq);if(typeof value.qq!=='string'||!oldKey.test(value.qq))throw Error('Unrepresentable native history shout author');}}

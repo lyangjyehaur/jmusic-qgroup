@@ -21,7 +21,7 @@
     "apps/api/src/activity-registration.ts": "50bddc306cf9759bae4aa36afaf1811933a2feb08d781e198cc99c0f1b9f6f95",
     "apps/api/src/activity-room-overview.ts": "30974dab9ac7d3b1c0309c41cb5e62304462cfaf4964f15d66ff991bba973ba4",
     "apps/api/src/activity-roster.ts": "493375bed2487523ce383a65bd3e7250fd4840c9a836932b780e883f8062c212",
-    "apps/api/src/admin-backups.ts": "4063f8b3c1c3d0a6a695c6b56a9010fc14ec13d66244361b561af033ab3427a9",
+    "apps/api/src/admin-backups.ts": "f633fe865b5c0f51f375f7421ffaea308a7552307351bb2d65b2793fb70d8830",
     "apps/api/src/admin-bot.ts": "5a6207bd769086439c3b59052557eb310c2491ed953fbeae043065649cb2021d",
     "apps/api/src/admin-music-catalog.ts": "7fc4118c4f1ddc4071e73a2e83671709ff345363f47e36f659c60578c0f7f2de",
     "apps/api/src/admin-music-erasure.ts": "bf4e4c71cfff42199d79306c70f0c808762c721d913e7001179796cb0346fd36",

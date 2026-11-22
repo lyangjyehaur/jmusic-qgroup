@@ -11,10 +11,11 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 22,
+  "full_parents_accepted": 32,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
-    "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221"
+    "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
+    "packages/runtime/src/strict-json.ts, legacy music import/reconciliation, administrative/history export and rollback writers: preserve literal numeric dictionary order; current candidate verified separately with captured data and checkpoint 225"
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -1327,8 +1328,8 @@
     },
     {
       "capability_id": "M13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "55/45分拆、雙方程度、共同本命／冷門／覆蓋／比例／標籤及各自獨有項保留。"
       ],
@@ -1336,24 +1337,26 @@
         "apps/api/src/music-matches.test.ts",
         "apps/web/tests/music-matches.spec.ts",
         "packages/domain/src/music-matching.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M14",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "兩排序及tie-break、證據折算／個人熟悉度／展示分上限、原localStorage偏好及URL優先保留。"
       ],
       "test_files": [
         "apps/web/tests/music-share.spec.ts",
         "packages/domain/src/music-matching.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M15",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "對方最多3項另列sparseMatches，不借少量重合取代主推薦或取得留言。"
       ],
@@ -1361,36 +1364,39 @@
         "apps/api/src/music-matches.test.ts",
         "apps/web/tests/music-matches.spec.ts",
         "packages/domain/src/music-matching.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M16",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "固定ID／舊數字key／自填contact別名可比，拒絕自己及缺失；不能指定viewer；共用詞條往返回比較。"
       ],
       "test_files": [
         "apps/api/src/music-matches.test.ts",
         "apps/web/tests/music-matches.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M17",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "未公開性別只本人可見，contact標為自填／舊查詢且未驗證；不回身份／憑證／原始欄位。"
       ],
       "test_files": [
         "apps/api/src/music-matches.test.ts",
         "apps/web/tests/music-matches.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M18",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "私人留言最多140 codepoints，可清空noteAt0；舊超長原文於無關改動保留。",
         "推薦依所選排序僅主榜首有留言；一般成分卡／比較按預設rare首位重新判斷；sparse從不顯示。"
@@ -1400,24 +1406,26 @@
         "apps/api/src/music-matches.test.ts",
         "apps/web/tests/music-fields.spec.ts",
         "apps/web/tests/music-matches.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M19",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "可空／built-in／自訂12字及公開開關；資料值保留但未公開不傳他人。"
       ],
       "test_files": [
         "apps/api/src/music-fields.test.ts",
         "apps/web/tests/music-fields.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M20",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "Canvas／完整複製清單取目前草稿及順序，選用人數／程度保留；不保存，推薦依已保存選擇；聯絡號明確勾選。",
         "真正PNG生成及下載；native share用已備File維持click activation；取消不下載，未支援／失敗退下載，剪貼簿／Canvas失敗可手動複製。",
@@ -1427,12 +1435,13 @@
         "apps/api/src/music-share.test.ts",
         "apps/web/tests/music-share.spec.ts",
         "packages/domain/src/music-share.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M21",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "保留48點、30分鐘、相鄰正向新增非淨增、top2 main+3sub穩定ties、24h/7d/最近8及時間語意。",
         "sampler獨立寫aggregate、沒有QQ/outbox；訪問不落快照；重啟去重、時鐘退回／gaps不補、shutdown停timer。",
@@ -1443,12 +1452,13 @@
         "apps/api/src/music-trend.test.ts",
         "apps/web/tests/music-trend.spec.ts",
         "packages/domain/src/music-trend.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "M22",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "minLink嚴格重合、最大選擇seed/admission、transitive及rescan、圈內會員排序／頻次tag、single前8及完整count保留；超8圈仍可看。",
         "圈子只需要saved成分/會員scope；傳worker最小ID/name/picks，不含contact/note/gender/credential；讀取不改outbox或其他表。",
@@ -1459,7 +1469,8 @@
         "apps/api/src/music-circles.test.ts",
         "apps/web/tests/music-circles.spec.ts",
         "packages/domain/src/music-circles.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
     },
     {
       "capability_id": "C01",
@@ -2353,6 +2364,52 @@
     "deployment_performed": false
   },
   "latest_music_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md",
+    "parent_ids": [
+      "M13",
+      "M14",
+      "M15",
+      "M16",
+      "M17",
+      "M18",
+      "M19",
+      "M20",
+      "M21",
+      "M22"
+    ],
+    "review_base_commit": "f4a8c90872541da9c3f2cf8046d960cd70112b50",
+    "candidate_type": "current_source_files_independently_pinned_outside_git",
+    "reviewed_source_paths": 73,
+    "unit_cases_referenced": 201,
+    "local_distinct_unit_cases_passed": 337,
+    "browser_cases_referenced": 56,
+    "profiles": 68,
+    "entries": 152,
+    "selection_rows": 682,
+    "scoring_pairs": 4624,
+    "api_ranking_viewers": 43,
+    "api_ranking_rows": 3460,
+    "share_contexts": 86,
+    "circle_thresholds": [
+      1,
+      20,
+      40,
+      60,
+      80,
+      100
+    ],
+    "serialized_old_python_circle_checks": 12,
+    "literal_numeric_source_order_preserved": true,
+    "unchanged_bot_tables": 6,
+    "retained_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "retained_python_http_calls": 532,
+    "actual_production_image_combination": false,
+    "full_b01_to_b15_accepted": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md",
+  "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
       "M01",

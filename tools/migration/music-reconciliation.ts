@@ -1,6 +1,6 @@
 import type { DB } from '@qgroup/database';
 import {erasureRequestId, type StoredIntent } from '../../apps/api/src/erasure-journal';
-import { digest, parseJson, profileId, musicErasures, type Identity, type Json, type ObjectValue } from './music-codec';
+import { digest, parseJson, jsonObjectKeys, profileId, musicErasures, type Identity, type Json, type ObjectValue } from './music-codec';
 import { reconcileIdentitySource } from './identity-reconciliation';
 
 type Row = Record<string, unknown>;
@@ -66,7 +66,7 @@ export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacy
     add('music_catalog_actions',{id:++action,actor_id:users.has(actor)?actor:null,actor_ref:intent.actorRef,command:intent.command,entry_id:intent.command==='delete_profile'?intent.profiles[0]!.id:'',target_id:'',affected_profiles:intent.profiles.length,created_at:intent.createdAt});
   }
   const members=new Map<string,ObjectValue>(),sourceMembers=new Map<string,{value:Json;source:string}>();
-  for(const [key,value] of Object.entries(originalMembers))if(!erased.has(key)){members.set(key,structuredClone(obj(value)));sourceMembers.set(key,{value,source:'json'});}
+  for(const key of jsonObjectKeys(originalMembers))if(!erased.has(key)){const value=originalMembers[key]!;members.set(key,structuredClone(obj(value)));sourceMembers.set(key,{value,source:'json'});}
   for(const row of identity.native_profiles!)if(!erased.has(String(row.qq))&&!members.has(String(row.qq))){const value=parseJson(text(row.payload));members.set(String(row.qq),structuredClone(obj(value)));sourceMembers.set(String(row.qq),{value,source:'native'});}
   const filtered=Object.fromEntries(Object.entries(identity).map(([table,rows])=>[table,rows.filter(row=>!erased.has(String(row.qq??'')))]));
   for(const row of filtered.profile_contacts!)if(members.has(String(row.qq)))members.get(String(row.qq))!.contactQQ=row.number!;
@@ -77,7 +77,8 @@ export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacy
   const originalProfile=(key:string)=>Object.hasOwn(originalMembers,key)?originalMembers[key]:identity.native_profiles!.find(row=>row.qq===key)?.payload;
   const erasedIds=new Set(tombstones.keys());
   let entrySourcePosition=0;
-  for(const [id,value] of Object.entries(originalEntries)){
+  for(const id of jsonObjectKeys(originalEntries)){
+    const value=originalEntries[id]!;
     const original=obj(value),entry=structuredClone(original);
     if(erased.has(String(entry.createdBy??''))||erasedIds.has(String(entry.createdBy??'')))entry.createdBy='';
     map('music','entry',id,id,digest(encode(value)),resetEntries.has(id)?'deleted':encode(entry)===encode(value)?'preserved':'erasure_redacted');
@@ -87,7 +88,7 @@ export function reconcileMusic(candidate:DB, raw:Json, identity:Identity, legacy
     add('music_entry_details',{entry_id:id,category:entry.category===undefined?'其他':text(entry.category),aliases_json:encode(array(entry.aliases)),created_by:text(entry.createdBy),created_at_json:encode(entry.createdAt??0),updated_at_json:encode(entry.updatedAt??null)});
   }
   let position=0;
-  for(const key of Object.keys(Object.fromEntries(members))){
+  for(const key of members.keys()){
     const member=members.get(key)!;
     const id=profileId(key),source=sourceMembers.get(key)!,sourceValue=structuredClone(obj(source.value));
     const references=[...filtered.links!,...filtered.prelinks!].filter(row=>row.qq===key),owner=references[0]?text(references[0].user_id):'';

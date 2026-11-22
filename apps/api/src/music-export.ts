@@ -2,10 +2,11 @@ import {musicProfileActiveSQL} from '@qgroup/database';
 import type { DB } from '@qgroup/database';
 import { musicCreatedIds } from '@qgroup/database';
 import { profileFields } from './music-fields';
+import { jsonObjectFromEntries } from '../../../packages/runtime/src/strict-json';
 
 type RecordValue = Record<string, unknown>;
 type Profile = { id: string; user_id: string | null; legacy_key: string | null; consent: number | null; pin_hash: string | null; fields_json: string | null; created_at: string | null };
-const records = <T>(pairs: [string, T][]) => Object.fromEntries(pairs);
+const records = jsonObjectFromEntries;
 function profiles(db: DB) {
   return db.prepare(`SELECT p.id,p.user_id,l.legacy_key,l.consent,l.pin_hash,l.fields_json,c.created_at
     FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id
