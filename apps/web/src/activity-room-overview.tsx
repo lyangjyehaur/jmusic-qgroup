@@ -101,6 +101,7 @@ export function ActivityRoomOverviewSection({ eventId, viewer }: { eventId: stri
           <div className="page-actions">
             {query.data.can_manage && <Link to={base(eventId) + '/rooms'}>分配預分包間</Link>}
             <Link to={base(eventId) + '/rooms/history'}>預分安排歷史</Link>
+            {viewer.authenticated && <Link to={'/tools/room-lab?'+new URLSearchParams({eventId})}>查看包間合拍度</Link>}
             {query.data.kind === 'actual' && (
               <Link to={base(eventId) + '/settlement?version=' + query.data.version}>查看本版結算</Link>
             )}

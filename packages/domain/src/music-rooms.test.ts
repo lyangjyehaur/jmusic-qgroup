@@ -66,11 +66,14 @@ print(json.dumps(out,ensure_ascii=False))`,
     ),
   );
 }
-function oldAnalysis(value: ReturnType<typeof musicRoomAnalysis>) {
+function oldAnalysis(value: ReturnType<typeof musicRoomAnalysis>, identity = (id: string) => id) {
+  const pair = (p: typeof value.worst) => p ? { ...p, a: identity(p.a), b: identity(p.b) } : null;
   return {
     ...value,
-    members: value.members.map(({ id, ...member }) => ({ qq: id, ...member })),
-    loner: value.loner ? { qq: value.loner.id, name: value.loner.name, avg: value.loner.avg } : null,
+    members: value.members.map(({ id, ...member }) => ({ qq: identity(id), ...member })),
+    pairs: value.pairs.map((p) => pair(p)!),
+    worst: pair(value.worst),
+    loner: value.loner ? { qq: identity(value.loner.id), name: value.loner.name, avg: value.loner.avg } : null,
   };
 }
 function translate(value: unknown): unknown {
@@ -84,13 +87,13 @@ function translate(value: unknown): unknown {
     );
   return value;
 }
-function oldSplit(value: ReturnType<typeof musicRoomSplit>) {
+function oldSplit(value: ReturnType<typeof musicRoomSplit>, identity = (id: string) => id) {
   return {
     ...value,
     rooms: value.rooms.map((room) => {
-      const a = oldAnalysis(room);
+      const a = oldAnalysis(room, identity);
       return {
-        qqs: room.ids,
+        qqs: room.ids.map(identity),
         members: a.members,
         memberMax: a.memberMax,
         memberMin: a.memberMin,
@@ -103,6 +106,51 @@ function oldSplit(value: ReturnType<typeof musicRoomSplit>) {
   };
 }
 describe('native music room analysis and partition', () => {
+  it('preserves original identity ties after profile/attendee remapping without returning internal ranks', () => {
+    const original: RoomMember[] = Array.from({ length: 12 }, (_, i) => ({
+      id: ['10020', '1003', '𠀀', '🟢', '名', 'native'][i % 6]! + i,
+      name: '同名' + i % 3,
+      gender: ['female', 'male', ''][i % 3],
+      selections: entries.slice(0, i % 4 + 2).map((e) => ({ entryId: e.id, level: 2 })),
+    }));
+    const rank = new Map<string, number>();
+    // Compute Python codepoint order, independently of migrated public IDs.
+    const ordered = [...original].sort((a, b) => {
+      const aa = Array.from(a.id), bb = Array.from(b.id);
+      for (let i = 0; i < Math.min(aa.length, bb.length); i++) {
+        const delta = aa[i]!.codePointAt(0)! - bb[i]!.codePointAt(0)!;
+        if (delta) return delta;
+      }
+      return aa.length - bb.length;
+    });
+    ordered.forEach((m, i) => rank.set(m.id, i));
+    for (const prefix of ['m_', 'attendee-']) {
+      const mapped = original.map((m, i) => ({ ...m, id: prefix + (99 - i), tieBreakOrder: rank.get(m.id)! }));
+      const identity = (id: string) => original[mapped.findIndex(m => m.id === id)]!.id;
+      const cases = [
+        ...original.slice(1).map((m) => ({ ids: [original[0]!.id, m.id] })),
+        { ids: original.map(m => m.id) },
+      ];
+      const answers = expected(original, cases);
+      for (const [i, c] of cases.entries()) {
+        const ids = c.ids.map(id => mapped[original.findIndex(m => m.id === id)]!.id);
+        const result = musicRoomAnalysis(ids, mapped, entries);
+        expect(oldAnalysis(result, identity)).toEqual(translate(answers[i]));
+        expect(JSON.stringify(result)).not.toContain('tieBreakOrder');
+      }
+      const splitCases = ([
+        { mode: 'rooms', value: 3 }, { mode: 'capacity', value: 5 }, { mode: 'sizes', sizes: [2, 3, 7] },
+      ] as RoomMode[]).flatMap(mode => [false, true].map(sameGender => ({ ids: original.map(m => m.id), mode, sameGender })));
+      const splits = expected(original, splitCases);
+      for (const [i, c] of splitCases.entries()) {
+        const result = musicRoomSplit(mapped.map(m => m.id), mapped, entries, c.mode, c.sameGender);
+        expect(oldSplit(result, identity)).toEqual(translate(splits[i]));
+        for (const { ids, capacity, ...analysis } of result.rooms)
+          expect(oldAnalysis(musicRoomAnalysis(ids, mapped, entries), identity)).toEqual(oldAnalysis(analysis, identity));
+        expect(JSON.stringify(result)).not.toContain('tieBreakOrder');
+      }
+    }
+  });
   it('matches original Python averages, calibrated and raw pair scores, ties, loner and common terms across empty/singleton/full rooms and Unicode identities', () => {
     let seed = 534;
     const random = () => (seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0) / 2 ** 32;

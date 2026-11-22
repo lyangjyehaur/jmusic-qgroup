@@ -4,11 +4,11 @@ import { createHash } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import { legacyMusicFields } from '@qgroup/database';
 import { RoomLabSource } from '@qgroup/contracts';
-import { DomainError, musicMatches, type MatchEntry, type RoomMember } from '@qgroup/domain';
+import { DomainError, musicCodepointOrder, musicMatches, type MatchEntry, type RoomMember } from '@qgroup/domain';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 import { activityRoster } from './activity-roster';
 import { eventRow } from './activity-arrangements';
-import { settlementVersion } from './settlement-context';
+import { roomPlan, settlementRoomDetail, settlementVersion } from './settlement-context';
 /** Minimal projection: private notes/contact/credentials never enter room work. */
 export function musicRoomSource(db: DB, userId: string, eventId: string | null, admit?: () => void) {
   const own = db.prepare(`SELECT id FROM music_profiles WHERE user_id=? AND ${musicProfileActiveSQL('music_profiles')}`).get(userId) as { id: string } | undefined;
@@ -25,7 +25,7 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
     .all() as MatchEntry[];
   const profiles = db
     .prepare(
-      `SELECT p.id,p.user_id,${musicNameSQL} name,f.gender,f.gender_public,l.fields_json FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`,
+      `SELECT p.id,p.user_id,${musicNameSQL} name,f.gender,f.gender_public,l.fields_json,l.legacy_key FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`,
     )
     .all() as {
     id: string;
@@ -34,7 +34,15 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
     gender: string | null;
     gender_public: number | null;
     fields_json: string | null;
+    legacy_key: string | null;
   }[];
+  // Original Python ties compare identity strings, not migrated profile IDs.
+  // Only ordinal ranks enter workers; original keys stay in this projection.
+  const identityOrder = new Map(
+    [...profiles]
+      .sort((a, b) => musicCodepointOrder(a.legacy_key ?? a.id, b.legacy_key ?? b.id))
+      .map((profile, index) => [profile.id, index]),
+  );
   const picks = new Map<string, RoomMember['selections'][number][]>();
   for (const row of db
     .prepare('SELECT profile_id,entry_id,level FROM music_selections ORDER BY profile_id,position')
@@ -53,6 +61,7 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
       name: profile.name,
       selections: picks.get(profile.id) ?? [],
       gender,
+      tieBreakOrder: identityOrder.get(profile.id)!,
       userId: profile.user_id,
     };
   });
@@ -99,6 +108,7 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
         name: person.name,
         selections: profile?.selections ?? [],
         gender: profile?.gender ?? '',
+        ...(profile ? { tieBreakOrder: profile.tieBreakOrder } : {}),
       });
       return {
         id: person.id,
@@ -116,11 +126,12 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
       !['draft', 'cancelled'].includes(event.lifecycle) &&
       !settlementVersion(db, eventId);
   } else {
-    work = music.map(({ id, name, selections, gender }) => ({
+    work = music.map(({ id, name, selections, gender, tieBreakOrder }) => ({
       id,
       name,
       selections,
       gender,
+      tieBreakOrder,
     }));
     const me = music.find((member) => member.id === own.id)!,
       scores = new Map(musicMatches(me, music, entries).matches.map((row) => [row.member.id, row.stats.matchPercent]));
@@ -134,6 +145,18 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
       recommendation: scores.get(member.id) ?? null,
     }));
   }
+  let currentRooms;
+  if (eventId) {
+    const invoice = settlementRoomDetail(db, eventId), plan = roomPlan(db, eventId);
+    const version = invoice?.rooms ? settlementVersion(db, eventId) : plan.version;
+    if (version) currentRooms = {
+      kind: invoice?.rooms ? 'actual' as const : 'plan' as const,
+      version,
+      rooms: (invoice?.rooms ?? plan.rooms).map(room => ({
+        id: room.id, name: room.name, members: room.person_ids,
+      })),
+    };
+  }
   const sourceVersion = createHash('sha256')
     .update(
       JSON.stringify({
@@ -142,6 +165,7 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
         eventId,
         revision,
         canAdopt,
+        currentRooms,
         members,
         work,
         entries,
@@ -155,6 +179,7 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
       sourceVersion,
       revision,
       canAdopt,
+      ...(currentRooms ? { currentRooms } : {}),
       members,
       selfId: members.find((member) => member.isMe)?.id ?? null,
     }),

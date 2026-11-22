@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "A12",
@@ -39,10 +39,16 @@
       "M19",
       "M20",
       "M21",
-      "M22"
+      "M22",
+      "P05",
+      "P06",
+      "P07",
+      "P08",
+      "P09",
+      "P10"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
-    "latest_runtime_checkpoint": "docs/unified-rebuild/226-forward-source-order-checkpoint.md"
+    "latest_runtime_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
   },
   "capabilities": [
     {
@@ -2661,25 +2667,29 @@
         "apps/api/src/music-rooms.test.ts",
         "apps/api/testsupport/music-room-record.test.ts",
         "apps/api/src/music-compute-jobs.test.ts",
-        "apps/api/src/music-compute-http.test.ts"
+        "apps/api/src/music-compute-http.test.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P06",
@@ -2706,25 +2716,29 @@
         "apps/api/src/music-rooms.test.ts",
         "apps/api/testsupport/music-room-record.test.ts",
         "apps/api/src/music-compute-jobs.test.ts",
-        "apps/api/src/music-compute-http.test.ts"
+        "apps/api/src/music-compute-http.test.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P07",
@@ -2751,25 +2765,29 @@
         "apps/api/src/music-rooms.test.ts",
         "apps/api/testsupport/music-room-record.test.ts",
         "apps/api/src/music-compute-jobs.test.ts",
-        "apps/api/src/music-compute-http.test.ts"
+        "apps/api/src/music-compute-http.test.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P08",
@@ -2796,7 +2814,8 @@
         "apps/web/src/activity-rooms.tsx",
         "apps/api/src/settlements.ts",
         "apps/web/src/music-room-record.ts",
-        "apps/web/src/draft-store.ts"
+        "apps/web/src/draft-store.ts",
+        "apps/api/src/settlement-context.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-roster.test.ts",
@@ -2804,17 +2823,20 @@
         "apps/api/src/music-rooms.test.ts",
         "apps/api/testsupport/music-room-record.test.ts",
         "apps/api/src/music-compute-jobs.test.ts",
-        "apps/api/src/music-compute-http.test.ts"
+        "apps/api/src/music-compute-http.test.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-roster.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-roster.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-roster.spec.ts",
@@ -2823,10 +2845,11 @@
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P09",
@@ -2853,25 +2876,29 @@
         "apps/api/src/music-rooms.test.ts",
         "apps/api/testsupport/music-room-record.test.ts",
         "apps/api/src/music-compute-jobs.test.ts",
-        "apps/api/src/music-compute-http.test.ts"
+        "apps/api/src/music-compute-http.test.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P10",
@@ -2896,25 +2923,29 @@
       "behavior_evidence": [
         "packages/domain/src/music-rooms.test.ts",
         "apps/api/src/music-rooms.test.ts",
-        "apps/api/testsupport/music-room-record.test.ts"
+        "apps/api/testsupport/music-room-record.test.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md"
+        "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-rooms.test.ts",
-        "apps/web/tests/durable-music-rooms.spec.ts"
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/227-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "自由／活動分房原稿已按帳號／成分世代／明確上下文持久保存；明確恢復、來源快照保全、結果交易確認、分頁競爭、舊 key 遷移與無訊號清除後的試算／分享／採用阻擋已補驗（檢查點 80）。自由／活動分析、三種分房、人工調整、來源失效、分享與正式採用已有隔離實作與合成差分；正式副本／運行版本組合、規模資源、舊 adapters、持久草稿／PWA、語系與 P6／P7 完整驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S01",

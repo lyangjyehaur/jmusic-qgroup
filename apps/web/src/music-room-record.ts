@@ -4,6 +4,7 @@ export const MusicRoomDraft=z.object({
  source:RoomLabSource,selected:z.array(z.string()).max(40),
  // Capacity may be temporarily invalid while editing; command validation remains strict.
  rooms:z.array(RoomLabRoomInput.extend({capacity:z.number()})).max(40),
+ roomNames:z.record(z.string().uuid(),z.string()).optional(),
  result:RoomLabResult.nullable(),mode:z.enum(['rooms','capacity','sizes']),value:z.string(),sizes:z.string(),sameGender:z.boolean(),
 }).strict();
 export type MusicRoomDraft=z.infer<typeof MusicRoomDraft>;

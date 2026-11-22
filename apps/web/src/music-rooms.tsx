@@ -181,7 +181,7 @@ function Editor({
       if(!active.current||generation.current!==attempt)return;
       if(value.sourceVersion!==parsed.data.sourceVersion||JSON.stringify(value.selected)!==JSON.stringify(parsed.data.selected))throw Error('試算回應與原名單不符，原安排仍保留。');
       if(command==='recalc'&&JSON.stringify(value.rooms.map(({id,capacity,members})=>({id,capacity,members})))!==JSON.stringify(draft.rooms))throw Error('試算回應與原包間不符，原安排仍保留。');
-      const next={...draft,result:value,rooms:command==='analyze'?draft.rooms:value.rooms.map(({id,capacity,members})=>({id,capacity,members}))};
+      const next={...draft,...(command==='split'?{roomNames:{}}:{}),result:value,rooms:command==='analyze'?draft.rooms:value.rooms.map(({id,capacity,members})=>({id,capacity,members}))};
       if(await persist(next,false,uiText("試算已完成，但無法保存結果；原安排仍保留，請重新計分。"))&&active.current&&generation.current===attempt)setDraft(next);
     } catch (error) {
       if (active.current && generation.current === attempt) { failed(error);
@@ -229,6 +229,27 @@ function Editor({
     finally{checking.current=false;if(active.current&&generation.current===expected)setBusy(false);}
   }
   async function beforeShare(){const attempt=generation.current;return !locked&&scored&&await persist(draft)&&active.current&&generation.current===attempt;}
+  const current = source.currentRooms, currentPeople = current?.rooms.flatMap(room => room.members) ?? [];
+  const currentProblem = current && (current.rooms.length > 40 || currentPeople.length > 40)
+    ? uiText('現有包間超過單次試算的 40 間／40 人上限；完整安排仍可在活動包間查看。')
+    : currentPeople.some(id => !known.has(id))
+      ? uiText('現有包間含已不在目前名冊的人員，請先核對正式安排。') : '';
+  async function loadCurrent(){
+    if(!current?.rooms.length||currentProblem||locked||stale||!begin())return;
+    const attempt=++generation.current;controller.current?.abort();setMessage('');
+    const names:Record<string,string>={}, rooms=current.rooms.map(room=>{
+      const id=crypto.randomUUID();names[id]=room.name;
+      return {id,capacity:Math.max(1,room.members.length),members:room.members};
+    });
+    const selected=[...new Set([...currentPeople.filter(id=>known.get(id)?.profileId),...draft.selected])].slice(0,40);
+    const next={...draft,selected,rooms,roomNames:names,result:null};
+    try{
+      if(await persist(next,true)&&active.current&&generation.current===attempt){
+        setDraft(next);await form.refreshVersions();
+        setMessage(uiText('已載入現有包間，請重新計分；原草稿已保全，正式安排未變更。'));
+      }
+    }finally{if(active.current&&generation.current===attempt)setBusy(false);}
+  }
   async function adopt(){if(!scored||!source.eventId||!fresh.canAdopt||!begin())return;try{if(!await persist(draft)||!active.current)return;navigate('/activities/'+encodeURIComponent(source.eventId)+'/rooms',{state:{roomSuggestion:{scope:viewer.scope,eventId:source.eventId,sourceVersion:source.sourceVersion,revision:source.revision,rooms:draft.rooms.map(room=>room.members)}}});}finally{if(active.current)setBusy(false);}}
   async function leave(){generation.current++;controller.current?.abort();setBusy(false);await form.leave();}
   function toggle(id: string, on: boolean) {
@@ -295,7 +316,7 @@ function Editor({
   const share = {
     title: source.title,
     rooms: draft.rooms.map((room, index) => ({
-      name: '包間 ' + (index + 1),
+      name: draft.roomNames?.[room.id] ?? '包間 ' + (index + 1),
       members: room.members.map(name),
       avg: result?.rooms.find((r) => r.id === room.id)?.analysis.avg ?? 0,
       min: result?.rooms.find((r) => r.id === room.id)?.analysis.min ?? 0,
@@ -313,6 +334,17 @@ function Editor({
       {stale && <Notice>名單、成分或來源狀態已變更。原試算已失效，請核對最新來源再重新計分。</Notice>}
       <DraftFeedback form={form} navigation={false}/>
       {message && <Text role="status">{message}</Text>}
+      {current && <section aria-label={current.kind==='actual'?'現有實際包間':'現有預分包間'}>
+        <Heading level={2}>{current.kind==='actual'?'現有實際包間':'現有預分包間'} · {current.version}</Heading>
+        {current.rooms.map(room=><div key={room.id}>
+          <Heading level={3}>{room.name} · {room.members.length} 人</Heading>
+          <ul>{room.members.map(id=><li key={id}>{known.get(id)?.name??uiText('已不在目前名冊')}{known.get(id)&&!known.get(id)?.profileId?uiText(' · 無成分'):''}</li>)}</ul>
+        </div>)}
+        {currentProblem && <Notice>{currentProblem}</Notice>}
+        <Button variant="secondary" disabled={locked||stale||!!currentProblem||!current.rooms.length} onClick={()=>void loadCurrent()}>
+          保全草稿並載入現有包間
+        </Button>
+      </section>}
       <Button variant="secondary" disabled={locked} onClick={() => void recheck()}>
         核對最新來源，保留包間輸入
       </Button>
@@ -458,7 +490,7 @@ function Editor({
           {draft.rooms.map((room, index) => (
             <Surface key={room.id} className="detail room-lab-room">
               <Heading level={3}>
-                包間 {index + 1} · {room.members.length} 人
+                {draft.roomNames?.[room.id] ?? '包間 ' + (index + 1)} · {room.members.length} 人
               </Heading>
               <label className="account-field">
                 包間 {index + 1} 容量

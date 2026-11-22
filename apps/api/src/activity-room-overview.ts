@@ -8,14 +8,14 @@ import { DomainError } from '@qgroup/domain';
 import { activityRoster, activityViewer } from './activity-roster';
 import { requireActivityAccess } from './activity-access';
 import { eventRow } from './activity-arrangements';
-import { roomPlan, settlementDetail, settlementVersion } from './settlement-context';
+import { roomPlan, settlementRoomDetail, settlementVersion } from './settlement-context';
 import type { Security } from './security';
 type Room = z.infer<typeof SettlementRoom>;
 export function activityRoomOverview(db: DB, id: string, viewer: string | null, historical?: number) {
   const access = requireActivityAccess(db, id, viewer),
     event = eventRow(db, id)!,
     live = activityRoster(db, id, viewer).participants;
-  const invoice = historical === undefined ? settlementDetail(db, id) : null;
+  const invoice = historical === undefined ? settlementRoomDetail(db, id) : null;
   let rooms: Room[], kind: 'none' | 'plan' | 'actual', version: number, created: string | null;
   if (historical !== undefined) {
     const row = db

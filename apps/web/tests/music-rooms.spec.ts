@@ -17,6 +17,33 @@ async function login(context: BrowserContext, user = 'alice') {
 }
 const button = (page: Page, name: string) => page.getByRole('button', { name, exact: true });
 const rooms = (page: Page) => page.getByRole('region', { name: '分房安排', exact: true });
+test('existing formal rooms load with original names and unmatched people, preserve prior drafts, recompute and share without changing the plan',async({page,context})=>{
+  await login(context);
+  const viewer=await(await context.request.get('/api/v2/session')).json();
+  const headers={'x-account-scope':viewer.scope,'x-csrf-token':viewer.csrf,origin,'idempotency-key':crypto.randomUUID()};
+  const detail=await(await context.request.get('/api/v2/activities/listen/rooms',{headers})).json();
+  const payer=detail.payers[0].id;
+  const saved=await context.request.post('/api/v2/activities/listen/rooms',{headers,data:{revision:detail.revision,rooms:[{id:'1111111111111111',name:'原活動長包間名稱',payer_id:payer,person_ids:['room-alice','room-bob','room-guest']}],confirm:true}});
+  expect(saved.status(),await saved.text()).toBe(200);
+  const savedView=await(await context.request.get('/api/v2/activities/listen/rooms',{headers})).json();
+  await split(page,true);
+  const prior=(await durableRows(page)).find(row=>row.key.endsWith(':event:listen'))!;
+  await expect(page.getByRole('region',{name:'現有預分包間',exact:true})).toContainText('原活動長包間名稱');
+  await button(page,'保全草稿並載入現有包間').click();
+  await expect(rooms(page)).toContainText('原活動長包間名稱');
+  await expect(rooms(page)).toContainText('沒有成分的同行');
+  await expect(page.getByRole('checkbox',{name:/圖片包含/})).toBeDisabled();
+  expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain(prior.raw);
+  await button(page,'重新計分').click();
+  await expect(rooms(page)).toContainText('沒有成分的成員不列入合拍分數');
+  await page.getByRole('checkbox',{name:/圖片包含/}).check();
+  await expect(page.getByRole('img',{name:/分房試算/})).toBeVisible();
+  await expect(page.getByRole('textbox',{name:'分房清單',exact:true})).toHaveValue(/原活動長包間名稱[\s\S]*沒有成分的同行/);
+  const after=await(await context.request.get('/api/v2/activities/listen/rooms',{headers})).json();
+  expect(after).toEqual(savedView);
+  await page.reload();await button(page,'恢復本機原稿').click();
+  await expect(rooms(page)).toContainText('原活動長包間名稱');
+});
 async function split(page: Page, event = false) {
   await page.goto('/tools/room-lab' + (event ? '?eventId=listen' : ''));
   await expect(page.getByRole('group', { name: /參與成員/ })).toBeVisible();
@@ -81,8 +108,9 @@ test('activity roster keeps unmatched and unselected people and adoption require
   await expect(rooms(page)).toContainText('小白 · 未加入試算');
   await page.getByRole('checkbox', { name: /小白.*候補/ }).check();
   const selects = rooms(page).locator('.room-lab-room');
-  await selects.first().getByLabel(/容量$/).fill('3');
-  const target = await selects.first().getByRole('combobox').first().inputValue();
+  const occupied = selects.filter({ has: page.getByRole('combobox') }).first();
+  await occupied.getByLabel(/容量$/).fill('3');
+  const target = await occupied.getByRole('combobox').first().inputValue();
   await page.getByRole('combobox', { name: '移動 沒有成分的同行', exact: true }).selectOption(target);
   await button(page, '重新計分').click();
   await expect(rooms(page)).toContainText('沒有成分的成員不列入合拍分數');

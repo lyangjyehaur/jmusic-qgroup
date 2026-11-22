@@ -6,7 +6,15 @@ import {
   type MatchMember,
 } from './music-matching';
 export const MUSIC_ROOM_LIMIT = 40;
-export type RoomMember = MatchMember & { gender?: string };
+export type RoomMember = MatchMember & {
+  gender?: string;
+  /** Internal rank of the original identity; never returned to clients. */
+  tieBreakOrder?: number;
+};
+function memberOrder(a: RoomMember, b: RoomMember) {
+  return (a.tieBreakOrder ?? Number.MAX_SAFE_INTEGER) - (b.tieBreakOrder ?? Number.MAX_SAFE_INTEGER) ||
+    musicCodepointOrder(a.id, b.id);
+}
 export type RoomMode = { mode: 'rooms' | 'capacity'; value: number } | { mode: 'sizes'; sizes: number[] };
 const fail = (message: string): never => {
   throw new Error(message);
@@ -81,7 +89,10 @@ function analyze(members: readonly RoomMember[], entries: readonly MatchEntry[],
       (best, pair) => (best === null || pair.score < best.score ? pair : best),
       null,
     );
-  const lonerMember = [...per].sort(([a, aa], [b, bb]) => average(aa) - average(bb) || musicCodepointOrder(a, b))[0];
+  const byId = new Map(members.map((member) => [member.id, member]));
+  const lonerMember = [...per].sort(
+    ([a, aa], [b, bb]) => average(aa) - average(bb) || memberOrder(byId.get(a)!, byId.get(b)!),
+  )[0];
   const need = Math.max(2, Math.floor((members.length * 3 + 4) / 5)),
     tally = new Map<string, number>(),
     catalog = new Map(entries.map((entry) => [entry.id, entry]));
@@ -161,7 +172,7 @@ export function musicRoomSplit(
       members.filter((other) => other.id !== member.id).reduce((sum, other) => sum + score(member, other), 0),
     ]),
   );
-  const order = [...members].sort((a, b) => totals.get(b.id)! - totals.get(a.id)! || musicCodepointOrder(a.id, b.id));
+  const order = [...members].sort((a, b) => totals.get(b.id)! - totals.get(a.id)! || memberOrder(a, b));
   const groups: RoomMember[][] = Array.from({ length: roomCount }, () => []),
     seedGenders = new Set<string>();
   const gender = (member: RoomMember) =>
@@ -173,7 +184,7 @@ export function musicRoomSplit(
         (a, b) =>
           Number(seedGenders.has(gender(a))) - Number(seedGenders.has(gender(b))) ||
           totals.get(b.id)! - totals.get(a.id)! ||
-          musicCodepointOrder(a.id, b.id),
+          memberOrder(a, b),
       );
     const member = order.shift()!;
     groups[i]!.push(member);

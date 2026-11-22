@@ -10,6 +10,7 @@ import { adminCatalogFixture, catalogProfiles } from '../testsupport/admin-catal
 import { createApp } from './app';
 import { createRoomJobs } from './music-room-jobs';
 import { atRoomWorkerResult } from '../testsupport/room-worker-boundary';
+import { musicRoomSource } from './music-room-source';
 const origin = 'https://rebuild.example',
   cleanup: (() => Promise<void>)[] = [];
 afterEach(async () => {
@@ -51,6 +52,75 @@ async function setup() {
   return { db, app, headers, read, calculate };
 }
 describe('scoped music room source and CPU jobs', () => {
+  it('loads current formal rooms as a whitelisted source, retains unmatched people and invalidates calculations after a plan update without mutating formal data', async () => {
+    const s=await setup(),before=(await s.read('listen')).json();
+    const room={id:'original-room-id',name:'原包間名稱',payer_id:'private-payer',payer_name:'private-payer-name',payer_label:'private-label',person_ids:['att-alice','att-bob','att-guest']};
+    s.db.prepare('INSERT INTO event_room_plans(event_id,version,snapshot_json,created_at) VALUES(?,?,?,?)')
+      .run('listen',1,JSON.stringify([room]),'now');
+    const source=(await s.read('listen')).json();
+    expect(source.currentRooms).toEqual({kind:'plan',version:1,rooms:[{id:room.id,name:room.name,members:room.person_ids}]});
+    expect(source.sourceVersion).not.toBe(before.sourceVersion);
+    expect(JSON.stringify(source)).not.toMatch(/private-payer|private-label|note|gender|tieBreakOrder/);
+    const tables=(s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'").all() as {name:string}[]).map(t=>t.name);
+    const snapshot=()=>tables.map(t=>s.db.prepare('SELECT * FROM "'+t+'" ORDER BY rowid').all()),saved=snapshot();
+    const payload={command:'recalc',sourceVersion:source.sourceVersion,selected:['att-alice','att-bob'],rooms:[{id:'00000000-0000-4000-8000-000000000001',capacity:3,members:room.person_ids}]};
+    const response=await s.calculate(payload,'listen');expect(response.statusCode,response.body).toBe(200);
+    expect(response.json().rooms[0].members).toEqual(room.person_ids);
+    expect(response.json().rooms[0].analysis.members.map((m:{id:string})=>m.id)).toEqual(['att-alice','att-bob']);
+    expect(snapshot()).toEqual(saved);
+    s.db.prepare('INSERT INTO event_room_plans(event_id,version,snapshot_json,created_at) VALUES(?,?,?,?)')
+      .run('listen',2,JSON.stringify([{...room,name:'修改後包間'}]),'later');
+    expect((await s.calculate(payload,'listen')).statusCode).toBe(409);
+    expect((await s.read('listen')).json().currentRooms.version).toBe(2);
+    // Original bills need no native editor-only fields for a room projection.
+    s.db.prepare("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,updated_at,actor_id,actor_name,kind,changed_fields) VALUES('listen',1,0,2,'','now','alice','A','created','[]')").run();
+    s.db.prepare('INSERT INTO settlement_details VALUES(?,?,?)').run('listen',1,JSON.stringify({
+      people:[{id:'att-alice',label:'原帳單姓名',status:'confirmed'},{id:'att-bob',label:'原同房姓名',status:'waiting'}],
+      rooms:[{...room,name:'實際包間'}],
+    }));
+    const actual=(await s.read('listen')).json();
+    expect(actual.currentRooms).toMatchObject({kind:'actual',version:1,rooms:[{name:'實際包間'}]});
+    const overview=await s.app.inject({url:'/api/v2/activities/listen/rooms/overview',headers:s.headers});
+    expect(overview.statusCode,overview.body).toBe(200);
+    expect(overview.json().rooms[0].people[0].name).toBe('原帳單姓名');
+    s.db.prepare("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,updated_at,actor_id,actor_name,kind,changed_fields) VALUES('listen',2,0,2,'','now','alice','A','created','[]')").run();
+    s.db.prepare('INSERT INTO settlement_details VALUES(?,?,?)').run('listen',2,JSON.stringify({people:[],rooms:[]}));
+    expect((await s.read('listen')).json().currentRooms).toEqual({kind:'actual',version:2,rooms:[]});
+  });
+  it('keeps original identity ties through free/activity workers, hides ranks and rejects stale identity ordering', async () => {
+    const s = await setup();
+    // Equal selections force ties; the original keys order Bob before Alice,
+    // opposite to both public profile IDs and attendee IDs.
+    s.db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(catalogProfiles.bob);
+    s.db.prepare('INSERT INTO music_selections SELECT ?,entry_id,level,position FROM music_selections WHERE profile_id=?')
+      .run(catalogProfiles.bob, catalogProfiles.alice);
+    s.db.prepare("INSERT INTO music_legacy_profiles VALUES(?,'10020','詞庫alice',1,'private','10020','{}','[]','oauth')")
+      .run(catalogProfiles.alice);
+    const free = musicRoomSource(s.db, 'alice', null), activity = musicRoomSource(s.db, 'alice', 'listen');
+    expect(free.work.find(m => m.id === catalogProfiles.bob)!.tieBreakOrder)
+      .toBeLessThan(free.work.find(m => m.id === catalogProfiles.alice)!.tieBreakOrder!);
+    expect(activity.work.find(m => m.id === 'att-bob')!.tieBreakOrder)
+      .toBe(free.work.find(m => m.id === catalogProfiles.bob)!.tieBreakOrder);
+    expect(activity.work.find(m => m.id === 'att-guest')!.tieBreakOrder).toBeUndefined();
+    expect(JSON.stringify([free.work, activity.work])).not.toMatch(/10002|10020|legacy_key|pin_hash/);
+    for (const eventId of ['', 'listen']) {
+      const source = (await s.read(eventId)).json(), selected = eventId
+        ? ['att-alice', 'att-bob'] : [catalogProfiles.alice, catalogProfiles.bob];
+      const analyzed = await s.calculate({command:'analyze',sourceVersion:source.sourceVersion,selected},eventId);
+      expect(analyzed.statusCode,analyzed.body).toBe(200);
+      expect(analyzed.json().analysis.loner.id).toBe(selected[1]);
+      const split = await s.calculate({command:'split',sourceVersion:source.sourceVersion,selected,config:{mode:'rooms',value:2},sameGender:false},eventId);
+      expect(split.statusCode,split.body).toBe(200);
+      expect(split.json().rooms.map((r: {members:string[]}) => r.members)).toEqual([[selected[1]],[selected[0]]]);
+      expect(JSON.stringify(source)+analyzed.body+split.body).not.toMatch(/tieBreakOrder|10002|10020|legacy_key|pin_hash/);
+      expect((await s.calculate({command:'analyze',sourceVersion:source.sourceVersion,selected,tieBreakOrder:0},eventId)).statusCode).toBe(400);
+    }
+    const previous = (await s.read()).json();
+    s.db.prepare("UPDATE music_legacy_profiles SET legacy_key='10001' WHERE profile_id=?").run(catalogProfiles.alice);
+    const latest = (await s.read()).json();
+    expect(latest.sourceVersion).not.toBe(previous.sourceVersion);
+    expect((await s.calculate({command:'analyze',sourceVersion:previous.sourceVersion,selected:[catalogProfiles.alice,catalogProfiles.bob]})).statusCode).toBe(409);
+  });
   it('analyzes and splits free picks, then recalculates manual moves with duplicate/capacity/conservation validation and no database writes', async () => {
     const s = await setup(),
       source = RoomLabSource.parse((await s.read()).json()),

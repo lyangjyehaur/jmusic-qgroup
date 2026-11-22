@@ -19,7 +19,7 @@
     "apps/api/src/activity-management.ts": "5b3bed1f16bb1effe701e7c188e8864bfd99f3ae7bc0c299635d5186afa83df9",
     "apps/api/src/activity-publish.ts": "5f34518b170e64bc5b0a2762f4c4c744905f3b1b3c9c5b1de257baf80a6817a5",
     "apps/api/src/activity-registration.ts": "50bddc306cf9759bae4aa36afaf1811933a2feb08d781e198cc99c0f1b9f6f95",
-    "apps/api/src/activity-room-overview.ts": "30974dab9ac7d3b1c0309c41cb5e62304462cfaf4964f15d66ff991bba973ba4",
+    "apps/api/src/activity-room-overview.ts": "89db01d5d1608162b449f49c9cb91ec29b34a1e574fd6bbb97020359d7305d69",
     "apps/api/src/activity-roster.ts": "493375bed2487523ce383a65bd3e7250fd4840c9a836932b780e883f8062c212",
     "apps/api/src/admin-backups.ts": "f633fe865b5c0f51f375f7421ffaea308a7552307351bb2d65b2793fb70d8830",
     "apps/api/src/admin-bot.ts": "5a6207bd769086439c3b59052557eb310c2491ed953fbeae043065649cb2021d",
@@ -56,7 +56,7 @@
     "apps/api/src/music-fields.ts": "c783c34c9fc26680e327b00a7a7f0f23374fd551a2c2379775ee51c64b699479",
     "apps/api/src/music-matches.ts": "77f9a3f758a7057168d2487d72a5b36188c25ac7da8e200a301a22c0259d3bdb",
     "apps/api/src/music-room-jobs.ts": "3451a509a67a04f9c4f225170238a6427edb3e216ee1c8e139f787c0f6a39fe9",
-    "apps/api/src/music-room-source.ts": "196f7e78f4cffff414219c7759a676209dd6faa22a7c41f53e7d9d638a1afb4e",
+    "apps/api/src/music-room-source.ts": "af8c23deaacdfb831c033dc1da6dc1aee327ce673f62d5e69f3f6138e162175c",
     "apps/api/src/music-room-task.ts": "1ea9522dae7432e415f027672f50e4b13dd1899ecef54cbff3969ae197bb6bb2",
     "apps/api/src/music-rooms.ts": "993a5ecd2cac2320dbd68ce5af4a7af956eee80176f8f1e3c6e3e18de9c5d674",
     "apps/api/src/music-shouts.ts": "1a130dc73041ae6e6464165b5f0fe7a3a6ca2abc1557a4b75aaa76b002d947da",
@@ -71,7 +71,7 @@
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
     "apps/api/src/settlement-calculation.ts": "db291cd2267f03630b92d23854b406a0ac19aacdfc35bf7794b5854fed5f8c9d",
     "apps/api/src/settlement-command.ts": "9af2e0124cdb32086833ac89dfe2ac0b8492d57f13a51be9638718c8b7e46f78",
-    "apps/api/src/settlement-context.ts": "751453606c1076fdd994ed8e03ca3f424bdc2c7cf698b657ca785379cd4d3ddf",
+    "apps/api/src/settlement-context.ts": "e045e51a2a7a39c06cda912e584bfb29bb6d33928a7b8af91c1b15f6547b1aef",
     "apps/api/src/settlements.ts": "7984d787b3d060a2d54f6962c31767b3ba0be5af418e61076345a86397d0bc8d",
     "apps/api/src/time-poll-bot.ts": "0d070b033f90dd68f8723a44c9d8cd3e7826f079a131287e2fd58d8d86f73cee",
     "apps/api/src/time-poll-command.ts": "1df6a91724428e1972fd18d6e6b2a9f09901304120c2ea772a163c4e1c7a0e4c",
@@ -110,7 +110,9 @@
     "apps/api/src/legacy-personal.ts": "56651a0336d91ccaac62df6640415739d2a7386e5392a1af201f814f71b3f2b6",
     "packages/database/src/music-source-order.ts": "ea0c1effc306febec1dc400b3ebb3decfd350da432950e28fc958eedbe83e1be",
     "apps/api/src/music-export.ts": "258a07403d013f957f13a9e82a164b47c7e08b7fae77b17524c0a4475762afd0",
-    "apps/api/src/music-match-data.ts": "7583a5b31acf409b066456f5accee301d7017512ddc40f754290dc6c89106b0f"
+    "apps/api/src/music-match-data.ts": "7583a5b31acf409b066456f5accee301d7017512ddc40f754290dc6c89106b0f",
+    "packages/contracts/src/music-rooms.ts": "e3586904cb9da91b42c0393727444d8ca984dcd5acb4ebaad72d96f5870f0d5e",
+    "packages/domain/src/music-rooms.ts": "29959a2db2d288851b629f1d46bfcedc45ed4128461f5cb95a4dfdd684c4ed8b"
   },
   "operations": [
     {
@@ -569,7 +571,8 @@
       "mode": "optional-scoped-member",
       "conditions": [
         "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
-        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection.",
+        "Current room reads validate only the preserved room and frozen-name projection of original/native bills; editor financial validation remains unchanged. Actual rooms, including explicit empty arrays, take precedence over the plan."
       ],
       "dependencies": [
         "apps/api/src/activity-roster.ts",
@@ -579,7 +582,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts"
       ],
       "additionalHeaders": []
     },
@@ -589,7 +593,8 @@
       "mode": "optional-scoped-member",
       "conditions": [
         "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
-        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection.",
+        "Current room reads validate only the preserved room and frozen-name projection of original/native bills; editor financial validation remains unchanged. Actual rooms, including explicit empty arrays, take precedence over the plan."
       ],
       "dependencies": [
         "apps/api/src/activity-roster.ts",
@@ -599,7 +604,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts"
       ],
       "additionalHeaders": []
     },
@@ -609,7 +615,8 @@
       "mode": "optional-scoped-member",
       "conditions": [
         "An absent or empty account scope uses the anonymous projection, even when a valid session cookie exists.",
-        "A supplied nonempty scope is validated; visitors retain the anonymous projection."
+        "A supplied nonempty scope is validated; visitors retain the anonymous projection.",
+        "Current room reads validate only the preserved room and frozen-name projection of original/native bills; editor financial validation remains unchanged. Actual rooms, including explicit empty arrays, take precedence over the plan."
       ],
       "dependencies": [
         "apps/api/src/activity-roster.ts",
@@ -619,7 +626,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts"
       ],
       "additionalHeaders": []
     },
@@ -1816,13 +1824,18 @@
       "file": "apps/api/src/music-rooms.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Original identity tie order is computed as internal numeric ranks, included in the source fingerprint and excluded from public source/results; workers do not receive original identity keys.",
+        "Current actual rooms take precedence over the current plan, are whitelisted to room ID/name/attendee IDs and included in the source fingerprint; calculation and draft loading do not persist formal assignments or financial changes."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "apps/api/src/music-room-source.ts",
-        "packages/database/src/music-source-order.ts"
+        "packages/database/src/music-source-order.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "packages/domain/src/music-rooms.ts",
+        "apps/api/src/settlement-context.ts"
       ],
       "additionalHeaders": []
     },
@@ -3699,7 +3712,9 @@
       "mode": "member-write",
       "conditions": [
         "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
-        "Circles and rooms share two worker slots per API instance; saturation rejects before the full music projection, after member-write, active-profile and event-access checks. A disconnected client cancels its worker; completed results recheck current authority and source."
+        "Circles and rooms share two worker slots per API instance; saturation rejects before the full music projection, after member-write, active-profile and event-access checks. A disconnected client cancels its worker; completed results recheck current authority and source.",
+        "Original identity tie order is computed as internal numeric ranks, included in the source fingerprint and excluded from public source/results; workers do not receive original identity keys.",
+        "Current actual rooms take precedence over the current plan, are whitelisted to room ID/name/attendee IDs and included in the source fingerprint; calculation and draft loading do not persist formal assignments or financial changes."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -3708,7 +3723,10 @@
         "apps/api/src/music-room-jobs.ts",
         "apps/api/src/music-room-task.ts",
         "apps/api/src/music-room-source.ts",
-        "packages/database/src/music-source-order.ts"
+        "packages/database/src/music-source-order.ts",
+        "packages/contracts/src/music-rooms.ts",
+        "packages/domain/src/music-rooms.ts",
+        "apps/api/src/settlement-context.ts"
       ],
       "additionalHeaders": []
     },

@@ -9,6 +9,11 @@ export const RoomLabSource = z
     selfId: Id.nullable(),
     revision: z.number().int().nonnegative().nullable(),
     canAdopt: z.boolean(),
+    currentRooms: z.object({
+      kind: z.enum(['plan', 'actual']),
+      version: z.number().int().positive(),
+      rooms: z.array(z.object({ id: Id, name: z.string(), members: z.array(Id) }).strict()).max(50),
+    }).strict().optional(),
     members: z.array(
       z.object({
         id: Id,

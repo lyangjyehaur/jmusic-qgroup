@@ -30,6 +30,16 @@ export function settlementDetail(db: DB, id: string, version = settlementVersion
     .get(id, version) as { snapshot_json: string } | undefined;
   return row ? storedFinance(SettlementSnapshot, row.snapshot_json) : null;
 }
+/** Room reads need the preserved room/name projection, including older bills
+ * whose financial schema differs from the native settlement editor. */
+export function settlementRoomDetail(db: DB, id: string, version = settlementVersion(db, id)) {
+  const row = db.prepare('SELECT snapshot_json FROM settlement_details WHERE event_id=? AND version=?')
+    .get(id, version) as { snapshot_json: string } | undefined;
+  return row ? z.object({
+    rooms: z.array(SettlementRoom).nullish(),
+    people: z.array(z.object({ id: z.string(), label: z.string(), status: z.string() })),
+  }).parse(JSON.parse(row.snapshot_json)) : null;
+}
 export function roomPlan(db: DB, id: string) {
   const row = db
     .prepare('SELECT version,snapshot_json FROM event_room_plans WHERE event_id=? ORDER BY version DESC LIMIT 1')

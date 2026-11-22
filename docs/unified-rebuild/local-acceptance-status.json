@@ -11,12 +11,13 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 32,
+  "full_parents_accepted": 38,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
     "packages/runtime/src/strict-json.ts, legacy music import/reconciliation, administrative/history export and rollback writers: preserve literal numeric dictionary order; current candidate verified separately with captured data and checkpoint 225",
-    "JSON order-preserving clones, account/reset source writers, verified source rebase order, native reads and final recovery boundaries: captured-source forward/reimport/package regression and separate current tests at checkpoint 226"
+    "JSON order-preserving clones, account/reset source writers, verified source rebase order, native reads and final recovery boundaries: captured-source forward/reimport/package regression and separate current tests at checkpoint 226",
+    "Original identity tie ranks, current plan/actual room loading and preserved room/frozen-name reader at checkpoint 227: captured-data analysis/split and true-worker API comparisons, 86 unit / 33 browser / retained online-source Python checks; no financial editor relaxation or actual production image acceptance"
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -765,82 +766,94 @@
     },
     {
       "capability_id": "P05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "保留2–40選人、共同項門檻、配對原分／展示分、平均／最差／孤立及Unicode tie順序。"
+        "保留2–40選人、共同項門檻、配對原分／展示分、平均／最差／孤立及Unicode tie順序。",
+        "第 227 批固定原程式／線上隔離副本與當前原條件審核通過；修正映射後身份 tie、現有預分／實際包間載入、房名與無成分者保全。"
       ],
       "test_files": [
         "apps/api/src/music-rooms.test.ts",
         "packages/domain/src/music-rooms.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
     },
     {
       "capability_id": "P06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "按房數／容量／自訂容量保留原seed/greedy/local-move及可選公開性別親和，全部人恰一次且不超容量。"
+        "按房數／容量／自訂容量保留原seed/greedy/local-move及可選公開性別親和，全部人恰一次且不超容量。",
+        "第 227 批固定原程式／線上隔離副本與當前原條件審核通過；修正映射後身份 tie、現有預分／實際包間載入、房名與無成分者保全。"
       ],
       "test_files": [
         "apps/web/tests/music-rooms.spec.ts",
         "packages/domain/src/music-rooms.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
     },
     {
       "capability_id": "P07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "移房後重新按成員計算分數／共同項／孤立，重複／容量／非來源成員拒絕。"
+        "移房後重新按成員計算分數／共同項／孤立，重複／容量／非來源成員拒絕。",
+        "第 227 批固定原程式／線上隔離副本與當前原條件審核通過；修正映射後身份 tie、現有預分／實際包間載入、房名與無成分者保全。"
       ],
       "test_files": [
         "apps/api/src/music-rooms.test.ts",
         "apps/web/tests/music-rooms.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
     },
     {
       "capability_id": "P08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "活動選取按attendee及有效user ownership，無成分／等候／暫定仍保留而不以同名或manager猜身份。"
+        "活動選取按attendee及有效user ownership，無成分／等候／暫定仍保留而不以同名或manager猜身份。",
+        "第 227 批固定原程式／線上隔離副本與當前原條件審核通過；修正映射後身份 tie、現有預分／實際包間載入、房名與無成分者保全。"
       ],
       "test_files": [
         "apps/api/src/music-rooms.test.ts",
         "apps/web/tests/music-rooms.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
     },
     {
       "capability_id": "P09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "來源變更或非目前帳號不能套用舊結果；計算完成再次驗證session/scope/revision。",
         "來源讀失敗不可當空名冊；保留原安排但撤銷分數、圖片與採用，最新重讀後需重算。",
         "採用先進正式editor並核對付款人，已有草稿须明確替換；成功回執不因後續source變更而重播。",
         "草稿及結果持久化失敗不發計算／採用；晚結果另存版本而不覆寫新配置。",
-        "計算限流／CPU budget／5秒逾時及停止可恢復；不發布晚結果或帶入資料庫/憑證。"
+        "計算限流／CPU budget／5秒逾時及停止可恢復；不發布晚結果或帶入資料庫/憑證。",
+        "第 227 批固定原程式／線上隔離副本與當前原條件審核通過；修正映射後身份 tie、現有預分／實際包間載入、房名與無成分者保全。"
       ],
       "test_files": [
         "apps/api/src/music-rooms.test.ts",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "apps/web/tests/music-rooms.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
     },
     {
       "capability_id": "P10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "360px長名、分房PNG下載及完整清單保留；剪貼簿/圖片/分享失敗有可操作退路。",
-        "來源回應不帶程度/性別/留言/聯絡/憑證；公開性別僅進計算；權限消失立即隱藏既有結果。"
+        "來源回應不帶程度/性別/留言/聯絡/憑證；公開性別僅進計算；權限消失立即隱藏既有結果。",
+        "第 227 批固定原程式／線上隔離副本與當前原條件審核通過；修正映射後身份 tie、現有預分／實際包間載入、房名與無成分者保全。"
       ],
       "test_files": [
         "apps/api/src/music-rooms.test.ts",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "apps/web/tests/music-rooms.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
     },
     {
       "capability_id": "S01",
@@ -2181,7 +2194,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/226-forward-source-order-checkpoint.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2409,7 +2422,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2435,5 +2448,36 @@
     "entries": 152,
     "selection_rows": 682,
     "original_p6_complete": false
+  },
+  "latest_room_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "P05",
+      "P06",
+      "P07",
+      "P08",
+      "P09",
+      "P10"
+    ],
+    "pinned_music_commit": "be51e065bd0d64a2df3a783ca14672d92ba6d49a",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "original_analysis_comparisons": 2314,
+    "original_split_comparisons": 576,
+    "original_http_comparisons": 117,
+    "free_viewers": 43,
+    "visible_events": 13,
+    "permission_refused_events": 1,
+    "active_attendees": 82,
+    "unlinked_attendees": 3,
+    "http_calls": 246,
+    "unchanged_calculation_tables": 96,
+    "independent_unchanged_tables_excluding_synthetic_sessions": 95,
+    "bot_tables_unchanged": 6,
+    "unit_cases_passed": 86,
+    "browser_cases_passed": 33,
+    "original_p6_complete": false,
+    "release_eligible": false,
+    "retained_python_http_calls": 532,
+    "actual_production_image_combination": false
   }
 }
