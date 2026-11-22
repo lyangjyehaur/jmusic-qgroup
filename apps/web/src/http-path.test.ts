@@ -8,7 +8,7 @@ import { ApiError as BoundaryError } from './api-errors';
 afterEach(() => vi.unstubAllGlobals());
 const scope='a'.repeat(64), key='11111111-1111-4111-8111-111111111111';
 
-it('resolves all 194 original operations without confusing encoded parameters with another segment',()=>{
+it('resolves all current operations without confusing encoded parameters with another segment',()=>{
   const seen=new Set<string>();
   for(const [key,operation] of Object.entries(HttpOperations)){
     const params:Record<string,string>={};
@@ -18,7 +18,7 @@ it('resolves all 194 original operations without confusing encoded parameters wi
     const resolved=resolveHttpPath(path,operation.method);
     expect(resolved).toEqual({key,params,query:{}});seen.add(resolved.key);
   }
-  expect(seen.size).toBe(205);
+  expect(seen.size).toBe(209);
 });
 it('resolves fixed routes and retains omitted defaults and BigInt query strings',()=>{
   expect(resolveHttpPath('/api/v2/me/activities').key).toBe('GET /api/v2/me/activities');
