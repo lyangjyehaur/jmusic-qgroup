@@ -3,9 +3,9 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/223-recovery-copy-activation.md",
     "full_parent_accepted": false,
-    "latest_full_regression_commit": "03d364f89b647315f4b8728f7c264610398d076b"
+    "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb"
   },
   "requirements": [
     {

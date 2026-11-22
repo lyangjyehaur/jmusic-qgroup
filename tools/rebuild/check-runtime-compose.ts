@@ -36,6 +36,9 @@ export function checkRuntimeCompose(input:unknown){
   const dataSource=mount.source as string;
   if(data&&dataSource!==data)throw Error('Web and bot must use the same approved data directory');data=dataSource;
   const env=obj(s.environment);if(env.NODE_ENV!=='production'||env[name==='web'?'REBUILD_DB':'KANBAN_DB']!=='/var/lib/qgroup/kanban.sqlite3')throw Error('Production mode and web/bot database paths must agree');
+  // The current fixed-image manifest has no activation receipt/copy binding.
+  // Do not report that configuration as verified through the older validator.
+  if(env.REBUILD_RECOVERY_ACTIVATION_ROOT!==undefined||env.REBUILD_RECOVERY_ACTIVATION_MANIFEST_SHA256!==undefined)throw Error('Recovery activation requires separate receipt and fixed-version runtime validation');
   const serviceOrigin=canonicalRuntimeOrigin(env[name==='web'?'REBUILD_ORIGIN':'KANBAN_BOT_BASE_URL']);
   if(origin&&origin!==serviceOrigin)throw Error('Web and bot origins must agree');origin=serviceOrigin;
   if(name==='web'){

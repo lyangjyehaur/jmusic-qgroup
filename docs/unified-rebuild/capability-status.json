@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/223-recovery-copy-activation.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "C01",
@@ -19,7 +19,7 @@
       "A13",
       "A15"
     ],
-    "latest_full_regression_commit": "03d364f89b647315f4b8728f7c264610398d076b"
+    "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb"
   },
   "capabilities": [
     {
@@ -649,7 +649,10 @@
         "apps/api/testsupport/runtime-compose.test.ts",
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
         "apps/api/src/forward-account-business.test.ts",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/223-recovery-copy-activation.md",
+        "apps/api/src/recovery-activation.test.ts",
+        "apps/api/src/recovery-activation-guards.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -702,7 +705,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 130 號接通原帳號關閉的三方成分／身份清理、完整 business／proof／再次 source rebase 與十份原來源 bytes 保留。完整最新 music erasure／reset generation、外部 ancestry／custody／高水位、latest-erasure 私人存取、browser／media／stopped capture、固定 Linux 版本組合及全功能／B01–B15 驗收仍待完成，recovery-blocked，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。"
+      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 130 號接通原帳號關閉的三方成分／身份清理、完整 business／proof／再次 source rebase 與十份原來源 bytes 保留。完整最新 music erasure／reset generation、外部 ancestry／custody／高水位、latest-erasure 私人存取、browser／media／stopped capture、固定 Linux 版本組合及全功能／B01–B15 驗收仍待完成，recovery-blocked，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
     },
     {
       "capability_id": "I15",
@@ -770,7 +773,10 @@
         "apps/api/src/legacy-music-intent.test.ts",
         "apps/api/src/forward-music-authority.test.ts",
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/223-recovery-copy-activation.md",
+        "apps/api/src/recovery-activation.test.ts",
+        "apps/api/src/recovery-activation-guards.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -823,7 +829,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。"
+      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
     },
     {
       "capability_id": "I16",
@@ -8497,7 +8503,10 @@
         "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
         "apps/api/src/forward-retired-reset-proofs.test.ts",
         "apps/api/src/forward-retired-reset-board.test.ts",
-        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
+        "docs/unified-rebuild/223-recovery-copy-activation.md",
+        "apps/api/src/recovery-activation.test.ts",
+        "apps/api/src/recovery-activation-guards.test.ts"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -8675,7 +8684,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。"
+      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
     },
     {
       "capability_id": "O13",
@@ -8912,7 +8921,10 @@
         "apps/api/src/forward-retired-reset-proofs.test.ts",
         "apps/api/src/forward-retired-reset-board.test.ts",
         "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/223-recovery-copy-activation.md",
+        "apps/api/src/recovery-activation.test.ts",
+        "apps/api/src/recovery-activation-guards.test.ts"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -9083,7 +9095,7 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。"
+      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
     },
     {
       "capability_id": "O14",

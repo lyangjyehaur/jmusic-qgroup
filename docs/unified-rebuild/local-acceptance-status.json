@@ -2157,7 +2157,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/223-recovery-copy-activation.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2277,22 +2277,23 @@
     "full_rollback_acceptance": false
   },
   "latest_ci_image_verification": {
-    "commit": "03d364f89b647315f4b8728f7c264610398d076b",
-    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45053293001",
+    "commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45056896434",
     "image": "passed; raw artifacts downloaded and checked",
-    "full_unit_browser": "passed; raw original artifacts checked in checkpoint 222",
+    "full_unit_browser": "passed; raw original artifacts and source pins checked in checkpoint 223",
     "actual_online_bot_image": false
   },
   "latest_full_regression": {
-    "commit": "03d364f89b647315f4b8728f7c264610398d076b",
-    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45053293001",
+    "commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45056896434",
     "unit_passed": 4063,
-    "browser_passed": 1044,
+    "browser_passed": 1047,
     "jobs": "all successful; raw unit/browser/image artifacts independently checked",
     "browser_skip_retry_flaky": 0,
     "includes_checkpoint_220_cross_domain_theme_case": true,
-    "includes_checkpoint_221_mobile_tools": false,
-    "includes_checkpoint_222_admin_device_tests": false
+    "includes_checkpoint_221_mobile_tools": true,
+    "includes_checkpoint_222_admin_device_tests": false,
+    "includes_checkpoint_223_recovery_activation": false
   },
   "legacy_http_forward_deletion_rehearsal": {
     "checkpoint": "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
@@ -2319,5 +2320,24 @@
     "original_source_all_tables_and_image_unchanged": true,
     "production_writes": false,
     "qq_sent": false
+  },
+  "recovery_copy_activation_rehearsal": {
+    "checkpoint": "docs/unified-rebuild/223-recovery-copy-activation.md",
+    "local_related_tests_passed": 160,
+    "new_cases": 40,
+    "source_tables_compared": 97,
+    "unchanged_non_storage_tables": 96,
+    "original_image_files": 4,
+    "original_wall_manifests": 1,
+    "original_bot_external_files": 6,
+    "preserved_delivery_review_rows": 7,
+    "native_authority_read_restarts": 2,
+    "original_source_still_blocked": true,
+    "same_retained_authority_continued": true,
+    "current_fixed_image_pair_accepted": false,
+    "production_quiescent_proven": false,
+    "external_authority_ancestry_certified": false,
+    "full_parent_accepted": false,
+    "deployment_performed": false
   }
 }

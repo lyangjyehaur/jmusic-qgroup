@@ -17,6 +17,12 @@ it.each(['missing web','missing bot','different origin','public http','trailing 
  expect(()=>checkRuntimeCompose({services:{web,bot}})).toThrow();
 });
 it('allows independent immutable web/bot image references without requiring matching versions',()=>{const r=checkRuntimeCompose({services:{web:runtimeComposeService('web'),bot:runtimeComposeService('bot')}});expect(r.images.web).not.toBe(r.images.bot);expect(r.deploymentPerformed).toBe(false);expect(r.sourceVersions).toBe('check independently');expect(checkRuntimeCompose({services:{web:{...runtimeComposeService('web'),mem_limit:'536870912',memswap_limit:'536870912'},bot:runtimeComposeService('bot')}}).deploymentPerformed).toBe(false);});
+it.each(['root','pin','pair'])('refuses an unbound recovery activation %s in the existing runtime manifest validator',shape=>{
+ const web=runtimeComposeService('web'),bot=runtimeComposeService('bot');
+ if(shape!=='pin')Object.assign(web.environment,{REBUILD_RECOVERY_ACTIVATION_ROOT:'/var/lib/qgroup-checkpoint/activation'});
+ if(shape!=='root')Object.assign(web.environment,{REBUILD_RECOVERY_ACTIVATION_MANIFEST_SHA256:'a'.repeat(64)});
+ expect(()=>checkRuntimeCompose({services:{web,bot}})).toThrow('separate receipt and fixed-version');
+});
 it('rejects mutable image tags, unbounded resources, privilege escalation, extra services and different databases',()=>{
  for(const patch of [{healthcheck:{disable:true}},{image:'qgroup:latest'},{image:'qgroup:main'},{build:{}},{privileged:true},{read_only:false},{init:false},{mem_limit:0},{memswap_limit:-1},{cpus:undefined},{cpus:0},{cpus:2},{pids_limit:0},{user:'0:0'},{cap_add:['SYS_ADMIN']},{security_opt:['no-new-privileges:true','seccomp:unconfined']},{tmpfs:['/tmp']},{volumes:[{type:'bind',source:'/different/data',target:'/var/lib/qgroup'}]},{environment:{KANBAN_DB:'/other.sqlite3'}}])expect(()=>checkRuntimeCompose({services:{web:runtimeComposeService('web'),bot:{...runtimeComposeService('bot'),...patch}}})).toThrow();
  expect(()=>checkRuntimeCompose({services:{web:runtimeComposeService('web'),bot:runtimeComposeService('bot'),other:runtimeComposeService('web')}})).toThrow();

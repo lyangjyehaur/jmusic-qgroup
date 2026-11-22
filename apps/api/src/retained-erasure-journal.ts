@@ -10,6 +10,7 @@ import {encode,ErasureAuthorityRecord,privateDirectory,privateFile,readRollbackE
 import {sourceDirectory,sourceStat,snapshotRollbackFile} from '../../../packages/runtime/src/private-source-files';
 import {digest} from '../../../packages/runtime/src/strict-json';
 import {RetainedErasureConfig} from './retained-erasure-config';
+import {readRecoveryActivation} from './recovery-activation-protocol';
 export {RetainedErasureConfig} from './retained-erasure-config';
 
 type Config=z.infer<typeof RetainedErasureConfig>;
@@ -21,8 +22,9 @@ export type RetainedJournal=ErasureJournal&{close():Promise<void>};
 export async function createRetainedErasureJournal(db:DB,input:Config,dependencies:{acquireLock?:(path:string)=>Promise<ErasureAuthorityLock>;fault?:(stage:string)=>void}={}):Promise<RetainedJournal>{
   const config=RetainedErasureConfig.parse(input),root=config.root,pin=config.manifestSha256,path=erasureJournalPath(db.name),folder=dirname(path);
   if(db.name===':memory:'||resolve(path)!==path||root===folder||root.startsWith(folder+'/')||folder.startsWith(root+'/'))throw Error('Authority and existing service storage must be isolated');
+  if(config.recoveryActivation){const activation=config.recoveryActivation.root;for(const other of [root,folder])if(activation===other||activation.startsWith(other+'/')||other.startsWith(activation+'/'))throw Error('Recovery activation must be retained outside authority and service storage');}
   const directories=new Map([root,join(root,'baseline'),join(root,'records'),folder].map(path=>[path,privateDirectory(path)])),parent=sourceDirectory(dirname(root)),sqliteInodes=new Set<string>();
-  let lock:ErasureAuthorityLock|undefined,closed=false,failed=false,observedPins:string[]=[],lineage:string|undefined;
+  let lock:ErasureAuthorityLock|undefined,closed=false,failed=false,observedPins:string[]=[],lineage:string|undefined,activation:ReturnType<typeof readRecoveryActivation>|undefined,heldCheckpoint:ReturnType<typeof privateFile>|undefined;
   function captureSQLite(){for(const suffix of ['', '-wal','-shm','-journal']){const stat=sourceStat(db.name+suffix);if(stat)sqliteInodes.add(stat.dev+':'+stat.ino);}}
   function owned(){if(closed)throw Error('Retained journal is closed');for(const [path,held] of directories){const current=privateDirectory(path);if(current.dev!==held.dev||current.ino!==held.ino)throw Error('Authority or service directory replaced');}const current=sourceDirectory(dirname(root));if(current.dev!==parent.dev||current.ino!==parent.ino)throw Error('Authority parent replaced');lock?.assertHeld();}
   function protect(path:string){owned();captureSQLite();const stat=sourceStat(path);if(stat&&sqliteInodes.has(stat.dev+':'+stat.ino))throw Error('Authority file cannot alias a live SQLite inode');}
@@ -48,12 +50,16 @@ export async function createRetainedErasureJournal(db:DB,input:Config,dependenci
     const after=source();if(!after.bytes?.equals(Buffer.concat([original.bytes??Buffer.alloc(0),suffix])))throw Error('Service ledger append differs');after.assertUnchanged();
   }
   function currentLineage(){const rows=db.prepare('SELECT lineage_id,recovery_required FROM rebuild_storage WHERE id=1').all() as {lineage_id:string;recovery_required:number}[];if(rows.length!==1||!rows[0]||!/^[a-f0-9]{32}$/.test(rows[0].lineage_id)||rows[0].recovery_required!==0)throw Error('Native storage lineage requires review');return rows[0].lineage_id;}
-  function verify(){if(failed)throw Error('Retained journal write failed; restart and verify authority');if(currentLineage()!==lineage)throw Error('Native storage differs from retained checkpoint lineage');const saved=snapshot(),local=source();if(!local.bytes?.equals(saved.ledgers.unified))throw Error('Latest retained intent absent from service ledger');saved.assertUnchanged();local.assertUnchanged();observe(saved);return {saved,local};}
+  function verify(){if(failed)throw Error('Retained journal write failed; restart and verify authority');heldCheckpoint?.assertUnchanged();activation?.assertUnchanged();if(currentLineage()!==lineage)throw Error('Native storage differs from retained checkpoint lineage');const saved=snapshot(),local=source();if(!local.bytes?.equals(saved.ledgers.unified))throw Error('Latest retained intent absent from service ledger');saved.assertUnchanged();local.assertUnchanged();observe(saved);return {saved,local};}
   try{
     protect(join(root,'.authority.lock'));lock=await (dependencies.acquireLock??acquireErasureAuthorityLock)(join(root,'.authority.lock'));owned();
     let saved=snapshot(true);
     const checkpoint=privateFile(config.sourceCheckpoint,512*1024*1024,protect);if(!checkpoint.bytes||checkpoint.sha256!==saved.manifest.checkpointSha256)throw Error('Retained checkpoint source pin differs');
-    const fixed=new Database(checkpoint.bytes);try{const versions=fixed.prepare('SELECT version FROM rebuild_schema').all() as {version:number}[],rows=fixed.prepare('SELECT lineage_id,recovery_required FROM rebuild_storage WHERE id=1').all() as {lineage_id:string;recovery_required:number}[];if(versions.length!==1||versions[0]?.version!==REBUILD_SCHEMA_VERSION||rows.length!==1||!rows[0]||!/^[a-f0-9]{32}$/.test(rows[0].lineage_id)||rows[0].recovery_required!==0)throw Error('Retained checkpoint lineage requires review');lineage=rows[0].lineage_id;}finally{fixed.close();}
+    heldCheckpoint=checkpoint;
+    const fixed=new Database(checkpoint.bytes);try{const versions=fixed.prepare('SELECT version FROM rebuild_schema').all() as {version:number}[],rows=fixed.prepare('SELECT lineage_id,recovery_required FROM rebuild_storage WHERE id=1').all() as {lineage_id:string;recovery_required:number}[];if(versions.length!==1||versions[0]?.version!==REBUILD_SCHEMA_VERSION||rows.length!==1||!rows[0]||!/^[a-f0-9]{32}$/.test(rows[0].lineage_id)||![0,1].includes(rows[0].recovery_required))throw Error('Retained checkpoint lineage requires review');lineage=rows[0].lineage_id;
+      if(rows[0].recovery_required===1){if(!config.recoveryActivation)throw Error('Retained checkpoint lineage requires review');activation=readRecoveryActivation(config.recoveryActivation.root,config.recoveryActivation.manifestSha256,checkpoint.bytes,saved,protect);if(activation.manifest.lineageId!==lineage)throw Error('Recovery activation lineage differs');}
+      else if(config.recoveryActivation)throw Error('Recovery activation requires the original blocked checkpoint');
+    }finally{fixed.close();}
     checkpoint.assertUnchanged();saved.assertUnchanged();if(currentLineage()!==lineage)throw Error('Native storage differs from retained checkpoint lineage');
     if(saved.pendingPublication){publish(saved);saved=snapshot();}observe(saved);
     const local=source(),original=local.bytes??Buffer.alloc(0);if(!saved.ledgers.unified.subarray(0,original.length).equals(original))throw Error('Service ledger contains unrecorded or conflicting authority bytes');

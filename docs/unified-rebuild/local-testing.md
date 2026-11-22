@@ -50,6 +50,6 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 
 單元完整回歸會啟動 Python 原行為讀取器；建議單一 worker。瀏覽器回歸自行管理 5082 端口，執行前先停止手動預覽，且先建置。macOS 有 Chrome 時預設使用 Chrome；其他環境先執行 `npx playwright install chromium`。bot 測試使用固定線上來源和受控投遞，不需要正式憑證。
 
-完整 Linux CI 提交 `03d364f89b647315f4b8728f7c264610398d076b` 的 unit 4,063 項、browser 1,044 項及映像組合均通過，沒有略過或重試。第 221 批手機工具及第 222 批兩項管理登出測試另有本機驗證；不將未包含的修改套用原完整 CI。真正匯出的線上 bot 映像隔離組合及同一正式副本的匯入／回退證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。
+完整 Linux CI 提交 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的 unit 4,063 項、browser 1,047 項及映像組合均通過，沒有略過或重試，包含第 221 批手機工具。第 222 批兩項管理登出測試及第 223 批恢復啟用修改另有本機驗證；不將未包含的修改套用原完整 CI。真正匯出的線上 bot 映像隔離組合及同一正式副本的匯入／回退證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。
 
-目前 10 個既有功能父項本機通過；156 個及 U01–U03 仍待完整審核，另須完成經審核 recovery activation 與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
+目前 10 個既有功能父項本機通過；156 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。

@@ -12,6 +12,7 @@
     "test:ui": "npm run typecheck && node tests/test_board_react.mjs && node tests/test_react_controllers.mjs && node tests/test_music_selection.mjs && node tests/test_yahha_patterns.mjs && node tests/test_react_ui.mjs",
     "typecheck": "tsc --noEmit",
     "restore:rebuild": "tsx tools/rebuild/restore-backup.ts",
+    "activate:recovery-copy": "tsx tools/migration/activate-recovery-copy.ts",
     "import:rebuild": "tsx tools/migration/import-snapshot.ts",
     "capture:rebuild": "tsx tools/migration/capture-snapshot.ts",
     "verify:rollback": "tsx tools/migration/read-rollback-package.ts",
