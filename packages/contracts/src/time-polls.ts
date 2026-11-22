@@ -36,7 +36,13 @@ export const CreateTimePoll = z.discriminatedUnion('time_mode', [
   }).strict(),
 ]);
 export const VoteTimePoll = z
-  .object({ revision, choices: z.array(z.object({ option_id: id, choice: PollChoice }).strict()) })
+  .object({
+    revision,
+    // Older native payloads remain parseable for exact committed-receipt lookup.
+    // New writes require the current person's ballot token at the API boundary.
+    ballot_token: z.string().regex(/^[a-f0-9]{64}$/).optional(),
+    choices: z.array(z.object({ option_id: id, choice: PollChoice }).strict()),
+  })
   .strict();
 const command = z.object({ revision, reason: text(200).default(''), confirm: z.literal(true) });
 export const ManageTimePoll = z.discriminatedUnion('action', [
@@ -117,6 +123,7 @@ export const TimePoll = z.object({
   can_manage: z.boolean(),
   can_vote: z.boolean(),
   my_choices: z.record(z.string(), PollChoice),
+  ballot_token: z.string().regex(/^[a-f0-9]{64}$/).optional(),
   has_voted: z.boolean(),
   options: z.array(PollOption),
   leading_option_ids: z.array(id),

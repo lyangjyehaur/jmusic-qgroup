@@ -12,7 +12,7 @@ const OriginalManage = z.object({ action: z.enum(['close','extend','cancel','rem
 export function decodeLegacyTimePoll(request: z.infer<typeof LegacyRequestCheck>, current: { time_mode: 'date'|'exact'; bot_enabled: number }) {
   const route = legacyTimePollId(request);
   if (route.vote) {
-    const raw = VoteTimePoll.omit({revision:true}).extend({base_revision:revision}).strict().parse(request.data);
+    const raw = VoteTimePoll.omit({revision:true,ballot_token:true}).extend({base_revision:revision}).strict().parse(request.data);
     return { ...route, kind: 'vote' as const, input: VoteTimePoll.parse({revision:raw.base_revision, choices:raw.choices}) };
   }
   const raw = OriginalManage.parse(request.data), common = { action:raw.action, revision:raw.base_revision, confirm:true, reason: raw.action === 'remove' ? '' : raw.reason === undefined ? '' : raw.reason };

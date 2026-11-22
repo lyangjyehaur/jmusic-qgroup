@@ -139,7 +139,7 @@ export function registerTimePolls(
   });
   app.post('/api/v2/time-polls/:id/votes', limited, async (request) => {
     const { id } = ActivityPath.parse(request.params), input = VoteTimePoll.parse(request.body);
-    return write(request, input, id, false, user => { const time = now(); return executePollVote(db, preparePollVote(db, pollRow(db, id), input, time), user, time); });
+    return write(request, input, id, false, user => { const time = now(); return executePollVote(db, preparePollVote(db, pollRow(db, id), input, time, user.id), user, time); });
   });
   app.post('/api/v2/time-polls/:id/manage', limited, async (request) => {
     const { id } = ActivityPath.parse(request.params), input = ManageTimePoll.parse(request.body);

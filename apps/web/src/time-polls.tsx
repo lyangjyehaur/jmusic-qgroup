@@ -415,7 +415,7 @@ function PollResults({ poll: p }: { poll: Poll }) {
   );
 }
 const EditableVotes = z
-  .object({ revision: z.number().int().nonnegative(), choices: z.record(z.string(), PollChoice) })
+  .object({ revision: z.number().int().nonnegative(), ballot_token: VoteTimePoll.shape.ballot_token, choices: z.record(z.string(), PollChoice) })
   .strict();
 function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
   const client = useQueryClient(),
@@ -424,7 +424,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
     key: 'qgroup:rebuild:activity-draft:poll-vote:v1:' + viewer.scope + ':' + initial.id,
     viewer,
     initial,
-    blank: (p) => ({ revision: p.revision, choices: p.my_choices }),
+    blank: (p) => ({ revision: p.revision, ballot_token: p.ballot_token, choices: p.my_choices }),
     valueSchema: EditableVotes,
     saveSchema: VoteTimePoll,
     beforeSubmit: () => requireLegacyAvailable(viewer.scope,base(initial.id)),
@@ -435,10 +435,12 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
     },
     fromPending: (input) => ({
       revision: input.revision,
+      ballot_token: input.ballot_token,
       choices: Object.fromEntries(input.choices.map((c) => [c.option_id, c.choice])),
     }),
     matches: (v, input) =>
       v.revision === input.revision &&
+      v.ballot_token === input.ballot_token &&
       JSON.stringify(v.choices) ===
         JSON.stringify(Object.fromEntries(input.choices.map((c) => [c.option_id, c.choice]))),
     after: (p) => {
@@ -452,7 +454,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
     v = form.draft.value,
     active = p.options.filter((o) => !o.expired),
     filled = active.filter((o) => !!v.choices[o.id]).length;
-  const stale = v.revision !== p.revision;
+  const stale = v.revision !== p.revision || !v.ballot_token || v.ballot_token !== p.ballot_token;
   return (
     <Surface className="detail">
       <Heading level={2}>我的填答</Heading>
@@ -466,6 +468,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
           else if (filled === active.length && !stale && p.can_vote)
             void form.submit({
               revision: v.revision,
+              ballot_token: v.ballot_token,
               choices: p.options
                 .filter((o) => v.choices[o.id])
                 .map((o) => ({ option_id: o.id, choice: v.choices[o.id]! })),
@@ -523,7 +526,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
             </fieldset>
           ))}
         </fieldset>
-        {stale && <Notice>投票安排已變更，請先核對最新版。</Notice>}
+        {stale && <Notice>填答或投票安排已變更，請核對最新版；原選擇保留。</Notice>}
         <Button
           type="submit"
           loading={form.busy}
@@ -535,7 +538,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
       <Button
         variant="secondary"
         disabled={form.locked}
-        onClick={() => void form.refresh((old, fresh) => ({ ...old, revision: fresh.revision }))}
+        onClick={() => void form.refresh((old, fresh) => ({ ...old, revision: fresh.revision, ballot_token: fresh.ballot_token }))}
       >
         核對最新候選，保留選擇
       </Button>

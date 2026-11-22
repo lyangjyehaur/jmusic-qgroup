@@ -19,7 +19,7 @@ A 帳號撤銷另一裝置上的 A 授權時，若該裝置正在使用 B 帳號
 - 成分找回、裝置及登入：3 檔、44 項通過，無略過。
 - 裝置、成分找回及持久恢復瀏覽器：31 項通過，無略過、重試或 flaky；本機預覽已重啟載入本批修正。
 - 重構建置／strict TypeScript／HTTP 契約及產物 smoke 通過。產物 smoke 涵蓋原生 bot 的本機 HTTP／WebSocket、ACK／Resume、outbox、模擬／不確定投遞、唯一投遞者與停止流程。
-- 最新完整單元及候選 Linux CI 結果仍待核對；第 214 批的 4,052／1,041 及映像組合證據屬於前一個固定提交，不能宣稱已驗證本批候選。
+- 後續已核對本批固定候選 Linux CI：完整 unit 4,055 項、browser 1,041 項及隔離映像組合通過；本機完整單工 unit 4,055 項亦通過。較早間歇性失敗仍保留，根因未證明；詳細限制與線上副本演練見[第 216 批](216-online-copy-rehearsal-checkpoint.md)。
 
 本機原始結果保存在私人驗證目錄的 `inactive-device-grant-before-final.json`、`inactive-device-grant-after.json` 及建置／smoke 紀錄，不包含正式來源或真實 QQ 投遞。
 

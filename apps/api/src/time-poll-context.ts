@@ -1,4 +1,5 @@
 import { withApiError } from './error-display';
+import { createHash } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import { PollCounts, PollHistoryDetails, TimePoll } from '@qgroup/contracts';
 import { botLocalTime, botMoment, DomainError } from '@qgroup/domain';
@@ -90,6 +91,18 @@ export function pollTotals(db: DB, poll: PollRow): Record<string, z.infer<typeof
     counts[row.option_id]![row.choice] = row.n;
   return counts;
 }
+/** Compare this person's submitted answers; other voters do not invalidate it. */
+export function pollBallotToken(db: DB, pollId: string, userId: string) {
+  const ballot = db.prepare('SELECT updated_at FROM time_poll_ballots WHERE poll_id=? AND user_id=?').get(pollId, userId) ?? null;
+  const votes = db.prepare('SELECT option_id,choice FROM time_poll_votes WHERE poll_id=? AND user_id=? ORDER BY option_id').all(pollId, userId);
+  // Receipts distinguish repeated saves within the legacy timestamp's one-second
+  // precision, including answers changed away and back. Other people's receipts
+  // cannot invalidate this person's reviewed form. No new shared schema is needed.
+  const receipts = db.prepare(`SELECT request_key,signature FROM request_results
+    WHERE user_id=? AND CASE WHEN json_valid(response_json) THEN json_extract(response_json,'$.id') END=?
+    ORDER BY request_key`).all(userId, pollId);
+  return createHash('sha256').update(JSON.stringify(['time-poll-ballot-v1', pollId, userId, ballot, votes, receipts])).digest('hex');
+}
 export function pollView(db: DB, poll: PollRow, viewer: string | null, now: Date, defaults: ActivityBotDefaults = {}) {
   const owner = viewer === poll.owner_id,
     totals = pollTotals(db, poll),
@@ -136,6 +149,7 @@ export function pollView(db: DB, poll: PollRow, viewer: string | null, now: Date
     can_vote: !!viewer && status === 'open',
     duration_hours: poll.time_mode === 'date' ? null : poll.duration_hours,
     my_choices: choices,
+    ...(viewer ? { ballot_token: pollBallotToken(db, poll.id, viewer) } : {}),
     has_voted: !!Object.keys(choices).length,
     options,
     leading_option_ids: max ? ranked.filter((o) => o.yes === max).map((o) => o.id) : [],

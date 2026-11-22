@@ -74,9 +74,9 @@
     "apps/api/src/settlement-context.ts": "751453606c1076fdd994ed8e03ca3f424bdc2c7cf698b657ca785379cd4d3ddf",
     "apps/api/src/settlements.ts": "7984d787b3d060a2d54f6962c31767b3ba0be5af418e61076345a86397d0bc8d",
     "apps/api/src/time-poll-bot.ts": "0d070b033f90dd68f8723a44c9d8cd3e7826f079a131287e2fd58d8d86f73cee",
-    "apps/api/src/time-poll-command.ts": "7161881069f7164b2a0c9e85fd9a7e0283d63e220898a3a3d82fa28e77a12232",
-    "apps/api/src/time-poll-context.ts": "5efca57fb601cf93973921a0a7e3f531d278a7c13328e2d21e3915eb8d500a94",
-    "apps/api/src/time-polls.ts": "452d546a9394fee2044e6705de17dbdd60de2541d956c435106e300d432e947e",
+    "apps/api/src/time-poll-command.ts": "1df6a91724428e1972fd18d6e6b2a9f09901304120c2ea772a163c4e1c7a0e4c",
+    "apps/api/src/time-poll-context.ts": "eb4682c0578caa30a848e533726e323831b7b78dd22ff0709e9023e1e26e3c47",
+    "apps/api/src/time-polls.ts": "aad8cc46a481c3e60f36f25dfa4d484e9cc737ef28d7451cddcd7f2107af0189",
     "packages/contracts/package.json": "2e51ee0e36eb1bc818ba07f4c410a57700aa6d9f959bc3c86f3f61cddd17dd89",
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
@@ -85,10 +85,10 @@
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
-    "packages/contracts/src/legacy-time-poll.ts": "5a0b86cfcba35622cb0f990c8c3303e440c9ff10b0c33a507ef06df93d5f3c88",
+    "packages/contracts/src/legacy-time-poll.ts": "4f3520d14921930dace557f62a390f9cbf8e419bbe38e365632ca1a5050f3662",
     "packages/contracts/src/legacy-values.ts": "6af476f4ae1ddf8609fb35a27c11cd7e2bcce49634670e4fed6a2125a9805514",
     "packages/contracts/src/payment-assets.ts": "9c925b021cb16cfd188e6620a341efdba6570e4a72b7110ede85899c08c8d83c",
-    "packages/contracts/src/time-polls.ts": "6d6651d83ebcb90b282cb13ebe1e77d19d0ef34cdc8c5e6a47ee393c3040461f",
+    "packages/contracts/src/time-polls.ts": "1d3456b0fc74d9a74eb7320af98b8e4114a289dc6f065b23080fa4c8fce89ec4",
     "packages/database/src/music-retirements.ts": "f4ae47d2ab943ab7bafd376f9c1f461121b4a0fe580284fd76fcf0526d89af62",
     "packages/domain/src/music-circles.ts": "ce4b93a8d42faaba36a2f5c253e039e89832c9570a8bcfa027120c180e9b953f",
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
@@ -1943,12 +1943,14 @@
         "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-context.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },
@@ -1963,12 +1965,14 @@
         "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-context.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },
@@ -2024,12 +2028,14 @@
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "apps/api/src/time-poll-command.ts",
+        "apps/api/src/time-poll-context.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },
@@ -3717,6 +3723,7 @@
         "apps/api/src/create-intents.ts",
         "apps/api/src/security.ts",
         "apps/api/src/time-poll-command.ts",
+        "apps/api/src/time-poll-context.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/create-intents.ts",
@@ -3760,12 +3767,14 @@
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "apps/api/src/time-poll-command.ts",
+        "apps/api/src/time-poll-context.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },
@@ -3773,18 +3782,22 @@
       "id": "POST /api/v2/time-polls/:id/votes",
       "file": "apps/api/src/time-polls.ts",
       "mode": "member-write",
-      "conditions": [],
+      "conditions": [
+        "Current member authority is checked before exact committed receipt replay, including pre-token receipts. Uncommitted ballots require the original current-person ballot token and poll revision; another person’s vote does not invalidate the token."
+      ],
       "dependencies": [
         "apps/api/src/activity-create-command.ts",
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
         "apps/api/src/time-poll-command.ts",
+        "apps/api/src/time-poll-context.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/legacy-activity-create.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },

@@ -46,13 +46,20 @@ async function setup() {
   }
   const alice = await account('alice'),
     bob = await account('bob');
-  const write = (path: string, payload: Record<string, unknown>, headers = alice, key = randomUUID()) =>
-    app.inject({
-      method: 'POST',
-      url: '/api/v2/time-polls' + path,
-      headers: { ...headers, 'idempotency-key': key },
-      payload,
-    });
+  // A retry must carry the token from its original reviewed body.
+  const ballotTokens = new Map<string, string | undefined>();
+  const write = async (path: string, payload: Record<string, unknown>, headers = alice, key = randomUUID()) => {
+    if (path.endsWith('/votes') && !('ballot_token' in payload)) {
+      const tokenKey = headers.cookie + ':' + path + ':' + key;
+      if (!ballotTokens.has(tokenKey)) {
+        const view = await app.inject({ url: '/api/v2/time-polls' + path.slice(0, -6), headers });
+        ballotTokens.set(tokenKey, view.json().ballot_token);
+      }
+      payload = { ...payload, ballot_token: ballotTokens.get(tokenKey) };
+    }
+    return app.inject({ method: 'POST', url: '/api/v2/time-polls' + path,
+      headers: { ...headers, 'idempotency-key': key }, payload });
+  };
   const definition = {
     title: '候選時段',
     category: '约K',
@@ -433,8 +440,12 @@ print(json.dumps(dict(owner=time_polls.serialize(db,poll,'alice'),voter=time_pol
       );
       const owner = await s.read(id); // Auto sequence IDs differ after Python regenerated its isolated job.
       for (const v of [owner, expected.owner]) for (const row of v.bot_delivery ?? []) delete row.id;
-      expect(owner).toEqual(expected.owner);
-      expect(await s.read(id, s.bob)).toEqual(expected.voter);
+      const { ballot_token: ownerToken, ...originalOwner } = owner;
+      const { ballot_token: voterToken, ...originalVoter } = await s.read(id, s.bob);
+      expect(ownerToken).toMatch(/^[a-f0-9]{64}$/);
+      expect(voterToken).toMatch(/^[a-f0-9]{64}$/);
+      expect(originalOwner).toEqual(expected.owner);
+      expect(originalVoter).toEqual(expected.voter);
       const jobs = s.db
         .prepare('SELECT kind,dedupe_key,target,payload_json FROM bot_outbox WHERE poll_id=?')
         .all(id) as { payload_json: string }[];

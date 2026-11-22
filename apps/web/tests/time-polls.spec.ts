@@ -10,6 +10,12 @@ async function login(context: BrowserContext, user = 'alice') {
 }
 async function write(context: BrowserContext, path: string, data: Record<string, unknown>) {
   const session = await (await context.request.get('/api/v2/session')).json();
+  if (path.endsWith('/votes') && !('ballot_token' in data)) {
+    const poll = await (await context.request.get('/api/v2/time-polls' + path.slice(0, -6), {
+      headers: { 'X-Account-Scope': session.scope },
+    })).json();
+    data = { ...data, ballot_token: poll.ballot_token };
+  }
   return context.request.post('/api/v2/time-polls' + path, {
     headers: {
       Origin: origin,
@@ -19,6 +25,12 @@ async function write(context: BrowserContext, path: string, data: Record<string,
     },
     data,
   });
+}
+async function readPoll(context: BrowserContext, id: string) {
+  const session = await (await context.request.get('/api/v2/session')).json();
+  const response = await context.request.get('/api/v2/time-polls/' + id, { headers: { 'X-Account-Scope': session.scope } });
+  expect(response.status(), await response.text()).toBe(200);
+  return response.json();
 }
 async function definition(page: Page) {
   await page.getByLabel('投票名稱', { exact: true }).fill('不連續日期');
@@ -343,4 +355,62 @@ test('recovers an uncertain removal from its owner-only management context after
       await context.request.get('/api/v2/time-polls/poll-exact', { headers: { 'X-Account-Scope': session.scope } })
     ).status(),
   ).toBe(404);
+});
+
+test('rejects stale answers from a separate browser, preserves choices and requires explicit review before saving again', async ({ page, context, browser }) => {
+  await login(context);
+  await page.goto('/time-polls/poll-date');
+  const fields = page.locator('fieldset.poll-choice');
+  await fields.nth(1).getByRole('radio', { name: '可以', exact: true }).check();
+  await fields.nth(2).getByRole('radio', { name: '可以', exact: true }).check();
+  const newerContext = await browser.newContext({ baseURL: origin, serviceWorkers: 'block' });
+  try {
+    await login(newerContext);
+    const newer = await newerContext.newPage();
+    await newer.goto('/time-polls/poll-date');
+    await newer.getByRole('button', { name: '未填項全選不行', exact: true }).click();
+    await newer.getByRole('button', { name: '提交填答', exact: true }).click();
+    await expect(newer.getByText('已保存。', { exact: true })).toBeVisible();
+    await page.getByRole('button', { name: '提交填答', exact: true }).click();
+    await expect(page.getByText('填答已有更新，請核對最新答案後再提交；原選擇保留', { exact: true })).toBeVisible();
+    for (const field of [fields.nth(1), fields.nth(2)]) await expect(field.getByRole('radio', { name: '可以', exact: true })).toBeChecked();
+    expect(Object.values((await readPoll(context, 'poll-date')).my_choices)).toEqual(['no', 'no']);
+    await expect.poll(async () => {
+      const row = (await durableRows(page)).find(row => row.key.includes('poll-vote:'));
+      return row ? JSON.parse(row.raw).pending : 'missing';
+    }).toBeUndefined();
+    await page.getByRole('button', { name: '核對最新候選，保留選擇', exact: true }).click();
+    await expect(page.getByText('已讀取最新版，原輸入保留；請重新預覽核對。', { exact: true })).toBeVisible();
+    for (const field of [fields.nth(1), fields.nth(2)]) await expect(field.getByRole('radio', { name: '可以', exact: true })).toBeChecked();
+    await page.getByRole('button', { name: '保存改票', exact: true }).click();
+    await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
+    expect(Object.values((await readPoll(context, 'poll-date')).my_choices)).toEqual(['yes', 'yes']);
+  } finally { await newerContext.close(); }
+});
+
+test('restores a pre-token local draft without losing choices and blocks sending until explicit fresh review', async ({ page, context }) => {
+  await login(context);
+  await page.goto('/time-polls/poll-date');
+  const fields = page.locator('fieldset.poll-choice');
+  await fields.nth(1).getByRole('radio', { name: '勉強可以', exact: true }).check();
+  await fields.nth(2).getByRole('radio', { name: '不行', exact: true }).check();
+  await expect.poll(async () => {
+    const row = (await durableRows(page)).find(row => row.key.includes('poll-vote:'));
+    return row ? JSON.parse(row.raw).value.choices : null;
+  }).toEqual({ 'poll-date-1': 'maybe', 'poll-date-2': 'no' });
+  const row = (await durableRows(page)).find(row => row.key.includes('poll-vote:'))!;
+  const old = JSON.parse(row.raw); delete old.value.ballot_token;
+  await damageDraft(page, 'poll-vote:', JSON.stringify(old));
+  page.on('dialog', d => void d.accept());
+  await page.reload();
+  await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
+  await expect(fields.nth(1).getByRole('radio', { name: '勉強可以', exact: true })).toBeChecked();
+  await expect(fields.nth(2).getByRole('radio', { name: '不行', exact: true })).toBeChecked();
+  await expect(page.getByRole('button', { name: '提交填答', exact: true })).toBeDisabled();
+  await expect(page.getByText('填答或投票安排已變更，請核對最新版；原選擇保留。', { exact: true })).toBeVisible();
+  expect((await readPoll(context, 'poll-date')).has_voted).toBe(false);
+  await page.getByRole('button', { name: '核對最新候選，保留選擇', exact: true }).click();
+  await page.getByRole('button', { name: '提交填答', exact: true }).click();
+  await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
+  expect((await readPoll(context, 'poll-date')).my_choices).toEqual({ 'poll-date-1': 'maybe', 'poll-date-2': 'no' });
 });

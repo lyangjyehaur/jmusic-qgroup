@@ -9,7 +9,7 @@ import { type ActivityBotDefaults } from './activity-bot';
 import { prepareActivityCreation, executeActivityCreation } from './activity-create-command';
 import { announcePoll, preparePollAnnouncement, enqueuePollAnnouncement, pollShareable } from './time-poll-bot';
 import { deliveryRetryBlocker } from './bot-delivery-rules';
-import { pollAvailable, pollDate, pollDateStart, pollExpires, pollRow, pollDeadline, pollOptions, pollTotals, type PollRow } from './time-poll-context';
+import { pollAvailable, pollBallotToken, pollDate, pollDateStart, pollExpires, pollRow, pollDeadline, pollOptions, pollTotals, type PollRow } from './time-poll-context';
 type User = { id: string; nickname: string };
 type Vote = z.infer<typeof VoteTimePoll>;
 type Manage = z.infer<typeof ManageTimePoll>;
@@ -58,8 +58,12 @@ function finalizedEvent(
   return executeActivityCreation(db,plan,user,now(),defaults,hook);
 }
 /** Preparation only reads; an inspection must never create trial events or jobs. */
-export function preparePollVote(db: DB, poll: PollRow, input: Vote, time: Date) {
+export function preparePollVote(db: DB, poll: PollRow, input: Vote, time: Date, nativeUserId?: string) {
   changed(poll, input.revision);
+  // Original Python request recovery has its own inspection token over the
+  // current source rows. Native forms must carry their original ballot token.
+  if (nativeUserId && input.ballot_token !== pollBallotToken(db, poll.id, nativeUserId))
+    throw withApiError(new DomainError('POLL_BALLOT_CHANGED', '填答已有更新，請核對最新答案後再提交；原選擇保留', 409));
   if (poll.status !== 'open' || Date.parse(poll.deadline) <= time.getTime()) throw withApiError(new DomainError('POLL_CLOSED', '投票已截止，請查看最終安排', 409));
   const options = pollOptions(db, poll.id), active = new Set(options.filter(o => pollAvailable(o, poll, time)).map(o => o.id)), submitted = new Set(input.choices.map(c => c.option_id));
   if (!active.size) throw withApiError(new DomainError('POLL_EXPIRED', '候選時段均已過期', 409));

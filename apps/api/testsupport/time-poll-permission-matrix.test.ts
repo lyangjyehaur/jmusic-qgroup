@@ -63,8 +63,16 @@ async function setup() {
     headers.set(a.id, h);
   }
   const read = (path: string, a: Actor) => app.inject({ url: '/api/v2/time-polls' + path, headers: headers.get(a.id)! });
-  const write = (path: string, payload: object, a: Actor, key = randomUUID()) => app.inject({ method: 'POST', url: '/api/v2/time-polls' + path,
-    headers: { ...headers.get(a.id)!, 'idempotency-key': key }, payload });
+  const ballotTokens = new Map<string, string | undefined>();
+  const write = async (path: string, payload: object, a: Actor, key = randomUUID()) => {
+    if (path.endsWith('/votes')) {
+      const tokenKey = a.id + ':' + path + ':' + key;
+      if (!ballotTokens.has(tokenKey)) ballotTokens.set(tokenKey, (await read(path.slice(0, -6), a)).json().ballot_token);
+      payload = { ...payload, ballot_token: ballotTokens.get(tokenKey) };
+    }
+    return app.inject({ method: 'POST', url: '/api/v2/time-polls' + path,
+      headers: { ...headers.get(a.id)!, 'idempotency-key': key }, payload });
+  };
   return { db, app, headers, read, write };
 }
 function snapshot(db: DB) {

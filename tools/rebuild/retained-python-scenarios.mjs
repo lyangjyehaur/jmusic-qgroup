@@ -178,7 +178,7 @@ export async function exerciseRetainedPython({ origin, rescue, rows, python, nat
     const poll = await post(pollPath, pollInput, {}, pollKey), pollWork = consume('time_poll_published');
     assert(pollWork.rows.every(row => row.poll_id === poll.id && row.event_id === null));
     await replay(pollPath, pollInput, pollKey, poll);
-    const ballot = await read('/time-polls/' + poll.id), vote = { revision: ballot.revision, choices: ballot.options.map(option => ({ option_id: option.id, choice: 'yes' })) }, voteKey = randomUUID();
+    const ballot = await read('/time-polls/' + poll.id), vote = { revision: ballot.revision, ballot_token: ballot.ballot_token, choices: ballot.options.map(option => ({ option_id: option.id, choice: 'yes' })) }, voteKey = randomUUID();
     const voted = await post(pollPath + '/' + poll.id + '/votes', vote, {}, voteKey);
     await replay(pollPath + '/' + poll.id + '/votes', vote, voteKey, voted);
     const afterVote = python(mode, draft.id); assert.deepEqual(afterVote.first, emptyPoll); assert.deepEqual(afterVote.second, emptyPoll); assert.equal(afterVote.calls.length, 0);
