@@ -28,11 +28,11 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "60dac75e3ec79329981546b85a5f798089550fc15314d38b654a54a2a60375d4",
+    "apps/api/src/app.ts": "0c63cd182e94c016510b62a2156a3ffec9f8bcb669d47cd4920988b4020f5936",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "bf8789dd18fcd1adc4c3e6403494ff75f33661637c6ee7e117d96608b64ee445",
-    "apps/api/src/create-intents.ts": "95c2ea774269b4f4b4e5b81a9f66122cc90fc83a0774b1f84da62bd7030cc1bd",
+    "apps/api/src/create-intents.ts": "4e54173c0fc37f95fbc26348cf5a8bb5913eb6810da4e157204426627f3d0849",
     "apps/api/src/finance.ts": "5bceb61f94b73d80c33877023580e91042bfdb6456cd8aa5fdcd254a2516b078",
     "apps/api/src/inbox.ts": "303d9cefb1ba4da27b7d82110432834e4e9c103b877a24705940a931a5f87d8d",
     "apps/api/src/legacy-detailed-settlement.ts": "645ec087b25171709106d48e93bd53f70925a710c6408ab231bcafa7d92436cd",
@@ -40,6 +40,7 @@
     "apps/api/src/legacy-local.ts": "a65e2ccf033d34f81f57754b413e777793eb519d42498d862bca2346f7c05fcb",
     "apps/api/src/legacy-rooms.ts": "771678f15cf49a637ee5797880e3c90d67f857a4d27b1e6a2d81b72463a6e6d6",
     "apps/api/src/legacy-settlement-token.ts": "42b4bc80c469dd5c3cf1a3653ab9b261eeaead8ee9f88dfc4629edb86a8f53a6",
+    "apps/api/src/legacy-time-poll-create.ts": "224747ffa752801bf434eb5aa060f15fcaf51632f774c9728ad85f9a0775f75d",
     "apps/api/src/legacy-time-poll.ts": "e867a2b2d1f18da5f333abf7d31224a518cfb2c9c7d9489eed165c648d8e29f4",
     "apps/api/src/music-catalog.ts": "27afeafcae22dad16da81f5bc89b290a4ff10febe13c9e586efa9e20ce4e9572",
     "apps/api/src/music-circle-jobs.ts": "8af7a3e56c921a14fb7c255596b0a5eee3f03037ebaf3ae74365c824208cc9af",
@@ -68,15 +69,17 @@
     "apps/api/src/settlement-command.ts": "9af2e0124cdb32086833ac89dfe2ac0b8492d57f13a51be9638718c8b7e46f78",
     "apps/api/src/settlement-context.ts": "751453606c1076fdd994ed8e03ca3f424bdc2c7cf698b657ca785379cd4d3ddf",
     "apps/api/src/settlements.ts": "7984d787b3d060a2d54f6962c31767b3ba0be5af418e61076345a86397d0bc8d",
-    "apps/api/src/time-poll-bot.ts": "a55f774cd795afec5e86e33aeb90b02f4295df034dc10e062c9d2a68bc74f6c1",
-    "apps/api/src/time-poll-command.ts": "ea126046193df547ad2b6a0599ba112aefec72da59966b63d3549d799e98a83e",
+    "apps/api/src/time-poll-bot.ts": "0d070b033f90dd68f8723a44c9d8cd3e7826f079a131287e2fd58d8d86f73cee",
+    "apps/api/src/time-poll-command.ts": "170c424671d50982080be6cc48071f39e74c04ae2f41eaffcf01157d8be9ab44",
     "apps/api/src/time-poll-context.ts": "5efca57fb601cf93973921a0a7e3f531d278a7c13328e2d21e3915eb8d500a94",
-    "apps/api/src/time-polls.ts": "d9b9994a0e88ab4f0502f882ff3c7a149aac14a458c4bd1057e58e59d2266d14",
+    "apps/api/src/time-polls.ts": "452d546a9394fee2044e6705de17dbdd60de2541d956c435106e300d432e947e",
     "packages/contracts/package.json": "2e51ee0e36eb1bc818ba07f4c410a57700aa6d9f959bc3c86f3f61cddd17dd89",
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
+    "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "4d4d391a7202a6835b20ec4fa1cd39471aa2e318cdd6a7f24956844337d9a31a",
+    "packages/contracts/src/index.ts": "27b89fe5a91869f515555ebe79612f7c1b1fa7687d7afe51b6eacffcd2b63f8b",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
+    "packages/contracts/src/legacy-time-poll-create.ts": "573420289982a7bb1371e163c0d39b1c3fad5780e4a75c08cbba58cb4b077f84",
     "packages/contracts/src/legacy-time-poll.ts": "5a0b86cfcba35622cb0f990c8c3303e440c9ff10b0c33a507ef06df93d5f3c88",
     "packages/contracts/src/payment-assets.ts": "9c925b021cb16cfd188e6620a341efdba6570e4a72b7110ede85899c08c8d83c",
     "packages/contracts/src/time-polls.ts": "6d6651d83ebcb90b282cb13ebe1e77d19d0ef34cdc8c5e6a47ee393c3040461f",
@@ -1336,7 +1339,7 @@
       "file": "apps/api/src/auth.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Only the current account and this device\u2019s previously authorized active accounts are returned."
+        "Only the current account and this device’s previously authorized active accounts are returned."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -2835,7 +2838,7 @@
       "mode": "device-write",
       "conditions": [
         "Use a verified unexpired attempt belonging to the current device and provider.",
-        "Binding requires a member and rejects another account\u2019s identity; login does not merge accounts."
+        "Binding requires a member and rejects another account’s identity; login does not merge accounts."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -3082,6 +3085,52 @@
         "apps/api/src/payment-codes.ts",
         "apps/api/src/legacy-local.ts",
         "packages/contracts/src/legacy-detailed-settlement.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/time-poll-create/inspect",
+      "file": "apps/api/src/legacy-time-poll-create.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Revalidate active member, origin, CSRF and scope in the transaction; exact original receipts require current poll ownership before revealing only the destination.",
+        "A same-intent alias is an existing draft destination, not proof of original commitment; foreign, deleted, corrupt or other-operation aliases block duplicate creation.",
+        "Pure preparation preserves original body/key/signature and validates current candidates/policy. Retry requires explicit confirmation and unchanged review; necessary writes, original receipt and separate alias are atomic; optional bot hook has an isolated savepoint."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/time-poll-command.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/create-intents.ts",
+        "packages/contracts/src/legacy-time-poll-create.ts",
+        "packages/contracts/src/create-intents.ts",
+        "packages/contracts/src/time-polls.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/time-poll-create/retry",
+      "file": "apps/api/src/legacy-time-poll-create.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Revalidate active member, origin, CSRF and scope in the transaction; exact original receipts require current poll ownership before revealing only the destination.",
+        "A same-intent alias is an existing draft destination, not proof of original commitment; foreign, deleted, corrupt or other-operation aliases block duplicate creation.",
+        "Pure preparation preserves original body/key/signature and validates current candidates/policy. Retry requires explicit confirmation and unchanged review; necessary writes, original receipt and separate alias are atomic; optional bot hook has an isolated savepoint."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/time-poll-command.ts",
+        "apps/api/src/time-poll-context.ts",
+        "apps/api/src/time-poll-bot.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/create-intents.ts",
+        "packages/contracts/src/legacy-time-poll-create.ts",
+        "packages/contracts/src/create-intents.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },
@@ -3334,12 +3383,16 @@
       "conditions": [],
       "dependencies": [
         "apps/api/src/app.ts",
+        "apps/api/src/create-intents.ts",
         "apps/api/src/security.ts",
+        "apps/api/src/time-poll-command.ts",
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
+        "packages/contracts/src/create-intents.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/contracts/src/time-polls.ts"
       ],
       "additionalHeaders": []
     },

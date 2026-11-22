@@ -1,5 +1,6 @@
 import { z } from 'zod';
-export const CreateIntent=z.string().uuid();
+// Original React authoring used eight random bytes; preserve its durable intent.
+export const CreateIntent=z.union([z.string().uuid(),z.string().regex(/^[a-f0-9]{16}$/)]);
 export const ViewCreateIntent=z.object({kind:z.enum(['activity','poll']),intent:CreateIntent}).strict();
 export const CreateIntentResult=z.discriminatedUnion('state',[
   z.object({state:z.literal('missing')}).strict(),

@@ -9,6 +9,7 @@ import { legacyInventoryUsable,mapLegacySources,preserveLegacy,type LegacyInvent
 import { describeLegacy } from './legacy-local-record';
 export type AuthoringPlan={source:AuthoringSource;row:LegacySnapshot;rows:LegacySnapshot[];raw:string;key:string;path:string;handle:DraftHandle;previous:string|null;pending:boolean};
 const object=(value:unknown):Record<string,unknown>|null=>value&&typeof value==='object'&&!Array.isArray(value)?value as Record<string,unknown>:null;
+async function intentFingerprint(value:string){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');}
 async function intentKey(kind:'activity'|'poll',intent:string){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode((kind==='activity'?'create ':'create time-poll ')+intent));return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');}
 async function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,source:AuthoringSource,requestsOnly=false){
   const rows:LegacySnapshot[]=requestsOnly?[]:[row],alreadyMapped=new Set(inventory.mappings.map(m=>m.id));
@@ -25,7 +26,10 @@ async function relatedSources(inventory:LegacyInventory,row:LegacySnapshot,sourc
       }catch{/* Unknown competing versions stay unmapped blockers. */}
     }else{
       const request=describeLegacy(candidate.source,row.scope).request,data=object(request?.data);
-      if(createKey&&candidate.sourceKey==='request:'+row.scope+':'+createKey&&request?.method==='POST'&&request.path===(source.kind==='activity'?'/api/events':'/api/time-polls')&&request.requestKey===createKey&&data?.client_intent===source.intent)rows.push(candidate);
+      if(createKey&&request?.method==='POST'&&request.path===(source.kind==='activity'?'/api/events':'/api/time-polls')&&request.requestKey===createKey&&data?.client_intent===source.intent){
+        const fingerprint=await intentFingerprint(request.method+' '+request.path+' '+JSON.stringify(request.data));
+        if(candidate.sourceKey==='request:'+row.scope+':'+fingerprint)rows.push(candidate);
+      }
     }
   }return rows;
 }
@@ -67,10 +71,10 @@ export async function adoptAuthoring(plan:AuthoringPlan,scope:string,epoch:numbe
   // Re-read after destination commit: old tabs can finish a request while conversion is running.
   const rows=await relatedSources(await freshInventory(scope,epoch),plan.row,plan.source);
   await check();
-  await mapLegacySources(scope,epoch,rows,{sourceId:plan.row.id,key:plan.key,path:plan.path,deviceEpoch:plan.handle.deviceEpoch});
+  await mapLegacySources(scope,epoch,rows.filter(candidate=>describeLegacy(candidate.source,scope).kind!=='request'),{sourceId:plan.row.id,key:plan.key,path:plan.path,deviceEpoch:plan.handle.deviceEpoch});
   await check();return plan.path;
 }
-/** A late pending→done snapshot is acknowledged explicitly without replacing the adopted draft. */
+/** A late pending→done snapshot is preserved explicitly without replacing the adopted draft. */
 export async function reconcileAuthoringRequests(row:LegacySnapshot,mapping:LegacyMapping,epoch:number,validate:()=>Promise<void>,active:()=>boolean){
   const check=async()=>{await validate();if(!active()||await deviceDraftEpoch()!==mapping.deviceEpoch)throw Error('帳號或頁面已變更，原紀錄保留。');};
   await check();
@@ -78,6 +82,7 @@ export async function reconcileAuthoringRequests(row:LegacySnapshot,mapping:Lega
   if(current?.sourceId!==row.id||current.targetKey!==mapping.targetKey)throw Error('轉換目的已變更，請重新讀取。');
   const rows=await relatedSources(inventory,row,decodeAuthoring(row,row.scope),true);
   await check();
-  if(rows.length)await mapLegacySources(row.scope,epoch,rows,{sourceId:row.id,key:mapping.targetKey,path:mapping.path,deviceEpoch:mapping.deviceEpoch});
+  // Association preserves snapshots only; it does not prove any request committed.
+  // Requests remain blockers until their dedicated recovery verifies a server result.
   await check();return rows.length;
 }

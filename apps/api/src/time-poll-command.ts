@@ -9,7 +9,7 @@ import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
 import { allocateActivity } from './activity-publish';
 import { announcePoll, preparePollAnnouncement, enqueuePollAnnouncement, pollShareable } from './time-poll-bot';
 import { deliveryRetryBlocker } from './bot-delivery-rules';
-import { pollAvailable, pollDate, pollDeadline, pollOptions, pollTotals, type PollRow } from './time-poll-context';
+import { pollAvailable, pollDate, pollDateStart, pollExpires, pollRow, pollDeadline, pollOptions, pollTotals, type PollRow } from './time-poll-context';
 type User = { id: string; nickname: string };
 type Vote = z.infer<typeof VoteTimePoll>;
 type Manage = z.infer<typeof ManageTimePoll>;
@@ -185,4 +185,75 @@ export function executePollManagement(db: DB, plan: ReturnType<typeof preparePol
   }
   if (['close', 'cancel', 'finalize'].includes(action)) skip('投票已截止、定案或取消');
   db.prepare('UPDATE time_polls SET revision=revision+1 WHERE id=?').run(id); recordPoll(db, id, user.id, action, details, stamp); return id;
+}
+
+/** Pure creation validation shared by native writes and original request recovery. */
+export function preparePollCreation(input: z.infer<typeof CreateTimePoll>, time: Date) {
+      const starts = input.options.map((o) =>
+        'date' in o ? pollDateStart(o.date, input.timezone) : activityDate(o.starts_at),
+      );
+      const definition = { time_mode: input.time_mode, timezone: input.timezone };
+      // Validate the shared arrangement (including IANA zone) before date expiry calculations.
+      const latest = starts
+          .map((starts_at) => pollExpires({ starts_at }, definition))
+          .reduce((a, b) => (a > b ? a : b)),
+        deadline = activityDate(input.deadline);
+      arrangementValues(
+        {
+          title: input.title,
+          category: input.category,
+          location: input.location,
+          description: input.description,
+          timezone: input.timezone,
+          capacity: input.capacity,
+          minimumParticipants: input.minimum_participants,
+          feePolicy: input.fee_policy,
+          startsAt: latest,
+          deadline,
+          durationHours: input.time_mode === 'exact' ? input.duration_hours : 3,
+          withdrawalDeadline: null,
+          visibility: 'public',
+          botEnabled: input.bot_enabled,
+          joinOwner: false,
+        },
+        time,
+        true,
+      );
+      if (new Set(starts).size !== starts.length) throw withApiError(new DomainError('POLL_DUPLICATE', '候選時段不能重複', 400));
+      const candidates = starts.map((starts_at) => ({ starts_at }));
+      if (candidates.some((o) => !pollAvailable(o, definition, time)))
+        throw withApiError(new DomainError('POLL_EXPIRED', '候選已過期，請選擇尚未失效的日期或時間', 400));
+      pollDeadline(deadline, candidates, definition, time);
+
+      return { input, starts, deadline };
+}
+export function executePollCreation(db: DB, plan: ReturnType<typeof preparePollCreation>, user: User, time: Date, defaults: ActivityBotDefaults, hook: (work: () => unknown) => void) {
+      const { input, starts, deadline } = plan;
+      const id = randomBytes(8).toString('hex'),
+        stamp = legacyStamp(time);
+      db.prepare(
+        'INSERT INTO time_polls(id,owner_id,title,category,location,description,timezone,duration_hours,capacity,minimum_participants,fee_policy,deadline,created_at,time_mode,bot_enabled) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+      ).run(
+        id,
+        user.id,
+        input.title,
+        input.category,
+        input.location,
+        input.description,
+        input.timezone,
+        input.time_mode === 'date' ? 0 : input.duration_hours,
+        input.capacity,
+        input.minimum_participants,
+        input.fee_policy,
+        deadline,
+        stamp,
+        input.time_mode,
+        Number(input.bot_enabled),
+      );
+      starts.forEach((start, i) =>
+        db.prepare('INSERT INTO time_poll_options VALUES(?,?,?,?)').run(randomBytes(8).toString('hex'), id, i, start),
+      );
+      recordPoll(db, id, user.id, 'created', { options: starts, deadline, time_mode: input.time_mode }, stamp);
+      hook(() => announcePoll(db, pollRow(db, id), time, defaults));
+      return id;
 }

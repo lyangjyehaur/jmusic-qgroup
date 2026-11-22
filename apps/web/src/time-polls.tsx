@@ -158,11 +158,13 @@ function CreatePoll({ viewer }: { viewer: Member }) {
   }, [form.locked, form.draft.value.client_intent]);
   const v = form.draft.value,
     edit = (patch: Partial<typeof v>) => form.edit({ ...v, ...patch });
-  const alreadyCreated=!!v.legacySource?.resolvedId;
+  const [lookedUp,setLookedUp]=useState<{scope:string;intent:string;id:string;epoch:number}|null>(null);
+  const resolvedId=v.legacySource?.resolvedId??(lookedUp&&lookedUp.scope===viewer.scope&&lookedUp.epoch===form.epoch&&lookedUp.intent===v.client_intent?lookedUp.id:undefined);
+  const alreadyCreated=!!resolvedId;
   return (
     <Surface className="detail activity-editor">
       <Notice>投票公開可見，請勿填寫私人資訊。投票不占名額，定案後須另行報名。</Notice>
-      {v.legacySource&&<Notice>{alreadyCreated?'原投票已建立，此後續草稿保留，不能另建投票。':'已帶入舊稿，候選順序保留。'}{v.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}{alreadyCreated&&<Link to={'/time-polls/'+encodeURIComponent(v.legacySource.resolvedId!)}>查看原投票</Link>}</Notice>}
+      {v.legacySource&&<Notice>{alreadyCreated?'原投票已建立，此後續草稿保留，不能另建投票。':'已帶入舊稿，候選順序保留。'}{v.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}{alreadyCreated&&<Link to={'/time-polls/'+encodeURIComponent(resolvedId!)}>查看原投票</Link>}</Notice>}
       <form
         noValidate
         onSubmit={(e) => {
@@ -284,7 +286,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
         </Button>
       </form>
       <DraftFeedback form={form} />
-      {v.client_intent&&!form.loading&&!form.readError&&<CreateIntentLookup key={viewer.scope+':'+v.client_intent+':'+form.epoch} viewer={viewer} kind="poll" intent={v.client_intent} disabled={form.busy}/>}
+      {v.client_intent&&!form.loading&&!form.readError&&<CreateIntentLookup key={viewer.scope+':'+v.client_intent+':'+form.epoch} viewer={viewer} kind="poll" intent={v.client_intent} disabled={form.busy} onExisting={id=>setLookedUp({scope:viewer.scope,epoch:form.epoch,intent:v.client_intent!,id})}/>}
     </Surface>
   );
 }

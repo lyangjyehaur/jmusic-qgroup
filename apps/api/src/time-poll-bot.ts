@@ -47,10 +47,11 @@ export function announcePoll(db: DB, poll: PollRow, now: Date, defaults: Activit
 }
 
 export function composeTimePollBotMessage(
-  poll: PollRow,
+  poll: Pick<PollRow,'id'|'title'|'timezone'|'time_mode'|'duration_hours'|'location'|'deadline'|'description'|'fee_policy'>,
   candidates: { starts_at: string }[],
   policy: BotPolicy,
   defaults: ActivityBotDefaults = {},
+  previewURL?: string,
 ) {
   const kind = 'time_poll_published';
   const title = Array.from(poll.title).slice(0, 40).join(''),
@@ -75,7 +76,7 @@ export function composeTimePollBotMessage(
     '每个时段可选：可以／勉强可以／不行，截止前可改票。',
     '投票不占名额，发起者定案后需另行报名。',
   );
-  const url = (defaults.baseURL ?? 'https://kanban.danndann.cn').replace(/\/+$/, '') + '/?poll=' + poll.id;
+  const url = previewURL ?? (defaults.baseURL ?? 'https://kanban.danndann.cn').replace(/\/+$/, '') + '/?poll=' + poll.id;
   const context = {
     ...Object.fromEntries(
       [

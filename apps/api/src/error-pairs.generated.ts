@@ -512,6 +512,22 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "旧成分的 QQ 是原资料查询标识，更正请联络管理员",
     "舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員"
   ],
+  "[\"LEGACY_POLL_CREATE_REVIEW_CHANGED\",\"建立投票核對資料已變更；請重新檢查後確認\"]": [
+    "建立投票核对资料已变更；请重新检查后确认",
+    "建立投票核對資料已變更；請重新檢查後確認"
+  ],
+  "[\"LEGACY_POLL_CREATE_UNSUPPORTED\",\"原建立投票方法或路徑尚未支援；原請求保留\"]": [
+    "原建立投票方法或路径尚未支援；原请求保留",
+    "原建立投票方法或路徑尚未支援；原請求保留"
+  ],
+  "[\"LEGACY_POLL_CREATE_UNSUPPORTED\",\"原建立投票欄位尚未支援或缺失；原請求保留，不能重試\"]": [
+    "原建立投票栏位尚未支援或缺失；原请求保留，不能重试",
+    "原建立投票欄位尚未支援或缺失；原請求保留，不能重試"
+  ],
+  "[\"LEGACY_POLL_CREATE_UNSUPPORTED\",\"原建立識別尚未支援；原請求保留\"]": [
+    "原建立识别尚未支援；原请求保留",
+    "原建立識別尚未支援；原請求保留"
+  ],
   "[\"LEGACY_POLL_REVIEW_CHANGED\",\"原投票核對資料已變更；請重新檢查後確認\"]": [
     "原投票核对资料已变更；请重新检查后确认",
     "原投票核對資料已變更；請重新檢查後確認"
@@ -540,6 +556,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "原操作编号与内容不符，请保留原纪录；不能重试不同内容",
     "原操作編號與內容不符，請保留原紀錄；不能重試不同內容"
   ],
+  "[\"LEGACY_REQUEST_CONFLICT\",\"原操作編號與內容不符；原請求保留\"]": [
+    "原操作编号与内容不符；原请求保留",
+    "原操作編號與內容不符；原請求保留"
+  ],
   "[\"LEGACY_REQUEST_GONE\",\"原活動已移除，不能重試款項操作\"]": [
     "原活动已移除，不能重试款项操作",
     "原活動已移除，不能重試款項操作"
@@ -547,6 +567,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"LEGACY_REQUEST_NICKNAME\",\"請先設定稱呼，再核對原請求\"]": [
     "请先设定称呼，再核对原请求",
     "請先設定稱呼，再核對原請求"
+  ],
+  "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執不是建立投票結果；原請求保留\"]": [
+    "原回执不是建立投票结果；原请求保留",
+    "原回執不是建立投票結果；原請求保留"
   ],
   "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執投票與原請求不一致，請保留並核對原紀錄\"]": [
     "原回执投票与原请求不一致，请保留并核对原纪录",
@@ -559,6 +583,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執無法解析，請保留並核對原紀錄\"]": [
     "原回执无法解析，请保留并核对原纪录",
     "原回執無法解析，請保留並核對原紀錄"
+  ],
+  "[\"LEGACY_REQUEST_RESULT_MISMATCH\",\"原回執無法解析；原請求保留\"]": [
+    "原回执无法解析；原请求保留",
+    "原回執無法解析；原請求保留"
   ],
   "[\"LEGACY_REQUEST_UNSUPPORTED\",\"原款項欄位尚未支援或缺失；原請求保留，不能重試\"]": [
     "原款项栏位尚未支援或缺失；原请求保留，不能重试",

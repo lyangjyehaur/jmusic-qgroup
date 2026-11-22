@@ -26,7 +26,7 @@ export function LegacyAuthoringConversion({viewer,inventory,row,validate,refresh
   }
   async function reconcile(){
     if(!mapped||busy)return;setBusy(true);setMessage('');
-    try{const count=await reconcileAuthoringRequests(row,mapped,inventory.epoch,async()=>{await validate();},()=>active.current);if(active.current){setMessage(count?uiText("已保全同一建立識別的後續請求，原請求未重送。"):uiText("沒有未核對的同一建立請求。"));await refresh();}}
+    try{const count=await reconcileAuthoringRequests(row,mapped,inventory.epoch,async()=>{await validate();},()=>active.current);if(active.current){setMessage(count?uiText("已保全同一建立識別的後續請求，原請求未重送，仍須逐筆核對結果。"):uiText("沒有未核對的同一建立請求。"));await refresh();}}
     catch(failure){if(active.current)setMessage(failure instanceof Error?errorText(failure):uiText("核對失敗，原紀錄保留。"));}finally{if(active.current)setBusy(false);}
   }
   const mapped=inventory.mappings.find(m=>m.id===row.id);
@@ -34,7 +34,7 @@ export function LegacyAuthoringConversion({viewer,inventory,row,validate,refresh
   if(!decoded)return <Notice>此稿不能轉換：{error}</Notice>;
   return <div className="legacy-conversion">{!decoded.value.timezone&&<div className="account-field"><label>原 IANA 時區<input value={zone} placeholder="Asia/Taipei" disabled={busy} aria-describedby={zoneHelp} onChange={e=>{setZone(e.target.value);setPlan(null);setConfirm(false);}}/></label><Text id={zoneHelp}>原稿未保存時區；時間轉換需填寫原裝置使用的時區。</Text></div>}
     <Button variant="secondary" disabled={busy} onClick={()=>void prepare()}>檢查此舊稿的轉換</Button>
-    {plan&&<Notice>{plan.source.kind==='activity'?'將帶入活動表單；已建立活動仍須核對最新安排。':'候選按原順序帶入；已建立投票只保留後續稿，不能重建。'}<ConversionPreview plan={plan}/>{plan.rows.length>1&&<Text>另有 {plan.rows.length-1} 筆同一原稿版本或建立請求一併保全；原請求不會重送。</Text>}{plan.pending?<Text>目的表單有待確認操作，不能覆寫；請先確認原結果。</Text>:<>{plan.previous!==null&&plan.previous!==plan.raw&&<label className="consent"><input type="checkbox" disabled={busy} checked={preserve} onChange={e=>setPreserve(e.target.checked)}/>保全目的表單的現有原稿，再採用此舊稿</label>}<label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>已核對原資料、結果與時區；只帶入表單，尚未送出</label><Button disabled={busy||!confirm||plan.previous!==null&&plan.previous!==plan.raw&&!preserve} onClick={()=>void adopt()}>保全並帶入新版表單</Button></>}</Notice>}
+    {plan&&<Notice>{plan.source.kind==='activity'?'將帶入活動表單；已建立活動仍須核對最新安排。':'候選按原順序帶入；已建立投票只保留後續稿，不能重建。'}<ConversionPreview plan={plan}/>{plan.rows.length>1&&<Text>另有 {plan.rows.length-1} 筆同一原稿版本或建立請求一併保全；原請求須逐筆核對，操作限制保留。</Text>}{plan.pending?<Text>目的表單有待確認操作，不能覆寫；請先確認原結果。</Text>:<>{plan.previous!==null&&plan.previous!==plan.raw&&<label className="consent"><input type="checkbox" disabled={busy} checked={preserve} onChange={e=>setPreserve(e.target.checked)}/>保全目的表單的現有原稿，再採用此舊稿</label>}<label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>已核對原資料、結果與時區；只帶入表單，尚未送出</label><Button disabled={busy||!confirm||plan.previous!==null&&plan.previous!==plan.raw&&!preserve} onClick={()=>void adopt()}>保全並帶入新版表單</Button></>}</Notice>}
     {message&&<Notice>{message}</Notice>}{destination&&<Link to={destination}>開啟已轉換原稿</Link>}
   </div>;
 }

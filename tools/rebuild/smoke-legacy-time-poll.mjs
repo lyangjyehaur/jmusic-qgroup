@@ -43,6 +43,22 @@ def transport(path,body):
  return True,0,dict(id='SYNTHETIC_ONLY')
 api.post.side_effect=transport;consumer=worker.OutboxWorker(config,api)
 print(json.dumps(dict(first=consumer.poll_once(),second=consumer.poll_once(),calls=[dict(path=c.args[0],body=c.args[1]) for c in api.post.call_args_list])))`;
+ const recoveredCreations=[];
+ for(const mode of ['date','exact']){
+  const intent=randomBytes(8).toString('hex'),canonical=hash('create time-poll '+intent),request={method:'POST',path:'/api/time-polls',requestKey:mode==='date'?canonical:randomBytes(16).toString('hex'),data:{title:'合成原建立 '+mode,category:'约K',location:'合成場地',capacity:4,timezone:'Asia/Taipei',deadline:'2099-12-10T00:00:00Z',time_mode:mode,duration_hours:mode==='date'?'original ignored field':4,client_intent:intent,options:mode==='date'?[{date:'2099-12-11'},{date:'2099-12-12'}]:[{starts_at:'2099-12-11T18:00:00+08:00'},{starts_at:'2099-12-12T18:00:00+08:00'}]}};
+  const before=row('SELECT * FROM time_polls'),review=await post('/api/v2/me/legacy-requests/time-poll-create/inspect',request);assert.equal(review.state,'retryable');assert.deepEqual(row('SELECT * FROM time_polls'),before);assert(review.group_preview.includes('（建立後的投票連結）'));
+  const body={...request,confirm:true,recovery_token:review.recovery_token},done=await post('/api/v2/me/legacy-requests/time-poll-create/retry',body);assert.equal(done.state,'committed');const id=done.receipt.target.id;
+  assert.equal(row('SELECT * FROM events').length,0);assert.equal(row('SELECT * FROM attendees').length,0);assert.equal(row('SELECT * FROM time_poll_options WHERE poll_id=?',id).length,2);
+  const oldReader=python(`import json,socket,sqlite3,sys
+sys.path.insert(0,sys.argv[1]);socket.socket=lambda *a,**k:(_ for _ in ()).throw(AssertionError('No network'))
+from qgroup_core import time_polls
+db=sqlite3.connect('file:'+sys.argv[2]+'?mode=ro',uri=True);db.row_factory=sqlite3.Row
+receipt=db.execute('SELECT response_status,response_json FROM request_results WHERE request_key=?',(sys.argv[3],)).fetchone();assert receipt['response_status']==201
+print(json.dumps(time_polls.serialize(db,time_polls.get(db,json.loads(receipt['response_json'])['id']),'alice')))`,request.requestKey);assert.equal(oldReader.id,id);assert.equal(oldReader.time_mode,mode);
+  const snapshot=JSON.stringify(['time_polls','time_poll_options','time_poll_history','bot_outbox','request_results'].map(t=>row('SELECT * FROM '+t)));assert.equal((await post('/api/v2/me/legacy-requests/time-poll-create/retry',body)).state,'committed');assert.equal(JSON.stringify(['time_polls','time_poll_options','time_poll_history','bot_outbox','request_results'].map(t=>row('SELECT * FROM '+t))),snapshot);
+  const alias=await post('/api/v2/me/legacy-requests/time-poll-create/inspect',{...request,requestKey:randomBytes(16).toString('hex')});assert.deepEqual(alias,{state:'existing',target:{kind:'poll',id}});recoveredCreations.push({id,body});
+ }
+ const creationNotices=python(worker);assert.equal(creationNotices.first.sent,2);assert.equal(creationNotices.second.claimed,0);assert.equal(creationNotices.calls.length,2);for(const creation of recoveredCreations)assert(creationNotices.calls.some(c=>JSON.stringify(c.body).includes('/?poll='+creation.id)));
  let sentPolls=0;
  const results=[];
  for(const mode of ['exact','date']) {
@@ -68,8 +84,8 @@ print(json.dumps(time_polls.serialize(db,time_polls.get(db,receipt['id']),'alice
   results.push({id,event:final.event_id,body:b});
  }
  const consumed=python(worker);assert.equal(consumed.first.sent,2);assert.equal(consumed.second.claimed,0);assert.equal(consumed.calls.length,2);
- const saved=row('SELECT * FROM bot_outbox');for(const r of results)assert((await post('/api/v2/me/legacy-requests/time-poll/retry',r.body)).committed);assert.deepEqual(row('SELECT * FROM bot_outbox'),saved);assert.equal(row('SELECT * FROM events').length,2);assert.equal(row('SELECT * FROM request_results').length,7);
+ const saved=row('SELECT * FROM bot_outbox');for(const r of results)assert((await post('/api/v2/me/legacy-requests/time-poll/retry',r.body)).committed);assert.deepEqual(row('SELECT * FROM bot_outbox'),saved);assert.equal(row('SELECT * FROM events').length,2);assert.equal(row('SELECT * FROM request_results').length,10);assert.equal(row('SELECT * FROM time_polls').length,4);
  child.kill('SIGTERM');assert.equal((await closed).code,0,logs);child=undefined;
  for(const pin of runtimePins)assert.equal(hash(readFileSync('.rebuild-dist/'+pin.path)),pin.sha256);for(const pin of sourcePins)assert.equal(hash(readFileSync(join(source,pin.path))),pin.sha256);
- console.log(JSON.stringify({version:1,pythonCommit:commit,sourcePins,runtimePins,compiledRecoveryVerified:true,originalReceiptReaderVerified:true,activityCreates:2,ownerSignups:2,voterNotifications:2,originalPollNoticeSent:sentPolls,originalActivityNoticesSent:2,originalReceipts:5,nativeCreateReceipts:2,originalReplayWrites:0,networkTransport:'denied',actualQQ:false,releaseEligible:false,scope:'none',deployment:'none'}));
+ console.log(JSON.stringify({version:1,pythonCommit:commit,sourcePins,runtimePins,compiledRecoveryVerified:true,originalReceiptReaderVerified:true,activityCreates:2,ownerSignups:2,voterNotifications:2,originalPollNoticeSent:sentPolls+2,originalPollCreates:2,originalCreationReceipts:2,creationAliasReceipts:1,originalActivityNoticesSent:2,originalReceipts:7,nativeCreateReceipts:2,originalReplayWrites:0,networkTransport:'denied',actualQQ:false,releaseEligible:false,scope:'none',deployment:'none'}));
 }finally{if(child){child.kill('SIGTERM');await closed;}rmSync(root,{recursive:true,force:true});}

@@ -1,3 +1,4 @@
+export * from './legacy-time-poll-create';
 export * from './legacy-time-poll';
 export * from './legacy-detailed-settlement';
 import { ErasureProof } from './erasure-proof';

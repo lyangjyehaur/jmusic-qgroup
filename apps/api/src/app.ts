@@ -1,3 +1,4 @@
+import { registerLegacyPollCreation } from './legacy-time-poll-create';
 import { ActivityPath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import { registerHttpResponseValidation } from './http-responses';
@@ -187,6 +188,7 @@ export function createApp(options: AppOptions) {
     registerLegacyLocal(app, db, security);
     registerLegacyRooms(app, db, security, now);
     registerLegacyTimePoll(app, db, security, now, options.activityBot);
+    registerLegacyPollCreation(app, db, security, now, options.activityBot);
     registerLegacyDetailedSettlement(app, db, security, now, options.activityBot);
     registerLegacyFinance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerCreateIntents(app, db, security);

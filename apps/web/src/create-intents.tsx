@@ -10,7 +10,7 @@ import { Notice, sessionQuery } from './shared';
 import { deviceDraftEpoch } from './draft-store';
 
 /** Read the current target without retiring the local draft or replaying a create. */
-export function CreateIntentLookup({viewer,kind,intent,disabled=false,validate}:{viewer:Member;kind:'activity'|'poll';intent:string;disabled?:boolean;validate?:()=>Promise<void>}) {
+export function CreateIntentLookup({viewer,kind,intent,disabled=false,validate,onExisting}:{viewer:Member;kind:'activity'|'poll';intent:string;disabled?:boolean;validate?:()=>Promise<void>;onExisting?:(id:string)=>void}) {
   const client=useQueryClient(),active=useRef(false);
   const [epoch]=useState(()=>validate?Promise.resolve(undefined):deviceDraftEpoch().catch(()=>undefined));
   const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[result,setResult]=useState<ReturnType<typeof CreateIntentResult.parse>|null>(null);
@@ -29,6 +29,7 @@ export function CreateIntentLookup({viewer,kind,intent,disabled=false,validate}:
       const fresh=await current();if(!active.current)return;
       const found=await authHttp(fresh).requestContract('POST /api/v2/me/create-intents/view', { body: {kind,intent} });
       await current();if(!active.current)return;
+      if(found.state==='existing')onExisting?.(found.id);
       setResult(found);setMessage(found.state==='missing'?uiText("尚未查到回執，不能據此認定未建立；原稿保留。"):kind==='poll'?uiText("原投票已建立，建立後不能改寫候選；本機後續編輯仍保留。"):uiText("原活動已建立；本機後續編輯仍保留，請開啟原活動核對。"));
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法查詢原結果，請保留原稿。"));}
     finally{if(active.current)setBusy(false);}
