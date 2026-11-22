@@ -5,14 +5,21 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+    "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
+      "C01",
+      "C02",
+      "C03",
       "C04",
       "C05",
-      "C07"
+      "C06",
+      "C07",
+      "A12",
+      "A13",
+      "A15"
     ],
-    "latest_full_regression_commit": "d5363bde9505b5cfb28417a36010ff3415808e30"
+    "latest_full_regression_commit": "03d364f89b647315f4b8728f7c264610398d076b"
   },
   "capabilities": [
     {
@@ -4933,7 +4940,8 @@
         "apps/api/testsupport/pending-operations.test.ts",
         "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
@@ -4942,24 +4950,27 @@
         "apps/web/tests/durable-music-shouts.spec.ts",
         "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts",
         "apps/web/tests/durable-music-shouts.spec.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
         "docs/unified-rebuild/44-music-shouts-checkpoint.md",
         "apps/web/tests/durable-music-shouts.spec.ts",
         "docs/unified-rebuild/78-durable-music-shouts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "找搭子文字及原 UUID／body／profile／epoch 已持久保存；關頁收件匣查回、交易確認、拒絕／限流、分頁保全、下載與無訊號成分刪除隔離已測（檢查點 78）。原生發布、140 code point／Python 空白、24 小時邊界、帳號隔離草稿及同操作編號恢復已隔離實作；跨程序併發發布／同 UUID 衝突、會員及管理身份邊界已補驗（檢查點 199）；完整副本對帳、舊入口 adapter、實際 bot 組合與 QQ WebView 待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "C02",
@@ -4977,28 +4988,32 @@
       ],
       "behavior_evidence": [
         "packages/domain/src/music-shouts.test.ts",
-        "apps/api/src/music-shouts.test.ts"
+        "apps/api/src/music-shouts.test.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
         "docs/unified-rebuild/44-music-shouts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "會員列表／詳情、目前稱呼／權威聯絡及來源、複製失敗退路、成分／比較安全返回已隔離實作；完整舊入口 adapter、正式來源與實際版本組合待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "C03",
@@ -5016,28 +5031,32 @@
       ],
       "behavior_evidence": [
         "packages/domain/src/music-shouts.test.ts",
-        "apps/api/src/music-shouts.test.ts"
+        "apps/api/src/music-shouts.test.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
         "apps/api/src/music-shouts.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
         "docs/unified-rebuild/44-music-shouts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "30 天浮點邊界、穩定歷史分頁／500 則、Python 差分、刪除與裁切清原副本、schema 11 遷移已隔離實作；正式副本完整對帳、備份／還原與舊入口待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "C04",
@@ -5123,21 +5142,25 @@
       ],
       "behavior_evidence": [
         "apps/web/tests/pwa.spec.ts",
-        "tools/rebuild/smoke-build.mjs"
+        "tools/rebuild/smoke-build.mjs",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/web/tests/pwa.spec.ts"
+        "apps/web/tests/pwa.spec.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/web/tests/pwa.spec.ts"
+        "apps/web/tests/pwa.spec.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/pwa.spec.ts",
         "docs/unified-rebuild/62-pwa-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "統一安裝身分、明確啟用且不自動重載、多視窗舊快取／分塊保全、離線私密隔離、下載失敗與舊 worker 自然退役已有本機瀏覽器證據。真實既有安裝者、手機實機與多平台升級、全部語系及正式切換／回退仍待 P6／P7 驗收；IndexedDB／舊草稿遷移未完成。未部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "C07",
@@ -5685,7 +5708,8 @@
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/shouts-migration.test.ts",
@@ -5693,7 +5717,8 @@
         "apps/api/src/import-snapshot.test.ts",
         "apps/api/src/admin-operations.test.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-shouts.test.ts",
@@ -5701,17 +5726,19 @@
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "apps/api/testsupport/shout-permission-matrix.test.ts",
-        "docs/unified-rebuild/199-shout-permissions-checkpoint.md"
+        "docs/unified-rebuild/199-shout-permissions-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-shouts.spec.ts",
         "docs/unified-rebuild/44-music-shouts-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理活躍／歷史分頁、權限／revision、明確刪除、原回執安全恢復及不複製作者內容的紀錄已隔離實作；跨程序刪除只提交一次、原副本及 migration map 清理、管理／救援撤權及回執隔離已補驗（檢查點 199）；完整備份／還原、舊入口與實際版本組合待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A13",
@@ -5733,28 +5760,32 @@
         "apps/web/tests/appearance.spec.ts",
         "tools/rebuild/smoke-build.mjs",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/wallpapers.test.ts",
         "apps/api/src/import-snapshot.test.ts",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/appearance.test.ts",
         "apps/web/tests/appearance.spec.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/appearance.spec.ts",
         "docs/unified-rebuild/47-appearance-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理 CRUD、排序／間隔、PNG／JPEG／WebP 完整解碼、2 MiB 邊界、交易回滾、未知結果與 schema 13 已隔離驗證；成套備份／配對恢復、正式資料卷與舊 adapters／實際版本組合待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A14",
@@ -5857,26 +5888,30 @@
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/durable-admin.spec.ts",
-        "docs/unified-rebuild/69-durable-admin-checkpoint.md"
+        "docs/unified-rebuild/69-durable-admin-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/durable-admin.spec.ts",
-        "apps/web/tests/durable-drafts.spec.ts"
+        "apps/web/tests/durable-drafts.spec.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts",
-        "apps/web/tests/durable-admin.spec.ts"
+        "apps/web/tests/durable-admin.spec.ts",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/durable-admin.spec.ts",
         "docs/unified-rebuild/69-durable-admin-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "會員角色登出清除此裝置會員及管理、救援管理登出保留會員登入、未知結果查狀態不重送，以及管理原稿／保全版本清除失敗重試、其他帳號本機原稿保留、無分頁訊號世代阻擋已隔離驗證。其餘管理 mutations 與含憑證原稿仍待遷移；其他實體裝置、全部管理入口、正式版本組合及回退驗收未完成，維持 in_progress，不構成切換核准。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B01",

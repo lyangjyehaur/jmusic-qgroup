@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 3,
+  "full_parents_accepted": 10,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221"
@@ -1451,8 +1451,8 @@
     },
     {
       "capability_id": "C01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "140 Unicode codepoints、24小時邊界後可重新發布；server拒绝不是只靠UI。"
       ],
@@ -1460,31 +1460,34 @@
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts",
         "packages/domain/src/music-shouts.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "C02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "成分會員權限、發布者成分往返、QQ來源標明自填，clipboard失敗可手選。"
       ],
       "test_files": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "C03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "30天邊界歸檔、歷史排序與分頁保完整；新歸檔超500才prune對應原引用。"
       ],
       "test_files": [
         "apps/api/src/music-shouts.test.ts",
         "apps/web/tests/music-shouts.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "C04",
@@ -1513,14 +1516,15 @@
     },
     {
       "capability_id": "C06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "舊/music/sw.js等舊clients關閉才退役，保其草稿及其他cache；新版不cache API/auth/私有導航。"
       ],
       "test_files": [
         "apps/web/tests/pwa.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "C07",
@@ -1667,26 +1671,28 @@
     },
     {
       "capability_id": "A12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "管理員可查active/history，删除原副本及archive引用，只保最小audit與ack、不留publisher私資料。"
       ],
       "test_files": [
         "apps/api/src/music-shouts.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "A13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "PNG/JPEG/WebP單張2MiB原bytes、排序/開关/config/删除；格式/路徑安全，配對備份保資產。"
       ],
       "test_files": [
         "apps/api/src/admin-backups.test.ts",
         "apps/api/src/appearance.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "A14",
@@ -1701,15 +1707,16 @@
     },
     {
       "capability_id": "A15",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "憑證方式只清rescue，帳號方式清當前裝置授權及跨tab私稿，其他裝置維持。"
       ],
       "test_files": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md"
     },
     {
       "capability_id": "B01",
@@ -2150,7 +2157,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2180,6 +2187,83 @@
       "execution": "local macOS Chrome; 12 distinct related cases passed, three new cases rerun with explicit motion assertions; zero Playwright retry/skip/flaky",
       "local_parent_accepted": true,
       "real_phone_keyboard_proved": false
+    },
+    {
+      "capability_id": "C01",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "C02",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "C03",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "C06",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "A12",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "A13",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "A15",
+      "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior reviewed against source, concrete test assertions and relevant formal-copy evidence",
+      "current_runtime_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+      "source_pins_in_supplemental_review": 51,
+      "current_pwa_admin_browser_cases": 17,
+      "new_admin_device_unit_cases": 2,
+      "actual_qq_or_real_phone": false
     }
   ],
   "legacy_http_rehearsal": {
@@ -2196,17 +2280,19 @@
     "commit": "03d364f89b647315f4b8728f7c264610398d076b",
     "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45053293001",
     "image": "passed; raw artifacts downloaded and checked",
-    "full_unit_browser": "pending terminal result",
+    "full_unit_browser": "passed; raw original artifacts checked in checkpoint 222",
     "actual_online_bot_image": false
   },
   "latest_full_regression": {
-    "commit": "d5363bde9505b5cfb28417a36010ff3415808e30",
-    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45049853048",
+    "commit": "03d364f89b647315f4b8728f7c264610398d076b",
+    "run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45053293001",
     "unit_passed": 4063,
-    "browser_passed": 1043,
+    "browser_passed": 1044,
     "jobs": "all successful; raw unit/browser/image artifacts independently checked",
     "browser_skip_retry_flaky": 0,
-    "includes_checkpoint_221_mobile_tools": false
+    "includes_checkpoint_220_cross_domain_theme_case": true,
+    "includes_checkpoint_221_mobile_tools": false,
+    "includes_checkpoint_222_admin_device_tests": false
   },
   "legacy_http_forward_deletion_rehearsal": {
     "checkpoint": "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
@@ -2220,5 +2306,18 @@
     "proof_claim_rows_for_this_copy": 0,
     "full_rollback_acceptance": false,
     "recovery_required": true
+  },
+  "latest_shout_parent_source_verification": {
+    "checkpoint": "docs/unified-rebuild/222-shouts-pwa-and-admin-parent-acceptance.md",
+    "original_active_shouts": 1,
+    "original_history_shouts": 0,
+    "time_points": 4,
+    "read_calls": 16,
+    "isolated_publish_calls": 8,
+    "independent_moderation_unchanged_typed_tables": 89,
+    "pre_deletion_paired_backup_images": 4,
+    "original_source_all_tables_and_image_unchanged": true,
+    "production_writes": false,
+    "qq_sent": false
   }
 }

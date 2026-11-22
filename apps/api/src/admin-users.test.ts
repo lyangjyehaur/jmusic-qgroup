@@ -131,6 +131,26 @@ describe('administrator authority, directory, roles and private metadata', () =>
     expect((await s.get(s.alice, '/admin/session')).statusCode).toBe(401); expect(s.db.prepare('SELECT * FROM browser_accounts').all()).toEqual([]);
     expect(s.db.prepare('SELECT * FROM admin_sessions').all()).toEqual([]);
   });
+  it.each(['account', 'credential'] as const)('%s logout preserves another device of the same member and its independent management authority', async method => {
+    const s = await setup(), account = method === 'account' ? 'alice' : 'bob', first = method === 'account' ? s.alice : s.bob;
+    const token = 'synthetic-second-device-' + randomUUID(), tokenHash = hash(token), cookie = 'kanban_session=' + token;
+    s.db.prepare('INSERT INTO browser_sessions VALUES(?,?,?)').run(tokenHash, account, stamp);
+    const viewer = (await s.app.inject({ url: '/api/v2/session', headers: { cookie } })).json(), second = { cookie, viewer };
+    await s.rescue(first); await s.rescue(second);
+    s.db.prepare('INSERT INTO browser_accounts VALUES(?,?,?)').run(tokenHash, 'bob', stamp);
+    const memberBefore = (await s.get(second, '/session')).json(), adminBefore = (await s.get(second, '/admin/session')).json();
+    const adminToken = hash(second.cookie.split('kanban_admin=')[1]!.split(';')[0]!), secondProof = s.db.prepare('SELECT * FROM admin_sessions WHERE token_hash=?').get(adminToken);
+    expect(adminBefore.authMethod).toBe(method);
+    expect((await s.command(first, '/admin/logout', { confirm: true })).json()).toEqual({ logoutAccount: method === 'account' });
+    expect((await s.get(first, '/admin/session')).statusCode).toBe(401);
+    expect((await s.get(first, '/session')).json().authenticated).toBe(method === 'credential');
+    expect((await s.get(second, '/session')).json()).toEqual(memberBefore);
+    expect((await s.get(second, '/admin/session')).json()).toEqual(adminBefore);
+    expect((await s.get(second, '/admin/users')).statusCode).toBe(200);
+    expect(s.db.prepare('SELECT * FROM admin_sessions WHERE token_hash=?').get(adminToken)).toEqual(secondProof);
+    expect(s.db.prepare('SELECT user_id FROM browser_accounts WHERE token_hash=?').all(tokenHash)).toEqual([{ user_id: 'bob' }]);
+    expect(s.db.prepare('SELECT user_id FROM browser_sessions WHERE token_hash=?').get(tokenHash)).toEqual({ user_id: account });
+  });
   it('paginates immutable role history without exposing actor credentials and rejects stale account scopes', async () => {
     const s = await setup();
     const insert = s.db.prepare('INSERT INTO admin_role_history(user_id,actor_ref,before_value,after_value,revision,created_at) VALUES(?,?,?,?,?,?)');
