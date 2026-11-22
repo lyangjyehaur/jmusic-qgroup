@@ -50,4 +50,4 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 
 單元完整回歸會啟動 Python 原行為讀取器；建議單一 worker。瀏覽器回歸自行管理 5082 端口，執行前先停止手動預覽，且先建置。macOS 有 Chrome 時預設使用 Chrome；其他環境先執行 `npx playwright install chromium`。bot 測試使用固定線上來源和受控投遞，不需要正式憑證。
 
-最終本機結果見[第 214 批](214-local-acceptance-checkpoint.md)。P6 的完整正式副本對帳、新寫入回退演練及實際版本組合仍須驗收，不由本機合成預覽代替。真實 QQ／WebView 的平台驗收另行記錄；P7 正式切換不在本輪範圍。
+第 214 批完整本機與 Linux 結果已通過；[第 215 批](215-device-grant-isolation-checkpoint.md)修正裝置授權撤銷的成分找回隔離，相關 44 項及瀏覽器 31 項通過，本批完整候選回歸仍待核對。P6 的完整正式副本對帳、新寫入回退演練及實際版本組合仍須驗收，不由本機合成預覽代替。真實 QQ／WebView 的平台驗收另行記錄；P7 正式切換不在本輪範圍。

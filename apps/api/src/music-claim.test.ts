@@ -176,6 +176,38 @@ describe('legacy PIN and fresh QQ music claims', () => {
     const devices = (await s.app.inject({url:'/api/v2/me/devices',headers:s.headers(original)})).json(); const target = devices.devices.find((row:{current:boolean})=>!row.current);
     expect((await s.post(original,'/me/devices/revoke',{deviceId:target.id,confirm:true})).statusCode).toBe(200); expect(s.db.prepare('SELECT 1 FROM music_claim_intents WHERE id=?').get(remoteClaim.claimId)).toBeUndefined();
   });
+  for (const stage of ['pending', 'authorized', 'completed'] as const) it('preserves another account '+stage+' music claim when only an inactive device grant is revoked', async () => {
+    const s = await setup(), alice = await s.browser('kanban_session=fixture-alice');
+    let bob = await s.browser('kanban_session=fixture-bob');
+    const link = await s.post(alice, '/me/devices/link', { confirm: true, authorizeOwnDevice: true });
+    expect(link.statusCode, link.body).toBe(200);
+    expect((await s.post(bob, '/device-links/accept', { token: link.json().token, confirm: true, acceptAccess: true })).statusCode).toBe(200);
+    const started = await s.start(bob); expect(started.statusCode, started.body).toBe(200);
+    const claim = started.json();
+    if (stage !== 'pending') {
+      const auth = await s.authorize(bob, claim.claimId, 'bob-grant-revocation');
+      expect(auth.done.statusCode, auth.done.body).toBe(200); bob = auth.next;
+      if (stage === 'completed') expect((await s.finish(bob, claim.claimId)).json().status).toBe('completed');
+    }
+    bob = await s.browser(bob.cookie);
+    const status = await s.status(bob); expect(status.status).toBe(stage);
+    const tables = ['users', 'music_claim_intents', 'music_profiles', 'music_selections', 'external_identities', 'login_attempts', 'bot_outbox', 'bot_settings'];
+    const snapshot = () => tables.map(table => s.db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all());
+    const before = snapshot();
+    const devices = await s.app.inject({ url: '/api/v2/me/devices', headers: s.headers(alice) });
+    const remote = devices.json().devices.find((device: { current: boolean }) => !device.current);
+    expect(remote).toBeDefined();
+    const revoked = await s.post(alice, '/me/devices/revoke', { deviceId: remote.id, confirm: true });
+    expect(revoked.statusCode, revoked.body).toBe(200);
+    expect((await s.browser(bob.cookie)).viewer).toEqual(bob.viewer);
+    expect((await s.post(bob, '/me/accounts/switch', { scope: alice.viewer.scope, confirm: true })).statusCode).toBe(403);
+    expect(await s.status(bob)).toEqual(status); expect(snapshot()).toEqual(before);
+    if (stage === 'pending') {
+      const auth = await s.authorize(bob, claim.claimId, 'bob-grant-revocation');
+      expect(auth.done.statusCode, auth.done.body).toBe(200); bob = auth.next;
+    }
+    expect((await s.finish(bob, claim.claimId)).json().status).toBe('completed');
+  });
   it('persists QQ and IP limits across process restarts and never trusts spoofed forwarded IP headers', async () => {
     const folder = mkdtempSync(join(tmpdir(),'qgroup-pin-limits-')); const path = join(folder,'state.sqlite3');
     try {

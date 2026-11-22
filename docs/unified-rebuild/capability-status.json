@@ -349,13 +349,16 @@
       ],
       "behavior_evidence": [
         "apps/api/src/account-devices.test.ts",
-        "apps/api/testsupport/device-link-record.test.ts"
+        "apps/api/testsupport/device-link-record.test.ts",
+        "apps/api/src/music-claim.test.ts",
+        "docs/unified-rebuild/215-device-grant-isolation-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/account-devices.test.ts"
+        "apps/api/src/account-devices.test.ts",
+        "apps/api/src/music-claim.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/devices.spec.ts",
@@ -366,7 +369,7 @@
         "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "已實作裝置列出、二次確認撤權、排除目前裝置、保留其他帳號／意圖、帳號歷史分頁與交易回滾；裝置舊入口、完整恢復／還原與實際版本組合驗收待完成。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
+      "remaining": "已實作裝置列出、二次確認撤權、排除目前裝置、保留其他帳號／意圖、帳號歷史分頁與交易回滾；裝置舊入口、完整恢復／還原與實際版本組合驗收待完成。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。 第 215 批修正非目前帳號的裝置授權撤銷會誤刪另一帳號成分找回；pending／authorized／completed 三項均保全原意圖並可續用，主動 session 撤銷仍失效。完整正式副本與實際版本／平台驗收保持未完成。"
     },
     {
       "capability_id": "I10",

@@ -82,10 +82,10 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
     const target = access(viewer.id).find(row => deviceId(viewer.id, row.token_hash) === selected);
     if (!target) throw withApiError(new DomainError('DEVICE_NOT_FOUND', '裝置授權不存在或已撤銷，請重新讀取', 404));
     if (target.token_hash === viewer.tokenHash) throw withApiError(new DomainError('CURRENT_DEVICE', '不能在這裡撤銷目前裝置，請使用登出', 400));
-    clearMusicClaims(db, target.token_hash);
     db.prepare('DELETE FROM browser_accounts WHERE token_hash=? AND user_id=?').run(target.token_hash, viewer.id);
     const current = db.prepare('SELECT user_id FROM browser_sessions WHERE token_hash=?').get(target.token_hash) as { user_id: string } | undefined;
     if (current?.user_id === viewer.id) {
+      clearMusicClaims(db, target.token_hash);
       const alternate = db.prepare(`SELECT b.user_id FROM browser_accounts b JOIN users u ON u.id=b.user_id WHERE b.token_hash=?
         AND NOT EXISTS(SELECT 1 FROM privacy_requests p WHERE p.user_id=b.user_id) ORDER BY b.created_at,b.user_id LIMIT 1`).get(target.token_hash) as { user_id: string } | undefined;
       if (alternate) db.prepare('UPDATE browser_sessions SET user_id=? WHERE token_hash=?').run(alternate.user_id, target.token_hash);
@@ -93,6 +93,8 @@ export function registerAccountDevices(app: FastifyInstance, db: DB, security: S
       db.prepare('DELETE FROM auth_requests WHERE token_hash=?').run(target.token_hash);
       db.prepare("UPDATE login_attempts SET status='failed',union_id='' WHERE token_hash=? AND status IN ('pending','exchanging','verified')").run(target.token_hash);
     } else {
+      // Keep the active account's recovery and authorization when removing only another grant.
+      db.prepare('DELETE FROM music_claim_intents WHERE current_token_hash=? AND target_user_id=?').run(target.token_hash, viewer.id);
       db.prepare("UPDATE login_attempts SET status='failed',union_id='' WHERE token_hash=? AND user_id=? AND status IN ('pending','exchanging','verified')").run(target.token_hash, viewer.id);
     }
     db.prepare("UPDATE device_links SET status='revoked' WHERE user_id=? AND status='pending'").run(viewer.id);
