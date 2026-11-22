@@ -53,3 +53,5 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 最新固定候選 `4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1` 的 Linux unit 4,063 項、browser 1,043 項與映像驗證均通過，沒有略過或重試；另與實際匯出的線上 Python bot 映像完成隔離組合。最新授權副本的重複匯入、新寫入回退／forward、成分與看板歷史、原 bot 外部 bytes／mtime 恢復及離線封存見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。使用說明兩句後續修正另做相關建置／瀏覽器驗證；原完整 CI 不冒稱包含該修改。P6 尚須完成父項台帳審核及原 web／music／bot 的回退後成套操作與錯誤恢復，不由本機合成預覽代替。真實 QQ／WebView 的平台驗收另行記錄；P7 正式切換不在本輪範圍。
 
 第 220 批已補固定舊版 HTTP 操作及新寫入 forward、30 份封存歷史的最新刪除／恢復／新程序重啟驗證；C04 的深淺主題與未保存跨領域草稿保全完成本機父項審核。其餘完整台帳仍未通過，詳見[驗收記錄](220-legacy-http-and-parent-acceptance.md)。
+
+第 221 批補回頂部與手機保存列可視區避讓；C04、C05、C07 完成本機父項驗收。可在長頁保留未保存選擇後使用回頂部，再核對保存列與草稿。正式副本刪除後完整 forward／proof／source rebase、三階段各 97 表重複回復及再次封存已核對。d536 的完整 Linux unit／browser／image 終態通過；本批手機工具另行驗證，原 CI 不包含它。詳見[本批驗收](221-forward-deletion-and-mobile-tools.md)。

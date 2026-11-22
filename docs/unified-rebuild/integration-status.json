@@ -3,8 +3,9 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/220-legacy-http-and-parent-acceptance.md",
-    "full_parent_accepted": false
+    "checkpoint": "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+    "full_parent_accepted": false,
+    "latest_full_regression_commit": "d5363bde9505b5cfb28417a36010ff3415808e30"
   },
   "requirements": [
     {
@@ -25,12 +26,14 @@
         "packages/domain/src/music-search.test.ts",
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
-        "apps/api/src/unified-workflow.test.ts"
+        "apps/api/src/unified-workflow.test.ts",
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
       ],
       "permission_evidence": [
         "apps/api/src/search.test.ts",
         "tools/rebuild/schemas/http-access-review.json",
-        "apps/api/src/unified-workflow.test.ts"
+        "apps/api/src/unified-workflow.test.ts",
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
       ],
       "ux_evidence": [
         "apps/web/tests/global-search.spec.ts"
@@ -55,11 +58,13 @@
         "docs/unified-rebuild/202-shared-music-compute-checkpoint.md",
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
-        "apps/api/src/unified-workflow.test.ts"
+        "apps/api/src/unified-workflow.test.ts",
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
       ],
       "permission_evidence": [
         "docs/unified-rebuild/198-room-permissions-checkpoint.md",
-        "apps/api/src/unified-workflow.test.ts"
+        "apps/api/src/unified-workflow.test.ts",
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts"
@@ -86,11 +91,13 @@
         "docs/unified-rebuild/201-circle-isolation-checkpoint.md",
         "docs/unified-rebuild/202-shared-music-compute-checkpoint.md",
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
-        "docs/unified-rebuild/214-local-acceptance-checkpoint.md"
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
       ],
       "permission_evidence": [
         "docs/unified-rebuild/43-music-circles-checkpoint.md",
-        "apps/api/src/music-circle-freshness.test.ts"
+        "apps/api/src/music-circle-freshness.test.ts",
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-circles.spec.ts"
