@@ -7,18 +7,36 @@ import { exerciseRetainedPython } from './retained-python-scenarios.mjs';
 import { syntheticImageFixture } from './synthetic-image-fixture.mjs';
 
 const args = process.argv.slice(2);
-assert(args.length === 6 && args[0] === '--web-image' && args[2] === '--python-image' && args[4] === '--commit',
-  'Use --web-image <complete ID> --python-image <complete ID> --commit <complete SHA>');
+assert([6, 8].includes(args.length) && args[0] === '--web-image' && args[2] === '--python-image' && args[4] === '--commit'
+  && (args.length === 6 || args[6] === '--python-commit'),
+  'Use --web-image <complete ID> --python-image <complete ID> --commit <complete SHA> [--python-commit <reviewed complete SHA>]');
 const webImage = args[1], pythonImage = args[3], commit = args[5];
 assert([webImage, pythonImage].every(id => /^sha256:[a-f0-9]{64}$/.test(id)) && /^[a-f0-9]{40}$/.test(commit));
 assert.notEqual(webImage, pythonImage);
-const pythonCommit = '8da877857f163853c449474e168534e2e493121b';
+const reviewedSources = {
+  '8da877857f163853c449474e168534e2e493121b': 55,
+  '07defc429d619a7558ab7218372886f531813ae3': 52,
+};
+const pythonCommit = args[7] ?? '8da877857f163853c449474e168534e2e493121b';
+assert(Object.hasOwn(reviewedSources, pythonCommit), 'Unreviewed retained Python source');
 const hash = bytes => createHash('sha256').update(bytes).digest('hex');
 const harnessPaths = ['verify-retained-python-images.mjs', 'retained-python-scenarios.mjs', 'retained-python-recovery.mjs', 'retained-worker-handoff.mjs', 'native-outbox-fixture.mjs', 'synthetic-image-fixture.mjs'];
 const harnessPins = harnessPaths.map(name => {
   const path = 'tools/rebuild/' + name, bytes = readFileSync(new URL(name, import.meta.url));
   assert(bytes.equals(execFileSync('git', ['show', commit + ':' + path], { maxBuffer: 1024 * 1024 })), path);
   return { path, sha256: hash(bytes) };
+});
+// Independently pin the reviewed Git tree; matching an image's own manifest
+// alone cannot prove that omitted or changed source files are authentic.
+const pythonPaths = execFileSync('git', ['ls-tree', '-r', '--name-only', pythonCommit, '--', 'qgroup_core', 'qgroup_bot'], { encoding: 'utf8' }).trim().split('\n');
+assert.equal(pythonPaths.length, reviewedSources[pythonCommit]);
+const expectedPythonPins = pythonPaths.map(path => ({ path, sha256: hash(execFileSync('git', ['show', pythonCommit + ':' + path], { maxBuffer: 16 * 1024 * 1024 })) }));
+const probeInput = JSON.stringify({ pythonCommit, pythonSourcePins: expectedPythonPins, verificationCommit: commit,
+  verificationTree: execFileSync('git', ['rev-parse', commit + '^{tree}'], { encoding: 'utf8' }).trim(),
+  fixtureSha256: hash(execFileSync('git', ['show', commit + ':tools/rebuild/retained-python-fixture.py'], { maxBuffer: 1024 * 1024 })),
+  originalDockerfileSha256: hash(execFileSync('git', ['show', pythonCommit + ':Dockerfile'], { maxBuffer: 1024 * 1024 })),
+  retainedSourceKind: pythonCommit === '07defc429d619a7558ab7218372886f531813ae3'
+    ? 'observed-2026-11-22' : 'original-frozen-baseline',
 });
 const nativeFixturePath = fileURLToPath(new URL('./native-outbox-fixture.mjs', import.meta.url));
 const docker = (...argv) => execFileSync('docker', argv, { encoding: 'utf8', timeout: 30000,
@@ -42,15 +60,19 @@ const limits = ['--network', 'none', '--read-only', '--cap-drop', 'ALL', '--secu
 const sourceProbe = String.raw`
 import asyncio,hashlib,importlib.metadata,json,os,pathlib,socket,sys
 root=pathlib.Path('/app/original-python'); manifest=json.loads(pathlib.Path('/app/retained-source.json').read_text())
+expected=json.loads(sys.argv[1])
 actual=[]
 for path in sorted(root.rglob('*')):
     assert not path.is_symlink()
     if path.is_file(): actual.append(dict(path=str(path.relative_to(root)),sha256=hashlib.sha256(path.read_bytes()).hexdigest()))
-assert actual == manifest['pythonSourcePins']
-assert len(actual)==55 and manifest['pythonCommit']=='8da877857f163853c449474e168534e2e493121b'
+assert actual == manifest['pythonSourcePins'] == expected['pythonSourcePins']
+assert manifest['pythonCommit'] == expected['pythonCommit']
+assert manifest['verificationCommit'] == expected['verificationCommit']
+assert manifest['verificationTree'] == expected['verificationTree']
+assert manifest['retainedSourceKind'] == expected['retainedSourceKind']
 fixture=hashlib.sha256(pathlib.Path('/app/retained-python-fixture.py').read_bytes()).hexdigest()
-assert fixture == manifest['fixtureSha256']
-assert hashlib.sha256(pathlib.Path('/app/original-Dockerfile').read_bytes()).hexdigest() == manifest['originalDockerfileSha256']
+assert fixture == manifest['fixtureSha256'] == expected['fixtureSha256']
+assert hashlib.sha256(pathlib.Path('/app/original-Dockerfile').read_bytes()).hexdigest() == manifest['originalDockerfileSha256'] == expected['originalDockerfileSha256']
 assert manifest['dependency'] == dict(name='websockets',version='17.4')
 assert importlib.metadata.version('websockets') == '17.4'
 def denied(*_args, **_kwargs): raise AssertionError('Source probe cannot use network')
@@ -86,7 +108,7 @@ const interrupted = () => {
 process.once('SIGTERM', interrupted); process.once('SIGINT', interrupted);
 try {
   ownedContainers.push(id + '-source');
-  const source = JSON.parse(docker('run', '--rm', '--name', id + '-source', ...limits, '--entrypoint', 'python', pythonImage, '-c', sourceProbe));
+  const source = JSON.parse(docker('run', '--rm', '--name', id + '-source', ...limits, '--entrypoint', 'python', pythonImage, '-c', sourceProbe, probeInput));
   assert.equal(source.uid, 994); assert.equal(source.gid, 992); assert.equal(source.manifest.verificationCommit, commit);
   for (const v of [volume, authorityVolume, checkpointVolume]) {
     docker('volume', 'create', '--label', 'qgroup.rehearsal=true', v); volumes.push(v);
@@ -155,7 +177,7 @@ try {
   const scenario = await exerciseRetainedPython({ origin, rescue, rows, python, native, fetch: request });
   assert.equal(scenario.webRuntime.commit, commit); assert.equal(scenario.webRuntime.source, 'rehearsal');
   assert.equal(scenario.webRuntime.tree, source.manifest.verificationTree);
-  assert.deepEqual(JSON.parse(docker('exec', bot, 'python', '-c', sourceProbe)), source);
+  assert.deepEqual(JSON.parse(docker('exec', bot, 'python', '-c', sourceProbe, probeInput)), source);
   const afterRuntime = JSON.parse(docker('exec', web, 'node', '-e',
     "const fs=require('fs'),hash=b=>require('crypto').createHash('sha256').update(b).digest('hex');console.log(JSON.stringify(['api/start.mjs','api/database.mjs'].map(path=>({path,sha256:hash(fs.readFileSync('.rebuild-dist/'+path))}))))"));
   assert.deepEqual(afterRuntime, runtimePins);
@@ -186,7 +208,8 @@ try {
   result = { version: 1, commit, pythonCommit, imageCombination: { web: webImage, python: pythonImage },
     architecture: specs[0].Architecture, pythonSource: source, runtimePins, harnessPins, nativeFixtureMount, fixture, ...scenario, httpCalls, originalWorkerInvocations, nativeWorkerInvocations,
     separateActualImages: true, sharedSyntheticDatabase: true, networkTransport: 'denied', network: 'none',
-    actualQQ: false, actualOnlineBotVersionKnown: false, fullB01ToB15Accepted: false,
+    actualQQ: false, actualOnlineImageVerified: false,
+    retainedSourceKind: source.manifest.retainedSourceKind, fullB01ToB15Accepted: false,
     scope: 'none', releaseEligible: false, gracefulStops: exits };
 } catch (error) {
   failure = error;

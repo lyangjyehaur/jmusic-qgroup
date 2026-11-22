@@ -5,13 +5,19 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { isAbsolute, join, resolve } from 'node:path';
 
 const args = process.argv.slice(2);
-assert(args.length === 4 && args[0] === '--source' && args[2] === '--output',
-  'Use --source <exact archived web context> --output <new absolute directory>');
+assert([4, 6].includes(args.length) && args[0] === '--source' && args[2] === '--output'
+  && (args.length === 4 || args[4] === '--python-commit'),
+  'Use --source <exact archived web context> --output <new absolute directory> [--python-commit <reviewed complete SHA>]');
 const source = resolve(args[1]), output = args[3];
 assert(isAbsolute(output) && !existsSync(output), 'New absolute output required');
 const metadata = JSON.parse(readFileSync(join(source, 'release-source.json')));
 assert(metadata.version === 1 && metadata.source === 'rehearsal' && /^[a-f0-9]{40}$/.test(metadata.commit));
-const pythonCommit = '8da877857f163853c449474e168534e2e493121b';
+const reviewedSources = {
+  '8da877857f163853c449474e168534e2e493121b': 55,
+  '07defc429d619a7558ab7218372886f531813ae3': 52,
+};
+const pythonCommit = args[5] ?? '8da877857f163853c449474e168534e2e493121b';
+assert(Object.hasOwn(reviewedSources, pythonCommit), 'Unreviewed retained Python source');
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const git = (...args) => execFileSync('git', args, { maxBuffer: 32 * 1024 * 1024 });
 const inputs = ['tools/rebuild/retained-python-fixture.py', 'deploy/retained-python-rehearsal.Dockerfile'];
@@ -24,7 +30,7 @@ execFileSync('tar', ['-xf', '-', '-C', join(output, 'original-python')], {
   input: git('archive', pythonCommit, 'qgroup_core', 'qgroup_bot'),
 });
 const paths = git('ls-tree', '-r', '--name-only', pythonCommit, '--', 'qgroup_core', 'qgroup_bot').toString().trim().split('\n');
-assert.equal(paths.length, 55);
+assert.equal(paths.length, reviewedSources[pythonCommit]);
 const pythonSourcePins = paths.map(path => {
   const bytes = readFileSync(join(output, 'original-python', path));
   assert(bytes.equals(git('show', pythonCommit + ':' + path)), path);
@@ -41,6 +47,8 @@ const manifest = { version: 1, kind: 'qgroup-retained-python-rehearsal', pythonC
   verificationCommit: metadata.commit, verificationTree: metadata.tree,
   pythonSourcePins, originalDockerfileSha256: digest(originalDockerfile), dependency: { name: 'websockets', version: '17.4' },
   fixtureSha256: digest(fixture), inputs: inputs.map(path => ({ path, sha256: digest(readFileSync(join(source, path))) })),
-  actualOnlineBotVersionKnown: false, actualQQ: false, releaseEligible: false };
+  retainedSourceKind: pythonCommit === '07defc429d619a7558ab7218372886f531813ae3'
+    ? 'observed-2026-11-22' : 'original-frozen-baseline',
+  actualOnlineImageVerified: false, actualQQ: false, releaseEligible: false };
 writeFileSync(join(output, 'retained-source.json'), JSON.stringify(manifest, null, 2) + '\n', { mode: 0o644, flag: 'wx' });
 process.stdout.write(JSON.stringify(manifest) + '\n');

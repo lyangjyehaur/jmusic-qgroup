@@ -22,7 +22,7 @@ import { botDeliveryFixture } from './bot-delivery-fixture';
 import { legacyHistoryFixture } from './legacy-history-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
-const paymentRoot = (process.env.REBUILD_TEST_BACKUPS === '1'||process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
+const paymentRoot = (process.env.REBUILD_TEST_FILE_STORAGE === '1'||process.env.REBUILD_TEST_BACKUPS === '1'||process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
 const legacyHistory=process.env.REBUILD_TEST_LEGACY_HISTORY==='1'?await legacyHistoryFixture():undefined;
 const db = legacyHistory?.db ?? openDatabase(paymentRoot ? resolve(paymentRoot, 'state.db') : ':memory:'); if(!legacyHistory)fixture(db);
 if (process.env.REBUILD_TEST_BACKUPS === '1') {

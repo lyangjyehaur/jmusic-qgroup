@@ -18,6 +18,14 @@ for(const [i,m] of shape.members.entries()){
  db.prepare("INSERT INTO music_profile_fields VALUES(?,?,'',0,'',0,0,'synthetic')").run(m.id,m.name);
  for(const [position,p] of m.selections.entries())db.prepare('INSERT INTO music_selections VALUES(?,?,?,?)').run(m.id,p.entryId,p.level,position);
 }
+const entryRows=db.prepare('SELECT id,name,kind FROM music_entries ORDER BY id').all();
+const expectedEntries=shape.entries.map(({id,name,kind})=>({id,name,kind}));
+const order=(a:{id:string},b:{id:string})=>a.id<b.id?-1:a.id>b.id?1:0;expectedEntries.sort(order);
+assert.deepEqual(entryRows,expectedEntries);
+const expectedSelections=shape.members.flatMap(m=>m.selections.map((p,position)=>({profile_id:m.id,entry_id:p.entryId,level:p.level,position}))).sort((a,b)=>a.profile_id<b.profile_id?-1:a.profile_id>b.profile_id?1:a.position-b.position);
+assert.deepEqual(db.prepare('SELECT profile_id,entry_id,level,position FROM music_selections ORDER BY profile_id,position').all(),expectedSelections);
+assert.equal((db.prepare('SELECT COUNT(*) AS n FROM music_profiles').get() as {n:number}).n,shape.members.length);
+for(const entry of shape.entries)assert.equal((db.prepare('SELECT COUNT(*) AS n FROM music_selections WHERE entry_id=?').get(entry.id) as {n:number}).n,entry.count);
 const origin='https://benchmark.invalid',app=createApp({db,origin,musicTrendSampling:false,pairedBackupScheduling:false});
 try{
  await app.ready();const cookie='kanban_session=fixture-alice',viewer=(await app.inject({url:'/api/v2/session',headers:{cookie}})).json(),headers={cookie,origin,'x-account-scope':viewer.scope,'x-csrf-token':viewer.csrf};
@@ -35,5 +43,5 @@ try{
   timings.sort((a,b)=>a-b);samples.push({name,repetitions:5,medianMilliseconds:Number(timings[2]!.toFixed(2)),maxMilliseconds:Number(timings[4]!.toFixed(2))});
  }
  assert.deepEqual(db.prepare('SELECT total_changes() AS n').get(),before);
- console.log(JSON.stringify({version:1,inputSha256:createHash('sha256').update(bytes).digest('hex'),observedAt:shape.observedAt,members:shape.members.length,entries:shape.entries.length,totalSelections:shape.members.reduce((n,m)=>n+m.selections.length,0),picksPerMemberMax:Math.max(...shape.members.map(m=>m.selections.length)),valuesFromLive:true,anonymized:true,productionChanged:false,databaseWritesDuringMeasurements:0,concurrency:1,measuredPeakTraffic:false,node:process.version,platform:process.platform,arch:process.arch,rssMiB:Number((process.memoryUsage().rss/2**20).toFixed(1)),samples,releaseEligible:false}));
+ console.log(JSON.stringify({version:1,inputSha256:createHash('sha256').update(bytes).digest('hex'),observedAt:shape.observedAt,members:shape.members.length,entries:shape.entries.length,totalSelections:shape.members.reduce((n,m)=>n+m.selections.length,0),picksPerMemberMax:Math.max(...shape.members.map(m=>m.selections.length)),valuesFromLive:true,anonymized:true,relationshipRowsVerified:true,selectionOrderAndLevelsVerified:true,formalPrivateMigrationVerified:false,productionChanged:false,databaseWritesDuringMeasurements:0,concurrency:1,measuredPeakTraffic:false,node:process.version,platform:process.platform,arch:process.arch,rssMiB:Number((process.memoryUsage().rss/2**20).toFixed(1)),samples,releaseEligible:false}));
 }finally{await app.close();db.close();}

@@ -138,20 +138,20 @@ jobs:
             echo 'Owned smoke container was not removed after exit' >&2
             exit 1
           fi
-      - name: Build fixed original Python verification image
+      - name: Build observed online Python source verification image
         run: |
-          git fetch --no-tags origin 8da877857f163853c449474e168534e2e493121b
+          git fetch --no-tags origin 07defc429d619a7558ab7218372886f531813ae3
           image_context="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/context"
           python_context="$RUNNER_TEMP/qgroup-python-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT"
-          node "$image_context/tools/rebuild/prepare-retained-python-image.mjs" --source "$image_context" --output "$python_context" > artifacts/ci/retained-python-image-source.json
-          docker build --build-arg QGROUP_PYTHON_COMMIT=8da877857f163853c449474e168534e2e493121b --build-arg "QGROUP_VERIFICATION_COMMIT=$GITHUB_SHA" --iidfile artifacts/ci/retained-python-image.id "$python_context"
-      - name: Verify actual web and original Python images together
+          node "$image_context/tools/rebuild/prepare-retained-python-image.mjs" --source "$image_context" --output "$python_context" --python-commit 07defc429d619a7558ab7218372886f531813ae3 > artifacts/ci/retained-python-image-source.json
+          docker build --build-arg QGROUP_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 --build-arg "QGROUP_VERIFICATION_COMMIT=$GITHUB_SHA" --iidfile artifacts/ci/retained-python-image.id "$python_context"
+      - name: Verify actual web and observed-source Python images together
         run: |
           image_context="$RUNNER_TEMP/qgroup-image-$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT/context"
           image_id="$(cat artifacts/ci/image.id)"
           python_id="$(cat artifacts/ci/retained-python-image.id)"
           docker image inspect "$python_id" > artifacts/ci/retained-python-image-inspect.json
-          timeout --signal=TERM --kill-after=90s 900s node "$image_context/tools/rebuild/verify-retained-python-images.mjs" --web-image "$image_id" --python-image "$python_id" --commit "$GITHUB_SHA" > artifacts/ci/retained-python-image-pair.json
+          timeout --signal=TERM --kill-after=90s 900s node "$image_context/tools/rebuild/verify-retained-python-images.mjs" --web-image "$image_id" --python-image "$python_id" --commit "$GITHUB_SHA" --python-commit 07defc429d619a7558ab7218372886f531813ae3 > artifacts/ci/retained-python-image-pair.json
       - uses: actions/upload-artifact@v4
         if: always()
         with:

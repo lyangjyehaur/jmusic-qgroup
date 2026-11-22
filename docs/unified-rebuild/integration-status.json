@@ -17,17 +17,20 @@
         "apps/api/src/search.test.ts",
         "apps/web/src/search-return.test.ts",
         "packages/domain/src/music-search.test.ts",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
+        "apps/api/src/unified-workflow.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/search.test.ts",
-        "tools/rebuild/schemas/http-access-review.json"
+        "tools/rebuild/schemas/http-access-review.json",
+        "apps/api/src/unified-workflow.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/global-search.spec.ts"
       ],
       "remaining": [
-        "已按目前線上選擇分布完成搜尋量測；完整候選版本的跨功能搜尋與資料對帳仍待驗收",
+        "已按線上選擇分布量測，且同一帳號搜尋→成分→活動→分房→結算整合通過；P6 完整正式私有來源對帳仍待驗收",
         "完整候選版本與舊入口／QQ WebView 的成套驗收"
       ]
     },
@@ -44,17 +47,20 @@
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "docs/unified-rebuild/80-durable-music-rooms-checkpoint.md",
         "docs/unified-rebuild/202-shared-music-compute-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
+        "apps/api/src/unified-workflow.test.ts"
       ],
       "permission_evidence": [
-        "docs/unified-rebuild/198-room-permissions-checkpoint.md"
+        "docs/unified-rebuild/198-room-permissions-checkpoint.md",
+        "apps/api/src/unified-workflow.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/music-rooms.spec.ts"
       ],
       "remaining": [
         "已按目前線上選擇分布完成 40 人分房量測；完整原名冊／帳務來源對帳仍待驗收",
-        "切換後實際 bot 版本組合與完整分房→結算成套驗收"
+        "已觀測線上來源的 Python 核心可讀整合分房／结算結果；該來源的實際隔離映像組合及 P6 正式副本成套驗收仍待完成"
       ]
     },
     {
@@ -73,7 +79,8 @@
         "apps/api/src/music-circle-jobs.test.ts",
         "docs/unified-rebuild/201-circle-isolation-checkpoint.md",
         "docs/unified-rebuild/202-shared-music-compute-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md"
       ],
       "permission_evidence": [
         "docs/unified-rebuild/43-music-circles-checkpoint.md",

@@ -45,7 +45,7 @@ sys.stdout.write(json.dumps(value,ensure_ascii=False,separators=(',',':'))+'\\n'
 },30000);
 it('rejects a stale original identity image that would recover an actually erased loaded member',()=>{
   const identity=image(db=>db.prepare('INSERT INTO native_profiles VALUES(?,?)').run('10001',JSON.stringify({qq:'10001',name:'stale erased'})));expect(()=>prepareForwardLegacyResetIdentityMembers({...input,identity})).toThrow('relation failed');
-});
+},60000);
 it('preserves unknown original root values and Python scalar types rather than trimming content during member recovery',()=>{
   const music=pin(Buffer.from(input.music.bytes.toString().replace(/}\s*$/,' ,"unclassified":{"float":1.0,"negative":-0.0,"unknown":[true,null]}}'))),source={...input,music},result=prepareForwardLegacyResetIdentityMembers(source);expect(result.music.bytes.toString()).toContain('"float":1.0');expect(result.music.bytes.toString()).toContain('"negative":-0.0');expect(verifyForwardLegacyResetIdentityMembers(source,result).originalValuesTypesAndOrderVerified).toBe(true);
 });

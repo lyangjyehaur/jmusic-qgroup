@@ -4168,8 +4168,14 @@
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
@@ -4196,8 +4202,14 @@
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
@@ -4225,8 +4237,14 @@
         "apps/web/tests/music-workspace.spec.ts",
         "apps/web/tests/music-entry.spec.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
@@ -5109,8 +5127,14 @@
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
+      "data_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/app.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
@@ -8135,9 +8159,17 @@
         "docs/unified-rebuild/155-bounded-precache-checkpoint.md",
         "docs/unified-rebuild/156-worker-compiler-checkpoint.md"
       ],
-      "data_evidence": [],
-      "permission_evidence": [],
-      "ux_evidence": [],
+      "data_evidence": [
+        "apps/api/src/static-assets.test.ts"
+      ],
+      "permission_evidence": [
+        "apps/api/src/static-assets.test.ts",
+        "apps/api/src/app.test.ts"
+      ],
+      "ux_evidence": [
+        "apps/web/tests/page-loading.spec.ts",
+        "apps/web/tests/pwa-precache.spec.ts"
+      ],
       "state": "in_progress",
       "remaining": "153–156 已實作壓縮、快取、lazy pages、完整 precache 分批與 worker dependency 版本；156 明確使用新 tsconfig，5 unit／25 browser、85快取資源及82資源／277真HTTP本機通過。155 原image／雙映像已核對並精確重現compiler差異；155 全量unit／browser及156原Linux／一致映像、代理快取、首次載入與正式規模驗收仍待完成。decoded working set不等於browser RSS或正式負載。"
     },
@@ -9022,7 +9054,9 @@
         "apps/api/testsupport/retained-erasure-config.test.ts",
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
       ],
-      "ux_evidence": [],
+      "ux_evidence": [
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md"
+      ],
       "state": "in_progress",
       "remaining": "完整 SHA／clean archive／release origin-main check、baked version 與獨立映像 config 已隔離驗證；功能來源仍為 rehearsal，實際候選版本組合、main 整合及完整發布／回退流程未驗收。 檢查點 115 補真 Docker inert-container metadata 與預設封存證據；未執行容器內程式、未認證候選版本或新增正式發布保障。 檢查點 118 修正原生歷史／匯出對 migration codec 的生產建置依賴、Docker ignore 缺漏腳本及 runtime flock 依賴；371 份生產來源副本建置及 12 個 bundle project inputs 封閉核對通過，第三方依賴仍重用本機安裝，沒有執行 Linux Docker npm ci／prune 或正式發布。按 both 評估影響，實際發布 none；固定 Linux 映像、強制 authority／checkpoint mounts 與完整 web／bot 候選版本組合仍待驗收。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。"
     },
@@ -9062,7 +9096,9 @@
         "tools/rebuild/verify-image.mjs",
         "tools/rebuild/verify-rollback-inspection.ts"
       ],
-      "ux_evidence": [],
+      "ux_evidence": [
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md"
+      ],
       "state": "in_progress",
       "remaining": "非 root／readonly／限資源 amd64 image、SQLite／sharp、明確 production storage、source／health 分離已隔離驗證；bot image 為版本與合成 health，真實 QQ、正式規模、實際 web-bot 組合與完整部署驗收未完成。 檢查點 115 補真 Docker inert-container metadata 與預設封存證據；未執行容器內程式、未認證候選版本或新增正式發布保障。"
     }
