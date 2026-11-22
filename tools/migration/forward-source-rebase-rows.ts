@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import {copyForwardSourceRebaseInput,sourceRebasePins,type ForwardSourceRebaseInput,openForwardSourceRebase} from './forward-source-rebase-source';
 import {forwardRows,forwardHash,assertForwardImage,forwardSequences} from './forward-board-storage';
-import {object} from './music-codec';
+import {object,jsonObjectKeys} from './music-codec';
 import {captureIdentitySource} from './identity-source';
 import {identityTables,identityColumns} from './rollback-identity-source';
 import {sourceRebaseDigest,sourceRebaseRowDigest,type SourceRebaseEvidence} from './source-rebase-evidence';
@@ -24,11 +24,12 @@ export function rebaseForwardSourceRows(input:ForwardSourceRebaseInput,s:ReturnT
     const run=sourceRebaseDigest(evidence),members=object(music.data.members,'rebased members'),documents:Row[]=[],maps:Row[]=[],identityRows:Row[]=[];
     const document=(kind:string,position:number,payload:unknown)=>documents.push({kind,position,payload_json:JSON.stringify(payload)});
     const map=(source:string,entity_type:string,source_id:string,target_id:string,payload:string,status:string)=>maps.push({source,entity_type,source_id,target_id,source_revision:run,payload_digest:forwardHash(payload),status});
-    Object.entries(object(music.data.entries,'rebased entries')).forEach(([id,entry],position)=>{document('entry_source',position,{entryId:id,entry});map('music','entry',id,id,JSON.stringify(entry),'preserved');});
+    const entrySource=object(music.data.entries,'rebased entries');jsonObjectKeys(entrySource).forEach((id,position)=>{const entry=entrySource[id]!;document('entry_source',position,{entryId:id,entry});map('music','entry',id,id,JSON.stringify(entry),'preserved');});
     const retiredSources=(s.proof.prepare("SELECT kind,position,payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as {kind:string;position:number;payload_json:string}[]).filter(row=>music.keys.some(key=>key.retired&&JSON.parse(row.payload_json).profileId===key.profileId));
     if(retiredSources.some(row=>!Number.isSafeInteger(row.position)||row.position<0))throw Error('Retired profile source position exceeds supported scope');
     documents.push(...retiredSources);const reservedProfilePositions=new Set(retiredSources.map(row=>row.position));
-    let position=0;for(const key of music.keys){
+    const orderedKeys=[...jsonObjectKeys(members).map(id=>music.keys.find(key=>key.legacyKey===id)!),...music.keys.filter(key=>!Object.hasOwn(members,key.legacyKey))];
+    let position=0;for(const key of orderedKeys){
       if(key.erased){map('music','profile',key.legacyKey,key.profileId,'','erased');continue;}
       if(key.retired){const original=s.proof.prepare("SELECT * FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=? AND target_id=?").get(key.legacyKey,key.profileId) as Row|undefined;if(original)maps.push(original);else map('music','profile',key.legacyKey,key.profileId,'','retired');continue;}
       const member=object(members[key.legacyKey],'rebased member'),creation=s.proof.prepare('SELECT created_at FROM music_profile_creation WHERE profile_id=?').get(key.profileId) as {created_at:string}|undefined;

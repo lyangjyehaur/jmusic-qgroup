@@ -41,7 +41,8 @@
       "M21",
       "M22"
     ],
-    "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb"
+    "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+    "latest_runtime_checkpoint": "docs/unified-rebuild/226-forward-source-order-checkpoint.md"
   },
   "capabilities": [
     {

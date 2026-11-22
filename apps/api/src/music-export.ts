@@ -1,4 +1,4 @@
-import {musicProfileActiveSQL} from '@qgroup/database';
+import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import type { DB } from '@qgroup/database';
 import { musicCreatedIds } from '@qgroup/database';
 import { profileFields } from './music-fields';
@@ -10,7 +10,7 @@ const records = jsonObjectFromEntries;
 function profiles(db: DB) {
   return db.prepare(`SELECT p.id,p.user_id,l.legacy_key,l.consent,l.pin_hash,l.fields_json,c.created_at
     FROM music_profiles p LEFT JOIN music_legacy_profiles l ON l.profile_id=p.id
-    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as Profile[];
+    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`).all() as Profile[];
 }
 /** Administrative data export, never an authentication or complete restore package. */
 export function exportMusic(db: DB, latest: DB = db) {
@@ -21,7 +21,7 @@ export function exportMusic(db: DB, latest: DB = db) {
   const keyFor = new Map(rows.map(row => [row.id, row.legacy_key ?? row.id]));
   const creator = (key: string) => erasedIds.has(key) || erasedKeys.has(key) ? '' : keyFor.get(key) ?? key;
   const entries = records((db.prepare(`SELECT e.id,e.name,e.kind,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json
-    FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.rowid`).all() as {
+    FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY ${musicSourceOrderSQL('entry','e')}`).all() as {
     id: string; name: string; kind: string; category: string | null; aliases_json: string | null; created_by: string | null; created_at_json: string | null; updated_at_json: string | null;
   }[]).map(row => [row.id, { id: row.id, text: row.name, kind: row.kind, category: row.category ?? (row.kind === 'main' ? '领域' : '其他'),
     aliases: JSON.parse(row.aliases_json ?? '[]') as unknown, createdBy: creator(row.created_by ?? ''),

@@ -1,3 +1,4 @@
+import {stringifyJson,jsonObjectKeys,jsonObjectFromEntries} from './music-codec';
 import {decodeErasureJournal} from '../../apps/api/src/erasure-journal';
 import {forwardHash,type PinnedForwardBytes} from './forward-board-storage';
 import {projectNativeForwardErasures} from './forward-erasure-projection';
@@ -29,7 +30,7 @@ function sources(h:ReturnType<typeof holdLegacyResetRecoveryInput>,retirement:Re
   const base=projectRollbackStateFromCheckpoint(baseline.nativeImage,decodeErasureJournal(baseline.nativeJournal.toString()));
   const boardInput={originalNative:pin(retirement.native.retainedNativeImage),retiredNative:pin(retirement.native.nativeImage),oldBoard:s.latestBoard};
   let boardDisposition:RetiredResetBoardBundle;if(suppliedBoard){verifyRetiredResetBoard(boardInput,suppliedBoard,guard);boardDisposition=suppliedBoard;}else boardDisposition=prepareRetiredResetBoard(boardInput,guard);
-  const inputs:ForwardMusicInput={checkpoint:pin(base.checkpointImage),baselineBoard:pin(base.boardImage),baselineJournal:pin(baseline.nativeJournal),nativeImage:pin(native.nativeImage),nativeJournal:pin(native.nativeJournal),oldBoard:boardDisposition.board,baselineMusic:pin(Buffer.from(JSON.stringify({...base.music,identityAuditMappings:base.identityAuditMappings})+'\n')),baselineIdentity:pin(base.identityImage),oldMusic:generation.derivedMusic,oldIdentity:retirement.identity};
+  const inputs:ForwardMusicInput={checkpoint:pin(base.checkpointImage),baselineBoard:pin(base.boardImage),baselineJournal:pin(baseline.nativeJournal),nativeImage:pin(native.nativeImage),nativeJournal:pin(native.nativeJournal),oldBoard:boardDisposition.board,baselineMusic:pin(Buffer.from(stringifyJson({...base.music,identityAuditMappings:base.identityAuditMappings})+'\n')),baselineIdentity:pin(base.identityImage),oldMusic:generation.derivedMusic,oldIdentity:retirement.identity};
   const original=openForwardMusicSources(inputs);let identityRows:ReturnType<typeof prepareForwardLegacyResetIdentityRows>;
   try{
     const rowInput={baseline:pin(original.baselineIdentity.serialize()),native:pin(original.nativeIdentity.serialize()),old:retirement.identity};
@@ -56,8 +57,8 @@ export type RetiredResetRecoveryBundle=ReturnType<typeof reconstructForwardRetir
  * re-derive the erasure/source environment, then use full-row oracles on the
  * actual business/proof/rebase outputs without rerunning those three writers. */
 export function verifyForwardRetiredResetRecovery(input:LegacyResetRecoveryInput,bundle:RetiredResetRecoveryBundle,boundary?:()=>void){
-  const summarize=(value:unknown):unknown=>Buffer.isBuffer(value)?{bytes:value.length,sha256:forwardHash(value)}:Array.isArray(value)?value.map(summarize):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).map(([key,item])=>[key,summarize(item)])):typeof value==='bigint'?{integer:String(value)}:value;
-  const fingerprint=()=>JSON.stringify(summarize(bundle)),before=fingerprint();
+  const summarize=(value:unknown):unknown=>Buffer.isBuffer(value)?{bytes:value.length,sha256:forwardHash(value)}:Array.isArray(value)?value.map(summarize):value&&typeof value==='object'?jsonObjectFromEntries(jsonObjectKeys(value).map(key=>[key,summarize((value as Record<string,unknown>)[key])])):typeof value==='bigint'?{integer:String(value)}:value;
+  const fingerprint=()=>stringifyJson(summarize(bundle)),before=fingerprint();
   const h=holdLegacyResetRecoveryInput(input,()=>{const value:unknown=boundary?.();if(value!==null&&(typeof value==='object'||typeof value==='function')&&'then' in value)throw Error('Retired reset recovery boundary must be synchronous');if(fingerprint()!==before)throw Error('Retired reset recovery output bundle changed');});
   const prepared=sources(h,bundle.retirement,bundle.generation,bundle.identityRows,bundle.boardDisposition),rows=verifyResetRecoveryCandidate(h,prepared.inputs,bundle);
   verifyResetGenerationReport(h,bundle.retirement.native.retained.projectedMusic,bundle.generation);

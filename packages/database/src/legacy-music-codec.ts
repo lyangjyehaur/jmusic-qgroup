@@ -1,5 +1,5 @@
-import { digest, parseJson, jsonObjectKeys, type Json } from '../../runtime/src/strict-json';
-export { digest, parseJson, jsonObjectKeys, jsonObjectFromEntries, stringifyJson, type Json, type ObjectValue } from '../../runtime/src/strict-json';
+import { digest, parseJson, jsonObjectKeys, jsonObjectFromEntries, cloneJson, type Json } from '../../runtime/src/strict-json';
+export { digest, parseJson, jsonObjectKeys, jsonObjectFromEntries, stringifyJson, cloneJson, type Json, type ObjectValue } from '../../runtime/src/strict-json';
 import { seedMusicFields, seedMusicShouts, type DB } from '@qgroup/database';
 import { assertIdentitySchema } from './legacy-identity-source';
 
@@ -62,7 +62,7 @@ export function musicErasures(source: string) {
   return erased;
 }
 export function projectMusic(raw: Json, originalIdentity: Identity, erased: Map<string, Json>, additionalErasedIds:ReadonlySet<string>=new Set()) {
-  const data = structuredClone(object(raw, 'music root'));
+  const original = object(raw, 'music root'), data = cloneJson(original);
   keys(data, ['entries', 'members', 'settings', 'shouts', 'shoutHistory', 'trend'], 'music root');
   const members = object(data.members, 'music members'); const entries = object(data.entries, 'music entries');
   const identity = Object.fromEntries(Object.entries(originalIdentity).map(([table, rows]) => [table, rows.filter(row => !erased.has(String(row.qq ?? '')))]));
@@ -78,6 +78,8 @@ export function projectMusic(raw: Json, originalIdentity: Identity, erased: Map<
   const erasedIds=new Set([...erased.keys()].map(profileId));for(const id of additionalErasedIds)erasedIds.add(id);
   for (const entry of Object.values(entries)) { const item = object(entry, 'entry'); if (erased.has(String(item.createdBy ?? ''))||erasedIds.has(String(item.createdBy??''))) item.createdBy = ''; }
   for (const kind of ['shouts', 'shoutHistory']) data[kind] = list(data[kind], kind).filter(value => !erased.has(String(object(value, kind).qq ?? '')));
+  const memberKeys = [...new Set([...jsonObjectKeys(object(original.members, 'original members')), ...identity.native_profiles!.map(row => String(row.qq))])];
+  data.members = jsonObjectFromEntries(memberKeys.filter(key => Object.hasOwn(members, key)).map(key => [key, members[key]!]));
   return { data, identity };
 }
 export function importMusic(db: DB, raw: Json, sourceIdentity: Identity, erased: Map<string, Json>, stamp: string, additionalErasedIds:ReadonlySet<string>=new Set()) {

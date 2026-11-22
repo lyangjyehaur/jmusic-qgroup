@@ -15,7 +15,8 @@
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
-    "packages/runtime/src/strict-json.ts, legacy music import/reconciliation, administrative/history export and rollback writers: preserve literal numeric dictionary order; current candidate verified separately with captured data and checkpoint 225"
+    "packages/runtime/src/strict-json.ts, legacy music import/reconciliation, administrative/history export and rollback writers: preserve literal numeric dictionary order; current candidate verified separately with captured data and checkpoint 225",
+    "JSON order-preserving clones, account/reset source writers, verified source rebase order, native reads and final recovery boundaries: captured-source forward/reimport/package regression and separate current tests at checkpoint 226"
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -2180,7 +2181,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/223-recovery-copy-activation.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/226-forward-source-order-checkpoint.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",

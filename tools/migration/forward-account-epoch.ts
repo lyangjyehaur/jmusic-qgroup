@@ -15,7 +15,7 @@ import {verifyRollbackMusic} from './rollback-music-reconciliation';
 import {verifyRollbackIdentity} from './rollback-identity-reconciliation';
 import {assertRollbackSource} from './rollback-source';
 import {schemaObjects} from './board-reconciliation';
-import {object,keys} from './music-codec';
+import {object,keys,stringifyJson} from './music-codec';
 import type {RollbackMusic} from './rollback-music';
 
 export type ForwardAccountEpochInput={sources:ForwardMusicInput;authorityRoot:string;manifestSha256:string;preparedAt:string};
@@ -40,14 +40,14 @@ export function prepareForwardAccountEpoch(input:ForwardAccountEpochInput,bounda
     const raw=mergeForwardMusicRows(s);opened.push(raw.identity);reconcileForwardMusicRows(s,raw.music,raw.identity);
     const board=mergeForwardBoardAccountClosures({sources:held,authorityRoot:root,manifestSha256:pin}),base=open(board.nativeImage),clean=cleanupForwardAccountMusic(s,base,raw.music,raw.identity,a.closed);opened.push(clean.identity);
     verifyForwardAccountMusic(s,base,raw.music,raw.identity,a.closed,clean.music,clean.identity);
-    const e={sources:{} as ForwardMusicInput,accountBase:accountPin(board.nativeImage),rawMusic:accountPin(Buffer.from(JSON.stringify(raw.music))),rawIdentity:accountPin(raw.identity.serialize()),cleanMusic:accountPin(Buffer.from(JSON.stringify(clean.music))),cleanIdentity:accountPin(clean.identity.serialize())};
+    const e={sources:{} as ForwardMusicInput,accountBase:accountPin(board.nativeImage),rawMusic:accountPin(Buffer.from(stringifyJson(raw.music))),rawIdentity:accountPin(raw.identity.serialize()),cleanMusic:accountPin(Buffer.from(stringifyJson(clean.music))),cleanIdentity:accountPin(clean.identity.serialize())};
     const bound=open(board.nativeImage),record=manifest({...input,sources:held},e,a.authority.head.sequence,a.authority.head.recordSha256),run=forwardHash('qgroup:forward-account-epoch:v1:'+musicCanonical(record));
     bound.transaction(()=>{
       const high=[...forwardRows(bound,'migration_runs')].reduce((high,row)=>high>row.__forward_rowid__?high:row.__forward_rowid__,0n);if(high===9223372036854775807n)throw Error('Account epoch run rowid exceeds capacity');
       bound.prepare('INSERT INTO migration_runs(rowid,source_digest,manifest_json,report_json,created_at) VALUES(?,?,?,?,?)').run(high+1n,run,JSON.stringify(record),JSON.stringify({originalSourcesRetained:true,accountAuthorityVerified:true,rawThreeWayRelationVerified:true,derivedInputOnly:true,externalRetentionVerified:false,releaseEligible:false}),stamp);
     }).immediate();
     const state=projectRollbackStateFromCheckpoint(bound.serialize(),a.journalReader.read()),journal=accountPin(a.journal);
-    e.sources={checkpoint:accountPin(state.checkpointImage),baselineBoard:accountPin(state.boardImage),baselineJournal:journal,nativeImage:accountPin(state.checkpointImage),nativeJournal:accountPin(a.journal),oldBoard:accountPin(state.boardImage),baselineMusic:accountPin(Buffer.from(JSON.stringify({...state.music,identityAuditMappings:state.identityAuditMappings}))),baselineIdentity:accountPin(state.identityImage),oldMusic:accountPin(Buffer.from(JSON.stringify(clean.music.data))),oldIdentity:accountPin(e.cleanIdentity.bytes)};
+    e.sources={checkpoint:accountPin(state.checkpointImage),baselineBoard:accountPin(state.boardImage),baselineJournal:journal,nativeImage:accountPin(state.checkpointImage),nativeJournal:accountPin(a.journal),oldBoard:accountPin(state.boardImage),baselineMusic:accountPin(Buffer.from(stringifyJson({...state.music,identityAuditMappings:state.identityAuditMappings}))),baselineIdentity:accountPin(state.identityImage),oldMusic:accountPin(Buffer.from(stringifyJson(clean.music.data))),oldIdentity:accountPin(e.cleanIdentity.bytes)};
     const verification=verifyForwardAccountEpoch({...input,sources:held},e);guard(input,held,a,root,pin,stamp,boundary);
     return {...e,report:verification};
   }finally{for(const db of opened.reverse())db.close();s.close();}
@@ -62,7 +62,7 @@ export function verifyForwardAccountEpoch(input:ForwardAccountEpochInput,epoch:F
     const e={...epoch,sources:copyForwardMusicInput(epoch.sources)};for(const key of ['accountBase','rawIdentity','cleanIdentity'] as const)pinned(e[key]);
     const raw=music(e.rawMusic),clean=music(e.cleanMusic),rawIdentity=open(e.rawIdentity.bytes),identity=open(e.cleanIdentity.bytes),base=open(e.accountBase.bytes);
     const board=verifyForwardBoardAccountClosures({sources:held,authorityRoot:root,manifestSha256:pin},e.accountBase.bytes),rows=reconcileForwardMusicRows(s,raw,rawIdentity),cleanup=verifyForwardAccountMusic(s,base,raw,rawIdentity,a.closed,clean,identity);
-    if(!e.sources.checkpoint.bytes.equals(e.sources.nativeImage.bytes)||!e.sources.baselineBoard.bytes.equals(e.sources.oldBoard.bytes)||!e.sources.nativeJournal.bytes.equals(a.journal)||!e.sources.baselineJournal.bytes.equals(a.journal)||!e.sources.oldIdentity.bytes.equals(e.cleanIdentity.bytes)||!e.sources.oldMusic.bytes.equals(Buffer.from(JSON.stringify(clean.data))))throw Error('Derived account source pair differs');
+    if(!e.sources.checkpoint.bytes.equals(e.sources.nativeImage.bytes)||!e.sources.baselineBoard.bytes.equals(e.sources.oldBoard.bytes)||!e.sources.nativeJournal.bytes.equals(a.journal)||!e.sources.baselineJournal.bytes.equals(a.journal)||!e.sources.oldIdentity.bytes.equals(e.cleanIdentity.bytes)||!e.sources.oldMusic.bytes.equals(Buffer.from(stringifyJson(clean.data))))throw Error('Derived account source pair differs');
     const db=open(e.sources.checkpoint.bytes);db.transaction(()=>assertRollbackSource(db)).immediate();base.transaction(()=>assertRollbackSource(base)).immediate();
     if(!forwardEqual(schemaObjects(base),schemaObjects(db)))throw Error('Account epoch schema differs');for(const name of ['user_version','application_id','encoding'])if(base.pragma(name,{simple:true})!==db.pragma(name,{simple:true}))throw Error('Account epoch metadata differs');
     const record=manifest({...input,sources:held},e,a.authority.head.sequence,a.authority.head.recordSha256),run=forwardHash('qgroup:forward-account-epoch:v1:'+musicCanonical(record));

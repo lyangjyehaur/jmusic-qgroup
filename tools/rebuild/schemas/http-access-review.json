@@ -46,21 +46,21 @@
     "apps/api/src/legacy-settlement-token.ts": "42b4bc80c469dd5c3cf1a3653ab9b261eeaead8ee9f88dfc4629edb86a8f53a6",
     "apps/api/src/legacy-time-poll-create.ts": "224747ffa752801bf434eb5aa060f15fcaf51632f774c9728ad85f9a0775f75d",
     "apps/api/src/legacy-time-poll.ts": "e867a2b2d1f18da5f333abf7d31224a518cfb2c9c7d9489eed165c648d8e29f4",
-    "apps/api/src/music-catalog.ts": "27afeafcae22dad16da81f5bc89b290a4ff10febe13c9e586efa9e20ce4e9572",
+    "apps/api/src/music-catalog.ts": "5f48b459c43ae6af23c7e7d7daf8db5f24daf4f58c2a481b2fb7f37d3c7b8521",
     "apps/api/src/music-circle-jobs.ts": "8af7a3e56c921a14fb7c255596b0a5eee3f03037ebaf3ae74365c824208cc9af",
     "apps/api/src/music-circle-task.ts": "d33f7a6d57e7439167db2f0fc1e5229a31d8051424159570c64003cfa828016b",
-    "apps/api/src/music-circles.ts": "b13538a0247a9571947c372d797de9b859c671fd7ea96a02c7be124e28e5605c",
+    "apps/api/src/music-circles.ts": "50392fee026bada65e6e2541c08a35d2d8d70bb817f065299f67457644a53e51",
     "apps/api/src/music-claim.ts": "ac89e7905919dd170019d755f3afd27a6a25cc778746f40ea0e0d5382ac37979",
     "apps/api/src/music-compute-budget.ts": "bad2ab05eaff74baaad4b5ebcd929d98e9229dbec6eccbac6f3d797ceead2223",
     "apps/api/src/music-contact.ts": "b37d2e7c594f201b5c06cf951288060a29994013e7b86fd131e268e17266dbf7",
     "apps/api/src/music-fields.ts": "c783c34c9fc26680e327b00a7a7f0f23374fd551a2c2379775ee51c64b699479",
     "apps/api/src/music-matches.ts": "77f9a3f758a7057168d2487d72a5b36188c25ac7da8e200a301a22c0259d3bdb",
     "apps/api/src/music-room-jobs.ts": "3451a509a67a04f9c4f225170238a6427edb3e216ee1c8e139f787c0f6a39fe9",
-    "apps/api/src/music-room-source.ts": "3e9da72fea16a3072edc50dfb29bec7358889074d0341a213e630ff2226e576b",
+    "apps/api/src/music-room-source.ts": "196f7e78f4cffff414219c7759a676209dd6faa22a7c41f53e7d9d638a1afb4e",
     "apps/api/src/music-room-task.ts": "1ea9522dae7432e415f027672f50e4b13dd1899ecef54cbff3969ae197bb6bb2",
     "apps/api/src/music-rooms.ts": "993a5ecd2cac2320dbd68ce5af4a7af956eee80176f8f1e3c6e3e18de9c5d674",
     "apps/api/src/music-shouts.ts": "1a130dc73041ae6e6464165b5f0fe7a3a6ca2abc1557a4b75aaa76b002d947da",
-    "apps/api/src/music-trend.ts": "4c6e6d43b4ed065ec9502aeda261497820b2c9611c1868036bf3af021b83bf9a",
+    "apps/api/src/music-trend.ts": "32f3192462f28ae2cd9c79a7ed5415f8e30f72b0d3266e06087400d529dbbea8",
     "apps/api/src/payment-codes.ts": "c9991b09208e86084cac36292afe2629ef2aa666241b7e513e5d3623b6699f20",
     "apps/api/src/privacy-consent.ts": "f296772294485e7eeefe2dc95b37f304c41aa3d2c0913469b3448316961c2e85",
     "apps/api/src/privacy.ts": "96757aa6e1dac2c04d4e64bf7c3c94c5603f49edd167253fae7bb5fc8f853043",
@@ -107,7 +107,10 @@
     "packages/contracts/src/legacy-participants.ts": "c8565038ac06a7a8fbc0048c4d4c4079377e359dd40382c4146abeca284f6860",
     "packages/contracts/src/legacy-personal.ts": "02cb0a30b1a578461884844e5d925c9377722a1b466bbde338d697626129d60d",
     "apps/api/src/payment-media.ts": "e6a5661767834fab3cb6ae91fe9038896ea76ebcaed3cb52660c57391c3a62f9",
-    "apps/api/src/legacy-personal.ts": "56651a0336d91ccaac62df6640415739d2a7386e5392a1af201f814f71b3f2b6"
+    "apps/api/src/legacy-personal.ts": "56651a0336d91ccaac62df6640415739d2a7386e5392a1af201f814f71b3f2b6",
+    "packages/database/src/music-source-order.ts": "ea0c1effc306febec1dc400b3ebb3decfd350da432950e28fc958eedbe83e1be",
+    "apps/api/src/music-export.ts": "258a07403d013f957f13a9e82a164b47c7e08b7fae77b17524c0a4475762afd0",
+    "apps/api/src/music-match-data.ts": "7583a5b31acf409b066456f5accee301d7017512ddc40f754290dc6c89106b0f"
   },
   "operations": [
     {
@@ -1477,7 +1480,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1678,7 +1682,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1703,7 +1708,8 @@
         "apps/api/src/music-circle-task.ts",
         "packages/domain/src/music-circles.ts",
         "packages/domain/src/music-matching.ts",
-        "apps/api/src/music-compute-budget.ts"
+        "apps/api/src/music-compute-budget.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1746,7 +1752,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1814,7 +1821,8 @@
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
-        "apps/api/src/music-room-source.ts"
+        "apps/api/src/music-room-source.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1879,7 +1887,8 @@
       "conditions": [],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1892,7 +1901,8 @@
       ],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -1909,7 +1919,8 @@
         "apps/api/src/music-fields.ts",
         "packages/domain/src/music-search.ts",
         "packages/domain/src/music-text.ts",
-        "packages/database/src/music-retirements.ts"
+        "packages/database/src/music-retirements.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "conditions": [
         "Current device scope is required for every result group.",
@@ -3524,7 +3535,8 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },
@@ -3695,7 +3707,8 @@
         "apps/api/src/music-compute-budget.ts",
         "apps/api/src/music-room-jobs.ts",
         "apps/api/src/music-room-task.ts",
-        "apps/api/src/music-room-source.ts"
+        "apps/api/src/music-room-source.ts",
+        "packages/database/src/music-source-order.ts"
       ],
       "additionalHeaders": []
     },

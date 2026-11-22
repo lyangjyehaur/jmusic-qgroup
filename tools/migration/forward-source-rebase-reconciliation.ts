@@ -5,7 +5,7 @@ import {schemaObjects} from './board-reconciliation';
 import {captureIdentitySource} from './identity-source';
 import {identityTables,identityColumns} from './rollback-identity-source';
 import {sourceRebaseDigest,sourceRebaseRowDigest,readSourceRebaseEvidence,type SourceRebaseEvidence} from './source-rebase-evidence';
-import {object} from './music-codec';
+import {object,jsonObjectKeys} from './music-codec';
 import {musicEqual} from './forward-music-sources';
 import {assertRollbackSource} from './rollback-source';
 import {decodeErasureJournal,type ErasureJournal} from '../../apps/api/src/erasure-journal';
@@ -28,10 +28,12 @@ export function verifyForwardSourceRebase(input:ForwardSourceRebaseInput,image:B
     const run=sourceRebaseDigest(evidence),desired=new Map<string,Record<string,unknown>[]>([['music_documents',[]],['music_legacy_identity',[]],['migration_map',[]]]);
     const docs=desired.get('music_documents')!,maps=desired.get('migration_map')!,rows=desired.get('music_legacy_identity')!;
     const expectedMap=(source:string,entity_type:string,source_id:string,target_id:string,payload:unknown,status:string)=>maps.push({source,entity_type,source_id,target_id,source_revision:run,payload_digest:forwardHash(typeof payload==='string'?payload:JSON.stringify(payload)),status});
-    let position=0;for(const [id,entry] of Object.entries(object(music.data.entries,'expected entries'))){docs.push({kind:'entry_source',position:position++,payload_json:JSON.stringify({entryId:id,entry})});expectedMap('music','entry',id,id,entry,'preserved');}
+    const entrySource=object(music.data.entries,'expected entries');let position=0;for(const id of jsonObjectKeys(entrySource)){const entry=entrySource[id]!;docs.push({kind:'entry_source',position:position++,payload_json:JSON.stringify({entryId:id,entry})});expectedMap('music','entry',id,id,entry,'preserved');}
     const retiredIds=new Set(music.keys.filter(row=>row.retired).map(row=>row.profileId)),retiredSources=(s.proof.prepare("SELECT kind,position,payload_json FROM music_documents WHERE kind='profile_source' ORDER BY position").all() as {kind:string;position:number;payload_json:string}[]).filter(row=>retiredIds.has(JSON.parse(row.payload_json).profileId));
     if(retiredSources.some(row=>!Number.isSafeInteger(row.position)||row.position<0))reject();docs.push(...retiredSources);const occupied=new Set(retiredSources.map(row=>row.position));
-    position=0;for(const binding of music.keys){
+    const memberPositions=new Map(jsonObjectKeys(members).map((key,index)=>[key,index]));
+    const bindings=[...music.keys].sort((a,b)=>(memberPositions.get(a.legacyKey)??Number.MAX_SAFE_INTEGER)-(memberPositions.get(b.legacyKey)??Number.MAX_SAFE_INTEGER));
+    position=0;for(const binding of bindings){
       if(binding.erased){expectedMap('music','profile',binding.legacyKey,binding.profileId,'','erased');continue;}
       if(binding.retired){const original=s.proof.prepare("SELECT * FROM migration_map WHERE source='music' AND entity_type='profile' AND source_id=? AND target_id=?").get(binding.legacyKey,binding.profileId) as Record<string,unknown>|undefined;if(original)maps.push(original);else expectedMap('music','profile',binding.legacyKey,binding.profileId,'','retired');continue;}
       const member=members[binding.legacyKey];if(!member)reject();while(occupied.has(position))position++;docs.push({kind:'profile_source',position:position++,payload_json:JSON.stringify({profileId:binding.profileId,legacyKey:binding.legacyKey,source:'json',member})});expectedMap('music','profile',binding.legacyKey,binding.profileId,member,'preserved');

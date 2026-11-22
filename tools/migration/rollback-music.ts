@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import {musicProfileActiveSQL,readMusicRetirements,type DB} from '@qgroup/database';
 import { readVerifiedErasureJournal, type ErasureJournal } from '../../apps/api/src/erasure-journal';
 import { assertRollbackSource } from './rollback-source';
-import { keys, object, parseJson, jsonObjectFromEntries, type Json, type ObjectValue } from './music-codec';
+import { keys, object, parseJson, jsonObjectKeys, jsonObjectFromEntries, type Json, type ObjectValue } from './music-codec';
 import { readSourceRebaseEvidence } from './source-rebase-evidence';
 import { verifyRollbackMusic } from './rollback-music-reconciliation';
 
@@ -141,7 +141,10 @@ export function projectRollbackMusic(db:DB,journal:ErasureJournal){
     const trend=(db.prepare("SELECT payload_json FROM music_documents WHERE kind IN ('trend','trend_sample') ORDER BY CASE kind WHEN 'trend' THEN 0 ELSE 1 END,position").all() as {payload_json:string}[]).map(row=>{
       const point=object(parseJson(row.payload_json),'rollback trend');keys(point,['t','counts'],'rollback trend');return point;
     });
-    const result:RollbackMusic={data:{entries,members:jsonObjectFromEntries(memberPairs),settings:{},shouts,shoutHistory,trend},keys:mapping};
+    const entryOrder=[...(rebased?originalEntries.keys():[]),...jsonObjectKeys(entries)].filter((id,index,all)=>Object.hasOwn(entries,id)&&all.indexOf(id)===index);
+    const memberValues=new Map(memberPairs),memberOrder=[...(rebased?originalProfiles.keys():[])].map(id=>byId.get(id)?.legacyKey).filter((key):key is string=>key!==undefined&&memberValues.has(key));
+    for(const [key] of memberPairs)if(!memberOrder.includes(key))memberOrder.push(key);
+    const result:RollbackMusic={data:{entries:jsonObjectFromEntries(entryOrder.map(id=>[id,entries[id]!])),members:jsonObjectFromEntries(memberOrder.map(key=>[key,memberValues.get(key)!])),settings:{},shouts,shoutHistory,trend},keys:mapping};
     const report=verifyRollbackMusic(db,result,intents);return {...result,report};
   }).immediate();
 }

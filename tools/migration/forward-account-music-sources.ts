@@ -1,7 +1,7 @@
 import Database from 'better-sqlite3';
 import type {DB} from '@qgroup/database';
 import type {RollbackMusic} from './rollback-music';
-import {object,parseJson} from './music-codec';
+import {object,parseJson,cloneJson,jsonObjectKeys} from './music-codec';
 import {identitySeconds,identityTables} from './rollback-identity-source';
 import {forwardRows,forwardEqual,type ForwardRow} from './forward-board-storage';
 import {musicEqual,assertForwardIdentity,type ForwardMusicSources} from './forward-music-sources';
@@ -23,7 +23,7 @@ function scope(s:ForwardMusicSources,board:DB,music:RollbackMusic,identity:DB,cl
 }
 /** Only source cleanup, after the original three-way row oracle has passed. */
 export function cleanupForwardAccountMusic(s:ForwardMusicSources,board:DB,raw:RollbackMusic,identity:DB,closures:Closure){
-  const {keys,tokens}=scope(s,board,raw,identity,closures),music=structuredClone(raw),db=new Database(identity.serialize());
+  const {keys,tokens}=scope(s,board,raw,identity,closures),music={...structuredClone(raw),data:cloneJson(raw.data)},db=new Database(identity.serialize());
   try{
     for(const value of Object.values(object(music.data.members,'account members'))){const member=object(value,'account member');if(closures.has(String(member.boardUserId)))member.boardUserId='';}
     db.transaction(()=>{
@@ -49,7 +49,7 @@ export function verifyForwardAccountMusic(s:ForwardMusicSources,board:DB,raw:Rol
   for(const original of [s.board.native,s.board.old])for(const row of forwardRows(original,'browser_sessions'))if(closures.has(String(row.user_id))&&(!alive.has(String(row.token_hash))||closures.has(alive.get(String(row.token_hash))!)))tokens.add(String(row.token_hash));
   assertForwardIdentity(candidate);validateForwardMusicGraph(s,music,candidate);
   const wanted=structuredClone(raw);for(const value of Object.values(object(wanted.data.members,'expected account members'))){const member=object(value,'expected member');if(closures.has(String(member.boardUserId)))member.boardUserId='';}
-  if(!musicEqual(wanted,music)||['entries','members'].some(kind=>Object.keys(object(raw.data[kind],'original account order')).join('\0')!==Object.keys(object(music.data[kind],'final account order')).join('\0')))throw Error('Account music content changed outside original closure');
+  if(!musicEqual(wanted,music)||['entries','members'].some(kind=>jsonObjectKeys(object(raw.data[kind],'original account order')).join('\0')!==jsonObjectKeys(object(music.data[kind],'final account order')).join('\0')))throw Error('Account music content changed outside original closure');
   let removed=0,changed=0,retained=0;
   for(const table of identityTables){
     const columns=(source.prepare('PRAGMA table_xinfo("'+table+'")').all() as {name:string}[]).map(row=>row.name),actual=forwardRows(candidate,table);

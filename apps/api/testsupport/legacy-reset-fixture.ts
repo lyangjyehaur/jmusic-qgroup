@@ -8,7 +8,7 @@ import {projectRollbackHistory} from '../../../tools/migration/rollback-history'
 import {assembleRollbackPackage,pinRollbackPackageSource} from '../../../tools/migration/rollback-package-codec';
 import {writeRollbackPackage} from '../../../tools/migration/rollback-package';
 import {writeRollbackErasureAuthority} from '../../../tools/migration/rollback-erasure-authority';
-import {digest} from '../../../packages/runtime/src/strict-json';
+import {digest,stringifyJson} from '../../../packages/runtime/src/strict-json';
 import {prepareResetRetirementProof,type ResetRetirementProofStage} from './reset-retirement-proof';
 
 export async function legacyResetFixture(proofStage?:ResetRetirementProofStage){
@@ -19,7 +19,7 @@ export async function legacyResetFixture(proofStage?:ResetRetirementProofStage){
     const data=dirname(s.db.name),journal=erasureJournal(s.db);
     writeFileSync(erasureJournalPath(s.db.name),'',{mode:0o600});
     const media=captureRollbackMedia(s.db,journal),state=projectRollbackStateFromCheckpoint(media.checkpointImage,media.journal),history=projectRollbackHistory(state,{capture:s.config,native:{root:join(data,'paired-backups'),manifests:[]}}),pkg=assembleRollbackPackage(state,media,history,pinRollbackPackageSource(media,{captureManifestSha256:s.config.manifestSha256,native:[]})),packageRoot=join(s.root,'package'),stamp=new Date('2026-11-20T00:00:00Z'),packagePin=writeRollbackPackage(pkg,packageRoot,[s.capture,data],stamp).manifestSha256,authority=join(s.root,'authority'),music=join(s.root,'old-music');
-    mkdirSync(music,{mode:0o700});writeFileSync(join(music,'data.json'),JSON.stringify(state.music.data)+'\n',{mode:0o600});writeFileSync(join(music,'identity.sqlite3'),state.identityImage,{mode:0o600});writeFileSync(join(music,'erasures.jsonl'),state.erasures.musicJournal,{mode:0o600});
+    mkdirSync(music,{mode:0o700});writeFileSync(join(music,'data.json'),stringifyJson(state.music.data)+'\n',{mode:0o600});writeFileSync(join(music,'identity.sqlite3'),state.identityImage,{mode:0o600});writeFileSync(join(music,'erasures.jsonl'),state.erasures.musicJournal,{mode:0o600});
     const pin=writeRollbackErasureAuthority(packageRoot,packagePin,authority,stamp,undefined,{database:s.db.name,sha256:digest(Buffer.alloc(0))}).manifestSha256;
     return {...s,claim,media,state,packageRoot,packagePin,authority,music,pin,config:{root:authority,manifestSha256:pin,sourceCheckpoint:join(packageRoot,'private/latest/unified.sqlite3')},before:s.db.serialize(),bot:s.db.prepare('SELECT * FROM bot_outbox ORDER BY id').all()};
   }catch(error){s.close();throw error;}

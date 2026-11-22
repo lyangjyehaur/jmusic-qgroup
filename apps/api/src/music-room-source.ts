@@ -1,4 +1,4 @@
-import {musicProfileActiveSQL} from '@qgroup/database';
+import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { createHash } from 'node:crypto';
 import type { DB } from '@qgroup/database';
@@ -20,12 +20,12 @@ export function musicRoomSource(db: DB, userId: string, eventId: string | null, 
   const entries = db
     .prepare(
       `SELECT e.id,e.name,e.kind,count(p.id) count FROM music_entries e LEFT JOIN music_selections s ON s.entry_id=e.id
-    LEFT JOIN music_profiles p ON p.id=s.profile_id AND ${musicProfileActiveSQL('p')} GROUP BY e.id ORDER BY e.rowid`,
+    LEFT JOIN music_profiles p ON p.id=s.profile_id AND ${musicProfileActiveSQL('p')} GROUP BY e.id ORDER BY ${musicSourceOrderSQL('entry','e')}`,
     )
     .all() as MatchEntry[];
   const profiles = db
     .prepare(
-      `SELECT p.id,p.user_id,${musicNameSQL} name,f.gender,f.gender_public,l.fields_json FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`,
+      `SELECT p.id,p.user_id,${musicNameSQL} name,f.gender,f.gender_public,l.fields_json FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`,
     )
     .all() as {
     id: string;

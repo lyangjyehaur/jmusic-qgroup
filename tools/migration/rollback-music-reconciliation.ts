@@ -48,11 +48,17 @@ export function verifyRollbackMusic(db:DB,result:RollbackMusic,intents:StoredInt
   for(const key of reserved)if(db.prepare('SELECT 1 FROM music_legacy_erasures WHERE legacy_key=?').get(key))erased.add(key);
   const creator=(value:string)=>erased.has(value)?'':map.get(value)?.legacyKey??value;
   equal(Object.keys(members).sort(),profiles.filter(p=>p.erased_at===null&&!retired.has(p.id)).map(p=>map.get(p.id)!.legacyKey).sort());
-  equal(jsonObjectKeys(members),profiles.filter(p=>p.erased_at===null&&!retired.has(p.id)).map(p=>map.get(p.id)!.legacyKey));
+  const sourceOrder=(ids:string[],kind:string,field:string)=>{
+    if(!rebased)return ids;
+    const sources=db.prepare('SELECT json_extract(payload_json,?) AS id FROM music_documents WHERE kind=? ORDER BY position').all('$.'+field,kind) as {id:string}[];
+    const rank=new Map(sources.map((row,index)=>[row.id,index]));
+    return [...ids].sort((a,b)=>(rank.get(a)??Number.MAX_SAFE_INTEGER)-(rank.get(b)??Number.MAX_SAFE_INTEGER));
+  };
+  equal(jsonObjectKeys(members),sourceOrder(profiles.filter(p=>p.erased_at===null&&!retired.has(p.id)).map(p=>p.id),'profile_source','profileId').map(id=>map.get(id)!.legacyKey));
   const terms=db.prepare(`SELECT e.id,e.name,e.kind,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json FROM music_entries e
     LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.rowid`).all() as {id:string;name:string;kind:string;category:string|null;aliases_json:string|null;created_by:string|null;created_at_json:string|null;updated_at_json:string|null}[];
   equal(Object.keys(entries).sort(),terms.map(row=>row.id).sort());
-  equal(jsonObjectKeys(entries),terms.map(row=>row.id));
+  equal(jsonObjectKeys(entries),sourceOrder(terms.map(row=>row.id),'entry_source','entryId'));
   for(const row of terms){
     const entry=obj(entries[row.id]);fields(entry,['id','text','kind','category','aliases','createdBy','createdAt','updatedAt']);equal(entry.id,row.id);equal(entry.text,row.name);
     equal(entry.kind==='main'||entry.kind==='sub'?entry.kind:entry.category==='领域'?'main':'sub',row.kind);

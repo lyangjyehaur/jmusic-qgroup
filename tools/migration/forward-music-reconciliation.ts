@@ -1,6 +1,6 @@
 import Database from 'better-sqlite3';
 import type {DB} from '@qgroup/database';
-import {object,profileId,type Json} from './music-codec';
+import {object,profileId,jsonObjectKeys,type Json} from './music-codec';
 import type {RollbackMusic} from './rollback-music';
 import {identityTables} from './rollback-identity-source';
 import {forwardRows,forwardRowReader,forwardEqual,forwardHash,forwardCanonical,assertForwardImage} from './forward-board-storage';
@@ -12,17 +12,13 @@ function expected<T>(before:T|undefined,current:T|undefined,legacy:T|undefined,e
   if(equal(before,legacy))return current;if(!equal(before,current)&&!equal(current,legacy))reject();return legacy;
 }
 /** Independent order oracle; no merge helper or report is consulted. */
-function order(before:string[],current:string[],legacy:string[],present:Set<string>,actual:string[],objectKeys=false){
+function order(before:string[],current:string[],legacy:string[],present:Set<string>,actual:string[]){
   const lists=[before,current,legacy].map(list=>list.filter(id=>present.has(id))),[b,n,o]=lists as [string[],string[],string[]],eq=(a:string[],b:string[])=>JSON.stringify(a)===JSON.stringify(b);
   const chosen=eq(b,o)?[n]:eq(b,n)?[o]:[n,o],discovery=[...new Set(lists.flat())],rank=new Map(discovery.map((id,index)=>[id,index])),constraints=new Set<string>();
   for(const list of chosen)for(let index=1;index<list.length;index++)constraints.add(JSON.stringify([list[index-1],list[index]]));
   const remaining=new Set(discovery),wanted:string[]=[];
   while(remaining.size){const blocked=new Set([...constraints].map(value=>JSON.parse(value) as [string,string]).filter(([a,b])=>remaining.has(a)&&remaining.has(b)).map(([,b])=>b)),ready=[...remaining].filter(id=>!blocked.has(id)).sort((a,b)=>rank.get(a)!-rank.get(b)!);if(!ready.length)reject();wanted.push(ready[0]!);remaining.delete(ready[0]!);}
-  // Object enumeration sorts canonical array-index keys before string keys.
-  // Shout arrays retain the topological order without this object-only rule.
-  const indexKey=(id:string)=>Number.isInteger(Number(id))&&Number(id)>=0&&Number(id)<4294967295&&String(Number(id))===id;
-  const enumerated=objectKeys?[...wanted.filter(indexKey).sort((a,b)=>Number(a)-Number(b)),...wanted.filter(id=>!indexKey(id))]:wanted;
-  if(!eq(enumerated,actual)||wanted.length!==present.size)reject();
+  if(!eq(wanted,actual)||wanted.length!==present.size)reject();
 }
 /** Reads all source rows and derives expectations independently. It never
  * invokes the merger or accepts its decisions, mapping list or summary as proof. */
@@ -40,7 +36,7 @@ export function reconcileForwardMusicRows(s:ForwardMusicSources,music:RollbackMu
     const [base,current,old]=sources.map(data=>object(data[kind],'verify music '+kind)) as [ReturnType<typeof object>,ReturnType<typeof object>,ReturnType<typeof object>],actual=object(music.data[kind],'candidate music '+kind),wanted=new Map<string,Json>();
     for(const key of new Set([...Object.keys(base),...Object.keys(current),...Object.keys(old)])){const value=expected(base[key],current[key],old[key],musicEqual);if(value!==undefined)wanted.set(key,value);}
     if(Object.keys(actual).length!==wanted.size||[...wanted].some(([key,value])=>!Object.hasOwn(actual,key)||!musicEqual(value,actual[key])))reject();
-    order(Object.keys(base),Object.keys(current),Object.keys(old),new Set(wanted.keys()),Object.keys(actual),true);counts[kind]=wanted.size;
+    order(jsonObjectKeys(base),jsonObjectKeys(current),jsonObjectKeys(old),new Set(wanted.keys()),jsonObjectKeys(actual));counts[kind]=wanted.size;
   }
   const [beforeSettings,currentSettings,legacySettings]=sources.map(data=>data.settings??{});if(!musicEqual(expected(beforeSettings,currentSettings,legacySettings,musicEqual),music.data.settings))reject();
   const [beforeTrend,currentTrend,legacyTrend]=sources.map(data=>data.trend??[]);let expectedTrend;
@@ -61,7 +57,7 @@ export function reconcileForwardMusicRows(s:ForwardMusicSources,music:RollbackMu
   for(const id of new Set([...base.keys(),...current.keys(),...old.keys()])){const value=expected(base.get(id),current.get(id),old.get(id),musicEqual);if(value)wanted.set(id,value);}
   if(actual.size!==wanted.size||[...wanted].some(([id,row])=>!musicEqual(row,actual.get(id))))reject();
   for(const kind of ['shouts','shoutHistory']){const present=new Set([...wanted].filter(([,row])=>row.kind===kind).map(([id])=>id)),ids=lists.map(map=>[...map].filter(([,row])=>row.kind===kind).map(([id])=>id));order(ids[0]!,ids[1]!,ids[2]!,present,ids[3]!);counts[kind]=present.size;}
-  const members=object(music.data.members,'verify forward keys'),mapping=[...s.native.keys,...Object.keys(members).filter(key=>!s.native.keys.some(row=>row.legacyKey===key)).map(key=>({profileId:profileId(key),legacyKey:key,mode:'preserved' as const,erased:false}))];
+  const members=object(music.data.members,'verify forward keys'),mapping=[...s.native.keys,...jsonObjectKeys(members).filter(key=>!s.native.keys.some(row=>row.legacyKey===key)).map(key=>({profileId:profileId(key),legacyKey:key,mode:'preserved' as const,erased:false}))];
   if(!musicEqual(music.keys,mapping))reject();
   const identityCounts:Record<string,number>={},digest:string[]=[];
   for(const table of identityTables){

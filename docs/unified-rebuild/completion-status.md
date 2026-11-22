@@ -8,6 +8,8 @@
 
 [第 225 批](225-matching-order-parent-acceptance.md)完成 M13–M22：同一線上副本 4,624 組配對、兩種排序、43 個原已連結帳號、分享／私有欄位、趨勢與 6 種圈子門檻皆與固定原程式一致。修正匯入／管理與歷史匯出／回退 JSON 的數字 QQ 鍵順序，6 張 bot 表保全；337 個不同本機單元案例、56 個瀏覽器案例與當前 API／bot build 通過。線上來源 Python bot 的 532 次隔離 HTTP 及重試／未知／模拟保全驗證通過；不是實際匯出映像組合驗收。完整 forward／source rebase 排序演練仍待完成。
 
+[第 226 批](226-forward-source-order-checkpoint.md)完成完整 forward／來源重綁排序回歸：實際副本 68 份成分／152 詞條／682 選擇，三階段各 97 表重跑一致，89 張非變更目標表與 6 張 bot 表保全；重新讀回 224 檔套件及 30 份成分／14 組看板歷史。補保留順序的複製、帳號／重置來源寫出、原生讀取及晚順序替換邊界；531 個不同單元案例與 107 個瀏覽器案例取得成功，當前 build／Python bot 隔離配合通過。尚未啟用的 recovery 原生備份歷史仍按原保護拒絕；固定 activation／實際 bot 映像組合驗收沒有因此完成。父項數量不變。
+
 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的完整 Linux unit **4,063**／browser **1,047**／image 已取得成功終態、原 artifacts 與原提交來源 pins，browser 無略過／重試／flaky。該提交包含第 221 批手機工具；第 222 批兩項管理登出測試及第 223 批 activation 修改分開以本機證據驗證，不套用未包含的完整 CI。實際匯出的線上 bot 映像隔離組合證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)；較早間歇性恢復失敗及 subprocess timeout 證據保留，根因尚未證明。
 
 最新正式副本已完成兩次匯入、新寫入回退／forward、30 份成分歷史、14 組看板歷史及外部 bot 狀態恢復；[第 220 批](220-legacy-http-and-parent-acceptance.md)完成固定舊 HTTP 新寫入及 244 次刪除後歷史下載／恢復／重啟；[第 221 批](221-forward-deletion-and-mobile-tools.md)完成刪除後完整 erasure／business／proof／source rebase、三階段各 97 表重複回復與再次封存。[第 223 批](223-recovery-copy-activation.md)新增離線啟用工具及原生 receipt／原 authority 綁定，正式隔離副本的 97 表只改恢復旗標、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣與跨兩次原生讀取／重啟通過；160 個相關案例、strict 與 API／bot bundle 通過。原輸入仍 blocked；當前固定版本的 activation／恢復組合尚未驗收，既有 runtime manifest 明確拒絕未綁定配置。剩餘為全台帳審核、當前固定版本成套恢復驗證及固定舊 web／music／bot 的全部回退操作，使用實際線上容量與已核對版本，不再要求預估容量或由使用者提供版本。

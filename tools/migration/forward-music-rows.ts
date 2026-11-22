@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import {object,profileId,type ObjectValue,type Json} from './music-codec';
+import {object,profileId,cloneJson,jsonObjectKeys,jsonObjectFromEntries,type ObjectValue,type Json} from './music-codec';
 import {identityTables,identityColumns,quoteIdentity} from './rollback-identity-source';
 import {forwardRows,forwardEqual,type ForwardRow} from './forward-board-storage';
 import {musicEqual,type ForwardMusicSources} from './forward-music-sources';
@@ -12,10 +12,10 @@ function choose<T>(base:T|undefined,native:T|undefined,old:T|undefined,equal:(a:
   return old;
 }
 function documents(base:ObjectValue,native:ObjectValue,old:ObjectValue,label:string){
-  const values=new Map<string,Json>();for(const key of new Set([...Object.keys(base),...Object.keys(native),...Object.keys(old)])){
-    const value=choose(base[key],native[key],old[key],musicEqual,label);if(value!==undefined)values.set(key,structuredClone(value));
+  const values=new Map<string,Json>();for(const key of new Set([...jsonObjectKeys(base),...jsonObjectKeys(native),...jsonObjectKeys(old)])){
+    const value=choose(base[key],native[key],old[key],musicEqual,label);if(value!==undefined)values.set(key,cloneJson(value));
   }
-  return Object.fromEntries(mergeForwardOrder(Object.keys(base),Object.keys(native),Object.keys(old),new Set(values.keys())).map(key=>[key,values.get(key)!]));
+  return jsonObjectFromEntries(mergeForwardOrder(jsonObjectKeys(base),jsonObjectKeys(native),jsonObjectKeys(old),new Set(values.keys())).map(key=>[key,values.get(key)!]));
 }
 function trend(before:Json,current:Json,legacy:Json){
   if(musicEqual(before,legacy)||musicEqual(current,legacy))return structuredClone(current);
@@ -43,7 +43,7 @@ export function mergeForwardMusicRows(s:ForwardMusicSources){
     for(const id of new Set(shoutSources.flatMap(map=>[...map.keys()]))){const wanted=choose(...shoutSources.map(map=>map.get(id)) as [Shout|undefined,Shout|undefined,Shout|undefined],musicEqual,'shouts');if(wanted)mergedShouts.set(id,structuredClone(wanted));}
     for(const kind of ['shouts','shoutHistory'] as const){const present=new Set([...mergedShouts].filter(([,row])=>row.kind===kind).map(([id])=>id)),orders=shoutSources.map(map=>[...map].filter(([,row])=>row.kind===kind).map(([id])=>id));data[kind]=mergeForwardOrder(...orders as [string[],string[],string[]],present).map(id=>mergedShouts.get(id)!.value);}
     const members=object(data.members,'merged members'),mapping=structuredClone(s.native.keys),reserved=new Set(mapping.map(row=>row.profileId));
-    for(const key of Object.keys(members))if(!mapping.some(row=>row.legacyKey===key)){const id=profileId(key);if(reserved.has(id))throw Error('Forward new profile ID collision');reserved.add(id);mapping.push({profileId:id,legacyKey:key,mode:'preserved',erased:false});}
+    for(const key of jsonObjectKeys(members))if(!mapping.some(row=>row.legacyKey===key)){const id=profileId(key);if(reserved.has(id))throw Error('Forward new profile ID collision');reserved.add(id);mapping.push({profileId:id,legacyKey:key,mode:'preserved',erased:false});}
     const music:RollbackMusic={data,keys:mapping};const identity=new Database(s.nativeIdentity.serialize()),candidate=identity;
     try{
     candidate.transaction(()=>{

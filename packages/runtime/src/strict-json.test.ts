@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { jsonObjectKeys, jsonObjectFromEntries, stringifyJson, parseJson, type ObjectValue } from './strict-json';
+import { jsonObjectKeys, jsonObjectFromEntries, stringifyJson, parseJson, cloneJson, type ObjectValue } from './strict-json';
 
 describe('source JSON discovery order', () => {
   it('retains nested numeric member and term keys in their actual source order', () => {
@@ -56,5 +56,16 @@ describe('source JSON discovery order', () => {
     const cycle: Record<string, unknown> = {}; cycle.self = cycle;
     expect(() => stringifyJson(cycle)).toThrow('Circular JSON data');
     expect(() => stringifyJson(undefined)).toThrow('Missing JSON data');
+  });
+  it('clones nested source order and negative zero independently of standard structuredClone or stringify', () => {
+    const source = parseJson('{"members":{"9000":{"value":-0,"picks":[{"9":1,"2":2}]},"1000":{}}}') as ObjectValue;
+    const clone = cloneJson(source);
+    expect(clone).toEqual(source); expect(clone).not.toBe(source);
+    expect(jsonObjectKeys(clone.members as object)).toEqual(['9000','1000']);
+    const member = (clone.members as ObjectValue)['9000'] as ObjectValue;
+    expect(Object.is(member.value,-0)).toBe(true);
+    expect(jsonObjectKeys((member.picks as ObjectValue[])[0]!)).toEqual(['9','2']);
+    delete (clone.members as ObjectValue)['9000'];
+    expect(jsonObjectKeys(source.members as object)).toEqual(['9000','1000']);
   });
 });

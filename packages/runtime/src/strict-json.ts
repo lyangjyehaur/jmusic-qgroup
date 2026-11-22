@@ -16,6 +16,21 @@ export function jsonObjectFromEntries<T>(pairs: Iterable<readonly [string, T]>):
   sourceKeys.set(result, [...new Set(entries.map(([key]) => key))]);
   return result;
 }
+/** Clone JSON values without losing discovery order or primitive representations
+ * such as negative zero through a stringify/parse roundtrip. */
+export function cloneJson<T extends Json>(value: T): T {
+  const copied = structuredClone(value), visited = new WeakSet<object>();
+  function remember(original: Json, clone: Json): void {
+    if (!original || typeof original !== 'object' || visited.has(original)) return;
+    visited.add(original);
+    if (Array.isArray(original)) original.forEach((item, index) => remember(item, (clone as Json[])[index]!));
+    else {
+      const keys = jsonObjectKeys(original); sourceKeys.set(clone as object, keys);
+      for (const key of keys) remember(original[key]!, (clone as ObjectValue)[key]!);
+    }
+  }
+  remember(value, copied); return copied;
+}
 /** Serialize plain JSON data in recorded discovery order. Normal JSON.stringify
  * remains unchanged for contracts and canonical hashes that intentionally sort. */
 export function stringifyJson(value: unknown, spaces = 0): string {

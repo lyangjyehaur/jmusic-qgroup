@@ -1,4 +1,4 @@
-import {musicProfileActiveSQL} from '@qgroup/database';
+import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
 import type { DB } from '@qgroup/database';
@@ -15,7 +15,7 @@ function countsNow(db: DB): Record<string, number> {
   // retains that order for equal gains, so GROUP BY's implicit key order is wrong.
   const counts = new Map<string, number>();
   for (const row of db.prepare(`SELECT s.entry_id FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id
-    WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid,s.position`).all() as { entry_id: string }[]) counts.set(row.entry_id, (counts.get(row.entry_id) ?? 0) + 1);
+    WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')},s.position`).all() as { entry_id: string }[]) counts.set(row.entry_id, (counts.get(row.entry_id) ?? 0) + 1);
   return Object.fromEntries(counts);
 }
 function history(db: DB): TrendPoint[] {
@@ -38,14 +38,14 @@ function integerTime(value: unknown): number | null {
 }
 function profiles(db: DB) {
   return (db.prepare(`SELECT p.id,${musicNameSQL} name,l.fields_json,c.created_at FROM music_profiles p ${musicNameJoins}
-    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as { id: string; name: string; fields_json: string | null; created_at: string | null }[])
+    LEFT JOIN music_profile_creation c ON c.profile_id=p.id WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`).all() as { id: string; name: string; fields_json: string | null; created_at: string | null }[])
     .map(row => ({ id: row.id, name: row.name, createdAt: row.fields_json !== null ? integerTime((JSON.parse(row.fields_json) as { createdAt?: unknown }).createdAt)
       : row.created_at && Number.isFinite(Date.parse(row.created_at)) ? Math.trunc(Date.parse(row.created_at) / 1000) : null }));
 }
 export function readMusicTrend(db: DB, now: Date) {
   const asOf = now.getTime() / 1000, counts = countsNow(db), members = profiles(db);
   const rawEntries = db.prepare(`SELECT e.id,e.name,e.kind,COALESCE(d.category,CASE e.kind WHEN 'main' THEN '领域' ELSE '其他' END) category,
-    COALESCE(d.created_at_json,'0') created_at_json FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.rowid`).all() as { id: string; name: string; kind: 'main' | 'sub'; category: string; created_at_json: string }[];
+    COALESCE(d.created_at_json,'0') created_at_json FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY ${musicSourceOrderSQL('entry','e')}`).all() as { id: string; name: string; kind: 'main' | 'sub'; category: string; created_at_json: string }[];
   const entries = rawEntries.map(row => ({ id: row.id, name: row.name, kind: row.kind, category: row.category, count: counts[row.id] ?? 0, createdAt: integerTime(JSON.parse(row.created_at_json)) }));
   const recent = (days: number) => ({ entries: entries.filter(row => row.createdAt !== null && row.createdAt > asOf - days * 86400).length, members: members.filter(row => row.createdAt !== null && row.createdAt > asOf - days * 86400).length });
   const stats = musicStats(db, rawEntries.map(row => row.created_at_json), now);

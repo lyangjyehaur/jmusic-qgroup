@@ -1,3 +1,4 @@
+import {cloneJson,stringifyJson} from '../../../tools/migration/music-codec';
 import Database from 'better-sqlite3';
 import {forwardBoardAccountFixture} from './forward-board-account-fixture';
 import {hash} from '../src/security';
@@ -11,7 +12,7 @@ export async function forwardAccountBusinessFixture(userId:'claimant'|'fresh-nat
   const s=await forwardBoardAccountFixture(userId);let board:Database.Database|undefined,identity:Database.Database|undefined;
   try{
     board=new Database(s.input.sources.oldBoard.bytes);identity=new Database(s.state.identityImage);
-    const old=structuredClone(s.state.music.data),key=s.state.music.keys.find(k=>k.profileId===s.profileId)!.legacyKey;
+    const old=cloneJson(s.state.music.data),key=s.state.music.keys.find(k=>k.profileId===s.profileId)!.legacyKey;
     const closedSession=hash(userId==='claimant'?'synthetic-proof-claimant':'synthetic-reference-fresh');
     const members=old.members as Record<string,Record<string,unknown>>;
     members[key]!.note='old closed profile content retained';members['10002']!.note='old open profile change';
@@ -29,7 +30,7 @@ export async function forwardAccountBusinessFixture(userId:'claimant'|'fresh-nat
     identity.prepare("INSERT INTO login_attempts(rowid,bucket,created) VALUES(31,?,1795147140.5)").run('ip:'+'c'.repeat(64));
     identity.prepare("INSERT INTO link_audit(id,qq,actor,before_user_id,after_user_id,created) VALUES(12,'10002','old-admin','bob','bob',1795147140.75)").run();
     identity.prepare("UPDATE sqlite_sequence SET seq=40 WHERE name='link_audit'").run();
-    const input=():ForwardAccountBusinessInput=>({sources:{...s.input.sources,baselineMusic:accountPin(Buffer.from(JSON.stringify({...s.state.music,identityAuditMappings:s.state.identityAuditMappings}))),baselineIdentity:accountPin(s.state.identityImage),oldMusic:accountPin(Buffer.from(JSON.stringify(old))),oldIdentity:accountPin(identity!.serialize()),oldBoard:accountPin(board!.serialize())},authorityRoot:s.input.authorityRoot,manifestSha256:s.input.manifestSha256,preparedAt:'2026-11-20T05:00:00.000Z',reconstructedAt:'2026-11-20T05:01:00.000Z',reconciledAt:'2026-11-20T05:02:00.000Z'});
+    const input=():ForwardAccountBusinessInput=>({sources:{...s.input.sources,baselineMusic:accountPin(Buffer.from(stringifyJson({...s.state.music,identityAuditMappings:s.state.identityAuditMappings}))),baselineIdentity:accountPin(s.state.identityImage),oldMusic:accountPin(Buffer.from(stringifyJson(old))),oldIdentity:accountPin(identity!.serialize()),oldBoard:accountPin(board!.serialize())},authorityRoot:s.input.authorityRoot,manifestSha256:s.input.manifestSha256,preparedAt:'2026-11-20T05:00:00.000Z',reconstructedAt:'2026-11-20T05:01:00.000Z',reconciledAt:'2026-11-20T05:02:00.000Z'});
     return {...s,accountOldBoard:board,accountOldIdentity:identity,accountOld:old,accountKey:key,closedSession,notificationId,accountInput:input,close(){identity!.close();board!.close();s.close();}};
   }catch(error){identity?.close();board?.close();s.close();throw error;}
 }

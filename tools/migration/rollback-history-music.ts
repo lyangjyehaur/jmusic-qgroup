@@ -2,7 +2,7 @@ import type {DB} from '@qgroup/database';
 import {createPrivacy} from '../../apps/api/src/privacy';
 import {exportMusic} from '../../apps/api/src/music-export';
 import {exportLegacyMusic} from '../../apps/api/src/legacy-music-export';
-import {digest,object,parseJson,stringifyJson,jsonObjectFromEntries,type Json,type ObjectValue} from './music-codec';
+import {digest,object,parseJson,stringifyJson,jsonObjectKeys,jsonObjectFromEntries,type Json,type ObjectValue} from './music-codec';
 import type {StoredIntent} from '../../apps/api/src/erasure-journal';
 import type {RollbackMusic} from './rollback-music';
 import {decodeHistory,openHistoryNative,type HistoryPins,type HistorySources} from './rollback-history-source';
@@ -25,7 +25,8 @@ export function projectNativeHistory(current:DB,music:RollbackMusic,archive:Hist
     }
     const data=object(parseJson(stringifyJson(exportMusic(copy,current))),'native history export'),members=object(data.members,'native historical members'),active=object(music.data.members,'current rollback members');
     const renamedPairs:[string,Json][]=[],renamedKeys=new Set<string>();
-    for(const row of rows){const member=members[row.legacy_key??row.id];if(member===undefined)continue;const key=byId.get(row.id)!;if(renamedKeys.has(key))throw Error('Historical native member collision');renamedKeys.add(key);
+    const profilesByKey=new Map(rows.map(row=>[row.legacy_key??row.id,row]));
+    for(const oldKey of jsonObjectKeys(members)){const row=profilesByKey.get(oldKey);if(!row)throw Error('Unmapped historical native member');const member=members[oldKey]!;const key=byId.get(row.id)!;if(renamedKeys.has(key))throw Error('Historical native member collision');renamedKeys.add(key);
       const value=object(member,'native historical member'),latest=active[key]===undefined?undefined:object(active[key],'current member');
       value.qq=key;value.boardUserId=latest?.boardUserId??'';value.pinHash=latest?.pinHash??'';value.contactQQ=latest?.contactQQ??'';
       renamedPairs.push([key,value]);

@@ -1,5 +1,5 @@
 import { ActivityPath } from '@qgroup/contracts/http-paths';
-import {musicProfileActiveSQL} from '@qgroup/database';
+import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
@@ -39,7 +39,7 @@ const rows = (db: DB) =>
       `SELECT e.*,COALESCE(d.category,CASE WHEN e.kind='main' THEN '领域' ELSE '其他' END) AS category,COALESCE(d.aliases_json,'[]') AS aliases_json,COALESCE(d.created_by,'') AS created_by,COALESCE(d.created_at_json,'0') AS created_at_json,COALESCE(d.updated_at_json,'null') AS updated_at_json,
  COALESCE(c.n,0) AS count
  FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id
- LEFT JOIN (SELECT s.entry_id,count(*) AS n FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id WHERE ${musicProfileActiveSQL('p')} GROUP BY s.entry_id) c ON c.entry_id=e.id ORDER BY e.rowid`,
+ LEFT JOIN (SELECT s.entry_id,count(*) AS n FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id WHERE ${musicProfileActiveSQL('p')} GROUP BY s.entry_id) c ON c.entry_id=e.id ORDER BY ${musicSourceOrderSQL('entry','e')}`,
     )
     .all() as Row[];
 const revision = (row: Row) =>
@@ -171,7 +171,7 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
       FROM music_profiles p ${musicNameJoins}
       JOIN music_selections s ON s.profile_id=p.id
       LEFT JOIN music_profile_contacts c ON c.profile_id=p.id
-      WHERE ${musicProfileActiveSQL('p')} AND s.entry_id=? ORDER BY p.rowid`).all(id) as z.infer<typeof MusicEntryMembers>['members'];
+      WHERE ${musicProfileActiveSQL('p')} AND s.entry_id=? ORDER BY ${musicSourceOrderSQL('profile','p')}`).all(id) as z.infer<typeof MusicEntryMembers>['members'];
     // Stable sort retains profile insertion order for equal names, as in the source list.
     members.sort((a, b) => textOrder(a.name, b.name));
     return MusicEntryMembers.parse({ entryId: id, members });

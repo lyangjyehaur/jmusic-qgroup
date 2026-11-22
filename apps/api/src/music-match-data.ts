@@ -1,22 +1,22 @@
-import {musicProfileActiveSQL} from '@qgroup/database';
+import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { legacyMusicFields, type DB } from '@qgroup/database';
 import { musicMatches, type MatchEntry } from '@qgroup/domain';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 export function musicMatchData(db: DB) {
   const entries = db.prepare(`SELECT e.id,e.name,e.kind,count(p.id) AS count FROM music_entries e
     LEFT JOIN music_selections s ON s.entry_id=e.id LEFT JOIN music_profiles p ON p.id=s.profile_id AND ${musicProfileActiveSQL('p')}
-    GROUP BY e.id ORDER BY e.rowid`).all() as MatchEntry[];
+    GROUP BY e.id ORDER BY ${musicSourceOrderSQL('entry','e')}`).all() as MatchEntry[];
   const raw = db.prepare(`SELECT p.id,${musicNameSQL} AS name,
     COALESCE(c.contact_qq,'') AS contactQQ,CASE WHEN c.contact_qq!='' THEN c.source ELSE '' END AS contactSource,
     f.note,f.gender,f.gender_public AS genderPublic,l.fields_json AS sourceFields
     FROM music_profiles p ${musicNameJoins} LEFT JOIN music_profile_contacts c ON c.profile_id=p.id
-    WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as {
+    WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`).all() as {
       id: string; name: string; contactQQ: string; contactSource: 'legacy' | 'self_reported' | '';
       note: string | null; gender: string | null; genderPublic: number | null; sourceFields: string | null;
     }[];
   const selections = new Map<string, { entryId: string; level: number }[]>();
   for (const row of db.prepare(`SELECT s.profile_id,s.entry_id,s.level FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id
-    WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid,s.position`).all() as { profile_id: string; entry_id: string; level: number }[]) {
+    WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')},s.position`).all() as { profile_id: string; entry_id: string; level: number }[]) {
     const list = selections.get(row.profile_id) ?? [];
     list.push({ entryId: row.entry_id, level: row.level }); selections.set(row.profile_id, list);
   }

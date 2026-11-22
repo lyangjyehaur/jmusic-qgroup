@@ -15,12 +15,14 @@ import {sourceRebaseDigest,readSourceRebaseEvidence} from '../../../tools/migrat
 import {projectRollbackMusic,rollbackMusicKeys} from '../../../tools/migration/rollback-music';
 import {projectRollbackIdentity} from '../../../tools/migration/rollback-identity';
 import {projectRollbackState} from '../../../tools/migration/rollback-state';
-import {object,profileId} from '../../../tools/migration/music-codec';
+import {object,profileId,jsonObjectKeys,jsonObjectFromEntries,stringifyJson,parseJson} from '../../../tools/migration/music-codec';
 import {erasureJournal,type ErasureJournal} from './erasure-journal';
 import {hash} from './security';
 import {createPrivacy} from './privacy';
 import {saveProfile} from './repositories';
 import {createMusicClaims} from './music-claim';
+import {musicMatchData} from './music-match-data';
+import {exportMusic} from './music-export';
 
 const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
 async function setup(stage:Parameters<typeof forwardSourceRebaseFixture>[0]='completed'){const s=await forwardSourceRebaseFixture(stage);cleanup.push(()=>s.close());return s;}
@@ -46,6 +48,33 @@ for target in json.loads(sys.argv[3]):
 it('rebases latest sources with original generated bindings and preserves every unrelated native table and sequence',async()=>{
   const s=await setup(),key=s.base.music.keys.find(row=>row.profileId===s.native.id)!;member(s,key.legacyKey).note='舊站更新原生成分';const input=s.rebaseInput(),result=rebaseForwardSources(input),db=open(result.nativeImage),before=open(input.proofImage.bytes);expect(rollbackMusicKeys(db).find(row=>row.profileId===s.native.id)).toEqual(key);expect(project(db).music.keys).toEqual(s.base.music.keys);expect(project(db).music.data.members).toMatchObject({[key.legacyKey]:{note:'舊站更新原生成分'}});
   for(const table of (before.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {name:string}[]).map(row=>row.name))if(!['music_documents','music_legacy_identity','migration_map','migration_runs'].includes(table))expect(rows(db,table),table).toEqual(rows(before,table));expect(result.retainedProofImage).toEqual(input.proofImage.bytes);expect(result.retainedBusinessImage).toEqual(input.proofs.businessImage.bytes);expect(()=>assertDatabaseUsable(db)).toThrow('offline review');expect(result.report).toMatchObject({sourceEvidenceRebased:true,externalRetentionVerified:false,latestErasureReplayRequired:true,releaseEligible:false,rollbackEligible:false,recoveryRequired:true});
+});
+it('retains literal member and numeric term order through source rebase and repeated rollback projection',async()=>{
+  const s=await setup(),members=object(s.old.members,'old members'),order=jsonObjectKeys(members).reverse(),entry=object(object(s.old.entries,'entries').e,'entry');
+  s.old.members=jsonObjectFromEntries(order.map(key=>[key,members[key]!]));
+  s.old.entries=jsonObjectFromEntries([['20',{id:'20',text:'Twenty',kind:'sub'}],['3',{id:'3',text:'Three',kind:'sub'}],['01',{id:'01',text:'Leading zero',kind:'sub'}],['e',entry]]);
+  const input=s.rebaseInput(),result=rebaseForwardSources(input),db=open(result.nativeImage),first=project(db).music,second=project(db).music;
+  for(const music of [first,second]){
+    expect(jsonObjectKeys(object(music.data.members,'members'))).toEqual(order);
+    expect(jsonObjectKeys(object(music.data.entries,'entries'))).toEqual(['20','3','01','e']);
+    const readBack=object(parseJson(stringifyJson(music.data)),'serialized projection');
+    expect(jsonObjectKeys(object(readBack.members,'members'))).toEqual(order);
+    expect(jsonObjectKeys(object(readBack.entries,'entries'))).toEqual(['20','3','01','e']);
+    expect(music.keys).toEqual(s.base.music.keys);
+  }
+  const matching=musicMatchData(db),admin=exportMusic(db);
+  expect(matching.members.map(row=>first.keys.find(key=>key.profileId===row.id)!.legacyKey)).toEqual(order);
+  expect(matching.entries.map(row=>row.id)).toEqual(['20','3','01','e']);
+  expect(jsonObjectKeys(admin.members)).toEqual(order.map(key=>{
+    const id=first.keys.find(binding=>binding.legacyKey===key)!.profileId;
+    return (db.prepare('SELECT legacy_key FROM music_legacy_profiles WHERE profile_id=?').get(id) as {legacy_key:string}|undefined)?.legacy_key??id;
+  }));
+  expect(jsonObjectKeys(admin.entries)).toEqual(['20','3','01','e']);
+  const proof=open(input.proofImage.bytes),names=(proof.prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {name:string}[]).map(row=>row.name);
+  for(const table of names)if(!['music_documents','music_legacy_identity','migration_map','migration_runs'].includes(table))expect(rows(db,table),table).toEqual(rows(proof,table));
+  db.prepare("UPDATE music_documents SET position=position+100000 WHERE kind='profile_source'").run();
+  db.prepare("UPDATE music_documents SET position=CASE position WHEN 100000 THEN 1 WHEN 100001 THEN 0 ELSE position-100000 END WHERE kind='profile_source'").run();
+  expect(()=>verifyForwardSourceRebase(input,db.serialize())).toThrow('row inventory differs in music_documents');
 });
 it('projects a completed native claim repeatedly without duplicating its original audit or changing legacy IDs',async()=>{
   const s=await setup(),input=s.rebaseInput(),result=rebaseForwardSources(input),db=open(result.nativeImage),a=project(db),b=project(db);expect(a.identity.db.serialize()).toEqual(b.identity.db.serialize());expect(rows(a.identity.db,'link_audit')).toEqual(rows(s.oldIdentity,'link_audit'));expect(a.identity.report.auditMappings).toEqual(s.base.identityAuditMappings);expect(a.identity.report.highWater).toBe(s.base.report.identity.highWater);expect(rows(db,'music_claim_intents')).toEqual(rows(open(input.proofImage.bytes),'music_claim_intents'));expect(createMusicClaims(db,()=>new Date(sourceRebasedAt)).status(s.device,s.claimId).status).toBe('completed');

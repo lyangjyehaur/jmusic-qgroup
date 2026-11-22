@@ -5,7 +5,8 @@
     "index": "docs/unified-rebuild/local-acceptance-status.json",
     "checkpoint": "docs/unified-rebuild/225-matching-order-parent-acceptance.md",
     "full_parent_accepted": false,
-    "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb"
+    "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+    "latest_runtime_checkpoint": "docs/unified-rebuild/226-forward-source-order-checkpoint.md"
   },
   "requirements": [
     {

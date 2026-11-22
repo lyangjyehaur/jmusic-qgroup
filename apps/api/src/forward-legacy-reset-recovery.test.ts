@@ -5,7 +5,7 @@ import {join} from 'node:path';
 import {legacyResetRecoveryFixture} from '../testsupport/legacy-reset-recovery-fixture';
 import {reconstructForwardLegacyResetRecovery,verifyForwardLegacyResetRecovery,type LegacyResetRecoveryBundle} from '../../../tools/migration/forward-legacy-reset-recovery';
 import {forwardRows,forwardHash} from '../../../tools/migration/forward-board-storage';
-import {profileId} from '../../../tools/migration/music-codec';
+import {profileId,jsonObjectKeys,jsonObjectFromEntries} from '../../../tools/migration/music-codec';
 import {getProfile} from './repositories';
 import {assertDatabaseUsable} from '@qgroup/database';
 
@@ -16,7 +16,7 @@ afterAll(()=>fixture?.close());
 function copy<T>(value:T):T{
   if(Buffer.isBuffer(value))return Buffer.from(value) as T;
   if(Array.isArray(value))return value.map(item=>copy(item)) as T;
-  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,copy(item)])) as T;
+  if(value&&typeof value==='object')return jsonObjectFromEntries(jsonObjectKeys(value).map(key=>[key,copy((value as Record<string,unknown>)[key])])) as T;
   return value;
 }
 function changeImage(bytes:Buffer,change:(db:Database.Database)=>{changes:number}){const db=new Database(bytes);try{expect(change(db).changes).toBe(1);return db.serialize();}finally{db.close();}}
@@ -92,9 +92,9 @@ it.each(['top-release','top-source-pin','top-final-pin','generation-report','bus
   for(const stage of ['generation','business','proof','rebased'] as const)if(kind===(stage==='rebased'?'rebase-report':stage+'-report'))(result[stage].report as unknown as {releaseEligible:boolean}).releaseEligible=true;
   expect(()=>verifyForwardLegacyResetRecovery(fixture.recoveryInput,result)).toThrow('report differs');
 },30000);
-it.each(['business-journal','report','final-image'] as const)('fences late %s output mutation at the final verification boundary',kind=>{
+it.each(['business-journal','report','final-image','member-order'] as const)('fences late %s output mutation at the final verification boundary',kind=>{
   const result=copy(candidate);let calls=0,last=0;verifyForwardLegacyResetRecovery(fixture.recoveryInput,candidate,()=>last++);
-  expect(()=>verifyForwardLegacyResetRecovery(fixture.recoveryInput,result,()=>{if(++calls!==last)return;if(kind==='business-journal')result.business.nativeJournal=Buffer.from('changed');else if(kind==='report')(result.report as unknown as {releaseEligible:boolean}).releaseEligible=true;else result.rebased.nativeImage[0]=result.rebased.nativeImage[0]!^1;})).toThrow('output bundle changed');expect(calls).toBe(last);
+  expect(()=>verifyForwardLegacyResetRecovery(fixture.recoveryInput,result,()=>{if(++calls!==last)return;if(kind==='business-journal')result.business.nativeJournal=Buffer.from('changed');else if(kind==='member-order'){const members=result.business.musicSources.data.members as Record<string,unknown>;result.business.musicSources.data.members=jsonObjectFromEntries(jsonObjectKeys(members).reverse().map(key=>[key,members[key]])) as NonNullable<typeof result.business.musicSources.data.members>;}else if(kind==='report')(result.report as unknown as {releaseEligible:boolean}).releaseEligible=true;else result.rebased.nativeImage[0]=result.rebased.nativeImage[0]!^1;})).toThrow('output bundle changed');expect(calls).toBe(last);
 },30000);
 it('fences original authority tree mutation without touching its live SQLite locks',async()=>{
   const s=await legacyResetRecoveryFixture(false);cleanup.push(()=>s.close());const path=join(s.authority,'authority-head.json'),original=readFileSync(path);let calls=0;

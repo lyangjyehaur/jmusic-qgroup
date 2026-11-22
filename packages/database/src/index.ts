@@ -119,3 +119,5 @@ export { musicCreatedIds } from './music-creations';
 export { seedWallpapers,wallpaperDigest,wallpaperFile } from './wallpapers';
 export * from './bot-policy';
 export * from './music-retirements';
+
+export {musicSourceOrderSQL} from './music-source-order';

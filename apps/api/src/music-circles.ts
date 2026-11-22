@@ -1,4 +1,4 @@
-import {musicProfileActiveSQL} from '@qgroup/database';
+import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { createHash } from 'node:crypto';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
@@ -18,14 +18,14 @@ export function registerMusicCircles(app: FastifyInstance, db: DB, security: Sec
     if (!profile) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好圈子', 403));
     const { minLink } = MusicCirclesQuery.parse(request.query);
     if (admit) jobs.available();
-    const entries = db.prepare('SELECT id,name,kind,0 AS count FROM music_entries ORDER BY rowid').all() as MatchEntry[];
+    const entries = db.prepare(`SELECT e.id,e.name,e.kind,0 AS count FROM music_entries e ORDER BY ${musicSourceOrderSQL('entry','e')}`).all() as MatchEntry[];
     const picks = new Map<string, MatchMember['selections'][number][]>();
     for (const row of db.prepare(`SELECT s.profile_id,s.entry_id,s.level FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id
-      WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid,s.position`).all() as { profile_id: string; entry_id: string; level: number }[]) {
+      WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')},s.position`).all() as { profile_id: string; entry_id: string; level: number }[]) {
       const list = picks.get(row.profile_id) ?? []; list.push({ entryId: row.entry_id, level: row.level }); picks.set(row.profile_id, list);
     }
     // Only the fields required by clustering are loaded. Notes/contact/gender never enter this projection.
-    const members = (db.prepare(`SELECT p.id,${musicNameSQL} name FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY p.rowid`).all() as { id: string; name: string }[])
+    const members = (db.prepare(`SELECT p.id,${musicNameSQL} name FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} ORDER BY ${musicSourceOrderSQL('profile','p')}`).all() as { id: string; name: string }[])
       .map(member => ({ ...member, selections: picks.get(member.id) ?? [] }));
     const task = { members, entries, minLink };
     return { userId: viewer.id, profileId: profile.id, task, version: createHash('sha256').update(JSON.stringify(task)).digest('hex') };

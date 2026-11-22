@@ -16,28 +16,58 @@ import {mergeForwardMusic} from '../../../tools/migration/forward-music-merge';
 import {verifyForwardMusicMerge} from '../../../tools/migration/forward-music-reconciliation';
 import {forwardHash,forwardRows} from '../../../tools/migration/forward-board-storage';
 import {musicEqual,type ForwardMusicInput} from '../../../tools/migration/forward-music-sources';
-import {object,profileId,type ObjectValue} from '../../../tools/migration/music-codec';
+import {object,profileId,parseJson,stringifyJson,cloneJson,jsonObjectKeys,jsonObjectFromEntries,type ObjectValue} from '../../../tools/migration/music-codec';
 import type {RollbackMusic} from '../../../tools/migration/rollback-music';
 
 const cleanup:(()=>void)[]=[];afterEach(()=>{for(const close of cleanup.splice(0).reverse())close();});
 const stamp=new Date('2026-11-20T01:00:00Z'),pin=(bytes:Buffer)=>({bytes:Buffer.from(bytes),sha256:forwardHash(bytes)});
-async function setup(options:{historyPair?:boolean;consumed?:boolean;highWater?:boolean}={}){
+async function setup(options:{historyPair?:boolean;consumed?:boolean;highWater?:boolean;numericOrder?:boolean}={}){
   const f=await legacyHistoryFixture();cleanup.push(()=>f.close());const db=f.db;
   for(const id of ['fresh-native','fresh-old','later-native'])db.prepare('INSERT INTO users VALUES(?,?,?,?)').run(id,hash('fixture-'+id),id,stamp.toISOString());
   if(options.historyPair){db.prepare("INSERT INTO music_shouts VALUES('second',NULL,'99998','原名字','second',11,12,2)").run();db.prepare("INSERT INTO music_shouts VALUES('third',NULL,'99997','原名字','third',13,14,3)").run();}
   if(options.consumed)db.prepare("INSERT INTO login_attempts(id,token_hash,user_id,provider,app_id,mode,status,expires_at,created_at) VALUES('baseline-used','synthetic',NULL,'qq','synthetic','login','used','expired',?)").run(stamp.toISOString());
   if(options.highWater){const row=db.prepare("SELECT payload_json FROM music_documents WHERE kind='identity_source'").get() as {payload_json:string},value=JSON.parse(row.payload_json);value.sqliteSequence=[{name:'link_audit',seq:'800'}];db.prepare("UPDATE music_documents SET payload_json=? WHERE kind='identity_source'").run(JSON.stringify(value));}
-  const generated=saveProfile(db,'fresh-native',{profileId:null,revision:0,musicEpoch:0,selections:[{entryId:'e',level:1}]},stamp),journal=erasureJournal(db),base=projectRollbackState(db,journal);
-  const oldIdentity=new Database(base.identityImage),oldBoard=new Database(base.boardImage);cleanup.push(()=>oldIdentity.close(),()=>oldBoard.close());let old=structuredClone(base.music.data);
-  const baselineMusic=pin(Buffer.from(JSON.stringify({...base.music,identityAuditMappings:base.identityAuditMappings}))),baselineJournal=pin(Buffer.from(base.journal.map(row=>JSON.stringify(row)+'\n').join('')));
-  const input=():ForwardMusicInput=>({checkpoint:pin(base.checkpointImage),baselineBoard:pin(base.boardImage),baselineJournal,nativeImage:pin(captureRollbackCheckpoint(db,journal).image),nativeJournal:pin(Buffer.from(journal.read().map(row=>JSON.stringify(row)+'\n').join(''))),oldBoard:pin(oldBoard.serialize()),baselineMusic,baselineIdentity:pin(base.identityImage),oldMusic:pin(Buffer.from(JSON.stringify(old))),oldIdentity:pin(oldIdentity.serialize())});
+  const generated=saveProfile(db,'fresh-native',{profileId:null,revision:0,musicEpoch:0,selections:[{entryId:'e',level:1}]},stamp),journal=erasureJournal(db);
+  if(options.numericOrder)db.prepare('UPDATE music_profiles SET rowid=-rowid').run();
+  const base=projectRollbackState(db,journal);
+  const oldIdentity=new Database(base.identityImage),oldBoard=new Database(base.boardImage);cleanup.push(()=>oldIdentity.close(),()=>oldBoard.close());let old=cloneJson(base.music.data);
+  const baselineMusic=pin(Buffer.from(stringifyJson({...base.music,identityAuditMappings:base.identityAuditMappings}))),baselineJournal=pin(Buffer.from(base.journal.map(row=>JSON.stringify(row)+'\n').join('')));
+  const input=():ForwardMusicInput=>({checkpoint:pin(base.checkpointImage),baselineBoard:pin(base.boardImage),baselineJournal,nativeImage:pin(captureRollbackCheckpoint(db,journal).image),nativeJournal:pin(Buffer.from(journal.read().map(row=>JSON.stringify(row)+'\n').join(''))),oldBoard:pin(oldBoard.serialize()),baselineMusic,baselineIdentity:pin(base.identityImage),oldMusic:pin(Buffer.from(stringifyJson(old))),oldIdentity:pin(oldIdentity.serialize())});
   return {db,base,journal,generated,oldIdentity,oldBoard,input,get old(){return old;},set old(value:ObjectValue){old=value;}};
 }
 function open(bytes:Buffer){const db=new Database(bytes);cleanup.push(()=>db.close());return db;}
 function members(data:ObjectValue){return object(data.members,'test members');}
 function member(data:ObjectValue,key:string){return object(members(data)[key],'test member');}
 function alter(input:ForwardMusicInput,name:'oldIdentity'|'baselineIdentity'|'nativeImage'|'checkpoint',change:(db:Database.Database)=>void){const db=new Database(input[name].bytes);try{change(db);input[name]=pin(db.serialize());}finally{db.close();}}
-function changeMusic(input:ForwardMusicInput,name:'baselineMusic'|'oldMusic',change:(data:ObjectValue)=>void){const data=object(JSON.parse(input[name].bytes.toString()),'test source');change(data);input[name]=pin(Buffer.from(JSON.stringify(data)));}
+function changeMusic(input:ForwardMusicInput,name:'baselineMusic'|'oldMusic',change:(data:ObjectValue)=>void){const data=object(parseJson(input[name].bytes.toString()),'test source');change(data);input[name]=pin(Buffer.from(stringifyJson(data)));}
+
+it('retains captured numeric member order and source append order through forward merge, serialization and independent verification',async()=>{
+  const s=await setup({numericOrder:true}),originalOrder=jsonObjectKeys(members(s.old));
+  expect(originalOrder.indexOf('10002')).toBeLessThan(originalOrder.indexOf('10001'));
+  s.old.members=jsonObjectFromEntries([...originalOrder.map(key=>[key,members(s.old)[key]!] as const),['10000',{qq:'10000',name:'後加原成分',selection:['e'],created:[],boardUserId:''}]]);
+  const input=s.input(),before=Object.fromEntries(Object.entries(input).map(([key,value])=>[key,Buffer.from(value.bytes)])),merged=mergeForwardMusic(input);
+  expect(jsonObjectKeys(members(merged.music.data))).toEqual([...originalOrder,'10000']);
+  const decoded=object(parseJson(stringifyJson(merged.music)),'serialized forward') as unknown as RollbackMusic;
+  expect(jsonObjectKeys(members(decoded.data))).toEqual([...originalOrder,'10000']);
+  expect(verifyForwardMusicMerge(input,decoded,merged.identityImage).profileMappings).toBe(merged.music.keys.length);
+  const changed={...decoded,data:cloneJson(decoded.data)};changed.data.members=jsonObjectFromEntries([...jsonObjectKeys(members(decoded.data))].reverse().map(key=>[key,members(decoded.data)[key]!]));
+  expect(()=>verifyForwardMusicMerge(input,changed,merged.identityImage)).toThrow('reconciliation');
+  for(const [key,value] of Object.entries(input))expect(value.bytes).toEqual(before[key]);
+});
+
+it('retains literal numeric term order and rejects contradictory concurrent dictionary reorders',async()=>{
+  const s=await setup(),entries=object(s.old.entries,'entries');
+  s.old.entries=jsonObjectFromEntries([['20',{id:'20',text:'原次序二十',kind:'sub'}],['3',{id:'3',text:'原次序三',kind:'sub'}],['01',{id:'01',text:'原次序零一',kind:'sub'}],...Object.entries(entries)]);
+  const input=s.input(),merged=mergeForwardMusic(input);
+  expect(jsonObjectKeys(object(merged.music.data.entries,'merged entries'))).toEqual(['20','3','01','e']);
+  const decoded=object(parseJson(stringifyJson(merged.music.data)),'serialized');expect(jsonObjectKeys(object(decoded.entries,'entries'))).toEqual(['20','3','01','e']);
+  const other=await setup({numericOrder:true}),oldOrder=jsonObjectKeys(members(other.old));
+  other.old.members=jsonObjectFromEntries([...oldOrder].reverse().map(key=>[key,members(other.old)[key]!]));
+  const current=other.db.prepare('SELECT id,rowid FROM music_profiles ORDER BY rowid').all() as {id:string;rowid:number}[];
+  other.db.prepare('UPDATE music_profiles SET rowid=rowid-1000').run();
+  for(const [index,row] of [current[1]!,current[0]!,...current.slice(2)].entries())other.db.prepare('UPDATE music_profiles SET rowid=? WHERE id=?').run(index+1,row.id);
+  expect(()=>mergeForwardMusic(other.input())).toThrow('order conflict');
+});
 
 it('merges real Python profile creation, contact, selection, shout, pending proof and unlink writes without losing native changes or original generated profile IDs',async()=>{
   const s=await setup();s.db.prepare("UPDATE music_profile_fields SET note='新版私人留言',note_at=17.25,revision=1 WHERE profile_id=?").run(profileId('10001'));

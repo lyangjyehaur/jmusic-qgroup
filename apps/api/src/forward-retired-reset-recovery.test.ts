@@ -10,7 +10,7 @@ import {forwardHash,forwardRows} from '../../../tools/migration/forward-board-st
 import {projectRollbackStateFromCheckpoint} from '../../../tools/migration/rollback-state';
 import {decodeErasureJournal} from './erasure-journal';
 import {getProfile} from './repositories';
-import {profileId} from '../../../tools/migration/music-codec';
+import {profileId,jsonObjectKeys,jsonObjectFromEntries} from '../../../tools/migration/music-codec';
 import {openForwardMusicSources} from '../../../tools/migration/forward-music-sources';
 import {saveProfile} from './repositories';
 
@@ -20,7 +20,7 @@ afterAll(()=>s?.close());
 function copy<T>(value:T):T{
   if(Buffer.isBuffer(value))return Buffer.from(value) as T;
   if(Array.isArray(value))return value.map(copy) as T;
-  if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,item])=>[key,copy(item)])) as T;
+  if(value&&typeof value==='object')return jsonObjectFromEntries(jsonObjectKeys(value).map(key=>[key,copy((value as Record<string,unknown>)[key])])) as T;
   return value;
 }
 function changedImage(bytes:Buffer,change:(db:Database.Database)=>void){const db=new Database(bytes);try{change(db);return db.serialize();}finally{db.close();}}
