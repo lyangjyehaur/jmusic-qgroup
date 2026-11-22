@@ -1,3 +1,5 @@
+import { LegacyInvitationRecovery } from './legacy-invitation-recovery';
+import { legacyInvitationPath } from '@qgroup/contracts';
 import { LegacyRegistrationRecovery } from './legacy-registration-recovery';
 import { legacyRegistrationPath } from '@qgroup/contracts';
 import { LegacyActivityPatchRecovery } from './legacy-activity-recovery';
@@ -138,6 +140,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {description.request?.method==='POST'&&description.request.path==='/api/time-polls'&&<LegacyPollCreationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request?.method==='POST'&&description.request.path==='/api/events'&&<LegacyActivityCreationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
+    {description.request&&supportsInvitations(description.request)&&<LegacyInvitationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request&&supportsRegistration(description.request)&&<LegacyRegistrationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request?.method==='PATCH'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}$/.test(description.request.path)&&<LegacyActivityPatchRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request?.method==='POST'&&/^\/api\/events\/[A-Za-z0-9_-]{1,80}\/finance$/.test(description.request.path)&&<LegacyFinanceRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/>}
@@ -152,3 +155,5 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
 }
 
 function supportsRegistration(input:Parameters<typeof legacyRegistrationPath>[0]){try{legacyRegistrationPath(input);return true;}catch{return false;}}
+
+function supportsInvitations(input:Parameters<typeof legacyInvitationPath>[0]){try{legacyInvitationPath(input);return true;}catch{return false;}}

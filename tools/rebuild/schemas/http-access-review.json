@@ -11,10 +11,10 @@
     "apps/api/src/activity-bot.ts": "a54318436d85d2b28b5db3175d1ec6271e9318b351be9ed43ab52026933dbbaf",
     "apps/api/src/activity-claims.ts": "88a2c3f244f5e0fa9d67d95dee7bf20ecddfef131689a549609bed5d2992f156",
     "apps/api/src/activity-create-command.ts": "57c3b0a0cedda4ac755a29a03d7bb35189369ad15b280d82941298b1031e3a57",
-    "apps/api/src/activity-delegation.ts": "642160490a399a48a70e06cca92e7529faca26bb5fd7a6423e49746740d9c61c",
+    "apps/api/src/activity-delegation.ts": "1316fc1d579591dafda7361c8b087eea81425e40ea6ae9cf0d681ca8fe258ac2",
     "apps/api/src/activity-drafts.ts": "343d43426046bc984bd88be4090b7cd6ad6d4d87d79eeb3c1f7d38d0662f4a36",
     "apps/api/src/activity-history.ts": "90fd4d47951b77e75c5fc40d8bea759b2bbcfdc83b6a551d6f388ca4a5950178",
-    "apps/api/src/activity-invitations.ts": "fc46f0664cfb6e497f63f7ddb94184d8a5cff7943e0d7aea199f24e807abd522",
+    "apps/api/src/activity-invitations.ts": "ff8ba015825ac30d0b5396341a876c44d0f09e2c80149cd3e4f8e44d8b422337",
     "apps/api/src/activity-lifecycle.ts": "d65f01b7850ed74a0e8a13e5ae6dd7309346e9685bcd1b0e658cba9d7a95a88b",
     "apps/api/src/activity-management.ts": "5b3bed1f16bb1effe701e7c188e8864bfd99f3ae7bc0c299635d5186afa83df9",
     "apps/api/src/activity-publish.ts": "5f34518b170e64bc5b0a2762f4c4c744905f3b1b3c9c5b1de257baf80a6817a5",
@@ -31,7 +31,7 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "87fed7d88de775f6931a0fcbf73bf2267e50e5a29cadbb94181b71fc3d0b8ee2",
+    "apps/api/src/app.ts": "40e95c9d8abe8d17acf2ee7e7de70b1cd9edee147a7e20f06b365ccdad14802d",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
@@ -81,7 +81,7 @@
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "f9a2f5226b59abb9343415612e86df8e9b6a73269b3731c344da7fb7edf9c31e",
+    "packages/contracts/src/index.ts": "ad0c11622169bb53e959432250fe73bcb388dcfc9be78ce41b52d7bb1d21fb9b",
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
@@ -100,7 +100,9 @@
     "packages/contracts/src/activity-arrangements.ts": "4002dd18740c80078b4eda166f2bb45f7f36a1d4b9aff11e7ef7689fa0e50149",
     "apps/api/src/legacy-activity-patch.ts": "5cbd54b4ed5971a8bcc0f01d1cfc5dd622dd8f1dba4b86aa659c36e558ece979",
     "apps/api/src/legacy-registration.ts": "db30dfc64c7bc19fdd1ce9b141c13b7b9d034d75dac82e249aee59ee42921d43",
-    "packages/contracts/src/legacy-registration.ts": "ab1e2c3d97ffba172bb9c3316f15fb5fd2810f6c9850c1b7a96200d8e9e9cbdb"
+    "packages/contracts/src/legacy-registration.ts": "ab1e2c3d97ffba172bb9c3316f15fb5fd2810f6c9850c1b7a96200d8e9e9cbdb",
+    "apps/api/src/legacy-invitations.ts": "1bfff722c864f7ae798937fa7c3874608b0cc42d55a09ee762d7d8e3c06ee2ab",
+    "packages/contracts/src/legacy-invitations.ts": "0abbf3dc558c7a684802f3318a6118715b7a5222de64642c5c9e42c5fb2aaf6f"
   },
   "operations": [
     {
@@ -3747,6 +3749,50 @@
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/invitations/inspect",
+      "file": "apps/api/src/legacy-invitations.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current roster/owner authority or exact accepted-person/token proof precedes receipt acknowledgement. Private activity acceptance uses pending recipient token. Original method/path/key/body/revision/agreement/responsibility retained. Review fences event, people, roles, invitations, owner identity and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-delegation.ts",
+        "packages/contracts/src/legacy-invitations.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/invitations/retry",
+      "file": "apps/api/src/legacy-invitations.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current roster/owner authority or exact accepted-person/token proof precedes receipt acknowledgement. Private activity acceptance uses pending recipient token. Original method/path/key/body/revision/agreement/responsibility retained. Review fences event, people, roles, invitations, owner identity and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-delegation.ts",
+        "packages/contracts/src/legacy-invitations.ts",
+        "packages/contracts/src/legacy-values.ts"
       ],
       "additionalHeaders": []
     }

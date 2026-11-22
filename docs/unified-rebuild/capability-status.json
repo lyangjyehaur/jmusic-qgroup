@@ -1344,20 +1344,29 @@
         "apps/api/src/activity-bot.ts",
         "apps/api/src/request-log.ts",
         "apps/web/src/activity-delegation.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "apps/api/src/legacy-invitations.ts",
+        "apps/web/src/legacy-invitation-recovery.tsx",
+        "packages/contracts/src/legacy-invitations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-delegation.test.ts"
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/api/src/legacy-invitations.test.ts",
+        "tools/rebuild/smoke-legacy-invitations.mjs",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-delegation.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-delegation.test.ts"
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/api/src/legacy-invitations.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-delegation.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-invitations.spec.ts",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "四 scopes、七日邀請、本人接受、替換與撤銷、綁定真實帳號、精確未知結果恢復與 Python 差分已測；需結合完整出席／結算、收件匣、全部舊 API 及隔離正式資料驗收，尚未完整通過。"
@@ -1374,20 +1383,29 @@
         "apps/api/src/activity-bot.ts",
         "apps/api/src/request-log.ts",
         "apps/web/src/activity-delegation.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "apps/api/src/legacy-invitations.ts",
+        "apps/web/src/legacy-invitation-recovery.tsx",
+        "packages/contracts/src/legacy-invitations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-delegation.test.ts"
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/api/src/legacy-invitations.test.ts",
+        "tools/rebuild/smoke-legacy-invitations.mjs",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-delegation.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-delegation.test.ts"
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/api/src/legacy-invitations.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-delegation.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-invitations.spec.ts",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "唯一指定結算人、替換／撤銷、雙方其他 scopes 保留及舊 worker 作廢撤權發布者通知已測；完整結算／收款與通知介面、全部舊 API 及資料遷移後成套驗收待完成。"
@@ -1404,20 +1422,29 @@
         "apps/api/src/activity-bot.ts",
         "apps/api/src/request-log.ts",
         "apps/web/src/activity-delegation.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "apps/api/src/legacy-invitations.ts",
+        "apps/web/src/legacy-invitation-recovery.tsx",
+        "packages/contracts/src/legacy-invitations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-delegation.test.ts"
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/api/src/legacy-invitations.test.ts",
+        "tools/rebuild/smoke-legacy-invitations.mjs",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-delegation.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-delegation.test.ts"
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/api/src/legacy-invitations.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-delegation.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-invitations.spec.ts",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "本人接受、舊邀請失效、原人報名／付款與結算歷史保全、同名帳號 audit、未知接受恢復與 Python worker 群卡已測；完整資金／出席／收件匣及舊入口、遷移後成套驗收待完成。"
@@ -1852,21 +1879,30 @@
         "apps/api/src/activity-registration.ts",
         "packages/contracts/src/activity-invitations.ts",
         "apps/web/src/activity-invitations.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "apps/api/src/legacy-invitations.ts",
+        "apps/web/src/legacy-invitation-recovery.tsx",
+        "packages/contracts/src/legacy-invitations.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-invitations.test.ts"
+        "apps/api/src/activity-invitations.test.ts",
+        "apps/api/src/legacy-invitations.test.ts",
+        "tools/rebuild/smoke-legacy-invitations.mjs",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-invitations.test.ts",
         "docs/unified-rebuild/26-activity-invitations-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-invitations.test.ts"
+        "apps/api/src/activity-invitations.test.ts",
+        "apps/api/src/legacy-invitations.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-invitations.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-invitations.spec.ts",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "原生批量邀請、不占位、有限預覽、單次接受、候補確認、私人存取與舊 attendee_invite 網址已測；原 key 恢復、Python 差分及舊 worker 消費已測。全部舊 API 轉接、正式副本與實際平台驗收待完成。"
@@ -7036,7 +7072,10 @@
         "apps/web/src/pwa/retire-music-worker.ts",
         "apps/web/src/activity-access-record.ts",
         "apps/web/src/draft-store.ts",
-        "apps/web/src/activity-sharing.tsx"
+        "apps/web/src/activity-sharing.tsx",
+        "apps/api/src/legacy-invitations.ts",
+        "apps/web/src/legacy-invitation-recovery.tsx",
+        "packages/contracts/src/legacy-invitations.ts"
       ],
       "behavior_evidence": [
         "apps/api/src/inbox.test.ts",
@@ -7047,7 +7086,10 @@
         "apps/web/tests/pwa.spec.ts",
         "apps/web/tests/durable-activity-access.spec.ts",
         "apps/api/testsupport/pending-operations.test.ts",
-        "docs/unified-rebuild/77-durable-activity-access-checkpoint.md"
+        "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
+        "apps/api/src/legacy-invitations.test.ts",
+        "tools/rebuild/smoke-legacy-invitations.mjs",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-access.test.ts",
@@ -7056,7 +7098,8 @@
       ],
       "permission_evidence": [
         "apps/api/src/activity-access.test.ts",
-        "apps/web/tests/durable-activity-access.spec.ts"
+        "apps/web/tests/durable-activity-access.spec.ts",
+        "apps/api/src/legacy-invitations.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-publish.spec.ts",
@@ -7068,7 +7111,9 @@
         "apps/web/tests/durable-activity-access.spec.ts",
         "docs/unified-rebuild/77-durable-activity-access-checkpoint.md",
         "apps/web/tests/activity-sharing.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-invitations.spec.ts",
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
       ],
       "state": "in_progress",
       "remaining": "查看邀請原 token／UUID／revision 已持久保存；關頁收件匣查回、交易確認、限流、拒絕與完成確認失敗、分頁競爭、原文下載及切帳號／無訊號登出隔離已測（檢查點 77）。已補全部既有 bot action 的明確原生目標、四類活動 token、poll／裝置 fragment／QQ return、音樂八類 hash、管理／隱私／聯絡入口與 replace 返回；party／tentative／report／onsite 預設保留舊稿，無 URL 自動業務提交。Python bot 實際產生連結有交叉測試；完整使用手冊、舊已安裝 PWA、真實 QQ 回調與切換後實際版本組合仍待驗收。"

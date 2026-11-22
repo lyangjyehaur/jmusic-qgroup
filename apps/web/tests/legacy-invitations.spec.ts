@@ -1,0 +1,68 @@
+import { createHash,randomBytes } from 'node:crypto';
+import type { BrowserContext,Page } from '@playwright/test';
+import { test,expect } from './fixtures';
+const origin='http://127.0.0.1:5082';
+async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
+async function auth(context:BrowserContext){const s=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':s.scope,'X-CSRF-Token':s.csrf,'Idempotency-Key':crypto.randomUUID()};}
+async function activity(context:BrowserContext,capacity=8){
+ await login(context);const r=await context.request.post('/api/v2/activities/drafts',{headers:await auth(context),data:{values:{title:'原邀請活動',category:'约K',location:'原場地',startsAt:'2099-12-11T18:00:00+08:00',deadline:'2099-12-10T00:00:00Z',capacity,timezone:'Asia/Taipei',botEnabled:true}}});expect(r.status(),await r.text()).toBe(200);const id=(await r.json()).id as string;
+ {const result=await context.request.post('/api/v2/activities/'+id+'/draft/publish',{headers:await auth(context),data:{revision:1,confirm:true,acceptConditions:true}});expect(result.status(),await result.text()).toBe(200);}return id;
+}
+async function revision(context:BrowserContext,id:string){return (await(await context.request.get('/api/v2/activities/'+id+'/lifecycle',{headers:await auth(context)})).json()).revision as number;}
+function original(id:string,data:Record<string,unknown>,method:'POST'|'PUT'|'PATCH'|'DELETE'='POST',suffix='/roster/invitations',user='alice'){const scope=createHash('sha256').update('kanban-drafts-v1:'+user).digest('hex'),path='/api/events/'+id+suffix,requestKey=randomBytes(16).toString('hex'),key='request:'+scope+':'+createHash('sha256').update(method+' '+path+' '+JSON.stringify(data)).digest('hex');return {key,scope,requestKey,path,method,data,status:'pending',at:1234567};}
+type Original=ReturnType<typeof original>;
+const request=(o:Original)=>({method:o.method,path:o.path,requestKey:o.requestKey,data:o.data});
+async function seed(page:Page,o:Original){await page.evaluate(async row=>{const db=await new Promise<IDBDatabase>((resolve,reject)=>{const r=indexedDB.open('kanban-local-v1',1);r.onupgradeneeded=()=>r.result.createObjectStore('entries',{keyPath:'key'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});try{await new Promise<void>((resolve,reject)=>{const tx=db.transaction('entries','readwrite');tx.objectStore('entries').put(row);tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error);});}finally{db.close();}},o);}
+async function mappings(page:Page){return page.evaluate(async()=>{const db=await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('qgroup-legacy-local-v1');r.onsuccess=()=>resolve(r.result);});try{return await new Promise<{path:string;kind:string}[]>(resolve=>{const r=db.transaction('mappings').objectStore('mappings').getAll();r.onsuccess=()=>resolve(r.result);});}finally{db.close();}});}
+async function inventory(page:Page){await page.goto('/me/local-history');await expect(page.getByRole('button',{name:'重新讀取舊紀錄',exact:true})).toBeVisible();}
+async function prepare(page:Page,committed=false){await page.getByRole('button',{name:'檢查原邀請請求的恢復',exact:true}).click();if(committed)await expect(page.getByText('原邀請操作已提交，只保存核對結果。',{exact:true})).toBeVisible();else await expect(page.getByLabel('原邀請操作重試核對',{exact:true})).toBeVisible();}
+async function confirm(page:Page,committed=false){await page.getByRole('checkbox',{name:committed?'保存已核對的操作結果':'已核對邀請、管理責任與通知，使用原編號重試邀請操作',exact:true}).check();await page.getByRole('button',{name:committed?'保存已核對結果':'重試原邀請請求',exact:true}).click();}
+async function resolved(page:Page,id:string,route='registration'){await expect(page.getByRole('link',{name:'查看操作結果',exact:true})).toHaveAttribute('href','/activities/'+id+'/'+route);expect(await mappings(page)).toEqual([expect.objectContaining({kind:'request'})]);}
+async function manager(context:BrowserContext,id:string,kind='cohost'){
+ const r=await context.request.post('/api/v2/activities/'+id+'/delegation/invitations',{headers:await auth(context),data:{revision:await revision(context,id),kind,targetName:'原協辦',attendeeId:null,permissions:kind==='cohost'?['attendance']:[],reason:'分擔責任',confirm:true}});expect(r.status(),await r.text()).toBe(200);return (await(await context.request.get('/api/v2/activities/'+id+'/delegation',{headers:await auth(context)})).json()).invitations[0] as {id:string;token:string};
+}
+async function roster(context:BrowserContext,id:string){const r=await context.request.post('/api/v2/activities/'+id+'/invitations',{headers:await auth(context),data:{revision:await revision(context,id),people:[{isSelf:false,name:'原受邀者',note:'原備註',payerKind:'manager'}],reason:'補邀請',confirm:true}});expect(r.status(),await r.text()).toBe(200);return (await(await context.request.get('/api/v2/activities/'+id+'/invitations',{headers:await auth(context)})).json()).people[0] as {id:string;token:string};}
+for(const action of ['roster-issue','roster-accept','manager-issue','manager-accept','invitation-revoke','role-revoke','transfer'])test('recovers original '+action+' with private tokens and a usable destination',async({page,context})=>{
+ const id=await activity(context);let suffix='/roster/invitations',data:Record<string,unknown>={people:[{name:'原受邀者',note:'原備註',payer_kind:'manager'}],queue_mode:'individual',intent:'registered',reason:'補邀請'},method:'POST'|'DELETE'='POST',user='alice',route='invitations',token='';
+ if(action==='roster-accept'){const i=await roster(context,id);token=i.token;suffix='/invitations/'+token+'/accept';data={conditions_version:1,accept_waiting:true};user='bob';route='registration';}
+ else if(action==='manager-issue'){suffix='/management/invitations';data={kind:'cohost',target_name:'原協辦',attendee_id:null,permissions:['attendance'],reason:'分擔責任'};route='delegation';}
+ else if(['manager-accept','invitation-revoke','role-revoke','transfer'].includes(action)){
+  const i=await manager(context,id,action==='transfer'?'transfer':'cohost');token=i.token;route='delegation';
+  if(action==='invitation-revoke'){suffix='/management/invitations/'+i.id;method='DELETE';data={reason:'撤銷邀請'};}
+  else if(action==='role-revoke'){
+   await login(context,'bob');const r=await context.request.post('/api/v2/activities/'+id+'/delegation/preview/'+token+'/accept',{headers:await auth(context),data:{revision:await revision(context,id),acceptResponsibility:true,confirm:true}});expect(r.status(),await r.text()).toBe(200);await login(context);const p=await(await context.request.get('/api/v2/activities/'+id+'/delegation',{headers:await auth(context)})).json();suffix='/management/roles/'+p.roles[0].id;method='DELETE';data={reason:'重新協調'};
+  }else{suffix='/management/invitations/'+token+'/accept';data={accept_responsibility:true};user='bob';}
+ }
+ await login(context,user);const o=original(id,{base_revision:await revision(context,id),...data},method,suffix,user);
+ await page.goto('/');await seed(page,o);await inventory(page);await prepare(page);if(token)expect(await page.locator('body').innerText()).not.toContain(token);await confirm(page);await resolved(page,id,route);
+ if(token){expect(JSON.stringify(await mappings(page))).not.toContain(token);expect(await page.locator('body').innerText()).not.toContain(token);}
+ await page.getByRole('link',{name:'查看操作結果',exact:true}).click();await expect(page).toHaveURL(new RegExp('/activities/'+id+'/'+route+'$'));
+});
+test('recovers a lost invitation response using the original receipt without duplicate invitation',async({page,context})=>{
+ const id=await activity(context),o=original(id,{base_revision:await revision(context,id),people:[{name:'原受邀者'}],reason:'補邀請'});await page.goto('/');await seed(page,o);await inventory(page);await prepare(page);
+ await page.route('**/api/v2/me/legacy-requests/invitations/retry',async route=>{expect(route.request().postDataJSON()).toMatchObject(request(o));const r=await route.fetch();expect(r.status()).toBe(200);await route.abort('failed');});
+ await confirm(page);await expect(page.getByText('連線未完成，請先核對結果後重試。',{exact:true})).toBeVisible();expect(await mappings(page)).toEqual([]);await page.unroute('**/api/v2/me/legacy-requests/invitations/retry');await inventory(page);await prepare(page,true);await confirm(page,true);await resolved(page,id,'invitations');const p=await(await context.request.get('/api/v2/activities/'+id+'/invitations',{headers:await auth(context)})).json();expect(p.people).toHaveLength(1);
+});
+test('rejects changed revision after review while preserving original request',async({page,context})=>{
+ const id=await activity(context),o=original(id,{base_revision:await revision(context,id),people:[{name:'原受邀者'}],reason:'補邀請'});await page.goto('/');await seed(page,o);await inventory(page);await prepare(page);await manager(context,id);await confirm(page);await expect(page.getByText(/版本|變更/).last()).toBeVisible();expect(await mappings(page)).toEqual([]);const p=await(await context.request.get('/api/v2/activities/'+id+'/invitations',{headers:await auth(context)})).json();expect(p.people).toEqual([]);
+});
+for(const leave of ['navigation','account','logout'])test('does not save invitation recovery mapping after '+leave,async({page,context})=>{
+ const id=await activity(context),o=original(id,{base_revision:await revision(context,id),people:[{name:'原受邀者'}],reason:'補邀請'});await page.goto('/');await seed(page,o);await inventory(page);await prepare(page);
+ let release!:()=>void,seen!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;}),arrived=new Promise<void>(resolve=>{seen=resolve;});
+ await page.route('**/api/v2/me/legacy-requests/invitations/retry',async route=>{const response=await route.fetch();seen();await gate;await route.fulfill({response});});
+ try{await confirm(page);await arrived;
+  if(leave==='navigation')await page.goto('/activities');
+  else if(leave==='account'){await login(context,'bob');await page.goto('/me/local-history');}
+  else{const other=await context.newPage();try{await other.goto('/me/accounts');await other.getByRole('button',{name:'登出此裝置',exact:true}).click();await expect(other.getByRole('link',{name:'登入',exact:true})).toBeVisible();}finally{await other.close();}}
+  release();expect(await mappings(page)).toEqual([]);
+  if(leave==='navigation'){await inventory(page);await prepare(page,true);await confirm(page,true);await resolved(page,id,'invitations');}
+ }finally{release();}
+});
+for(const kind of ['source','epoch'])test('fences original invitation recovery after '+kind+' changes',async({page,context})=>{
+ const id=await activity(context),o=original(id,{base_revision:await revision(context,id),people:[{name:'原受邀者'}],reason:'補邀請'});await page.goto('/');await seed(page,o);await inventory(page);await prepare(page);let writes=0;page.on('request',r=>{if(r.url().endsWith('/legacy-requests/invitations/retry'))writes++;});
+ if(kind==='source')await seed(page,{...o,data:{...o.data,reason:'舊分頁已修改'}});else await page.evaluate(async()=>{const db=await new Promise<IDBDatabase>(resolve=>{const r=indexedDB.open('qgroup-reviewed-drafts-v1',1);r.onupgradeneeded=()=>{r.result.createObjectStore('drafts',{keyPath:'key'});r.result.createObjectStore('versions',{keyPath:'id'});r.result.createObjectStore('epochs');};r.onsuccess=()=>resolve(r.result);});await new Promise<void>(resolve=>{const tx=db.transaction('epochs','readwrite');tx.objectStore('epochs').put(1,'device');tx.oncomplete=()=>resolve();});db.close();});await confirm(page);await expect(page.getByText(kind==='source'?/舊分頁已更新原紀錄/:/帳號、頁面或本機紀錄已變更/)).toBeVisible();expect(writes).toBe(0);expect(await mappings(page)).toEqual([]);
+});
+test('keeps a committed invitation after mapping transaction abort and allows receipt acknowledgement',async({page,context})=>{
+ const id=await activity(context),o=original(id,{base_revision:await revision(context,id),people:[{name:'原受邀者'}],reason:'補邀請'});await page.goto('/');await seed(page,o);await inventory(page);await prepare(page);await page.evaluate(()=>{const put=IDBObjectStore.prototype.put;IDBObjectStore.prototype.put=function(value,key){const r=put.call(this,value,key);if(this.name==='mappings')r.addEventListener('success',()=>this.transaction.abort());return r;};(window as unknown as {restorePut:()=>void}).restorePut=()=>{IDBObjectStore.prototype.put=put;};});await confirm(page);await expect(page.getByText('無法保全舊紀錄',{exact:true})).toBeVisible();expect(await mappings(page)).toEqual([]);await page.evaluate(()=>(window as unknown as {restorePut:()=>void}).restorePut());await prepare(page,true);await confirm(page,true);await resolved(page,id,'invitations');
+});
+test('reviews original transfer responsibility on mobile without overflow or exposing a token',async({page,context})=>{const id=await activity(context),invite=await manager(context,id,'transfer');await login(context,'bob');const o=original(id,{base_revision:await revision(context,id),accept_responsibility:true},'POST','/management/invitations/'+invite.token+'/accept','bob');await page.goto('/');await seed(page,o);await inventory(page);await page.setViewportSize({width:360,height:800});await prepare(page);const review=page.getByLabel('原邀請操作重試核對');await expect(review).toContainText('接任發起者');await expect(review).toContainText('原請求已明確接受管理責任');expect(await page.locator('body').innerText()).not.toContain(invite.token);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await review.screenshot({path:'/Users/danersaka/.codex/rebuild-verification/legacy-invitations-211/invitation-mobile.png'});});

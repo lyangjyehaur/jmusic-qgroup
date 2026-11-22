@@ -18,7 +18,7 @@ it('resolves all current operations without confusing encoded parameters with an
     const resolved=resolveHttpPath(path,operation.method);
     expect(resolved).toEqual({key,params,query:{}});seen.add(resolved.key);
   }
-  expect(seen.size).toBe(209);
+  expect(seen.size).toBe(211);
 });
 it('resolves fixed routes and retains omitted defaults and BigInt query strings',()=>{
   expect(resolveHttpPath('/api/v2/me/activities').key).toBe('GET /api/v2/me/activities');

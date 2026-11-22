@@ -1,3 +1,4 @@
+import { registerLegacyInvitations } from './legacy-invitations';
 import { registerLegacyRegistration } from './legacy-registration';
 import { registerLegacyActivityPatch } from './legacy-activity-patch';
 import { registerLegacyActivityCreation } from './legacy-activity-create';
@@ -196,6 +197,7 @@ export function createApp(options: AppOptions) {
     registerLegacyActivityCreation(app, db, security, now, legacyBotDefaults);
     registerLegacyActivityPatch(app, db, security, now, legacyBotDefaults);
     registerLegacyRegistration(app, db, security, now, legacyBotDefaults);
+    registerLegacyInvitations(app, db, security, now, legacyBotDefaults);
     registerLegacyDetailedSettlement(app, db, security, now, legacyBotDefaults);
     registerLegacyFinance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     registerCreateIntents(app, db, security);
