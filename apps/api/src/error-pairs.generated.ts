@@ -28,6 +28,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "请先取消归档再邀请管理者",
     "請先取消歸檔再邀請管理者"
   ],
+  "[\"ACTIVITY_CHANGED\",\"原名冊請求缺少活動版本；原請求保留\"]": [
+    "原名册请求缺少活动版本；原请求保留",
+    "原名冊請求缺少活動版本；原請求保留"
+  ],
   "[\"ACTIVITY_CHANGED\",\"原移除請求缺少活動版本；原請求保留\"]": [
     "原移除请求缺少活动版本；原请求保留",
     "原移除請求缺少活動版本；原請求保留"
@@ -583,6 +587,18 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"LEGACY_PREVIEW_EXPIRED\",\"原款項預覽已不符合目前帳本；原請求保留，請核對後更正原稿\"]": [
     "原款项预览已不符合目前帐本；原请求保留，请核对后更正原稿",
     "原款項預覽已不符合目前帳本；原請求保留，請核對後更正原稿"
+  ],
+  "[\"LEGACY_REGISTRATION_REVIEW_CHANGED\",\"名冊、安排或通知政策已變更；請重新檢查\"]": [
+    "名册、安排或通知政策已变更；请重新检查",
+    "名冊、安排或通知政策已變更；請重新檢查"
+  ],
+  "[\"LEGACY_REGISTRATION_UNSUPPORTED\",\"原名冊方法或路徑尚未支援；原請求保留\"]": [
+    "原名册方法或路径尚未支援；原请求保留",
+    "原名冊方法或路徑尚未支援；原請求保留"
+  ],
+  "[\"LEGACY_REGISTRATION_UNSUPPORTED\",\"原名冊欄位尚未支援或缺失；原請求保留\"]": [
+    "原名册栏位尚未支援或缺失；原请求保留",
+    "原名冊欄位尚未支援或缺失；原請求保留"
   ],
   "[\"LEGACY_REQUEST_CONFLICT\",\"原操作編號與內容不符，請保留並核對原紀錄\"]": [
     "原操作编号与内容不符，请保留并核对原纪录",
@@ -1211,6 +1227,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"ROSTER_REASON\",\"撤銷他人報名時請填寫原因\"]": [
     "撤销他人报名时请填写原因",
     "撤銷他人報名時請填寫原因"
+  ],
+  "[\"ROSTER_REASON\",\"暫不同意時請填寫原因\"]": [
+    "暂不同意时请填写原因",
+    "暫不同意時請填寫原因"
   ],
   "[\"ROSTER_REASON\",\"管理其他人的報名時請填寫原因\"]": [
     "管理其他人的报名时请填写原因",

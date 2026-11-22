@@ -193,6 +193,8 @@ export const HttpResponses = Object.freeze({
   "POST /api/v2/me/devices/revoke": json("Ok", contracts.Ok),
   "POST /api/v2/me/devices/revoke-link": json("Ok", contracts.Ok),
   "POST /api/v2/me/legacy-requests/check": json("LegacyRequestReceipt", contracts.LegacyRequestReceipt),
+  "POST /api/v2/me/legacy-requests/registration/inspect": json("LegacyRegistrationInspection", contracts.LegacyRegistrationInspection),
+  "POST /api/v2/me/legacy-requests/registration/retry": json("LegacyRegistrationResult", contracts.LegacyRegistrationResult),
   "POST /api/v2/me/legacy-requests/activity/inspect": json("LegacyActivityPatchInspection", contracts.LegacyActivityPatchInspection),
   "POST /api/v2/me/legacy-requests/activity/retry": json("LegacyActivityPatchResult", contracts.LegacyActivityPatchResult),
   "POST /api/v2/me/legacy-requests/activity-create/inspect": json("LegacyActivityCreationInspection", contracts.LegacyActivityCreationInspection),

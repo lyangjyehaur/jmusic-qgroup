@@ -12,7 +12,7 @@ import { activityViewer } from './activity-roster';
 import { appendEventAudit, arrangementSnapshot, eventRow, eventScopes, legacyStamp, requireEventRevision, storedArrangement, type EventRow } from './activity-arrangements';
 import { createActivityBot, type ActivityBotDefaults } from './activity-bot';
 
-function activePerson(db:DB,eventId:string,personId:string,userId:string){
+export function activeConditionPerson(db:DB,eventId:string,personId:string,userId:string){
   const person=db.prepare("SELECT a.*,COALESCE(u.nickname,a.name) AS current_name FROM attendees a LEFT JOIN users u ON u.id=a.user_id WHERE a.id=? AND a.event_id=? AND status IN ('confirmed','waiting','tentative')").get(personId,eventId) as {id:string;manager_id:string;current_name:string;confirmation_state:string;accepted_conditions_version:number|null}|undefined;
   if(!person)throw withApiError(new DomainError('ATTENDEE_NOT_FOUND','這位參加者不在有效名單中',404));
   if(person.manager_id!==userId)throw withApiError(new DomainError('CONSENT_PERMISSION','只能確認本人或自己代報人員的安排',403));
@@ -34,13 +34,33 @@ export function activityConditions(db:DB,id:string,userId:string|null,page:numbe
   const people=userId?db.prepare("SELECT a.id,COALESCE(u.nickname,a.name) AS name,a.status,a.confirmation_state AS confirmationState,a.accepted_conditions_version AS acceptedVersion FROM attendees a LEFT JOIN users u ON u.id=a.user_id LEFT JOIN roster_parties p ON p.id=a.party_id WHERE a.event_id=? AND a.manager_id=? AND a.status IN ('confirmed','waiting','tentative') ORDER BY p.seq,a.seq").all(id,userId):[];
   return {id,revision:event.revision,current:current?conditionVersion(current):{version:event.conditions_version,arrangement:arrangementSnapshot(event),summary:'尚未发布的安排',createdAt:event.created_at,actorName:''},history:rows.slice(0,20).map(conditionVersion),page,hasMore:rows.length>20,canRespond:['scheduled','ongoing'].includes(event.lifecycle)&&!event.archived_at,people};
 }
+export function prepareActivityConsent(db:DB,event:EventRow,user:{id:string},personId:string,input:Pick<z.infer<typeof RespondActivityConditions>,'conditionsVersion'|'decision'|'reason'>){
+      if(!['scheduled','ongoing'].includes(event.lifecycle)||event.archived_at)throw withApiError(new DomainError('CONDITIONS_CLOSED','活動已結束、取消或歸檔，不能再確認新安排',409));
+      if(input.conditionsVersion!==event.conditions_version)throw withApiError(new DomainError('CONDITIONS_CHANGED','安排又有變更，請載入最新安排再確認',409));
+      const person=activeConditionPerson(db,event.id,personId,user.id),decision=input.decision;
+
+ if(decision==='declined'&&!input.reason)throw withApiError(new DomainError('ROSTER_REASON','暫不同意時請填寫原因',400));
+ return {event,person,input};
+}
+export function executeActivityConsent(db:DB,plan:ReturnType<typeof prepareActivityConsent>,user:{id:string;nickname:string},time:Date,defaults:ActivityBotDefaults={},hookError:(id:string)=>void=()=>{}){
+ const {event,person,input}=plan,id=event.id,personId=person.id,decision=input.decision,stamp=legacyStamp(time);
+ if(person.confirmation_state===decision&&(decision!=='accepted'||person.accepted_conditions_version===event.conditions_version))return {id,revision:event.revision,removed:false};
+      const before={person_id:personId,nickname:person.current_name,confirmation:person.confirmation_state,accepted_version:person.accepted_conditions_version};
+      const accepted=decision==='accepted'?event.conditions_version:person.accepted_conditions_version;
+      db.prepare('UPDATE attendees SET confirmation_state=?,accepted_conditions_version=?,updated_at=? WHERE id=?').run(decision,accepted,stamp,personId);
+      db.prepare('INSERT INTO attendee_consents(attendee_id,event_id,version,decision,actor_id,actor_name,reason,created_at) VALUES(?,?,?,?,?,?,?,?)').run(personId,id,event.conditions_version,decision,user.id,user.nickname,input.reason,stamp);
+      appendEventAudit(db,event,user,'conditions_response',before,{person_id:personId,nickname:person.current_name,confirmation:decision,accepted_version:accepted},input.reason,stamp);
+      if(decision==='declined'){
+        db.prepare("INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,'conditions_declined',?,?)").run(event.owner_id,id,person.current_name+' 暂不同意新安排：'+input.reason+'；原报名及原约定保留，请协调处理',stamp);
+        try{db.transaction(()=>createActivityBot(db,()=>time,defaults).personal(id,event.owner_id,'conditions_declined'))();}catch{hookError(id);}
+      }
+ return {id,revision:eventRow(db,id)!.revision,removed:false};
+}
 export function registerActivityManagement(app:FastifyInstance,db:DB,security:Security,now:()=>Date,defaults:ActivityBotDefaults={}){
-  const bot=createActivityBot(db,now,defaults);
-  function optional(request:FastifyRequest,id:string,run:()=>unknown){try{db.transaction(run)();}catch{request.log.error({eventId:id},'Activity bot hook failed; business write preserved');}}
   const hookError=(id:string)=>app.log.error({eventId:id},'Activity promotion bot hook failed; business write preserved');
   function authorize(id:string,userId:string,kind:'arrangement'|'consent',personId?:string){
     requireActivityAccess(db,id,userId);const event=eventRow(db,id)!;
-    if(kind==='arrangement')requireActivitySchedule(db,event,userId);else activePerson(db,id,personId!,userId);
+    if(kind==='arrangement')requireActivitySchedule(db,event,userId);else activeConditionPerson(db,id,personId!,userId);
     return event;
   }
   function write(request:FastifyRequest,id:string,kind:'arrangement'|'consent',input:unknown,run:(event:EventRow,user:ReturnType<Security['memberWrite']>,stamp:string)=>z.infer<typeof ActivityDraftResult>,personId?:string){
@@ -78,20 +98,7 @@ export function registerActivityManagement(app:FastifyInstance,db:DB,security:Se
     const {id,personId}=ActivityPersonPath.parse(request.params),input=RespondActivityConditions.parse(request.body);
     return write(request,id,'consent',input,(event,user,stamp)=>{
       requireEventRevision(event,input.revision);
-      if(!['scheduled','ongoing'].includes(event.lifecycle)||event.archived_at)throw withApiError(new DomainError('CONDITIONS_CLOSED','活動已結束、取消或歸檔，不能再確認新安排',409));
-      if(input.conditionsVersion!==event.conditions_version)throw withApiError(new DomainError('CONDITIONS_CHANGED','安排又有變更，請載入最新安排再確認',409));
-      const person=activePerson(db,id,personId,user.id),decision=input.decision;
-      if(person.confirmation_state===decision&&(decision!=='accepted'||person.accepted_conditions_version===event.conditions_version))return {id,revision:event.revision,removed:false};
-      const before={person_id:personId,nickname:person.current_name,confirmation:person.confirmation_state,accepted_version:person.accepted_conditions_version};
-      const accepted=decision==='accepted'?event.conditions_version:person.accepted_conditions_version;
-      db.prepare('UPDATE attendees SET confirmation_state=?,accepted_conditions_version=?,updated_at=? WHERE id=?').run(decision,accepted,stamp,personId);
-      db.prepare('INSERT INTO attendee_consents(attendee_id,event_id,version,decision,actor_id,actor_name,reason,created_at) VALUES(?,?,?,?,?,?,?,?)').run(personId,id,event.conditions_version,decision,user.id,user.nickname,input.reason,stamp);
-      appendEventAudit(db,event,user,'conditions_response',before,{person_id:personId,nickname:person.current_name,confirmation:decision,accepted_version:accepted},input.reason,stamp);
-      if(decision==='declined'){
-        db.prepare("INSERT INTO notifications(user_id,event_id,kind,message,created_at) VALUES(?,?,'conditions_declined',?,?)").run(event.owner_id,id,person.current_name+' 暂不同意新安排：'+input.reason+'；原报名及原约定保留，请协调处理',stamp);
-        optional(request,id,()=>bot.personal(id,event.owner_id,'conditions_declined'));
-      }
-      return {id,revision:eventRow(db,id)!.revision,removed:false};
+      return executeActivityConsent(db,prepareActivityConsent(db,event,user,personId,input),user,new Date(stamp),defaults,hookError);
     },personId);
   });
 }

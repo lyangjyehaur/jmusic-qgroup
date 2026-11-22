@@ -38,6 +38,7 @@
     "test:retained-python:rebuild": "node tools/rebuild/smoke-retained-python.mjs",
     "check:capabilities": "node tools/rebuild/check-capabilities.mjs",
     "check:http-contracts:rebuild": "tsx tools/rebuild/build-http-contracts.ts --check",
+    "test:legacy-registration:rebuild": "node tools/rebuild/smoke-legacy-registration.mjs",
     "test:legacy-activity-patch:rebuild": "node tools/rebuild/smoke-legacy-activity-patch.mjs",
     "test:legacy-activity-create:rebuild": "node tools/rebuild/smoke-legacy-activity-create.mjs",
     "test:legacy-time-poll:rebuild": "node tools/rebuild/smoke-legacy-time-poll.mjs",

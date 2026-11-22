@@ -1305,20 +1305,29 @@
         "apps/api/src/activity-management.ts",
         "apps/web/src/activity-conditions.tsx",
         "apps/web/src/activity-drafts.tsx",
-        "packages/contracts/src/activity-arrangements.ts"
+        "packages/contracts/src/activity-arrangements.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "目前原管理人逐人接受／暫不同意、拒絕原因、雙版本、原報名／費用保全、no-op、未知結果與 Python 差分已測；需結合完整報名／認領／代管轉移及通知收件匣驗收，尚未完整通過。"
@@ -1546,20 +1555,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原生報名預覽、當時安排／revision 綁定及逐次明確接受費用安排已實作，原 Python token／資料／outbox 差分通過；全部舊入口及正式副本驗收待完成。"
@@ -1574,20 +1592,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "每批本人／同行／純代報、逐人公開備註與付款標記已實作，不建假帳號；原 manager 與 payer 分離。認領／代管交接及正式副本綜合驗收待完成。"
@@ -1602,20 +1629,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "逐人／整組、整組不足全候補與阻塞後方、混合分配明確 acceptPartial 已實作並與原 Python 差分；更多正式匯入／邊界隊列及全部舊入口驗收待完成。"
@@ -1630,20 +1666,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "待確認不占位、整組或逐人確認取得新 party ticket、最終名單通知已實作並差分；全部舊入口／待辦、正式副本驗收待完成。"
@@ -1658,20 +1703,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "已報本人可新增同行，退出後可重新報名且取得新隊序，未知結果不重複新增；全部舊入口及正式副本驗收待完成。"
@@ -1686,20 +1740,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原管理人／roster scope 修改公開備註、訪客稱呼與付款標記，協助他人須原因，拆組保留本組隊序；凍結付款來源不可改。認領全流程及正式副本驗收待完成。"
@@ -1714,20 +1777,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "逐人退出、只在實際開放時原嚴格 FIFO 遞補、合併退出與遞補群通知已實作；全部舊入口、待辦與正式副本驗收待完成。"
@@ -1742,20 +1814,29 @@
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
         "packages/contracts/src/activity-registration.ts",
-        "apps/api/src/activity-bot.ts"
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "逾期正式報名退出須原因且保留位至審核，roster scope 同意／拒絕須原因，候補／待確認直接退出，泛化私人提醒不含原因；通知收件匣／待辦、全部舊入口及正式副本驗收待完成。"
@@ -2361,25 +2442,33 @@
         "apps/api/src/room-plan-command.ts",
         "apps/api/src/legacy-rooms.ts",
         "packages/contracts/src/legacy-rooms.ts",
-        "apps/web/src/legacy-rooms-recovery.tsx"
+        "apps/web/src/legacy-rooms-recovery.tsx",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/music-rooms.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/web/tests/legacy-rooms-request.spec.ts"
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/legacy-rooms.test.ts"
+        "apps/api/src/legacy-rooms.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/web/tests/legacy-rooms-request.spec.ts"
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2390,7 +2479,8 @@
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-rooms-request.spec.ts",
-        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
@@ -5867,7 +5957,10 @@
         "apps/web/src/activity-lifecycle.tsx",
         "apps/api/src/activity-registration.ts",
         "apps/web/src/activity-registration.tsx",
-        "packages/contracts/src/activity-registration.ts"
+        "packages/contracts/src/activity-registration.ts",
+        "apps/api/src/legacy-registration.ts",
+        "packages/contracts/src/legacy-registration.ts",
+        "apps/web/src/legacy-registration-recovery.tsx"
       ],
       "behavior_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5879,7 +5972,10 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "apps/api/src/legacy-registration.test.ts",
+        "tools/rebuild/smoke-legacy-registration.mjs",
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -5888,19 +5984,22 @@
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "apps/api/src/legacy-registration.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
         "apps/web/tests/activity-lifecycle.spec.ts",
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-registration.spec.ts"
       ],
       "state": "in_progress",
       "remaining": "原生報名／退出／審核 producer、待確認／拆組 hook、合併遞補及去重已有 Python 差分；保留 Python worker 消費及 TS consumer/runtime 接通。全部業務 hook 成套驗證、正式資料及 QQ／版本組合仍待完成，見 25／53／57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"

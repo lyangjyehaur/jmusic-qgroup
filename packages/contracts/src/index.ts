@@ -1,3 +1,4 @@
+export * from './legacy-registration';
 export * from './legacy-activity-patch';
 export * from './legacy-activity-create';
 export * from './legacy-time-poll-create';

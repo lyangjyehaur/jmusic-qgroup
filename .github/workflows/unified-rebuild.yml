@@ -67,6 +67,8 @@ jobs:
           npm run test:legacy-activity-create:rebuild --silent > artifacts/ci/legacy-activity-create-pair.json
       - name: Verify original activity changes with the observed Python bot source
         run: npm run test:legacy-activity-patch:rebuild --silent > artifacts/ci/legacy-activity-patch-pair.json
+      - name: Verify original roster recovery with the observed Python bot source
+        run: npm run test:legacy-registration:rebuild --silent > artifacts/ci/legacy-registration-pair.json
       - run: npx playwright install --with-deps chromium
       - name: Pin public analytics client for intercepted transport test
         run: |
