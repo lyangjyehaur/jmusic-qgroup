@@ -3,7 +3,7 @@ import {
   ConditionArrangement,
   SettlementRosterPerson,
   SettlementRoom,
-  SettlementSnapshot,
+  StoredSettlementSnapshot,
   SettlementBill,
 } from '@qgroup/contracts';
 import { DomainError, pythonCasefold } from '@qgroup/domain';
@@ -28,7 +28,7 @@ export function settlementDetail(db: DB, id: string, version = settlementVersion
   const row = db
     .prepare('SELECT snapshot_json FROM settlement_details WHERE event_id=? AND version=?')
     .get(id, version) as { snapshot_json: string } | undefined;
-  return row ? storedFinance(SettlementSnapshot, row.snapshot_json) : null;
+  return row ? storedFinance(StoredSettlementSnapshot, row.snapshot_json) : null;
 }
 /** Room reads need the preserved room/name projection, including older bills
  * whose financial schema differs from the native settlement editor. */

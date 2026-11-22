@@ -8,15 +8,16 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { openDatabase } from '@qgroup/database';
-import { SettlementInput, SettlementContext, SettlementPreview, SettlementView } from '@qgroup/contracts';
+import { SettlementInput, SettlementContext, SettlementPreview, SettlementView, SettlementSnapshot, StoredSettlementSnapshot } from '@qgroup/contracts';
 import { fixture } from '../testsupport/fixture';
 import { createApp } from './app';
 import { eventRow } from './activity-arrangements';
 import { accountKey, financeEntries } from './finance-context';
 import { calculateSettlement } from './settlement-calculation';
 import { settlementDetail } from './settlement-context';
+import { settlementNotice } from './settlement-notice';
 import { pngChunk, testPNG } from '../testsupport/payment-fixture';
-import { activityBotPolicy, renderActivityBot } from './activity-bot';
+import { activityBotPolicy, buildActivityBotMessage, renderActivityBot } from './activity-bot';
 const origin = 'https://rebuild.example',
   stamp = '2026-11-17T00:00:00+00:00',
   a = accountKey('listen', 'alice'),
@@ -138,6 +139,70 @@ ${extra}`,
 const compare = (snapshot: unknown, expected: any) =>
   expect(snapshot).toEqual({ ...expected, journal_seq: String(expected.journal_seq) });
 describe('native settlement and rooms', () => {
+  it('reads original detailed bills without later metadata and preserves history when reviewing a new strict version', async () => {
+    const s = await setup(), historical = await python(s, s.input());
+    for (const field of ['journal_seq', 'balances', 'group_notice']) delete historical[field];
+    const raw = JSON.stringify(historical);
+    s.db.prepare("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,updated_at,actor_id,actor_name,kind,changed_fields) VALUES('listen',1,?,3,'','before','alice','小青','detailed_published','[]')")
+      .run(historical.total_cents);
+    s.db.prepare('INSERT INTO settlement_details VALUES(?,?,?)').run('listen', 1, raw);
+    s.db.prepare("INSERT INTO settlements(event_id,total_cents,headcount,note,updated_at) VALUES('listen',?,3,'','before')")
+      .run(historical.total_cents);
+    expect(StoredSettlementSnapshot.parse(historical)).toEqual(historical);
+    for (const invalid of [{balances:null}, {group_notice:'yes'}, {journal_seq:'1.5'}])
+      expect(StoredSettlementSnapshot.safeParse({...historical,...invalid}).success).toBe(false);
+    expect(SettlementSnapshot.safeParse(historical).success).toBe(false);
+    expect(settlementDetail(s.db, 'listen')).toEqual(historical);
+    for (const suffix of ['', '/context', '/history', '/history/1']) {
+      const r = await s.app.inject({url: '/api/v2/activities/listen/settlement' + suffix, headers: s.alice});
+      expect(r.statusCode, r.body).toBe(200);
+      const value = r.json(), bill = suffix === '/history' ? value.revisions[0] : suffix === '/history/1' ? value : value.bill;
+      expect(bill.detail).toEqual(historical);
+      for (const key of ['journal_seq', 'balances', 'group_notice']) expect(bill.detail).not.toHaveProperty(key);
+    }
+    expect((await python(s, {}, "print(json.dumps(bot_outbox.build_message(db,event,'settlement_updated')[:2]))"))[0])
+      .not.toContain('逐人 AA：');
+    const originalNotice = buildActivityBotMessage(s.db, eventRow(s.db, 'listen')!, 'settlement_updated', activityBotPolicy(s.db).config, new Date(stamp), {baseURL:origin});
+    expect(originalNotice?.text).not.toContain('逐人 AA：');
+    expect(originalNotice?.context).not.toHaveProperty('_settlement_notice');
+    const notice = settlementNotice(historical);
+    expect(notice.join('\n')).toContain('付款账户应付合计：');
+    expect(notice.join('\n')).not.toMatch(/无需补款|已投入|应退／待偿还/);
+    const data = s.input({reason:'補核對收付款'}), preview = await s.preview(data);
+    expect(preview.statusCode, preview.body).toBe(200);
+    const strict = SettlementPreview.parse(preview.json());
+    expect(strict.snapshot.group_notice).toBe(false);
+    compare(strict.snapshot, await python(s, data));
+    for (const key of ['journal_seq', 'balances', 'group_notice']) {
+      const damaged = { ...strict.snapshot };
+      delete (damaged as Record<string, unknown>)[key];
+      expect(SettlementPreview.safeParse({...strict, snapshot: damaged}).success).toBe(false);
+    }
+    const expected = await python(s, data, `data['preview_token']=settlements.token(settlements.calculate(db,event,user,data)[0],event,data['base_version'])
+settlements.save(db,event,user,data)
+print(json.dumps(dict(detail=settlements.details(db,'listen',2),history=[dict(r) for r in db.execute("SELECT * FROM settlement_history ORDER BY version")])))`);
+    const body = {...data, preview_token: strict.preview_token, confirm:true}, key = randomUUID(), saved = await s.send(body, s.alice, key);
+    expect(saved.statusCode, saved.body).toBe(200);
+    expect(saved.json()).toMatchObject({version:2,changed:true});
+    compare(settlementDetail(s.db, 'listen'), expected.detail);
+    const actualHistory = s.db.prepare("SELECT * FROM settlement_history ORDER BY version").all() as any[];
+    expect(actualHistory.map(r=>({...r,changed_fields:JSON.parse(r.changed_fields)})))
+      .toEqual(expected.history.map((r:any)=>({...r,changed_fields:JSON.parse(r.changed_fields)})));
+    expect(s.db.prepare("SELECT snapshot_json FROM settlement_details WHERE version=1").get()).toEqual({snapshot_json:raw});
+    const counts = () => ['settlement_history','settlement_details','finance_entries','event_audit','notifications','bot_outbox']
+      .map(table=>s.db.prepare('SELECT COUNT(*) AS n FROM '+table).get());
+    const once = counts(), retried = await s.send(body, s.alice, key);
+    expect(retried.body).toBe(saved.body);
+    expect(counts()).toEqual(once);
+    const payloads = (s.db.prepare('SELECT payload_json FROM bot_outbox').all() as {payload_json:string}[]).map(r=>JSON.parse(r.payload_json));
+    expect(payloads.length).toBeGreaterThan(0);
+    for (const p of payloads) {
+      expect(p.text).not.toContain('逐人 AA：');
+      expect(p).not.toHaveProperty('_settlement_image');
+    }
+    expect((await s.save(s.input({reason:'再次核對'}))).json()).toMatchObject({version:2,changed:false});
+    expect(settlementDetail(s.db, 'listen', 1)).toEqual(historical);
+  });
   it('matches all five allocation modes, signed independent remainders, frozen roster order and split payment ownership', async () => {
     const s = await setup();
     for (const mode of ['shares', 'equal', 'weights', 'fixed', 'duration']) {
@@ -288,7 +353,7 @@ describe('native settlement and rooms', () => {
     compare((await s.preview(data)).json().snapshot, await python(s, data));
     await s.save(data);
     expect(financeEntries(s.db, 'listen')).toHaveLength(1);
-    expect(settlementDetail(s.db, 'listen')?.balances.find((p) => p.id === custom)).toMatchObject({
+    expect(settlementDetail(s.db, 'listen')?.balances?.find((p) => p.id === custom)).toMatchObject({
       due_cents: 0,
       contributed_cents: 1200,
       balance_cents: -1200,

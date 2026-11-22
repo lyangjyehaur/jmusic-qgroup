@@ -12,6 +12,8 @@
 
 [第 227 批](227-room-parent-acceptance.md)完成 P05–P10：實際副本 2,314 次分析及 576 次分房與固定 Python 一致，補回遷移後身份的同分順序；43 個自由來源帳號與 13 場活動／82 位目前名冊成員正確對應，246 次 HTTP／117 次原程式比較通過。補現有預分／實際包間載入、原房名與無成分者／原稿保全，以及舊帳單專用包間讀取；95 張非合成 session 表與全部 6 張 bot 表不變。86 個單元／33 個瀏覽器案例、strict／build／bundle 煙霧通過。父項增加 6 個，整體 P6 尚未完成。
 
+[第 228 批](228-historical-settlement-compatibility.md)修正三份正式逐人帳單中兩份缺少後續帳本／群同意欄位的讀取相容性。64 次隔離 HTTP、三份原預覽／新版保存／精確重試與固定 Python 一致，原歷史及 118 筆 bot 工作保留；82 個單元／49 個瀏覽器、strict／build／bundle 煙霧通過。線上來源 Python bot 的 532 次隔離 HTTP／71 次原 worker／9 次 TypeScript worker 與正常停止也通過。這是 S08／S09／S14 的局部證據，父項數量不變；實際映像配對與完整 P6 尚未完成。
+
 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的完整 Linux unit **4,063**／browser **1,047**／image 已取得成功終態、原 artifacts 與原提交來源 pins，browser 無略過／重試／flaky。該提交包含第 221 批手機工具；第 222 批兩項管理登出測試及第 223 批 activation 修改分開以本機證據驗證，不套用未包含的完整 CI。實際匯出的線上 bot 映像隔離組合證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)；較早間歇性恢復失敗及 subprocess timeout 證據保留，根因尚未證明。
 
 最新正式副本已完成兩次匯入、新寫入回退／forward、30 份成分歷史、14 組看板歷史及外部 bot 狀態恢復；[第 220 批](220-legacy-http-and-parent-acceptance.md)完成固定舊 HTTP 新寫入及 244 次刪除後歷史下載／恢復／重啟；[第 221 批](221-forward-deletion-and-mobile-tools.md)完成刪除後完整 erasure／business／proof／source rebase、三階段各 97 表重複回復與再次封存。[第 223 批](223-recovery-copy-activation.md)新增離線啟用工具及原生 receipt／原 authority 綁定，正式隔離副本的 97 表只改恢復旗標、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣與跨兩次原生讀取／重啟通過；160 個相關案例、strict 與 API／bot bundle 通過。原輸入仍 blocked；當前固定版本的 activation／恢復組合尚未驗收，既有 runtime manifest 明確拒絕未綁定配置。剩餘為全台帳審核、當前固定版本成套恢復驗證及固定舊 web／music／bot 的全部回退操作，使用實際線上容量與已核對版本，不再要求預估容量或由使用者提供版本。

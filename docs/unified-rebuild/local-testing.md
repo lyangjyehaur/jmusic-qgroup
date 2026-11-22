@@ -1,6 +1,6 @@
 # 本機測試指南
 
-本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
+本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新舊帳單相容性見[第 228 批](228-historical-settlement-compatibility.md)，分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
 
 ## 啟動可操作預覽
 
@@ -54,7 +54,7 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 
 完整 Linux CI 提交 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的 unit 4,063 項、browser 1,047 項及映像組合均通過，沒有略過或重試，包含第 221 批手機工具。第 222 批兩項管理登出測試及第 223 批恢復啟用修改另有本機驗證；不將未包含的修改套用原完整 CI。真正匯出的線上 bot 映像隔離組合及同一正式副本的匯入／回退證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。
 
-目前 32 個既有功能父項本機通過；134 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
+目前 38 個既有功能父項本機通過；128 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
 
 ## 成分詞庫與共用編輯
 

@@ -1,8 +1,8 @@
-import type { SettlementSnapshot } from '@qgroup/contracts';
+import type { StoredSettlementSnapshot } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { money } from './settlement-context';
 const cut = (s: string, n: number) => Array.from(s).slice(0, n).join('');
-export function settlementNotice(snapshot: z.infer<typeof SettlementSnapshot>) {
+export function settlementNotice(snapshot: z.infer<typeof StoredSettlementSnapshot>) {
   if (snapshot.rooms?.length) {
     const lines = ['按实际包间结算：'];
     for (const room of (snapshot.room_balances ?? []).slice(0, 10)) {
@@ -26,6 +26,15 @@ export function settlementNotice(snapshot: z.infer<typeof SettlementSnapshot>) {
     ...snapshot.people.slice(0, 20).map((p) => cut(p.label || p.name, 36) + '：' + money(p.due_cents) + ' 元'),
   ];
   if (snapshot.people.length > 20) lines.push('其余人员 AA 请到活动页查看');
+  if (!snapshot.balances) {
+    lines.push(
+      '付款账户应付合计：',
+      ...snapshot.payers.slice(0, 20).map((p) => cut(p.label || p.name, 36) + '：' + money(p.amount_cents) + ' 元'),
+    );
+    if (snapshot.payers.length > 20) lines.push('其余付款账户请到活动页查看');
+    lines.push('本版未保存收付款快照，待补与退款请到站内账本核对。');
+    return lines;
+  }
   lines.push('付款账户待补／应退：');
   for (const p of snapshot.balances.slice(0, 20)) {
     const n = p.balance_cents;

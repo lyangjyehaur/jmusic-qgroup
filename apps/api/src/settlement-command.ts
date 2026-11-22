@@ -14,7 +14,7 @@ export function publishSettlement(db: DB, event: EventRow, user: SettlementUser,
   baseVersion: number, {snapshot, images, codes}: ReturnType<typeof calculateSettlement>,
   now: () => Date, bot: ReturnType<typeof createActivityBot>, onBotFailure: (id: string) => void) {
   const previous = settlementDetail(db, event.id),
-    comparable = ({ reason, changes, ...rest }: typeof snapshot) => {
+    comparable = ({ reason, changes, ...rest }: NonNullable<typeof previous>) => {
       void reason;
       void changes;
       return rest;

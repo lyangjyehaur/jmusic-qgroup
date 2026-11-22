@@ -65,6 +65,51 @@ test('publishes exact independent allocation with receipt, opted-in group previe
   await page.getByRole('link', { name: '查看本版收款碼與消費憑證', exact: true }).click();
   await expect(page.getByRole('img', { name: '消費憑證 · 消費', exact: true })).toBeVisible();
 });
+test('shows historical payer liability without invented paid balances and loads an old bill for review', async ({page,context}) => {
+  await login(context);
+  await page.goto(base + '/edit');
+  await prepare(page);
+  await preview(page);
+  await save(page);
+  // Simulate the original stored response shape; backend preservation and writes
+  // are verified separately against original Python bills and the captured copy.
+  await page.route('**/api/v2/activities/listen/settlement**', async route => {
+    if (route.request().method() !== 'GET') return route.continue();
+    const response = await route.fetch(), value = await response.json();
+    const omit = (bill:any) => {
+      if (bill?.version !== 1 || !bill.detail) return;
+      for (const key of ['journal_seq','balances','group_notice']) delete bill.detail[key];
+    };
+    omit(value.bill);
+    omit(value);
+    for (const bill of value.revisions ?? []) omit(bill);
+    await route.fulfill({response,json:value});
+  });
+  await page.goto(base);
+  await expect(page.getByRole('heading', {name:'第 1 版 · 逐人結算',exact:true})).toBeVisible();
+  await page.getByText('付款人應付合計', {exact:true}).click();
+  const totals = page.locator('details').filter({has:page.locator('summary').filter({hasText:/^付款人應付合計$/})});
+  await expect(totals).toContainText('小青 · ¥3.34');
+  await expect(totals).toContainText('小白 · ¥3.33');
+  await expect(totals).toContainText('本版未保存收付款快照');
+  await expect(page.getByText('發布時待補／應退', {exact:true})).toHaveCount(0);
+  await expect(page.getByText(/已投入/)).toHaveCount(0);
+  await page.setViewportSize({width:360,height:800});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('link', {name:'核對並發布逐人結算',exact:true}).click();
+  await expect(page.getByLabel('費用金額', {exact:true})).toHaveValue('10.00');
+  await expect(page.getByRole('checkbox', {name:/允許群通知包含逐人金額/})).not.toBeChecked();
+  await page.getByLabel('發布／修改原因（最多 300 字）', {exact:true}).fill('補核對');
+  await prepare(page,'12.00');
+  await preview(page);
+  await expect(page.getByRole('region', {name:'逐人結算預覽',exact:true})).toContainText('發布時待補／應退');
+  await save(page);
+  await page.goto(base);
+  await expect(page.getByRole('heading', {name:'第 2 版 · 逐人結算',exact:true})).toBeVisible();
+  await page.getByRole('button', {name:'第 1 版 · 10.00 元',exact:true}).click();
+  await expect(page.getByText('付款人應付合計', {exact:true})).toBeVisible();
+  await expect(page.getByText('發布時待補／應退', {exact:true})).toHaveCount(0);
+});
 test('plans rooms without money and publishes actual rooms with frozen separate transfers at 360px', async ({
   page,
   context,

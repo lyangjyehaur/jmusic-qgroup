@@ -6,7 +6,7 @@ import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { SaveSettlement, SettlementBill, SettlementContext, SettlementHistory, SettlementInput, SettlementPreview, SettlementSnapshot, type Viewer } from '@qgroup/contracts';
+import { SaveSettlement, SettlementBill, SettlementContext, SettlementHistory, SettlementInput, SettlementPreview, StoredSettlementSnapshot, type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import { Failure, Notice, PageIntro, useSession } from './shared';
@@ -19,7 +19,7 @@ import { PaymentAssetImage, preparePaymentImage } from './payment-image';
 import { paymentKindLabels } from './payment-codes';
 const base = (id: string) => '/activities/' + encodeURIComponent(id);
 type Context = z.infer<typeof SettlementContext>;
-type Invoice = z.infer<typeof SettlementSnapshot>;
+type Invoice = z.infer<typeof StoredSettlementSnapshot>;
 const modeLabels = {
     shares: uiText("共同份數"),
     equal: uiText("人數均分"),
@@ -109,7 +109,7 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
             </ul>
           </details>
         ))
-      ) : (
+      ) : s.balances ? (
         <details>
           <summary>發布時待補／應退</summary>
           <ul>
@@ -120,6 +120,12 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
               </li>
             ))}
           </ul>
+        </details>
+      ) : (
+        <details>
+          <summary>付款人應付合計</summary>
+          <ul>{s.payers.map((p) => <li key={p.id}>{p.label} · {money(p.amount_cents)}</li>)}</ul>
+          <Notice>本版未保存收付款快照，待補與退款請到收付款帳本核對。</Notice>
         </details>
       )}
       {s.note && <Text className="preserve-lines">備註：{s.note}</Text>}

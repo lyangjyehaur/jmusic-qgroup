@@ -187,6 +187,13 @@ export const SettlementSnapshot = z.object({
   group_notice: z.boolean(),
   changes: z.array(z.string()),
 });
+/** Older detailed bills predate ledger snapshots and explicit group consent.
+ * Preserve omissions on reads; new previews/publications use the full schema. */
+export const StoredSettlementSnapshot = SettlementSnapshot.extend({
+  journal_seq: SettlementSnapshot.shape.journal_seq.optional(),
+  balances: SettlementSnapshot.shape.balances.optional(),
+  group_notice: SettlementSnapshot.shape.group_notice.optional(),
+});
 export const SettlementBill = z.object({
   version: revision,
   total_amount: z.string(),
@@ -200,7 +207,7 @@ export const SettlementBill = z.object({
   changed_fields: z.array(z.string()),
   mode: z.enum(['legacy', 'detailed']),
   publisher_key: z.string().nullable(),
-  detail: SettlementSnapshot.nullable(),
+  detail: StoredSettlementSnapshot.nullable(),
 });
 export const SettlementContext = z.object({
   id: z.string(),

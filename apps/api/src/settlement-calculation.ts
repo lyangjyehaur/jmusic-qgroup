@@ -51,7 +51,7 @@ export const settlementToken = (event: EventRow, snapshot: Invoice, version: num
   );
 export const storedSettlement = (snapshot: Invoice) =>
   canonicalSettlement({ ...snapshot, journal_seq: BigInt(snapshot.journal_seq) });
-export function settlementChanges(before: Invoice | null, after: Invoice): string[] {
+export function settlementChanges(before: ReturnType<typeof settlementDetail>, after: Invoice): string[] {
   if (!before) return ['发布逐人核对后的费用与付款归属；旧人均版本如有则保留原样。'];
   const result: string[] = [];
   for (const key of ['people', 'items', 'payers'] as const) {

@@ -69,9 +69,9 @@
     "apps/api/src/room-plan-command.ts": "70f540303955a965f9be4227064012954a77768372d42d19bdeb7eb66e281210",
     "apps/api/src/search.ts": "62d69e955c64106d4dc81b513028b1ff35049b82cb9bf5e50453a17c3dcd62ee",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
-    "apps/api/src/settlement-calculation.ts": "db291cd2267f03630b92d23854b406a0ac19aacdfc35bf7794b5854fed5f8c9d",
-    "apps/api/src/settlement-command.ts": "9af2e0124cdb32086833ac89dfe2ac0b8492d57f13a51be9638718c8b7e46f78",
-    "apps/api/src/settlement-context.ts": "e045e51a2a7a39c06cda912e584bfb29bb6d33928a7b8af91c1b15f6547b1aef",
+    "apps/api/src/settlement-calculation.ts": "48dee4867e0fd53875bd6b60033b95dfbee8bbc801fd858443add540ccf19afe",
+    "apps/api/src/settlement-command.ts": "b58a88734b4c1fa4a1726f56d5c775372045f5a516ba6aab926d35961c4d9613",
+    "apps/api/src/settlement-context.ts": "50fa9525f375fef49fefe9743c5b1062f0e49fb15f275d7997ffbac1787e7701",
     "apps/api/src/settlements.ts": "7984d787b3d060a2d54f6962c31767b3ba0be5af418e61076345a86397d0bc8d",
     "apps/api/src/time-poll-bot.ts": "0d070b033f90dd68f8723a44c9d8cd3e7826f079a131287e2fd58d8d86f73cee",
     "apps/api/src/time-poll-command.ts": "1df6a91724428e1972fd18d6e6b2a9f09901304120c2ea772a163c4e1c7a0e4c",
@@ -112,7 +112,9 @@
     "apps/api/src/music-export.ts": "258a07403d013f957f13a9e82a164b47c7e08b7fae77b17524c0a4475762afd0",
     "apps/api/src/music-match-data.ts": "7583a5b31acf409b066456f5accee301d7017512ddc40f754290dc6c89106b0f",
     "packages/contracts/src/music-rooms.ts": "e3586904cb9da91b42c0393727444d8ca984dcd5acb4ebaad72d96f5870f0d5e",
-    "packages/domain/src/music-rooms.ts": "29959a2db2d288851b629f1d46bfcedc45ed4128461f5cb95a4dfdd684c4ed8b"
+    "packages/domain/src/music-rooms.ts": "29959a2db2d288851b629f1d46bfcedc45ed4128461f5cb95a4dfdd684c4ed8b",
+    "apps/api/src/settlement-notice.ts": "3765f4116434e868839b9e67ef34e0f6dd8b16571fe56d3fd5a30c23c0773cf5",
+    "packages/contracts/src/settlements.ts": "60c873e47801b614005f2c10f1a2ba22e4420301ab95f325f259f6a0fcbaa239"
   },
   "operations": [
     {
@@ -561,7 +563,9 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -583,7 +587,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/settlement-context.ts"
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -605,7 +610,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/settlement-context.ts"
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -627,7 +633,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/settlement-context.ts"
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -667,7 +674,9 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -705,7 +714,9 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -725,7 +736,9 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -745,7 +758,9 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -1835,7 +1850,8 @@
         "packages/database/src/music-source-order.ts",
         "packages/contracts/src/music-rooms.ts",
         "packages/domain/src/music-rooms.ts",
-        "apps/api/src/settlement-context.ts"
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -2513,7 +2529,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/room-plan-command.ts"
+        "apps/api/src/room-plan-command.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -2532,7 +2550,11 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "apps/api/src/settlement-command.ts"
+        "apps/api/src/settlement-command.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlement-notice.ts"
       ],
       "additionalHeaders": []
     },
@@ -2550,7 +2572,12 @@
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
-        "packages/contracts/src/payment-assets.ts"
+        "packages/contracts/src/payment-assets.ts",
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-calculation.ts",
+        "apps/api/src/settlement-command.ts",
+        "apps/api/src/settlement-notice.ts"
       ],
       "additionalHeaders": []
     },
@@ -3373,7 +3400,8 @@
         "apps/api/src/activity-access.ts",
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/settlement-context.ts",
-        "apps/api/src/legacy-local.ts"
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -3392,7 +3420,8 @@
         "apps/api/src/activity-access.ts",
         "apps/api/src/activity-arrangements.ts",
         "apps/api/src/settlement-context.ts",
-        "apps/api/src/legacy-local.ts"
+        "apps/api/src/legacy-local.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },
@@ -3415,7 +3444,9 @@
         "apps/api/src/legacy-settlement-token.ts",
         "apps/api/src/payment-codes.ts",
         "apps/api/src/legacy-local.ts",
-        "packages/contracts/src/legacy-detailed-settlement.ts"
+        "packages/contracts/src/legacy-detailed-settlement.ts",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-notice.ts"
       ],
       "additionalHeaders": []
     },
@@ -3438,7 +3469,9 @@
         "apps/api/src/legacy-settlement-token.ts",
         "apps/api/src/payment-codes.ts",
         "apps/api/src/legacy-local.ts",
-        "packages/contracts/src/legacy-detailed-settlement.ts"
+        "packages/contracts/src/legacy-detailed-settlement.ts",
+        "packages/contracts/src/settlements.ts",
+        "apps/api/src/settlement-notice.ts"
       ],
       "additionalHeaders": []
     },
@@ -3726,7 +3759,8 @@
         "packages/database/src/music-source-order.ts",
         "packages/contracts/src/music-rooms.ts",
         "packages/domain/src/music-rooms.ts",
-        "apps/api/src/settlement-context.ts"
+        "apps/api/src/settlement-context.ts",
+        "packages/contracts/src/settlements.ts"
       ],
       "additionalHeaders": []
     },

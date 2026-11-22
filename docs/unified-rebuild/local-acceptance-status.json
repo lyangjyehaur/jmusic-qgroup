@@ -17,7 +17,8 @@
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
     "packages/runtime/src/strict-json.ts, legacy music import/reconciliation, administrative/history export and rollback writers: preserve literal numeric dictionary order; current candidate verified separately with captured data and checkpoint 225",
     "JSON order-preserving clones, account/reset source writers, verified source rebase order, native reads and final recovery boundaries: captured-source forward/reimport/package regression and separate current tests at checkpoint 226",
-    "Original identity tie ranks, current plan/actual room loading and preserved room/frozen-name reader at checkpoint 227: captured-data analysis/split and true-worker API comparisons, 86 unit / 33 browser / retained online-source Python checks; no financial editor relaxation or actual production image acceptance"
+    "Original identity tie ranks, current plan/actual room loading and preserved room/frozen-name reader at checkpoint 227: captured-data analysis/split and true-worker API comparisons, 86 unit / 33 browser / retained online-source Python checks; no financial editor relaxation or actual production image acceptance",
+    "Historical settlement reads preserve omitted journal_seq / balances / group consent at checkpoint 228; strict native previews and writes unchanged. Three captured bills compared with original Python, 82 unit / 49 browser checks; no full settlement parent or actual image acceptance claimed."
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -942,7 +943,8 @@
       "full_parent_state": "in_progress",
       "clauses": [
         "preview綁revision/base version/journal/圖片；當前權限、一次入帳與回執。",
-        "結算未知結果保留原UUID/body，重載與inbox讀結果，不自動重送。"
+        "結算未知結果保留原UUID/body，重載與inbox讀結果，不自動重送。",
+        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
@@ -954,7 +956,8 @@
       "local_state": "clauses_verified",
       "full_parent_state": "in_progress",
       "clauses": [
-        "實際修改追加完整版本及原因/操作者/修改項，同內容不增版。"
+        "實際修改追加完整版本及原因/操作者/修改項，同內容不增版。",
+        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
@@ -1016,7 +1019,8 @@
       "local_state": "clauses_verified",
       "full_parent_state": "in_progress",
       "clauses": [
-        "舊版完整snapshot不受現況改名/退出/安排更新，當前待補/待退依最新帳與原款投影。"
+        "舊版完整snapshot不受現況改名/退出/安排更新，當前待補/待退依最新帳與原款投影。",
+        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
@@ -2479,5 +2483,36 @@
     "release_eligible": false,
     "retained_python_http_calls": 532,
     "actual_production_image_combination": false
+  },
+  "latest_historical_settlement_compatibility": {
+    "checkpoint": "docs/unified-rebuild/228-historical-settlement-compatibility.md",
+    "accepted_parent_ids": [],
+    "pinned_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "pinned_original_core_files": 34,
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "events": 14,
+    "permission_refused_events": 1,
+    "original_detailed_bills": 3,
+    "older_metadata_omissions": 2,
+    "http_calls": 64,
+    "original_preview_comparisons": 3,
+    "original_save_comparisons": 3,
+    "exact_retries": 3,
+    "unchanged_read_tables": 96,
+    "independent_unchanged_tables": 86,
+    "original_outbox_rows_preserved": 118,
+    "isolated_queued_not_sent_rows": 2,
+    "original_images_preserved": 4,
+    "unit_cases_passed": 82,
+    "browser_cases_passed": 49,
+    "original_p6_complete": false,
+    "release_eligible": false,
+    "actual_production_image_combination": false,
+    "retained_python_http_calls": 532,
+    "retained_original_worker_invocations": 71,
+    "retained_typescript_worker_invocations": 9,
+    "retained_python_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "retained_python_source_files": 52,
+    "retained_graceful_stop": true
   }
 }
