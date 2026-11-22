@@ -1,0 +1,2148 @@
+{
+  "version": 1,
+  "kind": "partial-local-acceptance-evidence-index",
+  "updated": "2026-11-23",
+  "validated_runtime_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
+  "ci_run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45041562137",
+  "unit_passed": 4063,
+  "browser_passed": 1043,
+  "existing_ids": 166,
+  "integration_ids": 3,
+  "reviewed_clauses": 228,
+  "matched_case_references": 939,
+  "unique_reviewed_source_paths": 329,
+  "full_parents_accepted": 0,
+  "runtime_changes_after_validated_commit": [
+    "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification"
+  ],
+  "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+  "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
+  "original_p6_complete": false,
+  "release_eligible": false,
+  "records": [
+    {
+      "capability_id": "I01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "公開讀取不建會員，訪客只建立 HttpOnly session；會員寫入仍要求登入。"
+      ],
+      "test_files": [
+        "apps/api/src/app.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "回調只驗證，本人確認才建立或綁定；綁定保留既有 ID、名稱與獨立授權。",
+        "十分鐘 state 綁原 session／帳號；重播、取消與交換中撤權不復活。",
+        "身份、同意、授權、cookie 旋轉與稽核一起回滾。"
+      ],
+      "test_files": [
+        "apps/api/src/auth.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "返回網址保留活動、投票、action、invite、query 與 hash；取消維持身份。"
+      ],
+      "test_files": [
+        "apps/api/src/auth.test.ts",
+        "apps/web/tests/auth.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "I04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "拒絕兩方向 QQ 綁定衝突；名稱／UnionID 不自動合併，OpenID 依 client ID 區分。"
+      ],
+      "test_files": [
+        "apps/api/src/auth.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "名稱註冊預設關閉，API 即時重驗設定；關閉不刪已有會員。",
+        "同意須指定目前版本及明確勾選；舊同意不隱含新版同意，也不搬給另一帳號。"
+      ],
+      "test_files": [
+        "apps/api/src/privacy-consent.test.ts",
+        "apps/api/src/registration.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "站內稱呼更新不換 ID、QQ 名稱、既有成分或凍結名冊金額。",
+        "QQ 頭像讀取限安全 origin；載入失敗有可及性退路。"
+      ],
+      "test_files": [
+        "apps/api/src/account-profile.test.ts",
+        "apps/api/src/auth.test.ts",
+        "apps/web/tests/account-profile.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "I07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "僅明確切換已授權帳號；舊頁私人讀寫拒絕，不搬兩個帳號資料。"
+      ],
+      "test_files": [
+        "apps/api/src/auth.test.ts",
+        "apps/web/tests/account-profile.spec.ts",
+        "apps/web/tests/devices.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "I08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "跨裝置連結十分鐘且只允許一人使用；查看不消耗，接受不自動切帳號。",
+        "產生與接受均明確確認；訪客不可接受；有效舊 plaintext 連結可續用。"
+      ],
+      "test_files": [
+        "apps/api/src/account-devices.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "不撤当前裝置或別人的裝置；僅撤目標帳號授權，保全另一帳號授權與 QQ 意圖。",
+        "非目前帳號撤權不能誤刪目前帳號的 pending／authorized／completed 成分找回。",
+        "帳號紀錄依目前帳號分頁，不回私人 details。"
+      ],
+      "test_files": [
+        "apps/api/src/account-devices.test.ts",
+        "apps/api/src/music-claim.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "UnionID 只回布林狀態，重授權原 QQ 保留原帳號；不宣稱 bot 實際已可用。",
+        "重授權提醒按原 scope key節流24小時，編輯／邀請期間不打斷、不先登出。"
+      ],
+      "test_files": [
+        "apps/api/src/auth.test.ts",
+        "apps/web/tests/account-profile.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "I11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "無成分只於明確保存建立新 m_ ID；重試及並行不重複，不搶舊成分。",
+        "已關聯／看板單邊／成分單邊用同一帳號進入；找回保留原資料及名稱。"
+      ],
+      "test_files": [
+        "apps/api/src/app.test.ts",
+        "apps/api/src/music-claim.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "4–6位PIN原session十分鐘意圖，須關聯本次freshQQ及最後確認；取消可重試。",
+        "QQ／IP持久限流與原Python邊界一致，競爭找回只有一個owner。"
+      ],
+      "test_files": [
+        "apps/api/src/music-claim.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "固定成分 ID與舊數字鍵可查；自填QQ清空不換ID，非認證身份且不可重號。"
+      ],
+      "test_files": [
+        "apps/api/src/music-contact.test.ts"
+      ]
+    },
+    {
+      "capability_id": "I14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "未交接的活動／未定案投票先拒絕帳號註銷，刪成分獨立可用。",
+        "註銷撤身份/session/管理權，保留共享帳務，依實際保留列標shared_review。",
+        "刪私人圖片保留共享引用；刪本人投票不重算凍結歷史。"
+      ],
+      "test_files": [
+        "apps/api/src/music-contact.test.ts",
+        "apps/api/src/privacy.test.ts",
+        "apps/web/tests/privacy.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "I15",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "成分刪除与帳號註銷分開，舊回執與草稿不能復活，新建全新ID。",
+        "隔離本機最新fsynced ledger優先恢復；再次重播不復活；不明durability fail closed。"
+      ],
+      "test_files": [
+        "apps/api/src/music-claim.test.ts",
+        "apps/api/src/music-contact.test.ts",
+        "apps/api/src/privacy.test.ts",
+        "apps/web/tests/privacy.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "I16",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "登出清理本session全部grants/意圖，其他裝置继续登入。",
+        "私人查詢key依scope、登出清理本機原稿並通知同瀏覽器其他分頁。"
+      ],
+      "test_files": [
+        "apps/api/src/auth.test.ts",
+        "apps/web/tests/account-profile.spec.ts",
+        "apps/web/tests/devices.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "公開列表排除private/draft/deleted，往期由實際結束取消或歸檔判斷；本人包含協辦、代管與歷史付款義務，僅access不等於參與。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-access.test.ts",
+        "apps/api/src/app.test.ts"
+      ]
+    },
+    {
+      "capability_id": "E02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "六類型及時長預設，全部安排欄位保留；日曆/時區/容量/字數錯誤不部分写入。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/web/tests/activity-drafts.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "draft僅event scope有權者；發布明確acceptConditions後自動本人報名，即使stored joinOwnerfalse；原scheduled join_ownerfalse語意保留。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "apps/api/src/legacy-activity-create.test.ts",
+        "apps/web/tests/activity-publish.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "copy只安排，日期/截止/通知重填、名册財務圖片協辦歷史不複製；本機copy原操作恢復不再讀source或另建場。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-access.test.ts",
+        "apps/web/tests/durable-authoring.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "private view須owner/explicit event_access；finite title/revision preview不授權，明確接受僅新增access，share token限owner，私人歷史不能旁路。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-access.test.ts",
+        "apps/api/src/activity-history.test.ts",
+        "apps/web/tests/activity-sharing.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "pause/resume與lifecycle分開；只有未過start/deadline且未結算可resume，strictFIFO只開放時補位。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-lifecycle.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "最低人數不足仍可附原因確認成團，不自動取消；已確認重做不增加稽核或通知。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/web/tests/activity-lifecycle.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "預定過期仍scheduled且actualStartedAtnull；start/finish記明確actual時間且重播保早值；延長用安排版本，跨日/DST/未知zone不猜。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/testsupport/activity-sharing.test.ts",
+        "apps/web/tests/activity-sharing.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "取消原因必填且可結算；archive/unarchive保原名册款項，remove第三方含withdrawn或財務歷史即拒，合格softdelete保回執、skip所有待送channel。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/web/tests/activity-lifecycle.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "category/time/duration/location/description/effective withdrawal/zone/fee重要改動須reason、不可變snapshot並標activeconfirmed/waiting/tentative待確認；title/capacity不虛增conditions版。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-management.test.ts",
+        "apps/web/tests/activity-conditions.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "本人/原manager逐人同意/拒絕，拒絕reason必填；保原席位/已接受版/資金，admin不代同意，重播重驗現在manager。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-management.test.ts",
+        "apps/web/tests/activity-conditions.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "cohost四scope分開、7天invite目前owner/trueaccount重驗，接受責任前無access/role；replacement不累加、revoke保本人管理。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/web/tests/activity-delegation.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "settlement接受時每場唯一指定者，替換只拿掉舊settlement、保双方其他duties；revoke無其他scope才刪role。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/web/tests/activity-delegation.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "transfer須對方接受、舊pendinggrants失效、新ownerrole移除，原owner留自己報名/代管及資金責任；同名仍有真IDchange與audit。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-delegation.test.ts",
+        "apps/web/tests/activity-delegation.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E15",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "absent/late/left/unknown/present與UTCactualtimes獨立名額/consent/payer；ended/cancelled更正reason必填，不重算歷史帳單。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/web/tests/activity-attendance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E16",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "onsite要roster+attendance、首bill前；費用/超額/繞候補各獨立confirm，舊queue不變。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/web/tests/activity-attendance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "E17",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "history保前後/操作者顯示/理由/時間與losslesscursor，無tokens/accountIDs/未確認申報原因；currentaccess重驗及appendonly。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-history.test.ts"
+      ]
+    },
+    {
+      "capability_id": "E18",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "完整摘要原文/目前版不洩私人名册決定；clipboard失敗選文可手動copy；高德只点击、encoded單一location、不定位。"
+      ],
+      "test_files": [
+        "apps/api/testsupport/activity-sharing.test.ts",
+        "apps/web/tests/activity-sharing.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "preview綁目前revision/安排/逐人輸入與分配，須明確接受當時費用，不默認接受新規則。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "本人/同行/純代報各獨立attendee，note及payer保留，管理人與付款人分開。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "confirmed保留；together不足整組waiting且阻後方；individual混合分配須明確accept_partial。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-publish.test.ts",
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "tentative不占位；確認另建party，新隊序不繼承先前優先。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "後加同行及退出後重新報名均建立新party；不動原confirmed資料、原順序與付款。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "只本人管理人或roster scope可改、管理他人須理由；linked姓名不被客人輸入覆蓋，已認領payer凍結，split保持原隊列。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "截止前退出按原FIFO補位、原confirmed不重排；關閉/期限後不自動遞補。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "confirmed逾期須原因、批准前留位；reject/approve須roster與原因，waiting/tentative直接退出。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "補報名邀請無位無通知，只有有限preview；接受當時條件/候補，單次且不重複本人。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-invitations.test.ts",
+        "apps/web/tests/activity-invitations.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "7天issue/supersede/request/approve/reject/revoke；原issuer權限重驗、未批准無私有access；不按同名合併。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-claims.test.ts",
+        "apps/web/tests/activity-claims.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "認領只轉身份/管理權與updated_at，原attendee/party/seq/consent/帳單/付款來源/圖片不變。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-claims.test.ts",
+        "apps/web/tests/activity-claims.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "同名獨立列，成分由該attendee.user_id取得；不借manager或pending claim，modal關閉不加history。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-roster.test.ts",
+        "apps/web/tests/activity-roster.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "R13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "每批1–20、有限capacity最多500；serial交易不超賣，409保輸入再preview。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/activity-registration.test.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "T01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "至少2候選、無舊固定項數上限、跨月不連續選擇與單項移除。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts",
+        "apps/web/tests/time-polls.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "T02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "全部有效候選必須一次明確填答，不能默認補票或報名。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts",
+        "apps/web/tests/time-polls.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "T03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "批量選擇只填未答，保已有答案與過期歷史；鍵盤可切radio。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts",
+        "apps/web/tests/time-polls.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "T04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "date按IANA當地下一日午夜、exact按開始；過期原choice及數字保留。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts"
+      ]
+    },
+    {
+      "capability_id": "T05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "截止早於最後候選失效；到時關閉，只有明確合法extend才延長。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts"
+      ]
+    },
+    {
+      "capability_id": "T06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "最高票只比較尚有效候選；zero或未達minimum/非最高須理由。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts",
+        "apps/web/tests/time-polls.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "T07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "定案唯一event，原vote不自動成報名；條件/owner報名/audit/notification/bot按原Python順序。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts"
+      ]
+    },
+    {
+      "capability_id": "T08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "新poll預設bot同步，event沿用；global/group關閉不生或不送，延遲只摘要有效候選。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts"
+      ]
+    },
+    {
+      "capability_id": "T09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "原UUID不再定案；管理revision與定案base_vote_revision過期拒絕，並行只建1event。"
+      ],
+      "test_files": [
+        "apps/api/src/time-polls.test.ts",
+        "apps/web/tests/time-polls.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "只有發起者調整正式預分，casefold房名不重複且最大50。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "P02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "attendee至多一房，可未分配；同付款人不把不同attendee合併。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-room-overview.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "本人按当前attendee user辨識，管理同行独立標記；歷史帳單保持凍結稱呼。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/web/tests/activity-room-overview.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "預分追加快照，原報名／付款／帳務及bot工作不被更改；相同內容不加版。",
+        "預分歷史可分頁、按正整數版本讀取，保留空快照與原付款人。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-room-overview.test.ts",
+        "apps/api/src/music-rooms.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-room-overview.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "保留2–40選人、共同項門檻、配對原分／展示分、平均／最差／孤立及Unicode tie順序。"
+      ],
+      "test_files": [
+        "apps/api/src/music-rooms.test.ts",
+        "packages/domain/src/music-rooms.test.ts"
+      ]
+    },
+    {
+      "capability_id": "P06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "按房數／容量／自訂容量保留原seed/greedy/local-move及可選公開性別親和，全部人恰一次且不超容量。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-rooms.spec.ts",
+        "packages/domain/src/music-rooms.test.ts"
+      ]
+    },
+    {
+      "capability_id": "P07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "移房後重新按成員計算分數／共同項／孤立，重複／容量／非來源成員拒絕。"
+      ],
+      "test_files": [
+        "apps/api/src/music-rooms.test.ts",
+        "apps/web/tests/music-rooms.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "活動選取按attendee及有效user ownership，無成分／等候／暫定仍保留而不以同名或manager猜身份。"
+      ],
+      "test_files": [
+        "apps/api/src/music-rooms.test.ts",
+        "apps/web/tests/music-rooms.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "來源變更或非目前帳號不能套用舊結果；計算完成再次驗證session/scope/revision。",
+        "來源讀失敗不可當空名冊；保留原安排但撤銷分數、圖片與採用，最新重讀後需重算。",
+        "採用先進正式editor並核對付款人，已有草稿须明確替換；成功回執不因後續source變更而重播。",
+        "草稿及結果持久化失敗不發計算／採用；晚結果另存版本而不覆寫新配置。",
+        "計算限流／CPU budget／5秒逾時及停止可恢復；不發布晚結果或帶入資料庫/憑證。"
+      ],
+      "test_files": [
+        "apps/api/src/music-rooms.test.ts",
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "apps/web/tests/music-rooms.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "P10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "360px長名、分房PNG下載及完整清單保留；剪貼簿/圖片/分享失敗有可操作退路。",
+        "來源回應不帶程度/性別/留言/聯絡/憑證；公開性別僅進計算；權限消失立即隱藏既有結果。"
+      ],
+      "test_files": [
+        "apps/api/src/music-rooms.test.ts",
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "apps/web/tests/music-rooms.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "舊人均原值保留，必須明確轉換及原因，追加新版。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "全正式名單不得省略，退出/缺席/拒絕安排/份數差異須核對原因。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "免共同、半份保持人員，免共同者仍可單獨負擔指定消費。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "五方式、選中範圍、精確固定額；1000上界及1440分鐘邊界。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-settlement.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "退款/折扣作負項獨立分配，總額/逐人不可負，不追加實際退款。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "一人多人付款/多人同付獨立保存，名稱不合併，沿用付款origin。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-settlement.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "整數分/千分比/BigInt最大餘數，每項獨立，tie保留凍結名冊順序。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts",
+        "packages/domain/src/domain.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "preview綁revision/base version/journal/圖片；當前權限、一次入帳與回執。",
+        "結算未知結果保留原UUID/body，重載與inbox讀結果，不自動重送。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-settlement.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "實際修改追加完整版本及原因/操作者/修改項，同內容不增版。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-settlement.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "PNG/CRC/尺寸/單張及總量驗證，每版獨立不可變圖片引用；missing/corrupt可恢復。",
+        "原Python結算proof/原body/圖片繼承語意可恢復，同原key不重加版或款。"
+      ],
+      "test_files": [
+        "apps/api/src/legacy-detailed-settlement.test.ts",
+        "apps/api/src/payment-codes.test.ts",
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "本人碼庫隔離/封存不改已發布圖片，舊source只能原publisher另存。"
+      ],
+      "test_files": [
+        "apps/api/src/payment-codes.test.ts",
+        "apps/web/tests/activity-settlement.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "每位人員歸一實際房，房分獨立對平，已有款room_id不得丟失。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/settlements.test.ts",
+        "apps/web/tests/activity-settlement.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "S13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "指定付款與已付款分開，paid真實時間/方式同transaction追加expense；已有支出不重記。"
+      ],
+      "test_files": [
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "S14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "舊版完整snapshot不受現況改名/退出/安排更新，當前待補/待退依最新帳與原款投影。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/settlements.test.ts"
+      ]
+    },
+    {
+      "capability_id": "F01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "申報不計入實收，只可本人責任及受管理未綁同行；非允許kind拒绝。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts"
+      ]
+    },
+    {
+      "capability_id": "F02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "核對接受原額/原snapshot，拒绝须原因，撤回僅本人；決定不可改。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "實收/退款/償還墊付保存payer/actual party/池或個人出資，無支付執行。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "個人墊付/代收池支出與退款分明；merchant refund關聯expense/deposit apply。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/finance.test.ts"
+      ]
+    },
+    {
+      "capability_id": "F05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "訂金保留在deposit非cost，退回及抵消費分開，剩額/後續依賴不可負。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "責任歸屬移轉與實體代收款移交為不同journal kind，當前有效party及原因，精確對平。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/finance.test.ts"
+      ]
+    },
+    {
+      "capability_id": "F07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "正額與真實過去時間/格式，preview隨內容/版本失效，不以新key自動重送。",
+        "原交易各kind/close/reopen/report/decisions及未知結果以原key/body/proof恢復。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/api/src/legacy-finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "confirmed entries/claims/actions只追加；沖銷先處理後續依賴，不沖銷沖銷。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "無逐人帳單個人金額null，當前最新帳單待補待退，不以管理同行當本人債。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts"
+      ]
+    },
+    {
+      "capability_id": "F10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "包間待補/待退與現金池獨立，跨房reference/資金使用拒绝，不以同收款人淨抵。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "無bill、欠款、應退、店家/房/訂金/現金/待核對不平不可結清；新帳/款/申報使舊close無效。"
+      ],
+      "test_files": [
+        "apps/api/src/finance-projection.test.ts",
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "F12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "原付款origin與immutable labels在認領/退出/改名/轉交後保留；current authority重驗。",
+        "BigInt序號/cursor數字排序，報告與entries獨立分頁，logout/切帳不露舊原稿。"
+      ],
+      "test_files": [
+        "apps/api/src/finance.test.ts",
+        "apps/web/tests/activity-finance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "kind/category 分開；公開分類只取實際詞條，使用者原文及別名保留。"
+      ],
+      "test_files": [
+        "apps/api/src/music-catalog.test.ts",
+        "apps/web/tests/music-entries.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "保留 NFKC/casefold/零寬處理、拼音全拼／首字母／假名及別名搜尋；不改來源顯示文字。",
+        "清空／Escape／斜線快捷鍵、獨立類型分類篩選及跨頁 URL 狀態。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-ranking.spec.ts",
+        "apps/web/tests/music-workspace.spec.ts",
+        "packages/domain/src/music-search.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "API 保存 1–20、領域 5／細分 15，拒絕重複／未知／非法程度；先建立詞條可有未選空白 profile。"
+      ],
+      "test_files": [
+        "apps/api/src/app.test.ts",
+        "apps/api/src/music-catalog.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "四檔程度可編輯；領域無程度編輯選單；保存、改詞條類型及其他欄位不無聲改選擇。"
+      ],
+      "test_files": [
+        "apps/api/src/music-catalog.test.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "搜尋、排行、詞條頁和成分編輯共用一份 selection／草稿，不因往返另建控制器。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-workspace.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "有變更才顯示保存條；360px長名稱與保存控制可用，成功後收起。",
+        "未知結果保留原UUID/body；送出中跨頁仍鎖定；登出後遲到結果不能復活私人草稿。",
+        "背景詞庫失敗不卸載編輯器；存儲拒絕阻止送出，損壞原稿先保全。",
+        "成分資料更新提高選擇revision，保留原選擇直到本人核對最新版本；不覆蓋未保存選擇。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-fields.spec.ts",
+        "apps/web/tests/music-ranking.spec.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "自建領域2／細分8、名称24 codepoints；跨類型／別名正規化重名拒絕並指向既有詞條。",
+        "舊created list是配額依据，與metadata owner獨立；已關聯舊建立者仍有權利。"
+      ],
+      "test_files": [
+        "apps/api/src/music-catalog.test.ts",
+        "apps/web/tests/music-entries.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "本人建立詞條才可改；當前身份／CSRF／scope及詞條revision／music epoch重新驗證。",
+        "管理員獨立入口不受2/8配額，可改其他建立者詞條；仍需管理權限及重新核對。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music-catalog.test.ts",
+        "apps/api/src/music-catalog.test.ts",
+        "apps/web/tests/music-entries.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "任何人已選用都阻擋建立者刪除，不能移除他人選擇；管理刪除另外確認影響。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music-catalog.test.ts",
+        "apps/api/src/music-catalog.test.ts",
+        "apps/web/tests/music-entries.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "兩類分開排，count優先與舊中文display tie排序；10/全部領域/20細分及完整詞庫保留。",
+        "會員、詞條與24h新增統計保留；跨頁保存／刪除即時更新，不丟顯示偏好。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-ranking.spec.ts",
+        "packages/domain/src/music-rankings.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "獨立氣泡圖包含完整詞條、名稱標籤／人數／選中狀態、鍵盤開詞條與完整清單退路。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-ranking.spec.ts",
+        "packages/domain/src/music-rankings.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "詞條資料可看分類／別名／建立者；選／取消沿用共同草稿；選取者列表受member/profile gate。"
+      ],
+      "test_files": [
+        "apps/api/src/music-entry-members.test.ts",
+        "apps/web/tests/music-entries.spec.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "55/45分拆、雙方程度、共同本命／冷門／覆蓋／比例／標籤及各自獨有項保留。"
+      ],
+      "test_files": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts",
+        "packages/domain/src/music-matching.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "兩排序及tie-break、證據折算／個人熟悉度／展示分上限、原localStorage偏好及URL優先保留。"
+      ],
+      "test_files": [
+        "apps/web/tests/music-share.spec.ts",
+        "packages/domain/src/music-matching.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M15",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "對方最多3項另列sparseMatches，不借少量重合取代主推薦或取得留言。"
+      ],
+      "test_files": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts",
+        "packages/domain/src/music-matching.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M16",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "固定ID／舊數字key／自填contact別名可比，拒絕自己及缺失；不能指定viewer；共用詞條往返回比較。"
+      ],
+      "test_files": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M17",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "未公開性別只本人可見，contact標為自填／舊查詢且未驗證；不回身份／憑證／原始欄位。"
+      ],
+      "test_files": [
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M18",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "私人留言最多140 codepoints，可清空noteAt0；舊超長原文於無關改動保留。",
+        "推薦依所選排序僅主榜首有留言；一般成分卡／比較按預設rare首位重新判斷；sparse從不顯示。"
+      ],
+      "test_files": [
+        "apps/api/src/music-fields.test.ts",
+        "apps/api/src/music-matches.test.ts",
+        "apps/web/tests/music-fields.spec.ts",
+        "apps/web/tests/music-matches.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M19",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "可空／built-in／自訂12字及公開開關；資料值保留但未公開不傳他人。"
+      ],
+      "test_files": [
+        "apps/api/src/music-fields.test.ts",
+        "apps/web/tests/music-fields.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "M20",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "Canvas／完整複製清單取目前草稿及順序，選用人數／程度保留；不保存，推薦依已保存選擇；聯絡號明確勾選。",
+        "真正PNG生成及下載；native share用已備File維持click activation；取消不下載，未支援／失敗退下載，剪貼簿／Canvas失敗可手動複製。",
+        "匯出白名單不含notes/gender/credentials，20長詞條不遺漏；未知／損壞草稿阻擋匯出，切帳號／登出／erasure撤銷晚圖片與分享退路。"
+      ],
+      "test_files": [
+        "apps/api/src/music-share.test.ts",
+        "apps/web/tests/music-share.spec.ts",
+        "packages/domain/src/music-share.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M21",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "保留48點、30分鐘、相鄰正向新增非淨增、top2 main+3sub穩定ties、24h/7d/最近8及時間語意。",
+        "sampler獨立寫aggregate、沒有QQ/outbox；訪問不落快照；重啟去重、時鐘退回／gaps不補、shutdown停timer。",
+        "公開aggregate與私有最近會員分開；圖例／時間／資料表／最近詞條完整，共同selection草稿往返無自存。",
+        "歷史aggregate保留，erasure移除live count／會員身份；錯誤不保留舊圖、損壞counts不改來源；晚會員不可跨帳號。"
+      ],
+      "test_files": [
+        "apps/api/src/music-trend.test.ts",
+        "apps/web/tests/music-trend.spec.ts",
+        "packages/domain/src/music-trend.test.ts"
+      ]
+    },
+    {
+      "capability_id": "M22",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "minLink嚴格重合、最大選擇seed/admission、transitive及rescan、圈內會員排序／頻次tag、single前8及完整count保留；超8圈仍可看。",
+        "圈子只需要saved成分/會員scope；傳worker最小ID/name/picks，不含contact/note/gender/credential；讀取不改outbox或其他表。",
+        "計算完成重新核對身份及source snapshot；client斷線取消，晚threshold／私人讀丟棄；門檻/entry/profile/compare往返保留。"
+      ],
+      "test_files": [
+        "apps/api/src/music-circle-freshness.test.ts",
+        "apps/api/src/music-circles.test.ts",
+        "apps/web/tests/music-circles.spec.ts",
+        "packages/domain/src/music-circles.test.ts"
+      ]
+    },
+    {
+      "capability_id": "C01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "140 Unicode codepoints、24小時邊界後可重新發布；server拒绝不是只靠UI。"
+      ],
+      "test_files": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts",
+        "packages/domain/src/music-shouts.test.ts"
+      ]
+    },
+    {
+      "capability_id": "C02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "成分會員權限、發布者成分往返、QQ來源標明自填，clipboard失敗可手選。"
+      ],
+      "test_files": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "C03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "30天邊界歸檔、歷史排序與分頁保完整；新歸檔超500才prune對應原引用。"
+      ],
+      "test_files": [
+        "apps/api/src/music-shouts.test.ts",
+        "apps/web/tests/music-shouts.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "C04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "system/light/dark與舊jpm偏好跨領域、跨tab和reload保留，不因切頁還原。"
+      ],
+      "test_files": [
+        "apps/web/tests/appearance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "C05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "管理員排序/開关/config與個人wallpapers偏好分開；decode前不display、reduce只1張。"
+      ],
+      "test_files": [
+        "apps/api/src/appearance.test.ts",
+        "apps/web/tests/appearance.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "C06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "舊/music/sw.js等舊clients關閉才退役，保其草稿及其他cache；新版不cache API/auth/私有導航。"
+      ],
+      "test_files": [
+        "apps/web/tests/pwa.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "C07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "360px長名稱與save可見、保存後bar移除；尊重reducedmotion。"
+      ],
+      "test_files": [
+        "apps/web/tests/appearance.spec.ts",
+        "apps/web/tests/music-workspace.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "A01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "逐請求重查角色、CSRF綁裝置與角色版本；憑證輪替/到期即失效。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-users.test.ts",
+        "apps/web/tests/admin.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "A02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "20筆分頁、稱呼/ID/第三方名與provider/client/subject配對狀態；不返回subject/UnionID。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-users.test.ts",
+        "apps/web/tests/admin.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "A03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "自撤拒絕、關閉帳號不能授權、role/history/receipt同交易且只追加。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-users.test.ts",
+        "apps/web/tests/admin.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "A04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "人工QQ/備註與身分和角色分開，version及唯一檢查，可清空。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-users.test.ts",
+        "apps/web/tests/admin.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "A05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "後台成分搜尋區分未關聯/prelink/OAuth，提供選擇但不含PIN證明、留言或性別。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "移轉/解除保成分/聯絡/隊序/財務；撤銷原授權、原source links不再復活，receipt不重apply。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "管理員只可協助可查看、已發布且未終止未結算活動；須原因、通知owner，不擴至費用/私有/群同步。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-management.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "刪除申請依實際保留資料判定，不允許管理員提交completed；revision包含當前共享計數。",
+        "註冊開关當前角色與revision重驗，僅actual change追加setting/history。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-users.test.ts",
+        "apps/api/src/registration.test.ts",
+        "apps/web/tests/admin-privacy.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "A09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "完整CRUD、merge按Python保留first familiarity/target owner/aliases與created清單，無孤兒引用。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music-catalog.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "管理員無成分仍可管理；numeric舊PIN只作找回，已綁OAuth不被PIN登入。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music-catalog.test.ts",
+        "apps/api/src/admin-music.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "刪成分與全reset須durable erasure，清身分/會話/歷史，但保帳號、活動、bot與reset後新資料。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-music-erasure.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "管理員可查active/history，删除原副本及archive引用，只保最小audit與ack、不留publisher私資料。"
+      ],
+      "test_files": [
+        "apps/api/src/music-shouts.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "PNG/JPEG/WebP單張2MiB原bytes、排序/開关/config/删除；格式/路徑安全，配對備份保資產。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-backups.test.ts",
+        "apps/api/src/appearance.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "歷史下載先套最新ownership/empty contact/PIN狀態/erasure，不啟用舊管理密碼；保原history與bot。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-backups.test.ts"
+      ]
+    },
+    {
+      "capability_id": "A15",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "憑證方式只清rescue，帳號方式清當前裝置授權及跨tab私稿，其他裝置維持。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-users.test.ts",
+        "apps/web/tests/admin.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "B01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "全部原別名/固定面板/裸@與未知幫助，公開指令只查詢及給入口。"
+      ],
+      "test_files": [
+        "apps/bot/src/replies.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "候選按原條件/順序/8項序號，9項更多提示；不歧義猜場或按broadcast opt-in隱藏查詢。"
+      ],
+      "test_files": [
+        "apps/bot/src/replies.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "群內名册有界/Unicode裁切/清理，保留省略提示；不帶私有备注/身份/付款細節。"
+      ],
+      "test_files": [
+        "apps/bot/src/replies.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "全部活動通知保留原plain/rich、凍結context、按鈕及深連結；自訂模板按原Python組合。",
+        "實際生命週期操作與原通知/outbox相容；同一轉換重播不重送。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-bot.test.ts",
+        "apps/api/src/activity-lifecycle.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "退出及最後遞補合併一則；重報取新票號，原同意保留。",
+        "暫定不耗名額或通知；一起報名確認採新票號，拆隊不插隊。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-registration.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "部署dry-run與policy三态語意保留，模擬是skipped/simulated，不換成真送。"
+      ],
+      "test_files": [
+        "apps/bot/src/outbox.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "save/revert追加版本，重試回原命令結果；相同設定不添版本，並行更新拒絕。",
+        "設定變更只重排未來提醒；換群作廢原工作，已送/模擬/不明/私人列原樣保留。",
+        "所有kind預覽用隔離範例，沒有排程、設定或真名冊副作用。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-bot.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "groups null才用deployment fallback，空列表全部停；錯target不改轉送，查詢/廣播各依群政策。"
+      ],
+      "test_files": [
+        "apps/api/src/admin-bot.test.ts",
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/outbox.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "勿擾/限流延後不耗attempts；跨重啟保留節奏；被動公開回覆不依broadcast節奏。"
+      ],
+      "test_files": [
+        "apps/bot/src/outbox.test.ts",
+        "apps/bot/src/replies.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "同writer lock領工作，過期token不能回寫，逐條錯誤不中斷整批；確認落盤失敗需人工核對。",
+        "取消已開始請求保留不確定，未開始工作回pending；同poll不能重疊。"
+      ],
+      "test_files": [
+        "apps/bot/src/outbox.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "只直接@且非bot/everyone，事件去重；callback先ACK/外層eventID，發送前重驗群與政策。"
+      ],
+      "test_files": [
+        "apps/bot/src/dispatch.test.ts",
+        "apps/bot/src/outbox.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "只提取原訊息／指定引用中的英文縮寫，保留全部指令別名；不向第三方傳網址、身份或原句。",
+        "詞條數、長度、大小寫及簡繁遮罩按原行為，保留允許詞與可信欄位邊界。",
+        "完整候選保留順序、重複與程式符號；拒絕第三方帶入URL和@。",
+        "緩存按TTL/bytes/LRU限制；每次重新套用當前遮罩，不裁掉超大完整結果。",
+        "縮寫請求有總逾時及單一執行限制；晚回應不存緩存，取消不轉成重送。",
+        "分段及1小時續讀跨重啟保留完整Unicode和重複；只前進已確認byte游標。",
+        "不明或存游標失敗保留原位置，提示可能重複；遮罩發布失敗保全舊body與metadata。",
+        "續讀綁原群，拒絕過期、穿越、錯邊界；新舊Python檔案互讀保留同一byte游標。"
+      ],
+      "test_files": [
+        "apps/bot/src/abbreviation-delivery.test.ts",
+        "apps/bot/src/abbreviations.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "日誌以opaque refs/codepoint metadata記錄，私人正文預設不存；opt-in遮罩與原Python一致。",
+        "持久日誌維持4份輪替備份與私人權限；IO失敗退至console且不變成第二次送出。",
+        "跨應用身份診斷只讀布林presence/site match，資料失敗不佔用指令或按鈕容量。",
+        "載入／套用設定版本與gateway健康分開；停止只保留實際last_poll/ACK，不虛構健康。"
+      ],
+      "test_files": [
+        "apps/bot/src/identity-diagnostics.test.ts",
+        "apps/bot/src/observability.test.ts",
+        "apps/bot/src/runtime.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "Identify/Resume按最後完成序號；heartbeat ACK與業務隊列分離，未完成不提前確認。",
+        "缺ACK、失效session、close code與重連退避保留原語意並設上限。",
+        "HTTP僅認證錯誤重試一次；永久、quota、傳輸、不明投遞不自動重播。",
+        "重試在取得token後重驗當前政策；取消／關閉禁止再次送出。",
+        "health使用同一私人bot-health.json原子寫入；worker失敗／停止後發布failed/stopped並釋放owner。"
+      ],
+      "test_files": [
+        "apps/bot/src/api.test.ts",
+        "apps/bot/src/gateway.test.ts",
+        "apps/bot/src/observability.test.ts"
+      ]
+    },
+    {
+      "capability_id": "B15",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "未綁身份不發個人款項/私聊，不把私人outbox改送到群。"
+      ],
+      "test_files": [
+        "apps/bot/src/outbox.test.ts",
+        "apps/bot/src/replies.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "publicv1 list/detail/participants/rooms保持Bearer、未配置503、read-only方法/CORS/cache及原逐欄語意。"
+      ],
+      "test_files": [
+        "apps/api/src/public-api.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "/music舊頁轉React，舊internal/exportadmin不得因proxyheader/cookie/bearer偽造公開；exactSWscope退役保其他app/drafts。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-access.test.ts",
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "apps/web/tests/pwa.spec.ts",
+        "packages/domain/src/legacy-navigation.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "每種event/poll/action/invitation/claim/device/music/hash原網址精確map，loginreturn/replaceback保留；不因開url自動操作。"
+      ],
+      "test_files": [
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "packages/domain/src/legacy-navigation.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O04",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "IDB原稿包含activity/poll/rooms/invoice/finance、原圖片/版本/intent/key；明確restore、無舊preview、IDBcommit後才清source、scope與跨tab版本保全。"
+      ],
+      "test_files": [
+        "apps/web/src/legacy-local-import.test.ts",
+        "apps/web/tests/durable-drafts.spec.ts",
+        "apps/web/tests/legacy-local.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "O05",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "操作持久化成功才送，unknown同key/body查回、currentlyauthorize；createintent防重建；receipt僅存在指示、不能取代業務權限。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-drafts.test.ts",
+        "apps/api/src/inbox.test.ts",
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/inbox-history.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "O06",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "revision+UUID/body同交易appendaudit；409保稿待explicitrecheck；必要write故障全rollback，原相容optionalbot hook故障保业务并log。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-lifecycle.test.ts",
+        "apps/api/src/activity-management.test.ts",
+        "apps/api/src/activity-publish.test.ts",
+        "apps/web/tests/activity-drafts.spec.ts",
+        "apps/web/tests/activity-registration.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "O07",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "十類待辦由目前業務/權限即時計算，已讀≠完成；105未讀與100+5分页、首readtime/recipient保護、archive仍留finance義務。"
+      ],
+      "test_files": [
+        "apps/api/src/inbox.test.ts",
+        "apps/web/tests/inbox-history.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "O08",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "AcceptLanguage最高q同q先者策略、静態system簡繁，用户字串/enum/key/value/erroridentity不改。"
+      ],
+      "test_files": [
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/language.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "O09",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "guide11原chapter、privacy/contact/qqreturn入口，簡繁/ICP保留；policy引導保持具體且user原文不轉。"
+      ],
+      "test_files": [
+        "apps/api/testsupport/language.test.ts",
+        "apps/web/tests/language.spec.ts",
+        "apps/web/tests/legacy-navigation.spec.ts",
+        "packages/domain/src/legacy-navigation.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O10",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "Umami只exactproductionorigin、完整metadataallowlist不含input/name/amount/ID/token，阻斷tracker不阻功能。"
+      ],
+      "test_files": [
+        "apps/api/testsupport/analytics.test.ts",
+        "apps/web/tests/analytics.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "O11",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "br/gzip/identity正MIME/bytes/quality/ETag/HEAD/range，私API不cache/壓縮、SPA/SWno-store、CSPnosniff與同origin/CSRF/限流保護。"
+      ],
+      "test_files": [
+        "apps/api/src/activity-access.test.ts",
+        "apps/api/src/static-assets.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O12",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "originalSQLite原列/schema/trigger/rowid/storageclass保留，copy媒體digest引用对应、两次import无dup、不用registrations重建roster。"
+      ],
+      "test_files": [
+        "apps/api/src/capture-snapshot.test.ts",
+        "apps/api/src/import-snapshot.test.ts",
+        "apps/api/src/offline-restore.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O13",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "musicJSON/identity/walls/latest erasure成套保全，維護writerlocks/來源pin、privatepackage可独立读；恢復不啟旧管理；bot外部cursor/uncertainty/groupstate/mtime也保全。"
+      ],
+      "test_files": [
+        "apps/api/src/capture-snapshot.test.ts",
+        "apps/api/src/rollback-bot-restore.test.ts",
+        "apps/api/src/rollback-bot-state.test.ts",
+        "apps/api/src/rollback-package.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O14",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "release必fullSHA在freshoriginmain、cleanarchive、双远端SHA确认；新Compose各imageimmutable/source独立，回退成套相容另验。"
+      ],
+      "test_files": [
+        "apps/api/testsupport/image-source.test.ts",
+        "apps/api/testsupport/runtime-compose.test.ts"
+      ]
+    },
+    {
+      "capability_id": "O15",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "非root/ROroot/capsdrop/no-newpriv/tmpfs64m、512MiB无swap/1CPU/128PID；privateenv外置、health實際DB、version另接口，loopbackproxy不能偽造client。"
+      ],
+      "test_files": [
+        "apps/api/src/runtime.test.ts",
+        "apps/api/testsupport/runtime-compose.test.ts"
+      ]
+    },
+    {
+      "capability_id": "U01",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "全站活動/詞條/同好同一入口；10類角色沿用各領域權限，無private/token/contact/ownerID；mjxs/xuanshi/全形yrsK/alias保原搜尋，23詞條10/10/3完整。；Back/person/compare回同q，共用未保存成分經search/term/profile仍保留；切帳號清private；遲回不覆蓋新query；source500不當empty200。；5視口無overflow、手機控件至少44px；原帳號scope與selection經music→match→search→activity→room→900分bill仍相同。"
+      ],
+      "test_files": [
+        "apps/api/src/search.test.ts",
+        "apps/api/src/unified-workflow.test.ts",
+        "apps/web/src/search-return.test.ts",
+        "apps/web/tests/global-search.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "U02",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "完整attendeeIDs保無成分/候補/未選人，不猜名字或manager；三種計算不寫DB，手動移無成分者不列合拍分，仍可正式採用。；suggestion載入前disabled；核對付款人及confirm才save；bob403/stale409，原Pythonplan/current/counts/roster與native同版本且保guest；新結算900分逐人/房/付款人對平。；原UUID可查回，unknownresponse保同body/key；IDB abort阻calculate/adopt/leave；競爭版本/手動輸入保全；跨tab撤權/刪成分/切帳號阻舊share/adopt/遲回。"
+      ],
+      "test_files": [
+        "apps/api/src/music-rooms.test.ts",
+        "apps/api/src/unified-workflow.test.ts",
+        "apps/web/tests/durable-music-rooms.spec.ts",
+        "apps/web/tests/music-rooms.spec.ts"
+      ]
+    },
+    {
+      "capability_id": "U03",
+      "local_state": "clauses_verified",
+      "full_parent_state": "in_progress",
+      "clauses": [
+        "原Python跨threshold/hashseed全等、bridge chain重掃、strict overlap及stable ID順序；12圈8展開4全部可達、同名不合併；獨立者/原選擇保全。；minLink100經person/compare返回100；term共享未保存草稿須明確save後更新圈子，鍵盤/長名稱/同名詞條ID/手機wrap可用。；worker只接names/IDs/tagaggregate且不inherit環境；selection/name/entry/erasure/qualification/device/account共7來源再驗；health可回/abortstop；切帳號/logout遲回不復活，cross-tab保存更新与erasuregate。"
+      ],
+      "test_files": [
+        "apps/api/src/music-circle-freshness.test.ts",
+        "apps/api/src/music-circle-jobs.test.ts",
+        "apps/api/src/music-circles.test.ts",
+        "apps/web/tests/music-circles.spec.ts",
+        "packages/domain/src/music-circles.test.ts"
+      ]
+    }
+  ],
+  "guidance_delta_validation": {
+    "build": "passed",
+    "compiled_isolated_smoke": "passed",
+    "existing_guide_browser_cases": 5,
+    "skips": 0,
+    "retries": 0,
+    "api_and_bot_bundle_bytes_unchanged": true
+  }
+}

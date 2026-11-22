@@ -2,6 +2,12 @@
   "schema_version": 1,
   "inventory": "01-capability-inventory.md",
   "release_eligible": false,
+  "latest_partial_acceptance": {
+    "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
+    "index": "docs/unified-rebuild/local-acceptance-status.json",
+    "checkpoint": "docs/unified-rebuild/219-current-copy-and-acceptance-checkpoint.md",
+    "full_parent_accepted": false
+  },
   "capabilities": [
     {
       "capability_id": "I01",
