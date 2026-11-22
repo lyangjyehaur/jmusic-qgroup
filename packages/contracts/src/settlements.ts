@@ -2,12 +2,15 @@ import { z } from 'zod';
 import { ConditionArrangement } from './activity-arrangements';
 import { FinancePayload, FinanceRoomBalance } from './finance';
 import { SettlementPaymentChoices, SettlementReceiptChoice } from './payment-assets';
+import { originalString } from './legacy-values';
 
 const text = (maximum: number, required = false) =>
   z
     .string()
     .trim()
     .refine((value) => Array.from(value).length <= maximum && (!required || !!value));
+const roomText = (maximum: number, required = false) =>
+  z.string().transform((value) => originalString(value) as string).refine((value) => Array.from(value).length <= maximum && (!required || !!value));
 const revision = z.number().int().nonnegative(),
   cents = z.number().int().safe(),
   id = z.string().regex(/^[a-f0-9]{16}$/);
@@ -67,7 +70,7 @@ export const SettlementItemInput = z
 export const RoomPlanInput = z
   .object({
     id,
-    name: text(40, true),
+    name: roomText(40, true),
     payer_id: SettlementPartyId,
     person_ids: z.array(z.string().min(1).max(80)).max(500),
   })
@@ -237,7 +240,7 @@ export const SaveRoomPlan = z
   .object({
     revision,
     rooms: z.array(RoomPlanInput).max(50),
-    reason: text(300).default(''),
+    reason: roomText(300).default(''),
     music_source_version: z.string().regex(/^[a-f0-9]{64}$/).optional(),
     confirm: z.literal(true),
   })

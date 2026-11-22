@@ -58,6 +58,45 @@ test('finds my room and managed guest on the activity, isolates account identity
   await expect(rooms.getByText(/我的包間/)).toHaveCount(0);
   await expect(rooms.getByText(/· 我/)).toHaveCount(0);
 });
+test('keeps the unassigned roster visible through moving people, removing a room and saving a partial plan', async ({page,context}) => {
+  await login(context);
+  await page.goto('/activities/listen/rooms');
+  const unassigned = page.getByRole('region', {name:'未分配人員',exact:true});
+  await expect(unassigned.getByText('未分配 · 3 人', {exact:true})).toBeVisible();
+  for (const name of ['小青','小白','同行']) await expect(unassigned.getByText(name, {exact:true})).toBeVisible();
+  await page.getByRole('button', {name:'新增包間',exact:true}).click();
+  const first = page.locator('.settlement-room').first();
+  await first.getByLabel('包間名稱', {exact:true}).fill('第一房');
+  await first.getByLabel('包間付款人', {exact:true}).selectOption({label:'小青'});
+  await first.getByText('包間人員 · 0 人', {exact:true}).click();
+  for (const name of ['小青','同行']) await first.getByRole('checkbox', {name,exact:true}).check();
+  await expect(unassigned.getByText('未分配 · 1 人', {exact:true})).toBeVisible();
+  await unassigned.getByText('未分配 · 1 人', {exact:true}).click();
+  await expect(unassigned.getByText('小白', {exact:true})).toBeVisible();
+  await page.getByRole('button', {name:'新增包間',exact:true}).click();
+  const second = page.locator('.settlement-room').nth(1);
+  await second.getByLabel('包間名稱', {exact:true}).fill('第二房');
+  await second.getByLabel('包間付款人', {exact:true}).selectOption({label:'小青'});
+  await second.getByText('包間人員 · 0 人', {exact:true}).click();
+  await second.getByRole('checkbox', {name:'同行',exact:true}).check();
+  await expect(first.getByRole('checkbox', {name:'同行',exact:true})).not.toBeChecked();
+  await second.getByRole('checkbox', {name:'小白',exact:true}).check();
+  await expect(unassigned.getByText('全部人員已分配。', {exact:true})).toBeVisible();
+  await first.getByRole('button', {name:'移除包間 1',exact:true}).click();
+  await expect(unassigned.getByText('未分配 · 1 人', {exact:true})).toBeVisible();
+  await unassigned.getByText('未分配 · 1 人', {exact:true}).click();
+  await expect(unassigned.getByText('小青', {exact:true})).toBeVisible();
+  await page.setViewportSize({width:360,height:800});
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.getByRole('checkbox', {name:'已核對包間人員與付款人，確認保存。',exact:true}).check();
+  await page.getByRole('button', {name:'保存預分包間',exact:true}).click();
+  await expect(page.getByText('已保存。', {exact:true})).toBeVisible();
+  const headers = await access(context), saved = await (await context.request.get('/api/v2/activities/listen/rooms',{headers})).json();
+  expect(saved.rooms).toMatchObject([{name:'第二房',person_ids:[p2,p3]}]);
+  await page.goto('/activities/listen#rooms');
+  await expect(page.locator('#rooms').getByText('我的包間：待分配', {exact:true})).toBeVisible();
+  await expect(page.locator('#rooms').getByRole('region', {name:'未分配人員',exact:true})).toContainText('小青');
+});
 test('reads immutable plans after rename, preserves original payer and recovers a failed snapshot without writes', async ({
   page,
   context,

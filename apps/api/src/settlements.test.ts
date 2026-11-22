@@ -428,6 +428,48 @@ print(json.dumps(dict(detail=settlements.details(db,'listen',2),history=[dict(r)
     expect((await s.preview(s.input(), s.bob)).statusCode).toBe(403);
     expect((await s.app.inject({ url: '/api/v2/activities/invite/settlement' })).statusCode).toBe(404);
   });
+  it('preserves all fifty planned room identities, permits partial membership and keeps same-payer rooms independent', async () => {
+    const s = await setup(), rooms = Array.from({length:50}, (_,i)=>({
+      id:(i+1).toString(16).padStart(16,'0'), name:i===0?'　'+ '𰀀'.repeat(40)+'　':'房 '+(i+1),
+      payer_id:a, person_ids:i===0?[p3,p1]:[],
+    })), data = {revision:0,rooms,confirm:true,reason:'核對部分安排'},
+      send = (payload:object) => s.app.inject({method:'POST',url:'/api/v2/activities/listen/rooms',headers:{...s.alice,'idempotency-key':randomUUID()},payload});
+    const expected = await python(s, {rooms,reason:data.reason}, `rooms.save_plan(db,event,user,data)
+print(json.dumps(rooms.plan(db,'listen')))`);
+    const before = ['attendees','settlements','settlement_history','settlement_details','finance_entries','bot_outbox','bot_settings']
+      .map(table=>s.db.prepare('SELECT * FROM '+table).all());
+    const saved = await send(data);
+    expect(saved.statusCode, saved.body).toBe(200);
+    const view = (await s.app.inject({url:'/api/v2/activities/listen/rooms',headers:s.alice})).json();
+    expect(view.rooms).toEqual(expected);
+    expect(view.rooms[0].name).toBe('𰀀'.repeat(40));
+    expect(view.rooms[0].person_ids).toEqual([p1,p3]);
+    expect(view.rooms).toHaveLength(50);
+    expect(view.rooms.every((r:any)=>r.payer_id===a)).toBe(true);
+    const committed = s.db.prepare('SELECT * FROM event_room_plans').all();
+    for (const invalid of [
+      [...rooms,{...rooms[0],id:'f'.repeat(16),name:'第 51 房',person_ids:[]}],
+      rooms.map((r,i)=>i? r:{...r,name:'𰀀'.repeat(41)}),
+      rooms.map((r,i)=>i===1?{...r,person_ids:[p1]}:r),
+    ]) expect((await send({...data,revision:1,rooms:invalid})).statusCode).toBe(400);
+    expect(s.db.prepare('SELECT * FROM event_room_plans').all()).toEqual(committed);
+    expect(['attendees','settlements','settlement_history','settlement_details','finance_entries','bot_outbox','bot_settings']
+      .map(table=>s.db.prepare('SELECT * FROM '+table).all())).toEqual(before);
+  });
+  it('matches original edge whitespace in native plans and actual-room previews without changing room identity', async () => {
+    const s = await setup();
+    for (const edge of ['\u0085','\u001c','\ufeff']) {
+      const rooms = [{id:i1,name:edge+'房'+edge,payer_id:a,person_ids:[p3,p2,p1]}], reason=edge+'核對'+edge,
+        expected = await python(s,{rooms,reason},`rooms.save_plan(db,event,user,data)
+print(json.dumps(dict(rooms=rooms.plan(db,'listen'),reason=db.execute("SELECT reason FROM event_audit WHERE event_id='listen' ORDER BY version DESC LIMIT 1").fetchone()[0])))`),
+        saved = await s.app.inject({method:'POST',url:'/api/v2/activities/listen/rooms',headers:{...s.alice,'idempotency-key':randomUUID()},payload:{revision:eventRow(s.db,'listen')!.revision,rooms,reason,confirm:true}});
+      expect(saved.statusCode,saved.body).toBe(200);
+      expect((await s.app.inject({url:'/api/v2/activities/listen/rooms',headers:s.alice})).json().rooms).toEqual(expected.rooms);
+      expect(s.db.prepare("SELECT reason FROM event_audit WHERE event_id='listen' ORDER BY version DESC LIMIT 1").get()).toEqual({reason:expected.reason});
+      const input = s.input({rooms:rooms.map(r=>({...r,amount:'10'}))});
+      compare((await s.preview(input)).json().snapshot,await python(s,input));
+    }
+  });
   it('rolls back bill, money, audit and notifications on required failures while isolating optional bot failures', async () => {
     const s = await setup();
     for (const table of ['event_audit', 'notifications', 'request_results']) {

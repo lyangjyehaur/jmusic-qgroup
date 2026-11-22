@@ -11,14 +11,15 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 38,
+  "full_parents_accepted": 42,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
     "packages/runtime/src/strict-json.ts, legacy music import/reconciliation, administrative/history export and rollback writers: preserve literal numeric dictionary order; current candidate verified separately with captured data and checkpoint 225",
     "JSON order-preserving clones, account/reset source writers, verified source rebase order, native reads and final recovery boundaries: captured-source forward/reimport/package regression and separate current tests at checkpoint 226",
     "Original identity tie ranks, current plan/actual room loading and preserved room/frozen-name reader at checkpoint 227: captured-data analysis/split and true-worker API comparisons, 86 unit / 33 browser / retained online-source Python checks; no financial editor relaxation or actual production image acceptance",
-    "Historical settlement reads preserve omitted journal_seq / balances / group consent at checkpoint 228; strict native previews and writes unchanged. Three captured bills compared with original Python, 82 unit / 49 browser checks; no full settlement parent or actual image acceptance claimed."
+    "Historical settlement reads preserve omitted journal_seq / balances / group consent at checkpoint 228; strict native previews and writes unchanged. Three captured bills compared with original Python, 82 unit / 49 browser checks; no full settlement parent or actual image acceptance claimed.",
+    "Room editor unassigned roster and correct pre-plan stale-member guidance; shared room-name / plan-reason contracts preserve original Python Unicode strip semantics at checkpoint 229. 67 unit / 71 browser and captured-data original comparisons passed. Fresh retained online-source Python checks: 532 HTTP / 71 original workers / 9 TS workers and graceful stop. P01–P04 accepted locally; actual image/recovery acceptance remains incomplete."
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -716,54 +717,62 @@
     },
     {
       "capability_id": "P01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "只有發起者調整正式預分，casefold房名不重複且最大50。"
+        "只有發起者調整正式預分，casefold房名不重複且最大50。",
+        "第 229 批固定原程式／正式隔離副本與完整原條件審核通過；原預分、本人／同行、版本與付款人保全，補未分配名單與部分保存操作。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
     },
     {
       "capability_id": "P02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "attendee至多一房，可未分配；同付款人不把不同attendee合併。"
+        "attendee至多一房，可未分配；同付款人不把不同attendee合併。",
+        "第 229 批固定原程式／正式隔離副本與完整原條件審核通過；原預分、本人／同行、版本與付款人保全，補未分配名單與部分保存操作。"
       ],
       "test_files": [
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-room-overview.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
     },
     {
       "capability_id": "P03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "本人按当前attendee user辨識，管理同行独立標記；歷史帳單保持凍結稱呼。"
+        "本人按当前attendee user辨識，管理同行独立標記；歷史帳單保持凍結稱呼。",
+        "第 229 批固定原程式／正式隔離副本與完整原條件審核通過；原預分、本人／同行、版本與付款人保全，補未分配名單與部分保存操作。"
       ],
       "test_files": [
         "apps/api/src/activity-room-overview.test.ts",
         "apps/web/tests/activity-room-overview.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
     },
     {
       "capability_id": "P04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "預分追加快照，原報名／付款／帳務及bot工作不被更改；相同內容不加版。",
-        "預分歷史可分頁、按正整數版本讀取，保留空快照與原付款人。"
+        "預分歷史可分頁、按正整數版本讀取，保留空快照與原付款人。",
+        "第 229 批固定原程式／正式隔離副本與完整原條件審核通過；原預分、本人／同行、版本與付款人保全，補未分配名單與部分保存操作。"
       ],
       "test_files": [
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/music-rooms.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-room-overview.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
     },
     {
       "capability_id": "P05",
@@ -2426,7 +2435,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2514,5 +2523,48 @@
     "retained_python_commit": "07defc429d619a7558ab7218372886f531813ae3",
     "retained_python_source_files": 52,
     "retained_graceful_stop": true
+  },
+  "latest_formal_room_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "P01",
+      "P02",
+      "P03",
+      "P04"
+    ],
+    "pinned_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "pinned_original_files": 36,
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "viewers_including_anonymous": 49,
+    "events": 14,
+    "http_calls": 1770,
+    "overview_comparisons": 637,
+    "historical_comparisons": 294,
+    "permission_refusals": 98,
+    "original_plan_versions": 6,
+    "original_history_rooms": 18,
+    "owner_editor_reads": 13,
+    "original_plan_write_comparisons": 10,
+    "blocked_plan_writes": 3,
+    "unchanged_business_saves": 10,
+    "exact_retries": 10,
+    "unchanged_read_tables": 96,
+    "unchanged_tables_after_writes": 92,
+    "independent_unchanged_tables_excluding_synthetic_sessions": 91,
+    "bot_tables_unchanged": 6,
+    "images_preserved": 4,
+    "unit_cases_passed": 67,
+    "browser_cases_passed": 71,
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false,
+    "change_scope": "both",
+    "room_text_normalization": "original_python_strip",
+    "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "retained_bot_source_files": 52,
+    "retained_bot_http_calls": 532,
+    "retained_python_worker_invocations": 71,
+    "retained_typescript_worker_invocations": 9,
+    "retained_bot_graceful_stop": true
   }
 }

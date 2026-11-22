@@ -2473,18 +2473,22 @@
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/music-rooms.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/web/tests/legacy-rooms-request.spec.ts"
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md",
+        "apps/web/tests/activity-room-overview.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/legacy-rooms.test.ts"
+        "apps/api/src/legacy-rooms.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/web/tests/legacy-rooms-request.spec.ts"
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2495,10 +2499,11 @@
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-rooms-request.spec.ts",
-        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P02",
@@ -2524,18 +2529,22 @@
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/music-rooms.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/web/tests/legacy-rooms-request.spec.ts"
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md",
+        "apps/web/tests/activity-room-overview.spec.ts"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/legacy-rooms.test.ts"
+        "apps/api/src/legacy-rooms.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/web/tests/legacy-rooms-request.spec.ts"
+        "apps/web/tests/legacy-rooms-request.spec.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2546,10 +2555,11 @@
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-rooms-request.spec.ts",
-        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md"
+        "docs/unified-rebuild/204-legacy-room-request-checkpoint.md",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P03",
@@ -2564,23 +2574,27 @@
       ],
       "behavior_evidence": [
         "apps/api/src/activity-room-overview.test.ts",
-        "apps/api/src/music-rooms.test.ts"
+        "apps/api/src/music-rooms.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-room-overview.test.ts"
+        "apps/api/src/activity-room-overview.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-room-overview.spec.ts",
         "docs/unified-rebuild/35-room-overview-checkpoint.md",
         "apps/web/tests/music-rooms.spec.ts",
         "docs/unified-rebuild/50-music-rooms-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P04",
@@ -2612,20 +2626,23 @@
         "apps/web/tests/legacy-rooms-request.spec.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/activity-room-overview.test.ts",
         "apps/api/src/legacy-rooms.test.ts",
         "apps/web/tests/legacy-rooms-request.spec.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -2637,10 +2654,11 @@
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-rooms-request.spec.ts",
         "docs/unified-rebuild/204-legacy-room-request-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/229-formal-room-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生正式預分管理、音樂試算採用預覽、來源版本再驗與原操作回執已具隔離測試；全部舊 adapter、正式副本與跨版本成套驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P05",

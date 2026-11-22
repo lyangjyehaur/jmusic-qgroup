@@ -43,6 +43,17 @@ audit.require_revision(event,data);rooms.save_plan(db,event,user,data);db.commit
 print(json.dumps(dict(rooms=rooms.plan(db,'listen'),revision=db.execute("SELECT revision FROM events WHERE id='listen'").fetchone()[0],audit=[dict(r) for r in db.execute("SELECT action,before_json,after_json,reason FROM event_audit WHERE event_id='listen' ORDER BY version")],outbox=[dict(r) for r in db.execute('SELECT * FROM bot_outbox')])))`,path,JSON.stringify(input.data)],{encoding:'utf8',env:{PATH:process.env.PATH,LANG:'en_US.UTF-8'}}));}finally{rmSync(root,{recursive:true,force:true});}
 }
 describe('original room request recovery',()=>{
+ it('preserves Python whitespace rules for room names and reasons through raw request recovery',async()=>{
+  const s=await setup();
+  for(const edge of ['\u0085','\u001c','\ufeff']) {
+   const room=s.input().data.rooms[0]!,input=s.input({rooms:[{...room,name:edge+'房'+edge}],reason:edge+'核對'+edge}),expected=await python(s,input),body=await prepared(s,input);
+   const result=await s.send(body,'retry');expect(result.statusCode,result.body).toBe(200);
+   expect((await s.view()).json().rooms).toEqual(expected.rooms);
+   const rows=s.db.prepare("SELECT action,before_json,after_json,reason FROM event_audit WHERE event_id='listen' ORDER BY version").all();
+   expect(rows.map((r:any)=>({...r,before_json:JSON.parse(r.before_json),after_json:JSON.parse(r.after_json)})))
+    .toEqual(expected.audit.map((r:any)=>({...r,before_json:JSON.parse(r.before_json),after_json:JSON.parse(r.after_json)})));
+  }
+ });
  it('matches original Python persistence, ordering, audit and bot work with raw signatures and labels preserved',async()=>{
   const s=await setup(),input=s.input(),expected=await python(s,input),body=await prepared(s,input),inspection=(await s.send(input)).json();
   expect(inspection.rooms).toEqual(expected.rooms);expect(inspection.rooms[0].person_ids).toEqual([p1,p2]);expect(inspection.current.rooms).toEqual([]);

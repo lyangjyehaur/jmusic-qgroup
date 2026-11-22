@@ -66,7 +66,9 @@ export function RoomFields<T extends Room>({
   change: (rooms: T[]) => void;
   create: () => T;
 }) {
-  const edit = (id: string, patch: Partial<T>) => change(rooms.map((r) => (r.id === id ? { ...r, ...patch } : r)));
+  const edit = (id: string, patch: Partial<T>) => change(rooms.map((r) => (r.id === id ? { ...r, ...patch } : r))),
+    assigned = new Set(rooms.flatMap((r) => r.person_ids)),
+    unassigned = people.filter((p) => !assigned.has(p.id));
   return (
     <>
       {rooms.map((room, index) => (
@@ -114,7 +116,7 @@ export function RoomFields<T extends Room>({
                 </label>
               ))}
               {room.person_ids.filter((id) => !people.some((p) => p.id === id)).length > 0 && (
-                <div><Text role="alert">原包間含未列入本版的人員，請移除或重新納入結算。</Text>{room.person_ids.filter(id=>!people.some(p=>p.id===id)).map(id=><label key={id} className="consent"><input type="checkbox" checked onChange={()=>edit(room.id,{person_ids:room.person_ids.filter(person=>person!==id)} as Partial<T>)}/><span>原人員 {id}（本版未列入，取消勾選可移除）</span></label>)}</div>
+                <div><Text role="alert">{actual ? '原包間含未列入本版的人員，請移除或重新納入結算。' : '原包間含已不在名冊的人員，請核對後移除。'}</Text>{room.person_ids.filter(id=>!people.some(p=>p.id===id)).map(id=><label key={id} className="consent"><input type="checkbox" checked onChange={()=>edit(room.id,{person_ids:room.person_ids.filter(person=>person!==id)} as Partial<T>)}/><span>原人員 {id}（本版未列入，取消勾選可移除）</span></label>)}</div>
               )}
             </details>
             <Button variant="ghost" onClick={() => change(rooms.filter((r) => r.id !== room.id))}>
@@ -158,6 +160,14 @@ export function RoomFields<T extends Room>({
           新增包間
         </Button>
       )}
+      <section aria-label="未分配人員">
+        {unassigned.length ? (
+          <details open={rooms.length === 0}>
+            <summary>未分配 · {unassigned.length} 人</summary>
+            <ul>{unassigned.map((p) => <li key={p.id}>{p.label}</li>)}</ul>
+          </details>
+        ) : <Text>{people.length ? '全部人員已分配。' : '目前名冊沒有可分配人員。'}</Text>}
+      </section>
     </>
   );
 }
