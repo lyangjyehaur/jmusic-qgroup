@@ -67,7 +67,7 @@ export function hasLegacyCredentials(value:unknown):boolean{
 }
 export function legacyBlocks(row:LegacyDescription,path:string){
   if(row.kind==='unknown')return true;
-  if(row.request){const p=row.request.path;return path==='/activities/new'&&p==='/api/events'||path==='/time-polls/new'&&p==='/api/time-polls'||p.startsWith('/api/events/')&&path.startsWith('/activities/'+p.split('/')[3]+'/');}
+  if(row.request){const p=row.request.path;return path==='/activities/new'&&p==='/api/events'||path==='/time-polls/new'&&p==='/api/time-polls'||p.startsWith('/api/time-polls/')&&(path==='/time-polls/'+p.split('/')[3]||path.startsWith('/time-polls/'+p.split('/')[3]+'/'))||p.startsWith('/api/events/')&&path.startsWith('/activities/'+p.split('/')[3]+'/');}
   if(!row.route)return false;
   return row.route===path||row.route.startsWith('/activities/')&&!row.route.slice('/activities/'.length).includes('/')&&path.startsWith(row.route+'/');
 }

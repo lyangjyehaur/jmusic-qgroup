@@ -13,6 +13,7 @@ import { createWebHttpClient } from './http';
 import { Failure,Notice,PageIntro } from './shared';
 import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { requireLegacyAvailable } from './legacy-local-availability';
 import { PendingBotDelivery as Pending } from './bot-delivery-record';
 const states={pending:uiText("待送"),sending:uiText("投遞中／待核對"),sent:uiText("已送出"),failed:uiText("失敗"),skipped:uiText("已略過")};
 const modes={inherit:uiText("沿用部署設定"),simulate:uiText("模擬"),live:uiText("實際發送")};
@@ -83,9 +84,10 @@ function DeliveryList({viewer,context,access,record}:{viewer:Viewer;context?:Con
     const work={id:selected,key:crypto.randomUUID(),input:{reviewToken:review.data.reviewToken,confirm:true as const}};
     setMessage('');let accepted=false;
     try{
+      await requireLegacyAvailable(viewer.scope,entityPath(context.entity,context.id)+'/bot-deliveries');
       if(!await record.persist(work,false,uiText("無法保存重送操作編號，請先修復瀏覽器儲存後再操作。"))||!active.current)return;
       record.replace(work);const result=await post(work);accepted=true;await completed(work,result);
-    }catch(error){if(active.current){loseAuthority(error);if(!accepted&&error instanceof ApiError&&[400,404,409,422].includes(error.status))await rejected(error);else setMessage(uiText("尚未確認重送結果；請先查回原操作，避免重複建立工作。"));}}
+    }catch(error){if(active.current){loseAuthority(error);if(!accepted&&error instanceof ApiError&&[400,404,409,422].includes(error.status))await rejected(error);else setMessage(error instanceof Error&&error.message.startsWith('有後續舊看板原稿')?errorText(error):uiText("尚未確認重送結果；請先查回原操作，避免重複建立工作。"));}}
     finally{if(active.current)record.setBusy(false);}
   }
   async function recover(resend=false){

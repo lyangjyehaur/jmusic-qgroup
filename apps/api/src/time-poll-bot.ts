@@ -8,21 +8,24 @@ import { pollAvailable, pollDate, pollOptions, type PollRow } from './time-poll-
 export function pollShareable(poll: PollRow, now: Date) {
   return !!poll.bot_enabled && poll.status === 'open' && Date.parse(poll.deadline) > now.getTime();
 }
-export function announcePoll(
+export function preparePollAnnouncement(
   db: DB,
   poll: PollRow,
   now: Date,
   defaults: ActivityBotDefaults,
-  fact = 'poll:' + poll.id,
 ) {
   const policy = activityBotPolicy(db, defaults).config,
     kind = 'time_poll_published';
-  if (!policy.enabled || !policy.broadcast_kinds.includes(kind) || !pollShareable(poll, now)) return false;
+  if (!policy.enabled || !policy.broadcast_kinds.includes(kind) || !pollShareable(poll, now)) return undefined;
   const target = policy.groups === null ? '' : policy.groups.find((g) => g.broadcast)?.id;
-  if (target === undefined) return false;
+  if (target === undefined) return undefined;
   const candidates = pollOptions(db, poll.id).filter((o) => pollAvailable(o, poll, now));
-  if (!candidates.length) return false;
+  if (!candidates.length) return undefined;
   const { payload } = composeTimePollBotMessage(poll, candidates, policy, defaults);
+  return { target, payload };
+}
+export function enqueuePollAnnouncement(db: DB, poll: PollRow, now: Date, notice: NonNullable<ReturnType<typeof preparePollAnnouncement>>, fact = 'poll:' + poll.id) {
+  const kind = 'time_poll_published';
   return (
     db
       .prepare(
@@ -31,12 +34,16 @@ export function announcePoll(
       .run(
         poll.id,
         kind,
-        hash(kind + '\ngroup\n' + target + '\n\n' + fact).slice(0, 32),
-        target,
-        JSON.stringify(payload),
+        hash(kind + '\ngroup\n' + notice.target + '\n\n' + fact).slice(0, 32),
+        notice.target,
+        JSON.stringify(notice.payload),
         legacyStamp(now),
       ).changes > 0
   );
+}
+export function announcePoll(db: DB, poll: PollRow, now: Date, defaults: ActivityBotDefaults, fact = 'poll:' + poll.id) {
+  const notice = preparePollAnnouncement(db, poll, now, defaults);
+  return !!notice && enqueuePollAnnouncement(db, poll, now, notice, fact);
 }
 
 export function composeTimePollBotMessage(

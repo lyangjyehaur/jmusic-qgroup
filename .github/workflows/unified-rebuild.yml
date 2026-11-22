@@ -57,6 +57,8 @@ jobs:
           npm run test:retained-python:rebuild --silent > artifacts/ci/retained-python.json
       - name: Verify original settlement recovery with compiled web and retained Python bot
         run: npm run test:legacy-settlement:rebuild --silent > artifacts/ci/legacy-settlement-pair.json
+      - name: Verify original time-poll recovery with compiled web and retained Python bot
+        run: npm run test:legacy-time-poll:rebuild --silent > artifacts/ci/legacy-time-poll-pair.json
       - run: npx playwright install --with-deps chromium
       - name: Pin public analytics client for intercepted transport test
         run: |

@@ -10,6 +10,7 @@ import { authHttp } from './auth';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
+import { LegacyLocalGuard } from './legacy-local';
 import { requireLegacyAvailable } from './legacy-local-availability';
 import { DraftFeedback } from './activity-settlement';
 import { Field } from './settlement-controls';
@@ -383,12 +384,12 @@ function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; 
       </Surface>
       {manage ? (
         p.is_owner && viewer.authenticated ? (
-          <PollManager key={'manage:' + viewer.scope} viewer={viewer} initial={p} />
+          <LegacyLocalGuard><PollManager key={'manage:' + viewer.scope} viewer={viewer} initial={p} /></LegacyLocalGuard>
         ) : (
           <Notice>只有發起者可以管理時間投票。</Notice>
         )
       ) : viewer.authenticated ? (
-        <VoteEditor key={'votes:' + viewer.scope} viewer={viewer} initial={p} />
+        <LegacyLocalGuard><VoteEditor key={'votes:' + viewer.scope} viewer={viewer} initial={p} /></LegacyLocalGuard>
       ) : (
         <PollResults poll={p} />
       )}
@@ -424,6 +425,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
     blank: (p) => ({ revision: p.revision, choices: p.my_choices }),
     valueSchema: EditableVotes,
     saveSchema: VoteTimePoll,
+    beforeSubmit: () => requireLegacyAvailable(viewer.scope,base(initial.id)),
     send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/time-polls/:id/votes', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }),
     latest: async () => {
       const p = await scopedHttp(viewer.scope).requestContract('GET /api/v2/time-polls/:id', { params: { id: initial.id } });
@@ -601,6 +603,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
     blank: managerBlank,
     valueSchema: ManagerEditable,
     saveSchema: ManageTimePoll,
+    beforeSubmit: () => requireLegacyAvailable(viewer.scope,base(initial.id)+'/manage'),
     send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/time-polls/:id/manage', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }),
     latest: async (result) => {
       if (result && TimePollResult.parse(result).removed) return initial;
