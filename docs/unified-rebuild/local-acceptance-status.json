@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 10,
+  "full_parents_accepted": 22,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221"
@@ -1159,20 +1159,21 @@
     },
     {
       "capability_id": "M01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "kind/category 分開；公開分類只取實際詞條，使用者原文及別名保留。"
       ],
       "test_files": [
         "apps/api/src/music-catalog.test.ts",
         "apps/web/tests/music-entries.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "保留 NFKC/casefold/零寬處理、拼音全拼／首字母／假名及別名搜尋；不改來源顯示文字。",
         "清空／Escape／斜線快捷鍵、獨立類型分類篩選及跨頁 URL 狀態。"
@@ -1181,12 +1182,13 @@
         "apps/web/tests/music-ranking.spec.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "packages/domain/src/music-search.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "API 保存 1–20、領域 5／細分 15，拒絕重複／未知／非法程度；先建立詞條可有未選空白 profile。"
       ],
@@ -1194,35 +1196,38 @@
         "apps/api/src/app.test.ts",
         "apps/api/src/music-catalog.test.ts",
         "apps/web/tests/music-workspace.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "四檔程度可編輯；領域無程度編輯選單；保存、改詞條類型及其他欄位不無聲改選擇。"
       ],
       "test_files": [
         "apps/api/src/music-catalog.test.ts",
         "apps/web/tests/music-workspace.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "搜尋、排行、詞條頁和成分編輯共用一份 selection／草稿，不因往返另建控制器。"
       ],
       "test_files": [
         "apps/web/tests/music-workspace.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "有變更才顯示保存條；360px長名稱與保存控制可用，成功後收起。",
         "未知結果保留原UUID/body；送出中跨頁仍鎖定；登出後遲到結果不能復活私人草稿。",
@@ -1233,12 +1238,13 @@
         "apps/web/tests/music-fields.spec.ts",
         "apps/web/tests/music-ranking.spec.ts",
         "apps/web/tests/music-workspace.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "自建領域2／細分8、名称24 codepoints；跨類型／別名正規化重名拒絕並指向既有詞條。",
         "舊created list是配額依据，與metadata owner獨立；已關聯舊建立者仍有權利。"
@@ -1246,12 +1252,13 @@
       "test_files": [
         "apps/api/src/music-catalog.test.ts",
         "apps/web/tests/music-entries.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "本人建立詞條才可改；當前身份／CSRF／scope及詞條revision／music epoch重新驗證。",
         "管理員獨立入口不受2/8配額，可改其他建立者詞條；仍需管理權限及重新核對。"
@@ -1260,12 +1267,13 @@
         "apps/api/src/admin-music-catalog.test.ts",
         "apps/api/src/music-catalog.test.ts",
         "apps/web/tests/music-entries.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "任何人已選用都阻擋建立者刪除，不能移除他人選擇；管理刪除另外確認影響。"
       ],
@@ -1273,12 +1281,13 @@
         "apps/api/src/admin-music-catalog.test.ts",
         "apps/api/src/music-catalog.test.ts",
         "apps/web/tests/music-entries.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "兩類分開排，count優先與舊中文display tie排序；10/全部領域/20細分及完整詞庫保留。",
         "會員、詞條與24h新增統計保留；跨頁保存／刪除即時更新，不丟顯示偏好。"
@@ -1286,24 +1295,26 @@
       "test_files": [
         "apps/web/tests/music-ranking.spec.ts",
         "packages/domain/src/music-rankings.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "獨立氣泡圖包含完整詞條、名稱標籤／人數／選中狀態、鍵盤開詞條與完整清單退路。"
       ],
       "test_files": [
         "apps/web/tests/music-ranking.spec.ts",
         "packages/domain/src/music-rankings.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "詞條資料可看分類／別名／建立者；選／取消沿用共同草稿；選取者列表受member/profile gate。"
       ],
@@ -1311,7 +1322,8 @@
         "apps/api/src/music-entry-members.test.ts",
         "apps/web/tests/music-entries.spec.ts",
         "apps/web/tests/music-workspace.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },
     {
       "capability_id": "M13",
@@ -2339,5 +2351,31 @@
     "external_authority_ancestry_certified": false,
     "full_parent_accepted": false,
     "deployment_performed": false
+  },
+  "latest_music_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
+    "parent_ids": [
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "M05",
+      "M06",
+      "M07",
+      "M08",
+      "M09",
+      "M10",
+      "M11",
+      "M12"
+    ],
+    "executed_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
+    "current_formal_api_commit": "86eb1dfb8f8f1adfa067f35ded4a7cf0680e7db1",
+    "source_paths_matching_regression": 49,
+    "unit_cases_referenced": 45,
+    "browser_cases_referenced": 44,
+    "profiles": 68,
+    "entries": 152,
+    "selection_rows": 682,
+    "original_p6_complete": false
   }
 }

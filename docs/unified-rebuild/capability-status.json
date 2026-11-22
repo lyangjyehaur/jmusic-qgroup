@@ -5,9 +5,12 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/223-recovery-copy-activation.md",
+    "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
+      "A12",
+      "A13",
+      "A15",
       "C01",
       "C02",
       "C03",
@@ -15,9 +18,18 @@
       "C05",
       "C06",
       "C07",
-      "A12",
-      "A13",
-      "A15"
+      "M01",
+      "M02",
+      "M03",
+      "M04",
+      "M05",
+      "M06",
+      "M07",
+      "M08",
+      "M09",
+      "M10",
+      "M11",
+      "M12"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb"
   },
@@ -4125,23 +4137,27 @@
       "behavior_evidence": [
         "apps/api/src/music-catalog.test.ts",
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "詞庫與編輯已共用完整 category／別名／原文與分類；正式副本、後台及舊入口成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M02",
@@ -4163,13 +4179,16 @@
         "apps/api/src/music-catalog.test.ts",
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
-        "apps/web/tests/music-ranking.spec.ts"
+        "apps/web/tests/music-ranking.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
@@ -4177,10 +4196,11 @@
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "docs/unified-rebuild/39-music-ranking-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "名稱／別名、完整拼音／首字母／假名、正規化、分類／類型、清空／Escape／斜線及兩頁共用搜尋已實作並對照原字典；舊 adapter、browser 遷移與正式副本成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M03",
@@ -4200,23 +4220,27 @@
       "behavior_evidence": [
         "apps/api/src/app.test.ts",
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "兩頁同一選擇與前後端 5／15／20、至少一項保存、首次空白成分及快取更新已測；正式副本、全部入口與舊資料成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M04",
@@ -4234,23 +4258,27 @@
       ],
       "behavior_evidence": [
         "packages/domain/src/music-search.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "兩頁共用細分四級，領域不顯示程度且保留等級；舊值正式副本對帳及其他音樂入口成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M05",
@@ -4269,24 +4297,28 @@
       "behavior_evidence": [
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
-        "apps/web/tests/music-entry.spec.ts"
+        "apps/web/tests/music-entry.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/app.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "docs/unified-rebuild/38-music-entry-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "詞庫／排行詳情／獨立詞條頁與成分編輯共用選擇、程度、移除及分類收合，名單與成分卡可往返並保留原稿；氣泡及全部入口成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M06",
@@ -4313,13 +4345,16 @@
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "apps/web/tests/music-entry.spec.ts",
-        "apps/web/tests/music-ranking.spec.ts"
+        "apps/web/tests/music-ranking.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-contact.spec.ts",
@@ -4327,10 +4362,11 @@
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "docs/unified-rebuild/38-music-entry-checkpoint.md",
         "docs/unified-rebuild/39-music-ranking-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "詞庫／獨立詞條／成分共用草稿、原 UUID、保存中鎖定及變更保存列，名單只反映已保存資料，跨成分卡恢復已測；browser 舊草稿遷移、完整跨入口與實際平台驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M07",
@@ -4345,21 +4381,25 @@
         "apps/web/src/music-entries.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生 2／8 建立額度、Unicode 24 字、名稱／別名重名指向、首次空白成分、精確重試與原建立清單已測；完整後台、舊 adapter、正式副本與跨服務驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M08",
@@ -4374,21 +4414,25 @@
         "apps/web/src/music-entries.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "會員改名／分類／類型、原建立者授權、版本衝突、熟悉度保全與未知結果已測；管理員完整詞條維護、舊入口及正式副本成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M09",
@@ -4403,21 +4447,25 @@
         "apps/web/src/music-entries.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/music-catalog.test.ts"
+        "apps/api/src/music-catalog.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生選用者刪除保護、確認／精確恢復、建立額度回收及成分刪除匿名化已測；完整後台、舊入口與正式副本成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M10",
@@ -4440,27 +4488,31 @@
         "apps/api/src/music-catalog.test.ts",
         "packages/domain/src/music-rankings.test.ts",
         "apps/web/tests/music-ranking.spec.ts",
-        "apps/api/src/music-stats.test.ts"
+        "apps/api/src/music-stats.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-catalog.test.ts",
         "packages/database/src/creation-migration.test.ts",
-        "apps/api/src/music-stats.test.ts"
+        "apps/api/src/music-stats.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-catalog.test.ts",
         "apps/api/src/music-stats.test.ts",
-        "apps/api/src/music-entry-members.test.ts"
+        "apps/api/src/music-entry-members.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-entries.spec.ts",
         "docs/unified-rebuild/36-music-catalog-checkpoint.md",
         "apps/web/tests/music-ranking.spec.ts",
         "docs/unified-rebuild/39-music-ranking-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生兩類獨立顯示排序、10／20／完整展開、成分／詞條／近期統計及建立時間保全已隔離驗證；正式匯入副本全量對帳、全部舊入口與切換版本組合驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M11",
@@ -4477,23 +4529,27 @@
       ],
       "behavior_evidence": [
         "packages/domain/src/music-rankings.test.ts",
-        "apps/web/tests/music-ranking.spec.ts"
+        "apps/web/tests/music-ranking.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/domain/src/music-rankings.test.ts",
-        "apps/api/src/music-stats.test.ts"
+        "apps/api/src/music-stats.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-stats.test.ts",
-        "apps/api/src/music-entry-members.test.ts"
+        "apps/api/src/music-entry-members.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-ranking.spec.ts",
         "docs/unified-rebuild/39-music-ranking-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生兩類獨立氣泡／清單、完整標籤與人數、鍵盤詳情、共用草稿、響應式全量配置已隔離驗證；正式大詞庫副本、舊入口與切換版本組合驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M12",
@@ -4518,24 +4574,28 @@
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "apps/api/src/music-entry-members.test.ts",
-        "apps/web/tests/music-entry.spec.ts"
+        "apps/web/tests/music-entry.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/music-entry-members.test.ts"
+        "apps/api/src/music-entry-members.test.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-entry-members.test.ts",
-        "apps/web/tests/music-entry.spec.ts"
+        "apps/web/tests/music-entry.spec.ts",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "apps/web/tests/music-entry.spec.ts",
         "docs/unified-rebuild/38-music-entry-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生獨立／內嵌詳情、完整已保存選取者、成分身份門檻、複製／同好返回、共用草稿、權限快取及 Python 差分已測；正式副本、舊 adapter、外部入口及切換版本組合成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M13",
