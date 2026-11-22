@@ -1459,24 +1459,34 @@
         "packages/contracts/src/activity-attendance.ts",
         "apps/api/src/activity-attendance.ts",
         "apps/web/src/activity-attendance.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "packages/contracts/src/legacy-participants.ts",
+        "apps/api/src/legacy-participants.ts",
+        "apps/web/src/legacy-participant-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-attendance.test.ts"
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/api/src/legacy-participants.test.ts",
+        "tools/rebuild/smoke-legacy-participants.mjs"
       ],
       "data_evidence": [
-        "apps/api/src/activity-attendance.test.ts"
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/api/src/legacy-participants.test.ts",
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-attendance.test.ts"
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/api/src/legacy-participants.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-attendance.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-participants.spec.ts",
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "五狀態、UTC 實際時間、開始／歸檔／結束後原因、原名額／付款與帳單保全、未知結果及 Python 差分已測；完整結算／分房／歷史收件匣、全部舊 API 及隔離正式資料成套驗收待完成。"
+      "remaining": "原生及原請求的認領／出席／補錄、精確回執恢復、Python 差分與保留線上 bot 來源組合已測；跨功能／隔離資料對帳及最後全套本機回歸待收斂，實際平台與正式切換分開驗收。"
     },
     {
       "capability_id": "E16",
@@ -1488,24 +1498,34 @@
         "packages/contracts/src/activity-attendance.ts",
         "apps/api/src/activity-attendance.ts",
         "apps/web/src/activity-attendance.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "packages/contracts/src/legacy-participants.ts",
+        "apps/api/src/legacy-participants.ts",
+        "apps/web/src/legacy-participant-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-attendance.test.ts"
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/api/src/legacy-participants.test.ts",
+        "tools/rebuild/smoke-legacy-participants.mjs"
       ],
       "data_evidence": [
-        "apps/api/src/activity-attendance.test.ts"
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/api/src/legacy-participants.test.ts",
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-attendance.test.ts"
+        "apps/api/src/activity-attendance.test.ts",
+        "apps/api/src/legacy-participants.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-attendance.spec.ts",
         "apps/web/tests/activity-publish.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-participants.spec.ts",
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "雙 scope、首份帳單前、逐人條件接受、超額與繞候補分別確認、原隊序保全、去重恢復及 Python 差分已測；完整結算／付款、全部舊 API 與隔離正式資料成套驗收待完成。"
+      "remaining": "原生及原請求的認領／出席／補錄、精確回執恢復、Python 差分與保留線上 bot 來源組合已測；跨功能／隔離資料對帳及最後全套本機回歸待收斂，實際平台與正式切換分開驗收。"
     },
     {
       "capability_id": "E17",
@@ -1919,24 +1939,34 @@
         "apps/api/src/activity-bot.ts",
         "packages/contracts/src/activity-claims.ts",
         "apps/web/src/activity-claims.tsx",
-        "apps/web/src/activity-entry.tsx"
+        "apps/web/src/activity-entry.tsx",
+        "packages/contracts/src/legacy-participants.ts",
+        "apps/api/src/legacy-participants.ts",
+        "apps/web/src/legacy-participant-recovery.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-claims.test.ts"
+        "apps/api/src/activity-claims.test.ts",
+        "apps/api/src/legacy-participants.test.ts",
+        "tools/rebuild/smoke-legacy-participants.mjs"
       ],
       "data_evidence": [
         "apps/api/src/activity-claims.test.ts",
-        "docs/unified-rebuild/27-attendee-claims-checkpoint.md"
+        "docs/unified-rebuild/27-attendee-claims-checkpoint.md",
+        "apps/api/src/legacy-participants.test.ts",
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-claims.test.ts"
+        "apps/api/src/activity-claims.test.ts",
+        "apps/api/src/legacy-participants.test.ts"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-claims.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "apps/web/tests/legacy-participants.spec.ts",
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
       ],
       "state": "in_progress",
-      "remaining": "原生認領邀請／七日效期／原 issuer 重驗／有限預覽／本人雙確認／管理審核／拒絕撤銷／未知結果恢復已測；全部舊 API、正式副本與實際平台驗收待完成。"
+      "remaining": "原生及原請求的認領／出席／補錄、精確回執恢復、Python 差分與保留線上 bot 來源組合已測；跨功能／隔離資料對帳及最後全套本機回歸待收斂，實際平台與正式切換分開驗收。"
     },
     {
       "capability_id": "R11",

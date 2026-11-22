@@ -7,9 +7,9 @@
     "apps/api/src/account-profile.ts": "b19626ffdeb15974e0016b3efd7f388d7bdd0e2828860d6145d94baa7198c0ab",
     "apps/api/src/activity-access.ts": "470811af82ce784174e5f50012780cfbec31be28a7cd0412d3467972a493ad5f",
     "apps/api/src/activity-arrangements.ts": "3a459c758872b68305b8ea73bdf00f55b460d8e3aef898ad9f76e00e2fe75e9a",
-    "apps/api/src/activity-attendance.ts": "2062cc7ce3530fd70ab9b4bb7509a41b893232a31a8bfc7f1767db325f4b95eb",
+    "apps/api/src/activity-attendance.ts": "64846b35de166ddf8ab0f674f348f2e98b4a8096829116f34e08a66ef28f4604",
     "apps/api/src/activity-bot.ts": "a54318436d85d2b28b5db3175d1ec6271e9318b351be9ed43ab52026933dbbaf",
-    "apps/api/src/activity-claims.ts": "88a2c3f244f5e0fa9d67d95dee7bf20ecddfef131689a549609bed5d2992f156",
+    "apps/api/src/activity-claims.ts": "2e3f308ed02a76a6e9487df8841020191f07151fcc68c7ca6aebebbd3ab58ba4",
     "apps/api/src/activity-create-command.ts": "57c3b0a0cedda4ac755a29a03d7bb35189369ad15b280d82941298b1031e3a57",
     "apps/api/src/activity-delegation.ts": "1316fc1d579591dafda7361c8b087eea81425e40ea6ae9cf0d681ca8fe258ac2",
     "apps/api/src/activity-drafts.ts": "343d43426046bc984bd88be4090b7cd6ad6d4d87d79eeb3c1f7d38d0662f4a36",
@@ -31,7 +31,7 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "40e95c9d8abe8d17acf2ee7e7de70b1cd9edee147a7e20f06b365ccdad14802d",
+    "apps/api/src/app.ts": "7079f47345b046e5cccf39039ed058316758fcbb7252d9e6b3b9f3cc18d8753e",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
@@ -81,7 +81,7 @@
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "ad0c11622169bb53e959432250fe73bcb388dcfc9be78ce41b52d7bb1d21fb9b",
+    "packages/contracts/src/index.ts": "f3f32cd93ece52ac2365afd16a84728b2cde8bf4d7efa630305ca224ca676960",
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
@@ -102,7 +102,9 @@
     "apps/api/src/legacy-registration.ts": "db30dfc64c7bc19fdd1ce9b141c13b7b9d034d75dac82e249aee59ee42921d43",
     "packages/contracts/src/legacy-registration.ts": "ab1e2c3d97ffba172bb9c3316f15fb5fd2810f6c9850c1b7a96200d8e9e9cbdb",
     "apps/api/src/legacy-invitations.ts": "1bfff722c864f7ae798937fa7c3874608b0cc42d55a09ee762d7d8e3c06ee2ab",
-    "packages/contracts/src/legacy-invitations.ts": "0abbf3dc558c7a684802f3318a6118715b7a5222de64642c5c9e42c5fb2aaf6f"
+    "packages/contracts/src/legacy-invitations.ts": "0abbf3dc558c7a684802f3318a6118715b7a5222de64642c5c9e42c5fb2aaf6f",
+    "apps/api/src/legacy-participants.ts": "10b25ddddd7a0ab047fdac0b47d57f0cb744a014d1b1864b73717062bf3c1e1b",
+    "packages/contracts/src/legacy-participants.ts": "c8565038ac06a7a8fbc0048c4d4c4079377e359dd40382c4146abeca284f6860"
   },
   "operations": [
     {
@@ -3792,6 +3794,52 @@
         "apps/api/src/activity-invitations.ts",
         "apps/api/src/activity-delegation.ts",
         "packages/contracts/src/legacy-invitations.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/participants/inspect",
+      "file": "apps/api/src/legacy-participants.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current claim management or attendance/roster scope precedes receipt acknowledgement; exact approved actor-scoped receipt may survive management transfer. Original request receipt requires token requester ownership, grants no access. New private claim requests require active token and current issuer authority. Original revision, identity/payment/person/onsite confirmations retained. Review fences event, people, claims, payment origins and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-claims.ts",
+        "apps/api/src/activity-attendance.ts",
+        "packages/contracts/src/legacy-participants.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/participants/retry",
+      "file": "apps/api/src/legacy-participants.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current claim management or attendance/roster scope precedes receipt acknowledgement; exact approved actor-scoped receipt may survive management transfer. Original request receipt requires token requester ownership, grants no access. New private claim requests require active token and current issuer authority. Original revision, identity/payment/person/onsite confirmations retained. Review fences event, people, claims, payment origins and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-claims.ts",
+        "apps/api/src/activity-attendance.ts",
+        "packages/contracts/src/legacy-participants.ts",
         "packages/contracts/src/legacy-values.ts"
       ],
       "additionalHeaders": []

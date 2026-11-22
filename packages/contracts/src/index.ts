@@ -1,3 +1,4 @@
+export * from './legacy-participants';
 export * from './legacy-invitations';
 export * from './legacy-registration';
 export * from './legacy-activity-patch';
