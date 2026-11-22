@@ -4,7 +4,7 @@
   "permissionBindingsComplete": false,
   "sourcePins": {
     "apps/api/src/account-devices.ts": "80183897d31d3fe3532706fbcc8567ea467f81f3f0c6edbfad791de93cd3c35f",
-    "apps/api/src/account-profile.ts": "b19626ffdeb15974e0016b3efd7f388d7bdd0e2828860d6145d94baa7198c0ab",
+    "apps/api/src/account-profile.ts": "c100034d12e88bbf3a12e5385ff7ec83ee2456b29d1887d3244ad21938ec4588",
     "apps/api/src/activity-access.ts": "470811af82ce784174e5f50012780cfbec31be28a7cd0412d3467972a493ad5f",
     "apps/api/src/activity-arrangements.ts": "3a459c758872b68305b8ea73bdf00f55b460d8e3aef898ad9f76e00e2fe75e9a",
     "apps/api/src/activity-attendance.ts": "64846b35de166ddf8ab0f674f348f2e98b4a8096829116f34e08a66ef28f4604",
@@ -31,13 +31,13 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "7079f47345b046e5cccf39039ed058316758fcbb7252d9e6b3b9f3cc18d8753e",
+    "apps/api/src/app.ts": "5dac56f128e020118db3048f686c17d8b6f944f7f947c5768e7e62e9737fb7a7",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
     "apps/api/src/create-intents.ts": "87a0eebeccfeee1c9b8c2350f1824b92676e44c8c058d99ed14d0b5b7d6b767a",
     "apps/api/src/finance.ts": "5bceb61f94b73d80c33877023580e91042bfdb6456cd8aa5fdcd254a2516b078",
-    "apps/api/src/inbox.ts": "303d9cefb1ba4da27b7d82110432834e4e9c103b877a24705940a931a5f87d8d",
+    "apps/api/src/inbox.ts": "76d17b870ba72d13fff50d9783502a9aeaa301612c9cabe1c5a931ad6a83bc88",
     "apps/api/src/legacy-activity-create.ts": "6ab62748774965e51fe340aaa2fb90c28b77524850a81e91b4061c326496d33c",
     "apps/api/src/legacy-detailed-settlement.ts": "645ec087b25171709106d48e93bd53f70925a710c6408ab231bcafa7d92436cd",
     "apps/api/src/legacy-finance.ts": "124ca44439fb44a4e1d70d3668ca6e4d05d9adb66e71a729455ce4aba682af1e",
@@ -61,7 +61,7 @@
     "apps/api/src/music-rooms.ts": "993a5ecd2cac2320dbd68ce5af4a7af956eee80176f8f1e3c6e3e18de9c5d674",
     "apps/api/src/music-shouts.ts": "1a130dc73041ae6e6464165b5f0fe7a3a6ca2abc1557a4b75aaa76b002d947da",
     "apps/api/src/music-trend.ts": "4c6e6d43b4ed065ec9502aeda261497820b2c9611c1868036bf3af021b83bf9a",
-    "apps/api/src/payment-codes.ts": "b34a36b2e55021250c2c5391bb9b9e82884c5b57b732d3186f6a7775dab48169",
+    "apps/api/src/payment-codes.ts": "c9991b09208e86084cac36292afe2629ef2aa666241b7e513e5d3623b6699f20",
     "apps/api/src/privacy-consent.ts": "f296772294485e7eeefe2dc95b37f304c41aa3d2c0913469b3448316961c2e85",
     "apps/api/src/privacy.ts": "96757aa6e1dac2c04d4e64bf7c3c94c5603f49edd167253fae7bb5fc8f853043",
     "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
@@ -81,7 +81,7 @@
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "f3f32cd93ece52ac2365afd16a84728b2cde8bf4d7efa630305ca224ca676960",
+    "packages/contracts/src/index.ts": "5a6ba85e313fd5906645d5e1da4e743d6d4c42fdfc2313ae4b7f1a8e7c2f027b",
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
@@ -104,7 +104,10 @@
     "apps/api/src/legacy-invitations.ts": "1bfff722c864f7ae798937fa7c3874608b0cc42d55a09ee762d7d8e3c06ee2ab",
     "packages/contracts/src/legacy-invitations.ts": "0abbf3dc558c7a684802f3318a6118715b7a5222de64642c5c9e42c5fb2aaf6f",
     "apps/api/src/legacy-participants.ts": "10b25ddddd7a0ab047fdac0b47d57f0cb744a014d1b1864b73717062bf3c1e1b",
-    "packages/contracts/src/legacy-participants.ts": "c8565038ac06a7a8fbc0048c4d4c4079377e359dd40382c4146abeca284f6860"
+    "packages/contracts/src/legacy-participants.ts": "c8565038ac06a7a8fbc0048c4d4c4079377e359dd40382c4146abeca284f6860",
+    "packages/contracts/src/legacy-personal.ts": "02cb0a30b1a578461884844e5d925c9377722a1b466bbde338d697626129d60d",
+    "apps/api/src/payment-media.ts": "e6a5661767834fab3cb6ae91fe9038896ea76ebcaed3cb52660c57391c3a62f9",
+    "apps/api/src/legacy-personal.ts": "56651a0336d91ccaac62df6640415739d2a7386e5392a1af201f814f71b3f2b6"
   },
   "operations": [
     {
@@ -3152,6 +3155,136 @@
       "additionalHeaders": []
     },
     {
+      "id": "POST /api/v2/me/legacy-requests/invitations/inspect",
+      "file": "apps/api/src/legacy-invitations.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current roster/owner authority or exact accepted-person/token proof precedes receipt acknowledgement. Private activity acceptance uses pending recipient token. Original method/path/key/body/revision/agreement/responsibility retained. Review fences event, people, roles, invitations, owner identity and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-delegation.ts",
+        "packages/contracts/src/legacy-invitations.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/invitations/retry",
+      "file": "apps/api/src/legacy-invitations.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current roster/owner authority or exact accepted-person/token proof precedes receipt acknowledgement. Private activity acceptance uses pending recipient token. Original method/path/key/body/revision/agreement/responsibility retained. Review fences event, people, roles, invitations, owner identity and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-delegation.ts",
+        "packages/contracts/src/legacy-invitations.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/participants/inspect",
+      "file": "apps/api/src/legacy-participants.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current claim management or attendance/roster scope precedes receipt acknowledgement; exact approved actor-scoped receipt may survive management transfer. Original request receipt requires token requester ownership, grants no access. New private claim requests require active token and current issuer authority. Original revision, identity/payment/person/onsite confirmations retained. Review fences event, people, claims, payment origins and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-claims.ts",
+        "apps/api/src/activity-attendance.ts",
+        "packages/contracts/src/legacy-participants.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/participants/retry",
+      "file": "apps/api/src/legacy-participants.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, origin and CSRF required. Current claim management or attendance/roster scope precedes receipt acknowledgement; exact approved actor-scoped receipt may survive management transfer. Original request receipt requires token requester ownership, grants no access. New private claim requests require active token and current issuer authority. Original revision, identity/payment/person/onsite confirmations retained. Review fences event, people, claims, payment origins and bot policy."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/activity-arrangements.ts",
+        "apps/api/src/activity-publish.ts",
+        "apps/api/src/activity-bot.ts",
+        "apps/api/src/activity-invitations.ts",
+        "apps/api/src/activity-claims.ts",
+        "apps/api/src/activity-attendance.ts",
+        "packages/contracts/src/legacy-participants.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/personal/inspect",
+      "file": "apps/api/src/legacy-personal.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, Origin and CSRF required. Exact original signature and actor-scoped receipts. Profile receipt must match scope and original nickname. Payment receipt rechecks current ownership including archived items; source authority required before new writes. Read-only preparation fences current profile, affected events, selected owned notifications, library and bot policy. Review contains no image or token. Credentials and unknown fields blocked."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/account-profile.ts",
+        "apps/api/src/inbox.ts",
+        "apps/api/src/payment-codes.ts",
+        "apps/api/src/payment-media.ts",
+        "packages/contracts/src/legacy-personal.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
+      "id": "POST /api/v2/me/legacy-requests/personal/retry",
+      "file": "apps/api/src/legacy-personal.ts",
+      "mode": "member-write",
+      "conditions": [
+        "Current member scope, Origin and CSRF required. Exact original signature and actor-scoped receipts. Profile receipt must match scope and original nickname. Payment receipt rechecks current ownership including archived items; source authority required before new writes. Read-only preparation fences current profile, affected events, selected owned notifications, library and bot policy. Review contains no image or token. Credentials and unknown fields blocked."
+      ],
+      "dependencies": [
+        "apps/api/src/app.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/legacy-local.ts",
+        "apps/api/src/account-profile.ts",
+        "apps/api/src/inbox.ts",
+        "apps/api/src/payment-codes.ts",
+        "apps/api/src/payment-media.ts",
+        "packages/contracts/src/legacy-personal.ts",
+        "packages/contracts/src/legacy-values.ts"
+      ],
+      "additionalHeaders": []
+    },
+    {
       "id": "POST /api/v2/me/legacy-requests/registration/inspect",
       "file": "apps/api/src/legacy-registration.ts",
       "mode": "member-write",
@@ -3751,96 +3884,6 @@
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts"
-      ],
-      "additionalHeaders": []
-    },
-    {
-      "id": "POST /api/v2/me/legacy-requests/invitations/inspect",
-      "file": "apps/api/src/legacy-invitations.ts",
-      "mode": "member-write",
-      "conditions": [
-        "Current member scope, origin and CSRF required. Current roster/owner authority or exact accepted-person/token proof precedes receipt acknowledgement. Private activity acceptance uses pending recipient token. Original method/path/key/body/revision/agreement/responsibility retained. Review fences event, people, roles, invitations, owner identity and bot policy."
-      ],
-      "dependencies": [
-        "apps/api/src/app.ts",
-        "apps/api/src/security.ts",
-        "apps/api/src/legacy-local.ts",
-        "apps/api/src/activity-access.ts",
-        "apps/api/src/activity-arrangements.ts",
-        "apps/api/src/activity-publish.ts",
-        "apps/api/src/activity-bot.ts",
-        "apps/api/src/activity-invitations.ts",
-        "apps/api/src/activity-delegation.ts",
-        "packages/contracts/src/legacy-invitations.ts",
-        "packages/contracts/src/legacy-values.ts"
-      ],
-      "additionalHeaders": []
-    },
-    {
-      "id": "POST /api/v2/me/legacy-requests/invitations/retry",
-      "file": "apps/api/src/legacy-invitations.ts",
-      "mode": "member-write",
-      "conditions": [
-        "Current member scope, origin and CSRF required. Current roster/owner authority or exact accepted-person/token proof precedes receipt acknowledgement. Private activity acceptance uses pending recipient token. Original method/path/key/body/revision/agreement/responsibility retained. Review fences event, people, roles, invitations, owner identity and bot policy."
-      ],
-      "dependencies": [
-        "apps/api/src/app.ts",
-        "apps/api/src/security.ts",
-        "apps/api/src/legacy-local.ts",
-        "apps/api/src/activity-access.ts",
-        "apps/api/src/activity-arrangements.ts",
-        "apps/api/src/activity-publish.ts",
-        "apps/api/src/activity-bot.ts",
-        "apps/api/src/activity-invitations.ts",
-        "apps/api/src/activity-delegation.ts",
-        "packages/contracts/src/legacy-invitations.ts",
-        "packages/contracts/src/legacy-values.ts"
-      ],
-      "additionalHeaders": []
-    },
-    {
-      "id": "POST /api/v2/me/legacy-requests/participants/inspect",
-      "file": "apps/api/src/legacy-participants.ts",
-      "mode": "member-write",
-      "conditions": [
-        "Current member scope, origin and CSRF required. Current claim management or attendance/roster scope precedes receipt acknowledgement; exact approved actor-scoped receipt may survive management transfer. Original request receipt requires token requester ownership, grants no access. New private claim requests require active token and current issuer authority. Original revision, identity/payment/person/onsite confirmations retained. Review fences event, people, claims, payment origins and bot policy."
-      ],
-      "dependencies": [
-        "apps/api/src/app.ts",
-        "apps/api/src/security.ts",
-        "apps/api/src/legacy-local.ts",
-        "apps/api/src/activity-access.ts",
-        "apps/api/src/activity-arrangements.ts",
-        "apps/api/src/activity-publish.ts",
-        "apps/api/src/activity-bot.ts",
-        "apps/api/src/activity-invitations.ts",
-        "apps/api/src/activity-claims.ts",
-        "apps/api/src/activity-attendance.ts",
-        "packages/contracts/src/legacy-participants.ts",
-        "packages/contracts/src/legacy-values.ts"
-      ],
-      "additionalHeaders": []
-    },
-    {
-      "id": "POST /api/v2/me/legacy-requests/participants/retry",
-      "file": "apps/api/src/legacy-participants.ts",
-      "mode": "member-write",
-      "conditions": [
-        "Current member scope, origin and CSRF required. Current claim management or attendance/roster scope precedes receipt acknowledgement; exact approved actor-scoped receipt may survive management transfer. Original request receipt requires token requester ownership, grants no access. New private claim requests require active token and current issuer authority. Original revision, identity/payment/person/onsite confirmations retained. Review fences event, people, claims, payment origins and bot policy."
-      ],
-      "dependencies": [
-        "apps/api/src/app.ts",
-        "apps/api/src/security.ts",
-        "apps/api/src/legacy-local.ts",
-        "apps/api/src/activity-access.ts",
-        "apps/api/src/activity-arrangements.ts",
-        "apps/api/src/activity-publish.ts",
-        "apps/api/src/activity-bot.ts",
-        "apps/api/src/activity-invitations.ts",
-        "apps/api/src/activity-claims.ts",
-        "apps/api/src/activity-attendance.ts",
-        "packages/contracts/src/legacy-participants.ts",
-        "packages/contracts/src/legacy-values.ts"
       ],
       "additionalHeaders": []
     }

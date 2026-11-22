@@ -30,20 +30,8 @@ function nicknameBotHook(db: DB, eventId: string, enabledDefault: boolean) {
     db.prepare("UPDATE bot_outbox SET status='skipped',last_error='活动已关闭公开群同步' WHERE event_id=? AND channel='group' AND status IN ('pending','sending')").run(eventId);
   }
 }
-export function registerAccountProfile(app: FastifyInstance, db: DB, security: Security, now: () => Date, botEnabledDefault = false) {
-  app.get('/api/v2/me/profile', async request => accountProfile(db, security.scopedMember(request).id));
-  app.put('/api/v2/me/profile', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
-    const device = security.memberWrite(request);
-    const input = SaveNickname.parse(request.body);
-    const requestKey = z.string().uuid().parse(request.headers['idempotency-key']);
-    const signature = hash('v2:PUT:/api/v2/me/profile:' + JSON.stringify(input));
-    const previous = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(device.id, requestKey) as { signature: string; response_json: string } | undefined;
-    if (previous) {
-      if (previous.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
-      return JSON.parse(previous.response_json) as ReturnType<typeof accountProfile>;
-    }
-    const before = accountProfile(db, device.id);
-    if (input.revision !== before.revision) throw withApiError(new DomainError('PROFILE_CHANGED', '稱呼已被修改；請核對目前稱呼後再保存', 409));
+export function saveAccountNickname(db:DB,device:{id:string},nickname:string,now:()=>Date,botEnabledDefault=false,hookError:(details:{eventId:string},message:string)=>void=()=>{}) {
+    const before=accountProfile(db,device.id),input={nickname};
     const stamp = now().toISOString();
     if (input.nickname !== before.nickname) {
       const affected = db.prepare("SELECT DISTINCT event_id FROM attendees WHERE user_id=? AND status!='withdrawn' ORDER BY event_id").all(device.id) as { event_id: string }[];
@@ -61,11 +49,28 @@ export function registerAccountProfile(app: FastifyInstance, db: DB, security: S
           VALUES(?,?,?,?,'nickname_changed',?,?,'',?)`).run(event.id, version, device.id, before.nickname, JSON.stringify(prior), JSON.stringify(current), stamp);
         // A failed optional bot hook cannot undo the account or immutable roster audit.
         try { db.transaction(() => nicknameBotHook(db, event.id, botEnabledDefault))(); }
-        catch { request.log.error({ eventId: event.id }, 'Nickname bot hook failed; account write preserved'); }
+        catch { hookError({ eventId: event.id }, 'Nickname bot hook failed; account write preserved'); }
       }
       db.prepare("INSERT INTO account_audit(user_id,action,details_json,created_at) VALUES(?,'nickname_changed',?,?)").run(device.id, JSON.stringify({ before: before.nickname, after: input.nickname }), stamp);
     }
-    const result = accountProfile(db, device.id);
+    return accountProfile(db,device.id);
+}
+export function registerAccountProfile(app: FastifyInstance, db: DB, security: Security, now: () => Date, botEnabledDefault = false) {
+  app.get('/api/v2/me/profile', async request => accountProfile(db, security.scopedMember(request).id));
+  app.put('/api/v2/me/profile', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
+    const device = security.memberWrite(request);
+    const input = SaveNickname.parse(request.body);
+    const requestKey = z.string().uuid().parse(request.headers['idempotency-key']);
+    const signature = hash('v2:PUT:/api/v2/me/profile:' + JSON.stringify(input));
+    const previous = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(device.id, requestKey) as { signature: string; response_json: string } | undefined;
+    if (previous) {
+      if (previous.signature !== signature) throw withApiError(new DomainError('REQUEST_CONFLICT', '這個操作編號已用於另一份內容', 409));
+      return JSON.parse(previous.response_json) as ReturnType<typeof accountProfile>;
+    }
+    const before = accountProfile(db, device.id);
+    if (input.revision !== before.revision) throw withApiError(new DomainError('PROFILE_CHANGED', '稱呼已被修改；請核對目前稱呼後再保存', 409));
+    const stamp=now().toISOString();
+    const result = saveAccountNickname(db,device,input.nickname,now,botEnabledDefault,(details,message)=>request.log.error(details,message));
     db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(device.id, requestKey, signature, JSON.stringify(result), 200, stamp);
     return result;
   }).immediate());

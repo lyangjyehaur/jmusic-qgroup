@@ -1,3 +1,6 @@
+import { LegacyPersonalRecovery } from './legacy-personal-recovery';
+import { LegacyAuthorizationRecovery,legacyAuthorizationDestination } from './legacy-authorization-recovery';
+import { legacyPersonalPath } from '@qgroup/contracts';
 import { LegacyParticipantRecovery } from './legacy-participant-recovery';
 import { legacyParticipantPath } from '@qgroup/contracts';
 import { LegacyInvitationRecovery } from './legacy-invitation-recovery';
@@ -138,10 +141,12 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法下載原稿。"));}finally{if(active.current)setBusy(false);}
   }
   return <><Heading level={3}>{description.label}</Heading><Text>原保存時間：{typeof (row.source as {at?:unknown}).at==='number'?new Date((row.source as {at:number}).at).toLocaleString('zh-TW'):'未記錄'}</Text>
-    {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text><Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button></>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
+    {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text>{!legacyAuthorizationDestination(description.request!)&&<Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button>}</>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {description.request?.method==='POST'&&description.request.path==='/api/time-polls'&&<LegacyPollCreationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request?.method==='POST'&&description.request.path==='/api/events'&&<LegacyActivityCreationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
+    {description.request&&<LegacyAuthorizationRecovery input={description.request}/> }
+    {description.request&&supportsPersonal(description.request)&&<LegacyPersonalRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request&&supportsParticipants(description.request)&&<LegacyParticipantRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request&&supportsInvitations(description.request)&&<LegacyInvitationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
     {description.request&&supportsRegistration(description.request)&&<LegacyRegistrationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }
@@ -162,3 +167,5 @@ function supportsRegistration(input:Parameters<typeof legacyRegistrationPath>[0]
 function supportsInvitations(input:Parameters<typeof legacyInvitationPath>[0]){try{legacyInvitationPath(input);return true;}catch{return false;}}
 
 function supportsParticipants(input:Parameters<typeof legacyParticipantPath>[0]){try{legacyParticipantPath(input);return true;}catch{return false;}}
+
+function supportsPersonal(input:Parameters<typeof legacyPersonalPath>[0]){try{legacyPersonalPath(input);return true;}catch{return false;}}

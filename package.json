@@ -44,7 +44,8 @@
     "test:legacy-time-poll:rebuild": "node tools/rebuild/smoke-legacy-time-poll.mjs",
     "test:legacy-settlement:rebuild": "node tools/rebuild/smoke-legacy-settlement.mjs",
     "test:legacy-invitations:rebuild": "node tools/rebuild/smoke-legacy-invitations.mjs",
-    "test:legacy-participants:rebuild": "node tools/rebuild/smoke-legacy-participants.mjs"
+    "test:legacy-participants:rebuild": "node tools/rebuild/smoke-legacy-participants.mjs",
+    "test:legacy-personal:rebuild": "node tools/rebuild/smoke-legacy-personal.mjs"
   },
   "devDependencies": {
     "@hyperjump/json-schema": "1.18.1",

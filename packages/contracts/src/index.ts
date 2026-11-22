@@ -167,3 +167,5 @@ export * from './bot-policy';
 export * from './bot-deliveries';
 export * from './activity-access';
 export * from './finance-origin';
+
+export * from './legacy-personal';

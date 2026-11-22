@@ -67,6 +67,28 @@ function sourceAuthority(db: DB, userId: string, source: z.infer<typeof PaymentC
   const event = db.prepare("SELECT 1 FROM events WHERE id=? AND status!='deleted'").get(source.event_id);
   if (!event || !settlementPublishedBy(db, source.event_id, source.version, userId)) fail('只能保存自己發布結算時使用的收款碼', 403);
 }
+type CreateCodeInput={kind:Kind;name:string}&({image:string}|{source:z.infer<typeof PaymentCodeSource>});
+export function preparePaymentCode(db:DB,userId:string,input:CreateCodeInput){
+ if('source' in input)sourceAuthority(db,userId,input.source);
+ const raw='image' in input?paymentImage(input.image):existingPaymentCodes(db,input.source.event_id,input.source.version).find(code=>code.meta.kind===input.source.kind)?.raw;
+ if(!raw)fail('原版收款碼不存在，請重新選擇');return {input,raw};
+}
+export function createPaymentCode(db:DB,user:{id:string},prepared:ReturnType<typeof preparePaymentCode>,now:()=>Date){
+ const {input,raw}=prepared;
+    const digest = imageDigest(raw);
+    let row = db.prepare('SELECT * FROM user_payment_codes WHERE user_id=? AND kind=? AND digest=? AND name=? AND archived_at IS NULL').get(user.id, input.kind, digest, input.name) as CodeRow | undefined;
+    const stamp = legacyStamp(now());
+    if (!row) {
+      if ((db.prepare('SELECT count(*) AS count FROM user_payment_codes WHERE user_id=? AND archived_at IS NULL').get(user.id) as { count: number }).count >= 30) fail('最多保存 30 張收款碼，請先移除不再使用的碼');
+      putPaymentImage(db, raw, now()); const id = randomBytes(8).toString('hex');
+      db.prepare('INSERT INTO user_payment_codes VALUES(?,?,?,?,?,?,NULL)').run(id, user.id, input.kind, input.name, digest, stamp); row = ownedPaymentCode(db, user.id, id);
+    }
+    return codeView(row);
+}
+export function archivePaymentCode(db:DB,row:ReturnType<typeof ownedPaymentCode>,stamp:string){
+ if(row.archived_at)fail('收款碼已移除',404);
+ db.prepare('UPDATE user_payment_codes SET archived_at=? WHERE id=?').run(stamp,row.id);
+}
 export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
 
   const limits = { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } };
@@ -83,25 +105,15 @@ export function registerPaymentAssets(app: FastifyInstance, db: DB, security: Se
     const signature = 'payment-code:create:' + hash(JSON.stringify(input));
     const old = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id, key) as { signature: string; response_json: string } | undefined;
     if (old) { if (old.signature !== signature) fail('這個操作編號已用於另一份內容', 409); return PaymentCode.parse(JSON.parse(old.response_json)); }
-    const raw = 'image' in input ? paymentImage(input.image) : existingPaymentCodes(db, input.source.event_id, input.source.version).find(code => code.meta.kind === input.source.kind)?.raw;
-    if (!raw) fail('原版收款碼不存在，請重新選擇');
-    const digest = imageDigest(raw);
-    let row = db.prepare('SELECT * FROM user_payment_codes WHERE user_id=? AND kind=? AND digest=? AND name=? AND archived_at IS NULL').get(user.id, input.kind, digest, input.name) as CodeRow | undefined;
-    const stamp = legacyStamp(now());
-    if (!row) {
-      if ((db.prepare('SELECT count(*) AS count FROM user_payment_codes WHERE user_id=? AND archived_at IS NULL').get(user.id) as { count: number }).count >= 30) fail('最多保存 30 張收款碼，請先移除不再使用的碼');
-      putPaymentImage(db, raw, now()); const id = randomBytes(8).toString('hex');
-      db.prepare('INSERT INTO user_payment_codes VALUES(?,?,?,?,?,?,NULL)').run(id, user.id, input.kind, input.name, digest, stamp); row = ownedPaymentCode(db, user.id, id);
-    }
-    const result = codeView(row); db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id, key, signature, JSON.stringify(result), 200, stamp); return result;
+    const prepared=preparePaymentCode(db,user.id,input),stamp=legacyStamp(now()),result=createPaymentCode(db,user,prepared,now);
+    db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id, key, signature, JSON.stringify(result), 200, stamp); return result;
   }).immediate());
   app.delete('/api/v2/me/payment-codes/:codeId', limits, async request => db.transaction(() => {
     const user = security.memberWrite(request), { codeId } = PaymentLibraryPath.parse(request.params), input = ArchivePaymentCode.parse(request.body), key = z.string().uuid().parse(request.headers['idempotency-key']);
     const row = ownedPaymentCode(db, user.id, codeId, true), signature = 'payment-code:archive:' + codeId + ':' + hash(JSON.stringify(input));
     const old = db.prepare('SELECT signature,response_json FROM request_results WHERE user_id=? AND request_key=?').get(user.id, key) as { signature: string; response_json: string } | undefined;
     if (old) { if (old.signature !== signature) fail('這個操作編號已用於另一份內容', 409); return { ok: true }; }
-    if (row.archived_at) fail('收款碼已移除', 404);
-    const stamp = legacyStamp(now()); db.prepare('UPDATE user_payment_codes SET archived_at=? WHERE id=?').run(stamp, codeId);
+    const stamp = legacyStamp(now());archivePaymentCode(db,row,stamp);
     db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id, key, signature, '{"ok":true}', 200, stamp); return { ok: true };
   }).immediate());
   app.get('/api/v2/me/payment-codes/:codeId/image', async (request, reply) => {

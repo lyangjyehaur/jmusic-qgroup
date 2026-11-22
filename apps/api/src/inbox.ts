@@ -9,6 +9,9 @@ import { hash, type Security } from './security';
 import { requireActivityAccess } from './activity-access';
 import { eventRow, eventScopes, legacyStamp, type EventRow } from './activity-arrangements';
 import { financeTodoSummary } from './finance-projection';
+export function markNotificationsRead(db:DB,userId:string,ids:readonly (string|number)[],stamp:string){
+ for(const id of ids)db.prepare('UPDATE notifications SET read_at=COALESCE(read_at,?) WHERE id=? AND user_id=?').run(stamp,BigInt(id),userId);
+}
 export function registerInbox(app:FastifyInstance,db:DB,security:Security,now:()=>Date){
   const unread=(userId:string)=>(db.prepare("SELECT COUNT(*) AS count FROM notifications n JOIN events e ON e.id=n.event_id WHERE n.user_id=? AND n.read_at IS NULL AND e.status!='deleted'").get(userId) as {count:number}).count;
   app.get('/api/v2/me/operations/:key',async request=>{const user=security.scopedMember(request),{key}=RequestKeyPath.parse(request.params);return {committed:!!db.prepare('SELECT 1 FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key)};});
@@ -24,7 +27,7 @@ export function registerInbox(app:FastifyInstance,db:DB,security:Security,now:()
       const user=security.memberWrite(request),key=z.string().uuid().parse(request.headers['idempotency-key']),signature='notifications-read:'+hash(JSON.stringify(input));
       const old=db.prepare('SELECT signature FROM request_results WHERE user_id=? AND request_key=?').get(user.id,key) as {signature:string}|undefined;
       if(old){if(old.signature!==signature)throw withApiError(new DomainError('REQUEST_CONFLICT','這個操作編號已用於另一份內容',409));return {ok:true};}
-      const stamp=legacyStamp(now());for(const id of input.ids)db.prepare('UPDATE notifications SET read_at=COALESCE(read_at,?) WHERE id=? AND user_id=?').run(stamp,BigInt(id),user.id);
+      const stamp=legacyStamp(now());markNotificationsRead(db,user.id,input.ids,stamp);
       db.prepare('INSERT INTO request_results VALUES(?,?,?,?,?,?)').run(user.id,key,signature,'{"ok":true}',200,stamp);return {ok:true};
     }).immediate();
   });

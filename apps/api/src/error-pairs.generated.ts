@@ -596,6 +596,18 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "原认领／出席方法、栏位或版本缺失／尚未支援；原请求保留",
     "原認領／出席方法、欄位或版本缺失／尚未支援；原請求保留"
   ],
+  "[\"LEGACY_PERSONAL_RESULT_MISMATCH\",\"原回執與個人操作不一致；原請求保留\"]": [
+    "原回执与个人操作不一致；原请求保留",
+    "原回執與個人操作不一致；原請求保留"
+  ],
+  "[\"LEGACY_PERSONAL_REVIEW_CHANGED\",\"稱呼、消息或收款碼已變更；請重新核對\"]": [
+    "称呼、消息或收款码已变更；请重新核对",
+    "稱呼、消息或收款碼已變更；請重新核對"
+  ],
+  "[\"LEGACY_PERSONAL_UNSUPPORTED\",\"原個人操作的方法或欄位尚未支援；原請求保留\"]": [
+    "原个人操作的方法或栏位尚未支援；原请求保留",
+    "原個人操作的方法或欄位尚未支援；原請求保留"
+  ],
   "[\"LEGACY_POLL_CREATE_REVIEW_CHANGED\",\"建立投票核對資料已變更；請重新檢查後確認\"]": [
     "建立投票核对资料已变更；请重新检查后确认",
     "建立投票核對資料已變更；請重新檢查後確認"
@@ -847,6 +859,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
   "[\"MUSIC_PROFILE_REQUIRED\",\"請先保存成分，再查看選取者\"]": [
     "请先保存成分，再查看选取者",
     "請先保存成分，再查看選取者"
+  ],
+  "[\"NICKNAME_REQUIRED\",\"請先設定稱呼再保存收款碼\"]": [
+    "请先设定称呼再保存收款码",
+    "請先設定稱呼再保存收款碼"
   ],
   "[\"NICKNAME_REQUIRED\",\"請先設定稱呼再操作\"]": [
     "请先设定称呼再操作",
