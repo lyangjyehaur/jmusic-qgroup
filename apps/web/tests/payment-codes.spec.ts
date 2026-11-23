@@ -32,11 +32,12 @@ test('unknown create results preserve exact input and UUID across reload, appear
     if (route.request().method() !== 'POST') return route.continue(); keys.push(route.request().headers()['idempotency-key']!); bodies.push(route.request().postData()!); const response = await route.fetch();
     if (fail) { fail = false; await route.fulfill({ response, body: '{' }); } else await route.fulfill({ response });
   });
-  await upload(page, '斷線原圖'); await page.getByRole('button', { name: '保存收款碼', exact: true }).click(); await expect(page.getByText('尚未確認操作結果。原圖與操作編號已保留，請按「確認操作結果」安全重試。', { exact: true })).toBeVisible();
+  await upload(page, '\ufeff斷線原圖\ufeff'); await page.getByRole('button', { name: '保存收款碼', exact: true }).click(); await expect(page.getByText('尚未確認操作結果。原圖與操作編號已保留，請按「確認操作結果」安全重試。', { exact: true })).toBeVisible();
+  expect(JSON.parse(bodies[0]!).name).toBe('\ufeff斷線原圖\ufeff');
   await expect(page.getByLabel('名稱（選填）', { exact: true })).toBeDisabled();
   const serialized = (await durableRows(page)).filter(row=>row.key.includes('payment-codes:')).map(row=>JSON.parse(row.raw));
   expect(serialized[0].form.image).toBe(''); expect(serialized[0].pending.input.data.image.length).toBeGreaterThan(0);
-  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); expect(keys).toHaveLength(1);
+  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); await expect(page.getByLabel('名稱（選填）',{exact:true})).toHaveValue('\ufeff斷線原圖\ufeff'); expect(keys).toHaveLength(1);
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.goto('/inbox');
   await expect(page.getByRole('link', { name: '我的收款碼', exact: true })).toBeVisible(); expect(keys).toHaveLength(1); await page.getByRole('link', { name: '我的收款碼', exact: true }).click();
   await page.getByRole('button', { name: '確認操作結果', exact: true }).click(); await expect(page.getByText('收款碼已保存。', { exact: true })).toBeVisible(); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); expect(bodies[0]).toBe(bodies[1]); await expect(page.getByRole('heading', { name: '已保存（1／30）', exact: true })).toBeVisible();

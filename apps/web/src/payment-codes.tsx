@@ -6,7 +6,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button, Heading, Surface, Text } from 'yahha-ui';
 import { z } from 'zod';
-import { ArchivePaymentCode, CreatePaymentCode, PaymentCode, PaymentCodeId, PaymentCodeLibrary, PaymentCodeSource, PaymentKind, type Viewer } from '@qgroup/contracts';
+import { ArchivePaymentCode, CreatePaymentCode, PaymentCode, PaymentCodeId, PaymentCodeLibrary, PaymentCodeName, PaymentCodeSource, PaymentKind, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { scopedHttp } from './http';
 import { authHttp, loginLink } from './auth';
@@ -23,7 +23,8 @@ const Draft = z.object({ form: Form, pending: z.object({ key: z.string().uuid(),
   if (value.form.source && value.form.image) return false;
   if (!value.pending || value.pending.input.command !== 'create') return true;
   const input = value.pending.input.data;
-  return input.kind === value.form.kind && input.name === value.form.name.trim() && ('image' in input ? input.image === value.form.image && !value.form.source : JSON.stringify(input.source) === JSON.stringify(value.form.source) && !value.form.image);
+  const name = PaymentCodeName.safeParse(value.form.name);
+  return name.success && input.kind === value.form.kind && input.name === name.data && ('image' in input ? input.image === value.form.image && !value.form.source : JSON.stringify(input.source) === JSON.stringify(value.form.source) && !value.form.image);
 });
 type DraftValue = z.infer<typeof Draft>;
 const blank = (): DraftValue => ({ form: { kind: 'wechat', name: '', image: '' } });
@@ -84,7 +85,7 @@ function Library({ viewer }: { viewer: Viewer }) {
     {requestedSource && <Surface className="detail"><Heading level={2}>從結算保存收款碼</Heading>{importQuery.isPending ? <Notice>正在核對原版收款碼…</Notice> : importQuery.error ? <Failure error={importQuery.error} retry={() => void importQuery.refetch()} /> : !importQuery.data?.can_save ? <Text role="alert">只能保存自己發布結算時使用的收款碼。</Text> : (() => { const code = importQuery.data.codes.find(code => code.kind === requestedSource.kind); return code ? <><Text>第 {requestedSource.version} 版 · {paymentKindLabels[code.kind]}{code.name ? ' · ' + code.name : ''}</Text><PaymentAssetImage url={code.url} scope={viewer.scope} label="原版收款碼" /><Button disabled={blocked || dirty} onClick={() => { change({ kind: code.kind, name: code.name, image: '', source: requestedSource }); }}>帶入原版收款碼</Button>{dirty && !draft.form.source && <Text>先完成或清除下方圖片草稿，再帶入原版收款碼。</Text>}</> : <Text role="alert">原版收款碼不存在，請重新選擇。</Text>; })()}<Link to={'/activities/' + encodeURIComponent(requestedSource.event_id) + '/settlement/images?version=' + requestedSource.version}>回到結算原圖</Link></Surface>}
     {library.isPending ? <Notice>正在讀取收款碼…</Notice> : library.error ? <Failure error={library.error} retry={() => void library.refetch()} /> : <Surface className="detail"><Heading level={2}>已保存（{library.data.codes.length}／30）</Heading>{library.data.codes.length ? <ul className="payment-library">{library.data.codes.map(code => <li key={code.id}><Heading level={3}>{paymentKindLabels[code.kind]}{code.name ? ' · ' + code.name : ''}</Heading><PaymentAssetImage url={code.url} scope={viewer.scope} label={paymentKindLabels[code.kind] + '收款碼' + (code.name ? ' ' + code.name : '')} /><Button variant="secondary" disabled={blocked} onClick={() => setRemove(code)}>移除 {code.name || paymentKindLabels[code.kind] + '收款碼'}</Button></li>)}</ul> : <Text>尚未保存收款碼，可在下方新增。</Text>}</Surface>}
     {remove && <Surface role="alert"><Heading level={2}>移除 {remove.name || paymentKindLabels[remove.kind] + '收款碼'}？</Heading><Text>已發布帳單及歷史圖片會保留。</Text><Button disabled={blocked} onClick={() => void send({ command: 'archive', id: remove.id, data: { confirm: true } })}>確認移除</Button><Button variant="secondary" onClick={() => setRemove(undefined)}>取消移除</Button></Surface>}
-    <Surface className="detail"><Heading level={2}>新增收款碼</Heading><form onSubmit={event => { event.preventDefault(); void send({ command: 'create', data: { kind: draft.form.kind, name: draft.form.name.trim(), confirm: true, ...(draft.form.source ? { source: draft.form.source } : { image: draft.form.image }) } }); }}>
+    <Surface className="detail"><Heading level={2}>新增收款碼</Heading><form onSubmit={event => { event.preventDefault(); void send({ command: 'create', data: { kind: draft.form.kind, name: draft.form.name, confirm: true, ...(draft.form.source ? { source: draft.form.source } : { image: draft.form.image }) } }); }}>
       <fieldset disabled={blocked}><div className="account-field"><label htmlFor="payment-kind">收款方式</label><select id="payment-kind" value={draft.form.kind} onChange={event => change({ ...draft.form, kind: PaymentKind.parse(event.target.value) })}>{Object.entries(paymentKindLabels).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}</select></div>
       <label className="account-field">名稱（選填）<input value={draft.form.name} maxLength={80} onChange={event => change({ ...draft.form, name: event.target.value })} /></label>
       <label className="account-field">收款碼圖片<input type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file); }} /></label>

@@ -1,6 +1,6 @@
 # 本機測試指南
 
-本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新正式分房驗收見[第 229 批](229-formal-room-parent-acceptance.md)，舊帳單相容性見[第 228 批](228-historical-settlement-compatibility.md)，分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
+本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新結算／收款碼驗收見[第 230 批](230-settlement-parent-acceptance.md)，正式分房驗收見[第 229 批](229-formal-room-parent-acceptance.md)，舊帳單相容性見[第 228 批](228-historical-settlement-compatibility.md)，分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
 
 ## 啟動可操作預覽
 
@@ -54,7 +54,7 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 
 完整 Linux CI 提交 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的 unit 4,063 項、browser 1,047 項及映像組合均通過，沒有略過或重試，包含第 221 批手機工具。第 222 批兩項管理登出測試及第 223 批恢復啟用修改另有本機驗證；不將未包含的修改套用原完整 CI。真正匯出的線上 bot 映像隔離組合及同一正式副本的匯入／回退證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。
 
-目前 42 個既有功能父項本機通過；124 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
+目前 56 個既有功能父項本機通過；110 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
 
 ## 成分詞庫與共用編輯
 
@@ -82,3 +82,9 @@ M13–M22 的完整本機證據及排序修正見[第 225 批](225-matching-orde
 ## 正式預分與未分配人員
 
 P01–P04 的完整本機證據見[第 229 批](229-formal-room-parent-acceptance.md)。在預分包間編輯頁先查看「未分配」名單，再建立包間、命名、選付款人及勾選人員。移到另一房會解除原房分配；移除房間後人員回到未分配，可先保存部分安排。全部分配後顯示完成狀態；候補預分仍不等於正式名額或已付款。歷史入口保留原房名／付款人，已發布帳單的實際包間回到結算核對。
+
+## 結算、原版本與收款碼
+
+S01–S14 的完整本機證據見[第 230 批](230-settlement-parent-acceptance.md)。原人均帳單先顯示原分母與差額；轉逐人須選擇轉換、核對人員及填原因，保存後原版仍可查看。編輯費用時可選五種分攤及共同／指定人員；付款人與真實墊款分開核對，已記支出選 recorded，不重記付款。發布前查看逐人、付款人與房間金額，修改備註／圖片後應追加版。
+
+在「我的收款碼」新增合成圖片，再於結算帶入；從歷史查看和下載原圖、另存本人發布的碼。移除碼庫後舊帳图片應保留。模擬丟失保存回應後重新整理，只查回原操作；切帳號不顯示他人私圖或待確認內容。上述普通預覽仍不啟動 bot 投遞程序。

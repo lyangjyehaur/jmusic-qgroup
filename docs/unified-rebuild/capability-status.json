@@ -5,19 +5,33 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
-      "A12",
-      "A13",
-      "A15",
-      "C01",
-      "C02",
-      "C03",
-      "C04",
-      "C05",
-      "C06",
-      "C07",
+      "P01",
+      "P02",
+      "P03",
+      "P04",
+      "P05",
+      "P06",
+      "P07",
+      "P08",
+      "P09",
+      "P10",
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S06",
+      "S07",
+      "S08",
+      "S09",
+      "S10",
+      "S11",
+      "S12",
+      "S13",
+      "S14",
       "M01",
       "M02",
       "M03",
@@ -40,15 +54,19 @@
       "M20",
       "M21",
       "M22",
-      "P05",
-      "P06",
-      "P07",
-      "P08",
-      "P09",
-      "P10"
+      "C01",
+      "C02",
+      "C03",
+      "C04",
+      "C05",
+      "C06",
+      "C07",
+      "A12",
+      "A13",
+      "A15"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
-    "latest_runtime_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md"
+    "latest_runtime_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
   },
   "capabilities": [
     {
@@ -2981,21 +2999,25 @@
         "apps/web/src/reviewed-draft.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S02",
@@ -3019,22 +3041,26 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S03",
@@ -3058,22 +3084,26 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S04",
@@ -3097,22 +3127,26 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S05",
@@ -3130,21 +3164,25 @@
         "apps/web/src/reviewed-draft.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S06",
@@ -3168,22 +3206,26 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S07",
@@ -3210,22 +3252,26 @@
       "behavior_evidence": [
         "packages/domain/src/domain.test.ts",
         "apps/api/src/settlements.test.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S08",
@@ -3257,17 +3303,20 @@
         "apps/api/testsupport/legacy-settlement.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "apps/web/tests/legacy-detailed-settlement-request.spec.ts"
+        "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -3275,10 +3324,11 @@
         "apps/web/tests/legacy-settlement.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md"
+        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S09",
@@ -3310,17 +3360,20 @@
         "apps/api/testsupport/legacy-settlement.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "apps/web/tests/legacy-detailed-settlement-request.spec.ts"
+        "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -3328,10 +3381,11 @@
         "apps/web/tests/legacy-settlement.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md"
+        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S10",
@@ -3370,19 +3424,22 @@
         "apps/api/testsupport/legacy-settlement.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/payment-codes.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/payment-codes.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "apps/web/tests/legacy-detailed-settlement-request.spec.ts"
+        "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/payment-codes.spec.ts",
@@ -3391,10 +3448,11 @@
         "apps/web/tests/legacy-settlement.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md"
+        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S11",
@@ -3438,7 +3496,8 @@
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
         "tools/rebuild/smoke-legacy-settlement.mjs",
         "apps/api/src/legacy-personal.test.ts",
-        "tools/rebuild/smoke-legacy-personal.mjs"
+        "tools/rebuild/smoke-legacy-personal.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/payment-codes.test.ts",
@@ -3446,14 +3505,16 @@
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "tools/rebuild/smoke-legacy-settlement.mjs",
         "apps/api/src/legacy-personal.test.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/payment-codes.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "apps/api/src/legacy-personal.test.ts"
+        "apps/api/src/legacy-personal.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/payment-codes.spec.ts",
@@ -3464,10 +3525,11 @@
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
         "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S12",
@@ -3501,17 +3563,20 @@
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/finance.test.ts",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/finance.test.ts",
-        "apps/web/tests/legacy-money.spec.ts"
+        "apps/web/tests/legacy-money.spec.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -3519,10 +3584,11 @@
         "docs/unified-rebuild/86-legacy-money-conversion-checkpoint.md",
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S13",
@@ -3554,17 +3620,20 @@
         "apps/api/testsupport/legacy-settlement.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "tools/rebuild/smoke-legacy-settlement.mjs"
+        "tools/rebuild/smoke-legacy-settlement.mjs",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/legacy-detailed-settlement.test.ts",
-        "apps/web/tests/legacy-detailed-settlement-request.spec.ts"
+        "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -3572,10 +3641,11 @@
         "apps/web/tests/legacy-settlement.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-detailed-settlement-request.spec.ts",
-        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md"
+        "docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。 第 205 號補齊原逐人結算請求、Python 原預覽憑證、原圖片及碼庫選擇、隨單款項與回執恢復的隔離驗證；未提升完整驗收或發布資格。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "S14",
@@ -3599,22 +3669,26 @@
       ],
       "behavior_evidence": [
         "apps/api/src/settlements.test.ts",
-        "apps/api/testsupport/legacy-settlement.test.ts"
+        "apps/api/testsupport/legacy-settlement.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/settlements.test.ts"
+        "apps/api/src/settlements.test.ts",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
         "docs/unified-rebuild/33-settlement-checkpoint.md",
         "apps/web/tests/legacy-settlement.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/230-settlement-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊結算 fields／React 原稿已接實際 TSX 表單；未選人員、休眠包間／商家設定、五種分攤、PNG 原圖／歷史引用、原裝置 Date 時區、目的 CAS／pending／登出及送出前交易封存有隔離證據（檢查點 87）。原請求精確 adapter、退休來源查回、正式資料／實際裝置與 web-bot 候選組合仍待完成。 原生逐人結算、五種分攤、實際包間、隨單支出、不可變版本與圖片、精確重試及 Python bot 模擬消費已實作並差分；仍需全部匯入歷史／舊協議 adapter、正式資料副本、端到端整體操作與實際平台驗收，未允許切換。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F01",

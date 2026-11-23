@@ -1,5 +1,6 @@
 import { z } from 'zod';
-const text=(max:number)=>z.string().trim().refine(v=>Array.from(v).length<=max);
+import { originalString } from './legacy-values';
+const text=(max:number)=>z.string().transform(value=>originalString(value) as string).refine(v=>Array.from(v).length<=max);
 export const FinanceKind=z.enum(['collection','refund','reimbursement','expense','merchant_refund','deposit','deposit_return','deposit_apply','credit_transfer','cash_transfer']);
 export const FinanceParty=z.object({id:z.string(),name:z.string(),label:z.string()});
 export const FinancePayload=z.object({kind:FinanceKind.optional(),amount_cents:z.number().int().nonnegative().safe().optional(),occurred_at:z.string().optional(),note:z.string().optional(),reason:z.string().optional(),payer_id:z.string().optional(),custodian_id:z.string().optional(),funder_id:z.string().optional(),actual_party_id:z.string().optional(),from_id:z.string().optional(),to_id:z.string().optional(),reference_id:z.string().optional(),funding:z.enum(['pool','payer']).optional(),merchant:z.string().optional(),room_id:z.string().optional(),room_name:z.string().optional(),method:z.string().optional(),parties:z.array(FinanceParty).optional(),bill_version:z.number().int().optional(),command:z.string().optional(),entry_id:z.string().optional(),last_seq:z.string().regex(/^(0|[1-9][0-9]{0,18})$/).optional()});

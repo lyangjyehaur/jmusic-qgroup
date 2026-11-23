@@ -141,6 +141,24 @@ const send=(s:Setup,body:object,mode='inspect',headers=s.alice)=>s.app.inject({m
 const state=(s:Setup)=>s.db.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name").all().map(row=>{const name=(row as {name:string}).name;return [name,s.db.prepare('SELECT * FROM "'+name+'"').all()];});
 async function prepared(s:Setup,o:object){const before=state(s),r=await send(s,o);expect(r.statusCode,r.body).toBe(200);expect(r.json().state).toBe('retryable');expect(state(s)).toEqual(before);return {...o,confirm:true,recovery_token:r.json().recovery_token};}
 describe('original detailed settlement request recovery',()=>{
+ it('preserves raw Unicode text and original preview proofs through invoice request recovery',async()=>{
+  for(const edge of ['\u0085','\u001c','\ufeff']) {
+   const s=await setup(),o=await original(s),wrap=(v:string)=>edge+v+edge,
+    data={...o.data,note:wrap('原備註'),reason:wrap('原原因'),
+     people:o.data.people.map(p=>({...p,reason:wrap('逐人核對')})),
+     items:[{id:i1,name:wrap('原費用'),amount:'10',reason:wrap('原依據')}],
+     payment_codes:[{kind:'other',name:wrap('原收款碼'),image:testPNG().toString('base64')}]},
+    expected=await python(s,data,"print(json.dumps(settlements.preview(db,event,user,data)))"),
+    raw={...o,data:{...data,preview_token:expected.preview_token}},body=await prepared(s,raw);
+   const inspection=(await send(s,raw)).json();expect(inspection.preview.preview_token).toBe(expected.preview_token);
+   expect(inspection.preview.snapshot).toEqual({...expected.snapshot,journal_seq:String(expected.snapshot.journal_seq)});
+   expect((await send(s,body,'retry')).statusCode).toBe(200);
+   expect(settlementDetail(s.db,'listen')).toEqual({...expected.snapshot,journal_seq:String(expected.snapshot.journal_seq)});
+   expect((s.db.prepare('SELECT signature FROM request_results WHERE request_key=?').get(raw.requestKey) as {signature:string}).signature)
+    .toBe(originalRequestSignature(raw.method,raw.path,raw.data));
+   const before=state(s);expect((await send(s,body,'retry')).statusCode).toBe(200);expect(state(s)).toEqual(before);
+  }
+ });
  for(const mode of ['shares','equal','weights','fixed','duration'])it('validates the original Python proof and publishes '+mode+' allocations through the same immutable command',async()=>{
   const s=await setup(),allocations=[p1,p2,p3].map((person_id,i)=>({person_id,...(mode==='weights'?{weight:['1','2','0'][i]}:mode==='fixed'?{amount:['0.01','0.02','0.02'][i]}:mode==='duration'?{minutes:[20,40,0][i]}:{})})),o=await original(s,{items:[{id:i1,name:'原費用',amount:'0.05',mode,reason:'原分攤依據',allocations}],group_notice:true}),expected=await python(s,o.data,"s=settlements.preview(db,event,user,data);settlements.save(db,event,user,data);db.commit();print(json.dumps(dict(preview=s,detail=settlements.details(db,'listen',1),finance=[dict(r) for r in db.execute('SELECT * FROM finance_entries')],notifications=[dict(r) for r in db.execute('SELECT * FROM notifications')],outbox=[dict(r) for r in db.execute('SELECT * FROM bot_outbox')],revision=db.execute(\"SELECT revision FROM events WHERE id='listen'\").fetchone()[0])))"),body=await prepared(s,o),inspection=(await send(s,o)).json();
   expect(inspection.preview.preview_token).toBe(expected.preview.preview_token);expect(inspection.preview.snapshot).toEqual({...expected.preview.snapshot,journal_seq:String(expected.preview.snapshot.journal_seq)});

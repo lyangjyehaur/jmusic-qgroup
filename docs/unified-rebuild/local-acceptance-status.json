@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 42,
+  "full_parents_accepted": 56,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -19,7 +19,8 @@
     "JSON order-preserving clones, account/reset source writers, verified source rebase order, native reads and final recovery boundaries: captured-source forward/reimport/package regression and separate current tests at checkpoint 226",
     "Original identity tie ranks, current plan/actual room loading and preserved room/frozen-name reader at checkpoint 227: captured-data analysis/split and true-worker API comparisons, 86 unit / 33 browser / retained online-source Python checks; no financial editor relaxation or actual production image acceptance",
     "Historical settlement reads preserve omitted journal_seq / balances / group consent at checkpoint 228; strict native previews and writes unchanged. Three captured bills compared with original Python, 82 unit / 49 browser checks; no full settlement parent or actual image acceptance claimed.",
-    "Room editor unassigned roster and correct pre-plan stale-member guidance; shared room-name / plan-reason contracts preserve original Python Unicode strip semantics at checkpoint 229. 67 unit / 71 browser and captured-data original comparisons passed. Fresh retained online-source Python checks: 532 HTTP / 71 original workers / 9 TS workers and graceful stop. P01–P04 accepted locally; actual image/recovery acceptance remains incomplete."
+    "Room editor unassigned roster and correct pre-plan stale-member guidance; shared room-name / plan-reason contracts preserve original Python Unicode strip semantics at checkpoint 229. 67 unit / 71 browser and captured-data original comparisons passed. Fresh retained online-source Python checks: 532 HTTP / 71 original workers / 9 TS workers and graceful stop. P01–P04 accepted locally; actual image/recovery acceptance remains incomplete.",
+    "Invoice / merchant / payment-code text uses original Python strip rules; code form and durable pending comparison share the contract at checkpoint 230. 133 unit / 105 browser, captured-data 4241 HTTP / 36 previews / 8 publications with original Python and append-row storage preservation passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop. S01–S14 accepted locally; actual production image / recovery acceptance remains incomplete."
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -867,175 +868,203 @@
     },
     {
       "capability_id": "S01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "舊人均原值保留，必須明確轉換及原因，追加新版。"
+        "舊人均原值保留，必須明確轉換及原因，追加新版。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "全正式名單不得省略，退出/缺席/拒絕安排/份數差異須核對原因。"
+        "全正式名單不得省略，退出/缺席/拒絕安排/份數差異須核對原因。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "免共同、半份保持人員，免共同者仍可單獨負擔指定消費。"
+        "免共同、半份保持人員，免共同者仍可單獨負擔指定消費。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "五方式、選中範圍、精確固定額；1000上界及1440分鐘邊界。"
+        "五方式、選中範圍、精確固定額；1000上界及1440分鐘邊界。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-settlement.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "退款/折扣作負項獨立分配，總額/逐人不可負，不追加實際退款。"
+        "退款/折扣作負項獨立分配，總額/逐人不可負，不追加實際退款。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "一人多人付款/多人同付獨立保存，名稱不合併，沿用付款origin。"
+        "一人多人付款/多人同付獨立保存，名稱不合併，沿用付款origin。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-settlement.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "整數分/千分比/BigInt最大餘數，每項獨立，tie保留凍結名冊順序。"
+        "整數分/千分比/BigInt最大餘數，每項獨立，tie保留凍結名冊順序。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
         "packages/domain/src/domain.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "preview綁revision/base version/journal/圖片；當前權限、一次入帳與回執。",
         "結算未知結果保留原UUID/body，重載與inbox讀結果，不自動重送。",
-        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。"
+        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-settlement.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "實際修改追加完整版本及原因/操作者/修改項，同內容不增版。",
-        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。"
+        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-settlement.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "PNG/CRC/尺寸/單張及總量驗證，每版獨立不可變圖片引用；missing/corrupt可恢復。",
-        "原Python結算proof/原body/圖片繼承語意可恢復，同原key不重加版或款。"
+        "原Python結算proof/原body/圖片繼承語意可恢復，同原key不重加版或款。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/legacy-detailed-settlement.test.ts",
         "apps/api/src/payment-codes.test.ts",
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "本人碼庫隔離/封存不改已發布圖片，舊source只能原publisher另存。"
+        "本人碼庫隔離/封存不改已發布圖片，舊source只能原publisher另存。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/payment-codes.test.ts",
         "apps/web/tests/activity-settlement.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "每位人員歸一實際房，房分獨立對平，已有款room_id不得丟失。"
+        "每位人員歸一實際房，房分獨立對平，已有款room_id不得丟失。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/web/tests/activity-settlement.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "指定付款與已付款分開，paid真實時間/方式同transaction追加expense；已有支出不重記。"
+        "指定付款與已付款分開，paid真實時間/方式同transaction追加expense；已有支出不重記。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "S14",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "舊版完整snapshot不受現況改名/退出/安排更新，當前待補/待退依最新帳與原款投影。",
-        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。"
+        "第 228 批正式隔離副本的三份舊逐人帳單缺省欄位保全、原預覽／新版保存／精確重試與固定 Python 一致；局部相容性證據，不標完整父項通過。",
+        "第 230 批固定原程式、正式隔離副本及原條件完整核對通過；原帳／每版原圖／私碼庫／付款責任與資金分開，原請求及斷線查回保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
         "apps/api/src/finance.test.ts",
         "apps/api/src/settlements.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
     },
     {
       "capability_id": "F01",
@@ -2435,7 +2464,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/229-formal-room-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2566,5 +2595,65 @@
     "retained_python_worker_invocations": 71,
     "retained_typescript_worker_invocations": 9,
     "retained_bot_graceful_stop": true
+  },
+  "latest_settlement_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "S01",
+      "S02",
+      "S03",
+      "S04",
+      "S05",
+      "S06",
+      "S07",
+      "S08",
+      "S09",
+      "S10",
+      "S11",
+      "S12",
+      "S13",
+      "S14"
+    ],
+    "change_scope": "both",
+    "review_base_commit": "d271086a86e5edc699af74af01f475ae7b12a75e",
+    "pinned_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "pinned_original_core_files": 34,
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "viewers_including_anonymous": 49,
+    "events": 14,
+    "http_calls": 4241,
+    "bill_comparisons": 294,
+    "context_comparisons": 13,
+    "read_refusals": 1457,
+    "public_image_comparisons": 196,
+    "private_library_comparisons": 48,
+    "private_image_refusals": 192,
+    "preview_comparisons": 36,
+    "blocked_previews": 9,
+    "publication_comparisons": 8,
+    "exact_retries": 8,
+    "no_op_saves": 4,
+    "unchanged_read_tables": 96,
+    "unchanged_tables_after_writes": 87,
+    "independent_unchanged_tables_including_synthetic_session_difference": 86,
+    "original_detailed_bills_preserved": 3,
+    "original_plan_versions_preserved": 6,
+    "original_outbox_rows_preserved": 118,
+    "unchanged_bot_tables": 5,
+    "bot_outbox_only_appended": true,
+    "new_isolated_expenses": 8,
+    "images_preserved": 4,
+    "unit_cases_passed": 133,
+    "browser_cases_passed": 105,
+    "text_normalization": "original_python_strip",
+    "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "retained_bot_source_files": 52,
+    "retained_bot_http_calls": 532,
+    "retained_original_worker_invocations": 71,
+    "retained_typescript_worker_invocations": 9,
+    "retained_graceful_stop": true,
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false
   }
 }

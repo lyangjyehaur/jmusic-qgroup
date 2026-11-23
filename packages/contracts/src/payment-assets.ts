@@ -1,8 +1,9 @@
 import { z } from 'zod';
+import { originalString } from './legacy-values';
 
 export const PaymentKind = z.enum(['wechat', 'alipay', 'other']);
 export const PaymentCodeId = z.string().regex(/^[a-f0-9]{16}$/);
-export const PaymentCodeName = z.string().trim().refine(value => Array.from(value).length <= 40 && !/[\x00-\x1f\x7f]/.test(value), '收款碼名稱最多 40 字');
+export const PaymentCodeName = z.string().transform(value=>originalString(value) as string).refine(value => Array.from(value).length <= 40, '收款碼名稱最多 40 字');
 export const PaymentImage = z.string().min(1).max(2800000);
 export const PaymentCodeSource = z.object({ event_id: z.string().min(1).max(80), version: z.number().int().min(1).max(Number.MAX_SAFE_INTEGER), kind: PaymentKind }).strict();
 const common = { kind: PaymentKind, name: PaymentCodeName, confirm: z.literal(true) };

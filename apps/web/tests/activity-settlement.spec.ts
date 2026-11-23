@@ -34,6 +34,28 @@ async function image(page: Page) {
   });
   return { name: 'synthetic.png', mimeType: 'image/png', buffer: Buffer.from(raw, 'base64') };
 }
+test('preserves the legacy denominator until an explicit reasoned conversion creates a new version',async({page,context})=>{
+  await login(context);
+  const path='/activities/karaoke/settlement';
+  await page.goto(path);
+  await expect(page.getByRole('heading',{name:'第 1 版 · 舊人均帳單',exact:true})).toBeVisible();
+  await expect(page.getByText('總額 0.05 元 · 7 人 · 人均 0.01 元',{exact:true})).toBeVisible();
+  await expect(page.getByText('四捨五入差額：2 分',{exact:true})).toBeVisible();
+  const old=await(await context.request.get('/api/v2/activities/karaoke/settlement/history/1')).json();
+  await page.getByRole('link',{name:'核對並發布逐人結算',exact:true}).click();
+  await prepare(page,'0.08');
+  await page.getByRole('button',{name:'預覽逐人結算',exact:true}).click();
+  await expect(page.getByText(/舊人均帳單需要明確確認轉換/)).toBeVisible();
+  await page.getByRole('checkbox',{name:'確認將舊人均帳單轉為逐人結算；歷史版本保留。',exact:true}).check();
+  await page.getByRole('button',{name:'預覽逐人結算',exact:true}).click();
+  await expect(page.getByText(/修改或轉換結算請填寫原因/)).toBeVisible();
+  await page.getByLabel('發布／修改原因（最多 300 字）',{exact:true}).fill('重新逐人核對');
+  await preview(page);await save(page);await page.goto(path);
+  await expect(page.getByRole('heading',{name:'第 2 版 · 逐人結算',exact:true})).toBeVisible();
+  await page.getByRole('button',{name:'第 1 版 · 0.05 元',exact:true}).click();
+  await expect(page.getByText('總額 0.05 元 · 7 人 · 人均 0.01 元',{exact:true})).toBeVisible();
+  expect(await(await context.request.get('/api/v2/activities/karaoke/settlement/history/1')).json()).toEqual(old);
+});
 test('publishes exact independent allocation with receipt, opted-in group preview and a reasoned second version', async ({
   page,
   context,

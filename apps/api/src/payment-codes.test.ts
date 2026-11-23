@@ -26,6 +26,17 @@ async function setup(frozen = false) {
   return { root, db, app, headers, auth, payload, save, get, archive };
 }
 describe('private payment library and immutable invoice assets', () => {
+  it('matches original whitespace in code names without dropping BOM or changing an exact retry', async () => {
+    const s=await setup(),names=['\u0085原碼\u0085','\u001c原碼\u001c','\ufeff原碼\ufeff','第一行\n第二行','原\u0000碼'],
+      expected=JSON.parse(execFileSync('python3',['-c',"import json,sys\nfrom qgroup_core.common import string\nprint(json.dumps([string({'name':n},'name',40,False) for n in json.loads(sys.argv[1])]))",JSON.stringify(names)],{encoding:'utf8',timeout:15000}));
+    for (const [i,name] of names.entries()) {
+      const key=randomUUID(),input={...s.payload,name},saved=await s.save(input,{'idempotency-key':key});
+      expect(saved.statusCode,saved.body).toBe(200);expect(saved.json().name).toBe(expected[i]);
+      expect((await s.save(input,{'idempotency-key':key})).body).toBe(saved.body);
+      expect((await s.get(saved.json().url)).rawPayload).toEqual(testPNG());
+    }
+    expect((await s.get()).json().codes).toHaveLength(4);
+  });
   it('validates PNG dimensions, CRCs, chunks, exact EOF, format and size against retained Python', () => {
     const valid = testPNG(), badCrc = Buffer.from(valid); badCrc[35] = badCrc[35]! ^ 1;
     const candidates = [valid, testPNG([0, 20, 10], 1600, 1600), testPNG([0, 0, 0], 1601), testPNG([0, 0, 0], 0), badCrc, valid.subarray(0, -1), Buffer.concat([valid, Buffer.from('x')]), Buffer.from('JPEG'), Buffer.concat([valid.subarray(0, 33), pngChunk('IEND', Buffer.alloc(0))]), Buffer.concat([valid.subarray(0, 33), valid.subarray(8)]), Buffer.concat([valid.subarray(0, 33), pngChunk('tEXt', Buffer.alloc(2 * 1024 * 1024)), valid.subarray(33)])].map(raw => raw.toString('base64'));
@@ -63,7 +74,7 @@ describe('private payment library and immutable invoice assets', () => {
     const s = await setup(); expect((await s.save()).statusCode).toBe(200);
     const rejectedHeaders: Record<string, string>[] = [{ 'x-account-scope': '' }, { 'x-account-scope': 'wrong' }, { 'x-csrf-token': '' }, { origin: 'https://foreign.example' }, { cookie: '' }];
     for (const extra of rejectedHeaders) expect((await s.save(s.payload, extra)).statusCode).toBeGreaterThanOrEqual(400);
-    for (const input of [{ ...s.payload, kind: 'cash' }, { ...s.payload, name: 'x'.repeat(41) }, { ...s.payload, name: '\u0000' }, { ...s.payload, confirm: false }, { ...s.payload, source: { event_id: 'past', version: 1, kind: 'wechat' } }, { ...s.payload, image: 'not-png' }]) expect((await s.save(input, { 'idempotency-key': randomUUID() })).statusCode).toBe(400);
+    for (const input of [{ ...s.payload, kind: 'cash' }, { ...s.payload, name: 'x'.repeat(41) }, { ...s.payload, confirm: false }, { ...s.payload, source: { event_id: 'past', version: 1, kind: 'wechat' } }, { ...s.payload, image: 'not-png' }]) expect((await s.save(input, { 'idempotency-key': randomUUID() })).statusCode).toBe(400);
     expect((await s.get('/api/v2/me/payment-codes', { 'x-account-scope': '' })).statusCode).toBe(409);
     expect((await s.get('/api/v2/me/payment-codes', { cookie: '' })).statusCode).toBe(401);
     s.db.prepare('DELETE FROM browser_sessions').run(); expect((await s.save()).statusCode).toBe(401);

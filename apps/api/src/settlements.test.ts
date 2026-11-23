@@ -139,6 +139,74 @@ ${extra}`,
 const compare = (snapshot: unknown, expected: any) =>
   expect(snapshot).toEqual({ ...expected, journal_seq: String(expected.journal_seq) });
 describe('native settlement and rooms', () => {
+  it('keeps legacy denominators and rounding differences independent of the current roster', async () => {
+    for (const [total,count] of [[5,3],[1,2],[0,7],[999999999,7]]) {
+      const s=await setup();
+      s.db.prepare("INSERT INTO settlements(event_id,total_cents,headcount,note,updated_at) VALUES('listen',?,?, '原帳單','before')").run(total,count);
+      s.db.prepare("INSERT INTO settlement_history(event_id,version,total_cents,headcount,note,updated_at,actor_id,actor_name,kind,changed_fields) VALUES('listen',1,?,?,'原帳單','before','alice','小青','published','[]')").run(total,count);
+      const original=await python(s,{},"from qgroup_core import billing\nprint(json.dumps(billing.serialize_settlement(db.execute(\"SELECT *,LENGTH(qr_image) AS qr_size FROM settlement_history WHERE event_id='listen'\").fetchone())))"),
+        before=s.db.prepare('SELECT * FROM settlement_history').all(),view=(await s.app.inject({url:'/api/v2/activities/listen/settlement'})).json();
+      for (const key of ['total_amount','headcount','per_person_amount','rounding_difference_cents','note','updated_at','version']) expect(view.bill[key]).toEqual(original[key]);
+      expect(view.bill.mode).toBe('legacy');
+      expect((await s.preview(s.input({reason:'核對轉換'}))).statusCode).toBe(400);
+      await s.save(s.input({convert_legacy:true,reason:'逐人核對'}));
+      expect(s.db.prepare('SELECT * FROM settlement_history WHERE version=1').all()).toEqual(before);
+      expect((await s.app.inject({url:'/api/v2/activities/listen/settlement/history/1'})).json()).toEqual(view.bill);
+      expect(settlementDetail(s.db,'listen')!.people).toHaveLength(3);
+    }
+  });
+  it('preserves original Unicode boundaries in invoice text, payment codes and accompanying merchant expenses', async () => {
+    for (const edge of ['\u0085', '\u001c', '\ufeff']) {
+      const s = await setup(), wrap = (value: string) => edge + value + edge,
+        custom = 'custom:1234567890abcdef', image = testPNG().toString('base64'),
+        data = {...s.input(),
+          people: [{id:p1,share:'0.5',reason:wrap('半份及代付'),payments:[{payer_id:custom,share:'1'}]}, {id:p2}, {id:p3}],
+          items: [{id:i1,name:wrap('費用'),amount:'10',reason:wrap('依據')}],
+          custom_payers: [{id:custom,name:wrap('外部付款人')}],
+          note:wrap('帳單備註'),reason:wrap('發布核對'),
+          merchant_payment: {mode:'paid',amount:'10',payer_id:custom,occurred_at:stamp,method:'cash',merchant:wrap('店家'),note:wrap('付款備註'),reason:wrap('付款依據')},
+          payment_codes: [{kind:'other',name:wrap('收款碼'),image}],
+        }, expected = await python(s,data), preview = await s.preview(data as any);
+      expect(preview.statusCode,preview.body).toBe(200);
+      compare(preview.json().snapshot,expected);
+      const body = {...data,preview_token:preview.json().preview_token,confirm:true}, key=randomUUID(), saved=await s.send(body,s.alice,key);
+      expect(saved.statusCode,saved.body).toBe(200);
+      compare(settlementDetail(s.db,'listen'),expected);
+      expect(financeEntries(s.db,'listen')[0]?.payload).toEqual(expected.merchant_payment);
+      const before = ['settlement_history','settlement_details','finance_entries','settlement_code_images','event_audit','notifications','bot_outbox']
+        .map(table=>s.db.prepare('SELECT * FROM '+table).all());
+      expect((await s.send(body,s.alice,key)).body).toBe(saved.body);
+      expect(['settlement_history','settlement_details','finance_entries','settlement_code_images','event_audit','notifications','bot_outbox']
+        .map(table=>s.db.prepare('SELECT * FROM '+table).all())).toEqual(before);
+    }
+  });
+  it('keeps zero and half-share people, permits individual expenses and verifies allocation limits against Python', async () => {
+    const s=await setup(), data=s.input({
+      people:[{id:p1,share:'0',reason:'免共同費，個別消費另計'},{id:p2,share:'0.5',reason:'半份'},{id:p3}],
+      items:[{id:i1,name:'共同',amount:'0.03'},{id:i2,name:'個別',amount:'0.04',mode:'equal',scope:'selected',reason:'個別消費',allocations:[{person_id:p1}]}],
+    });
+    const preview=await s.preview(data);expect(preview.statusCode,preview.body).toBe(200);compare(preview.json().snapshot,await python(s,data));
+    expect(preview.json().snapshot.people.map((p:any)=>p.due_cents)).toEqual([4,1,2]);
+    for (const [mode,field,maximum] of [['weights','weight','1000'],['duration','minutes',1440]] as const) {
+      const valid={...s.input(),items:[{id:i1,name:'邊界',amount:'0.01',mode,reason:'核對上界',allocations:[p1,p2,p3].map((person_id,i)=>({person_id,[field]:i===0?maximum:mode==='weights'?'0':0}))}]};
+      const result=await s.preview(valid as any);expect(result.statusCode,result.body).toBe(200);compare(result.json().snapshot,await python(s,valid));
+      for (const invalid of mode==='weights'?['1000.001','0.0001','-1']:[1441,-1,0.5]) {
+        const bad={...valid,items:[{...valid.items[0]!,allocations:valid.items[0]!.allocations.map((a,i)=>i? a:{...a,[field]:invalid})}]};
+        expect((await s.preview(bad as any)).statusCode).toBe(400);
+      }
+    }
+    for (const amount of ['0','9999999.99']) {
+      const valid=s.input({items:[{id:i1,name:'𰀀'.repeat(80),amount}]});
+      const result=await s.preview(valid);expect(result.statusCode,result.body).toBe(200);compare(result.json().snapshot,await python(s,valid));
+    }
+    const fifty={...s.input(),items:Array.from({length:50},(_,i)=>({id:i.toString(16).padStart(16,'0'),name:'費用 '+i,amount:'0'}))};
+    expect((await s.preview(fifty as any)).statusCode).toBe(200);
+    for (const bad of [{...fifty,items:[...fifty.items,{id:'f'.repeat(16),name:'第 51 項',amount:'0'}]},
+      {...s.input(),items:[{id:i1,name:'𰀀'.repeat(81),amount:'0'}]},
+      {...s.input(),items:[{id:i1,name:'超額',amount:'10000000'}]}]) expect((await s.preview(bad as any)).statusCode).toBe(400);
+    for (const table of ['settlement_history','settlement_details','finance_entries','event_audit','bot_outbox'])
+      expect(s.db.prepare('SELECT * FROM '+table).all()).toHaveLength(0);
+  });
   it('reads original detailed bills without later metadata and preserves history when reviewing a new strict version', async () => {
     const s = await setup(), historical = await python(s, s.input());
     for (const field of ['journal_seq', 'balances', 'group_notice']) delete historical[field];
