@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 124,
+  "full_parents_accepted": 139,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -1938,139 +1938,161 @@
     },
     {
       "capability_id": "B01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "全部原別名/固定面板/裸@與未知幫助，公開指令只查詢及給入口。"
+        "全部原別名/固定面板/裸@與未知幫助，公開指令只查詢及給入口。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/replies.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "候選按原條件/順序/8項序號，9項更多提示；不歧義猜場或按broadcast opt-in隱藏查詢。"
+        "候選按原條件/順序/8項序號，9項更多提示；不歧義猜場或按broadcast opt-in隱藏查詢。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/replies.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "群內名册有界/Unicode裁切/清理，保留省略提示；不帶私有备注/身份/付款細節。"
+        "群內名册有界/Unicode裁切/清理，保留省略提示；不帶私有备注/身份/付款細節。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/replies.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "全部活動通知保留原plain/rich、凍結context、按鈕及深連結；自訂模板按原Python組合。",
-        "實際生命週期操作與原通知/outbox相容；同一轉換重播不重送。"
+        "實際生命週期操作與原通知/outbox相容；同一轉換重播不重送。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/activity-bot.test.ts",
         "apps/api/src/activity-lifecycle.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "退出及最後遞補合併一則；重報取新票號，原同意保留。",
-        "暫定不耗名額或通知；一起報名確認採新票號，拆隊不插隊。"
+        "暫定不耗名額或通知；一起報名確認採新票號，拆隊不插隊。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "部署dry-run與policy三态語意保留，模擬是skipped/simulated，不換成真送。"
+        "部署dry-run與policy三态語意保留，模擬是skipped/simulated，不換成真送。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/outbox.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "save/revert追加版本，重試回原命令結果；相同設定不添版本，並行更新拒絕。",
         "設定變更只重排未來提醒；換群作廢原工作，已送/模擬/不明/私人列原樣保留。",
-        "所有kind預覽用隔離範例，沒有排程、設定或真名冊副作用。"
+        "所有kind預覽用隔離範例，沒有排程、設定或真名冊副作用。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-bot.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "groups null才用deployment fallback，空列表全部停；錯target不改轉送，查詢/廣播各依群政策。"
+        "groups null才用deployment fallback，空列表全部停；錯target不改轉送，查詢/廣播各依群政策。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-bot.test.ts",
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/outbox.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "勿擾/限流延後不耗attempts；跨重啟保留節奏；被動公開回覆不依broadcast節奏。"
+        "勿擾/限流延後不耗attempts；跨重啟保留節奏；被動公開回覆不依broadcast節奏。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/outbox.test.ts",
         "apps/bot/src/replies.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "同writer lock領工作，過期token不能回寫，逐條錯誤不中斷整批；確認落盤失敗需人工核對。",
-        "取消已開始請求保留不確定，未開始工作回pending；同poll不能重疊。"
+        "取消已開始請求保留不確定，未開始工作回pending；同poll不能重疊。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/outbox.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "只直接@且非bot/everyone，事件去重；callback先ACK/外層eventID，發送前重驗群與政策。"
+        "只直接@且非bot/everyone，事件去重；callback先ACK/外層eventID，發送前重驗群與政策。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/outbox.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "只提取原訊息／指定引用中的英文縮寫，保留全部指令別名；不向第三方傳網址、身份或原句。",
         "詞條數、長度、大小寫及簡繁遮罩按原行為，保留允許詞與可信欄位邊界。",
@@ -2079,57 +2101,65 @@
         "縮寫請求有總逾時及單一執行限制；晚回應不存緩存，取消不轉成重送。",
         "分段及1小時續讀跨重啟保留完整Unicode和重複；只前進已確認byte游標。",
         "不明或存游標失敗保留原位置，提示可能重複；遮罩發布失敗保全舊body與metadata。",
-        "續讀綁原群，拒絕過期、穿越、錯邊界；新舊Python檔案互讀保留同一byte游標。"
+        "續讀綁原群，拒絕過期、穿越、錯邊界；新舊Python檔案互讀保留同一byte游標。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/abbreviation-delivery.test.ts",
         "apps/bot/src/abbreviations.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "日誌以opaque refs/codepoint metadata記錄，私人正文預設不存；opt-in遮罩與原Python一致。",
         "持久日誌維持4份輪替備份與私人權限；IO失敗退至console且不變成第二次送出。",
         "跨應用身份診斷只讀布林presence/site match，資料失敗不佔用指令或按鈕容量。",
-        "載入／套用設定版本與gateway健康分開；停止只保留實際last_poll/ACK，不虛構健康。"
+        "載入／套用設定版本與gateway健康分開；停止只保留實際last_poll/ACK，不虛構健康。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/identity-diagnostics.test.ts",
         "apps/bot/src/observability.test.ts",
         "apps/bot/src/runtime.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B14",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "Identify/Resume按最後完成序號；heartbeat ACK與業務隊列分離，未完成不提前確認。",
         "缺ACK、失效session、close code與重連退避保留原語意並設上限。",
         "HTTP僅認證錯誤重試一次；永久、quota、傳輸、不明投遞不自動重播。",
         "重試在取得token後重驗當前政策；取消／關閉禁止再次送出。",
-        "health使用同一私人bot-health.json原子寫入；worker失敗／停止後發布failed/stopped並釋放owner。"
+        "health使用同一私人bot-health.json原子寫入；worker失敗／停止後發布failed/stopped並釋放owner。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/api.test.ts",
         "apps/bot/src/gateway.test.ts",
         "apps/bot/src/observability.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "B15",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "未綁身份不發個人款項/私聊，不把私人outbox改送到群。"
+        "未綁身份不發個人款項/私聊，不把私人outbox改送到群。",
+        "第 236 批完整原條件／具體斷言、159 單元／46 瀏覽器、實際候選及保存的線上 bot 映像、同批線上隔離副本通過；57 別名、每來源 1,441 回覆、531 HTTP／71 原 worker／9 TS worker／314 入口，原待送資料不消費。正式平台與 runtime 切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/bot/src/outbox.test.ts",
         "apps/bot/src/replies.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md"
     },
     {
       "capability_id": "O01",
@@ -2375,7 +2405,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2482,6 +2512,156 @@
       "current_pwa_admin_browser_cases": 17,
       "new_admin_device_unit_cases": 2,
       "actual_qq_or_real_phone": false
+    },
+    {
+      "capability_id": "B01",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B02",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B03",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B04",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B05",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B06",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B07",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B08",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B09",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B10",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B11",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B12",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B13",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B14",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "B15",
+      "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions, captured readonly data and fixed actual image combination reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+      "actual_exported_online_image_combination_verified": true,
+      "actual_qq_or_production_switch": false
     }
   ],
   "legacy_http_rehearsal": {
@@ -2603,7 +2783,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -3083,5 +3263,75 @@
     "actual_production_image_combination": false,
     "original_p6_complete": false,
     "release_eligible": false
+  },
+  "latest_bot_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B09",
+      "B10",
+      "B11",
+      "B12",
+      "B13",
+      "B14",
+      "B15"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "actual_images": {
+      "web": "sha256:acbe1303656b48c7d1e4677aaaf63817b46573c4c13ffe901046858b28ddb159",
+      "python": "sha256:e9d93c4441e2a34989722d7a5a86f87c8fa99cbc638b37cfe75a712fe6aa6720"
+    },
+    "retained_python_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "unit_cases_passed": 159,
+    "browser_cases_passed": 46,
+    "immutable_original_python_image_cases_reused": 117,
+    "reviewed_semantic_clauses": 34,
+    "unchanged_source_test_pins": 943,
+    "unchanged_runtime_pins": 245,
+    "archived_git_blobs_verified": 1610,
+    "captured_events": 14,
+    "public_commands": 25,
+    "all_aliases": 57,
+    "parse_comparisons": 176,
+    "reply_comparisons_per_source": 1441,
+    "captured_source_comparisons": 2,
+    "candidate_comparisons_per_source": 25,
+    "original_outbox_rows_preserved": 118,
+    "actual_image_pair_http_calls": 531,
+    "original_python_worker_invocations": 71,
+    "native_worker_invocations": 9,
+    "deep_links_verified": 314,
+    "handoff_cases": 7,
+    "natural_retry_and_due_clock": true,
+    "original_source_bytes_unchanged": true,
+    "native_entrypoint_observation_ms": 7743,
+    "original_five_second_combined_harness_passed": false,
+    "split_harness_assertions_preserved": true,
+    "actual_exported_online_image_combination_verified": true,
+    "production_services_executed": false,
+    "actual_qq": false,
+    "current_fixed_activation_complete": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_activation_revalidation_failure": {
+    "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+    "attempt": "236",
+    "source_package_checkpoint": "221",
+    "stage": "pinned-source",
+    "reason": "Rollback history reconciliation failed; retain pinned original histories",
+    "activation_performed": false,
+    "original_package_preserved": true,
+    "cause_verified": false,
+    "current_fixed_activation_complete": false
   }
 }

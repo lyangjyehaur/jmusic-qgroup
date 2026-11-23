@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "I01",
@@ -131,7 +131,22 @@
       "C07",
       "A12",
       "A13",
-      "A15"
+      "A15",
+      "B01",
+      "B02",
+      "B03",
+      "B04",
+      "B05",
+      "B06",
+      "B07",
+      "B08",
+      "B09",
+      "B10",
+      "B11",
+      "B12",
+      "B13",
+      "B14",
+      "B15"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
     "latest_runtime_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
@@ -6523,27 +6538,31 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/bot/src/replies.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/replies.test.ts",
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
-        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md"
+        "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生六主指令、全部別名、公開回覆、縮寫及訊息／按鈕已接入可執行 runtime；面板設定 revision、停止與本機投遞互斥已有隔離證據。完整舊入口、正式資料、實際版本組合與 QQ 仍待驗收，見 54–57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B02",
@@ -6567,24 +6586,28 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/replies.test.ts",
         "apps/bot/src/dispatch.test.ts",
-        "apps/bot/src/dispatch-workers.test.ts"
+        "apps/bot/src/dispatch-workers.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生清單排序、期限／序號／短碼及公開範圍已有 Python 差分，隔離 dispatch 與 runtime 已接通。舊網站入口 adapters、正式資料及實際版本組合／QQ 尚待驗收，見 54／56／57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B03",
@@ -6615,7 +6638,8 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6623,21 +6647,24 @@
         "packages/domain/src/bot-rendering.test.ts",
         "apps/bot/src/replies.test.ts",
         "packages/database/src/consent-migration.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/replies.test.ts",
         "apps/bot/src/dispatch.test.ts",
-        "apps/bot/src/dispatch-workers.test.ts"
+        "apps/bot/src/dispatch-workers.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "當前／凍結名單、正式／候補／倒數、隱私／限長及同交易公開查詢已有 Python 差分，dispatch／runtime 已接通。正式資料、實際 web-bot 組合及 QQ 尚待驗收，見 22／53／54／56／57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B04",
@@ -6686,7 +6713,8 @@
         "docs/unified-rebuild/167-retained-bot-domains-checkpoint.md",
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "apps/api/src/legacy-activity-patch.test.ts",
-        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6698,7 +6726,8 @@
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
-        "apps/api/src/legacy-activity-patch.test.ts"
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
@@ -6706,7 +6735,8 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
-        "apps/api/src/legacy-activity-patch.test.ts"
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -6717,10 +6747,11 @@
         "apps/web/tests/time-polls.spec.ts",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-activity-patch.spec.ts"
+        "apps/web/tests/legacy-activity-patch.spec.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生活動／報名／退出／安排／結算／投票 producer、卡片與公開指令已有 Python 差分及保留 Python worker 消費證據；TS outbox 已接入獨立於 Gateway 的隔離 runtime。全部業務 hook 成套追蹤、正式待送對帳、跨版本／QQ／切換與回退尚待驗收，見 22–34／53–57 號檢查點；不等於 B01–B15 通過。 第 167 號已新增固定舊 bot 與編譯網站的六類狀態、投票及結算收款碼隔離流程；正式版本組合與全項驗收仍未完成。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B05",
@@ -6759,7 +6790,8 @@
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6769,13 +6801,15 @@
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -6783,10 +6817,11 @@
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生報名／退出／審核 producer、待確認／拆組 hook、合併遞補及去重已有 Python 差分；保留 Python worker 消費及 TS consumer/runtime 接通。全部業務 hook 成套驗證、正式資料及 QQ／版本組合仍待完成，見 25／53／57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B06",
@@ -6848,7 +6883,8 @@
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "apps/api/src/legacy-activity-patch.test.ts",
-        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md"
+        "docs/unified-rebuild/209-legacy-activity-patch-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -6865,7 +6901,8 @@
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
-        "apps/api/src/legacy-activity-patch.test.ts"
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -6879,7 +6916,8 @@
         "apps/api/src/admin-operations.test.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
-        "apps/api/src/legacy-activity-patch.test.ts"
+        "apps/api/src/legacy-activity-patch.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -6894,10 +6932,11 @@
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-activity-patch.spec.ts"
+        "apps/web/tests/legacy-activity-patch.spec.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。三種模式、通用群通知核對／明確新工作重送、原 UUID 回執查回、模擬不重播及 Python／TS consumer 差分已有隔離證據。相容投票 API 保留既有重新生成語意，未改成新核對 token 協議；正式待送對帳、QQ 與實際版本組合仍待驗收，見 52／53／57／58 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B07",
@@ -6943,7 +6982,8 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -6957,7 +6997,8 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -6966,7 +7007,8 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -6976,10 +7018,11 @@
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。模板設定／預覽／版本恢復、TS consumer 最新模板重組與凍結事實、未來提醒重算已隔離驗證；公開回覆與 runtime 的 revision 套用已接通。完整瀏覽器驗收、正式資料及實際版本組合／QQ 尚待完成，見 52–54／57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B08",
@@ -7040,7 +7083,8 @@
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/bot-policy.test.ts",
@@ -7058,7 +7102,8 @@
         "apps/api/src/capture-rollback-package.test.ts",
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
-        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-bot.test.ts",
@@ -7074,7 +7119,8 @@
         "apps/api/src/capture-rollback-package.test.ts",
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
-        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-bot.spec.ts",
@@ -7087,10 +7133,11 @@
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。群政策、目的群及 consumer 保全、Gateway 群觀察與每次發送／token 後再驗已接入隔離 runtime；部署預設群及 applied revision 有實際寫入證據。正式群資料、QQ／版本組合與切換仍待驗收，見 52／53／56／57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B09",
@@ -7148,7 +7195,8 @@
         "tools/rebuild/retained-worker-handoff.mjs",
         "tools/rebuild/native-outbox-fixture.mjs",
         "docs/unified-rebuild/169-retained-worker-handoff-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -7163,7 +7211,8 @@
         "apps/bot/src/runtime.test.ts",
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
@@ -7174,7 +7223,8 @@
         "apps/web/tests/durable-admin-bot.spec.ts",
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -7185,10 +7235,11 @@
         "docs/unified-rebuild/73-durable-bot-policy-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。持久勿擾／間隔、頻控不耗失敗次數、提醒去重及公開回覆已有差分；runtime 驗證 Gateway 離線輪詢，新增 token 等待跨入勿擾時段的延後保全。QQ／版本組合及長期負載尚待驗收，見 53／54／57 號檢查點。 第 168 號新增固定舊 bot 與編譯網站的自然到期、勿擾／間隔與投遞恢復演練；本機完整報告已核對，原 Linux 双映像及完整 B01–B15 驗收仍待完成。 第 169 號新增順序 Python／compiled TypeScript consumer 雙向重試、未確認／模擬保全與持久間隔交接；本機完整演練及三個領域 oracle 已核對，原 Linux CI 及正式 runtime 切換仍未驗收。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B10",
@@ -7248,7 +7299,8 @@
         "tools/rebuild/retained-worker-handoff.mjs",
         "tools/rebuild/native-outbox-fixture.mjs",
         "docs/unified-rebuild/169-retained-worker-handoff-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -7269,7 +7321,8 @@
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/outbox.test.ts",
@@ -7280,7 +7333,8 @@
         "apps/api/src/capture-rollback-package.test.ts",
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
-        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
@@ -7288,10 +7342,11 @@
         "apps/web/tests/bot-deliveries.spec.ts",
         "docs/unified-rebuild/58-bot-deliveries-checkpoint.md",
         "docs/unified-rebuild/63-bot-sqlite-locking-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "TS claim fencing／續租／退避、取消／202／確認回寫保全已有差分；runtime 停止保留不確定結果、釋回未開始工作，更新後 Python／TS 官方入口以同目錄 OS 鎖互斥，既有 sending 拒絕啟動待核對。無法排除未更新 binary／他機副本，不承諾恰好一次；正式對帳、版本組合／QQ／回退仍待驗收，見 53／57 號檢查點。 58 號檢查點新增唯讀不確定結果核對、阻擋線上重送及獨立新 intent／回執，不提供線上狀態重設。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 第 168 號新增固定舊 bot 與編譯網站的自然到期、勿擾／間隔與投遞恢復演練；本機完整報告已核對，原 Linux 双映像及完整 B01–B15 驗收仍待完成。 第 169 號新增順序 Python／compiled TypeScript consumer 雙向重試、未確認／模擬保全與持久間隔交接；本機完整演練及三個領域 oracle 已核對，原 Linux CI 及正式 runtime 切換仍未驗收。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B11",
@@ -7348,7 +7403,8 @@
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
         "tools/rebuild/retained-python-scenarios.mjs",
         "docs/unified-rebuild/167-retained-bot-domains-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-bot.test.ts",
@@ -7360,7 +7416,8 @@
         "apps/bot/src/outbox.test.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/bot/src/replies.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-management.test.ts",
@@ -7370,7 +7427,8 @@
         "apps/bot/src/replies.test.ts",
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
@@ -7382,10 +7440,11 @@
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
         "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生通知與公開指令 Markdown／普通文字、ACK／去重／11–12 回呼、外層 event_id、群及 token 後政策已有隔離證據；runtime 面板註冊按目前政策及 revision 更新。群內身份仍不推斷，個人操作留網站；QQ／版本組合尚待驗收，見 53／54／56／57 號檢查點。 第 167 號已新增固定舊 bot 與編譯網站的六類狀態、投票及結算收款碼隔離流程；正式版本組合與全項驗收仍未完成。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B12",
@@ -7434,7 +7493,8 @@
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -7447,7 +7507,8 @@
         "apps/api/src/capture-rollback-package.test.ts",
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
-        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/abbreviations.test.ts",
@@ -7459,16 +7520,18 @@
         "apps/api/src/capture-rollback-package.test.ts",
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
-        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/55-bot-abbreviations-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "縮寫／引用／遮罩／快取／完整分段／續讀與新舊檔案互讀已有差分；隔離 runtime 接通並保留原續讀目錄，更新後同目錄官方程序互斥，取消／token 後再驗政策已測。未更新程序與異機不受鎖保證；正式規模／巨量傳遞、續讀對帳及實際組合／QQ 尚待驗收，見 55–57 號檢查點。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B13",
@@ -7549,7 +7612,8 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -7575,7 +7639,8 @@
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
         "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/observability.test.ts",
@@ -7595,7 +7660,8 @@
         "apps/api/src/capture-rollback-package.test.ts",
         "docs/unified-rebuild/112-offline-capture-boundary-checkpoint.md",
         "apps/api/src/rollback-bot-restore.test.ts",
-        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md"
+        "docs/unified-rebuild/113-original-bot-state-restore-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
@@ -7611,10 +7677,11 @@
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
         "apps/web/tests/durable-bot-deliveries.spec.ts",
         "docs/unified-rebuild/76-durable-bot-deliveries-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。bot 設定／模板／群政策原稿、save／revert 原命令、關頁收件匣查回、交易 abort、分頁保全、明確恢復與重新確認及無分頁訊號撤權已補驗（檢查點 73）；API／bot 契約不變，正式版本組合仍待驗收。私有 trace／health、設定後台、runtime applied revision、群投遞列表／明確重送與原生 UnionID presence／布林匹配診斷已有隔離證據；後者與 Python 差分一致，失敗不佔用回覆容量、不記原始識別值。正式資料與不確定工作對帳、實際版本組合及 QQ 尚待驗收，見 51–53／57–59 號檢查點。 原群通知重送的持久化、關頁回執、交易中斷、政策變更與權限隔離已有第 76 號隔離證據；正式版本組合與真實 QQ 驗收仍待完成。 檢查點 112 已將最新 bot bytes／原時間、全部 outbox 狀態接入持鎖 v3 私人封存與 stopped-service pins／CLI；Docker 僅合成 response，未證明實際版本／有效 override／外部協調或 bot 恢復完成。 檢查點 113 已在隔離新目錄精確恢復 bot 原 bytes／奈秒 mtime，實際 Python／TS 續讀／清理／自訂詞庫及群拒絕已有證據；輸出無 DB／owner／配置、不啟動 worker，固定舊 bot 全套讀寫與版本組合仍未驗收，rollbackEligible=false。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B14",
@@ -7650,13 +7717,15 @@
         "apps/bot/src/ownership.test.ts",
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/bot/src/gateway.test.ts",
         "apps/bot/src/observability.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/bot/src/api.test.ts",
@@ -7664,16 +7733,18 @@
         "apps/bot/src/dispatch.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "apps/bot/src/ownership.test.ts"
+        "apps/bot/src/ownership.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/51-bot-transport-checkpoint.md",
         "docs/unified-rebuild/56-bot-dispatch-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
-        "docs/unified-rebuild/57-bot-runtime-checkpoint.md"
+        "docs/unified-rebuild/57-bot-runtime-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "Gateway／Resume／token／心跳與有界 dispatch 已接原生 outbox runtime，CPU 隔離、離線輪詢、token 後政策、SIGTERM、worker 崩潰與本機唯一 owner 已驗證。鎖只保證參與協議的同目錄程序；正式版本組合／QQ／長期連線及切換回退仍待驗收，見 51／56／57 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "B15",
@@ -7706,7 +7777,8 @@
         "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
         "docs/unified-rebuild/135-retained-python-images-checkpoint.md",
         "docs/unified-rebuild/136-native-python-dispatch-checkpoint.md",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/settlements.test.ts",
@@ -7714,13 +7786,15 @@
         "apps/bot/src/outbox.test.ts",
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "apps/bot/src/replies.test.ts",
-        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md"
+        "docs/unified-rebuild/134-retained-python-owner-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/settlements.test.ts",
         "apps/api/src/time-polls.test.ts",
         "apps/bot/src/outbox.test.ts",
-        "apps/bot/src/replies.test.ts"
+        "apps/bot/src/replies.test.ts",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-settlement.spec.ts",
@@ -7729,10 +7803,11 @@
         "docs/unified-rebuild/53-bot-outbox-checkpoint.md",
         "docs/unified-rebuild/54-bot-public-replies-checkpoint.md",
         "tools/rebuild/smoke-bot.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/236-bot-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生 TS 結算文字／逐張凍結碼 consumer 與新網站 producer 已比對保留 Python 的 7 個合成請求；當前發布者權限、group_notice、版本、上傳後換群／撤權與獨立重試已測。正式資料、QQ／web-bot 實際組合、切換及回退驗收仍待完成，見 33／53 號檢查點。 公開結算查詢只回版本／總額／人數／當前結清狀態，未綁定的我的與款項操作只回網站入口；普通／Markdown／唯讀資料保全已完成 Python 差分，見 54 號檢查點。 2026-11-22 已只讀核對目前 bot 的 52 個公開來源檔案，並驗證 compiled web 與該固定來源的隔離版本組合；真實 QQ 與正式切換驗收仍分開。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O01",
