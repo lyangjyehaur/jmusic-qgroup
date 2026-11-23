@@ -13,7 +13,7 @@
     "apps/api/src/activity-create-command.ts": "57c3b0a0cedda4ac755a29a03d7bb35189369ad15b280d82941298b1031e3a57",
     "apps/api/src/activity-delegation.ts": "1316fc1d579591dafda7361c8b087eea81425e40ea6ae9cf0d681ca8fe258ac2",
     "apps/api/src/activity-drafts.ts": "343d43426046bc984bd88be4090b7cd6ad6d4d87d79eeb3c1f7d38d0662f4a36",
-    "apps/api/src/activity-history.ts": "90fd4d47951b77e75c5fc40d8bea759b2bbcfdc83b6a551d6f388ca4a5950178",
+    "apps/api/src/activity-history.ts": "c595fcf873e97dcc012ecfec049bf19838da31235af8ce371a0d57ce802ea974",
     "apps/api/src/activity-invitations.ts": "ff8ba015825ac30d0b5396341a876c44d0f09e2c80149cd3e4f8e44d8b422337",
     "apps/api/src/activity-lifecycle.ts": "d65f01b7850ed74a0e8a13e5ae6dd7309346e9685bcd1b0e658cba9d7a95a88b",
     "apps/api/src/activity-management.ts": "5b3bed1f16bb1effe701e7c188e8864bfd99f3ae7bc0c299635d5186afa83df9",

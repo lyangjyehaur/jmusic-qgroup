@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 84,
+  "full_parents_accepted": 102,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -21,7 +21,8 @@
     "Historical settlement reads preserve omitted journal_seq / balances / group consent at checkpoint 228; strict native previews and writes unchanged. Three captured bills compared with original Python, 82 unit / 49 browser checks; no full settlement parent or actual image acceptance claimed.",
     "Room editor unassigned roster and correct pre-plan stale-member guidance; shared room-name / plan-reason contracts preserve original Python Unicode strip semantics at checkpoint 229. 67 unit / 71 browser and captured-data original comparisons passed. Fresh retained online-source Python checks: 532 HTTP / 71 original workers / 9 TS workers and graceful stop. P01–P04 accepted locally; actual image/recovery acceptance remains incomplete.",
     "Invoice / merchant / payment-code text uses original Python strip rules; code form and durable pending comparison share the contract at checkpoint 230. 133 unit / 105 browser, captured-data 4241 HTTP / 36 previews / 8 publications with original Python and append-row storage preservation passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop. S01–S14 accepted locally; actual production image / recovery acceptance remains incomplete.",
-    "Finance close audit checkpoints now use exact JSON integers via an optional shared audit serializer; other callers retain original JSON behavior. UI extra parties stop at the original limit of two; close history retains its original bill version and checkpoint, and mobile room totals use existing aligned columns. Checkpoint 231: 300 unit / 50 browser, captured-data 4094 HTTP / 63 original previews and writes / exact retries, 3087 private-view comparisons, 3 original bill close/reopen/new-pending scenarios, independent typed rows and 68 compressed intermediate copies passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop; final API bundle pins unchanged by subsequent UI-only cap / immutable close-version / room alignment fixes. F01–F12 accepted locally; actual image/recovery acceptance remains incomplete."
+    "Finance close audit checkpoints now use exact JSON integers via an optional shared audit serializer; other callers retain original JSON behavior. UI extra parties stop at the original limit of two; close history retains its original bill version and checkpoint, and mobile room totals use existing aligned columns. Checkpoint 231: 300 unit / 50 browser, captured-data 4094 HTTP / 63 original previews and writes / exact retries, 3087 private-view comparisons, 3 original bill close/reopen/new-pending scenarios, independent typed rows and 68 compressed intermediate copies passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop; final API bundle pins unchanged by subsequent UI-only cap / immutable close-version / room alignment fixes. F01–F12 accepted locally; actual image/recovery acceptance remains incomplete.",
+    "Activity history retains original condition person_id, settlement mode / changed_fields and native draft_join_owner; React shows same-name target IDs and nested/root draft flags. Checkpoint 233: 194 distinct unit / 161 browser, captured-copy 3450 HTTP / 257 original Python writes and exact retries, independent 15-clone storage review with original 118 outbox rows retained and four expected skipped transitions. Current final API pins match the completed 532 HTTP / 71 retained Python / 9 TS worker smoke; E01–E18 accepted locally. Actual image / activation / recovery and full P6 remain incomplete."
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -268,224 +269,261 @@
     },
     {
       "capability_id": "E01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "公開列表排除private/draft/deleted，往期由實際結束取消或歸檔判斷；本人包含協辦、代管與歷史付款義務，僅access不等於參與。"
+        "公開列表排除private/draft/deleted，往期由實際結束取消或歸檔判斷；本人包含協辦、代管與歷史付款義務，僅access不等於參與。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-access.test.ts",
         "apps/api/src/app.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "六類型及時長預設，全部安排欄位保留；日曆/時區/容量/字數錯誤不部分写入。"
+        "六類型及時長預設，全部安排欄位保留；日曆/時區/容量/字數錯誤不部分写入。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/web/tests/activity-drafts.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "draft僅event scope有權者；發布明確acceptConditions後自動本人報名，即使stored joinOwnerfalse；原scheduled join_ownerfalse語意保留。"
+        "draft僅event scope有權者；發布明確acceptConditions後自動本人報名，即使stored joinOwnerfalse；原scheduled join_ownerfalse語意保留。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-publish.test.ts",
         "apps/api/src/legacy-activity-create.test.ts",
         "apps/web/tests/activity-publish.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "copy只安排，日期/截止/通知重填、名册財務圖片協辦歷史不複製；本機copy原操作恢復不再讀source或另建場。"
+        "copy只安排，日期/截止/通知重填、名册財務圖片協辦歷史不複製；本機copy原操作恢復不再讀source或另建場。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-access.test.ts",
         "apps/web/tests/durable-authoring.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "private view須owner/explicit event_access；finite title/revision preview不授權，明確接受僅新增access，share token限owner，私人歷史不能旁路。"
+        "private view須owner/explicit event_access；finite title/revision preview不授權，明確接受僅新增access，share token限owner，私人歷史不能旁路。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-access.test.ts",
         "apps/api/src/activity-history.test.ts",
         "apps/web/tests/activity-sharing.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "pause/resume與lifecycle分開；只有未過start/deadline且未結算可resume，strictFIFO只開放時補位。"
+        "pause/resume與lifecycle分開；只有未過start/deadline且未結算可resume，strictFIFO只開放時補位。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-lifecycle.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "最低人數不足仍可附原因確認成團，不自動取消；已確認重做不增加稽核或通知。"
+        "最低人數不足仍可附原因確認成團，不自動取消；已確認重做不增加稽核或通知。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/web/tests/activity-lifecycle.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "預定過期仍scheduled且actualStartedAtnull；start/finish記明確actual時間且重播保早值；延長用安排版本，跨日/DST/未知zone不猜。"
+        "預定過期仍scheduled且actualStartedAtnull；start/finish記明確actual時間且重播保早值；延長用安排版本，跨日/DST/未知zone不猜。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/api/src/activity-management.test.ts",
         "apps/api/testsupport/activity-sharing.test.ts",
         "apps/web/tests/activity-sharing.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "取消原因必填且可結算；archive/unarchive保原名册款項，remove第三方含withdrawn或財務歷史即拒，合格softdelete保回執、skip所有待送channel。"
+        "取消原因必填且可結算；archive/unarchive保原名册款項，remove第三方含withdrawn或財務歷史即拒，合格softdelete保回執、skip所有待送channel。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-lifecycle.test.ts",
         "apps/web/tests/activity-lifecycle.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "category/time/duration/location/description/effective withdrawal/zone/fee重要改動須reason、不可變snapshot並標activeconfirmed/waiting/tentative待確認；title/capacity不虛增conditions版。"
+        "category/time/duration/location/description/effective withdrawal/zone/fee重要改動須reason、不可變snapshot並標activeconfirmed/waiting/tentative待確認；title/capacity不虛增conditions版。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-management.test.ts",
         "apps/web/tests/activity-conditions.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "本人/原manager逐人同意/拒絕，拒絕reason必填；保原席位/已接受版/資金，admin不代同意，重播重驗現在manager。"
+        "本人/原manager逐人同意/拒絕，拒絕reason必填；保原席位/已接受版/資金，admin不代同意，重播重驗現在manager。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-management.test.ts",
         "apps/web/tests/activity-conditions.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "cohost四scope分開、7天invite目前owner/trueaccount重驗，接受責任前無access/role；replacement不累加、revoke保本人管理。"
+        "cohost四scope分開、7天invite目前owner/trueaccount重驗，接受責任前無access/role；replacement不累加、revoke保本人管理。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-delegation.test.ts",
         "apps/web/tests/activity-delegation.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "settlement接受時每場唯一指定者，替換只拿掉舊settlement、保双方其他duties；revoke無其他scope才刪role。"
+        "settlement接受時每場唯一指定者，替換只拿掉舊settlement、保双方其他duties；revoke無其他scope才刪role。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-delegation.test.ts",
         "apps/web/tests/activity-delegation.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E14",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "transfer須對方接受、舊pendinggrants失效、新ownerrole移除，原owner留自己報名/代管及資金責任；同名仍有真IDchange與audit。"
+        "transfer須對方接受、舊pendinggrants失效、新ownerrole移除，原owner留自己報名/代管及資金責任；同名仍有真IDchange與audit。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-delegation.test.ts",
         "apps/web/tests/activity-delegation.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E15",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "absent/late/left/unknown/present與UTCactualtimes獨立名額/consent/payer；ended/cancelled更正reason必填，不重算歷史帳單。"
+        "absent/late/left/unknown/present與UTCactualtimes獨立名額/consent/payer；ended/cancelled更正reason必填，不重算歷史帳單。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-attendance.test.ts",
         "apps/web/tests/activity-attendance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E16",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "onsite要roster+attendance、首bill前；費用/超額/繞候補各獨立confirm，舊queue不變。"
+        "onsite要roster+attendance、首bill前；費用/超額/繞候補各獨立confirm，舊queue不變。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/src/activity-attendance.test.ts",
         "apps/web/tests/activity-attendance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E17",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "history保前後/操作者顯示/理由/時間與losslesscursor，無tokens/accountIDs/未確認申報原因；currentaccess重驗及appendonly。"
+        "history保前後/操作者顯示/理由/時間與losslesscursor，無tokens/accountIDs/未確認申報原因；currentaccess重驗及appendonly。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
-        "apps/api/src/activity-history.test.ts"
-      ]
+        "apps/api/src/activity-history.test.ts",
+        "apps/web/tests/activity-history.spec.ts"
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "E18",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "完整摘要原文/目前版不洩私人名册決定；clipboard失敗選文可手動copy；高德只点击、encoded單一location、不定位。"
+        "完整摘要原文/目前版不洩私人名册決定；clipboard失敗選文可手動copy；高德只点击、encoded單一location、不定位。",
+        "第 233 批完整原條件審核、194 單元／161 瀏覽器及同一正式副本 3450 HTTP 通過；49 個身份／14 場活動、257 次原 Python 寫入與精確重試、原 140 audit／三份帳單／六版包間及 outbox 狀態語意保全。"
       ],
       "test_files": [
         "apps/api/testsupport/activity-sharing.test.ts",
         "apps/web/tests/activity-sharing.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
     },
     {
       "capability_id": "R01",
@@ -2293,7 +2331,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/227-room-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2521,7 +2559,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2823,6 +2861,65 @@
     "browser_cases_passed": 158,
     "runtime_bundle_files_unchanged": 245,
     "retained_bot_evidence_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_activity_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "E01",
+      "E02",
+      "E03",
+      "E04",
+      "E05",
+      "E06",
+      "E07",
+      "E08",
+      "E09",
+      "E10",
+      "E11",
+      "E12",
+      "E13",
+      "E14",
+      "E15",
+      "E16",
+      "E17",
+      "E18"
+    ],
+    "change_scope": "web",
+    "review_base_commit": "6f53380f3966fa68f410bb4543556579c9d4065a",
+    "pinned_original_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "viewers_including_anonymous": 49,
+    "captured_events": 14,
+    "captured_attendees": 87,
+    "original_audit_rows": 140,
+    "http_calls": 3450,
+    "activity_view_comparisons": 637,
+    "conditions_read_comparisons": 637,
+    "original_history_row_comparisons": 6664,
+    "copy_arrangements_comparisons": 13,
+    "my_list_comparisons": 48,
+    "original_write_comparisons": 257,
+    "exact_retries": 257,
+    "business_refusals": 11,
+    "isolated_clones": 15,
+    "synthetic_drafts": 12,
+    "independent_unchanged_tables_per_clone": 83,
+    "original_detailed_bills_preserved": 3,
+    "original_room_versions_preserved": 6,
+    "original_outbox_rows_preserved": 118,
+    "expected_original_outbox_skipped_across_clones": 4,
+    "isolated_new_outbox_rows": 55,
+    "unit_cases_passed": 194,
+    "browser_cases_passed": 161,
+    "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "retained_bot_http_calls": 532,
+    "retained_original_worker_invocations": 71,
+    "retained_typescript_worker_invocations": 9,
+    "retained_graceful_stop": true,
+    "final_api_pins_match_completed_bot_smoke": true,
     "actual_production_image_combination": false,
     "original_p6_complete": false,
     "release_eligible": false
