@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 151,
+  "full_parents_accepted": 156,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -2278,53 +2278,61 @@
     },
     {
       "capability_id": "O08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "AcceptLanguage最高q同q先者策略、静態system簡繁，用户字串/enum/key/value/erroridentity不改。"
+        "AcceptLanguage最高q同q先者策略、静態system簡繁，用户字串/enum/key/value/erroridentity不改。",
+        "第 238 批完整原條件與 36 個具體案例引用、62 來源／測試 pins 核對；552 相關單元及 38 瀏覽器通過，固定實際映像恢復啟動、保存 Python 只讀與原静態產物證據綁定；正式部署與外部平台另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/testsupport/language.test.ts",
         "apps/web/tests/language.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
     },
     {
       "capability_id": "O09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "guide11原chapter、privacy/contact/qqreturn入口，簡繁/ICP保留；policy引導保持具體且user原文不轉。"
+        "guide11原chapter、privacy/contact/qqreturn入口，簡繁/ICP保留；policy引導保持具體且user原文不轉。",
+        "第 238 批完整原條件與 36 個具體案例引用、62 來源／測試 pins 核對；552 相關單元及 38 瀏覽器通過，固定實際映像恢復啟動、保存 Python 只讀與原静態產物證據綁定；正式部署與外部平台另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/testsupport/language.test.ts",
         "apps/web/tests/language.spec.ts",
         "apps/web/tests/legacy-navigation.spec.ts",
         "packages/domain/src/legacy-navigation.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
     },
     {
       "capability_id": "O10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "Umami只exactproductionorigin、完整metadataallowlist不含input/name/amount/ID/token，阻斷tracker不阻功能。"
+        "Umami只exactproductionorigin、完整metadataallowlist不含input/name/amount/ID/token，阻斷tracker不阻功能。",
+        "第 238 批完整原條件與 36 個具體案例引用、62 來源／測試 pins 核對；552 相關單元及 38 瀏覽器通過，固定實際映像恢復啟動、保存 Python 只讀與原静態產物證據綁定；正式部署與外部平台另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/testsupport/analytics.test.ts",
         "apps/web/tests/analytics.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
     },
     {
       "capability_id": "O11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "br/gzip/identity正MIME/bytes/quality/ETag/HEAD/range，私API不cache/壓縮、SPA/SWno-store、CSPnosniff與同origin/CSRF/限流保護。"
+        "br/gzip/identity正MIME/bytes/quality/ETag/HEAD/range，私API不cache/壓縮、SPA/SWno-store、CSPnosniff與同origin/CSRF/限流保護。",
+        "第 238 批完整原條件與 36 個具體案例引用、62 來源／測試 pins 核對；552 相關單元及 38 瀏覽器通過，固定實際映像恢復啟動、保存 Python 只讀與原静態產物證據綁定；正式部署與外部平台另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/activity-access.test.ts",
         "apps/api/src/static-assets.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
     },
     {
       "capability_id": "O12",
@@ -2367,15 +2375,17 @@
     },
     {
       "capability_id": "O15",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "非root/ROroot/capsdrop/no-newpriv/tmpfs64m、512MiB无swap/1CPU/128PID；privateenv外置、health實際DB、version另接口，loopbackproxy不能偽造client。"
+        "非root/ROroot/capsdrop/no-newpriv/tmpfs64m、512MiB无swap/1CPU/128PID；privateenv外置、health實際DB、version另接口，loopbackproxy不能偽造client。",
+        "第 238 批完整原條件與 36 個具體案例引用、62 來源／測試 pins 核對；552 相關單元及 38 瀏覽器通過，固定實際映像恢復啟動、保存 Python 只讀與原静態產物證據綁定；正式部署與外部平台另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/runtime.test.ts",
         "apps/api/testsupport/runtime-compose.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
     },
     {
       "capability_id": "U01",
@@ -2429,7 +2439,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2818,6 +2828,56 @@
       "original_python_source_pins": 43,
       "production_services_executed": false,
       "actual_qq": false
+    },
+    {
+      "capability_id": "O08",
+      "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 62,
+      "criteria": "complete original behavior and current concrete cases reviewed with fixed actual runtime evidence",
+      "actual_qq": false,
+      "production_services_executed": false
+    },
+    {
+      "capability_id": "O09",
+      "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 62,
+      "criteria": "complete original behavior and current concrete cases reviewed with fixed actual runtime evidence",
+      "actual_qq": false,
+      "production_services_executed": false
+    },
+    {
+      "capability_id": "O10",
+      "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 62,
+      "criteria": "complete original behavior and current concrete cases reviewed with fixed actual runtime evidence",
+      "actual_qq": false,
+      "production_services_executed": false
+    },
+    {
+      "capability_id": "O11",
+      "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 62,
+      "criteria": "complete original behavior and current concrete cases reviewed with fixed actual runtime evidence",
+      "actual_qq": false,
+      "production_services_executed": false
+    },
+    {
+      "capability_id": "O15",
+      "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 62,
+      "criteria": "complete original behavior and current concrete cases reviewed with fixed actual runtime evidence",
+      "actual_qq": false,
+      "production_services_executed": false
     }
   ],
   "legacy_http_rehearsal": {
@@ -2939,7 +2999,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -3561,6 +3621,65 @@
     "worker_started": false,
     "current_actual_image_recovery_startup_accepted": false,
     "fixed_legacy_service_rollback_complete": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_common_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+    "accepted_parent_ids": [
+      "O08",
+      "O09",
+      "O10",
+      "O11",
+      "O15"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "unit_cases": 552,
+    "unit_files": 21,
+    "browser_cases": 38,
+    "browser_files": 3,
+    "current_clause_case_references": 36,
+    "source_test_pins": 62,
+    "fixed_actual_runtime_evidence_bound": true,
+    "actual_qq": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_actual_recovery_image_validation": {
+    "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+    "change_scope": "none",
+    "review_base_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "image_combination": {
+      "web": "sha256:acbe1303656b48c7d1e4677aaaf63817b46573c4c13ffe901046858b28ddb159",
+      "python": "sha256:e9d93c4441e2a34989722d7a5a86f87c8fa99cbc638b37cfe75a712fe6aa6720"
+    },
+    "source_package_checkpoint": "226",
+    "authority_checkpoint": "237",
+    "actual_web_startup_accepted": true,
+    "original_blocked_checkpoint_requires_activation": true,
+    "startup_rounds": 2,
+    "http_calls": 140,
+    "authority_lock_and_release_verified": true,
+    "graceful_stops": 2,
+    "saved_python_actual_image_readonly_accepted": true,
+    "python_source_pins": 52,
+    "reply_comparisons_per_source": 1441,
+    "sources_compared": 2,
+    "parse_comparisons": 176,
+    "candidate_commands": 25,
+    "independent_typed_tables": 97,
+    "unchanged_typed_tables": 95,
+    "expected_trend_samples": 1,
+    "original_outbox_rows_preserved": 118,
+    "uncertain_deliveries_preserved": 7,
+    "bot_external_bytes_and_nanosecond_times_preserved": 6,
+    "source_files_unchanged": true,
+    "cleanup_verified": true,
+    "worker_started": false,
+    "full_recovery_worker_and_legacy_roundtrip_accepted": false,
+    "actual_qq": false,
+    "production_writes": false,
     "original_p6_complete": false,
     "release_eligible": false
   }

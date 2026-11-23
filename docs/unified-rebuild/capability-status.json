@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "I01",
@@ -158,7 +158,12 @@
       "A09",
       "A10",
       "A11",
-      "A14"
+      "A14",
+      "O08",
+      "O09",
+      "O10",
+      "O11",
+      "O15"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
     "latest_runtime_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
@@ -8803,17 +8808,20 @@
         "apps/web/tests/language.spec.ts",
         "tools/rebuild/verify-image.mjs",
         "apps/api/src/error-display.test.ts",
-        "docs/unified-rebuild/96-system-error-displays-checkpoint.md"
+        "docs/unified-rebuild/96-system-error-displays-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/testsupport/language.test.ts",
         "apps/web/tests/language.spec.ts",
         "apps/api/src/error-display.test.ts",
-        "apps/web/tests/error-displays.spec.ts"
+        "apps/web/tests/error-displays.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/testsupport/language.test.ts",
-        "apps/web/tests/error-displays.spec.ts"
+        "apps/web/tests/error-displays.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/language.spec.ts",
@@ -8824,10 +8832,11 @@
         "docs/unified-rebuild/94-display-fragments-checkpoint.md",
         "apps/web/tests/error-displays.spec.ts",
         "docs/unified-rebuild/96-system-error-displays-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "最高優先 Accept-Language、公開 shell／HEAD、固定與動態顯示片段、原生 template／原文、手冊／統一政策及同意已隔離實作。API／domain 361 個固定標記、例外身份／cause／stack／Zod issues、可選顯示欄位及舊回應相容、圖片／下載／原 UUID／payload／雙分頁刪除已補驗（檢查點 96）；原生完整 963 項與新增雙語瀏覽器 14 場景通過。全套 829 場景首輪＋修正後覆蓋通過，固定映像 runtime／24 shell／4 API 錯誤契約通過；未標記固定 helper／驗證訊息、持久系統 notes、API 通知／安排／結算顯示、實際候選 web／bot 組合、實體裝置與 QQ WebView 仍待完成，不轉換使用者或持久原文。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O09",
@@ -8858,19 +8867,22 @@
         "apps/api/src/privacy-consent.test.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
         "apps/api/src/legacy-activity-create.test.ts",
-        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md"
+        "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/testsupport/language.test.ts",
         "apps/web/tests/guide.spec.ts",
         "packages/database/src/consent-migration.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/testsupport/language.test.ts",
         "apps/web/tests/guide.spec.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -8881,10 +8893,11 @@
         "apps/web/tests/privacy-consent.spec.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-activity-create.spec.ts"
+        "apps/web/tests/legacy-activity-create.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "統一 TSX 手冊、聯絡、既有回調與成分／活動／bot 用途政策已實作；獨立同意、原紀錄／歷史回執／恢復及不推定同意已隔離驗證（檢查點 95）。正式政策版本／公告、完整來源資料與候選組合、實體裝置及 QQ WebView 尚未验收。 第 208 號補齊原建立活動請求（草稿／直接發布、邀請／公開、本人報名）、原 key／回執／alias 原子恢復與目前權限路徑；完整驗收條件仍保留。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O10",
@@ -8903,23 +8916,27 @@
       ],
       "behavior_evidence": [
         "apps/api/testsupport/analytics.test.ts",
-        "apps/web/tests/analytics.spec.ts"
+        "apps/web/tests/analytics.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/testsupport/analytics.test.ts",
-        "apps/web/tests/analytics.spec.ts"
+        "apps/web/tests/analytics.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/testsupport/analytics.test.ts",
-        "apps/web/tests/analytics.spec.ts"
+        "apps/web/tests/analytics.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/analytics.spec.ts",
         "docs/unified-rebuild/91-analytics-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生路由／互動／寫入結果白名單與完整 production origin、payload 重建、密碼／hidden 原文排除及 bounded buffer 已測；攔截公開客戶端 transport、blocked／throw／插入失敗及既有 auth／分享／bot 舊入口回歸通過（檢查點 91）。全站簡繁、完整候選版本組合與實體裝置／QQ WebView／效能驗收待完成；統計客戶端更新須重新驗證。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O11",
@@ -8948,21 +8965,25 @@
         "apps/web/tests/pwa-precache.spec.ts",
         "tools/rebuild/verify-worker-precache.mjs",
         "docs/unified-rebuild/155-bounded-precache-checkpoint.md",
-        "docs/unified-rebuild/156-worker-compiler-checkpoint.md"
+        "docs/unified-rebuild/156-worker-compiler-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/static-assets.test.ts"
+        "apps/api/src/static-assets.test.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/static-assets.test.ts",
-        "apps/api/src/app.test.ts"
+        "apps/api/src/app.test.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/page-loading.spec.ts",
-        "apps/web/tests/pwa-precache.spec.ts"
+        "apps/web/tests/pwa-precache.spec.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "153–156 已實作壓縮、快取、lazy pages、完整 precache 分批與 worker dependency 版本；156 明確使用新 tsconfig，5 unit／25 browser、85快取資源及82資源／277真HTTP本機通過。155 原image／雙映像已核對並精確重現compiler差異；155 全量unit／browser及156原Linux／一致映像、代理快取、首次載入與正式規模驗收仍待完成。decoded working set不等於browser RSS或正式負載。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O12",
@@ -9885,22 +9906,26 @@
         "packages/runtime/src/runtime.test.ts",
         "apps/api/testsupport/runtime-compose.test.ts",
         "tools/rebuild/verify-rollback-inspection.ts",
-        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md"
+        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "data_evidence": [
         "docs/unified-rebuild/89-unified-runtime-checkpoint.md",
-        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md"
+        "docs/unified-rebuild/115-real-docker-inspection-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/runtime.test.ts",
         "tools/rebuild/verify-image.mjs",
-        "tools/rebuild/verify-rollback-inspection.ts"
+        "tools/rebuild/verify-rollback-inspection.ts",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/214-local-acceptance-checkpoint.md"
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
+        "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "非 root／readonly／限資源 amd64 image、SQLite／sharp、明確 production storage、source／health 分離已隔離驗證；bot image 為版本與合成 health，真實 QQ、正式規模、實際 web-bot 組合與完整部署驗收未完成。 檢查點 115 補真 Docker inert-container metadata 與預設封存證據；未執行容器內程式、未認證候選版本或新增正式發布保障。"
+      "state": "passed",
+      "remaining": ""
     }
   ]
 }
