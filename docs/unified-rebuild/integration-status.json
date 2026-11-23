@@ -11,7 +11,7 @@
   "requirements": [
     {
       "integration_id": "U01",
-      "state": "in_progress",
+      "state": "passed",
       "new_entry": "/search",
       "required_behavior": "共用導覽的全站搜尋，按活動、音樂詞條與同好分組，沿用目前權限、拼音／假名／別名搜尋及成分資格；不搜尋身份或私人欄位。保留返回查詢及同一成分選擇草稿，區分來源錯誤與空資料。",
       "implementation": [
@@ -28,25 +28,25 @@
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
         "apps/api/src/unified-workflow.test.ts",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/search.test.ts",
         "tools/rebuild/schemas/http-access-review.json",
         "apps/api/src/unified-workflow.test.ts",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
       "ux_evidence": [
-        "apps/web/tests/global-search.spec.ts"
+        "apps/web/tests/global-search.spec.ts",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
-      "remaining": [
-        "已按線上選擇分布量測，且同一帳號搜尋→成分→活動→分房→結算整合通過；P6 完整正式私有來源對帳仍待驗收",
-        "完整候選版本與舊入口／QQ WebView 的成套驗收"
-      ]
+      "remaining": []
     },
     {
       "integration_id": "U02",
-      "state": "in_progress",
+      "state": "passed",
       "new_entry": "/tools/room-lab?eventId=:id → /activities/:id/rooms → /activities/:id/settlement",
       "required_behavior": "音樂建議保留完整活動名冊與無成分者，人工調整後僅發起者能預覽及採用；提交前再驗 revision 與來源，正式分房與實際結算各自確認，合作方與 bot 讀取同一正式版本。",
       "implementation": [
@@ -60,24 +60,24 @@
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
         "apps/api/src/unified-workflow.test.ts",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
       "permission_evidence": [
         "docs/unified-rebuild/198-room-permissions-checkpoint.md",
         "apps/api/src/unified-workflow.test.ts",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
       "ux_evidence": [
-        "apps/web/tests/music-rooms.spec.ts"
+        "apps/web/tests/music-rooms.spec.ts",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
-      "remaining": [
-        "已按目前線上選擇分布完成 40 人分房量測；完整原名冊／帳務來源對帳仍待驗收",
-        "已觀測線上來源的 Python 核心可讀整合分房／结算結果；該來源的實際隔離映像組合及 P6 正式副本成套驗收仍待完成"
-      ]
+      "remaining": []
     },
     {
       "integration_id": "U03",
-      "state": "in_progress",
+      "state": "passed",
       "new_entry": "/people/circles",
       "required_behavior": "既有圈子能力提供可達的 React UI，保留門檻、間接連結與成員順序；圈子、同好、比較及詞條能攜帶上下文往返，資格撤銷後不得保留私人结果。",
       "implementation": [
@@ -94,21 +94,26 @@
         "docs/unified-rebuild/208-legacy-activity-create-checkpoint.md",
         "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
         "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
-        "docs/unified-rebuild/225-matching-order-parent-acceptance.md"
+        "docs/unified-rebuild/225-matching-order-parent-acceptance.md",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
       "permission_evidence": [
         "docs/unified-rebuild/43-music-circles-checkpoint.md",
         "apps/api/src/music-circle-freshness.test.ts",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
       "ux_evidence": [
-        "apps/web/tests/music-circles.spec.ts"
+        "apps/web/tests/music-circles.spec.ts",
+        "docs/unified-rebuild/239-common-and-integration-acceptance.md"
       ],
-      "remaining": [
-        "已按目前線上 66 位會員、152 個詞條、681 筆選擇的分布完成圈子量測；完整候選整合驗收仍待完成",
-        "正式來源完整內容對帳與完整候選版本成套驗收",
-        "第 225 批修正數字鍵的原 JSON 順序，當前正式副本重匯入、管理／歷史／回退寫出及舊 Python 圈子比對通過；完整 forward／source rebase 的排序演練與當前固定服務映像恢復組合仍待驗證。"
-      ]
+      "remaining": []
     }
+  ],
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
+  "completed_parent_ids": [
+    "U01",
+    "U02",
+    "U03"
   ]
 }

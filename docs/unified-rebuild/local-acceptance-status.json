@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 156,
+  "full_parents_accepted": 163,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -2187,74 +2187,85 @@
     },
     {
       "capability_id": "O01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "publicv1 list/detail/participants/rooms保持Bearer、未配置503、read-only方法/CORS/cache及原逐欄語意。"
+        "publicv1 list/detail/participants/rooms保持Bearer、未配置503、read-only方法/CORS/cache及原逐欄語意。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/public-api.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "/music舊頁轉React，舊internal/exportadmin不得因proxyheader/cookie/bearer偽造公開；exactSWscope退役保其他app/drafts。"
+        "/music舊頁轉React，舊internal/exportadmin不得因proxyheader/cookie/bearer偽造公開；exactSWscope退役保其他app/drafts。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/activity-access.test.ts",
         "apps/web/tests/legacy-navigation.spec.ts",
         "apps/web/tests/pwa.spec.ts",
         "packages/domain/src/legacy-navigation.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "每種event/poll/action/invitation/claim/device/music/hash原網址精確map，loginreturn/replaceback保留；不因開url自動操作。"
+        "每種event/poll/action/invitation/claim/device/music/hash原網址精確map，loginreturn/replaceback保留；不因開url自動操作。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/web/tests/legacy-navigation.spec.ts",
         "packages/domain/src/legacy-navigation.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "IDB原稿包含activity/poll/rooms/invoice/finance、原圖片/版本/intent/key；明確restore、無舊preview、IDBcommit後才清source、scope與跨tab版本保全。"
+        "IDB原稿包含activity/poll/rooms/invoice/finance、原圖片/版本/intent/key；明確restore、無舊preview、IDBcommit後才清source、scope與跨tab版本保全。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/web/src/legacy-local-import.test.ts",
         "apps/web/tests/durable-drafts.spec.ts",
         "apps/web/tests/legacy-local.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "操作持久化成功才送，unknown同key/body查回、currentlyauthorize；createintent防重建；receipt僅存在指示、不能取代業務權限。"
+        "操作持久化成功才送，unknown同key/body查回、currentlyauthorize；createintent防重建；receipt僅存在指示、不能取代業務權限。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/inbox.test.ts",
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/inbox-history.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "revision+UUID/body同交易appendaudit；409保稿待explicitrecheck；必要write故障全rollback，原相容optionalbot hook故障保业务并log。"
+        "revision+UUID/body同交易appendaudit；409保稿待explicitrecheck；必要write故障全rollback，原相容optionalbot hook故障保业务并log。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/activity-lifecycle.test.ts",
@@ -2262,19 +2273,22 @@
         "apps/api/src/activity-publish.test.ts",
         "apps/web/tests/activity-drafts.spec.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "十類待辦由目前業務/權限即時計算，已讀≠完成；105未讀與100+5分页、首readtime/recipient保護、archive仍留finance義務。"
+        "十類待辦由目前業務/權限即時計算，已讀≠完成；105未讀與100+5分页、首readtime/recipient保護、archive仍留finance義務。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/inbox.test.ts",
         "apps/web/tests/inbox-history.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "O08",
@@ -2389,38 +2403,43 @@
     },
     {
       "capability_id": "U01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "全站活動/詞條/同好同一入口；10類角色沿用各領域權限，無private/token/contact/ownerID；mjxs/xuanshi/全形yrsK/alias保原搜尋，23詞條10/10/3完整。；Back/person/compare回同q，共用未保存成分經search/term/profile仍保留；切帳號清private；遲回不覆蓋新query；source500不當empty200。；5視口無overflow、手機控件至少44px；原帳號scope與selection經music→match→search→activity→room→900分bill仍相同。"
+        "全站活動/詞條/同好同一入口；10類角色沿用各領域權限，無private/token/contact/ownerID；mjxs/xuanshi/全形yrsK/alias保原搜尋，23詞條10/10/3完整。；Back/person/compare回同q，共用未保存成分經search/term/profile仍保留；切帳號清private；遲回不覆蓋新query；source500不當empty200。；5視口無overflow、手機控件至少44px；原帳號scope與selection經music→match→search→activity→room→900分bill仍相同。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/search.test.ts",
         "apps/api/src/unified-workflow.test.ts",
         "apps/web/src/search-return.test.ts",
         "apps/web/tests/global-search.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "U02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "完整attendeeIDs保無成分/候補/未選人，不猜名字或manager；三種計算不寫DB，手動移無成分者不列合拍分，仍可正式採用。；suggestion載入前disabled；核對付款人及confirm才save；bob403/stale409，原Pythonplan/current/counts/roster與native同版本且保guest；新結算900分逐人/房/付款人對平。；原UUID可查回，unknownresponse保同body/key；IDB abort阻calculate/adopt/leave；競爭版本/手動輸入保全；跨tab撤權/刪成分/切帳號阻舊share/adopt/遲回。"
+        "完整attendeeIDs保無成分/候補/未選人，不猜名字或manager；三種計算不寫DB，手動移無成分者不列合拍分，仍可正式採用。；suggestion載入前disabled；核對付款人及confirm才save；bob403/stale409，原Pythonplan/current/counts/roster與native同版本且保guest；新結算900分逐人/房/付款人對平。；原UUID可查回，unknownresponse保同body/key；IDB abort阻calculate/adopt/leave；競爭版本/手動輸入保全；跨tab撤權/刪成分/切帳號阻舊share/adopt/遲回。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/music-rooms.test.ts",
         "apps/api/src/unified-workflow.test.ts",
         "apps/web/tests/durable-music-rooms.spec.ts",
         "apps/web/tests/music-rooms.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     },
     {
       "capability_id": "U03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "原Python跨threshold/hashseed全等、bridge chain重掃、strict overlap及stable ID順序；12圈8展開4全部可達、同名不合併；獨立者/原選擇保全。；minLink100經person/compare返回100；term共享未保存草稿須明確save後更新圈子，鍵盤/長名稱/同名詞條ID/手機wrap可用。；worker只接names/IDs/tagaggregate且不inherit環境；selection/name/entry/erasure/qualification/device/account共7來源再驗；health可回/abortstop；切帳號/logout遲回不復活，cross-tab保存更新与erasuregate。"
+        "原Python跨threshold/hashseed全等、bridge chain重掃、strict overlap及stable ID順序；12圈8展開4全部可達、同名不合併；獨立者/原選擇保全。；minLink100經person/compare返回100；term共享未保存草稿須明確save後更新圈子，鍵盤/長名稱/同名詞條ID/手機wrap可用。；worker只接names/IDs/tagaggregate且不inherit環境；selection/name/entry/erasure/qualification/device/account共7來源再驗；health可回/abortstop；切帳號/logout遲回不復活，cross-tab保存更新与erasuregate。",
+        "第 239 批完整原條件與 211 個具體案例引用、167 來源／測試 pins 核對；617 單元／149 瀏覽器與正式隔離副本 608 讀取／244 整合操作、六種圈子門檻及保存實際 Python bot 的 25 指令／同版三人帳單通過。恢復投遞 worker／成套回退另驗，不部署。"
       ],
       "test_files": [
         "apps/api/src/music-circle-freshness.test.ts",
@@ -2428,7 +2447,8 @@
         "apps/api/src/music-circles.test.ts",
         "apps/web/tests/music-circles.spec.ts",
         "packages/domain/src/music-circles.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md"
     }
   ],
   "guidance_delta_validation": {
@@ -2439,7 +2459,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2999,7 +3019,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -3682,5 +3702,39 @@
     "production_writes": false,
     "original_p6_complete": false,
     "release_eligible": false
+  },
+  "full_integration_parents_accepted": 3,
+  "latest_common_and_integration_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
+    "accepted_parent_ids": [
+      "O01",
+      "O02",
+      "O03",
+      "O04",
+      "O05",
+      "O06",
+      "O07",
+      "U01",
+      "U02",
+      "U03"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "unit_cases": 617,
+    "browser_cases": 149,
+    "current_clause_case_references": 211,
+    "source_test_pins": 167,
+    "captured_copy_read_http": 608,
+    "captured_copy_workflow_http": 244,
+    "catalog_queries": 155,
+    "circle_thresholds": 6,
+    "saved_python_command_comparisons": 25,
+    "saved_python_source_pins": 52,
+    "new_workflow_roster_members": 3,
+    "new_workflow_total_cents": 900,
+    "original_outbox_rows_preserved": 118,
+    "original_p6_complete": false,
+    "release_eligible": false,
+    "actual_qq": false
   }
 }

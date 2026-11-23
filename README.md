@@ -265,3 +265,5 @@ QQ 服务配置从可选的 `/etc/qgroup/qq.env` 读取（root 所有、0600）�
 
 
 正式公开前，按用户确认封存并清空整套测试数据（账号、活动、报名、账务与图片）。先停止服务，再执行 `deploy/reset_test_data.py --database /var/lib/qgroup/kanban.sqlite3 --archive /var/backups/一个新目录 --confirm-test-data`，由原 systemd 服务创建新数据库，不以 root 初始化实时库。封存与日常备份均须保留，恢复时成套还原。管理凭证原文仅保存于本地 `artifacts/private/`（目录 0700、文件 0600），不会随部署包上传；轮替服务器摘要即可撤销旧凭证与管理会话。
+
+最新本機驗收見[第 239 批](docs/unified-rebuild/239-common-and-integration-acceptance.md)：163／166 及 U01–U03 通過，剩恢復／回退收尾，不部署。
