@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 139,
+  "full_parents_accepted": 151,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -1760,132 +1760,154 @@
     },
     {
       "capability_id": "A01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "逐請求重查角色、CSRF綁裝置與角色版本；憑證輪替/到期即失效。"
+        "逐請求重查角色、CSRF綁裝置與角色版本；憑證輪替/到期即失效。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "20筆分頁、稱呼/ID/第三方名與provider/client/subject配對狀態；不返回subject/UnionID。"
+        "20筆分頁、稱呼/ID/第三方名與provider/client/subject配對狀態；不返回subject/UnionID。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "自撤拒絕、關閉帳號不能授權、role/history/receipt同交易且只追加。"
+        "自撤拒絕、關閉帳號不能授權、role/history/receipt同交易且只追加。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "人工QQ/備註與身分和角色分開，version及唯一檢查，可清空。"
+        "人工QQ/備註與身分和角色分開，version及唯一檢查，可清空。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-users.test.ts",
         "apps/web/tests/admin.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "後台成分搜尋區分未關聯/prelink/OAuth，提供選擇但不含PIN證明、留言或性別。"
+        "後台成分搜尋區分未關聯/prelink/OAuth，提供選擇但不含PIN證明、留言或性別。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-music.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "移轉/解除保成分/聯絡/隊序/財務；撤銷原授權、原source links不再復活，receipt不重apply。"
+        "移轉/解除保成分/聯絡/隊序/財務；撤銷原授權、原source links不再復活，receipt不重apply。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-music.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "管理員只可協助可查看、已發布且未終止未結算活動；須原因、通知owner，不擴至費用/私有/群同步。"
+        "管理員只可協助可查看、已發布且未終止未結算活動；須原因、通知owner，不擴至費用/私有/群同步。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/activity-management.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "刪除申請依實際保留資料判定，不允許管理員提交completed；revision包含當前共享計數。",
-        "註冊開关當前角色與revision重驗，僅actual change追加setting/history。"
+        "註冊開关當前角色與revision重驗，僅actual change追加setting/history。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/registration.test.ts",
         "apps/web/tests/admin-privacy.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "完整CRUD、merge按Python保留first familiarity/target owner/aliases與created清單，無孤兒引用。"
+        "完整CRUD、merge按Python保留first familiarity/target owner/aliases與created清單，無孤兒引用。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-music-catalog.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "管理員無成分仍可管理；numeric舊PIN只作找回，已綁OAuth不被PIN登入。"
+        "管理員無成分仍可管理；numeric舊PIN只作找回，已綁OAuth不被PIN登入。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-music-catalog.test.ts",
         "apps/api/src/admin-music.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "刪成分與全reset須durable erasure，清身分/會話/歷史，但保帳號、活動、bot與reset後新資料。"
+        "刪成分與全reset須durable erasure，清身分/會話/歷史，但保帳號、活動、bot與reset後新資料。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-music-erasure.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A12",
@@ -1914,14 +1936,16 @@
     },
     {
       "capability_id": "A14",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "歷史下載先套最新ownership/empty contact/PIN狀態/erasure，不啟用舊管理密碼；保原history與bot。"
+        "歷史下載先套最新ownership/empty contact/PIN狀態/erasure，不啟用舊管理密碼；保原history與bot。",
+        "第 237 批完整原條件／具體斷言、89 管理單元／60 瀏覽器及正式隔離副本核對通過；79 目前來源／測試、43 固定原 Python 來源 pins 與成功子報告綁定，原帳號／活動／成分與 bot 保全。正式平台及切換另按 P7 驗收。"
       ],
       "test_files": [
         "apps/api/src/admin-backups.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
     },
     {
       "capability_id": "A15",
@@ -2405,7 +2429,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2662,6 +2686,138 @@
       "saved_python_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
       "actual_exported_online_image_combination_verified": true,
       "actual_qq_or_production_switch": false
+    },
+    {
+      "capability_id": "A01",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A02",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A03",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A04",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A05",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A06",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A07",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A08",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A09",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A10",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A11",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
+    },
+    {
+      "capability_id": "A14",
+      "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+      "local_parent_accepted": true,
+      "criteria": "complete original required behavior, concrete assertions and captured readonly data reviewed together",
+      "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+      "source_test_pins": 79,
+      "original_python_source_pins": 43,
+      "production_services_executed": false,
+      "actual_qq": false
     }
   ],
   "legacy_http_rehearsal": {
@@ -2783,7 +2939,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -3331,7 +3487,81 @@
     "reason": "Rollback history reconciliation failed; retain pinned original histories",
     "activation_performed": false,
     "original_package_preserved": true,
-    "cause_verified": false,
-    "current_fixed_activation_complete": false
+    "cause_verified": true,
+    "current_fixed_activation_complete": false,
+    "diagnostic_checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+    "verified_cause": "Values match; legacy checkpoint 221 history dictionary order differs at 50 positions in the first mismatching member list; original package and rejecting diagnostic preserved."
+  },
+  "latest_admin_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+    "accepted_parent_ids": [
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A14"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "unit_cases_passed": 89,
+    "browser_cases_passed": 60,
+    "additional_registration_cases_reused": 2,
+    "reviewed_semantic_clauses": 13,
+    "unchanged_source_test_pins": 79,
+    "original_python_source_pins": 43,
+    "directory_comparisons": 159,
+    "role_writes": 47,
+    "metadata_writes": 96,
+    "main_http_calls": 3015,
+    "music_members": 68,
+    "ownership_transitions_original_compared": 204,
+    "numeric_pin_resets": 51,
+    "non_numeric_pin_rejections": 17,
+    "event_assistance_original_writes": 9,
+    "catalog_history_erasure_http_calls": 300,
+    "catalog_terms": 152,
+    "catalog_operations": 4,
+    "histories_downloaded": 30,
+    "member_erasure_scenarios": 2,
+    "all_music_reset_scenarios": 1,
+    "privacy_http_calls": 60,
+    "independent_storage_clones": 4,
+    "independent_tables_per_clone": 97,
+    "original_outbox_rows_preserved": 118,
+    "production_writes": false,
+    "actual_qq": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_recovery_copy_activation": {
+    "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
+    "change_scope": "none",
+    "package_source_checkpoint": "226",
+    "source_package_sha256": "34bf98dbaeea1294363330574cd56d05ff41991b223277a63225ea168b8a18f5",
+    "new_matching_authority_sha256": "410ea740b2cf1772ff02d4679323d56317f200df6291ce39d2125e38ac46fd96",
+    "current_unmodified_verifier_passed": true,
+    "activation_passed": true,
+    "source_remains_blocked": true,
+    "native_authority_restarts": 2,
+    "readonly_native_bot_help_passed": true,
+    "independent_typed_tables": 97,
+    "independent_comparisons": 2,
+    "only_recovery_flag_changed": true,
+    "original_bot_external_files_preserved": 6,
+    "original_media_files_preserved": 5,
+    "uncertain_deliveries_preserved": 7,
+    "worker_started": false,
+    "current_actual_image_recovery_startup_accepted": false,
+    "fixed_legacy_service_rollback_complete": false,
+    "original_p6_complete": false,
+    "release_eligible": false
   }
 }

@@ -1,6 +1,6 @@
 # 群聚看板
 
-重構最新進度：[原逐人結算請求恢復](docs/unified-rebuild/205-legacy-detailed-settlement-checkpoint.md)。原憑證、圖片與隨單付款經核對後沿原編號恢復，已驗證與固定舊 Python bot 的隔離配合。目前仍在功能分支實作與驗收，尚未部署。
+重構最新進度：[管理父項與離線恢復驗收](docs/unified-rebuild/237-admin-and-recovery-acceptance.md)。151／166 個既有功能父項本機通過；共用操作、整合與實際映像成套恢復仍在驗收。目前仍在功能分支，尚未部署。
 
 看板與成分的單一產品重構規劃（2026-11-20，隔離實作中、尚未發布；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
 

@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/236-bot-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/237-admin-and-recovery-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "I01",
@@ -146,7 +146,19 @@
       "B12",
       "B13",
       "B14",
-      "B15"
+      "B15",
+      "A01",
+      "A02",
+      "A03",
+      "A04",
+      "A05",
+      "A06",
+      "A07",
+      "A08",
+      "A09",
+      "A10",
+      "A11",
+      "A14"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
     "latest_runtime_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md"
@@ -5824,28 +5836,32 @@
         "apps/api/src/registration.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/admin-users.test.ts",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/registration.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。逐請求角色／救援憑證、輪替／到期、管理 CSRF、限流、兩種登出與未知結果查回已實作；完整後台、跨裝置／真 QQ WebView 與正式版本組合待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A02",
@@ -5860,20 +5876,24 @@
         "apps/web/src/admin-users.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/admin-users.test.ts"
+        "apps/api/src/admin-users.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "每頁 20、搜尋與精確身份關係的 UnionID 篩選、不輸出身份秘密已實作；大量匯入資料、完整語言／讀屏／WebView 及正式資料遷移待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A03",
@@ -5892,25 +5912,29 @@
       "behavior_evidence": [
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-users.test.ts",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。角色獨立版本、不可自撤／對註銷授權、同交易不可變歷史及歷史分頁已實作；關閉帳號歷史入口、完整後台與匯入角色對照待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A04",
@@ -5929,25 +5953,29 @@
       "behavior_evidence": [
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-users.test.ts",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。私人備註／人工 QQ 版本、唯一檢查、恢復與會員隔離已實作；未用於認領，完整 ownership／匯入資料與舊站所有管理流程待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A05",
@@ -5962,22 +5990,26 @@
         "packages/database/src/schema-v6.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/admin-music.test.ts"
+        "apps/api/src/admin-music.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music.test.ts",
         "packages/database/src/ownership-migration.test.ts",
-        "docs/unified-rebuild/17-ownership-checkpoint.md"
+        "docs/unified-rebuild/17-ownership-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/admin-music.test.ts"
+        "apps/api/src/admin-music.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "查詢／分頁與未關聯／預先關聯／OAuth／直接帳號成分分流已實作，不回傳 PIN 摘要或私人欄位；完整匯入資料及正式後台流程待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A06",
@@ -6006,7 +6038,8 @@
         "apps/api/testsupport/pending-operations.test.ts",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music.test.ts",
@@ -6016,7 +6049,8 @@
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music.test.ts",
@@ -6024,7 +6058,8 @@
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music.spec.ts",
@@ -6034,10 +6069,11 @@
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。預覽／明確確認、修正／解除、競態、雙方 epoch／舊回執失效、撤銷找回證據、追加歷史、原 link_audit 分頁合流與 Python 差分已驗證；重建／回退投影、舊 adapter 及正式副本待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A07",
@@ -6052,20 +6088,24 @@
         "packages/contracts/src/activity-arrangements.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-management.test.ts"
+        "apps/api/src/activity-management.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-conditions.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "具名會員管理員在可查看、未結算、未終止／歸檔的活動協助安排、必填原因、owner 設定限制、截止連動例外及通知原發起者已實作；不擴名單／帳權。完整後台活動入口、角色撤銷跨流程、舊 adapter 與正式副本仍待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A08",
@@ -6085,28 +6125,32 @@
         "apps/api/src/registration.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/admin-users.test.ts",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/registration.test.ts",
         "apps/api/src/admin-users.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/admin-privacy.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。註冊開關／revision／稽核及刪除申請分頁、即時共享紀錄／bot 收件人檢查與明確說明、衝突及未知結果恢復已實作；政策版本更新／重同意、完整審核歷史與共享資料處理、備份／還原濾除仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A09",
@@ -6127,27 +6171,31 @@
       "behavior_evidence": [
         "apps/api/src/admin-music-catalog.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music-catalog.test.ts",
         "packages/database/src/catalog-migration.test.ts",
         "docs/unified-rebuild/45-admin-music-catalog-checkpoint.md",
-        "apps/api/src/admin-operations.test.ts"
+        "apps/api/src/admin-operations.test.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music-catalog.test.ts",
         "apps/api/src/admin-operations.test.ts",
-        "apps/web/tests/admin-operation-receipts.spec.ts"
+        "apps/web/tests/admin-operation-receipts.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music-catalog.spec.ts",
         "apps/web/tests/admin-operation-receipts.spec.ts",
         "docs/unified-rebuild/74-admin-operation-receipts-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "收件匣管理回執已依原管理 scope 查詢；會員 UUID 碰撞、撤權／重授、救援更新、只讀保全與延遲回應已補驗（檢查點 74）。原生管理 CRUD／合併、Python 選擇順序與熟悉度差分、建立清單轉移及額度、目標編輯權保留、全域版本核對、精確恢復與 bot 資料保全已合成驗證；來源全量對帳、備份／還原／回退匯出、舊 adapters、正式規模及實際版本組合仍待成套驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A10",
@@ -6174,7 +6222,8 @@
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "apps/api/testsupport/pending-operations.test.ts",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music.test.ts",
@@ -6184,13 +6233,15 @@
         "packages/database/src/pin-migration.test.ts",
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music.test.ts",
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
-        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md"
+        "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music.spec.ts",
@@ -6198,10 +6249,11 @@
         "apps/web/tests/durable-admin-ownership.spec.ts",
         "docs/unified-rebuild/71-durable-admin-ownership-checkpoint.md",
         "docs/unified-rebuild/72-erased-music-acknowledgements-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "管理關聯與解除原稿、PIN 僅持久保存 requestId、雙 pending 查回、交易 abort、異常 PIN 原文下載而不入版本庫、分頁保全與無訊號撤權阻擋已測（檢查點 71）。成分刪除後的原回執、拒絕後原稿保留、交易 abort、PIN requestId 保全與刪除競態已補驗（檢查點 72）；正式版本組合仍待驗收。無成分管理員可查看原成分、詞條與程度；數字 QQ PIN 重設、目前管理授權／版本／確認、未知結果只查回執、找回證據撤銷、原關聯歷史及隱私保全已合成驗證；完整會員欄位、舊 adapter／回退投影與正式版本組合仍待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A11",
@@ -6247,7 +6299,8 @@
         "apps/api/src/forward-music-authority.test.ts",
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
         "apps/api/src/orphan-music-reset.test.ts",
-        "docs/unified-rebuild/157-orphan-history-reset-checkpoint.md"
+        "docs/unified-rebuild/157-orphan-history-reset-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-music-erasure.test.ts",
@@ -6260,7 +6313,8 @@
         "apps/api/testsupport/retained-erasure-config.test.ts",
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
         "apps/api/src/forward-music-authority.test.ts",
-        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-music-erasure.test.ts",
@@ -6269,17 +6323,19 @@
         "apps/api/src/retained-erasure-journal.test.ts",
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
-        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
+        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-music-erasure.spec.ts",
         "apps/web/tests/durable-erasures.spec.ts",
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/orphan-music-reset.spec.ts"
+        "apps/web/tests/orphan-music-reset.spec.ts",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "157 補齊無成分／詞條時的匿名、歷史留言、趨勢及發布紀錄重置，historyRecords預覽、mapping revision與空資料原因；40 unit／28 browser、固定Python及compiled API本機驗證通過。新固定原Linux／實際雙映像、原生reset完整世代與exact key reuse、原來源 ancestry／high-water／custody、完整歷史／媒體／browser及正式候選驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A12",
@@ -6431,7 +6487,8 @@
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
         "apps/api/src/legacy-music-intent.test.ts",
         "apps/api/src/forward-music-authority.test.ts",
-        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/admin-backups.test.ts",
@@ -6444,7 +6501,8 @@
         "apps/api/testsupport/retained-erasure-config.test.ts",
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
         "apps/api/src/forward-music-authority.test.ts",
-        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md"
+        "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/admin-backups.test.ts",
@@ -6455,17 +6513,19 @@
         "apps/api/src/retained-erasure-journal.test.ts",
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
-        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
+        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/admin-backups.spec.ts",
         "docs/unified-rebuild/48-backup-export-checkpoint.md",
         "apps/web/tests/legacy-backups.spec.ts",
         "docs/unified-rebuild/101-legacy-history-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/237-admin-and-recovery-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生及舊配對／單 JSON 已接入統一管理下載，固定 capture manifest 與實際匯入來源、最新刪除／RESET／帳號關閉、關聯／明確空聯絡／目前 PIN、原稿保全、權限與晚回應已隔離驗證（檢查點 101）。舊 URL adapters、正式歷史來源／規模、完整恢復與實際候選版本組合尚待完成。 檢查點 117 已驗證明確舊 music overlay 的 authority record／replay、namespace／普通歷史／目前匯出 current identity 投影、真 HTTP 管理權限／confirmation／503，以及 authority-aware 私人離線維護／真 flock 排除／重啟恢復。原未包覆維護 CLI 仍會繞過 authority；structured reset term scope、全部維護入口約束／固定版本組合、native writer／startup、authority 外部保全與完整 forward restore 仍待驗收，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "A15",
