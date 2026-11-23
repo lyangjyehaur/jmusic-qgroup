@@ -32,6 +32,13 @@ for (const row of integration.requirements) {
   else assert(row.remaining.length > 0);
 }
 const integrationPassed = integration.requirements.filter(row => row.state === 'passed').length;
-assert.equal(ledger.release_eligible, passed === expected.length && integrationPassed === integration.requirements.length);
+const locallyAccepted = passed === expected.length && integrationPassed === integration.requirements.length;
+assert.equal(typeof ledger.release_source_approved, 'boolean', 'Release source approval must be recorded separately from local acceptance');
+assert.equal(ledger.release_eligible, locallyAccepted && ledger.release_source_approved);
+if (ledger.release_source_approved) {
+  assert(/^[a-f0-9]{40}$/.test(ledger.release_source_commit), 'Approved release source requires a full commit SHA');
+  assert(Array.isArray(ledger.release_source_evidence) && ledger.release_source_evidence.length > 0);
+  for (const path of ledger.release_source_evidence) assert(existsSync(new URL('../../' + path, import.meta.url)), `Missing release source evidence: ${path}`);
+}
 console.log(`Capability ledger: ${expected.length} IDs preserved; ${passed} fully accepted; release eligible: ${ledger.release_eligible}`);
 console.log(`Integration ledger: ${integration.requirements.length} requirements preserved; ${integrationPassed} fully accepted`);

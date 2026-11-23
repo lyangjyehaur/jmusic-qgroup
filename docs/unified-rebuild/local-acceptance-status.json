@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "kind": "partial-local-acceptance-evidence-index",
+  "kind": "complete-local-acceptance-evidence-index",
   "updated": "2026-11-23",
   "validated_runtime_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
   "ci_run": "https://github.com/lyangjyehaur/jmusic-qgroup/actions/runs/45041562137",
@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 163,
+  "full_parents_accepted": 166,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -26,7 +26,7 @@
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
-  "original_p6_complete": false,
+  "original_p6_complete": true,
   "release_eligible": false,
   "records": [
     {
@@ -2351,41 +2351,47 @@
     {
       "capability_id": "O12",
       "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "full_parent_state": "passed",
       "clauses": [
-        "originalSQLite原列/schema/trigger/rowid/storageclass保留，copy媒體digest引用对应、两次import无dup、不用registrations重建roster。"
+        "originalSQLite原列/schema/trigger/rowid/storageclass保留，copy媒體digest引用对应、两次import无dup、不用registrations重建roster。",
+        "第 241 批完成原條款、當前來源 pins 及同一隔離正式副本的成套恢復／原 HTTP 新寫入／forward／再啟用與實際映像驗證；P6 本機通過，正式來源尚未批准，不部署。"
       ],
       "test_files": [
         "apps/api/src/capture-snapshot.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "apps/api/src/offline-restore.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md"
     },
     {
       "capability_id": "O13",
       "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "full_parent_state": "passed",
       "clauses": [
-        "musicJSON/identity/walls/latest erasure成套保全，維護writerlocks/來源pin、privatepackage可独立读；恢復不啟旧管理；bot外部cursor/uncertainty/groupstate/mtime也保全。"
+        "musicJSON/identity/walls/latest erasure成套保全，維護writerlocks/來源pin、privatepackage可独立读；恢復不啟旧管理；bot外部cursor/uncertainty/groupstate/mtime也保全。",
+        "第 241 批完成原條款、當前來源 pins 及同一隔離正式副本的成套恢復／原 HTTP 新寫入／forward／再啟用與實際映像驗證；P6 本機通過，正式來源尚未批准，不部署。"
       ],
       "test_files": [
         "apps/api/src/capture-snapshot.test.ts",
         "apps/api/src/rollback-bot-restore.test.ts",
         "apps/api/src/rollback-bot-state.test.ts",
         "apps/api/src/rollback-package.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md"
     },
     {
       "capability_id": "O14",
       "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "full_parent_state": "passed",
       "clauses": [
-        "release必fullSHA在freshoriginmain、cleanarchive、双远端SHA确认；新Compose各imageimmutable/source独立，回退成套相容另验。"
+        "release必fullSHA在freshoriginmain、cleanarchive、双远端SHA确认；新Compose各imageimmutable/source独立，回退成套相容另验。",
+        "第 241 批完成原條款、當前來源 pins 及同一隔離正式副本的成套恢復／原 HTTP 新寫入／forward／再啟用與實際映像驗證；P6 本機通過，正式來源尚未批准，不部署。"
       ],
       "test_files": [
         "apps/api/testsupport/image-source.test.ts",
         "apps/api/testsupport/runtime-compose.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md"
     },
     {
       "capability_id": "O15",
@@ -2459,7 +2465,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -3019,7 +3025,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -3735,6 +3741,57 @@
     "original_outbox_rows_preserved": 118,
     "original_p6_complete": false,
     "release_eligible": false,
+    "actual_qq": false
+  },
+  "release_source_approved": false,
+  "completed_runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+  "latest_recovery_worker_handoff": {
+    "checkpoint": "docs/unified-rebuild/240-recovery-worker-handoff-acceptance.md",
+    "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "worker_invocations": 20,
+    "handoff_cases": 7,
+    "http_calls": 43,
+    "original_outbox_rows": 118,
+    "deliberate_isolated_due_rows": 2,
+    "original_policy_restored": true,
+    "python_owner_lock_present": false,
+    "python_controller_serial": true,
+    "native_owner_lock_held": true,
+    "actual_qq": false
+  },
+  "latest_complete_local_acceptance": {
+    "checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md",
+    "runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774",
+    "newly_accepted_parent_ids": [
+      "O12",
+      "O13",
+      "O14"
+    ],
+    "existing_parent_count": 166,
+    "integration_parent_count": 3,
+    "current_unit_cases": 552,
+    "current_exact_clause_case_references": 16,
+    "source_test_pins": 19,
+    "forward_repeat_typed_tables": {
+      "business": 97,
+      "proof": 97,
+      "rebase": 97
+    },
+    "music_history_pairs": 30,
+    "board_history_pairs": 14,
+    "bot_external_files": 6,
+    "original_images": 4,
+    "new_image": 1,
+    "post_worker_outbox_rows": 146,
+    "fixed_web_restarts": 2,
+    "final_recovery_http_calls": 11,
+    "saved_python_commands": 25,
+    "saved_python_source_pins": 52,
+    "package_v2_sha256": "a2878382bd6ac9c3603da20fa9403ea8a3aad0646acf5c252d992bf83ea5c860",
+    "original_p6_complete": true,
+    "release_source_approved": false,
+    "release_eligible": false,
+    "deployment_performed": false,
     "actual_qq": false
   }
 }

@@ -2,11 +2,14 @@
   "schema_version": 1,
   "inventory": "01-capability-inventory.md",
   "release_eligible": false,
+  "release_source_approved": false,
+  "release_source_commit": null,
+  "release_source_evidence": [],
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/239-common-and-integration-acceptance.md",
-    "full_parent_accepted": false,
+    "checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md",
+    "full_parent_accepted": true,
     "completed_parent_ids": [
       "I01",
       "I02",
@@ -170,15 +173,19 @@
       "O09",
       "O10",
       "O11",
+      "O12",
+      "O13",
+      "O14",
       "O15"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
-    "latest_runtime_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+    "latest_runtime_checkpoint": "docs/unified-rebuild/241-complete-local-acceptance.md",
     "completed_integration_ids": [
       "U01",
       "U02",
       "U03"
-    ]
+    ],
+    "completed_runtime_commit": "1d672eb1b3a0e6519dc890a88e8a5bc855371774"
   },
   "capabilities": [
     {
@@ -9277,7 +9284,8 @@
         "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
         "docs/unified-rebuild/223-recovery-copy-activation.md",
         "apps/api/src/recovery-activation.test.ts",
-        "apps/api/src/recovery-activation-guards.test.ts"
+        "apps/api/src/recovery-activation-guards.test.ts",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "data_evidence": [
         "packages/database/src/privacy-migration.test.ts",
@@ -9379,7 +9387,8 @@
         "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
         "apps/api/src/forward-retired-reset-proofs.test.ts",
         "apps/api/src/forward-retired-reset-board.test.ts",
-        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -9436,7 +9445,8 @@
         "docs/unified-rebuild/149-native-reset-member-retirement-checkpoint.md",
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
         "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
-        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md"
+        "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -9452,10 +9462,11 @@
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "docs/unified-rebuild/107-rollback-state-checkpoint.md",
         "docs/unified-rebuild/108-rollback-media-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O13",
@@ -9695,7 +9706,8 @@
         "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
         "docs/unified-rebuild/223-recovery-copy-activation.md",
         "apps/api/src/recovery-activation.test.ts",
-        "apps/api/src/recovery-activation-guards.test.ts"
+        "apps/api/src/recovery-activation-guards.test.ts",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -9792,7 +9804,9 @@
         "apps/api/src/forward-retired-reset-proofs.test.ts",
         "apps/api/src/forward-retired-reset-board.test.ts",
         "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md",
+        "docs/unified-rebuild/240-recovery-worker-handoff-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
@@ -9848,7 +9862,8 @@
         "docs/unified-rebuild/150-retirement-source-preparation-checkpoint.md",
         "docs/unified-rebuild/151-retired-reset-recovery-checkpoint.md",
         "docs/unified-rebuild/152-retired-reset-proof-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
@@ -9863,10 +9878,11 @@
         "docs/unified-rebuild/106-rollback-erasures-checkpoint.md",
         "docs/unified-rebuild/107-rollback-state-checkpoint.md",
         "docs/unified-rebuild/108-rollback-media-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "第 152 號驗證真正原 pending／authorized／completed claims 經原 reset 與整組恢復後失效並保全原證據，修正原 old board cached response 可能在退休後恢復為 200 的問題；14 個新案例與 77 個既有回歸、共 6 檔／91 個不同案例通過。第 151 號 browser／image 原產物已獨立核對，unit 及全量 run 待 terminal；本批完整 CI 待核對。完整來源鏈／high-water、reset 後續世代／重複 epoch／exact key reuse、latest-erasure 私人歷史、外部 ancestry／custody、media／browser pending、真正停止來源 capture、正式規模、完整 TS bot／實際候選版本組合／B01–B15／QQ 及 audited activation 仍未完成。維持 in_progress／release_eligible=false，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O14",
@@ -9897,7 +9913,8 @@
         "apps/api/src/retained-erasure-journal.test.ts",
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
-        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
+        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "data_evidence": [
         "docs/unified-rebuild/89-unified-runtime-checkpoint.md",
@@ -9905,7 +9922,8 @@
         "apps/api/src/retained-erasure-journal.test.ts",
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
-        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
+        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/testsupport/image-source.test.ts",
@@ -9913,13 +9931,15 @@
         "apps/api/src/retained-erasure-journal.test.ts",
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
-        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md"
+        "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
       "ux_evidence": [
-        "docs/unified-rebuild/214-local-acceptance-checkpoint.md"
+        "docs/unified-rebuild/214-local-acceptance-checkpoint.md",
+        "docs/unified-rebuild/241-complete-local-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "完整 SHA／clean archive／release origin-main check、baked version 與獨立映像 config 已隔離驗證；功能來源仍為 rehearsal，實際候選版本組合、main 整合及完整發布／回退流程未驗收。 檢查點 115 補真 Docker inert-container metadata 與預設封存證據；未執行容器內程式、未認證候選版本或新增正式發布保障。 檢查點 118 修正原生歷史／匯出對 migration codec 的生產建置依賴、Docker ignore 缺漏腳本及 runtime flock 依賴；371 份生產來源副本建置及 12 個 bundle project inputs 封閉核對通過，第三方依賴仍重用本機安裝，沒有執行 Linux Docker npm ci／prune 或正式發布。按 both 評估影響，實際發布 none；固定 Linux 映像、強制 authority／checkpoint mounts 與完整 web／bot 候選版本組合仍待驗收。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "O15",
@@ -9967,5 +9987,6 @@
       "state": "passed",
       "remaining": ""
     }
-  ]
+  ],
+  "original_p6_complete": true
 }

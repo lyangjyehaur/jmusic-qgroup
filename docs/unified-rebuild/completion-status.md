@@ -1,76 +1,52 @@
 # 實作與驗收收斂清單
 
-更新：2026-11-23。任務範圍為完成原計畫 P0–P6 的實作與本機驗收；P7 正式切換排除。不合併 main、不部署、不操作真實 QQ。本機預覽及[測試指南](local-testing.md)可用；最終驗收尚未完成。
+更新：2026-11-23。**P0–P6 的實作及完整本機驗收已完成：166／166 既有功能與 U01–U03 全部通過。** 任務不包含 P7 正式切換；沒有合併 main、部署或向 QQ 發送消息。發布範圍：`none`。
 
-166 個既有功能 ID 與 U01–U03 均已有實作、測試與具體語意條款。原[條款索引](local-acceptance-status.json)仍綁 `4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1`，記錄 228 條款、939 個成功案例引用及 329 個來源路徑；完整父項驗收另外記錄。[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)完成 C01–C03、C06、A12、A13、A15，加上 C04、C05、C07，接續[第 227 批](227-room-parent-acceptance.md)完成 P05–P10，接續[第 229 批](229-formal-room-parent-acceptance.md)完成 P01–P04，接續[第 230 批](230-settlement-parent-acceptance.md)完成 S01–S14，接續[第 231 批](231-finance-parent-acceptance.md)完成 F01–F12，接續[第 232 批](232-identity-parent-acceptance.md)完成 I01–I16，接續[第 233 批](233-activity-parent-acceptance.md)完成 E01–E18，接續[第 234 批](234-roster-parent-acceptance.md)完成 R01–R13，接續[第 235 批](235-time-poll-parent-acceptance.md)完成 T01–T09，接續[第 236 批](236-bot-parent-acceptance.md)完成 B01–B15，接續[第 237 批](237-admin-and-recovery-acceptance.md)完成 A01–A11、A14，接續[第 238 批](238-common-and-actual-recovery-acceptance.md)完成 O08–O11、O15，接續[第 239 批](239-common-and-integration-acceptance.md)完成 O01–O07 與 U01–U03，目前 **163 個既有父項與三個整合父項本機通過，O12–O14 及成套恢復／回退收尾待完成**。新驗證使用同一線上副本的原喊話，包含原作者／聯絡来源、30 天邊界、140 字／24 小時伺服器限制、管理刪除與事前配對備份；另補同會員其他裝置管理權保全的兩項測試。
+[第 241 批完整報告](241-complete-local-acceptance.md)記錄最後 O12–O14 與連續恢復／回退／forward；[本機測試指南](local-testing.md)提供可操作預覽。`original_p6_complete=true`；候選尚未合入遠端 main，`release_source_approved=false`、`release_eligible=false`。本機驗收與正式來源批准分開，不以功能通過宣稱可直接發布。
 
-[第 224 批](224-music-parent-acceptance.md)完成 M01–M12 全部原條件審核；同一線上副本的 68 份成分、152 個詞條、682 筆選擇與選取者及 68 份原建立清單額度皆與固定 Python 一致，39 份原非空已連結成分在隔離克隆保存／精確重試後仍保留程度與順序，87 張非操作目標表含 bot 資料保持不變。49 個相關來源／測試與已成功的完整 CI 提交逐檔一致，引用 45 個單元／44 個瀏覽器案例；本批沒有修改運行程式。
+## 完成範圍
 
-[第 225 批](225-matching-order-parent-acceptance.md)完成 M13–M22：同一線上副本 4,624 組配對、兩種排序、43 個原已連結帳號、分享／私有欄位、趨勢與 6 種圈子門檻皆與固定原程式一致。修正匯入／管理與歷史匯出／回退 JSON 的數字 QQ 鍵順序，6 張 bot 表保全；337 個不同本機單元案例、56 個瀏覽器案例與當前 API／bot build 通過。線上來源 Python bot 的 532 次隔離 HTTP 及重試／未知／模拟保全驗證通過；不是實際匯出映像組合驗收。完整 forward／source rebase 排序演練仍待完成。
+| 原計畫 | 結果 |
+| --- | --- |
+| P0 功能盤點／規劃 | 166 個原功能與 U01–U03 保留原 ID、既有行為及驗收條款；舊程式與提交歷史可查。 |
+| P1–P5 統一實作 | React／TSX 網頁、TypeScript API／worker、共用資料與活動／成分操作完成。必要操作提示保留，純展示文案移除。 |
+| P6 完整本機驗收 | 各父項、整合動線、線上隔離副本、固定實際版本組合、bot 指令／交接、資料恢復與回退後新寫入往返通過。 |
+| P7 正式切換 | 本次任務排除；須另按發布政策整合 main、批准完整 SHA、取得當時成套快照及切換。 |
 
-[第 226 批](226-forward-source-order-checkpoint.md)完成完整 forward／來源重綁排序回歸：實際副本 68 份成分／152 詞條／682 選擇，三階段各 97 表重跑一致，89 張非變更目標表與 6 張 bot 表保全；重新讀回 224 檔套件及 30 份成分／14 組看板歷史。補保留順序的複製、帳號／重置來源寫出、原生讀取及晚順序替換邊界；531 個不同單元案例與 107 個瀏覽器案例取得成功，當前 build／Python bot 隔離配合通過。尚未啟用的 recovery 原生備份歷史仍按原保護拒絕；固定 activation／實際 bot 映像組合驗收沒有因此完成。父項數量不變。
+## 父項驗收索引
 
-[第 227 批](227-room-parent-acceptance.md)完成 P05–P10：實際副本 2,314 次分析及 576 次分房與固定 Python 一致，補回遷移後身份的同分順序；43 個自由來源帳號與 13 場活動／82 位目前名冊成員正確對應，246 次 HTTP／117 次原程式比較通過。補現有預分／實際包間載入、原房名與無成分者／原稿保全，以及舊帳單專用包間讀取；95 張非合成 session 表與全部 6 張 bot 表不變。86 個單元／33 個瀏覽器案例、strict／build／bundle 煙霧通過。父項增加 6 個，整體 P6 尚未完成。
+| 原功能 | 完整本機證據 |
+| --- | --- |
+| I01–I16 身份／裝置／刪除 | [第 232 批](232-identity-parent-acceptance.md) |
+| E01–E18 活動 | [第 233 批](233-activity-parent-acceptance.md) |
+| R01–R13 名冊 | [第 234 批](234-roster-parent-acceptance.md) |
+| T01–T09 時間投票 | [第 235 批](235-time-poll-parent-acceptance.md) |
+| P01–P10 分房 | [第 227 批](227-room-parent-acceptance.md)、[第 229 批](229-formal-room-parent-acceptance.md) |
+| S01–S14 結算 | [第 230 批](230-settlement-parent-acceptance.md)，原帳單相容性見[第 228 批](228-historical-settlement-compatibility.md) |
+| F01–F12 財務 | [第 231 批](231-finance-parent-acceptance.md) |
+| M01–M22 成分／詞庫／同好 | [第 224 批](224-music-parent-acceptance.md)、[第 225 批](225-matching-order-parent-acceptance.md) |
+| C01–C07 喊話／PWA 等 | [第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)與既有 C04／C05／C07 證據 |
+| A01–A15 管理 | [第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)、[第 237 批](237-admin-and-recovery-acceptance.md) |
+| B01–B15 bot | [第 236 批](236-bot-parent-acceptance.md)，恢復交接見[第 240 批](240-recovery-worker-handoff-acceptance.md) |
+| O01–O15 共用操作 | [第 238 批](238-common-and-actual-recovery-acceptance.md)、[第 239 批](239-common-and-integration-acceptance.md)、[第 241 批](241-complete-local-acceptance.md) |
+| U01–U03 統一體驗 | [第 239 批](239-common-and-integration-acceptance.md) |
 
-[第 228 批](228-historical-settlement-compatibility.md)修正三份正式逐人帳單中兩份缺少後續帳本／群同意欄位的讀取相容性。64 次隔離 HTTP、三份原預覽／新版保存／精確重試與固定 Python 一致，原歷史及 118 筆 bot 工作保留；82 個單元／49 個瀏覽器、strict／build／bundle 煙霧通過。線上來源 Python bot 的 532 次隔離 HTTP／71 次原 worker／9 次 TypeScript worker 與正常停止也通過。這是 S08／S09／S14 的局部證據，父項數量不變；實際映像配對與完整 P6 尚未完成。
+[功能台帳](capability-status.json)、[整合台帳](integration-status.json)與[原條款索引](local-acceptance-status.json)保留逐項來源、測試及父項決定。原條款索引的較早完整 CI 與各批次結果仍保留其實際提交時點，最新完整本機決定另列於 `latest_complete_local_acceptance`。
 
-[第 229 批](229-formal-room-parent-acceptance.md)完成 P01–P04：48 個帳號加匿名訪客、1,770 次隔離 HTTP，637 次概況／294 次歷史與固定原程式一致；10 場活動的部分保存、同內容核對／精確重試通過，6 版原預分歷史與原報名／帳務／bot 表保留。補回編輯器未分配人員數量與名單；修正房名／分房原因的原 Python Unicode 空白語意；67 個單元／71 個瀏覽器及當前 build／bundle 煙霧通過；重新驗證線上来源 Python bot，532 次隔離 HTTP／71 次原 worker／9 次 TypeScript worker 與正常停止通過。新增 4 個本機通過父項，總數 42；跨版本／回退與 U01–U03 尚未完成。
+## 回歸與隔離正式副本
 
-[第 230 批](230-settlement-parent-acceptance.md)完成 S01–S14：線上副本 4,241 次 HTTP、294 次帳單／196 次原圖及 36 次預覽與固定 Python 一致；八次發布／精確重試、四次同內容不加版，原三份詳細帳單、六版房間歷史與 118 筆 bot 工作保留。修正結算／隨單費用／碼名的 Unicode 空白語意及 pending 名稱一致性；133 個單元／105 個瀏覽器及當前 build／bundle 煙霧通過，線上來源 bot 的 532 HTTP／71 原 worker／9 TS worker 與正常停止通過。新增 14 個父項，總數 56；當前實際映像／activation／成套回退與其餘父項待完成。
+完整 Linux CI 提交 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的 4,063 單元／1,047 瀏覽器／映像取得成功終態；沒有略過、重試或 flaky。後续實作修正的相關單元、瀏覽器、原 Python 比較、build／bundle 與實際映像證據見各批報告，不將後續修改套用較早完整 CI。
 
-[第 231 批](231-finance-parent-acceptance.md)完成 F01–F12：同一線上副本 4,094 次 HTTP、637 次帳本與 63 次預覽／保存／精確重試和原 Python 一致；3,087 次私人／公開讀取及三份原帳單結清／重新開啟／新增申報保全，原 118 筆 bot 工作不變。修正結清稽核的精確 JSON 整數及原兩人表單上限；300 單元／50 瀏覽器與當前 build／bundle 煙霧通過。線上來源 bot 的 532 HTTP／71 原 worker／9 TS worker 及正常停止通過；最後前端修正未改 API bundle 雜湊，補回結清歷史的原版次／檢查點與手機欄位對齊。新增 12 個父項，總數 68；其餘完整審核及實際版本／恢復驗收待完成。
+固定新版 runtime 為 `1d672eb1b3a0e6519dc890a88e8a5bc855371774`，搭配實際保存的正式 Python bot `07defc429d619a7558ab7218372886f531813ae3`；實際映像 ID 見[第 241 批](241-complete-local-acceptance.md)。其後至本批只有文件及台帳檢查變更，未修改運行程式。
 
-[第 232 批](232-identity-parent-acceptance.md)完成 I01–I16：375 單元／158 瀏覽器、同一線上隔離副本 2,186 HTTP，48 個帳號／裝置讀取與 42 個註銷結果與原 Python 一致，另六個有管理工作正確拒絕；24 組裝置流程、68 份成分查詢、43 份刪除／新 ID 重建與最新落盤 ledger 重播／配對歷史 HTTP 匯出通過。18 張共享及 bot 表、原 118 筆工作、25 份未關聯成分與三個原墓碑保全；原刪除標記投影共 46 筆。沒有運行程式修改，245 個 bundle pins 與第 231 批相同，沿用該批固定 bot 來源證據；不宣稱實際映像組合新驗收。新增 16 個父項，累計 84；其餘 82 個及 U01–U03、當前固定版本恢復與成套回退仍未完成。
+最新授權副本使用現在線上規模：48 帳號、14 活動、87 參加者、68 份成分、152 詞條、682 選擇、三份原詳細帳單、六版房間及 118 outbox。重複匯入、原資料與字典順序、最新刪除紀錄、30 成分歷史、14 看板歷史、媒體與六 bot 外檔已對帳。早期 1,000 人／2,000 詞條合成樣本只保留為額外證據，不作本次容量基準。
 
-[第 233 批](233-activity-parent-acceptance.md)完成 E01–E18：194 單元／161 瀏覽器及正式隔離副本 3,450 HTTP、257 次原 Python 寫入／精確重試通過；49 個身份、14 場活動與原 140 筆歷史、三份帳單、六版分房及 outbox 保全。補回活動歷史的同名安排回覆目標、結算方式／變更欄位及草稿本人參加；15 克隆各 83 張非目標表 typed rows 一致。當前 API pins 與本輪已成功的 532 HTTP／71 原 worker／9 TS worker／正常停止相同。新增 18 個父項，累計 102；其餘 64 個及 U01–U03、當前固定版本恢復與成套回退仍未完成。
+第 240 批完成恢復副本的 20 次 worker／43 HTTP／七種交接，保留原意圖、限流與不確定投遞語意。第 241 批沿用該成功副本建立新的三人分房／900 分結算，再完成固定原 HTTP 新寫入、完整來源＋authority 的 business／proof／rebase、三階段各 97 表重跑、重新封存／啟用、固定映像兩次啟停及原 Python 25 指令比較。終態獨立 97 表與圖片／外檔 bytes／mtime 對帳通過；完整失敗證據仍保存在私人目錄。
 
-[第 234 批](234-roster-parent-acceptance.md)完成 R01–R13：148 單元／111 瀏覽器及正式隔離副本 7,298 HTTP、71 次原 Python 寫入／精確重試通過；3,936 次逐人音樂讀取、七場隔離新增活動與實際帳單後 self／manager 認領保全。五克隆各 77 張非目標表及 579 筆原操作相關列 typed rows 相同，原報名、三份帳單、六版分房及 118 outbox 原樣保留。943 個來源／測試與 245 個產物未變，沿用第 233 批固定來源 bot 相容性證據；新增 13 個父項，累計 115，剩餘 51 個及 U01–U03、當前固定版本恢復與成套回退仍未完成。
+## 本機交付與正式環境
 
-[第 235 批](235-time-poll-parent-acceptance.md)完成 T01–T09：66 單元／49 瀏覽器與正式隔離副本 2,604 HTTP、82 次原 Python 寫入／精確重試通過。原四份投票、24 候選、填答／票及歷史保留；只在原開放投票的操作克隆依規則更新原 17 列，五次定案只報名發起者。日期／精確與兩時區過期、55 候選、同人 ballot 競態及原群工作保全；四克隆各 79 張非目標表與 734 筆原列不變。943 個來源與 245 個產物未變，沿用已驗證的 bot 來源證據；新增九個父項，累計 124，剩餘 42 個及 U01–U03、當前固定版本恢復與成套回退尚未完成。
+本機預覽入口為 <http://127.0.0.1:5082>，使用隔離合成資料及模擬登入，不載入私人正式副本、不啟動投遞 worker。啟動、測試帳號及建議操作順序見[測試指南](local-testing.md)。
 
-[第 236 批](236-bot-parent-acceptance.md)完成 B01–B15：159 單元／46 瀏覽器、固定候選映像配保存的正式 bot 映像取得 531 HTTP／71 原 worker／9 TS worker／314 深連結、七種交接與正常停止。實際映像內同批原看板／新庫的 14 活動、25 指令、57 別名、每來源 1,441 回覆一致，原庫及 118 outbox 不變。新映像網站與離線版本檢查通過；原整組 bot harness 的五秒逾時及 OOM 保留，分置 library／入口後通過，入口觀察 7,743 ms，沒有改產品規則或時鐘。原第 221 批套件在啟用前被目前歷史對帳拒絕，原因仍待核對；不以通知恢復代替固定 activation／成套回退。新增 15 父項，累計 139；剩餘 12 管理、15 共用操作及 U01–U03。管理 89 單元／60 瀏覽器先取得成功，正式副本完整父項仍待審核。
+正式環境沒有因本輪改動。唯讀擷取期間未停止服務，不能當成正式停寫切換證據；原看板刪除紀錄缺失已記錄，正式切換需重新取得当時成套快照。真實 QQ 授權／真群投遞及實機 WebView 結果另行記錄，不冒充本機模擬已通過，也不因此延伸本次本機實作範圍。
 
-[第 237 批](237-admin-and-recovery-acceptance.md)完成 A01–A11、A14：89 管理單元／60 瀏覽器、3,015 主要 HTTP／159 目錄對照／47 角色與 96 備註寫入、204 原 owner 轉換、51 PIN 重設及 17 非數字成分拒絕、九次原活動協助、300 詞庫／歷史／刪除／重置 HTTP 與 60 刪除申請 HTTP 通過。四個克隆各 97 表及原圖片／118 outbox 保全；79 目前來源與 43 原 Python pins 核對。舊套件拒絕確認為歷史字典順序；排序修正後套件搭配新 authority 已完成離線啟用與原生重啟，兩次獨立 97 表比較只改恢復旗標，六個 bot 外檔及七筆不確定工作保全。新增 12 父項，累計 151，剩 15 共用操作及 U01–U03；實際映像 recovery startup 與原服務成套回退尚未完成，P6 仍未完成。
-
-[第 238 批](238-common-and-actual-recovery-acceptance.md)完成 O08–O11、O15：552 單元／38 瀏覽器、36 具體案例引用與 62 來源／測試 pins 核對。實際固定網站映像在第 237 批啟用副本完成兩次啟動／140 HTTP／正常停止重啟；原阻擋 checkpoint 無回執拒絕、authority 鎖與禁寫通過。保存的 Python bot 映像與新映像對原 checkpoint／恢復庫各 1,441 回覆及 176 解析一致。獨立 97 表對帳只見恢復旗標與一筆按啟動時鐘新增的趨勢；原 118 outbox、六個 bot 外檔及奈秒時間保留。沒有啟動投遞 worker，原服務全部回退／forward 與恢復 worker 成套交接仍待完成。累計 156，剩 O01–O07、O12–O14 及 U01–U03，P6 仍未完成。
-
-[第 239 批](239-common-and-integration-acceptance.md)完成 O01–O07、U01–U03：617 單元／149 瀏覽器與 211 具體案例、167 pins 核對；線上隔離副本 608 讀取／244 整合操作、六門檻圈子及保存實際 Python bot 的 25 指令／同版三人 900 分帳單通過。原所有資料列、scope／成分及 118 outbox 保留。累計 163／166 及三個整合父項，剩 O12–O14、恢復投遞 worker 與原服務完整往返。
-
-`0059259f4b5382d54aedb79a769edfddd8d4dafb` 的完整 Linux unit **4,063**／browser **1,047**／image 已取得成功終態、原 artifacts 與原提交來源 pins，browser 無略過／重試／flaky。該提交包含第 221 批手機工具；第 222 批兩項管理登出測試及第 223 批 activation 修改分開以本機證據驗證，不套用未包含的完整 CI。當前固定候選與實際匯出 bot 的組合證據見[第 236 批](236-bot-parent-acceptance.md)；較早組合見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)；較早間歇性恢復失敗及 subprocess timeout 證據保留，根因尚未證明。
-
-最新正式副本已完成兩次匯入、新寫入回退／forward、30 份成分歷史、14 組看板歷史及外部 bot 狀態恢復；[第 220 批](220-legacy-http-and-parent-acceptance.md)完成固定舊 HTTP 新寫入及 244 次刪除後歷史下載／恢復／重啟；[第 221 批](221-forward-deletion-and-mobile-tools.md)完成刪除後完整 erasure／business／proof／source rebase、三階段各 97 表重複回復與再次封存。[第 223 批](223-recovery-copy-activation.md)新增離線啟用工具及原生 receipt／原 authority 綁定，正式隔離副本的 97 表只改恢復旗標、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣與跨兩次原生讀取／重啟通過；160 個相關案例、strict 與 API／bot bundle 通過。原輸入仍 blocked；當前固定版本的 activation／恢復組合尚未驗收，既有 runtime manifest 明確拒絕未綁定配置。剩餘為全台帳審核、當前固定版本成套恢復驗證及固定舊 web／music／bot 的全部回退操作，使用實際線上容量與已核對版本，不再要求預估容量或由使用者提供版本。
-
-| 批次 | 剩餘工作 | 完成判據 |
-| --- | --- | --- |
-| 1. 操作與恢復收尾（已完成本機相關验收） | 已核對原操作與個人／授權紀錄處理（[第 213 批](213-legacy-personal-checkpoint.md)）；保留方法、原 key、payload、回執與當前權限。活動／投票建立、活動編輯／發布／生命週期／群通知、名冊／安排回覆、邀請／協辦／發起者交接、認領／出席／現場補錄、個人稱呼／消息已讀／收款碼、時間投票管理、正式分房、逐人結算與帳本恢復已有隔離實作。 | 相關原生／恢復命令已核對；已提交操作不重送；授權／未知來源保留並有目前處理入口。最後全套與跨功能驗收仍列於第 2、3 批。 |
-| 2. 整合與資料驗收 | 最新副本的 59 張看板／25 張成分表與 97 張新庫表重複匯入對帳、新寫入回退及 forward 已通過。第 219–226 批已驗證 224 檔 v2 與 227 檔 v3 私人套件，含 30 份成分歷史、14 組看板歷史及 6 個原 bot 外部檔案；原 bytes／mtime、outbox 与設定保全。166 個既有 ID 與 U01–U03 已有語意條款證據。已補固定原 web／music 的實際 HTTP 新寫入及 forward、歷史下載／刪除／回退恢復；已完成回退後新刪除的 forward／proof／source rebase、重複回復及歴史／媒體重新封存；剩餘為 O12–O14、恢復副本投遞 worker 交接與固定原服務／bot 成套回退／forward 收尾。原第 221 批套件於第 236 批啟用前被歷史對帳拒絕；第 237 批已確認為字典順序差異，改用第 226 批套件及新配對 authority 完成離線啟用／原生重啟，實際映像恢復仍待驗證。只讀投影或 created 容器不足以替代。 | 現有功能矩陣逐項取得完整本機證據；資料及 bot 行為沒有遺漏；程序和錯誤恢復可重現。 |
-| 3. 本機交付 | 已有可啟動預覽、指南及固定候選完整回歸；第 220 批主題與本批找搭子／PWA／管理操作已有具體本機證據。第 2 批未完成前，不標最終驗收完成。 | 完整報告通過；功能缺口清零；可按文件在本機測試。 |
-
-P6 還要求全台帳審核、隔離正式副本、固定版本組合及新寫入回退演練，不能移到 P7 或由本機合成測試代替。P7 正式切換屬後續發布工作。真實 QQ 授權、真群投遞與實機 WebView 的結果分開記錄，不把模擬結果當成外部平台驗收，也不以尚未部署為由繼續增加本機功能範圍。
-
-最新線上副本擷取期間資料版本穩定，但服務未停寫，不證明跨服務停寫切換邊界；看板刪除紀錄檔缺失已記錄。這份副本只用於本機驗收，切換須重新取得當時成套快照。最新資料量為 48 個看板帳號／14 場活動／87 筆參加者、68 份成分來源會員／682 筆選擇，詳見第 219 批；下列較早觀察保持原時點。
-
-## 已讀取的線上基準
-
-2026-11-22 09:17–09:23（Asia/Taipei）只讀取得。沒有改動服務、憑證、群設定或待送工作。
-
-- 看板：45 個帳號、13 場活動、77 筆參加者、4 個時間投票；schema_migrations 20 筆。SQLite user_version 為 0，不能把它當成 schema 版本。
-- 成分：66 位會員、152 個詞條（13 主／139 子）、681 筆選擇、單人最多 20 項，1 則喊話、48 個趨勢樣本。選擇分布已移除姓名及原始識別碼後留在本機私人驗證目錄，沒有納入 Git。
-- web：來源 `83eb54ce94f935a4048aaf63a410206723f09bd8`，映像 `sha256:e26f55f0aa1c0a9d7d237d71fcf271bb52456a5f2a548f4679f3f5bd701920e9`。
-- bot：來源 `07defc429d619a7558ab7218372886f531813ae3`，映像 `sha256:e9d93c4441e2a34989722d7a5a86f87c8fa99cbc638b37cfe75a712fe6aa6720`。52 個 qgroup_core／qgroup_bot 公開檔案逐檔雜湊相符；兩服務皆 running／healthy。
-
-本機以同一選擇分布逐列核對關係、程度與順序，再實測 API（第 214 批）：搜尋 median 3.12 ms、同好 6.54 ms、圈子 185.33 ms、40 人分房 197.54 ms，程序末端 RSS 187.6 MiB。每項 5 次，單請求循序執行；量測期間 DB 寫入 0。這是當前資料量的本機測試，不是正式機 RSS、尖峰流量或整套資料遷移已通過的宣告。較早的 1,000 人／2,000 詞條合成壓力樣本保留為額外證據，不再作本次容量基準。
-
-## 驗證與啟動入口
-
-```sh
-npm ci --no-audit --no-fund
-npm run build:rebuild
-npm run test:rebuild -- --maxWorkers=1 --testTimeout=30000
-npm run test:e2e:rebuild
-REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run test:retained-python:rebuild
-```
-
-瀏覽器測試使用各自的隔離 fixture 與已建置網站；必須先完成建置再執行。活動操作收尾見[第 209 批](209-legacy-activity-patch-checkpoint.md)，名冊及安排回覆見[第 210 批](210-legacy-registration-checkpoint.md)，邀請及管理交接見[第 211 批](211-legacy-invitations-checkpoint.md)，認領及出席見[第 212 批](212-legacy-participants-checkpoint.md)，個人操作與授權紀錄見[第 213 批](213-legacy-personal-checkpoint.md)。完整驗收結果以最新檢查點的報告為準，不能將這份收斂清單本身視為已通過。
-
-本機開發使用 `npm run dev:rebuild`，入口 `http://127.0.0.1:5080`，API 為 `http://127.0.0.1:5081`。使用獨立開發庫；不要將 `REBUILD_DB` 指向正式資料。若要先查看合成資料的已建置版本，執行 `node_modules/.bin/tsx apps/api/testsupport/preview.ts`，入口 `http://127.0.0.1:5082`。完整啟動設定見[本機開發](07-implementation-checkpoint.md#本機開發)。
+保存的原 Python bot 沒有新版 OS 排他鎖，更換 worker 必須先停止舊 bot並確認退出，再啟動新版。發布仍須遵守[發布政策](../deployment-policy.md)及 README 的 server2 保全流程；本機通過、原始碼推送及 main 更新都不等於部署。

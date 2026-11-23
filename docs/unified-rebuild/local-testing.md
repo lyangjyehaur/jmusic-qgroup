@@ -1,6 +1,6 @@
 # 本機測試指南
 
-本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新財務驗收見[第 231 批](231-finance-parent-acceptance.md)，結算／收款碼驗收見[第 230 批](230-settlement-parent-acceptance.md)，正式分房驗收見[第 229 批](229-formal-room-parent-acceptance.md)，舊帳單相容性見[第 228 批](228-historical-settlement-compatibility.md)，分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
+本指南使用隔離資料及合成 QQ 登入。P0–P6 的實作及完整本機驗收已完成，166 個既有功能與 U01–U03 全部通過，見[第 241 批](241-complete-local-acceptance.md)。沒有合併 main 或部署，線上網站與 bot 繼續使用原版本。
 
 ## 啟動可操作預覽
 
@@ -54,7 +54,7 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 
 完整 Linux CI 提交 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的 unit 4,063 項、browser 1,047 項及映像組合均通過，沒有略過或重試，包含第 221 批手機工具。第 222 批兩項管理登出測試及第 223 批恢復啟用修改另有本機驗證；不將未包含的修改套用原完整 CI。真正匯出的線上 bot 映像隔離組合及同一正式副本的匯入／回退證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。
 
-目前 163 個既有功能父項與 U01–U03 本機通過；[第 239 批](239-common-and-integration-acceptance.md)完成共用操作、全站搜尋／圈子／三人分房帳單整合，剩 O12–O14 及恢復投遞 worker／原服務完整往返，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。[第 237 批](237-admin-and-recovery-acceptance.md)完成剩餘管理父項；排序修正後套件與新配對 authority 的離線啟用／原生重啟通過，[第 238 批](238-common-and-actual-recovery-acceptance.md)完成固定實際映像的恢復網站啟動及保存 Python 只讀相容性，恢復 worker 交接與原服務完整往返仍待驗證。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
+完整父項審核、正式隔離副本、固定實際 web／bot 映像、恢復 worker 交接及原站 HTTP 新寫入往返均通過，見[第 240 批](240-recovery-worker-handoff-acceptance.md)與[第 241 批](241-complete-local-acceptance.md)。預覽可立即操作；真實 QQ／WebView 平台結果與正式切換另行記錄。本輪不部署。
 
 ## 成分詞庫與共用編輯
 
@@ -77,7 +77,7 @@ M13–M22 的完整本機證據及排序修正見[第 225 批](225-matching-orde
 4. 開啟「圈子」改門檻、查看全部群組與獨立成員，以鍵盤開啟詞條並返回；修改成分後核對結果更新。
 5. 開啟「趨勢」，核對圖例、資料表、最近詞條與會員入口；從詞條回到原草稿。匿名訪客只可見聚合資料。
 
-目前這批本機驗收通過，原 P6 的完整恢復／forward 排序及固定版本組合驗收尚未完成，不部署。
+完整恢復／forward 與固定版本組合的本機驗收已通過，見[第 241 批](241-complete-local-acceptance.md)；未部署。
 
 ## 正式預分與未分配人員
 
