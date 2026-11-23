@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 68,
+  "full_parents_accepted": 84,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -30,209 +30,241 @@
   "records": [
     {
       "capability_id": "I01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "公開讀取不建會員，訪客只建立 HttpOnly session；會員寫入仍要求登入。"
+        "公開讀取不建會員，訪客只建立 HttpOnly session；會員寫入仍要求登入。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/app.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "回調只驗證，本人確認才建立或綁定；綁定保留既有 ID、名稱與獨立授權。",
         "十分鐘 state 綁原 session／帳號；重播、取消與交換中撤權不復活。",
-        "身份、同意、授權、cookie 旋轉與稽核一起回滾。"
+        "身份、同意、授權、cookie 旋轉與稽核一起回滾。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/auth.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "返回網址保留活動、投票、action、invite、query 與 hash；取消維持身份。"
+        "返回網址保留活動、投票、action、invite、query 與 hash；取消維持身份。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/auth.test.ts",
         "apps/web/tests/auth.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "拒絕兩方向 QQ 綁定衝突；名稱／UnionID 不自動合併，OpenID 依 client ID 區分。"
+        "拒絕兩方向 QQ 綁定衝突；名稱／UnionID 不自動合併，OpenID 依 client ID 區分。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/auth.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "名稱註冊預設關閉，API 即時重驗設定；關閉不刪已有會員。",
-        "同意須指定目前版本及明確勾選；舊同意不隱含新版同意，也不搬給另一帳號。"
+        "同意須指定目前版本及明確勾選；舊同意不隱含新版同意，也不搬給另一帳號。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/privacy-consent.test.ts",
         "apps/api/src/registration.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "站內稱呼更新不換 ID、QQ 名稱、既有成分或凍結名冊金額。",
-        "QQ 頭像讀取限安全 origin；載入失敗有可及性退路。"
+        "QQ 頭像讀取限安全 origin；載入失敗有可及性退路。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/account-profile.test.ts",
         "apps/api/src/auth.test.ts",
         "apps/web/tests/account-profile.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "僅明確切換已授權帳號；舊頁私人讀寫拒絕，不搬兩個帳號資料。"
+        "僅明確切換已授權帳號；舊頁私人讀寫拒絕，不搬兩個帳號資料。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/auth.test.ts",
         "apps/web/tests/account-profile.spec.ts",
         "apps/web/tests/devices.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "跨裝置連結十分鐘且只允許一人使用；查看不消耗，接受不自動切帳號。",
-        "產生與接受均明確確認；訪客不可接受；有效舊 plaintext 連結可續用。"
+        "產生與接受均明確確認；訪客不可接受；有效舊 plaintext 連結可續用。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/account-devices.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "不撤当前裝置或別人的裝置；僅撤目標帳號授權，保全另一帳號授權與 QQ 意圖。",
         "非目前帳號撤權不能誤刪目前帳號的 pending／authorized／completed 成分找回。",
-        "帳號紀錄依目前帳號分頁，不回私人 details。"
+        "帳號紀錄依目前帳號分頁，不回私人 details。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/account-devices.test.ts",
         "apps/api/src/music-claim.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "UnionID 只回布林狀態，重授權原 QQ 保留原帳號；不宣稱 bot 實際已可用。",
-        "重授權提醒按原 scope key節流24小時，編輯／邀請期間不打斷、不先登出。"
+        "重授權提醒按原 scope key節流24小時，編輯／邀請期間不打斷、不先登出。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/auth.test.ts",
         "apps/web/tests/account-profile.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "無成分只於明確保存建立新 m_ ID；重試及並行不重複，不搶舊成分。",
-        "已關聯／看板單邊／成分單邊用同一帳號進入；找回保留原資料及名稱。"
+        "已關聯／看板單邊／成分單邊用同一帳號進入；找回保留原資料及名稱。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/app.test.ts",
         "apps/api/src/music-claim.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "4–6位PIN原session十分鐘意圖，須關聯本次freshQQ及最後確認；取消可重試。",
-        "QQ／IP持久限流與原Python邊界一致，競爭找回只有一個owner。"
+        "QQ／IP持久限流與原Python邊界一致，競爭找回只有一個owner。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/music-claim.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "固定成分 ID與舊數字鍵可查；自填QQ清空不換ID，非認證身份且不可重號。"
+        "固定成分 ID與舊數字鍵可查；自填QQ清空不換ID，非認證身份且不可重號。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/music-contact.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I14",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "未交接的活動／未定案投票先拒絕帳號註銷，刪成分獨立可用。",
         "註銷撤身份/session/管理權，保留共享帳務，依實際保留列標shared_review。",
-        "刪私人圖片保留共享引用；刪本人投票不重算凍結歷史。"
+        "刪私人圖片保留共享引用；刪本人投票不重算凍結歷史。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/music-contact.test.ts",
         "apps/api/src/privacy.test.ts",
         "apps/web/tests/privacy.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I15",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "成分刪除与帳號註銷分開，舊回執與草稿不能復活，新建全新ID。",
-        "隔離本機最新fsynced ledger優先恢復；再次重播不復活；不明durability fail closed。"
+        "隔離本機最新fsynced ledger優先恢復；再次重播不復活；不明durability fail closed。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/music-claim.test.ts",
         "apps/api/src/music-contact.test.ts",
         "apps/api/src/privacy.test.ts",
         "apps/web/tests/privacy.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "I16",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "登出清理本session全部grants/意圖，其他裝置继续登入。",
-        "私人查詢key依scope、登出清理本機原稿並通知同瀏覽器其他分頁。"
+        "私人查詢key依scope、登出清理本機原稿並通知同瀏覽器其他分頁。",
+        "第 232 批完整原條件審核、375 單元／158 瀏覽器及同一線上隔離副本通過；48 帳號／68 成分、24 組裝置、42 註銷／6 拒絕、43 刪除／新 ID／最新 ledger／歷史配對匯出与原身份及共享 bot typed rows 保全。"
       ],
       "test_files": [
         "apps/api/src/auth.test.ts",
         "apps/web/tests/account-profile.spec.ts",
         "apps/web/tests/devices.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md"
     },
     {
       "capability_id": "E01",
@@ -2489,7 +2521,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2735,6 +2767,62 @@
     "retained_original_worker_invocations": 71,
     "retained_typescript_worker_invocations": 9,
     "retained_graceful_stop": true,
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_identity_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "I01",
+      "I02",
+      "I03",
+      "I04",
+      "I05",
+      "I06",
+      "I07",
+      "I08",
+      "I09",
+      "I10",
+      "I11",
+      "I12",
+      "I13",
+      "I14",
+      "I15",
+      "I16"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "2f9a2edacac3af5875d2a0fc2c4fc01b33d7a0fd",
+    "pinned_original_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "accounts": 48,
+    "active_profiles": 68,
+    "linked_profiles": 43,
+    "http_calls": 2186,
+    "account_list_comparisons": 48,
+    "device_list_comparisons": 48,
+    "music_link_comparisons": 48,
+    "same_qq_reauthorizations": 48,
+    "profile_card_and_alias_comparisons": 68,
+    "two_device_scenarios": 24,
+    "new_board_only_profiles": 5,
+    "account_closures": 42,
+    "active_work_closure_refusals": 6,
+    "original_python_typed_closure_comparisons": 42,
+    "music_erasures_and_fresh_id_rebuilds": 43,
+    "original_unlinked_active_profiles_preserved": 25,
+    "original_profile_tombstones_preserved": 3,
+    "projected_erasure_rows": 46,
+    "read_tables_unchanged": 96,
+    "shared_and_bot_tables_unchanged": 18,
+    "original_outbox_rows_preserved": 118,
+    "latest_fsynced_ledger_replayed_twice": true,
+    "actual_paired_backup_historical_http_export_verified": true,
+    "rollback_projection_verified": true,
+    "unit_cases_passed": 375,
+    "browser_cases_passed": 158,
+    "runtime_bundle_files_unchanged": 245,
+    "retained_bot_evidence_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
     "actual_production_image_combination": false,
     "original_p6_complete": false,
     "release_eligible": false

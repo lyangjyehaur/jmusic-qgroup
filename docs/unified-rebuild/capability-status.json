@@ -5,9 +5,25 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/232-identity-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
+      "I01",
+      "I02",
+      "I03",
+      "I04",
+      "I05",
+      "I06",
+      "I07",
+      "I08",
+      "I09",
+      "I10",
+      "I11",
+      "I12",
+      "I13",
+      "I14",
+      "I15",
+      "I16",
       "P01",
       "P02",
       "P03",
@@ -100,22 +116,26 @@
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "訪客 session、不建會員與登入引導已測；完整舊入口與正式遷移後的匿名／權限驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I02",
@@ -135,15 +155,18 @@
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -151,10 +174,11 @@
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "已實作登入／綁定／回調確認、原裝置與時限、衝突與失效競態；真 QQ、正式資料及完整錯誤恢復驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I03",
@@ -181,27 +205,31 @@
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/registration.test.ts",
         "apps/api/src/activity-roster.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/registration.test.ts",
         "apps/api/src/activity-roster.test.ts",
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/activity-roster.spec.ts",
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "QQ 與名稱註冊的本地 query／hash 返回已測；舊 URL adapters、真實邀請／投票動作與過期恢復待完成。 已補名單浮層、完整卡與新成分保存的活動錨點返回；完整邀請／報名／分房上下文仍待完成。 時間投票的原生通知、定案活動、延遲候選摘要及舊 worker 模擬投遞已補測；非真實 QQ 驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I04",
@@ -217,22 +245,26 @@
       ],
       "behavior_evidence": [
         "apps/api/src/auth.test.ts",
-        "apps/api/src/qq-provider.test.ts"
+        "apps/api/src/qq-provider.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/auth.test.ts"
+        "apps/api/src/auth.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "兩種 QQ 綁定衝突、同名／UnionID 不合併及 client 隔離已測；正式匯入與完整身分操作聯測待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I05",
@@ -256,28 +288,32 @@
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/registration.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "packages/database/src/consent-migration.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/registration.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
         "apps/web/tests/registration.spec.ts",
         "apps/web/tests/privacy-consent.spec.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "名稱註冊開關、獨立政策版本、既有帳號明確確認及回應／儲存失敗、原帳號、版本漂移與跨頁恢復已隔離驗證（檢查點 95）。正式政策版本／公告、完整資料遷移、實體裝置及實際候選 web／bot 組合仍待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I06",
@@ -304,19 +340,22 @@
         "apps/api/src/account-profile.test.ts",
         "apps/api/src/music-fields.test.ts",
         "apps/api/src/legacy-personal.test.ts",
-        "tools/rebuild/smoke-legacy-personal.mjs"
+        "tools/rebuild/smoke-legacy-personal.mjs",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/account-profile.test.ts",
         "tools/rebuild/compare-nickname.py",
         "apps/api/src/legacy-personal.test.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/account-profile.test.ts",
-        "apps/api/src/legacy-personal.test.ts"
+        "apps/api/src/legacy-personal.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -324,10 +363,11 @@
         "apps/web/tests/music-fields.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "稱呼、名冊版本／快照、去重恢復、QQ 暱稱分離與官方頭像備援已實作；正式遷移後資料、真實平台／完整可及性及語言驗收待完成。 已補成分稱呼與帳號稱呼獨立、預設固定及 Unicode 重名保護；完整名冊成分卡與舊協議投影仍待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I07",
@@ -349,19 +389,22 @@
         "apps/api/src/auth.test.ts",
         "apps/api/src/qq-provider.test.ts",
         "apps/api/src/account-devices.test.ts",
-        "apps/api/src/account-profile.test.ts"
+        "apps/api/src/account-profile.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/account-profile.test.ts",
-        "tools/rebuild/compare-nickname.py"
+        "tools/rebuild/compare-nickname.py",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/account-devices.test.ts",
         "apps/api/src/account-profile.test.ts",
         "apps/api/src/privacy-consent.test.ts",
-        "docs/unified-rebuild/95-unified-privacy-checkpoint.md"
+        "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -369,10 +412,11 @@
         "apps/web/tests/account-profile.spec.ts",
         "apps/web/tests/privacy-consent.spec.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "帳號 grant、切換、撤銷後替代帳號與跨分頁 scope／草稿隔離已測；完整離線／背景、多瀏覽器、真實遷移與舊入口驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I08",
@@ -391,13 +435,16 @@
       ],
       "behavior_evidence": [
         "apps/api/src/account-devices.test.ts",
-        "apps/api/testsupport/device-link-record.test.ts"
+        "apps/api/testsupport/device-link-record.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/account-devices.test.ts"
+        "apps/api/src/account-devices.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/devices.spec.ts",
@@ -405,10 +452,11 @@
         "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "已實作十分鐘一次性連結、兩端確認、訪客登入返回、取消不消耗、並行一次成功與回執核對；舊入口 adapters、真 QQ WebView 與遷移版本組合驗收待完成。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I09",
@@ -429,14 +477,17 @@
         "apps/api/src/account-devices.test.ts",
         "apps/api/testsupport/device-link-record.test.ts",
         "apps/api/src/music-claim.test.ts",
-        "docs/unified-rebuild/215-device-grant-isolation-checkpoint.md"
+        "docs/unified-rebuild/215-device-grant-isolation-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/auth-bot.test.ts"
+        "apps/api/src/auth-bot.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/account-devices.test.ts",
-        "apps/api/src/music-claim.test.ts"
+        "apps/api/src/music-claim.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/devices.spec.ts",
@@ -444,10 +495,11 @@
         "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "已實作裝置列出、二次確認撤權、排除目前裝置、保留其他帳號／意圖、帳號歷史分頁與交易回滾；裝置舊入口、完整恢復／還原與實際版本組合驗收待完成。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。 第 215 批修正非目前帳號的裝置授權撤銷會誤刪另一帳號成分找回；pending／authorized／completed 三項均保全原意圖並可續用，主動 session 撤銷仍失效。完整正式副本與實際版本／平台驗收保持未完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I10",
@@ -475,20 +527,23 @@
         "apps/bot/src/identity-diagnostics.test.ts",
         "apps/bot/src/dispatch-workers.test.ts",
         "apps/bot/src/runtime.test.ts",
-        "tools/rebuild/smoke-bot.ts"
+        "tools/rebuild/smoke-bot.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/account-profile.test.ts",
         "tools/rebuild/compare-nickname.py",
         "apps/bot/src/identity-diagnostics.test.ts",
-        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md"
+        "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/account-profile.test.ts",
         "apps/bot/src/identity-diagnostics.test.ts",
-        "apps/bot/src/runtime.test.ts"
+        "apps/bot/src/runtime.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -496,10 +551,11 @@
         "docs/unified-rebuild/59-bot-identity-diagnostics-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-personal.spec.ts",
-        "docs/unified-rebuild/213-legacy-personal-checkpoint.md"
+        "docs/unified-rebuild/213-legacy-personal-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "UnionID 狀態、原 QQ bind 重授權、24 小時提醒節流及缺值／成功結果已測；原生 worker 存在／布林匹配診斷與 Python 差分已接通，不輸出原值或推定 bot 已綁定。真 QQ 跨應用授權、全裝置／儲存限制與實際版本組合驗收待完成，見 59 號檢查點。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I11",
@@ -531,20 +587,23 @@
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-claim.test.ts",
         "apps/api/src/admin-music.test.ts",
-        "apps/api/testsupport/pending-operations.test.ts"
+        "apps/api/testsupport/pending-operations.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-claim.test.ts",
-        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/web/tests/durable-music-recovery.spec.ts"
+        "apps/web/tests/durable-music-recovery.spec.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -553,10 +612,11 @@
         "apps/web/tests/admin-music.spec.ts",
         "apps/web/tests/durable-music-recovery.spec.ts",
         "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。共用 session、已關聯匯入、PIN／本次 OAuth 找回及管理關聯已實作並以合成資料驗證；完整欄位、原 session／intent adapter、正式版本組合及副本演練待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I12",
@@ -575,27 +635,31 @@
       ],
       "behavior_evidence": [
         "apps/api/src/music-claim.test.ts",
-        "apps/api/testsupport/pending-operations.test.ts"
+        "apps/api/testsupport/pending-operations.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/music-claim.test.ts",
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/claim-migration.test.ts",
         "docs/unified-rebuild/16-recovery-checkpoint.md",
-        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md"
+        "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/music-claim.test.ts",
-        "apps/web/tests/durable-music-recovery.spec.ts"
+        "apps/web/tests/durable-music-recovery.spec.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/music-recovery.spec.ts",
         "apps/web/tests/durable-music-recovery.spec.ts",
         "docs/unified-rebuild/79-durable-music-recovery-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "舊成分找回僅保存原 UUID／QQ／action；原編號查詢、PIN 不入儲存、關頁後明確核對、關聯／取消結果恢復、交易中止、分頁競爭、異常秘密原文下載與無訊號登出隔離已補驗（檢查點 79）。PIN 4–6 位、持久 QQ／IP 限流、原 session 十分鐘 intent、本次 QQ 授權與明確關聯、取消／未知結果恢復均有合成驗證；真 QQ、舊 session／intent 協議與正式版本組合待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I13",
@@ -618,27 +682,31 @@
       "behavior_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
         "apps/api/src/music-contact.test.ts",
-        "packages/database/src/contact-migration.test.ts"
+        "packages/database/src/contact-migration.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/import-snapshot.test.ts",
         "packages/database/src/import-migration.test.ts",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "docs/unified-rebuild/14-import-checkpoint.md",
         "apps/web/tests/music-contact.spec.ts",
         "docs/unified-rebuild/15-contact-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "權威聯絡表、舊數字鍵保護、native 自填修改／清空、會員查詢／複製、重號／原子競態、身份隔離與刪除已實作並與 Python 差分；管理更正、舊網址／協議 adapter、完整匯入未知案例、合併隱私政策與實際平台驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I14",
@@ -711,7 +779,8 @@
         "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
         "docs/unified-rebuild/223-recovery-copy-activation.md",
         "apps/api/src/recovery-activation.test.ts",
-        "apps/api/src/recovery-activation-guards.test.ts"
+        "apps/api/src/recovery-activation-guards.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -734,7 +803,8 @@
         "apps/api/src/forward-board-account-merge.test.ts",
         "docs/unified-rebuild/129-board-account-references-checkpoint.md",
         "docs/unified-rebuild/130-account-business-source-rebase-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -750,7 +820,8 @@
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -761,10 +832,11 @@
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
         "apps/web/tests/privacy-consent.spec.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "帳號關閉、權限撤銷、收據、審核、匯入後舊身份撤銷及獨立成分聯絡歷史保留待審已實作；完整共享資料處理、歷史備份／恢復／媒體濾除及正式 bot 版本組合待驗收。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 統一政策及新同意／回執隨 Python／TS 帳號關閉刪除、恢復防復活已隔離驗證（檢查點 95）；正式適用版本及實際候選組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 130 號接通原帳號關閉的三方成分／身份清理、完整 business／proof／再次 source rebase 與十份原來源 bytes 保留。完整最新 music erasure／reset generation、外部 ancestry／custody／高水位、latest-erasure 私人存取、browser／media／stopped capture、固定 Linux 版本組合及全功能／B01–B15 驗收仍待完成，recovery-blocked，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I15",
@@ -835,7 +907,8 @@
         "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
         "docs/unified-rebuild/223-recovery-copy-activation.md",
         "apps/api/src/recovery-activation.test.ts",
-        "apps/api/src/recovery-activation-guards.test.ts"
+        "apps/api/src/recovery-activation-guards.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -858,7 +931,8 @@
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
         "apps/api/src/forward-music-authority.test.ts",
         "docs/unified-rebuild/128-legacy-music-erasure-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/privacy.test.ts",
@@ -875,7 +949,8 @@
         "docs/unified-rebuild/118-native-erasure-continuation-checkpoint.md",
         "apps/api/testsupport/retained-erasure-config.test.ts",
         "docs/unified-rebuild/119-retained-authority-config-checkpoint.md",
-        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md"
+        "docs/unified-rebuild/221-forward-deletion-and-mobile-tools.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/privacy.spec.ts",
@@ -885,10 +960,11 @@
         "apps/web/tests/admin-music-erasure.spec.ts",
         "apps/web/tests/durable-erasures.spec.ts",
         "docs/unified-rebuild/81-durable-erasure-recovery-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "分開刪除、ID／epoch、回執 410、兩套最新 ledger 優先匯入／恢復、原來源重跑不復活、PIN／native／contact／喊話清理、權威聯絡及各分頁草稿清除已實作；管理刪除、歷史下載／備份濾除、完整還原／回退待驗收。 管理刪除與重置、找回 OAuth 撤銷、版本 2 意圖及舊副本／快照匯入後防復活已補測；成套備份與回退仍待完成。 會員／管理刪除證明獨立持久儲存、原回執／精確重送、關頁／交易失敗／分頁競爭／清除恢復及秘密匯出隔離已測（檢查點 81）；實際裝置、完整恢復與正式版本組合仍待驗收。 檢查點 116 已在私人歷史看板副本重播最新帳號刪除，核對原 SQLite／gzip 圖片配對、native schema 13／14／15、59 表／signed rowid／高水位與原 bot 狀態，並經原 Python recovery／media readers 驗證；v2／v3 套件及来源隔離已有直接案例。較早期 legacy schema、跨程序／重啟後最新刪除權威、完整固定舊服務／實際 bot 配對與 forward restore 仍未驗收；輸出 historyOnly=true／rollbackEligible=false，不部署。 檢查點 117 已在私人三 domain authority 保全原 bytes，驗證先 intent 後服務 ledger、真程序四階段中斷／重啟、舊資料恢復後原 Python 重播、原 HTTP 匯出 guard、獨立 TS chain reader 與明確 authority-aware 離線維護；沒有改動正式 bot。authority 自身的外部保留／高水位認證、native writer／startup 接入、舊 reset structured term scope、全部維護入口約束／固定映像組合與完整 forward restore 仍未驗收；原未包覆維護 CLI 仍不可在 authority 演練直接使用，rollbackEligible=false，不部署。 檢查點 118 已在私人 authority 接入原生網站的持鎖續寫／read guard／checkpoint-lineage 綁定，真程序中斷後恢復、同 baseline DB 重播、原 admin bytes／原回執、SQL rollback、SQLite inode 排除及全部五種 bot 狀態保留均有隔離證據。舊 board／music 回退後新增 intent 會阻擋 native，不假裝完成 forward projection；完整 forward projection／rebase、較早 native baseline footprint／任意歷史恢復、強制候選配置、外部 custody／高水位、審計修復、Linux 固定映像／完整實際版本組合仍待驗收，rollbackEligible=false，不部署。 檢查點 119 強制 production web 在 DB 開啟前提供完整 retained authority／checkpoint；候選 Compose 提供三個分離的既有私人 bind、唯讀 checkpoint、明確 production 與 pin，解析後 checker 及實際 Docker Compose config 已隔離驗證。可獨立讀取的合成空 image fixture 由原生 reader／factory 接受，保留原生刪除 35 案例；尚未執行 Linux 固定映像，配置宣告不代表外部 custody／retention、實際 mount、版本組合或完整 forward projection／baseline 恢復已通過，所有切換 gate 保留，不部署。 第 128 號補原 music 刪除 v3 匯入、原 Python deletion／frozen-history 範圍、帳號與 bot 保全、私人套件和 native paired-backup／offline-restore 合成證據；origin metadata 不認證外部 custody，完整 reset／ancestry／重複 epoch／activation 和實際版本組合仍待驗收，不部署。 第 221 批已在最新正式隔離副本完成原 HTTP 成分刪除後的完整 erasure／business／proof／source rebase，三階段各 97 表重複回復、30 歷史及當前匯出、4 圖片與原 bot 外部 bytes 保全及再次 224 檔封存。這份副本沒有 pending claims／frozen audit mappings，不替代非空案例。固定原服務／bot 成套操作、外部 ancestry／high-water／custody 及經審核 recovery activation 仍待完成；輸出保持 recovery_required=1，不部署。 第 223 批新增離線啟用副本與原生 receipt／原 authority 綁定，當前線上隔離副本的 97 表、4 圖片及 6 個 bot 外部檔案保全、7 筆投遞審核列保持原樣、跨兩次原生讀取／重啟已驗證；原 blocked 輸入不變。本機共 160 相關案例通過。review 不代替正式停寫／外部 ancestry 或當前固定版本成套驗收；原 runtime manifest 明確拒絕未綁定的 activation 配置，其餘 P6 父項驗收仍待完成，不部署。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "I16",
@@ -919,19 +995,22 @@
         "apps/api/src/account-devices.test.ts",
         "apps/api/src/account-profile.test.ts",
         "apps/api/src/music-contact.test.ts",
-        "apps/api/testsupport/device-link-record.test.ts"
+        "apps/api/testsupport/device-link-record.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/auth-bot.test.ts",
         "apps/api/src/account-profile.test.ts",
         "tools/rebuild/compare-nickname.py",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/auth.test.ts",
         "apps/api/src/account-devices.test.ts",
         "apps/api/src/account-profile.test.ts",
-        "apps/api/src/music-contact.test.ts"
+        "apps/api/src/music-contact.test.ts",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/auth.spec.ts",
@@ -942,10 +1021,11 @@
         "docs/unified-rebuild/82-short-lived-device-links-checkpoint.md",
         "apps/web/tests/privacy-consent.spec.ts",
         "docs/unified-rebuild/95-unified-privacy-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/232-identity-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "登出當前 session／全部 grant／意圖及跨分頁清稿、私人畫面更新已測；儲存不可用、離線／背景分頁、其他敏感資料與完整多瀏覽器驗收待完成。 已補稱呼草稿依 scope 隔離、切回恢復及登出清理的瀏覽器證據。 短效發出／接收連結獨立持久化、十分鐘期限、交易／分頁競爭、原接受結果、世代清除／晚回應及關頁恢復已合成驗證（檢查點 82）；實際 QQ WebView、完整舊遷移及版本組合仍待驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "E01",
