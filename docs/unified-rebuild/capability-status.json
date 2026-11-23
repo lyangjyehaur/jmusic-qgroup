@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "I01",
@@ -55,6 +55,15 @@
       "R11",
       "R12",
       "R13",
+      "T01",
+      "T02",
+      "T03",
+      "T04",
+      "T05",
+      "T06",
+      "T07",
+      "T08",
+      "T09",
       "P01",
       "P02",
       "P03",
@@ -2451,7 +2460,8 @@
         "apps/api/src/create-intents.test.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/api/testsupport/legacy-authoring.test.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/time-polls.test.ts",
@@ -2461,7 +2471,8 @@
         "apps/web/tests/create-intents.spec.ts",
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
-        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md"
+        "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/time-polls.test.ts",
@@ -2469,7 +2480,8 @@
         "apps/web/tests/legacy-local.spec.ts",
         "apps/api/src/create-intents.test.ts",
         "apps/web/tests/create-intents.spec.ts",
-        "apps/web/tests/legacy-authoring.spec.ts"
+        "apps/web/tests/legacy-authoring.spec.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
@@ -2478,10 +2490,11 @@
         "docs/unified-rebuild/84-create-intents-checkpoint.md",
         "apps/web/tests/legacy-authoring.spec.ts",
         "docs/unified-rebuild/85-legacy-authoring-conversion-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "活動／複製活動與投票原 fields／React 欄位轉換、原 IANA 時區與凌晨日曆加日／DST 拒絕、原 UUID 結果綁定、既有活動最新核對及已建立投票唯讀保留已補驗（檢查點 85）。目的 strict CAS 後才保存來源映射；中止精確重試、目的保全／pending 阻擋、來源改寫、晚到同意圖請求、vault 升級、切帳號與登出世代有隔離證據。結算原圖轉換（包間／帳務原稿轉換的後續證據見檢查點 86）、未知或不同意圖競爭稿處理、原稿退休後的來源目的查回、全部舊命令 adapter、匯出重新匯入與實際版本組合仍待完成。 原建立識別已沿用 Python 確定性 key 與 request_results 綁定，跨請求 UUID 去重、既有原回執不改寫、後續編輯保留及目前 React 原稿辨識／來源再驗已補驗（檢查點 84）。活動／投票逐欄位轉換、目的原稿與來源映射的後續證據見檢查點 85；其餘領域與實際版本組合仍待完成。 原 kanban-local-v1 同源專用保全、六種原表單／原圖／scope／undefined／原版本與編號保留、來源改寫雙版本、只讀 Python 原回執查詢與未映射表單阻擋已補驗（檢查點 83）。來源不刪除；登出例外沿用既有明確清除，epoch 阻止晚匯入與舊頁寫回。逐領域無損轉換、建立結果與目的稿的轉換確認、原命令重送、特殊授權與匯出重新匯入、未知形狀分類及實際版本組合仍待完成。 原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T02",
@@ -2497,20 +2510,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T03",
@@ -2526,20 +2543,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T04",
@@ -2555,20 +2576,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T05",
@@ -2584,20 +2609,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T06",
@@ -2613,20 +2642,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T07",
@@ -2642,20 +2675,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T08",
@@ -2671,20 +2708,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T09",
@@ -2700,20 +2741,24 @@
         "apps/web/src/time-polls.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/time-polls.test.ts"
+        "apps/api/src/time-polls.test.ts",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/time-polls.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生日期／精確時段、完整填答／未填批次、失效舊票、管理／唯一活動定案、群同步／舊 worker 及精確恢復已具合成測試與 Python 差分；全部舊 HTTP adapter、正式副本與 B01–B15 成套驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "P01",

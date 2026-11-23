@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 115,
+  "full_parents_accepted": 124,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -711,107 +711,125 @@
     },
     {
       "capability_id": "T01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "至少2候選、無舊固定項數上限、跨月不連續選擇與單項移除。"
+        "至少2候選、無舊固定項數上限、跨月不連續選擇與單項移除。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts",
         "apps/web/tests/time-polls.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "全部有效候選必須一次明確填答，不能默認補票或報名。"
+        "全部有效候選必須一次明確填答，不能默認補票或報名。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts",
         "apps/web/tests/time-polls.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "批量選擇只填未答，保已有答案與過期歷史；鍵盤可切radio。"
+        "批量選擇只填未答，保已有答案與過期歷史；鍵盤可切radio。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts",
         "apps/web/tests/time-polls.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "date按IANA當地下一日午夜、exact按開始；過期原choice及數字保留。"
+        "date按IANA當地下一日午夜、exact按開始；過期原choice及數字保留。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "截止早於最後候選失效；到時關閉，只有明確合法extend才延長。"
+        "截止早於最後候選失效；到時關閉，只有明確合法extend才延長。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "最高票只比較尚有效候選；zero或未達minimum/非最高須理由。"
+        "最高票只比較尚有效候選；zero或未達minimum/非最高須理由。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts",
         "apps/web/tests/time-polls.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "定案唯一event，原vote不自動成報名；條件/owner報名/audit/notification/bot按原Python順序。"
+        "定案唯一event，原vote不自動成報名；條件/owner報名/audit/notification/bot按原Python順序。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "新poll預設bot同步，event沿用；global/group關閉不生或不送，延遲只摘要有效候選。"
+        "新poll預設bot同步，event沿用；global/group關閉不生或不送，延遲只摘要有效候選。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "T09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "原UUID不再定案；管理revision與定案base_vote_revision過期拒絕，並行只建1event。"
+        "原UUID不再定案；管理revision與定案base_vote_revision過期拒絕，並行只建1event。",
+        "第 235 批完整原條件審核、66 單元／49 瀏覽器及同一正式副本 2604 HTTP 通過；82 次原 Python 寫入／精確重試、原候選／歷史及 118 outbox 保全，五次唯一活動定案不代報投票者。日期／精確／DST／55 候選與本人 ballot 競態核對，四克隆各 79 張非目標表 typed rows 不變；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/time-polls.test.ts",
         "apps/web/tests/time-polls.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md"
     },
     {
       "capability_id": "P01",
@@ -2357,7 +2375,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2585,7 +2603,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2997,6 +3015,67 @@
     "lossless_intermediate_archives": 77,
     "unit_cases_passed": 148,
     "browser_cases_passed": 111,
+    "runtime_source_files_unchanged": 943,
+    "runtime_bundle_files_unchanged": 245,
+    "retained_bot_evidence_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+    "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_time_poll_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/235-time-poll-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "T01",
+      "T02",
+      "T03",
+      "T04",
+      "T05",
+      "T06",
+      "T07",
+      "T08",
+      "T09"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "e4ad78c7d70e0948fcef9934a04be620185af1c4",
+    "pinned_original_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "viewers_including_anonymous": 49,
+    "captured_polls": 4,
+    "captured_open_date_polls": 1,
+    "captured_deleted_polls": 3,
+    "captured_options": 24,
+    "captured_ballots": 4,
+    "captured_votes": 33,
+    "captured_history_rows": 8,
+    "captured_public_poll_comparisons": 49,
+    "captured_owner_context_comparisons": 4,
+    "captured_list_comparisons": 98,
+    "captured_read_refusals": 339,
+    "http_calls": 2604,
+    "all_public_poll_comparisons": 833,
+    "all_owner_context_comparisons": 21,
+    "original_write_comparisons": 82,
+    "exact_retries": 82,
+    "original_business_refusals": 8,
+    "native_input_refusals": 1,
+    "native_old_ballot_conflicts": 1,
+    "isolated_clones": 4,
+    "isolated_created_polls": 5,
+    "largest_candidate_batch_verified": 55,
+    "finalized_activities": 5,
+    "expired_synthetic_vote_rows_preserved": 8,
+    "independent_unchanged_tables_per_clone": 79,
+    "retained_original_target_rows_per_clone": 734,
+    "original_ballot_and_vote_rows_retained": 37,
+    "controlled_original_ballot_and_vote_rows_updated": 17,
+    "original_detailed_bills_preserved": 3,
+    "original_room_versions_preserved": 6,
+    "original_outbox_rows_unchanged": 118,
+    "isolated_new_outbox_rows": 22,
+    "lossless_intermediate_archives": 90,
+    "unit_cases_passed": 66,
+    "browser_cases_passed": 49,
     "runtime_source_files_unchanged": 943,
     "runtime_bundle_files_unchanged": 245,
     "retained_bot_evidence_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
