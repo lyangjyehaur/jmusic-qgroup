@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 56,
+  "full_parents_accepted": 68,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -20,7 +20,8 @@
     "Original identity tie ranks, current plan/actual room loading and preserved room/frozen-name reader at checkpoint 227: captured-data analysis/split and true-worker API comparisons, 86 unit / 33 browser / retained online-source Python checks; no financial editor relaxation or actual production image acceptance",
     "Historical settlement reads preserve omitted journal_seq / balances / group consent at checkpoint 228; strict native previews and writes unchanged. Three captured bills compared with original Python, 82 unit / 49 browser checks; no full settlement parent or actual image acceptance claimed.",
     "Room editor unassigned roster and correct pre-plan stale-member guidance; shared room-name / plan-reason contracts preserve original Python Unicode strip semantics at checkpoint 229. 67 unit / 71 browser and captured-data original comparisons passed. Fresh retained online-source Python checks: 532 HTTP / 71 original workers / 9 TS workers and graceful stop. P01–P04 accepted locally; actual image/recovery acceptance remains incomplete.",
-    "Invoice / merchant / payment-code text uses original Python strip rules; code form and durable pending comparison share the contract at checkpoint 230. 133 unit / 105 browser, captured-data 4241 HTTP / 36 previews / 8 publications with original Python and append-row storage preservation passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop. S01–S14 accepted locally; actual production image / recovery acceptance remains incomplete."
+    "Invoice / merchant / payment-code text uses original Python strip rules; code form and durable pending comparison share the contract at checkpoint 230. 133 unit / 105 browser, captured-data 4241 HTTP / 36 previews / 8 publications with original Python and append-row storage preservation passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop. S01–S14 accepted locally; actual production image / recovery acceptance remains incomplete.",
+    "Finance close audit checkpoints now use exact JSON integers via an optional shared audit serializer; other callers retain original JSON behavior. UI extra parties stop at the original limit of two; close history retains its original bill version and checkpoint, and mobile room totals use existing aligned columns. Checkpoint 231: 300 unit / 50 browser, captured-data 4094 HTTP / 63 original previews and writes / exact retries, 3087 private-view comparisons, 3 original bill close/reopen/new-pending scenarios, independent typed rows and 68 compressed intermediate copies passed. Fresh retained online-source Python: 532 HTTP / 71 original / 9 TS workers and graceful stop; final API bundle pins unchanged by subsequent UI-only cap / immutable close-version / room alignment fixes. F01–F12 accepted locally; actual image/recovery acceptance remains incomplete."
   ],
   "latest_readonly_source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
   "latest_private_rollback_package_v3_sha256": "acd75bf63421febce1bd49316b0ba4f8fb54a2259adf98fe0336e591592979c4",
@@ -1068,151 +1069,175 @@
     },
     {
       "capability_id": "F01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "申報不計入實收，只可本人責任及受管理未綁同行；非允許kind拒绝。"
+        "申報不計入實收，只可本人責任及受管理未綁同行；非允許kind拒绝。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "核對接受原額/原snapshot，拒绝须原因，撤回僅本人；決定不可改。"
+        "核對接受原額/原snapshot，拒绝须原因，撤回僅本人；決定不可改。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "實收/退款/償還墊付保存payer/actual party/池或個人出資，無支付執行。"
+        "實收/退款/償還墊付保存payer/actual party/池或個人出資，無支付執行。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "個人墊付/代收池支出與退款分明；merchant refund關聯expense/deposit apply。"
+        "個人墊付/代收池支出與退款分明；merchant refund關聯expense/deposit apply。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
         "apps/api/src/finance.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "訂金保留在deposit非cost，退回及抵消費分開，剩額/後續依賴不可負。"
+        "訂金保留在deposit非cost，退回及抵消費分開，剩額/後續依賴不可負。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "責任歸屬移轉與實體代收款移交為不同journal kind，當前有效party及原因，精確對平。"
+        "責任歸屬移轉與實體代收款移交為不同journal kind，當前有效party及原因，精確對平。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
         "apps/api/src/finance.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "正額與真實過去時間/格式，preview隨內容/版本失效，不以新key自動重送。",
-        "原交易各kind/close/reopen/report/decisions及未知結果以原key/body/proof恢復。"
+        "原交易各kind/close/reopen/report/decisions及未知結果以原key/body/proof恢復。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/legacy-finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "confirmed entries/claims/actions只追加；沖銷先處理後續依賴，不沖銷沖銷。"
+        "confirmed entries/claims/actions只追加；沖銷先處理後續依賴，不沖銷沖銷。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "無逐人帳單個人金額null，當前最新帳單待補待退，不以管理同行當本人債。"
+        "無逐人帳單個人金額null，當前最新帳單待補待退，不以管理同行當本人債。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "包間待補/待退與現金池獨立，跨房reference/資金使用拒绝，不以同收款人淨抵。"
+        "包間待補/待退與現金池獨立，跨房reference/資金使用拒绝，不以同收款人淨抵。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "無bill、欠款、應退、店家/房/訂金/現金/待核對不平不可結清；新帳/款/申報使舊close無效。"
+        "無bill、欠款、應退、店家/房/訂金/現金/待核對不平不可結清；新帳/款/申報使舊close無效。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance-projection.test.ts",
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "F12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
         "原付款origin與immutable labels在認領/退出/改名/轉交後保留；current authority重驗。",
-        "BigInt序號/cursor數字排序，報告與entries獨立分頁，logout/切帳不露舊原稿。"
+        "BigInt序號/cursor數字排序，報告與entries獨立分頁，logout/切帳不露舊原稿。",
+        "第 231 批原條件完整審核、正式隔離副本及原 Python 款項演練通過；十種款項、報告隱私、關聯沖銷、三份原帳單結清／重開／新增申報與精確整數稽核保全。"
       ],
       "test_files": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/activity-finance.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
     },
     {
       "capability_id": "M01",
@@ -2464,7 +2489,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2646,6 +2671,64 @@
     "unit_cases_passed": 133,
     "browser_cases_passed": 105,
     "text_normalization": "original_python_strip",
+    "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
+    "retained_bot_source_files": 52,
+    "retained_bot_http_calls": 532,
+    "retained_original_worker_invocations": 71,
+    "retained_typescript_worker_invocations": 9,
+    "retained_graceful_stop": true,
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_finance_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06",
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12"
+    ],
+    "change_scope": "both",
+    "review_base_commit": "be9b59f279883a96fa89056ed5aca36825f2c03f",
+    "pinned_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "pinned_original_core_files": 34,
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "viewers_including_anonymous": 49,
+    "events": 14,
+    "http_calls": 4094,
+    "view_comparisons": 637,
+    "read_refusals": 49,
+    "original_preview_comparisons": 63,
+    "original_write_comparisons": 63,
+    "exact_retries": 63,
+    "rejected_operations": 5,
+    "private_report_view_comparisons": 3087,
+    "original_bill_close_reopen_scenarios": 3,
+    "original_room_scope_checkpoints": 3,
+    "unchanged_read_tables": 96,
+    "unchanged_tables_after_writes": 88,
+    "independent_unchanged_tables_including_synthetic_session_difference": 87,
+    "new_journal_rows": 55,
+    "new_reports": 6,
+    "new_report_actions": 3,
+    "integer_audit_close_checkpoints": 6,
+    "original_detailed_bills_preserved": 3,
+    "original_plan_versions_preserved": 6,
+    "original_outbox_rows_preserved": 118,
+    "unchanged_bot_tables": 5,
+    "bot_outbox_only_appended": true,
+    "compressed_intermediate_copies_verified": 68,
+    "unit_cases_passed": 300,
+    "browser_cases_passed": 50,
     "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
     "retained_bot_source_files": 52,
     "retained_bot_http_calls": 532,

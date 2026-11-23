@@ -85,7 +85,8 @@ export function executeFinance(db:DB,event:EventRow,user:User,input:{revision:nu
     }else if(action==='record')append(command.id!,command.transaction!.kind!,command.transaction!);
     else append(randomBytes(8).toString('hex'),{reverse:'reversal',close:'close',reopen:'reopen'}[action]!,command,null,command.entry_id??null);
     const after=financeSummary(db,event,user.id),privateAction=['report','reject','withdraw'].includes(action),operation=privateAction?Object.fromEntries(Object.entries(command).filter(([key])=>!['transaction','reason'].includes(key))):command;
-    appendEventAudit(db,event,user,'finance_'+action,{state:before.state},{operation,state:after.state},privateAction?'':command.reason??command.transaction?.reason??'',stamp);
+    const auditOperation=command.last_seq===undefined?operation:{...operation,last_seq:BigInt(command.last_seq)};
+    appendEventAudit(db,event,user,'finance_'+action,{state:before.state},{operation:auditOperation,state:after.state},privateAction?'':command.reason??command.transaction?.reason??'',stamp,canonical);
     const recipients=new Set([event.owner_id,...(db.prepare('SELECT user_id FROM event_roles WHERE event_id=?').all(id) as {user_id:string}[]).filter(r=>eventScopes(db,event,r.user_id).has('settlement')).map(r=>r.user_id)]),{users}=financeParties(db,event,user.id);
     for(const p of command.transaction?.parties??[]){if(users.has(p.id))recipients.add(users.get(p.id)!);else if(p.id.startsWith('person:')){const row=db.prepare('SELECT manager_id FROM attendees WHERE event_id=? AND id=?').get(id,p.id.slice(7)) as {manager_id:string}|undefined;if(row)recipients.add(row.manager_id);}}
     if(command.report_id)recipients.add((db.prepare('SELECT reporter_id FROM finance_reports WHERE id=?').get(command.report_id) as {reporter_id:string}).reporter_id);

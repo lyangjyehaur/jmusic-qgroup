@@ -1,6 +1,6 @@
 # 本機測試指南
 
-本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新結算／收款碼驗收見[第 230 批](230-settlement-parent-acceptance.md)，正式分房驗收見[第 229 批](229-formal-room-parent-acceptance.md)，舊帳單相容性見[第 228 批](228-historical-settlement-compatibility.md)，分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
+本指南使用隔離資料及合成 QQ 登入。執行測試不會部署；目前線上網站與 bot 繼續使用原版本。 最新財務驗收見[第 231 批](231-finance-parent-acceptance.md)，結算／收款碼驗收見[第 230 批](230-settlement-parent-acceptance.md)，正式分房驗收見[第 229 批](229-formal-room-parent-acceptance.md)，舊帳單相容性見[第 228 批](228-historical-settlement-compatibility.md)，分房完整父項驗收見[第 227 批](227-room-parent-acceptance.md)，整體 P6 驗收仍未完成。
 
 ## 啟動可操作預覽
 
@@ -54,7 +54,7 @@ REBUILD_RETAINED_PYTHON_COMMIT=07defc429d619a7558ab7218372886f531813ae3 npm run 
 
 完整 Linux CI 提交 `0059259f4b5382d54aedb79a769edfddd8d4dafb` 的 unit 4,063 項、browser 1,047 項及映像組合均通過，沒有略過或重試，包含第 221 批手機工具。第 222 批兩項管理登出測試及第 223 批恢復啟用修改另有本機驗證；不將未包含的修改套用原完整 CI。真正匯出的線上 bot 映像隔離組合及同一正式副本的匯入／回退證據見[第 219 批](219-current-copy-and-acceptance-checkpoint.md)。
 
-目前 56 個既有功能父項本機通過；110 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
+目前 68 個既有功能父項本機通過；98 個及 U01–U03 仍待完整審核，[第 223 批](223-recovery-copy-activation.md)已補離線啟用副本與原生 receipt 綁定，160 個相關案例及同一線上副本對帳通過；仍須當前固定版本的 activation／恢復驗收與固定原 web／music／bot 的成套回退操作。找搭子原資料、管理刪除、PWA、壁紙及跨裝置管理登出的最新證據見[第 222 批](222-shouts-pwa-and-admin-parent-acceptance.md)。本機預覽可立即操作，最終 P6 驗收尚未完成。真實 QQ／WebView 的平台結果分開記錄；本輪不部署。
 
 ## 成分詞庫與共用編輯
 
@@ -88,3 +88,9 @@ P01–P04 的完整本機證據見[第 229 批](229-formal-room-parent-acceptanc
 S01–S14 的完整本機證據見[第 230 批](230-settlement-parent-acceptance.md)。原人均帳單先顯示原分母與差額；轉逐人須選擇轉換、核對人員及填原因，保存後原版仍可查看。編輯費用時可選五種分攤及共同／指定人員；付款人與真實墊款分開核對，已記支出選 recorded，不重記付款。發布前查看逐人、付款人與房間金額，修改備註／圖片後應追加版。
 
 在「我的收款碼」新增合成圖片，再於結算帶入；從歷史查看和下載原圖、另存本人發布的碼。移除碼庫後舊帳图片應保留。模擬丟失保存回應後重新整理，只查回原操作；切帳號不顯示他人私圖或待確認內容。上述普通預覽仍不啟動 bot 投遞程序。
+
+## 帳本、申報與結清
+
+F01–F12 的完整本機證據見[第 231 批](231-finance-parent-acceptance.md)。以第二帳號申報合成款項，公開帳本應仍無已確認款項，其他會員看不到申報原文；發起者核對確認後才進帳。拒絕要原因，申報人可撤回未處理申報。
+
+測訂金支付、部分退回／抵消費、店家退差及逐項沖銷，核對原紀錄仍在。切換更正款項歸屬與移交代收資金，分別核對責任與持有款；有實際包間時逐房登記，不跨房抵銷。所有人、店家、訂金、持有款及申報對平後才可結清，填原因重新核對；新增待核對申報後應回到待處理。額外款項人員最多兩個，移除後可再次新增。

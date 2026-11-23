@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "P01",
@@ -32,6 +32,18 @@
       "S12",
       "S13",
       "S14",
+      "F01",
+      "F02",
+      "F03",
+      "F04",
+      "F05",
+      "F06",
+      "F07",
+      "F08",
+      "F09",
+      "F10",
+      "F11",
+      "F12",
       "M01",
       "M02",
       "M03",
@@ -66,7 +78,7 @@
       "A15"
     ],
     "latest_full_regression_commit": "0059259f4b5382d54aedb79a769edfddd8d4dafb",
-    "latest_runtime_checkpoint": "docs/unified-rebuild/230-settlement-parent-acceptance.md"
+    "latest_runtime_checkpoint": "docs/unified-rebuild/231-finance-parent-acceptance.md"
   },
   "capabilities": [
     {
@@ -3718,18 +3730,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -3737,10 +3752,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F02",
@@ -3770,18 +3786,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -3789,10 +3808,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F03",
@@ -3822,18 +3842,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -3841,10 +3864,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F04",
@@ -3874,18 +3898,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -3893,10 +3920,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F05",
@@ -3926,18 +3954,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -3945,10 +3976,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F06",
@@ -3978,18 +4010,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -3997,10 +4032,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F07",
@@ -4030,18 +4066,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -4049,10 +4088,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F08",
@@ -4082,18 +4122,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -4101,10 +4144,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F09",
@@ -4121,21 +4165,25 @@
       ],
       "behavior_evidence": [
         "apps/api/src/finance.test.ts",
-        "apps/api/src/activity-bot.test.ts"
+        "apps/api/src/activity-bot.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
-        "apps/api/src/finance-projection.test.ts"
+        "apps/api/src/finance-projection.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/finance.test.ts"
+        "apps/api/src/finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F10",
@@ -4152,21 +4200,25 @@
       ],
       "behavior_evidence": [
         "apps/api/src/finance.test.ts",
-        "apps/api/src/activity-bot.test.ts"
+        "apps/api/src/activity-bot.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
-        "apps/api/src/finance-projection.test.ts"
+        "apps/api/src/finance-projection.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/finance.test.ts"
+        "apps/api/src/finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F11",
@@ -4196,18 +4248,21 @@
         "apps/api/src/activity-bot.test.ts",
         "apps/api/testsupport/legacy-money.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/api/src/finance-projection.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/finance.test.ts",
         "apps/web/tests/legacy-money.spec.ts",
-        "apps/api/src/legacy-finance.test.ts"
+        "apps/api/src/legacy-finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
@@ -4215,10 +4270,11 @@
         "apps/web/tests/legacy-money.spec.ts",
         "apps/web/tests/legacy-finance-request.spec.ts",
         "docs/unified-rebuild/88-legacy-finance-request-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原 POST finance 待確認請求已沿用本機指紋、原隨機 key／Python 簽名與預覽 token；八命令／十款項差分、required receipt 原子回滾、損壞／衝突／權限阻擋、原回執 durable 確認、回應遺失與 mapping 中止不重送，以及保留 Python bot 的模擬消費已驗（檢查點 88）。其他原命令 adapter、失效來源明確退休、來源目的版本查回、完整裝置／資料／候選 web-bot 組合及新寫入回退仍待完成。 舊包間與收支 fields／React 原稿已能帶入實際 TSX 表單；固定房間／款項／操作目標、停用自訂人員與欄位、原時區核對、已存在款項只讀、目的 CAS／中止／pending／競爭／清除世代及 Python bot 回歸有隔離證據（檢查點 86）。結算含原圖轉換、原請求 adapter、目的版本退休後查回與完整候選版本組合仍待完成。 原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "F12",
@@ -4235,21 +4291,25 @@
       ],
       "behavior_evidence": [
         "apps/api/src/finance.test.ts",
-        "apps/api/src/activity-bot.test.ts"
+        "apps/api/src/activity-bot.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/finance.test.ts",
-        "apps/api/src/finance-projection.test.ts"
+        "apps/api/src/finance-projection.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/finance.test.ts"
+        "apps/api/src/finance.test.ts",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-finance.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/231-finance-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生帳本與全部十種款項／八種命令已隔離驗證，含 Python 差分、舊 worker、精確恢復、逐房核對及大序號；仍須與完整逐人結算編輯、改帳、分房、憑證及正式匯入副本成套驗收，見 31-finance-checkpoint.md。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "M01",
