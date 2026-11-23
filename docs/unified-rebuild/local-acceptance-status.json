@@ -11,7 +11,7 @@
   "reviewed_clauses": 228,
   "matched_case_references": 939,
   "unique_reviewed_source_paths": 329,
-  "full_parents_accepted": 102,
+  "full_parents_accepted": 115,
   "runtime_changes_after_validated_commit": [
     "apps/web/src/guide.tsx: two operation guidance corrections; separate build and existing guide browser verification",
     "apps/web/src/page-tools.tsx, layout.tsx, style.css: back-to-top and visual-viewport save-bar spacing; separate build/UI/smoke and browser verification at checkpoint 221",
@@ -527,161 +527,187 @@
     },
     {
       "capability_id": "R01",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "preview綁目前revision/安排/逐人輸入與分配，須明確接受當時費用，不默認接受新規則。"
+        "preview綁目前revision/安排/逐人輸入與分配，須明確接受當時費用，不默認接受新規則。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R02",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "本人/同行/純代報各獨立attendee，note及payer保留，管理人與付款人分開。"
+        "本人/同行/純代報各獨立attendee，note及payer保留，管理人與付款人分開。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R03",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "confirmed保留；together不足整組waiting且阻後方；individual混合分配須明確accept_partial。"
+        "confirmed保留；together不足整組waiting且阻後方；individual混合分配須明確accept_partial。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-publish.test.ts",
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R04",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "tentative不占位；確認另建party，新隊序不繼承先前優先。"
+        "tentative不占位；確認另建party，新隊序不繼承先前優先。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R05",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "後加同行及退出後重新報名均建立新party；不動原confirmed資料、原順序與付款。"
+        "後加同行及退出後重新報名均建立新party；不動原confirmed資料、原順序與付款。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R06",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "只本人管理人或roster scope可改、管理他人須理由；linked姓名不被客人輸入覆蓋，已認領payer凍結，split保持原隊列。"
+        "只本人管理人或roster scope可改、管理他人須理由；linked姓名不被客人輸入覆蓋，已認領payer凍結，split保持原隊列。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R07",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "截止前退出按原FIFO補位、原confirmed不重排；關閉/期限後不自動遞補。"
+        "截止前退出按原FIFO補位、原confirmed不重排；關閉/期限後不自動遞補。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R08",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "confirmed逾期須原因、批准前留位；reject/approve須roster與原因，waiting/tentative直接退出。"
+        "confirmed逾期須原因、批准前留位；reject/approve須roster與原因，waiting/tentative直接退出。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R09",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "補報名邀請無位無通知，只有有限preview；接受當時條件/候補，單次且不重複本人。"
+        "補報名邀請無位無通知，只有有限preview；接受當時條件/候補，單次且不重複本人。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-invitations.test.ts",
         "apps/web/tests/activity-invitations.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R10",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "7天issue/supersede/request/approve/reject/revoke；原issuer權限重驗、未批准無私有access；不按同名合併。"
+        "7天issue/supersede/request/approve/reject/revoke；原issuer權限重驗、未批准無私有access；不按同名合併。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-claims.test.ts",
         "apps/web/tests/activity-claims.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R11",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "認領只轉身份/管理權與updated_at，原attendee/party/seq/consent/帳單/付款來源/圖片不變。"
+        "認領只轉身份/管理權與updated_at，原attendee/party/seq/consent/帳單/付款來源/圖片不變。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-claims.test.ts",
         "apps/web/tests/activity-claims.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R12",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "同名獨立列，成分由該attendee.user_id取得；不借manager或pending claim，modal關閉不加history。"
+        "同名獨立列，成分由該attendee.user_id取得；不借manager或pending claim，modal關閉不加history。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-roster.test.ts",
         "apps/web/tests/activity-roster.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "R13",
-      "local_state": "clauses_verified",
-      "full_parent_state": "in_progress",
+      "local_state": "parent_verified",
+      "full_parent_state": "passed",
       "clauses": [
-        "每批1–20、有限capacity最多500；serial交易不超賣，409保輸入再preview。"
+        "每批1–20、有限capacity最多500；serial交易不超賣，409保輸入再preview。",
+        "第 234 批完整原條件審核、148 單元／111 瀏覽器及同一正式副本 7298 HTTP 通過；71 次原 Python 寫入／精確重試、3936 次逐人音樂與五克隆原報名／帳務／118 outbox 保全。七場隔離新增活動及實際原生帳單後 self／manager 認領保留原隊位和付款來源；運行產物逐檔未變。"
       ],
       "test_files": [
         "apps/api/src/activity-drafts.test.ts",
         "apps/api/src/activity-registration.test.ts",
         "apps/web/tests/activity-registration.spec.ts"
-      ]
+      ],
+      "parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md"
     },
     {
       "capability_id": "T01",
@@ -2331,7 +2357,7 @@
     "retries": 0,
     "api_and_bot_bundle_bytes_unchanged": true
   },
-  "latest_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+  "latest_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
   "supplemental_parent_checks": [
     {
       "capability_id": "C04",
@@ -2559,7 +2585,7 @@
     "original_p6_complete": false,
     "release_eligible": false
   },
-  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+  "latest_parent_acceptance_checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
   "previous_music_parent_acceptance": {
     "checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md",
     "parent_ids": [
@@ -2920,6 +2946,61 @@
     "retained_typescript_worker_invocations": 9,
     "retained_graceful_stop": true,
     "final_api_pins_match_completed_bot_smoke": true,
+    "actual_production_image_combination": false,
+    "original_p6_complete": false,
+    "release_eligible": false
+  },
+  "latest_roster_parent_acceptance": {
+    "checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
+    "accepted_parent_ids": [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13"
+    ],
+    "change_scope": "none",
+    "review_base_commit": "b36e447ba1a1414c4eb43d19e4513f1d09c76373",
+    "pinned_original_web_commit": "83eb54ce94f935a4048aaf63a410206723f09bd8",
+    "source_manifest_sha256": "591a7209bf5ef07b3a79569a4abd411899660acfcf25b24ee1fb9e38098bbd7c",
+    "viewers_including_anonymous": 49,
+    "captured_events": 14,
+    "captured_attendees": 87,
+    "captured_unbound_guests": 0,
+    "captured_waiting_people": 0,
+    "captured_roster_comparisons": 637,
+    "captured_registration_comparisons": 624,
+    "captured_claim_list_comparisons": 624,
+    "captured_invitation_list_comparisons": 624,
+    "captured_music_comparisons": 3936,
+    "http_calls": 7298,
+    "original_write_comparisons": 71,
+    "exact_retries": 71,
+    "business_and_boundary_refusals": 8,
+    "isolated_clones": 5,
+    "isolated_created_events": 7,
+    "financial_claim_preservation_checks": 3,
+    "independent_unchanged_tables_per_clone": 77,
+    "retained_original_target_rows_per_clone": 579,
+    "original_detailed_bills_preserved": 3,
+    "original_room_versions_preserved": 6,
+    "original_outbox_rows_unchanged": 118,
+    "isolated_new_outbox_rows": 7,
+    "lossless_intermediate_archives": 77,
+    "unit_cases_passed": 148,
+    "browser_cases_passed": 111,
+    "runtime_source_files_unchanged": 943,
+    "runtime_bundle_files_unchanged": 245,
+    "retained_bot_evidence_checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+    "retained_bot_source_commit": "07defc429d619a7558ab7218372886f531813ae3",
     "actual_production_image_combination": false,
     "original_p6_complete": false,
     "release_eligible": false

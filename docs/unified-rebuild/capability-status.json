@@ -5,7 +5,7 @@
   "latest_partial_acceptance": {
     "validated_commit": "4fb6bbb86f12e1ef3e3569f1b31ed91573f1eaa1",
     "index": "docs/unified-rebuild/local-acceptance-status.json",
-    "checkpoint": "docs/unified-rebuild/233-activity-parent-acceptance.md",
+    "checkpoint": "docs/unified-rebuild/234-roster-parent-acceptance.md",
     "full_parent_accepted": false,
     "completed_parent_ids": [
       "I01",
@@ -42,6 +42,19 @@
       "E16",
       "E17",
       "E18",
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
+      "R13",
       "P01",
       "P02",
       "P03",
@@ -1903,23 +1916,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生報名預覽、當時安排／revision 綁定及逐次明確接受費用安排已實作，原 Python token／資料／outbox 差分通過；全部舊入口及正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R02",
@@ -1940,23 +1957,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "每批本人／同行／純代報、逐人公開備註與付款標記已實作，不建假帳號；原 manager 與 payer 分離。認領／代管交接及正式副本綜合驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R03",
@@ -1977,23 +1998,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "逐人／整組、整組不足全候補與阻塞後方、混合分配明確 acceptPartial 已實作並與原 Python 差分；更多正式匯入／邊界隊列及全部舊入口驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R04",
@@ -2014,23 +2039,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "待確認不占位、整組或逐人確認取得新 party ticket、最終名單通知已實作並差分；全部舊入口／待辦、正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R05",
@@ -2051,23 +2080,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "已報本人可新增同行，退出後可重新報名且取得新隊序，未知結果不重複新增；全部舊入口及正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R06",
@@ -2088,23 +2121,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原管理人／roster scope 修改公開備註、訪客稱呼與付款標記，協助他人須原因，拆組保留本組隊序；凍結付款來源不可改。認領全流程及正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R07",
@@ -2125,23 +2162,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "逐人退出、只在實際開放時原嚴格 FIFO 遞補、合併退出與遞補群通知已實作；全部舊入口、待辦與正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R08",
@@ -2162,23 +2203,27 @@
         "apps/api/src/activity-registration.test.ts",
         "apps/api/src/legacy-registration.test.ts",
         "tools/rebuild/smoke-legacy-registration.mjs",
-        "docs/unified-rebuild/210-legacy-registration-checkpoint.md"
+        "docs/unified-rebuild/210-legacy-registration-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-registration.test.ts",
-        "apps/api/src/legacy-registration.test.ts"
+        "apps/api/src/legacy-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "apps/web/tests/legacy-registration.spec.ts"
+        "apps/web/tests/legacy-registration.spec.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "逾期正式報名退出須原因且保留位至審核，roster scope 同意／拒絕須原因，候補／待確認直接退出，泛化私人提醒不含原因；通知收件匣／待辦、全部舊入口及正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R09",
@@ -2200,24 +2245,28 @@
         "apps/api/src/activity-invitations.test.ts",
         "apps/api/src/legacy-invitations.test.ts",
         "tools/rebuild/smoke-legacy-invitations.mjs",
-        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-invitations.test.ts",
-        "docs/unified-rebuild/26-activity-invitations-checkpoint.md"
+        "docs/unified-rebuild/26-activity-invitations-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-invitations.test.ts",
-        "apps/api/src/legacy-invitations.test.ts"
+        "apps/api/src/legacy-invitations.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-invitations.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-invitations.spec.ts",
-        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md"
+        "docs/unified-rebuild/211-legacy-invitations-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生批量邀請、不占位、有限預覽、單次接受、候補確認、私人存取與舊 attendee_invite 網址已測；原 key 恢復、Python 差分及舊 worker 消費已測。全部舊 API 轉接、正式副本與實際平台驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R10",
@@ -2239,26 +2288,30 @@
       "behavior_evidence": [
         "apps/api/src/activity-claims.test.ts",
         "apps/api/src/legacy-participants.test.ts",
-        "tools/rebuild/smoke-legacy-participants.mjs"
+        "tools/rebuild/smoke-legacy-participants.mjs",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-claims.test.ts",
         "docs/unified-rebuild/27-attendee-claims-checkpoint.md",
         "apps/api/src/legacy-participants.test.ts",
-        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
         "apps/api/src/activity-claims.test.ts",
-        "apps/api/src/legacy-participants.test.ts"
+        "apps/api/src/legacy-participants.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-claims.spec.ts",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
         "apps/web/tests/legacy-participants.spec.ts",
-        "docs/unified-rebuild/212-legacy-participants-checkpoint.md"
+        "docs/unified-rebuild/212-legacy-participants-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "原生及原請求的認領／出席／補錄、精確回執恢復、Python 差分與保留線上 bot 來源組合已測；跨功能／隔離資料對帳及最後全套本機回歸待收斂，實際平台與正式切換分開驗收。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R11",
@@ -2275,21 +2328,25 @@
         "apps/web/src/activity-entry.tsx"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-claims.test.ts"
+        "apps/api/src/activity-claims.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
         "apps/api/src/activity-claims.test.ts",
-        "docs/unified-rebuild/27-attendee-claims-checkpoint.md"
+        "docs/unified-rebuild/27-attendee-claims-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-claims.test.ts"
+        "apps/api/src/activity-claims.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-claims.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "批准保留原 attendee／party／隊序／consent 與全部帳務／圖片，兩種 append-only 付款來源凍結及舊 finance consumer 已測；新版結算／申報權利全流程、正式副本與實際平台驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R12",
@@ -2307,21 +2364,25 @@
         "packages/contracts/src/index.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-roster.test.ts"
+        "apps/api/src/activity-roster.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-roster.spec.ts",
         "docs/unified-rebuild/20-roster-checkpoint.md",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "已實作同名獨立列、目前官方頭像備援、單一成分浮層／共同喜好、同行隔離、關閉不加歷史、完整卡返回與跨頁登出；名冊全部寫操作、舊入口、正式資料／真實平台與完整無障礙驗收仍待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "R13",
@@ -2336,20 +2397,24 @@
         "apps/api/src/activity-bot.ts"
       ],
       "behavior_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "data_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "permission_evidence": [
-        "apps/api/src/activity-registration.test.ts"
+        "apps/api/src/activity-registration.test.ts",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
       "ux_evidence": [
         "apps/web/tests/activity-registration.spec.ts",
-        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md"
+        "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
+        "docs/unified-rebuild/234-roster-parent-acceptance.md"
       ],
-      "state": "in_progress",
-      "remaining": "每批 1–20、重複本人、精確預覽版本、SQLite immediate 並行不超賣、409 保稿重預覽及原 key 恢復已實作；多程序負載、全部舊入口與正式副本驗收待完成。"
+      "state": "passed",
+      "remaining": ""
     },
     {
       "capability_id": "T01",
