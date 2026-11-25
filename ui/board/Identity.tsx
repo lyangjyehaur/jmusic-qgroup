@@ -129,7 +129,9 @@ function beginQQ(
         : app.me.authenticated
           ? "将进入这个 QQ 对应的账号；当前账号分开保留，不自动合并报名或款项。"
           : "将前往 QQ 官方授权，首次登录会创建账号。返回后核对并确认登录。",
-      () => f.run(() => startQQ(app, mode, privacy)),
+      () => startQQ(app, mode, privacy),
+      // Closing this layer traverses history and cancels the pending QQ navigation.
+      { closeOnSuccess: false },
     );
   } catch (error) {
     f.setError(errorMessage(error));

@@ -718,6 +718,7 @@ export interface ModalProps {
     action: () => unknown;
     confirm?: string;
     cancel?: string;
+    closeOnSuccess?: boolean;
   };
   draftClose: { target: string; status: FormStatus };
   link: { text: string; title: string };
@@ -768,7 +769,7 @@ export interface BoardContextValue extends BoardServices {
     title: string,
     text: string,
     action: () => unknown,
-    labels?: { confirm?: string; cancel?: string },
+    labels?: { confirm?: string; cancel?: string; closeOnSuccess?: boolean },
   ): string;
   formStates: React.RefObject<Map<string, FormStatus>>;
   setFilter(filter: string): void;
