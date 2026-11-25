@@ -72,9 +72,10 @@ def verify(folder, expected_hash, api_commit):
     html = (folder / "index.html").read_text()
     if f'name="qgroup-build" content="{m["buildId"]}"' not in html:
         raise ValueError("Shell and worker build version differ")
-    for name in ("sw.js", "music/sw.js"):
-        if m["buildId"] not in (folder / name).read_text():
-            raise ValueError("Worker build version differs")
+    # The legacy music worker only unregisters its old scope. It deliberately
+    # has no build constant or fetch handler; its exact bytes are hashed above.
+    if m["buildId"] not in (folder / 'sw.js').read_text():
+        raise ValueError("Worker build version differs")
     for name in re.findall(r'(?:src|href)="/([^"?#]+)"', html):
         if name not in files:
             raise ValueError("Missing shell dependency: " + name)

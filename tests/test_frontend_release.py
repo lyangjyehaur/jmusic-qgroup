@@ -20,7 +20,8 @@ class FrontendSourceTests(unittest.TestCase):
             files = {name: b'fixture' for name in release.FIXED}
             build_id = 'd' * 64
             files['index.html'] = f'<html><meta name="qgroup-build" content="{build_id}" /></html>'.encode()
-            files['sw.js'] = files['music/sw.js'] = build_id.encode()
+            files['sw.js'] = build_id.encode()
+            files['music/sw.js'] = b'/* legacy retirement worker has no version constant */'
             files['assets/page-12345678.js'] = b'export const version=1'
             files['assets/page-12345678.css'] = b'.fixture{}'
             for name, data in files.items():
