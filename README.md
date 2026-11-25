@@ -130,7 +130,7 @@ npm run test:ui
 
 ### 2026-11-25 起的正式服务
 
-正式站已切换为统一版 TypeScript 网站与 bot，来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`。实际映像、迁移、备份及恢复限制见[本次发布记录](docs/releases/2026-11-25-unified-rebuild.md)。当前运行配置使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像；上段共用 `QGROUP_TAG` 的限制针对保留的旧版 Compose，不能用它启动当前服务。
+正式站已切换为统一版 TypeScript 网站与 bot，首次切换来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`；迁移、备份及恢复限制见[统一版切换记录](docs/releases/2026-11-25-unified-rebuild.md)。网站随后单边更新至 `caa41409c7cb324ddda8637da35bc06ae56352a6`，活动按预定结束时间自动归入往期，bot 保持首次切换版本；实际映像、验证及回退见[活动分类发布记录](docs/releases/2026-11-25-activity-history.md)。当前运行配置使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像；上段共用 `QGROUP_TAG` 的限制针对保留的旧版 Compose，不能用它启动当前服务。
 
 - 正式入口仍为 `https://kanban.danndann.cn`，沿用 1Panel 的 `127.0.0.1:8791` 上游。
 - 当前容器：`qgroup-unified-web-1`、`qgroup-unified-bot-1`。配置位于 `/opt/qgroup-releases/unified-20261125-54107b8/runtime.env`，私有 web／bot 环境文件同目录保留；不在终端打印完整 Compose 配置或环境值。
