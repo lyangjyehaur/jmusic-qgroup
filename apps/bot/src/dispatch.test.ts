@@ -64,6 +64,25 @@ print(json.dumps([[bool(mentions_bot(v.get('mentions') or [],'BOT',v.get('conten
     await s.dispatch.drain();expect(s.calls).toEqual([['ack','interaction'],['observe','group','INTERACTION_CREATE',undefined],['reply',{group:'group',command:'名额',argument:'2',eventId:'event-id'}]]);
     await s.dispatch.onDispatch(event('INTERACTION_CREATE',{...payload,id:'second',type:12},''),lifetime());await s.dispatch.drain();expect(s.calls.filter(c=>c[0]==='reply')).toHaveLength(1);
   });
+  it('preserves opaque reply tokens and deduplicates long punctuated message IDs across event types',async()=>{
+    const s=await setupRouting(),msgId='ROBOT1.0_'+ 'synthetic/+=:'.repeat(20),eventId='event.reply:'+ 'synthetic/+=.'.repeat(20);
+    for(const type of ['GROUP_AT_MESSAGE_CREATE','GROUP_MESSAGE_CREATE'])await s.dispatch.onDispatch(event(type,{id:msgId}),lifetime());
+    await s.dispatch.onDispatch(event('INTERACTION_CREATE',{id:'interaction',type:11,data:{resolved:{button_data:'/帮助'}}},eventId),lifetime());
+    await s.dispatch.drain();
+    expect(s.calls.filter(c=>c[0]==='reply')).toEqual([
+      ['reply',{group:'group',command:'活动',argument:'',msgId}],
+      ['reply',{group:'group',command:'帮助',argument:'',eventId}],
+    ]);
+    expect(s.rows.filter(r=>r.event==='message_ignored').map(r=>r.reason)).toEqual(['duplicate']);
+    expect(JSON.stringify(s.rows)).not.toContain(msgId);expect(JSON.stringify(s.rows)).not.toContain(eventId);
+  });
+  it('rejects missing, oversized and control-bearing message tokens without logging their values',async()=>{
+    const s=await setupRouting();
+    for(const id of [undefined,42,'','x'.repeat(4097),'private\ntoken'])await s.dispatch.onDispatch(event('GROUP_MESSAGE_CREATE',{id}),lifetime());
+    await s.dispatch.drain();expect(s.calls.filter(c=>c[0]==='reply')).toEqual([]);
+    expect(s.rows.filter(r=>r.event==='message_ignored').map(r=>r.reason)).toEqual(Array(5).fill('invalid_message_id'));
+    expect(JSON.stringify(s.rows)).not.toContain('private');
+  });
   it('continues business after ACK failure but never starts it after cancellation',async()=>{
     let release!:()=>void;const ack=new Promise<void>(resolve=>{release=resolve;});
     const s=await setupRouting({api:{ackInteraction:async()=>{await ack;throw Error('private error');}}}),stop=new AbortController();
@@ -97,6 +116,15 @@ print(json.dumps([[bool(mentions_bot(v.get('mentions') or [],'BOT',v.get('conten
   });
 });
 describe('native dispatched replies and current policy',()=>{
+  it('passes opaque message/event tokens unchanged to the reply API while keeping group paths strict',async()=>{
+    const s=setupService(),msgId='ROBOT1.0_'+ 'synthetic/+=:'.repeat(20),eventId='event.reply:'+ 'synthetic/+=.'.repeat(20);
+    await s.service.reply({...s.request,msgId},s.api,lifetime());
+    await s.service.reply({...s.request,msgId:undefined,eventId},s.api,lifetime());
+    expect(s.calls.map(c=>[c.options?.msgId,c.options?.eventId])).toEqual([[msgId,undefined],[undefined,eventId]]);
+    await s.service.reply({...s.request,group:'group/path',msgId},s.api,lifetime());
+    await s.service.reply({...s.request,msgId:'invalid\ntoken',eventId},s.api,lifetime());
+    expect(s.calls).toHaveLength(2);
+  });
   it('uses read-only public commands with broadcasts disabled and rechecks dry-run/groups/replies',async()=>{
     const s=setupService();await s.service.reply(s.request,s.api,lifetime());expect(s.calls).toHaveLength(1);expect(s.calls[0]!.options?.markdown).toContain('## 选择活动');
     for(const patch of [{dry_run:true},{replies_enabled:false},{groups:[]}] as const){s.setPolicy(patch as Parameters<typeof s.setPolicy>[0]);await s.service.reply({...s.request,msgId:'another'},s.api,lifetime());}

@@ -63,17 +63,19 @@ try {
   const path=join(dispatchDirectory,'state.sqlite3'),db=openDatabase(path);
   db.prepare('UPDATE bot_settings SET config_json=?').run(JSON.stringify({enabled:false,dry_run:false,groups:[{id:'synthetic-group',name:'',replies:true,broadcast:false}]}));
   const config=bot!.loadBotConfig({KANBAN_DB:path,KANBAN_BOT_BASE_URL:'https://example.test',KANBAN_BOT_DRY_RUN:'0'});
-  const calls:string[]=[],api={replyGroup:async(_group:string,text:string)=>{calls.push(text);return {ok:true,code:0,data:{},status:200,kind:'ok' as const,platformTrace:null};}};
+  const tokens:unknown[]=[],calls:string[]=[],api={replyGroup:async(_group:string,text:string,options?:{msgId?:string;eventId?:string})=>{calls.push(text);tokens.push(options?.msgId??options?.eventId);return {ok:true,code:0,data:{},status:200,kind:'ok' as const,platformTrace:null};}};
   const diagnostics:Record<string,unknown>[]=[],observer=bot!.createBotObserver(row=>diagnostics.push(row));
   const workers=new dispatch!.BotDispatchWorkers(config,{api,observer});
   const router=new dispatch!.BotDispatcher({business:workers,api:{ackInteraction:async()=>{calls.push('ACK');return {ok:true,code:0,data:{},status:200,kind:'ok' as const,platformTrace:null};}}});
   try {
     const signal=new AbortController().signal;
     await router.onDispatch({op:0,t:'READY',s:1,d:{user:{id:'SYNTHETIC'}}},signal);
-    const message={op:0 as const,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:'message',group_openid:'synthetic-group',content:'<@SYNTHETIC> /帮助',author:{union_openid:'SYNTHETIC-UNION-SECRET',union_user_account:'SYNTHETIC-QQ-ACCOUNT'}}};
+    const msgId='ROBOT1.0_'+ 'synthetic/+=:'.repeat(20),eventId='event.reply:'+ 'synthetic/+=.'.repeat(20);
+    const message={op:0 as const,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:msgId,group_openid:'synthetic-group',content:'<@SYNTHETIC> /帮助',author:{union_openid:'SYNTHETIC-UNION-SECRET',union_user_account:'SYNTHETIC-QQ-ACCOUNT'}}};
     await router.onDispatch(message,signal);await router.onDispatch({...message,t:'GROUP_MESSAGE_CREATE',s:3},signal);
-    await router.onDispatch({op:0,t:'INTERACTION_CREATE',s:4,id:'outer-event',d:{id:'interaction',type:11,group_openid:'synthetic-group',data:{resolved:{button_data:'/我的'}}}},signal);
+    await router.onDispatch({op:0,t:'INTERACTION_CREATE',s:4,id:eventId,d:{id:'interaction',type:11,group_openid:'synthetic-group',data:{resolved:{button_data:'/我的'}}}},signal);
     await router.drain();assert.equal(calls.length,3);assert(calls.includes('ACK'));assert(calls.some(text=>text.includes('机器人尚未绑定')));
+    assert.deepEqual([...tokens].sort(),[msgId,eventId].sort());
     const observed=diagnostics.filter(row=>row.event==='message_received');assert.equal(observed.length,2);assert(observed.every(row=>row.unionid_matches_site===false&&row.union_user_account_present===true));assert(!JSON.stringify(diagnostics).includes('SYNTHETIC-UNION-SECRET'));assert(!JSON.stringify(diagnostics).includes('SYNTHETIC-QQ-ACCOUNT'));
     assert.deepEqual(db.prepare('SELECT COUNT(*) AS n FROM bot_outbox').get(),{n:0});
     db.exec('UPDATE rebuild_storage SET recovery_required=1');

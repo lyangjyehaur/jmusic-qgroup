@@ -5,7 +5,7 @@ import type { QQBotAPI } from './api';
 import type { GatewayDispatch } from './gateway';
 import { checkAbort, within } from './lifecycle';
 import { createBotObserver, safeError, type BotObserver } from './observability';
-import { object, reference, validPlatformId, type APIObject } from './protocol';
+import { object, reference, validPlatformId, validReplyToken, type APIObject } from './protocol';
 import { messageObservation,type MessageObservation } from './identity-diagnostics';
 export interface BotDispatchReply {
   group: string; command: BotCommand | null; argument: string; msgId?: string; eventId?: string;
@@ -113,7 +113,7 @@ export class BotDispatcher {
         const resolved=object(inner.resolved)?inner.resolved:{},[command,argument]=parseBotCommand(typeof resolved.button_data==='string'?resolved.button_data:'');
         this.#observer.event('command_parsed',{source:'button',command:command??'unknown',argument_ref:reference(argument)});
         // Only the outer dispatch ID authorizes an event reply.
-        if(!validPlatformId(event.id)){this.#observer.event('reply_skipped',{reason:'invalid_event_id'});return;}
+        if(!validReplyToken(event.id)){this.#observer.event('reply_skipped',{reason:'invalid_event_id'});return;}
         await this.options.business.reply({group,command,argument,eventId:event.id},lifetime);
       });return;
     }
@@ -130,14 +130,14 @@ export class BotDispatcher {
       if(author.bot)reason='bot_author';
       else if(mentionsEveryone(payload))reason='everyone_mention';
       else if(!addressed)reason='not_addressed';
-      else if(!validPlatformId(payload.id))reason='invalid_message_id';
+      else if(!validReplyToken(payload.id))reason='invalid_message_id';
       else if(this.#jobs.size>=(this.options.maxJobs??64))reason='queue_full';
       else {const decision=this.#dedup.message(payload);if(decision!=='new')reason=decision;else {
         const [command,argument]=groupBotCommand(payload);request={group,command,argument,msgId:payload.id as string};
         // Input and quoted text never receive content previews, even in diagnostic mode.
         this.#observer.event('command_parsed',{source:'message',command:command??'unknown',argument_ref:reference(argument),group_ref:reference(group)});
       }}
-      if(reason)this.#observer.event('message_ignored',{reason,group_ref:reference(group)});
+      if(reason)this.#observer.event('message_ignored',{reason,group_ref:reference(group),...(reason==='invalid_message_id'?{input_id_type:typeof payload.id,input_id_length:typeof payload.id==='string'?payload.id.length:null}:{})});
     }
     if(diagnostic)this.#diagnose(diagnostic,signal);
     if(!observe&&!request&&reason!=='duplicate')return;

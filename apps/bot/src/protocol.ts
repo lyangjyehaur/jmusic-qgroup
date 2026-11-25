@@ -80,6 +80,12 @@ export function endpoint(url: string) {
 export function validPlatformId(id: unknown): id is string {
   return typeof id === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(id);
 }
+/** Message/event IDs are opaque JSON reply tokens, not URL path segments.
+ * Preserve punctuation and long tokens; reject empty/oversized/control input.
+ */
+export function validReplyToken(id: unknown): id is string {
+  return typeof id === 'string' && id.length >= 1 && id.length <= 4096 && /^[\x21-\x7e]+$/.test(id);
+}
 /** Reviewed against the official QQ close-code table on 2026-11-17. */
 export function gatewayCloseAction(code: number): 'stop' | 'identify' | 'resume' {
   if ([4001, 4002, 4010, 4011, 4012, 4013, 4014, 4914, 4915].includes(code)) return 'stop';

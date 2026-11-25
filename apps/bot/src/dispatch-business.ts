@@ -9,7 +9,7 @@ import type { BotDispatchReply } from './dispatch';
 import type { DispatchConfig, DispatchWork } from './dispatch-types';
 import { checkAbort } from './lifecycle';
 import { createBotObserver, type BotObserver } from './observability';
-import { reference, validPlatformId } from './protocol';
+import { reference, validPlatformId, validReplyToken } from './protocol';
 import { identityDiagnosticFields,type MessageObservation } from './identity-diagnostics';
 import { readPublicBotReply } from './replies';
 import { BotMaskLoader } from './word-mask';
@@ -51,7 +51,7 @@ export class BotDispatchService {
   }
   async reply(request:BotDispatchReply,api:Pick<QQBotAPI,'replyGroup'>,signal:AbortSignal) {
     const {group,command,argument,msgId,eventId}=request;
-    if(!validPlatformId(group)||!(validPlatformId(msgId)||validPlatformId(eventId)))return;
+    if(!validPlatformId(group)||!(msgId!==undefined?validReplyToken(msgId):validReplyToken(eventId)))return;
     if(!this.#allowed(group,signal))return;
     const beforeSend=()=>{if(!this.#allowed(group,signal,true))throw new AbbreviationSendBlocked();};
     try {

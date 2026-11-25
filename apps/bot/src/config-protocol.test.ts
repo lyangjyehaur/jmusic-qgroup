@@ -12,6 +12,7 @@ import {
   platformTrace,
   reference,
   validPlatformId,
+  validReplyToken,
 } from './protocol';
 
 describe('bot configuration and QQ protocol parity', () => {
@@ -170,6 +171,7 @@ print(json.dumps([[api_code(r['data']),classify_error(api_code(r['data']),r['sta
     expect(platformTrace('trace:01')).toBe('trace:01');
     expect(platformTrace('secret\nheader')).toBeNull();
     expect(['group_1', 'bad/path', 'x'.repeat(129), ''].map(validPlatformId)).toEqual([true, false, false, false]);
+    expect(['ROBOT1.0_a/b+c=', 'x'.repeat(4096), '', 'x'.repeat(4097), 'id\n', 'id token', null].map(validReplyToken)).toEqual([true,true,false,false,false,false,false]);
   });
   it('uses the QQ official close-code Resume/Identify permissions including internal and permanent errors', () => {
     for (const code of [4001, 4002, 4010, 4011, 4012, 4013, 4014, 4914, 4915])

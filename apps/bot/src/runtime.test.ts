@@ -82,11 +82,12 @@ describe('native bot runtime lifecycle',()=>{
     expect(s.rows.some(row=>row.event==='websocket_ready')).toBe(false);
     expect(s.db.prepare('SELECT status FROM bot_outbox').get()).toEqual({status:'sent'});
     const peer=await s.ready();
-    const message={op:0,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:'message',group_openid:'group',content:'<@BOT> /帮助',author:{id:'person',union_openid:'SITE-UNION-SECRET',union_user_account:'PRIVATE-QQ-ACCOUNT'}}};peer.send(message);peer.send({...message,t:'GROUP_MESSAGE_CREATE',s:3});
-    peer.send({op:0,t:'INTERACTION_CREATE',s:4,id:'outer-event',d:{id:'interaction',type:11,group_openid:'group',data:{resolved:{button_data:'/我的'}}}});
+    const msgId='ROBOT1.0_'+ 'synthetic/+=:'.repeat(20),eventId='event.reply:'+ 'synthetic/+=.'.repeat(20);
+    const message={op:0,t:'GROUP_AT_MESSAGE_CREATE',s:2,d:{id:msgId,group_openid:'group',content:'<@BOT> /帮助',author:{id:'person',union_openid:'SITE-UNION-SECRET',union_user_account:'PRIVATE-QQ-ACCOUNT'}}};peer.send(message);peer.send({...message,t:'GROUP_MESSAGE_CREATE',s:3});
+    peer.send({op:0,t:'INTERACTION_CREATE',s:4,id:eventId,d:{id:'interaction',type:11,group_openid:'group',data:{resolved:{button_data:'/我的'}}}});
     try{await until(()=>s.posts.length===3&&s.panels===1&&s.health().last_ack!==null,5000);}
     catch{throw Error(JSON.stringify({n:s.posts.length,panels:s.panels,health:s.health(),acks:s.rows.filter(r=>r.event==='heartbeat_ack'),events:s.rows.filter(r=>r.event!=='poll_completed').slice(-10)}));}
-    expect(s.posts.filter(body=>body.msg_id==='message')).toHaveLength(1);expect(s.posts.some(body=>body.event_id==='outer-event')).toBe(true);expect(s.timeline).toContain('ack');
+    expect(s.posts.filter(body=>body.msg_id===msgId)).toHaveLength(1);expect(s.posts.some(body=>body.event_id===eventId)).toBe(true);expect(s.timeline).toContain('ack');
     await until(()=>s.rows.filter(row=>row.event==='message_received').length===2);expect(s.rows.filter(row=>row.event==='message_received').every(row=>row.unionid_matches_site===true&&row.union_user_account_present===true)).toBe(true);
     const settings=s.db.prepare('SELECT revision FROM bot_settings').get() as {revision:number},runtime=s.db.prepare('SELECT applied_revision,deployment_group FROM bot_runtime').get();expect(runtime).toEqual({applied_revision:settings.revision,deployment_group:'group'});
     expect(s.health()).toMatchObject({runtime_state:'running',dry_run:false,deployment_dry_run:false,policy_resolved:true,gateway_connected:true});
