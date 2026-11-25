@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -48,7 +49,7 @@ function ActivityReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyAct
  <Text>目前狀態：{phases[plan.lifecycle]??plan.lifecycle}{plan.archived?'；已歸檔':''}；報名{plan.registrationOpen?'開啟（仍受截止時間限制）':'關閉'}。</Text>
  <Text>操作：{c.kind==='edit'?'修改安排':c.kind==='publish'?'發布草稿':c.kind==='lifecycle'?actions[c.action]:c.kind==='bot_sync'?'設定群同步':'重送原群通知'}</Text>
  {c.reason&&<Text>原因：{c.reason}</Text>}
- {(c.kind==='edit'||c.kind==='publish')&&<dl><dt>名稱</dt><dd>{v.title}</dd><dt>類型</dt><dd>{v.category}</dd><dt>地點</dt><dd>{v.location}</dd><dt>開始</dt><dd>{localTime(v.startsAt,v.timezone)}</dd><dt>報名截止</dt><dd>{localTime(v.deadline,v.timezone)}</dd><dt>退出期限</dt><dd>{localTime(v.withdrawalDeadline??v.deadline,v.timezone)}</dd><dt>時區</dt><dd>{v.timezone??'UTC（未設定）'}</dd><dt>持續</dt><dd>{v.durationHours} 小時</dd><dt>人數</dt><dd>上限 {v.capacity||'不限'}；最低 {v.minimumParticipants}</dd><dt>可見性</dt><dd>{v.visibility==='public'?'公開':'邀請可見'}</dd><dt>費用</dt><dd>{v.feePolicy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{v.description||'未填'}</dd><dt>群同步</dt><dd>{v.botEnabled?'開啟':'關閉'}</dd></dl>}
+ {(c.kind==='edit'||c.kind==='publish')&&<dl><dt>名稱</dt><dd>{v.title}</dd><dt>類型</dt><dd>{activityCategoryLabel(v.category)}</dd><dt>地點</dt><dd>{v.location}</dd><dt>開始</dt><dd>{localTime(v.startsAt,v.timezone)}</dd><dt>報名截止</dt><dd>{localTime(v.deadline,v.timezone)}</dd><dt>退出期限</dt><dd>{localTime(v.withdrawalDeadline??v.deadline,v.timezone)}</dd><dt>時區</dt><dd>{v.timezone??'UTC（未設定）'}</dd><dt>持續</dt><dd>{v.durationHours} 小時</dd><dt>人數</dt><dd>上限 {v.capacity||'不限'}；最低 {v.minimumParticipants}</dd><dt>可見性</dt><dd>{v.visibility==='public'?'公開':'邀請可見'}</dd><dt>費用</dt><dd>{v.feePolicy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{v.description||'未填'}</dd><dt>群同步</dt><dd>{v.botEnabled?'開啟':'關閉'}</dd></dl>}
  {c.kind==='edit'&&<Text>重要安排變更後，已發布活動的有效參加者須重新確認；原報名和原同意紀錄保留。</Text>}
  {plan.requiresOwnerSignup&&<Text>將發布目前草稿；發起者 {plan.ownerName} 自動報名並接受目前安排。</Text>}
  {c.kind==='bot_sync'&&<Text>群同步：{c.botEnabled?'開啟，依管理員群政策':'關閉；停止未送群通知'}。</Text>}

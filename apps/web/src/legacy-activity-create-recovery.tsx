@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -44,7 +45,7 @@ const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat(display
 function ActivityReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyActivityCreationInspection>,{state:'retryable'}>;requestKey:string}) {
  const {lifecycle,values:c}=plan.command;
  return <div aria-label="原建立活動重試核對"><Text>{c.title}</Text><Text>原操作編號 {requestKey}；發起者 {plan.owner_name}。</Text>
- <dl><dt>建立方式</dt><dd>{lifecycle==='draft'?'保存草稿':'直接發布'}</dd><dt>可見性</dt><dd>{c.visibility==='public'?'公開':'邀請可見'}</dd><dt>類型</dt><dd>{c.category}</dd><dt>地點</dt><dd>{c.location}</dd><dt>時區</dt><dd>{c.timezone??'未設定（以 UTC 顯示）'}</dd><dt>開始</dt><dd>{localTime(c.startsAt,c.timezone)}</dd><dt>報名截止</dt><dd>{localTime(c.deadline,c.timezone)}</dd><dt>退出期限</dt><dd>{localTime(c.withdrawalDeadline??c.deadline,c.timezone)}{c.withdrawalDeadline===null?'（沿用報名截止）':''}</dd><dt>持續時間</dt><dd>{c.durationHours} 小時</dd><dt>人數</dt><dd>上限 {c.capacity||'不限'} · 最低 {c.minimumParticipants}</dd><dt>費用</dt><dd>{c.feePolicy||'未填'}</dd></dl>
+ <dl><dt>建立方式</dt><dd>{lifecycle==='draft'?'保存草稿':'直接發布'}</dd><dt>可見性</dt><dd>{c.visibility==='public'?'公開':'邀請可見'}</dd><dt>類型</dt><dd>{activityCategoryLabel(c.category)}</dd><dt>地點</dt><dd>{c.location}</dd><dt>時區</dt><dd>{c.timezone??'未設定（以 UTC 顯示）'}</dd><dt>開始</dt><dd>{localTime(c.startsAt,c.timezone)}</dd><dt>報名截止</dt><dd>{localTime(c.deadline,c.timezone)}</dd><dt>退出期限</dt><dd>{localTime(c.withdrawalDeadline??c.deadline,c.timezone)}{c.withdrawalDeadline===null?'（沿用報名截止）':''}</dd><dt>持續時間</dt><dd>{c.durationHours} 小時</dd><dt>人數</dt><dd>上限 {c.capacity||'不限'} · 最低 {c.minimumParticipants}</dd><dt>費用</dt><dd>{c.feePolicy||'未填'}</dd></dl>
  {c.description&&<Text className="preserve-lines">{c.description}</Text>}
  <Notice>{lifecycle==='draft'?'只保存草稿，不發布安排、報名或群通知。':c.joinOwner?'直接發布安排；發起者將自動報名並接受本次安排。':'直接發布安排；發起者不自動報名。'}{c.visibility==='public'?'公開活動請勿填寫私人資訊。':'邀請可見活動不會同步到公開群。'}</Notice>
  {lifecycle==='draft'&&<Text>發布草稿時發起者自動報名：{c.joinOwner?'是':'否'}。</Text>}

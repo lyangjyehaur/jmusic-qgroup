@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 // Adapted from kimi/src/pages/ActivitiesPage.tsx; data and routes are server-backed.
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
@@ -22,7 +23,7 @@ export function KimiActivityRow({ event, rooms = false }: { event: z.infer<typeo
   const status=listedActivityStatus(event), label=event.estimatedOver&&!event.archived?uiText('已過預定時間'):statuses.find(([value])=>value===status)?.[1]??event.phase;
   const mine=event.myRegistration;
   return <article className="activity-row"><div className="activity-date" aria-hidden="true"><strong>{day}</strong><span>{month}</span></div>
-    <div className="activity-main"><div className="activity-title-line"><h2><Link to={to}>{event.title}</Link></h2><Badge>{event.category}</Badge></div>
+    <div className="activity-main"><div className="activity-title-line"><h2><Link to={to}>{event.title}</Link></h2><Badge>{activityCategoryLabel(event.category)}</Badge></div>
       <div className="activity-meta"><span><Clock3 size={14}/>{activityDisplayDate(event.startsAt,event.timezone)}</span><span><MapPin size={14}/>{event.location}</span></div>
       {mine&&<div className="my-registration">我的報名 <Badge tone={mine==='confirmed'?'green':'amber'} dot>{mine==='confirmed'?'正式':mine==='waiting'?'候補':'待確認'}</Badge>{mine==='tentative'&&<Link to={'/activities/'+event.id+'/conditions'}>前往確認</Link>}</div>}
     </div><div className="activity-capacity"><span><UsersRound size={15}/><strong>{event.confirmed}</strong> / {event.capacity||'不限'}</span>{event.waiting>0&&<small>候補 {event.waiting} 人</small>}</div>

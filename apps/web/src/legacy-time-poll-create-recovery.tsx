@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -44,7 +45,7 @@ const localTime=(value:string,zone:string)=>new Intl.DateTimeFormat(displayLocal
 function PollReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyPollCreationInspection>,{state:'retryable'}>;requestKey:string}) {
  const c=plan.command;
  return <div aria-label="原建立投票重試核對"><Text>{c.title}</Text><Text>原操作編號 {requestKey}；發起者 {plan.owner_name}。</Text>
- <dl><dt>類型</dt><dd>{c.category}</dd><dt>地點</dt><dd>{c.location}</dd><dt>時區</dt><dd>{c.timezone}</dd><dt>投票截止</dt><dd>{localTime(plan.deadline,c.timezone)}</dd><dt>人數</dt><dd>上限 {c.capacity||'不限'} · 最低 {c.minimum_participants}</dd><dt>費用</dt><dd>{c.fee_policy||'未填'}</dd></dl>
+ <dl><dt>類型</dt><dd>{activityCategoryLabel(c.category)}</dd><dt>地點</dt><dd>{c.location}</dd><dt>時區</dt><dd>{c.timezone}</dd><dt>投票截止</dt><dd>{localTime(plan.deadline,c.timezone)}</dd><dt>人數</dt><dd>上限 {c.capacity||'不限'} · 最低 {c.minimum_participants}</dd><dt>費用</dt><dd>{c.fee_policy||'未填'}</dd></dl>
  {plan.starts.map((start,i)=><Text key={i}>候選 {i+1}：{c.time_mode==='date'&&'date' in c.options[i]! ? c.options[i]!.date:localTime(start,c.timezone)}</Text>)}
  {c.time_mode==='exact'&&<Text>每場持續 {c.duration_hours} 小時</Text>}{c.description&&<Text className="preserve-lines">{c.description}</Text>}
  <Notice>投票公開可見，請勿填寫私人資訊。只建立時間投票，不建立活動或報名；定案後須另外報名。</Notice>

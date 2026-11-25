@@ -1,3 +1,4 @@
+import { activityCategories } from './activity-categories';
 import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -22,7 +23,7 @@ import { ActionLink } from './action-link';
 
 type Saved = z.infer<typeof ActivityDraft> & {assisted?:boolean};
 type Values = z.infer<typeof ActivityArrangementInput>;
-const categories=[['约K',uiText("約 K")],['聚餐',uiText("聚餐")],['运动',uiText("運動")],['出游',uiText("出遊")],['游戏',uiText("遊戲")],['其他',uiText("其他")]];
+const categories=activityCategories;
 type FormValue = z.infer<typeof Form>;
 type DraftValue = z.infer<typeof Draft>;
 // Editing uses an explicit fixed offset, independent of the browser / event display zone.

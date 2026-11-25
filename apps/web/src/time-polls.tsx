@@ -1,3 +1,4 @@
+import { activityCategoryLabel, activityCategories } from './activity-categories';
 import { uiText, displayLocale } from './language';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
@@ -167,8 +168,8 @@ function CreatePoll({ viewer }: { viewer: Member }) {
           </Field>
           <Field label="活動類型">
             <select value={v.category} onChange={(e) => edit({ category: ActivityCategory.parse(e.target.value) })}>
-              {ActivityCategory.options.map((c) => (
-                <option key={c}>{c}</option>
+              {activityCategories.map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
               ))}
             </select>
           </Field>
@@ -319,7 +320,7 @@ function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; 
       {manage ? <ActionLink to={base(p.id)}>返回填答與結果</ActionLink> : p.is_owner && <ActionLink variant="primary" to={base(p.id)+'/manage'}>管理時間投票</ActionLink>}
       {manage&&p.is_owner&&<ActionLink to={base(p.id)+'/bot-deliveries'}>群通知紀錄</ActionLink>}
     </>}/>{share&&<p className="poll-share-status" role="status">{share}</p>}</div>
-    <div className="poll-detail-status"><Badge dot tone={p.status==='open'?'green':p.status==='cancelled'?'red':p.status==='finalized'?'blue':'neutral'}>{states[p.status]}</Badge><Badge>{p.category}</Badge><span>{p.time_mode==='date'?'按日期投票':'精確時段投票'}</span></div>
+    <div className="poll-detail-status"><Badge dot tone={p.status==='open'?'green':p.status==='cancelled'?'red':p.status==='finalized'?'blue':'neutral'}>{states[p.status]}</Badge><Badge>{activityCategoryLabel(p.category)}</Badge><span>{p.time_mode==='date'?'按日期投票':'精確時段投票'}</span></div>
     <section className="poll-summary-panel" aria-label="投票安排">
       <dl className="poll-summary-facts"><div><dt><MapPin size={15}/>地點</dt><dd>{p.location}</dd></div><div><dt><Clock3 size={15}/>投票截止</dt><dd>{activityDisplayDate(p.deadline,p.timezone)}</dd></div><div><dt><UsersRound size={15}/>填答人數</dt><dd><strong>{p.respondent_count}</strong> 人填答<span> · {p.options.length} 項候選</span></dd></div></dl>
       {p.description&&<p className="poll-description preserve-lines">{p.description}</p>}

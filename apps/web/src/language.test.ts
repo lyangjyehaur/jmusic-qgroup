@@ -1,6 +1,7 @@
 import { afterEach, it, expect, vi } from 'vitest';
 import ts from 'typescript';
 import { createRequire } from 'node:module';
+import { readFileSync } from 'node:fs';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { displayLanguage } from '@qgroup/contracts';
 import { displayText, displayLocale, uiText, withErrorText, errorText, displayError } from './language';
@@ -18,6 +19,14 @@ function render(source: string, language: string, original = false) {
 it('shows traditional Chinese for every non-simplified primary browser language even with a simplified fallback', () => {
   for(const language of ['zh-Hant','zh-TW','zh-HK','zh-MO','zh','en','ja-JP','ko-KR','fr-FR','de-DE']) expect(displayLanguage(language+',zh-CN;q=0.8')).toBe('zh-Hant');
   for(const language of ['zh-CN','zh-SG','zh-Hans','zh-Hans-CN']) expect(displayLanguage(language+',en;q=0.8')).toBe('zh-Hans');
+});
+it('localizes only known activity type labels and keeps the submitted codes and unknown imported strings original', () => {
+  const source=readFileSync(new URL('./activity-categories.ts',import.meta.url),'utf8')+`
+    export function Sample(){return <><p>{activityCategories.map(([value])=>activityCategoryLabel(value)).join('／')}</p><p>{activityCategoryLabel('后台發 · 帐号後臺')}</p><input value={activityCategories[2][0]}/></>}`;
+  for(const language of ['zh-Hans','zh-Hant']) {
+    const text=render(source,language);expect(text).toContain(language==='zh-Hans'?'约 K／聚餐／运动／出游／游戏／其他':'約 K／聚餐／運動／出遊／遊戲／其他');
+    expect(text).toContain('后台發 · 帐号後臺');expect(text).toContain('value="运动"');
+  }
 });
 it('uses the selected script for weekdays while retaining event time zones and UTC+8 display rules', () => {
   for(const language of ['zh-Hans','zh-Hant','en-US','ja','']) {

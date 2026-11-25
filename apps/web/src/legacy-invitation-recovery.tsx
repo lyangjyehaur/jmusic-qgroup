@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -48,7 +49,7 @@ function InvitationReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyI
  {plan.targetName&&<Text>對象：{plan.targetName}</Text>}
  {'reason' in c&&<Text>原因：{c.reason}</Text>}
  {c.kind==='roster-issue'&&<><ul>{c.people.map((p,i)=><li key={i}>{p.name}{p.note?' · 備註：'+p.note:''} · 付款：受邀者本人</li>)}</ul><Text>受邀者接受時確認安排；建立邀請不佔正式名額。</Text></>}
- {c.kind==='roster-accept'&&<><Text>本次接受：{plan.status==='confirmed'?'正式報名':'候補'}；原請求{c.acceptWaiting?'已':'未'}接受候補。</Text><Text>目前安排版本 {plan.conditionsVersion}；原版本 {c.conditionsVersion??'未記錄'}。</Text><dl><dt>類型</dt><dd>{a.category}</dd><dt>開始</dt><dd>{new Date(a.starts_at).toLocaleString(displayLocale(),{timeZone:a.timezone??'UTC'})}</dd><dt>地點</dt><dd>{a.location}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl><Text>以目前帳號接受邀請及安排，沿用原邀請編號與備註。</Text></>}
+ {c.kind==='roster-accept'&&<><Text>本次接受：{plan.status==='confirmed'?'正式報名':'候補'}；原請求{c.acceptWaiting?'已':'未'}接受候補。</Text><Text>目前安排版本 {plan.conditionsVersion}；原版本 {c.conditionsVersion??'未記錄'}。</Text><dl><dt>類型</dt><dd>{activityCategoryLabel(a.category)}</dd><dt>開始</dt><dd>{new Date(a.starts_at).toLocaleString(displayLocale(),{timeZone:a.timezone??'UTC'})}</dd><dt>地點</dt><dd>{a.location}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl><Text>以目前帳號接受邀請及安排，沿用原邀請編號與備註。</Text></>}
  {(c.kind==='manager-issue'||c.kind==='manager-accept')&&<><Text>發起者：{plan.ownerName}</Text><Text>責任：{c.kind==='manager-issue'?c.role==='transfer'?'接任發起者':plan.permissions.map(p=>scopes[p]).join('、'):plan.permissions.length?plan.permissions.map(p=>scopes[p]).join('、'):'接任發起者'}</Text>{plan.expiresAt?<Text>邀請到期：{new Date(plan.expiresAt).toLocaleString(displayLocale())}</Text>:<Text>新邀請有效期 7 天。</Text>}
  {plan.priorRoles.length>0&&<ul>{plan.priorRoles.map((r,i)=><li key={i}>{r.name} · {r.permissions.map(p=>scopes[p]).join('、')}</li>)}</ul>}
  {(c.kind==='manager-issue'&&c.role==='transfer'||c.kind==='manager-accept'&&!plan.permissions.length)&&<Text>交接完成後，新發起者承接管理；原發起者的待接受邀請全部失效。</Text>}

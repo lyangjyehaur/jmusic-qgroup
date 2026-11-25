@@ -142,9 +142,10 @@ test.describe('complete browser-script display',()=>{
   test.use({pollExamples:true});
   for(const language of ['zh-CN','en-US','ja-JP']) test(language+' localizes dates, dialog controls and poll statistics while retaining original content',async({page,context})=>{
     await languageHeader(context,language);const simplified=language==='zh-CN',raw='后台發 · 帐号後臺';
-    await page.route('**/api/v2/time-polls/poll-exact',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,title:raw}});});
-    await page.route('**/api/v2/activities?*',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,events:body.events.map((event:Record<string,unknown>)=>({...event,startsAt:'2026-11-28T16:00:00Z',timezone:'Asia/Shanghai'}))}});});
+    await page.route('**/api/v2/time-polls/poll-exact',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,title:raw,category:'游戏'}});});
+    await page.route('**/api/v2/activities?*',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,events:body.events.map((event:Record<string,unknown>)=>({...event,title:raw,category:'运动',startsAt:'2026-11-28T16:00:00Z',timezone:'Asia/Shanghai'}))}});});
     await page.goto('/activities');await expect(page.locator('.activity-meta').first()).toContainText(simplified?'周日':'週日');
+    await expect(page.locator('.activity-title-line').first()).toContainText(simplified?'运动':'運動');await expect(page.locator('.activity-title-line').first()).toContainText(raw);
     await page.getByRole('link',{name:simplified?'全站搜寻':'全站搜尋',exact:true}).click();
     const dialog=page.getByRole('dialog',{name:simplified?'全站搜寻':'全站搜尋',exact:true});await expect(dialog).toBeVisible();
     await page.getByRole('searchbox',{name:simplified?'搜寻活动、词条或成分称呼':'搜尋活動、詞條或成分稱呼',exact:true}).fill('音');
@@ -153,5 +154,6 @@ test.describe('complete browser-script display',()=>{
     await dialog.getByRole('button',{name:simplified?'返回原页':'返回原頁',exact:true}).click();await expect(page).toHaveURL('/activities');
     await page.goto('/time-polls/poll-exact');await expect(page.getByRole('heading',{name:raw,exact:true})).toBeVisible();
     await expect(page.locator('.vote-stats').first()).toContainText(simplified?'勉强可以':'勉強可以');
+    await expect(page.locator('.poll-detail-status')).toContainText(simplified?'游戏':'遊戲');
   });
 });

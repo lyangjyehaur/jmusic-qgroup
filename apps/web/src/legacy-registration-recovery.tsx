@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -53,7 +54,7 @@ function RegistrationReview({plan,requestKey}:{plan:Extract<z.infer<typeof Legac
  <ul>{c.people.map((person,i)=><li key={i}>{plan.allocation[i]?.name} · {statuses[plan.allocation[i]?.status??'']??plan.allocation[i]?.status} · 付款：{person.payerKind==='self'?'本人':'代報者'}{person.note?' · 備註：'+person.note:''}</li>)}</ul>
  <Text>{c.originalPreviewRequired?'沿用原預覽碼；本次報名接受目前安排。':'沿用舊本人報名入口；本次报名前須核對目前安排。'}</Text></>}
  {(c.kind==='signup'||c.kind==='conditions')&&<><Text>目前安排版本 {plan.conditionsVersion}{c.conditionsVersion!==undefined?'；原版本 '+c.conditionsVersion:''}。</Text>
- <dl><dt>類型</dt><dd>{a.category}</dd><dt>開始</dt><dd>{localTime(a.starts_at,a.timezone)}</dd><dt>持續</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{a.location}</dd><dt>退出期限</dt><dd>{localTime(a.withdrawal_deadline,a.timezone)}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl></>}
+ <dl><dt>類型</dt><dd>{activityCategoryLabel(a.category)}</dd><dt>開始</dt><dd>{localTime(a.starts_at,a.timezone)}</dd><dt>持續</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{a.location}</dd><dt>退出期限</dt><dd>{localTime(a.withdrawal_deadline,a.timezone)}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl></>}
  {(plan.effect==='declined'||plan.effect==='withdrawal_request')&&<Text>{plan.effect==='declined'?'原報名、原約定及付款責任保留；通知發起者協調。':'申請送交名冊管理者；審核前原報名保留。'}</Text>}
  {['withdraw','approve','reject','confirm','split','signup','edit'].includes(plan.effect)&&<Text>保存名冊與操作紀錄，依群政策產生通知；候補依原排隊順序處理。</Text>}
  </div>;

@@ -1,3 +1,4 @@
+import { activityCategoryLabel } from './activity-categories';
 import { errorText, uiText, displayLocale } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -26,7 +27,7 @@ function dateLabel(value:string,zone:string|null){
 }
 function Version({value,heading}:{value:z.infer<typeof ConditionVersion>;heading:string}){
   const a=value.arrangement;
-  return <Surface role="region" aria-label={heading} className="detail"><Heading level={2}>{heading} · 第 {value.version} 版</Heading><Text>{value.summary}</Text>{value.actorName&&<Text tone="muted">{value.actorName} · {dateLabel(value.createdAt,'Asia/Taipei')}（台北）</Text>}<dl><dt>類型</dt><dd>{a.category}</dd><dt>時間</dt><dd>{dateLabel(a.starts_at,a.timezone)}（{a.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd><ActivityLocation value={a.location}/></dd><dt>退出期限</dt><dd>{dateLabel(a.withdrawal_deadline,a.timezone)}</dd>{a.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{a.fee_policy}</dd></>}{a.description&&<><dt>注意事項</dt><dd className="preserve-lines">{a.description}</dd></>}</dl></Surface>;
+  return <Surface role="region" aria-label={heading} className="detail"><Heading level={2}>{heading} · 第 {value.version} 版</Heading><Text>{value.summary}</Text>{value.actorName&&<Text tone="muted">{value.actorName} · {dateLabel(value.createdAt,'Asia/Taipei')}（台北）</Text>}<dl><dt>類型</dt><dd>{activityCategoryLabel(a.category)}</dd><dt>時間</dt><dd>{dateLabel(a.starts_at,a.timezone)}（{a.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{a.duration_hours===null?'未設定':a.duration_hours+' 小時'}</dd><dt>地點</dt><dd><ActivityLocation value={a.location}/></dd><dt>退出期限</dt><dd>{dateLabel(a.withdrawal_deadline,a.timezone)}</dd>{a.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{a.fee_policy}</dd></>}{a.description&&<><dt>注意事項</dt><dd className="preserve-lines">{a.description}</dd></>}</dl></Surface>;
 }
 export function ActivityManagementLink({eventId,viewer}:{eventId:string;viewer:Member}){
   const query=useQuery({queryKey:['private',viewer.scope,'activity-arrangements',eventId],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: eventId } })});
