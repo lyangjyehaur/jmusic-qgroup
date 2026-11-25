@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
@@ -40,7 +40,7 @@ export function LegacyActivityCreationRecovery({viewer,inventory,row,request,val
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原建立活動請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原建立請求已提交，只保存核對結果。</Text>:plan.state==='existing'?<Text>同一草稿已有活動；此紀錄不證明原請求已提交。核對後可保存既有活動位置。</Text>:<ActivityReview plan={plan} requestKey={request.requestKey}/>}
  <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對安排、報名與群通知，使用原編號建立活動':'保存已核對的建立結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原建立活動請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
-const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat('zh-TW',{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
+const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
 function ActivityReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyActivityCreationInspection>,{state:'retryable'}>;requestKey:string}) {
  const {lifecycle,values:c}=plan.command;
  return <div aria-label="原建立活動重試核對"><Text>{c.title}</Text><Text>原操作編號 {requestKey}；發起者 {plan.owner_name}。</Text>

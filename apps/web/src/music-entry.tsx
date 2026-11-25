@@ -35,7 +35,7 @@ export function MusicEntryDetails({ entry }: {
 }) {
   const workspace = useMusicWorkspace(), location = useLocation();
   const inDialog=useContext(DialogPageContext);
-  useDiscoveryDetails(entry.name,(entry.kind==='main'?'領域':'細分')+'・'+categoryLabel(entry.category));
+  useDiscoveryDetails(entry.name,(entry.kind==='main'?uiText('領域'):uiText('細分'))+'・'+categoryLabel(entry.category));
   const selection = workspace.state === 'ready' ? workspace.selection : null;
   const detailPath = musicEntryPath(entry.id, location.search);
   return <section className="music-entry-detail" role="region" aria-label="詞條資料">

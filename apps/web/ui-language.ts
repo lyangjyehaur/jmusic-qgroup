@@ -6,7 +6,7 @@ import type { Plugin } from 'vite';
 const hans = Converter({ from: 't', to: 'cn' }), traditional = Converter({ from: 'cn', to: 'tw' });
 const hant = (text: string) => traditional(text).replaceAll('賬', '帳');
 const han = /[\u3400-\u9fff]/;
-const attributes = new Set(['title', 'description', 'label', 'placeholder', 'aria-label', 'alt']);
+const attributes = new Set(['title', 'description', 'label', 'placeholder', 'aria-label', 'alt', 'hint', 'error', 'closeLabel']);
 const alias = '__qgroupDisplay';
 const errorAlias = '__qgroupError';
 // 台北 is valid in both scripts; retain the existing form's geographic label.

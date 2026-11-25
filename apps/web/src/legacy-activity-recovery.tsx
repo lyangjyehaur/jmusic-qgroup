@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
@@ -39,9 +39,9 @@ export function LegacyActivityPatchRecovery({viewer,inventory,row,request,valida
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原活動請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原活動操作已提交，只保存核對結果。</Text>:<ActivityReview plan={plan} requestKey={request.requestKey}/>}
  <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對安排、報名與群通知，使用原編號重試活動操作':'保存已核對的操作結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原活動請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
-const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat('zh-TW',{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
-const phases:Record<string,string>={draft:'草稿',scheduled:'已排定',ongoing:'進行中',ended:'已結束',cancelled:'已取消'};
-const actions={pause:'暫停報名',resume:'恢復報名',formation:'確認成團',start:'開始活動',finish:'結束活動',cancel:'取消活動',archive:'歸檔',unarchive:'取消歸檔',remove:'移除活動'};
+const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
+const phases:Record<string,string>={draft:uiText('草稿'),scheduled:uiText('已排定'),ongoing:uiText('進行中'),ended:uiText('已結束'),cancelled:uiText('已取消')};
+const actions={pause:uiText('暫停報名'),resume:uiText('恢復報名'),formation:uiText('確認成團'),start:uiText('開始活動'),finish:uiText('結束活動'),cancel:uiText('取消活動'),archive:uiText('歸檔'),unarchive:uiText('取消歸檔'),remove:uiText('移除活動')};
 function ActivityReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyActivityPatchInspection>,{state:'retryable'}>;requestKey:string}){
  const c=plan.command,v=c.kind==='edit'?c.values:plan.current;
  return <div aria-label="原活動操作重試核對"><Text>{plan.title}</Text><Text>原操作編號 {requestKey}；目前版本 {plan.currentRevision}；原版本 {c.revision??'未記錄，須核對目前資料'}。</Text>

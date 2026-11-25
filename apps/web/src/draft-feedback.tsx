@@ -1,3 +1,4 @@
+import { displayLocale } from './language';
 import { Text } from 'yahha-ui';
 import { Button } from './kimi-ui';
 import { Notice } from './shared';
@@ -41,7 +42,7 @@ export function DraftFeedback({
       )}
       {!!form.versions.length && <details><summary>本機保全版本（{form.versions.length}）</summary>
         <ul>{form.versions.map(version => <li key={version.id}>
-          {new Date(version.at).toLocaleString('zh-TW')} · {version.reason}
+          {new Date(version.at).toLocaleString(displayLocale())} · {version.reason}
           <Button variant="ghost" disabled={form.busy || !!form.readError || form.loading} onClick={() => void form.restoreVersion(version.id)}>載入此原稿（保留目前版本）</Button>
           <Button variant="ghost" onClick={() => {
             const url = URL.createObjectURL(new Blob([version.raw], { type: 'application/json' }));

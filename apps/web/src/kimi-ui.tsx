@@ -23,6 +23,7 @@ import {
   type ButtonProps as YahhaButtonProps,
 } from 'yahha-ui';
 import { useState } from 'react';
+import { uiText, displayLocale } from './language';
 type User = { name: string; avatar: string; color: string; avatarUrl?:string };
 
 
@@ -189,7 +190,7 @@ export function Field({ label, hint, error, required, children, className }: {
 }
 
 /** 同一區域切換內容面板；原型頁面自行渲染面板，這裡只使用元件庫的標籤列與選中狀態。 */
-export function Tabs({ items, value, onChange, label = '切換內容' }: {
+export function Tabs({ items, value, onChange, label = uiText('切換內容') }: {
   items: { value: string; label: string; count?: number }[];
   value: string;
   onChange: (value: string) => void;
@@ -271,11 +272,11 @@ export function SearchInput({ value, onChange, placeholder, autoFocus, label }: 
   />;
 }
 
-export function CopyButton({ value, label = '複製' }: { value: string; label?: string }) {
+export function CopyButton({ value, label = uiText('複製') }: { value: string; label?: string }) {
   const [message, setMessage] = useState('');
   return <><YIconButton aria-label={label} variant="ghost" size="sm" className="icon-button" onClick={async () => {
-    try { await navigator.clipboard.writeText(value); setMessage('已複製。'); }
-    catch { setMessage('無法自動複製，請手動複製：' + value); }
+    try { await navigator.clipboard.writeText(value); setMessage(uiText('已複製。')); }
+    catch { setMessage(uiText('無法自動複製，請手動複製：') + value); }
   }}><CopyIcon size="sm" /></YIconButton>{message && <span role="status">{message}</span>}</>;
 }
 
@@ -285,7 +286,7 @@ export function CheckLine({ checked, children }: { checked: boolean; children: R
 
 export function formatDateTime(value: string) {
   const date = new Date(value);
-  return new Intl.DateTimeFormat('zh-TW', { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
+  return new Intl.DateTimeFormat(displayLocale(), { month: 'long', day: 'numeric', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }).format(date);
 }
 
 export function statusTone(status: string): 'neutral' | 'green' | 'amber' | 'red' | 'blue' | 'outline' {

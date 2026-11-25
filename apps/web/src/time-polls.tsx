@@ -1,4 +1,4 @@
-import { uiText } from './language';
+import { uiText, displayLocale } from './language';
 import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -28,7 +28,7 @@ const choices = { yes: uiText("可以"), maybe: uiText("勉強可以"), no: uiTe
 const states = { open: uiText("投票中"), closed: uiText("已截止"), cancelled: uiText("已取消"), finalized: uiText("已定案"), deleted: uiText("已移除") };
 const label = (o: Poll['options'][number], p: Poll) =>
   o.starts_at
-    ? new Intl.DateTimeFormat('zh-TW', { timeZone: p.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(
+    ? new Intl.DateTimeFormat(displayLocale(), { timeZone: p.timezone, dateStyle: 'medium', timeStyle: 'short' }).format(
         new Date(o.starts_at),
       )
     : o.date;
@@ -332,7 +332,7 @@ function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; 
 }
 function PollTally({option:o}:{option:Poll['options'][number]}){
  const total=Math.max(1,o.yes+o.maybe+o.no);
- return <div className="vote-stats" aria-label="填答分佈">{[[o.yes,'可以'],[o.maybe,'勉強可以'],[o.no,'不行']].map(([count,label],index)=><span key={index} style={{'--vote-width':Number(count)/total*100+'%'} as CSSProperties}>{label} {count}</span>)}</div>;
+ return <div className="vote-stats" aria-label="填答分佈">{[[o.yes,choices.yes],[o.maybe,choices.maybe],[o.no,choices.no]].map(([count,label],index)=><span key={index} style={{'--vote-width':Number(count)/total*100+'%'} as CSSProperties}>{label} {count}</span>)}</div>;
 }
 function PollResults({ poll: p }: { poll: Poll }) {
   return <section className="poll-results-panel" aria-label="投票統計"><div className="vote-heading"><Heading level={2}>候選統計</Heading><span>{p.respondent_count} 人填答</span></div><div className="vote-options">

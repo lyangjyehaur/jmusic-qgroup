@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
@@ -38,9 +38,9 @@ export function LegacyTimePollRecovery({viewer,inventory,row,request,validate,re
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原時間投票請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原操作已提交，只保存已核對結果；不重新投票、建立活動或通知。</Text>:<PollReview plan={plan} requestKey={request.requestKey}/>}
  <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原選擇、操作、安排及通知，使用原編號重試原時間投票操作'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原時間投票操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
-const choices={yes:'可以',maybe:'勉強可以',no:'不行'};
-const localTime=(value:string,zone:string)=>new Intl.DateTimeFormat('zh-TW',{timeZone:zone,dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
-const actions={close:'提前截止',extend:'調整截止並開放',cancel:'取消投票',remove:'移除投票',bot_sync:'設定群同步',bot_retry:'重送群通知',finalize:'定案並建立活動'};
+const choices={yes:uiText('可以'),maybe:uiText('勉強可以'),no:uiText('不行')};
+const localTime=(value:string,zone:string)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone,dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
+const actions={close:uiText('提前截止'),extend:uiText('調整截止並開放'),cancel:uiText('取消投票'),remove:uiText('移除投票'),bot_sync:uiText('設定群同步'),bot_retry:uiText('重送群通知'),finalize:uiText('定案並建立活動')};
 function PollReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyTimePollInspection>,{state:'retryable'}>;requestKey:string}) {
  const p=plan.current,c=plan.command,f=plan.finalization;
  return <div aria-label="原時間投票重試核對"><Text>{p.title}</Text><Text>原安排版本 {c.revision}；目前票數版本 {p.vote_revision}；原操作編號 {requestKey}。</Text>

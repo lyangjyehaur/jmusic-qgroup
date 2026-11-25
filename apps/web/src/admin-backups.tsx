@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,7 +18,7 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
   const urls = useRef(new Map<string, ReturnType<typeof setTimeout>>());
   const [busy, setBusy] = useState(false), [message, setMessage] = useState(''), [confirmed, setConfirmed] = useState(false);
   const list = useQuery({ queryKey: ['private', viewer.scope, 'admin-backups', access.scope], queryFn: ({ signal }) => adminReadHttp(viewer).requestContract('GET /api/v2/admin/backups', { signal }), refetchOnMount: 'always', refetchOnWindowFocus: 'always' });
-  const backupLabel = (item: NonNullable<typeof list.data>['backups'][number]) => item.createdAt ? new Date(item.createdAt).toLocaleString('zh-TW') : item.sourceStamp ?? item.id;
+  const backupLabel = (item: NonNullable<typeof list.data>['backups'][number]) => item.createdAt ? new Date(item.createdAt).toLocaleString(displayLocale()) : item.sourceStamp ?? item.id;
   useEffect(() => { active.current = true; return () => { active.current = false; controller.current?.abort(); for (const [url, timer] of urls.current) { clearTimeout(timer); URL.revokeObjectURL(url); } urls.current.clear(); }; }, []);
   function denied(error: unknown) {
     if (!(error instanceof ApiError)) return;

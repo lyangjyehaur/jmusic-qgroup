@@ -10,7 +10,7 @@ import { legacyRegistrationPath } from '@qgroup/contracts';
 import { LegacyActivityPatchRecovery } from './legacy-activity-recovery';
 import { LegacyActivityCreationRecovery } from './legacy-activity-create-recovery';
 import { LegacyPollCreationRecovery } from './legacy-time-poll-create-recovery';
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useId,useRef,useState,type ReactNode } from 'react';
 import { Link,useLocation } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -141,7 +141,7 @@ function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventor
     try{await original();if(!active.current)return;const url=URL.createObjectURL(new Blob([row.raw],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='kanban-local-draft-'+row.id.slice(0,12)+'.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),10000);setMessage(uiText("已下載原草稿保全檔；包含本機資料與圖片，請自行保管。"));}
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("無法下載原稿。"));}finally{if(active.current)setBusy(false);}
   }
-  return <><Heading level={3}>{description.label}</Heading><Text>原保存時間：{typeof (row.source as {at?:unknown}).at==='number'?new Date((row.source as {at:number}).at).toLocaleString('zh-TW'):'未記錄'}</Text>
+  return <><Heading level={3}>{description.label}</Heading><Text>原保存時間：{typeof (row.source as {at?:unknown}).at==='number'?new Date((row.source as {at:number}).at).toLocaleString(displayLocale()):'未記錄'}</Text>
     {description.kind==='unknown'?<Notice>原紀錄已保全，但格式尚未完成映射，不能轉換或重送。</Notice>:description.kind==='request'?<><Text>原編號：{description.request!.requestKey}</Text><Text>方法：{description.request!.method}</Text>{!legacyAuthorizationDestination(description.request!)&&<Button variant="secondary" disabled={busy} onClick={()=>void check()}>核對原請求結果</Button>}</>:hasCredentials(row.source)?<Notice>原稿含授權資料，保留在本機；不能展示或匯出。</Notice>:<><DraftContents data={description.data!}/><Button variant="secondary" disabled={busy} onClick={()=>void download()}>下載此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}{receipt?.target&&<Link to={(receipt.target.kind==='activity'?'/activities/':'/time-polls/')+encodeURIComponent(receipt.target.id)}>查看原{receipt.target.kind==='activity'?'活動':'時間投票'}</Link>}
     {description.request?.method==='POST'&&description.request.path==='/api/time-polls'&&<LegacyPollCreationRecovery viewer={viewer} inventory={inventory} row={row} request={description.request} validate={original} refresh={()=>client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']})}/> }

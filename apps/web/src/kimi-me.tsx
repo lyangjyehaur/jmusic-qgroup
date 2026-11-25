@@ -8,7 +8,7 @@ import { ActionLink } from './action-link';
 import { EmbeddedPageContext, Failure, Notice, useSession } from './shared';
 import { scopedHttp } from './http';
 import { listedActivityStatus } from './kimi-activities';
-import { uiText } from './language';
+import { uiText, displayLocale } from './language';
 export function KimiMePage({activeTab,panel}:{activeTab?:string;panel?:ReactNode}={}) {
   const session=useSession(),viewer=session.data,[params,setParams]=useSearchParams(),navigate=useNavigate();
   const tab=activeTab??params.get('tab')??'overview';
@@ -25,4 +25,4 @@ export function KimiMePage({activeTab,panel}:{activeTab?:string;panel?:ReactNode
   </div>;
 }
 
-function shortDate(value:string,timezone:string|null){try{return new Intl.DateTimeFormat('zh-TW',{month:'numeric',day:'numeric',timeZone:timezone??'UTC'}).format(new Date(value));}catch{return '—';}}
+function shortDate(value:string,timezone:string|null){try{return new Intl.DateTimeFormat(displayLocale(),{month:'numeric',day:'numeric',timeZone:timezone??'UTC'}).format(new Date(value));}catch{return '—';}}

@@ -3,6 +3,8 @@ import { domainErrorDisplay } from '@qgroup/domain';
 export function displayText(hans: string, hant: string) {
   return typeof document !== 'undefined' && document.documentElement.lang === 'zh-Hans' ? hans : hant;
 }
+/** Use the selected UI script for date labels without changing their time zone. */
+export function displayLocale() { return displayText('zh-CN', 'zh-TW'); }
 /** Explicit display boundary; the build rejects nonliteral arguments. */
 export function uiText(value: string) { return value; }
 const errors = new WeakMap<Error, readonly [string, string]>();

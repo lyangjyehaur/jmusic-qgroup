@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
@@ -40,16 +40,16 @@ export function LegacyInvitationRecovery({viewer,inventory,row,request,validate,
  <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對邀請、管理責任與通知，使用原編號重試邀請操作':'保存已核對的操作結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原邀請請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
 
-const scopes:Record<string,string>={schedule:'安排',roster:'名冊',attendance:'到場',settlement:'結算'};
-const actions:Record<string,string>={'roster-issue':'建立補報名邀請','roster-accept':'接受补报名邀請','manager-issue':'建立管理邀請','manager-accept':'接受管理責任','invitation-revoke':'撤銷管理邀請','role-revoke':'撤銷協辦權限'};
+const scopes:Record<string,string>={schedule:uiText('安排'),roster:uiText('名冊'),attendance:uiText('到場'),settlement:uiText('結算')};
+const actions:Record<string,string>={'roster-issue':uiText('建立補報名邀請'),'roster-accept':uiText('接受补报名邀請'),'manager-issue':uiText('建立管理邀請'),'manager-accept':uiText('接受管理責任'),'invitation-revoke':uiText('撤銷管理邀請'),'role-revoke':uiText('撤銷協辦權限')};
 function InvitationReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyInvitationInspection>,{state:'retryable'}>;requestKey:string}){
  const c=plan.command,a=plan.arrangement;
  return <div aria-label="原邀請操作重試核對"><Text>{plan.title}</Text><Text>原操作編號 {requestKey}；目前版本 {plan.currentRevision}；原版本 {c.revision}。</Text><Text>操作：{actions[c.kind]}</Text>
  {plan.targetName&&<Text>對象：{plan.targetName}</Text>}
  {'reason' in c&&<Text>原因：{c.reason}</Text>}
  {c.kind==='roster-issue'&&<><ul>{c.people.map((p,i)=><li key={i}>{p.name}{p.note?' · 備註：'+p.note:''} · 付款：受邀者本人</li>)}</ul><Text>受邀者接受時確認安排；建立邀請不佔正式名額。</Text></>}
- {c.kind==='roster-accept'&&<><Text>本次接受：{plan.status==='confirmed'?'正式報名':'候補'}；原請求{c.acceptWaiting?'已':'未'}接受候補。</Text><Text>目前安排版本 {plan.conditionsVersion}；原版本 {c.conditionsVersion??'未記錄'}。</Text><dl><dt>類型</dt><dd>{a.category}</dd><dt>開始</dt><dd>{new Date(a.starts_at).toLocaleString('zh-TW',{timeZone:a.timezone??'UTC'})}</dd><dt>地點</dt><dd>{a.location}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl><Text>以目前帳號接受邀請及安排，沿用原邀請編號與備註。</Text></>}
- {(c.kind==='manager-issue'||c.kind==='manager-accept')&&<><Text>發起者：{plan.ownerName}</Text><Text>責任：{c.kind==='manager-issue'?c.role==='transfer'?'接任發起者':plan.permissions.map(p=>scopes[p]).join('、'):plan.permissions.length?plan.permissions.map(p=>scopes[p]).join('、'):'接任發起者'}</Text>{plan.expiresAt?<Text>邀請到期：{new Date(plan.expiresAt).toLocaleString('zh-TW')}</Text>:<Text>新邀請有效期 7 天。</Text>}
+ {c.kind==='roster-accept'&&<><Text>本次接受：{plan.status==='confirmed'?'正式報名':'候補'}；原請求{c.acceptWaiting?'已':'未'}接受候補。</Text><Text>目前安排版本 {plan.conditionsVersion}；原版本 {c.conditionsVersion??'未記錄'}。</Text><dl><dt>類型</dt><dd>{a.category}</dd><dt>開始</dt><dd>{new Date(a.starts_at).toLocaleString(displayLocale(),{timeZone:a.timezone??'UTC'})}</dd><dt>地點</dt><dd>{a.location}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl><Text>以目前帳號接受邀請及安排，沿用原邀請編號與備註。</Text></>}
+ {(c.kind==='manager-issue'||c.kind==='manager-accept')&&<><Text>發起者：{plan.ownerName}</Text><Text>責任：{c.kind==='manager-issue'?c.role==='transfer'?'接任發起者':plan.permissions.map(p=>scopes[p]).join('、'):plan.permissions.length?plan.permissions.map(p=>scopes[p]).join('、'):'接任發起者'}</Text>{plan.expiresAt?<Text>邀請到期：{new Date(plan.expiresAt).toLocaleString(displayLocale())}</Text>:<Text>新邀請有效期 7 天。</Text>}
  {plan.priorRoles.length>0&&<ul>{plan.priorRoles.map((r,i)=><li key={i}>{r.name} · {r.permissions.map(p=>scopes[p]).join('、')}</li>)}</ul>}
  {(c.kind==='manager-issue'&&c.role==='transfer'||c.kind==='manager-accept'&&!plan.permissions.length)&&<Text>交接完成後，新發起者承接管理；原發起者的待接受邀請全部失效。</Text>}
  {plan.permissions.includes('settlement')&&<Text>結算人僅一位；接受後撤銷原結算人此項權限，保留其他職責。</Text>}

@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ import { deviceSlot,deviceToken } from './device-link-record';
 const pendingLinkKey = 'qgroup:rebuild:device-link';
 function displayTime(value: string) {
   const date = new Date(value);
-  return Number.isFinite(date.getTime()) ? date.toLocaleString('zh-TW', { hour12: false }) : uiText('時間未記錄');
+  return Number.isFinite(date.getTime()) ? date.toLocaleString(displayLocale(), { hour12: false }) : uiText('時間未記錄');
 }
 const actionLabels: Record<string, string> = {
   qq_login: uiText("QQ 登入"), qq_bound: uiText("綁定 QQ"), name_registered: uiText("建立帳號"), nickname_changed: uiText("修改站內稱呼"), account_switched: uiText("切換帳號"), music_claimed: uiText("找回原成分"),

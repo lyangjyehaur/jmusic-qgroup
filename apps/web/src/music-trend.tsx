@@ -1,4 +1,4 @@
-import { uiText } from './language';
+import { uiText, displayLocale } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
@@ -16,7 +16,7 @@ import { categoryLabel } from './music-entries';
 type Trend = z.infer<typeof MusicTrend>;
 const colors = [1,2,3,4,5].map(index=>'var(--app-chart-'+index+')');
 const validDate = (t: number) => Number.isFinite(new Date(t * 1000).getTime());
-const date = (t: number) => validDate(t) ? new Intl.DateTimeFormat('zh-TW', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(t * 1000) : uiText('時間無法顯示');
+const date = (t: number) => validDate(t) ? new Intl.DateTimeFormat(displayLocale(), { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(t * 1000) : uiText('時間無法顯示');
 function Created({ time }: { time: number | null }) {
   return time && validDate(time) ? <time dateTime={new Date(time * 1000).toISOString()}>{date(time)}</time> : <>時間未記錄</>;
 }

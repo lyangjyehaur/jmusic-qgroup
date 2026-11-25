@@ -41,7 +41,7 @@ export function LegacyPersonalRecovery({viewer,inventory,row,request,validate,re
 }
 
 
-const actions:Record<string,string>={profile:'修改站內稱呼',notifications:'標記消息已讀','code-create':'保存收款碼','code-archive':'移除收款碼'};
+const actions:Record<string,string>={profile:uiText('修改站內稱呼'),notifications:uiText('標記消息已讀'),'code-create':uiText('保存收款碼'),'code-archive':uiText('移除收款碼')};
 function PersonalReview({plan,requestKey,request,scope}:{plan:Extract<z.infer<typeof LegacyPersonalInspection>,{state:'retryable'}>;requestKey:string;request:Request;scope:string}){
  return <div aria-label="原個人操作重試核對"><Text>原操作編號 {requestKey}</Text><Text>操作：{actions[plan.kind]}</Text>
  {plan.kind==='profile'&&<><dl><dt>目前稱呼</dt><dd>{plan.currentNickname}</dd><dt>原請求稱呼</dt><dd>{plan.nickname}</dd></dl><Text>更新 {plan.affectedActivities} 場有效報名的稱呼及操作紀錄；名額與付款責任保留。</Text></>}

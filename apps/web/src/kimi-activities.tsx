@@ -10,7 +10,7 @@ import { Failure, Notice, useSession } from './shared';
 import { scopedHttp } from './http';
 import { ActivityBrowseTabs } from './activity-browse-tabs';
 import { activityDisplayDate } from './activity-summary';
-import { uiText } from './language';
+import { uiText, displayLocale } from './language';
 const statuses = [['all',uiText('全部狀態')],['draft',uiText('草稿')],['open',uiText('報名中')],['full',uiText('已額滿')],['paused',uiText('未開放報名')],['ongoing',uiText('進行中')],['ended',uiText('已結束')],['cancelled',uiText('已取消')],['archived',uiText('已歸檔')]] as const;
 export function listedActivityStatus(event: z.infer<typeof ListedActivity>) {
   return event.archived?'archived':event.estimatedOver?'ended':['draft','ongoing','ended','cancelled'].includes(event.phase)?event.phase:!event.registrationOpen?'paused':event.capacity>0&&event.confirmed>=event.capacity?'full':'open';
@@ -18,7 +18,7 @@ export function listedActivityStatus(event: z.infer<typeof ListedActivity>) {
 export function KimiActivityRow({ event, rooms = false }: { event: z.infer<typeof ListedActivity>; rooms?: boolean }) {
   const to=event.lifecycle==='draft'?'/activities/'+encodeURIComponent(event.id)+'/edit':rooms?'/tools/room-lab?eventId='+encodeURIComponent(event.id):'/activities/'+encodeURIComponent(event.id);
   let day='—', month='';
-  try { if(event.timezone){const d=new Date(event.startsAt);day=new Intl.DateTimeFormat('zh-TW',{day:'numeric',timeZone:event.timezone}).formatToParts(d).find(p=>p.type==='day')?.value??'—';month=new Intl.DateTimeFormat('zh-TW',{month:'short',timeZone:event.timezone}).format(d);} } catch { /* Preserve original time below. */ }
+  try { if(event.timezone){const d=new Date(event.startsAt);day=new Intl.DateTimeFormat(displayLocale(),{day:'numeric',timeZone:event.timezone}).formatToParts(d).find(p=>p.type==='day')?.value??'—';month=new Intl.DateTimeFormat(displayLocale(),{month:'short',timeZone:event.timezone}).format(d);} } catch { /* Preserve original time below. */ }
   const status=listedActivityStatus(event), label=event.estimatedOver&&!event.archived?uiText('已過預定時間'):statuses.find(([value])=>value===status)?.[1]??event.phase;
   const mine=event.myRegistration;
   return <article className="activity-row"><div className="activity-date" aria-hidden="true"><strong>{day}</strong><span>{month}</span></div>

@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
@@ -43,7 +43,7 @@ function Loader({viewer,id,manage}:{viewer:Member;id:string;manage:boolean}){
 }
 function when(value:string,timezone:string|null){
   if(!/(?:Z|[+-]\d{2}:\d{2})$/.test(value)||!timezone)return value.replace('T',' ');
-  try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:timezone}).format(new Date(value));}catch{return value;}
+  try{return new Intl.DateTimeFormat(displayLocale(),{dateStyle:'medium',timeStyle:'short',timeZone:timezone}).format(new Date(value));}catch{return value;}
 }
 function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:boolean}){
   const navigate=useNavigate(),inActivity=useActivityAction();

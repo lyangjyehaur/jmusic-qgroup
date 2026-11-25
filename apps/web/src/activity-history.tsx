@@ -1,4 +1,4 @@
-import { uiText } from './language';
+import { uiText, displayLocale } from './language';
 import { Fragment } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
@@ -15,7 +15,7 @@ function object(value:unknown):Snapshot{return value&&typeof value==='object'&&!
 const systemFields=new Set(['status','visibility','lifecycle','registration_open','formation_state','confirmation','kind','state','bot_enabled','mode']);
 function display(value:unknown,system=false):string {if(value===null||value===undefined||value==='')return uiText('未設定');if(Array.isArray(value))return value.map(item=>display(item,system)).join('、');if(!system)return String(value);if(typeof value==='boolean')return value?uiText('是'):uiText('否');return values[String(value)]??String(value);}
 function displayField(value:unknown,key:string){return display(key==='draft_join_owner'&&typeof value==='number'?Boolean(value):value,systemFields.has(key)||key==='draft_join_owner');}
-function stamp(value:string){const date=new Date(value);return Number.isNaN(date.getTime())?value:new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Taipei'}).format(date)+uiText('（台北）');}
+function stamp(value:string){const date=new Date(value);return Number.isNaN(date.getTime())?value:new Intl.DateTimeFormat(displayLocale(),{dateStyle:'medium',timeStyle:'short',timeZone:'Asia/Taipei'}).format(date)+uiText('（台北）');}
 function People({data,label}:{data:Snapshot;label:string}){
   const people=data.people??data.participants??(data.attendee?[data.attendee]:[]),roles=data.roles,rooms=data.rooms;
   if(!Array.isArray(people)||(!people.length&&!Array.isArray(roles)&&!Array.isArray(rooms)))return null;

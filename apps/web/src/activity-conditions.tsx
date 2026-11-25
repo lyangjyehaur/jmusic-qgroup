@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
@@ -22,7 +22,7 @@ type DraftValue=z.infer<typeof Draft>;
 const original=(data:Conditions):DraftValue=>({revision:data.revision,conditionsVersion:data.current.version,personId:'',decision:'accepted',reason:''});
 function dateLabel(value:string,zone:string|null){
   if(!/(?:Z|[+-]\d{2}:\d{2})$/.test(value)||!zone)return value.replace('T',' ');
-  try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(value));}catch{return value;}
+  try{return new Intl.DateTimeFormat(displayLocale(),{dateStyle:'medium',timeStyle:'short',timeZone:zone}).format(new Date(value));}catch{return value;}
 }
 function Version({value,heading}:{value:z.infer<typeof ConditionVersion>;heading:string}){
   const a=value.arrangement;

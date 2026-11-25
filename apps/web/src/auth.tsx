@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -150,5 +150,5 @@ export function Accounts() {
 
 function AccountDevices({viewer}:{viewer:Extract<Viewer,{authenticated:true}>}){
  const devices=useQuery({queryKey:['private',viewer.scope,'devices'],queryFn:()=>createWebHttpClient({context:()=>({scope:viewer.scope})}).requestContract('GET /api/v2/me/devices',{})});
- return <section className="form-section span-full"><div className="section-title-row"><div className="section-heading"><span>裝置</span><div><h2>登入裝置</h2></div></div><Link className="text-link" to="/me/devices">裝置與帳號紀錄</Link></div>{devices.isPending?<Notice>正在讀取裝置…</Notice>:devices.error?<Failure error={devices.error} retry={()=>void devices.refetch()}/>:<div className="device-list">{devices.data.devices.map((device,index)=><div key={device.id}><Laptop size={20}/><span><strong>{device.current?'目前裝置':'其他裝置 '+index}</strong><small>授權於 {new Date(device.createdAt).toLocaleString('zh-TW')}</small></span>{device.current?<Badge tone="green">目前</Badge>:<ActionLink size="sm" to="/me/devices">管理</ActionLink>}</div>)}</div>}</section>;
+ return <section className="form-section span-full"><div className="section-title-row"><div className="section-heading"><span>裝置</span><div><h2>登入裝置</h2></div></div><Link className="text-link" to="/me/devices">裝置與帳號紀錄</Link></div>{devices.isPending?<Notice>正在讀取裝置…</Notice>:devices.error?<Failure error={devices.error} retry={()=>void devices.refetch()}/>:<div className="device-list">{devices.data.devices.map((device,index)=><div key={device.id}><Laptop size={20}/><span><strong>{device.current?'目前裝置':'其他裝置 '+index}</strong><small>授權於 {new Date(device.createdAt).toLocaleString(displayLocale())}</small></span>{device.current?<Badge tone="green">目前</Badge>:<ActionLink size="sm" to="/me/devices">管理</ActionLink>}</div>)}</div>}</section>;
 }

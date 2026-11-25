@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -105,7 +105,7 @@ function Recovery({ viewer }: { viewer: Viewer }) {
     </form> : status && <>
       <Heading level={2}>{status.name || '原成分'}</Heading><Text>舊 QQ：{status.legacyQQ}</Text><Text>固定成分 ID：{status.profileId}</Text>
       {status.status === 'completed' ? <><Notice>已關聯原成分。</Notice><Link to="/me/music">編輯原成分</Link></> : status.status === 'unavailable' ? <Notice>找回已過期、成分已變更或已有關聯。取消後可重新找回；如有衝突請聯絡管理員。</Notice> : <>
-        <Text>有效至 {new Date(status.expiresAt).toLocaleString('zh-TW')}。</Text>
+        <Text>有效至 {new Date(status.expiresAt).toLocaleString(displayLocale())}。</Text>
         {status.status === 'pending' ? <>
           <Text>{viewer.authenticated ? `${uiText("接著授權目前帳號「")}${viewer.nickname}${uiText("」的 QQ，不切換或合併帳號。")}` : '接著授權 QQ，確認登入帳號後再核對成分關聯。'}</Text>
           {!viewer.privacyAccepted && <label className="consent"><input type="checkbox" checked={privacy} onChange={event => setPrivacy(event.target.checked)} /><span>我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></span></label>}

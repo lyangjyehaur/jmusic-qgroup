@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -13,7 +14,7 @@ import { activityDisplayDate } from './activity-summary';
 import { categoryLabel } from './music-entries';
 import { loginLink } from './auth';
 
-const labels = { all: '全部', activities: '活動', music: '音樂詞條', people: '同好' } as const;
+const labels = { all: uiText('全部'), activities: uiText('活動'), music: uiText('音樂詞條'), people: uiText('同好') } as const;
 function searchPath(q: string, group: keyof typeof labels = 'all', page = 1) {
   const params = new URLSearchParams({ q });
   if (group !== 'all') params.set('group', group);

@@ -1,3 +1,4 @@
+import { uiText } from './language';
 import { KimiMusicFrame } from './kimi-page-frames';
 import { createContext, useContext, useRef, useState, type ReactNode } from 'react';
 import { UNSAFE_LocationContext, useLocation, useNavigate, useOutlet, type Location } from 'react-router-dom';
@@ -12,9 +13,9 @@ import { GitCompareArrows, ListMusic } from 'lucide-react';
 export const DialogPageContext = createContext(false);
 export const InactivePageContext = createContext(false);
 export function discoveryDialogKind(location: Pick<Location, 'pathname'>) {
-  if (location.pathname === '/search') return '全站搜尋';
-  if (/^\/music\/entries\/[^/]+$/.test(location.pathname)) return '詞條資料';
-  if (/^\/people\/m_[a-f0-9]{24,40}$/.test(location.pathname)) return '同好成分';
+  if (location.pathname === '/search') return uiText('全站搜尋');
+  if (/^\/music\/entries\/[^/]+$/.test(location.pathname)) return uiText('詞條資料');
+  if (/^\/people\/m_[a-f0-9]{24,40}$/.test(location.pathname)) return uiText('同好成分');
   return null;
 }
 export function localDiscoveryReturn(value: unknown): string | null {

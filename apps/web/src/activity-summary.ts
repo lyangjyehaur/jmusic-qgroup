@@ -1,11 +1,11 @@
-import { uiText } from './language';
+import { uiText, displayLocale } from './language';
 import type { ActivityView } from '@qgroup/contracts';
 
 const instant = (value: string) => /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
 function formatter(zone: string | null, withOffset = true) {
   if (!zone) return null;
   try {
-    return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone, ...(withOffset ? { timeZoneName: 'shortOffset' as const } : {}) });
+    return new Intl.DateTimeFormat(displayLocale(), { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone, ...(withOffset ? { timeZoneName: 'shortOffset' as const } : {}) });
   } catch { return null; }
 }
 export function activityDate(value: string, zone: string | null) {

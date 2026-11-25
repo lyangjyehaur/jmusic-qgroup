@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
@@ -39,9 +39,9 @@ export function LegacyRegistrationRecovery({viewer,inventory,row,request,validat
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原名冊請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原名冊操作已提交，只保存核對結果。</Text>:<RegistrationReview plan={plan} requestKey={request.requestKey}/>}
  <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對名冊、安排與通知，使用原編號重試名冊操作':'保存已核對的操作結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原名冊請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
-const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat('zh-TW',{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
-const statuses:Record<string,string>={confirmed:'正式報名',waiting:'候補',tentative:'待確認',invited:'受邀',withdrawn:'已退出',accepted:'已接受',pending:'待回覆',declined:'暫不同意'};
-const actions={signup:'新增報名',edit:'修改報名',confirm:'確認參加',split:'改為分開排隊',withdraw:'退出報名',withdrawal_request:'申請退出，等待審核',approve:'同意退出',reject:'拒絕退出',accepted:'接受目前安排',declined:'暫不同意目前安排',noop:'目前沒有本人報名，保存原退出操作結果'};
+const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
+const statuses:Record<string,string>={confirmed:uiText('正式報名'),waiting:uiText('候補'),tentative:uiText('待確認'),invited:uiText('受邀'),withdrawn:uiText('已退出'),accepted:uiText('已接受'),pending:uiText('待回覆'),declined:uiText('暫不同意')};
+const actions={signup:uiText('新增報名'),edit:uiText('修改報名'),confirm:uiText('確認參加'),split:uiText('改為分開排隊'),withdraw:uiText('退出報名'),withdrawal_request:uiText('申請退出，等待審核'),approve:uiText('同意退出'),reject:uiText('拒絕退出'),accepted:uiText('接受目前安排'),declined:uiText('暫不同意目前安排'),noop:uiText('目前沒有本人報名，保存原退出操作結果')};
 function RegistrationReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyRegistrationInspection>,{state:'retryable'}>;requestKey:string}){
  const c=plan.command,a=plan.arrangement,p=plan.currentPerson;
  return <div aria-label="原名冊操作重試核對"><Text>{plan.title}</Text><Text>原操作編號 {requestKey}；目前版本 {plan.currentRevision}；原版本 {c.revision??'未記錄，須核對目前資料'}。</Text>

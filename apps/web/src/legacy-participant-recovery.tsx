@@ -1,5 +1,5 @@
 import { legacyParticipantPath } from '@qgroup/contracts';
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
@@ -44,20 +44,20 @@ export function LegacyParticipantRecovery({viewer,inventory,row,request,validate
 }
 
 
-const attendanceLabels:Record<string,string>={unknown:'未核對',present:'到場',absent:'缺席',late:'遲到',left:'已離場'};
-const claimStatuses:Record<string,string>={invited:'待本人申請',requested:'待管理人核對',approved:'已通過',rejected:'已拒絕',revoked:'已撤銷',expired:'已過期'};
-const rosterStatuses:Record<string,string>={confirmed:'正式報名',waiting:'候補',tentative:'待確認',withdrawn:'已退出'};
-const actions:Record<string,string>={'claim-issue':'建立本人認領邀請','claim-request':'申請本人認領','claim-decision':'處理認領申請',attendance:'核對出席',onsite:'現場補錄'};
+const attendanceLabels:Record<string,string>={unknown:uiText('未核對'),present:uiText('到場'),absent:uiText('缺席'),late:uiText('遲到'),left:uiText('已離場')};
+const claimStatuses:Record<string,string>={invited:uiText('待本人申請'),requested:uiText('待管理人核對'),approved:uiText('已通過'),rejected:uiText('已拒絕'),revoked:uiText('已撤銷'),expired:uiText('已過期')};
+const rosterStatuses:Record<string,string>={confirmed:uiText('正式報名'),waiting:uiText('候補'),tentative:uiText('待確認'),withdrawn:uiText('已退出')};
+const actions:Record<string,string>={'claim-issue':uiText('建立本人認領邀請'),'claim-request':uiText('申請本人認領'),'claim-decision':uiText('處理認領申請'),attendance:uiText('核對出席'),onsite:uiText('現場補錄')};
 function ParticipantReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyParticipantInspection>,{state:'retryable'}>;requestKey:string}){
  const c=plan.command,p=plan.currentPerson,a=plan.arrangement;
  return <div aria-label="原認領／出席操作重試核對"><Text>{plan.title}</Text><Text>原操作編號 {requestKey}；目前版本 {plan.currentRevision}；原版本 {c.revision}。</Text><Text>操作：{actions[c.kind]}</Text>
  {p&&<dl><dt>參加者</dt><dd>{p.name}</dd><dt>名額</dt><dd>{rosterStatuses[p.status]??p.status}</dd><dt>付款</dt><dd>{p.payerName}{p.paymentLocked?'（原付款責任已保全）':''}</dd></dl>}
  {'reason' in c&&c.reason&&<Text>原因：{c.reason}</Text>}
- {plan.claim&&<><Text>認領：{claimStatuses[plan.claim.status]??plan.claim.status}；到期 {new Date(plan.claim.expiresAt).toLocaleString('zh-TW')}。</Text>{plan.claim.requesterName&&<Text>申請帳號：{plan.claim.requesterName}</Text>}</>}
+ {plan.claim&&<><Text>認領：{claimStatuses[plan.claim.status]??plan.claim.status}；到期 {new Date(plan.claim.expiresAt).toLocaleString(displayLocale())}。</Text>{plan.claim.requesterName&&<Text>申請帳號：{plan.claim.requesterName}</Text>}</>}
  {c.kind==='claim-issue'&&<Text>邀請有效期 7 天。重新邀請會撤銷此人原有的待接受／待審申請。</Text>}
  {c.kind==='claim-request'&&<Text>原請求已確認本人身份與保留原付款責任；提交只建立待審申請，管理人核對通過後才移轉報名。</Text>}
  {c.kind==='claim-decision'&&<><Text>結果：{c.decision==='approve'?'通過':c.decision==='reject'?'拒絕':'撤銷'}</Text><Text>{c.decision==='approve'?'原請求已明確確認申請人就是此參加者；移轉名額管理，保留原付款人、同意、帳務和憑證。':'結束本次認領；原報名、付款責任及帳務保留。'}</Text></>}
- {c.kind==='attendance'&&<><Text>目前出席：{p?attendanceLabels[p.attendance]:''}{p?.note?'；備註：'+p.note:''}。</Text><dl><dt>保存出席</dt><dd>{attendanceLabels[c.attendance]}</dd><dt>備註</dt><dd>{c.note||'未填'}</dd><dt>到場</dt><dd>{c.arrivedAt?new Date(c.arrivedAt).toLocaleString('zh-TW'):'未填'}</dd><dt>離場</dt><dd>{c.leftAt?new Date(c.leftAt).toLocaleString('zh-TW'):'未填'}</dd></dl><Text>出席紀錄不會自動更動名額或帳務。</Text></>}
- {c.kind==='onsite'&&<><Text>正式 {plan.confirmed} 人／上限 {plan.capacity||'不限'}；候補 {plan.waiting} 人。</Text><ul>{c.people.map((v,i)=><li key={i}>{plan.onsiteNames[i]} · 付款：{v.payerKind==='self'?'本人':'代報者'}{v.note?' · 備註：'+v.note:''}</li>)}</ul><Text>超額：{c.allowOverCapacity?'原請求已確認':'未確認'}；跳過候補排隊：{c.overrideWaitlist?'原請求已確認':'未確認'}。</Text><Text>安排版本 {plan.conditionsVersion}；原版本 {c.conditionsVersion}。</Text><dl><dt>開始</dt><dd>{new Date(a.starts_at).toLocaleString('zh-TW',{timeZone:a.timezone??'UTC'})}</dd><dt>地點</dt><dd>{a.location}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl><Text>原請求已確認現場人員接受目前安排；補錄為正式到場，不提升原候補。</Text></>}
+ {c.kind==='attendance'&&<><Text>目前出席：{p?attendanceLabels[p.attendance]:''}{p?.note?'；備註：'+p.note:''}。</Text><dl><dt>保存出席</dt><dd>{attendanceLabels[c.attendance]}</dd><dt>備註</dt><dd>{c.note||'未填'}</dd><dt>到場</dt><dd>{c.arrivedAt?new Date(c.arrivedAt).toLocaleString(displayLocale()):'未填'}</dd><dt>離場</dt><dd>{c.leftAt?new Date(c.leftAt).toLocaleString(displayLocale()):'未填'}</dd></dl><Text>出席紀錄不會自動更動名額或帳務。</Text></>}
+ {c.kind==='onsite'&&<><Text>正式 {plan.confirmed} 人／上限 {plan.capacity||'不限'}；候補 {plan.waiting} 人。</Text><ul>{c.people.map((v,i)=><li key={i}>{plan.onsiteNames[i]} · 付款：{v.payerKind==='self'?'本人':'代報者'}{v.note?' · 備註：'+v.note:''}</li>)}</ul><Text>超額：{c.allowOverCapacity?'原請求已確認':'未確認'}；跳過候補排隊：{c.overrideWaitlist?'原請求已確認':'未確認'}。</Text><Text>安排版本 {plan.conditionsVersion}；原版本 {c.conditionsVersion}。</Text><dl><dt>開始</dt><dd>{new Date(a.starts_at).toLocaleString(displayLocale(),{timeZone:a.timezone??'UTC'})}</dd><dt>地點</dt><dd>{a.location}</dd><dt>費用</dt><dd>{a.fee_policy||'未填'}</dd><dt>注意事項</dt><dd className="preserve-lines">{a.description||'未填'}</dd></dl><Text>原請求已確認現場人員接受目前安排；補錄為正式到場，不提升原候補。</Text></>}
  <Text>保存操作紀錄，依群政策產生通知。</Text></div>;
 }

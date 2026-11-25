@@ -1,4 +1,4 @@
-import { errorText, uiText } from './language';
+import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useLocation,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
@@ -20,7 +20,7 @@ import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { parseMusicShoutDraft,type MusicShoutDraft as Draft } from './music-shout-record';
 export type Shout=z.infer<typeof MusicShout>;
-export function shoutDate(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?uiText('時間未記錄'):date.toLocaleString('zh-TW',{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+export function shoutDate(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?uiText('時間未記錄'):date.toLocaleString(displayLocale(),{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
 export function MusicShoutsPage({history=false}:{history?:boolean}){
   return <><PageIntro title={history?'找搭子歷史':'找搭子'}/><div className="page-actions"><Link to="/people">回到同好</Link><Link to={history?'/people/shouts':'/people/shouts/history'}>{history?'目前找搭子':'找搭子歷史'}</Link></div>
     <MusicMemberAccess purpose={uiText("使用找搭子")}>{viewer=><Shouts key={viewer.scope+':'+viewer.musicEpoch} viewer={viewer} history={history}/>}</MusicMemberAccess></>;
