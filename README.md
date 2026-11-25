@@ -128,6 +128,26 @@ npm run test:ui
 
 发布范围、单边更新条件、混合版本验证及回退规则见 [Web／bot 发布与相容性规则](docs/deployment-policy.md)。项目级 `AGENTS.md` 也引用同一份规则；以经过验证的 web／bot 版本组合为准，不强制两边同版。当前 Compose 仍共用 `QGROUP_TAG`，独立版本锁定及自动发布检查尚未实现。
 
+### 2026-11-25 起的正式服务
+
+正式站已切换为统一版 TypeScript 网站与 bot，来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`。实际映像、迁移、备份及恢复限制见[本次发布记录](docs/releases/2026-11-25-unified-rebuild.md)。当前运行配置使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像；上段共用 `QGROUP_TAG` 的限制针对保留的旧版 Compose，不能用它启动当前服务。
+
+- 正式入口仍为 `https://kanban.danndann.cn`，沿用 1Panel 的 `127.0.0.1:8791` 上游。
+- 当前容器：`qgroup-unified-web-1`、`qgroup-unified-bot-1`。配置位于 `/opt/qgroup-releases/unified-20261125-54107b8/runtime.env`，私有 web／bot 环境文件同目录保留；不在终端打印完整 Compose 配置或环境值。
+- 正式数据库：`/var/lib/qgroup-unified/data/kanban.sqlite3`；独立删除权威目录 `/var/lib/qgroup-erasure`、固定检查点 `/var/lib/qgroup-checkpoint`。恢复业务数据时不得一并覆盖或回退最新删除权威。
+- 原 `qgroup-web`、`qgroup-music`、`qgroup-bot` 已停止并关闭自动重启，旧 systemd 应用服务保持禁用。旧映像与 `/var/lib/qgroup`、`/var/lib/qgroup-music` 原数据保留；尚未重新启动旧版测试站。后续测试必须使用独立副本并隔离真实 QQ 投递。
+- `qgroup-backup.timer` 已改用统一版备份适配，输出到 `/var/backups/qgroup-unified`，包含 SQLite、图片、经独立验证的删除权威副本及检查点，以 `.complete.json` 作为整套成功凭据；原站备份不覆盖。新版网站另有每小时的成套备份。
+
+```sh
+# 当前正式服务；不要改用下方旧 Compose 的 up/build 指令。
+docker compose --env-file /opt/qgroup-releases/unified-20261125-54107b8/runtime.env -f /opt/qgroup-releases/unified-20261125-54107b8/source/deploy/unified-compose.yaml ps
+docker compose --env-file /opt/qgroup-releases/unified-20261125-54107b8/runtime.env -f /opt/qgroup-releases/unified-20261125-54107b8/source/deploy/unified-compose.yaml logs --tail 50 web bot
+```
+
+### 切换前旧版记录
+
+以下路径、单映像 Compose 与启动指令保留供理解原部署及之后的隔离测试，不是当前正式站的启动方式。不得重新连接新版正式数据或并行启动旧 bot。
+
 - 网站：https://kanban.danndann.cn
 - 应用 `/opt/qgroup`，由 **Docker Compose** 管理：`qgroup-web` 与 `qgroup-bot` 两个容器共用同一个 `qgroup:<tag>` 映像，只差启动命令；同一静态账号 `qgroupsvc`（994:992）非 root 运行，容器只读根文件系统。
 - 后端仅监听 `127.0.0.1:8791`。容器刻意用 **host networking**：`server.py` 的限流只在來源为回环时才信任反向代理的 `X-Real-IP`；改用 bridge 发布端口会让所有访客都来自 Docker 网关，限流退化成全局共用。`1Panel` 上游因此一行都不用改。
