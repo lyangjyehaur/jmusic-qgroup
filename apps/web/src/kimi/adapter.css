@@ -476,3 +476,16 @@
  .kimi.poll-detail-page .vote-heading { align-items: flex-start; }
  .kimi.poll-detail-page .vote-heading > span { max-width: 120px; }
 }
+
+.kimi .activity-schedule-preview { padding: 12px 16px; border-left: 3px solid var(--accent); background: var(--app-panel-tint); margin-top: 16px; }
+.kimi .activity-schedule-preview p { margin: 4px 0; }
+.kimi .activity-schedule-lines { white-space: pre-line; overflow-wrap: anywhere; }
+.kimi .activity-publish-consent { color: var(--muted); font-size: 13px; margin: 16px 0; }
+.kimi .activity-form .sticky-save-bar { gap: 10px; flex-wrap: wrap; }
+.kimi .activity-form .sticky-save-bar > p { flex: 1; }
+.kimi-shell:has(.activity-form) .back-to-top { bottom: calc(var(--mobile-dock-height, 0px) + 112px + var(--visual-viewport-inset, 0px)); }
+@media(max-width:520px) {
+  .kimi .activity-form .sticky-save-bar { gap: 8px; }
+  .kimi .activity-form .sticky-save-bar > p { flex: 0 0 100%; margin: 0; font-size: 12px; white-space: nowrap; }
+  .kimi .activity-form .sticky-save-bar > button { flex: 1; }
+}

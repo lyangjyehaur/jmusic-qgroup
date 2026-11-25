@@ -43,8 +43,9 @@ export function arrangementValues(raw:z.infer<typeof ActivityArrangementInput>,n
 export function validateArrangementValues(values:z.infer<typeof ActivityArrangementInput>,now:Date,draft:boolean,existing?:EventRow) {
   values.startsAt=activityDate(values.startsAt);values.deadline=activityDate(values.deadline);
   if(!draft&&Date.parse(values.startsAt)<=now.getTime()&&(!existing||values.startsAt!==existing.starts_at))throw withApiError(new DomainError('ACTIVITY_START_PASSED','新的活動開始時間需要晚於現在',400));
-  if(values.deadline>values.startsAt)throw withApiError(new DomainError('INVALID_ACTIVITY_DEADLINE','報名截止時間不能晚於活動開始時間',400));
-  if(values.withdrawalDeadline!==null){values.withdrawalDeadline=activityDate(values.withdrawalDeadline);if(values.withdrawalDeadline>values.startsAt)throw withApiError(new DomainError('INVALID_WITHDRAWAL_DEADLINE','退出期限不能晚於活動開始時間',400));}
+  const end=Date.parse(values.startsAt)+values.durationHours*3600000;
+  if(Date.parse(values.deadline)>end)throw withApiError(new DomainError('INVALID_ACTIVITY_DEADLINE','報名截止時間不能晚於活動結束時間',400));
+  if(values.withdrawalDeadline!==null){values.withdrawalDeadline=activityDate(values.withdrawalDeadline);if(Date.parse(values.withdrawalDeadline)>end)throw withApiError(new DomainError('INVALID_WITHDRAWAL_DEADLINE','退出期限不能晚於活動結束時間',400));}
   if(values.capacity&&values.minimumParticipants>values.capacity)throw withApiError(new DomainError('INVALID_ACTIVITY_MINIMUM','最低成團人數不能超過人數上限',400));
   if(values.timezone!==null){
     // ICU also accepts offset zones in recent Node; the source contract is an IANA name.

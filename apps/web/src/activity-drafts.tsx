@@ -18,22 +18,32 @@ import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
-import { Button, Field, PageHeader, Select } from './kimi-ui';
+import { Button, Field, Modal, PageHeader, Select } from './kimi-ui';
 import { ActionLink } from './action-link';
+import { eventStartValue, isEarlyTime, schedulePreview, shiftCalendarDate, startCountdownText, wallDate, wallToISO } from './activity-schedule';
 
 type Saved = z.infer<typeof ActivityDraft> & {assisted?:boolean};
 type Values = z.infer<typeof ActivityArrangementInput>;
 const categories=activityCategories;
 type FormValue = z.infer<typeof Form>;
 type DraftValue = z.infer<typeof Draft>;
-// Editing uses an explicit fixed offset, independent of the browser / event display zone.
-const localTime=(value:string|null)=>value?new Date(Date.parse(value)+8*3600000).toISOString().slice(0,19):'';
-const fromValues=(v:Values):FormValue=>({...v,startsAt:localTime(v.startsAt),deadline:localTime(v.deadline),withdrawalDeadline:localTime(v.withdrawalDeadline),capacity:String(v.capacity),minimumParticipants:String(v.minimumParticipants),durationHours:String(v.durationHours),timezone:v.timezone??''});
-const empty=():FormValue=>({title:'',category:'约K',location:'',startsAt:'',deadline:'',capacity:'0',description:'',durationHours:'3',withdrawalDeadline:'',visibility:'public',timezone:'Asia/Taipei',minimumParticipants:'0',feePolicy:'',botEnabled:false,joinOwner:true});
+const durations:Record<string,string>={'约K':'3','聚餐':'2','运动':'2','出游':'8','游戏':'3','其他':'3'};
+const localTime=(value:string|null,zone:string|null)=>value?wallDate(value,zone):'';
+const fromValues=(v:Values):FormValue=>{
+  const startsAt=localTime(v.startsAt,v.timezone);
+  return {...v,startsAt,eventDate:startsAt.slice(0,10),startTime:startsAt.slice(11),startDayOffset:'0',deadline:localTime(v.deadline,v.timezone),withdrawalDeadline:localTime(v.withdrawalDeadline,v.timezone),capacity:String(v.capacity),minimumParticipants:String(v.minimumParticipants),durationHours:String(v.durationHours),timezone:v.timezone??'',deadlineFollowsEnd:false};
+};
+const empty=():FormValue=>{
+  const eventDate=shiftCalendarDate(wallDate(Date.now(),'Asia/Shanghai').slice(0,10),1),startsAt=eventDate+'T18:00';
+  return {title:'',category:'约K',location:'',startsAt,deadline:eventDate+'T21:00:00',capacity:'0',description:'',durationHours:'3',withdrawalDeadline:'',visibility:'public',timezone:'Asia/Shanghai',minimumParticipants:'0',feePolicy:'',botEnabled:true,joinOwner:true,eventDate,startTime:'18:00',startDayOffset:'0',deadlineFollowsEnd:true};
+};
 const original=(saved:Saved|null):DraftValue=>({id:saved?.id??null,revision:saved?.revision??0,form:saved?fromValues(saved.values):empty(),reason:'',...(!saved?{clientIntent:crypto.randomUUID()}:{})});
+function formStart(form:FormValue){return form.eventDate!==undefined&&form.startTime!==undefined?eventStartValue(form.eventDate,form.startTime,form.startDayOffset??'0'):form.startsAt;}
+function formEnd(form:FormValue){return wallDate(Date.parse(wallToISO(formStart(form),form.timezone))+Number(form.durationHours)*3600000,form.timezone);}
 function inputValues(form:FormValue){
   const integer=(value:string)=>/^\d+$/.test(value)?Number(value):NaN;
-  return ActivityArrangementInput.parse({...form,startsAt:form.startsAt+'+08:00',deadline:form.deadline+'+08:00',withdrawalDeadline:form.withdrawalDeadline?form.withdrawalDeadline+'+08:00':null,timezone:form.timezone.trim()||null,capacity:integer(form.capacity),minimumParticipants:integer(form.minimumParticipants),durationHours:integer(form.durationHours)});
+  const {eventDate,startTime,startDayOffset,deadlineFollowsEnd,...values}=form;
+  return ActivityArrangementInput.parse({...values,startsAt:wallToISO(formStart(form),form.timezone),deadline:wallToISO(form.deadline,form.timezone),withdrawalDeadline:form.withdrawalDeadline?wallToISO(form.withdrawalDeadline,form.timezone):null,timezone:form.timezone.trim()||null,capacity:integer(form.capacity),minimumParticipants:integer(form.minimumParticipants),durationHours:integer(form.durationHours)});
 }
 export function ActivityDraftsPage(){return <><PageIntro title="活動草稿"/><div className="page-actions"><Link to="/activities">所有活動</Link><Link to="/activities/new">新增活動草稿</Link></div><MemberAccess>{viewer=><DraftList key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
 function DraftList({viewer}:{viewer:Member}){
@@ -52,7 +62,7 @@ function CopyLoader({viewer,id}:{viewer:Member;id:string}){
   if(probe.isPending||probe.isFetching)return <Notice>正在讀取本機原稿…</Notice>;
   if(probe.error)return <Failure error={probe.error} retry={()=>void probe.refetch()}/>;
   if(restorable)return <Editor viewer={viewer} initial={null} copyId={id}/>;
-  return query.isPending?<Notice>正在讀取原活動安排…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<><Notice>已帶入原活動安排；請重新填寫日期與截止時間。名單、款項、圖片與通知設定不會複製。</Notice><Editor viewer={viewer} initial={null} copy={query.data}/></>;
+  return query.isPending?<Notice>正在讀取原活動安排…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<><Notice>已帶入原活動安排；請重新填寫日期與截止時間。名單、款項與圖片不會複製；群推送預設開啟。</Notice><Editor viewer={viewer} initial={null} copy={query.data}/></>;
 }
 export function ActivityArrangementPage(){
   const {id=''}=useParams();
@@ -82,12 +92,12 @@ function PendingResult({viewer,id,published=false}:{viewer:Member;id:string;publ
 }
 function Comparison({saved}:{saved:Saved}){
   const v=saved.values;
-  return <Surface aria-label="目前已保存的活動安排"><h2>目前已保存的活動安排</h2><dl className="draft-comparison"><dt>活動名稱</dt><dd>{v.title}</dd><dt>活動類型</dt><dd>{categories.find(([key])=>key===v.category)?.[1]??v.category}</dd><dt>地點</dt><dd>{v.location}</dd><dt>開始時間（台北）</dt><dd>{localTime(v.startsAt)}</dd><dt>報名截止（台北）</dt><dd>{localTime(v.deadline)}</dd><dt>持續時間</dt><dd>{v.durationHours} 小時</dd><dt>人數上限／最低成團人數</dt><dd>{v.capacity||'不限'}／{v.minimumParticipants}</dd><dt>退出期限（台北）</dt><dd>{localTime(v.withdrawalDeadline)||'依報名截止時間'}</dd><dt>可見性</dt><dd>{v.visibility==='public'?'公開':'邀請可見'}</dd><dt>顯示時區</dt><dd>{v.timezone||'未指定'}</dd><dt>群同步</dt><dd>{v.botEnabled?'開啟':'關閉'}</dd><dt>費用規則</dt><dd>{v.feePolicy||'未填寫'}</dd><dt>活動說明</dt><dd>{v.description||'未填寫'}</dd></dl></Surface>;
+  return <Surface aria-label="目前已保存的活動安排"><h2>目前已保存的活動安排</h2><dl className="draft-comparison"><dt>活動名稱</dt><dd>{v.title}</dd><dt>活動類型</dt><dd>{categories.find(([key])=>key===v.category)?.[1]??v.category}</dd><dt>地點</dt><dd>{v.location}</dd><dt>開始時間</dt><dd>{localTime(v.startsAt,v.timezone)}</dd><dt>報名截止</dt><dd>{localTime(v.deadline,v.timezone)}</dd><dt>持續時間</dt><dd>{v.durationHours} 小時</dd><dt>人數上限／最低成團人數</dt><dd>{v.capacity||'不限'}／{v.minimumParticipants}</dd><dt>退出期限</dt><dd>{localTime(v.withdrawalDeadline,v.timezone)||'依報名截止時間'}</dd><dt>可見性</dt><dd>{v.visibility==='public'?'公開':'邀請可見'}</dd><dt>顯示時區</dt><dd>{v.timezone||'未指定'}</dd><dt>群同步</dt><dd>{v.botEnabled?'開啟':'關閉'}</dd><dt>費用規則</dt><dd>{v.feePolicy||'未填寫'}</dd><dt>活動說明</dt><dd>{v.description||'未填寫'}</dd></dl></Surface>;
 }
 function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;initial:Saved|null;published?:boolean;copy?:z.infer<typeof ActivityCopy>;copyId?:string}){
   const client=useQueryClient(),navigate=useNavigate();
   const storageKey='qgroup:rebuild:activity-draft:'+(published?'arrangements:v1:':'v1:')+viewer.scope+':'+(initial?.id??(copyId||copy?'copy:'+(copyId??copy!.id):'new'));
-  const seed=():DraftValue=>copy?{...original(null),form:{...empty(),...copy.values,durationHours:String(copy.values.durationHours),capacity:String(copy.values.capacity),minimumParticipants:String(copy.values.minimumParticipants),timezone:copy.values.timezone??''}}:original(initial);
+  const seed=():DraftValue=>{if(!copy)return original(initial);const form={...empty(),...copy.values,durationHours:String(copy.values.durationHours),capacity:String(copy.values.capacity),minimumParticipants:String(copy.values.minimumParticipants),timezone:copy.values.timezone??'',botEnabled:copy.values.visibility==='public',startsAt:'',eventDate:'',startTime:'',startDayOffset:'',deadline:''};return {...original(null),form};};
   const [saved,setSaved]=useState(initial),[message,setMessage]=useState(''),[comparison,setComparison]=useState(false),[confirmRemove,setConfirmRemove]=useState(false),[confirmPublish,setConfirmPublish]=useState(false),[destination,setDestination]=useState(''),[completedId,setCompletedId]=useState('');
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>Draft.refine(value=>(!published||!value.pending||value.pending.kind==='save')&&value.id===(initial?.id??null)).parse(JSON.parse(raw)),
     dirty:value=>!!value.reason||JSON.stringify(value.form)!==JSON.stringify(original(saved).form),pending:value=>!!value.pending,blocking:!destination});
@@ -98,8 +108,28 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   const locked=record.locked||saved?.canEdit===false||alreadyCreated;
   useEffect(()=>{if(destination)void navigate(destination,{replace:!initial});},[destination,navigate,initial]);
   useEffect(()=>{setConfirmRemove(false);setConfirmPublish(false);},[record.epoch]);
-  function edit(patch:Partial<FormValue>){if(locked)return;if(published&&saved?.assisted&&patch.deadline&&draft.form.withdrawalDeadline===draft.form.deadline)patch.withdrawalDeadline=patch.deadline;record.change({...draft,form:{...draft.form,...patch}});setMessage('');setConfirmRemove(false);setConfirmPublish(false);}
-  async function submit(kind:'save'|'remove'|'publish'='save'){
+  const [timeCheck,setTimeCheck]=useState(false),[now,setNow]=useState(Date.now());
+  useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),30000);return()=>clearInterval(timer);},[]);
+  function edit(patch:Partial<FormValue>){
+    if(locked)return;
+    const before=draft.form;
+    if(patch.category&&before.durationHours===(durations[before.category]??'3'))patch.durationHours=durations[patch.category]??'3';
+    if(patch.startTime!==undefined){
+      if(isEarlyTime(patch.startTime)&&!isEarlyTime(before.startTime??before.startsAt.slice(11)))patch.startDayOffset='';
+      if(!isEarlyTime(patch.startTime))patch.startDayOffset='0';
+    }
+    if(patch.deadline!==undefined&&patch.deadlineFollowsEnd===undefined)patch.deadlineFollowsEnd=false;
+    const next={...before,...patch};
+    if(['eventDate','startTime','startDayOffset','durationHours','timezone'].some(key=>key in patch)){
+      try{next.startsAt=formStart(next);}catch{next.startsAt='';}
+      let follow=before.deadlineFollowsEnd;
+      if(follow===undefined){try{follow=!before.deadline||before.deadline===formEnd(before);}catch{follow=!before.deadline;}}
+      if(follow){try{next.deadline=formEnd(next);}catch{next.deadline='';}next.deadlineFollowsEnd=true;}
+    }
+    if(published&&saved?.assisted&&next.deadline!==before.deadline&&before.withdrawalDeadline===before.deadline)next.withdrawalDeadline=next.deadline;
+    record.change({...draft,form:next});setMessage('');setConfirmRemove(false);setConfirmPublish(false);setTimeCheck(false);
+  }
+  async function submit(kind:'save'|'remove'|'publish'='save',timeConfirmed=false){
     if(alreadyCreated||busy||record.unavailable||(!draft.pending&&saved?.canEdit===false))return;
     if(draft.legacySource?.reviewRequired){setMessage(uiText("請先核對目前安排與原稿，再保存或發布。"));return;}
     let operation=draft.pending;
@@ -107,14 +137,19 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
       if(kind==='remove'){
         if(!saved?.canRemove||!confirmRemove)return;
         operation={kind:'remove',key:crypto.randomUUID(),input:{revision:draft.revision,confirm:true}};
-      }else if(kind==='publish'){
-        if(!saved?.isOwner||!confirmPublish||dirty)return;
-        operation={kind:'publish',key:crypto.randomUUID(),input:{revision:draft.revision,confirm:true,acceptConditions:true}};
       }else{
-        try{const values=inputValues(draft.form);operation=saved?{kind:'save',key:crypto.randomUUID(),input:{revision:draft.revision,values,reason:draft.reason}}:{kind:'create',key:crypto.randomUUID(),input:{values,clientIntent:draft.clientIntent??crypto.randomUUID()}};}
-        catch{setMessage(uiText("請檢查必填欄位、時間與人數範圍。"));return;}
+        try{
+          const values=inputValues(draft.form);
+          if(kind==='publish'){
+            if(saved&&(!saved.isOwner||!confirmPublish||dirty))return;
+            const preview=schedulePreview(new Date(values.startsAt),new Date(Date.parse(values.startsAt)+values.durationHours*3600000),values.timezone);
+            if(preview.requiresConfirmation&&!timeConfirmed){setTimeCheck(true);return;}
+          }
+          operation=saved?(kind==='publish'?{kind:'publish',key:crypto.randomUUID(),input:{revision:draft.revision,confirm:true,acceptConditions:true}}:{kind:'save',key:crypto.randomUUID(),input:{revision:draft.revision,values,reason:draft.reason}}):{kind:'create',key:crypto.randomUUID(),input:{values,clientIntent:draft.clientIntent??crypto.randomUUID(),...(kind==='publish'?{publish:true,confirm:true,acceptConditions:true}:{})}};
+        }catch(error){setAdvanced(true);setMessage(error instanceof z.ZodError?uiText("請檢查必填欄位、時間與人數範圍。"):error instanceof Error?errorText(error):uiText("請檢查必填欄位、時間與人數範圍。"));return;}
       }
     }
+    setTimeCheck(false);
     const pending={...draft,...(operation.kind==='create'&&operation.input.clientIntent?{clientIntent:operation.input.clientIntent}:{}),pending:operation};if(!record.begin())return;
     if(!draft.pending){try{await requireLegacyAvailable(viewer.scope,saved?'/activities/'+encodeURIComponent(saved.id)+(published?'/arrangements':'/edit'):'/activities/new');}catch(error){if(active.current){setMessage(error instanceof Error?errorText(error):uiText("尚未送出，請先核對原紀錄。"));setBusy(false);}return;}}
     if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
@@ -126,7 +161,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
       else result=await authHttp(viewer).requestContract(published?'PUT /api/v2/activities/:id/arrangements':'PUT /api/v2/activities/:id/draft', { params: { id: initial?.id??'' }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;
       if(!active.current)return;
       if(result.removed){if(!await record.retire())throw Error('storage');setDestination('/me/activities/drafts');}
-      else if(operation.kind==='publish'){if(!await record.retire())throw Error('storage');void client.invalidateQueries({queryKey:['activities']});setDestination('/activities/'+encodeURIComponent(result.id));}
+      else if(operation.kind==='publish'||(operation.kind==='create'&&operation.input.publish)){if(!await record.retire())throw Error('storage');void client.invalidateQueries({queryKey:['activities']});setDestination('/activities/'+encodeURIComponent(result.id));}
       else{
         let latest:Saved;
         try{latest=await (published?scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/arrangements', { params: { id: result.id } }):scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/draft', { params: { id: result.id } }));}
@@ -150,7 +185,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
     }catch(error){
       if(!active.current)return;
       if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);if(published)setAdvanced(true);setMessage(errorText(error));}
-      else setMessage(published?uiText("尚未確認活動安排保存結果。原操作已保留，請按「確認安排操作結果」安全重試。"):uiText("尚未確認活動草稿操作結果。原操作已保留，請按「確認草稿操作結果」安全重試。"));
+      else setMessage(operation.kind==='create'&&operation.input.publish?uiText("尚未確認活動發布結果。原操作已保留，請按「確認發布結果」安全重試。"):published?uiText("尚未確認活動安排保存結果。原操作已保留，請按「確認安排操作結果」安全重試。"):uiText("尚未確認活動草稿操作結果。原操作已保留，請按「確認草稿操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
   async function rebase(){
@@ -159,6 +194,9 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   const f=draft.form;const owner=saved?.isOwner??true;
+  const eventDate=f.eventDate??f.startsAt.slice(0,10),startTime=f.startTime??f.startsAt.slice(11),early=isEarlyTime(startTime);
+  let preview:ReturnType<typeof schedulePreview>|null=null,countdown='';
+  try{const start=new Date(wallToISO(formStart(f),f.timezone));preview=schedulePreview(start,new Date(+start+Number(f.durationHours)*3600000),f.timezone);countdown=startCountdownText(start,now);}catch{}
   const [advanced,setAdvanced]=useState(published);
   return <>{blocker.state==='blocked'&&<Surface role="alert"><Text>仍有活動草稿或待確認操作。</Text><Button onClick={()=>blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={()=>void record.leave()}>保留草稿並離開</Button></Surface>}
     {saved&&<div className="page-actions"><Link to={'/activities/'+encodeURIComponent(saved.id)+'/delegation'}>管理分工</Link></div>}
@@ -166,37 +204,47 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
     {draft.legacySource&&<Notice>已帶入舊稿；原保存版本：{draft.legacySource.baseRevision??'未記錄'}。{draft.legacySource.reviewRequired?'請先核對目前安排，輸入仍保留。':''}{draft.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}</Notice>}
     {published&&saved?.assisted&&<Notice>以管理員身分協助修改，必須填寫原因；不授予名單或帳務權限。原退出期限若連動報名截止，會一併連動。</Notice>}
     {published&&saved?.canEdit===false&&<Notice>目前不能修改活動安排；請核對活動狀態與管理權限。</Notice>}
-    <div className="activity-editor"><form className="activity-form" noValidate onSubmit={event=>{event.preventDefault();void submit();}}>
+    <div className="activity-editor"><form className="activity-form" noValidate onSubmit={event=>{event.preventDefault();void submit(saved?'save':'publish');}}>
       <fieldset className="activity-form-fields" disabled={locked}><legend className="sr-only">活動安排</legend>
-      <section className="form-section"><div className="section-heading"><span>01</span><div><h2>基本資料</h2></div></div><div className="form-grid">
+      <section className="form-section"><div className="section-heading"><h2>基本資料</h2></div><div className="form-grid">
         <Field label="活動名稱" required className="span-2"><input value={f.title} maxLength={120} onChange={e=>edit({title:e.target.value})}/></Field>
         <Field label="活動類型"><Select value={f.category} onChange={e=>edit({category:e.target.value})}>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</Select></Field>
+        <Field label="地點" required><input value={f.location} maxLength={240} onChange={e=>edit({location:e.target.value})}/></Field>
+        <Field label="注意事項" className="span-2"><textarea id="activity-description" rows={4} value={f.description} maxLength={6000} onChange={e=>edit({description:e.target.value})}/></Field>
+      </div></section>
+      <section className="form-section"><div className="section-heading"><h2>時間安排</h2></div><div className="form-grid three-cols">
+        <Field label="活動日期" required><input type="date" value={eventDate} onChange={e=>edit({eventDate:e.target.value,startTime})}/></Field>
+        <Field label="開始時間" required><input type="time" step="1" value={startTime} onChange={e=>edit({startTime:e.target.value,eventDate})}/></Field>
+        <Field label="持續時間" required><Select value={f.durationHours} onChange={e=>edit({durationHours:e.target.value})}>{Array.from({length:24},(_,i)=><option key={i+1} value={String(i+1)}>{i+1} 小時</option>)}</Select></Field>
+        {early&&<Field label="凌晨屬於哪一晚" required className="span-2"><Select value={f.startDayOffset??'0'} onChange={e=>edit({startDayOffset:e.target.value,eventDate,startTime})}><option value="">請選擇</option><option value="0">當天凌晨（前一晚過後）</option><option value="1">次日凌晨（相約當晚過後）</option></Select></Field>}
+      </div>
+      <div className="activity-schedule-preview" aria-live="polite">{preview?<><p className="activity-schedule-lines">{preview.text}</p><p>{countdown}</p></>:<p>{early?uiText('請選擇凌晨屬於哪一晚，核對完整開始與結束日期。'):uiText('請填寫有效的活動日期、時間與時長。')}</p>}</div>
+      </section>
+      <section className="form-section"><div className="section-heading"><h2>報名設定</h2></div><div className="form-grid">
+        <Field label="最低成團人數" hint="0 表示不設定門檻"><input type="number" min="0" max="500" step="1" value={f.minimumParticipants} onChange={e=>edit({minimumParticipants:e.target.value})}/></Field>
+      </div>
+      <label className="switch-row"><span><strong>{published?'同步到 QQ 群':'發布後同步到 QQ 群'}</strong>{f.visibility!=='public'&&<small>邀請可見活動不能同步到公開群。</small>}</span><input type="checkbox" aria-label={published?'同步到 QQ 群':'發布後同步到 QQ 群'} checked={f.botEnabled} disabled={!owner||f.visibility!=='public'||locked} onChange={e=>edit({botEnabled:e.target.checked})}/><i/></label>
+      </section>
+      <section className={'advanced-section'+(advanced?' open':'')}><button type="button" className="advanced-toggle" aria-expanded={advanced} onClick={()=>setAdvanced(value=>!value)}><span><ChevronDown size={17}/>進階設定</span></button><div hidden={!advanced} className="advanced-content form-grid">
+        <Field label="人數上限" hint="0 表示不限"><input type="number" min="0" max="500" step="1" value={f.capacity} onChange={e=>edit({capacity:e.target.value})}/></Field>
         <Field label="可見性"><Select value={f.visibility} disabled={!owner||locked} onChange={e=>edit({visibility:e.target.value as FormValue['visibility'],botEnabled:e.target.value==='public'?f.botEnabled:false})}><option value="public">公開</option><option value="invitation">邀請可見</option></Select></Field>
-        <Field label="地點" required className="span-2"><input value={f.location} maxLength={240} onChange={e=>edit({location:e.target.value})}/></Field>
-        <Field label="活動說明" className="span-2"><textarea id="activity-description" rows={4} value={f.description} maxLength={6000} onChange={e=>edit({description:e.target.value})}/></Field>
-      </div></section>
-      <section className="form-section"><div className="section-heading"><span>02</span><div><h2>時間安排</h2></div></div><div className="form-grid three-cols">
-        <Field label="開始時間（台北）" required><input type="datetime-local" step="1" value={f.startsAt} onChange={e=>edit({startsAt:e.target.value})}/></Field>
-        <Field label="持續時間（小時）" required><input type="number" min="1" max="24" step="1" value={f.durationHours} onChange={e=>edit({durationHours:e.target.value})}/></Field>
-        <Field label="活動顯示時區" hint="時間以台北 UTC+8 輸入；顯示時區可填 IANA 名稱或留空。"><input value={f.timezone} maxLength={100} placeholder="Asia/Taipei" onChange={e=>edit({timezone:e.target.value})}/></Field>
-      </div></section>
-      <section className="form-section"><div className="section-heading"><span>03</span><div><h2>報名與費用</h2></div></div><div className="form-grid registration-grid">
-        <Field label="報名截止（台北）" required><input type="datetime-local" step="1" value={f.deadline} onChange={e=>edit({deadline:e.target.value})}/></Field>
-        <Field label="退出期限（台北）" hint="留空依報名截止時間；僅發起者可修改。"><input type="datetime-local" step="1" value={f.withdrawalDeadline} disabled={!owner||locked} onChange={e=>edit({withdrawalDeadline:e.target.value})}/></Field>
-        <Field label="人數上限" required hint="0 表示不限"><input type="number" min="0" max="500" step="1" value={f.capacity} onChange={e=>edit({capacity:e.target.value})}/></Field>
-        <Field label="最低成團人數" required hint="0 表示不設定門檻"><input type="number" min="0" max="500" step="1" value={f.minimumParticipants} onChange={e=>edit({minimumParticipants:e.target.value})}/></Field>
+        <Field label="報名截止" hint="預設與活動結束時間一致；可手動提前。"><input type="datetime-local" step="1" value={f.deadline} onChange={e=>edit({deadline:e.target.value})}/></Field>
+        <Field label="退出期限" hint="留空依報名截止時間；僅發起者可修改。"><input type="datetime-local" step="1" value={f.withdrawalDeadline} disabled={!owner||locked} onChange={e=>edit({withdrawalDeadline:e.target.value})}/></Field>
+        <Button variant="secondary" disabled={locked} onClick={()=>{try{edit({deadline:formEnd(f),deadlineFollowsEnd:true});}catch{setMessage(uiText('請先填寫有效的活動時間。'));}}}>截止跟隨活動結束</Button>
+        <Field label="活動時區" hint="日期與時間依此時區輸入。"><input value={f.timezone} maxLength={100} placeholder="Asia/Shanghai" onChange={e=>edit({timezone:e.target.value})}/></Field>
         <Field label="費用規則" className="span-2"><textarea id="activity-fee" rows={3} value={f.feePolicy} maxLength={2000} disabled={!owner||locked} onChange={e=>edit({feePolicy:e.target.value})}/></Field>
-      </div></section>
-      <section className={'advanced-section'+(advanced?' open':'')}><button type="button" className="advanced-toggle" aria-expanded={advanced} onClick={()=>setAdvanced(value=>!value)}><span><ChevronDown size={17}/>進階設定</span><small>群同步與修改紀錄</small></button><div hidden={!advanced} className="advanced-content">
-        <label className="switch-row"><span><strong>{published?'同步到 QQ 群':'發布後同步到 QQ 群'}</strong><small>草稿不發送通知；邀請可見活動不能同步到公開群。</small></span><input type="checkbox" aria-label={published?'同步到 QQ 群':'發布後同步到 QQ 群'} checked={f.botEnabled} disabled={!owner||f.visibility!=='public'||locked} onChange={e=>edit({botEnabled:e.target.checked})}/><i/></label>
-        {saved&&<Field label={published?'修改原因（重要安排或管理員協助必填）':'修改原因（選填）'}><input value={draft.reason} maxLength={400} onChange={e=>record.change({...draft,reason:e.target.value})}/></Field>}
+        {saved&&<Field label={published?'修改原因（重要安排或管理員協助必填）':'修改原因（選填）'} className="span-2"><input value={draft.reason} maxLength={400} onChange={e=>record.change({...draft,reason:e.target.value})}/></Field>}
       </div></section>
       </fieldset>
-      <div className="draft-save-bar sticky-save-bar"><Text>{draft.pending?'操作結果待確認':dirty?'有未保存修改':'目前安排已保存'}</Text><Button type="submit" loading={busy} disabled={alreadyCreated||!!draft.legacySource?.reviewRequired||!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button></div>
+      {!saved&&<p className="activity-publish-consent">發布即以本人報名，並接受以上安排與費用規則。</p>}
+      <div className="draft-save-bar sticky-save-bar"><Text>{draft.pending?'操作結果待確認':dirty?'有未保存修改':saved?'目前安排已保存':'尚未發布'}</Text>
+      {!saved&&!draft.pending&&<Button variant="secondary" disabled={locked||!!draft.legacySource?.reviewRequired} onClick={()=>void submit('save')}>建立活動草稿</Button>}
+      <Button type="submit" loading={busy} disabled={alreadyCreated||record.unavailable||!!draft.legacySource?.reviewRequired||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(draft.pending.kind==='create'&&draft.pending.input.publish?'確認發布結果':published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'發布活動'}</Button></div>
     </form>{saved&&saved.canEdit&&!draft.pending&&<Button variant="secondary" disabled={busy||!!readError} onClick={()=>void rebase()}>核對目前安排，保留輸入</Button>}
     {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!!draft.legacySource?.reviewRequired||!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!!draft.legacySource?.reviewRequired||!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
     {message&&<Text role="status">{message}</Text>}{completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
     {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy} onExisting={id=>setLookedUp({id,scope:viewer.scope,intent:draft.clientIntent!,epoch:record.epoch})}/>}
+    {timeCheck&&preview&&<Modal title="核對活動時間" onClose={()=>setTimeCheck(false)} footer={<><Button variant="secondary" onClick={()=>setTimeCheck(false)}>返回修改</Button><Button loading={busy} disabled={locked} onClick={()=>void submit('publish',true)}>日期無誤，發布活動</Button></>}><p className="activity-schedule-lines">{preview.text}</p><p>發布即以本人報名，並接受以上安排與費用規則。</p></Modal>}
     <DraftFeedback form={record} navigation={false}/>
     </div></>;
 }

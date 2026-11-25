@@ -1,3 +1,4 @@
+import { fillAdvancedActivity, setActivityStart } from './activity-authoring-controls';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { durableRows } from './draft-helpers';
@@ -5,7 +6,7 @@ test.use({ financeExamples: true, paymentExamples: true });
 const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 const title=(page:Page)=>page.getByLabel('活動名稱',{exact:true});
-async function fill(page:Page,name:string){await title(page).fill(name);await page.getByLabel('地點',{exact:true}).fill('台北');await page.getByLabel('開始時間（台北）',{exact:true}).fill('2099-12-12T18:00:00');await page.getByLabel('報名截止（台北）',{exact:true}).fill('2099-12-11T18:00:00');}
+async function fill(page:Page,name:string){await title(page).fill(name);await page.getByLabel('地點',{exact:true}).fill('台北');await setActivityStart(page,'2099-12-12T18:00:00');await fillAdvancedActivity(page,'報名截止','2099-12-11T18:00:00');}
 async function saved(page:Page){await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);}
 async function image(page:Page){const raw=await page.evaluate(()=>{const c=document.createElement('canvas');c.width=16;c.height=16;c.getContext('2d')!.fillRect(0,0,16,16);return c.toDataURL().split(',')[1]!;});return {name:'code.png',mimeType:'image/png',buffer:Buffer.from(raw,'base64')};}
 test('retains the original pending without sending after account replacement during its storage commit',async({page,context})=>{

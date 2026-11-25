@@ -1,3 +1,4 @@
+import { fillAdvancedActivity, setActivityStart } from './activity-authoring-controls';
 import { createHash } from 'node:crypto';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test,expect } from './fixtures';
@@ -10,7 +11,7 @@ const button=(kind:'activity'|'poll')=>kind==='activity'?'建立活動草稿':'�
 async function fill(page:Page,kind:'activity'|'poll') {
   await page.getByLabel(name(kind),{exact:true}).fill('原建立內容');
   if(kind==='activity'){
-    await page.getByLabel('地點',{exact:true}).fill('台北');await page.getByLabel('開始時間（台北）',{exact:true}).fill('2099-12-23T18:00:00');await page.getByLabel('報名截止（台北）',{exact:true}).fill('2099-12-22T18:00:00');
+    await page.getByLabel('地點',{exact:true}).fill('台北');await setActivityStart(page,'2099-12-23T18:00:00');await fillAdvancedActivity(page,'報名截止','2099-12-22T18:00:00');
   }else{
     await page.getByLabel('預計地點',{exact:true}).fill('台北');await page.getByLabel('候選日期 1',{exact:true}).fill('2099-12-23');await page.getByLabel('候選日期 2',{exact:true}).fill('2099-12-24');await page.getByLabel('投票截止（含時區）',{exact:true}).fill('2099-12-22T18:00:00+08:00');
   }

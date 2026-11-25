@@ -19,7 +19,8 @@ export const ActivityDraft = z.object({
   canEdit: z.boolean(), canRemove: z.boolean(), removalBlocker: z.string(),
   values: ActivityArrangementInput,
 });
-export const CreateActivityDraft = z.object({ values: ActivityArrangementInput,clientIntent:CreateIntent.optional() }).strict();
+// Omitted flags retain the original draft payload and its create-intent signature.
+export const CreateActivityDraft = z.object({ values: ActivityArrangementInput,clientIntent:CreateIntent.optional(),publish:z.literal(true).optional(),confirm:z.literal(true).optional(),acceptConditions:z.literal(true).optional() }).strict().refine(input=>!input.publish||(input.confirm===true&&input.acceptConditions===true));
 export const SaveActivityDraft = z.object({ revision: z.number().int().min(0), values: ActivityArrangementInput, reason: text(200).default('') }).strict();
 export const RemoveActivityDraft = z.object({ revision: z.number().int().min(0), confirm: z.literal(true) }).strict();
 export const PublishActivityDraft = z.object({ revision: z.number().int().min(0), confirm: z.literal(true), acceptConditions: z.literal(true) }).strict();

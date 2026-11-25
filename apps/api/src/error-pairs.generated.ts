@@ -460,9 +460,9 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "暂时无法完成操作，请保留选择后重试",
     "暫時無法完成操作，請保留選擇後重試"
   ],
-  "[\"INVALID_ACTIVITY_DEADLINE\",\"報名截止時間不能晚於活動開始時間\"]": [
-    "报名截止时间不能晚于活动开始时间",
-    "報名截止時間不能晚於活動開始時間"
+  "[\"INVALID_ACTIVITY_DEADLINE\",\"報名截止時間不能晚於活動結束時間\"]": [
+    "报名截止时间不能晚于活动结束时间",
+    "報名截止時間不能晚於活動結束時間"
   ],
   "[\"INVALID_ACTIVITY_MINIMUM\",\"最低成團人數不能超過人數上限\"]": [
     "最低成团人数不能超过人数上限",
@@ -508,9 +508,9 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "返回地址不正确",
     "返回地址不正確"
   ],
-  "[\"INVALID_WITHDRAWAL_DEADLINE\",\"退出期限不能晚於活動開始時間\"]": [
-    "退出期限不能晚于活动开始时间",
-    "退出期限不能晚於活動開始時間"
+  "[\"INVALID_WITHDRAWAL_DEADLINE\",\"退出期限不能晚於活動結束時間\"]": [
+    "退出期限不能晚于活动结束时间",
+    "退出期限不能晚於活動結束時間"
   ],
   "[\"INVITATION_BOT_SYNC\",\"邀請可見活動不能同步到公開群，請先關閉群同步\"]": [
     "邀请可见活动不能同步到公开群，请先关闭群同步",

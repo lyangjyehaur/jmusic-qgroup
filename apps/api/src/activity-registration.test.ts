@@ -57,6 +57,16 @@ print(json.dumps(result))`,path],{encoding:'utf8',env:{...process.env,KANBAN_BOT
   }finally{rmSync(folder,{recursive:true,force:true});}
 }
 describe('registration, party queues and individual management',()=>{
+  it.each(['scheduled','ongoing'])('accepts signup and FIFO promotion during %s until the cutoff or end',async(lifecycle)=>{
+    const s=await setup();s.db.prepare("UPDATE events SET starts_at='2026-11-16T23:00:00+00:00',deadline='2026-11-17T02:00:00+00:00',duration_hours=3,capacity=1,lifecycle=? WHERE id='listen'").run(lifecycle);
+    expect((await s.signup()).statusCode).toBe(200);expect((await s.signup(s.values(),s.bob)).statusCode).toBe(200);
+    expect(s.people().map(p=>p.status)).toEqual(['confirmed','waiting']);
+    expect((await s.change(s.people()[0]!.id,'withdraw')).statusCode).toBe(200);
+    expect(s.people().map(p=>p.status)).toEqual(['withdrawn','confirmed']);
+    for(const patch of ["deadline='2026-11-17T00:00:00+00:00'","deadline='2026-11-17T02:00:00+00:00',duration_hours=1"]){
+      s.db.exec("UPDATE events SET "+patch+" WHERE id='listen'");expect((await s.preview(s.values([guest('截止後')]))).statusCode).toBe(409);
+    }
+  });
   it('matches the exact original preview digest for Unicode, multiline notes, party intention and mixed allocations',async()=>{
     const s=await setup(),data=s.values([guest('同行 😀'),{isSelf:true,name:'ignored',note:'逐行\n原文',payerKind:'self'}]);s.db.exec("UPDATE events SET capacity=1 WHERE id='listen'");
     const expected=JSON.parse(execFileSync('python3',['-c',`import json,sys

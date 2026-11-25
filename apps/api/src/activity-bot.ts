@@ -37,7 +37,8 @@ export function botRosterLines(db:DB,event:EventRow,options:{ids?:Set<string>;pr
 }
 export function botRegistrationLabel(event:EventRow,now:Date){
   if(['ended','cancelled'].includes(event.lifecycle)||event.archived_at)return '已结束报名';
-  if(event.lifecycle==='ongoing'||botMoment(event.starts_at,event.timezone)<=now.getTime())return '已开始，补报名请联系发起者';
+  const start=botMoment(event.starts_at,event.timezone),end=start+(event.duration_hours??0)*3600000;
+  if(end<=now.getTime())return '已结束报名';
   if(botMoment(event.deadline,event.timezone)<=now.getTime())return '已截止，补报名请联系发起者';return event.registration_open?'开放报名':'已暂停报名';
 }
 function withCountdown(text:string,countdown:string,markdown=false){if(!countdown)return text;const split=text.indexOf('\n');const head=split<0?text:text.slice(0,split);const rest=split<0?'':text.slice(split+1);const decorated=head+'\n'+(markdown?'**'+countdown+'**':countdown)+(split<0?'':'\n')+rest;return botLength(decorated)<=4000?decorated:text;}

@@ -52,9 +52,10 @@ export function validateSelections(selections: readonly { entryId: string; level
 
 export function activityState(event: { lifecycle: string; starts_at: string; deadline: string; duration_hours: number | null; archived_at: string | null; status: string; registration_open: number }, now: Date) {
   const start = Date.parse(event.starts_at);
+  const end = event.duration_hours === null ? start : start + event.duration_hours * 3600000;
   return {
     phase: event.lifecycle === 'scheduled' && start <= now.getTime() ? 'ongoing' : event.lifecycle,
-    registrationOpen: event.lifecycle === 'scheduled' && !!event.registration_open && !event.archived_at && event.status === 'open' && Date.parse(event.deadline) > now.getTime() && start > now.getTime(),
+    registrationOpen: ['scheduled','ongoing'].includes(event.lifecycle) && !!event.registration_open && !event.archived_at && event.status === 'open' && Date.parse(event.deadline) > now.getTime() && end > now.getTime(),
     estimatedOver: ['scheduled', 'ongoing'].includes(event.lifecycle) && event.duration_hours !== null && start + event.duration_hours * 3600000 <= now.getTime(),
   };
 }

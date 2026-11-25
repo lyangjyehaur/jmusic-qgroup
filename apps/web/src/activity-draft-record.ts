@@ -1,7 +1,15 @@
 import { z } from 'zod';
 import { CreateActivityDraft,CreateIntent,SaveActivityDraft,RemoveActivityDraft,PublishActivityDraft } from '@qgroup/contracts';
+import { wallDate } from './activity-schedule';
 import { LegacyDraftSource } from './legacy-draft-source';
-export const ActivityEditorForm=z.object({title:z.string(),category:z.string(),location:z.string(),startsAt:z.string(),deadline:z.string(),capacity:z.string(),description:z.string(),durationHours:z.string(),withdrawalDeadline:z.string(),visibility:z.enum(['public','invitation']),timezone:z.string(),minimumParticipants:z.string(),feePolicy:z.string(),botEnabled:z.boolean(),joinOwner:z.boolean()}).strict();
+export const ActivityEditorForm=z.object({title:z.string(),category:z.string(),location:z.string(),startsAt:z.string(),deadline:z.string(),capacity:z.string(),description:z.string(),durationHours:z.string(),withdrawalDeadline:z.string(),visibility:z.enum(['public','invitation']),timezone:z.string(),minimumParticipants:z.string(),feePolicy:z.string(),botEnabled:z.boolean(),joinOwner:z.boolean(),eventDate:z.string().optional(),startTime:z.string().optional(),startDayOffset:z.string().optional(),deadlineFollowsEnd:z.boolean().optional()}).strict().transform(form=>{
+  if(form.eventDate!==undefined)return form;
+  // Earlier native drafts stored wall clocks at UTC+8, even with a different display zone.
+  // Upgrade only the editable values. Any pending operation keeps its exact payload and key.
+  const convert=(value:string)=>{if(!value)return '';try{return wallDate(value+'+08:00',form.timezone);}catch{return value;}};
+  const startsAt=convert(form.startsAt);
+  return {...form,startsAt,eventDate:startsAt.slice(0,10),startTime:startsAt.slice(11),startDayOffset:'0',deadline:convert(form.deadline),withdrawalDeadline:convert(form.withdrawalDeadline)};
+});
 const Pending=z.discriminatedUnion('kind',[
   z.object({kind:z.literal('create'),key:z.string().uuid(),input:CreateActivityDraft}).strict(),
   z.object({kind:z.literal('save'),key:z.string().uuid(),input:SaveActivityDraft}).strict(),

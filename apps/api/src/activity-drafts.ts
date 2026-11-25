@@ -75,7 +75,10 @@ export function registerActivityDrafts(app:FastifyInstance,db:DB,security:Securi
     const input=CreateActivityDraft.parse(request.body);
     return write(request,'/api/v2/activities/drafts',input,(user,stamp)=>{
       const previous=priorCreateIntent<{id:string;revision:number;removed:boolean}>(db,user.id,'activity',input.clientIntent,input);if(previous)return previous;
-      const time=now(),id=executeActivityCreation(db,prepareActivityCreation(input.values,time,'draft'),user,time,botDefaults,()=>{});
+      const time=now(),id=executeActivityCreation(db,prepareActivityCreation(input.publish?{...input.values,joinOwner:true}:input.values,time,input.publish?'scheduled':'draft'),user,time,botDefaults,work=>{
+        if(!input.publish)return;
+        try{db.transaction(work)();}catch{request.log.error({publication:true},'Creation bot hook failed; business write preserved');}
+      });
       const result={id,revision:eventRow(db,id)!.revision,removed:false};recordCreateIntent(db,user.id,'activity',input.clientIntent,input,result,stamp);return result;
     });
   });

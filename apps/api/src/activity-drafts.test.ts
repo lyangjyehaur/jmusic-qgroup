@@ -24,6 +24,32 @@ async function setup(){
   return {db,app,alice,bob,write,create,get};
 }
 describe('native activity draft authoring',()=>{
+  it('publishes atomically with owner consent, a single group notice and replayable creation receipts',async()=>{
+    const s=await setup();s.db.prepare('UPDATE bot_settings SET config_json=?').run(JSON.stringify({enabled:true,schedule_enabled:true,groups:[{id:'synthetic-group',name:'測試',broadcast:true,replies:true}]}));
+    const key=randomUUID(),clientIntent=randomUUID(),values={...input(),startsAt:'2026-11-20T18:00:25+08:00',deadline:'2026-11-20T21:00:25+08:00',withdrawalDeadline:'2026-11-20T21:00:25+08:00'},payload={values,clientIntent,publish:true,confirm:true,acceptConditions:true};
+    const response=await s.write('activities/drafts',payload,s.alice,key);expect(response.statusCode).toBe(200);const {id}=response.json();
+    expect(eventRow(s.db,id)).toMatchObject({lifecycle:'scheduled',registration_open:1,status:'open',bot_enabled:1,deadline:'2026-11-20T13:00:25+00:00'});
+    expect(s.db.prepare('SELECT user_id,status,accepted_conditions_version FROM attendees WHERE event_id=?').all(id)).toEqual([{user_id:'alice',status:'confirmed',accepted_conditions_version:1}]);
+    expect(s.db.prepare('SELECT decision FROM attendee_consents WHERE event_id=?').all(id)).toEqual([{decision:'accepted'}]);
+    expect(s.db.prepare('SELECT action FROM event_audit WHERE event_id=? ORDER BY version').all(id)).toEqual([{action:'event_created'},{action:'signup'}]);
+    expect(s.db.prepare("SELECT count(*) AS n FROM bot_outbox WHERE event_id=? AND kind='activity_published'").get(id)).toEqual({n:1});
+    expect((await s.write('activities/drafts',payload,s.alice,key)).body).toBe(response.body);
+    expect((await s.write('activities/drafts',payload)).body).toBe(response.body);
+    expect((await s.write('activities/drafts',{values,clientIntent})).statusCode).toBe(409);
+    expect((await s.get('activities/draft-results/'+key)).json()).toEqual({state:'completed',result:response.json()});
+    expect((await s.get('activities/'+id+'/draft')).statusCode).toBe(409);
+    expect((await s.get('me/activity-drafts')).json().drafts.some((d:{id:string})=>d.id===id)).toBe(false);
+  });
+  it('rejects missing publication consent and rolls back all mandatory publication records together',async()=>{
+    const s=await setup(),values={...input(),startsAt:'2026-11-20T18:00:00+08:00',deadline:'2026-11-20T21:00:00+08:00'};
+    for(const flags of [{publish:true},{publish:true,confirm:true},{publish:true,acceptConditions:true}])expect((await s.write('activities/drafts',{values,...flags})).statusCode).toBe(400);
+    const before=s.db.prepare('SELECT count(*) AS n FROM events').get();
+    for(const table of ['event_access','event_conditions','attendees','attendee_consents','event_audit','request_results']){
+      s.db.exec(`CREATE TRIGGER synthetic_publication_failure BEFORE INSERT ON ${table} BEGIN SELECT RAISE(ABORT,'synthetic'); END`);
+      expect((await s.write('activities/drafts',{values,clientIntent:randomUUID(),publish:true,confirm:true,acceptConditions:true})).statusCode).toBe(500);
+      expect(s.db.prepare('SELECT count(*) AS n FROM events').get()).toEqual(before);s.db.exec('DROP TRIGGER synthetic_publication_failure');
+    }
+  });
   it('creates a private draft with legacy IDs, normalized arrangements, owner access and first audit; no roster, conditions or bot side effects',async()=>{
     const s=await setup();const response=await s.create();expect(response.statusCode).toBe(200);const result=response.json();expect(result).toMatchObject({revision:1,removed:false});expect(result.id).toMatch(/^[a-f0-9]{16}$/);
     const event=eventRow(s.db,result.id)!;expect(event).toMatchObject({title:'草稿活動',location:'台北',starts_at:'2026-10-12T06:30:25+00:00',deadline:'2026-10-11T06:30:00+00:00',lifecycle:'draft',status:'closed',registration_open:0,bot_enabled:1,draft_join_owner:0});

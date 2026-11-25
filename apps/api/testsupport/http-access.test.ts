@@ -53,7 +53,7 @@ it('documents account administrator and independent rescue alternatives includin
   ]);
 });
 it('retains anonymous public views, visitor bootstrapping and proof-only receipt recovery', () => {
-  expect(op('GET /api/v2/activities').security).toEqual([{}]);expect(op('GET /api/v2/session').security).toEqual([{}]);
+  expect(op('GET /api/v2/activities').security).toEqual([{}, { BrowserSession: [], AccountScope: [] }]);expect(op('GET /api/v2/session').security).toEqual([{}]);
   expect(op('GET /api/v2/activities/:id').security).toEqual([{}, { BrowserSession: [], AccountScope: [] }]);
   expect(op('GET /api/v2/activities/:id/roster')['x-qgroup-access']).toMatchObject({ mode: 'optional-scoped-member' });
   const receipt = op('POST /api/v2/privacy/receipt');expect(receipt).not.toHaveProperty('security');

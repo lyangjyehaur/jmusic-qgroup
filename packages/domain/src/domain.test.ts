@@ -2,6 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { execFileSync } from 'node:child_process';
 import { activityState, parseAmount, parseWeight, splitCents } from './index';
 describe('exact money and lifecycle', () => {
+  it('keeps registration open until the earlier cutoff or planned end, including during an activity',()=>{
+    const event={lifecycle:'scheduled',starts_at:'2026-11-25T10:00:00Z',deadline:'2026-11-25T13:00:00Z',duration_hours:3,archived_at:null,status:'open',registration_open:1};
+    for(const lifecycle of ['scheduled','ongoing']){
+      expect(activityState({...event,lifecycle},new Date('2026-11-25T10:00:00Z')).registrationOpen).toBe(true);
+      expect(activityState({...event,lifecycle},new Date('2026-11-25T12:59:59Z')).registrationOpen).toBe(true);
+      expect(activityState({...event,lifecycle},new Date(event.deadline)).registrationOpen).toBe(false);
+    }
+    const now=new Date('2026-11-25T11:00:00Z');
+    for(const patch of [{deadline:'2026-11-25T11:00:00Z'},{duration_hours:1},{duration_hours:null},{registration_open:0},{status:'closed'},{archived_at:'now'},...['draft','ended','cancelled'].map(lifecycle=>({lifecycle}))])expect(activityState({...event,...patch},now).registrationOpen).toBe(false);
+  });
   it('matches legacy Python amount/weight parsing and largest remainder for 400 synthetic cases', () => {
     let seed = 42;
     const next = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed; };

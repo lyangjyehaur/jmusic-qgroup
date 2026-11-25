@@ -34,7 +34,8 @@ function blocker(db:DB,event:EventRow,action:Action,now:Date){
   if(action==='finish')return draft||event.lifecycle==='cancelled'?'草稿或已取消活動不能標記為結束；取消活動可直接填寫結算':'';
   if(terminal||draft)return '這個活動不能執行這項狀態操作';
   if(['pause','resume'].includes(action)&&db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(event.id))return '已有結算，不能切換報名狀態';
-  if(action==='resume'&&(botMoment(event.deadline,event.timezone)<=now.getTime()||botMoment(event.starts_at,event.timezone)<=now.getTime()))return '報名截止已過，請先調整安排或使用邀請補報名';
+  const end=botMoment(event.starts_at,event.timezone)+(event.duration_hours??0)*3600000;
+  if(action==='resume'&&(botMoment(event.deadline,event.timezone)<=now.getTime()||end<=now.getTime()))return '報名截止或活動結束時間已過，請先調整安排或使用邀請補報名';
   return '';
 }
 function needsReason(db:DB,event:EventRow,action:Action){return action==='cancel'||(action==='formation'&&event.formation_state!=='confirmed'&&(db.prepare("SELECT count(*) AS n FROM attendees WHERE event_id=? AND status='confirmed'").get(event.id) as {n:number}).n<event.minimum_participants);}
@@ -59,7 +60,7 @@ export function executeActivityLifecycle(db:DB,plan:ReturnType<typeof prepareAct
   if(!noOp){
     if(action==='pause'||action==='resume')db.prepare('UPDATE events SET registration_open=?,status=? WHERE id=?').run(Number(action==='resume'),action==='resume'?'open':'closed',id);
     if(action==='start'){
-      db.prepare("UPDATE events SET lifecycle='ongoing',actual_started_at=?,registration_open=0,status='closed' WHERE id=?").run(stamp,id);
+      db.prepare("UPDATE events SET lifecycle='ongoing',actual_started_at=? WHERE id=?").run(stamp,id);
       notice={kind:'event_started',message:event.title+' 已开始'};
     }
     if(action==='finish'){

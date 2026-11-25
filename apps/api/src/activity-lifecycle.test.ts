@@ -55,7 +55,15 @@ print(json.dumps(result))`,path],{encoding:'utf8',env:{...process.env,KANBAN_BOT
   }finally{rmSync(folder,{recursive:true,force:true});}
 }
 describe('explicit activity lifecycle with legacy bot compatibility',()=>{
-  it.each([{actions:['pause','resume','formation','start','finish','archive','unarchive','cancel']},{actions:['finish','cancel','archive','unarchive']},{actions:['pause','resume']}])('matches original Python event, roster, finance, notice, audit and complete outbox for $actions',async({actions})=>{
+  it('preserves open or paused registration on start and can resume during the activity',async()=>{
+    for(const paused of [false,true]){
+      const s=await setup();s.db.prepare("UPDATE events SET starts_at='2026-11-16T23:00:00+00:00',deadline='2026-11-17T02:00:00+00:00',duration_hours=3,registration_open=?,status=? WHERE id='listen'").run(Number(!paused),paused?'closed':'open');
+      expect((await s.change('start')).statusCode).toBe(200);expect(eventRow(s.db,'listen')).toMatchObject({lifecycle:'ongoing',registration_open:Number(!paused),status:paused?'closed':'open'});
+      expect((await s.change('pause')).statusCode).toBe(200);expect((await s.change('resume')).statusCode).toBe(200);
+      s.db.exec("UPDATE events SET duration_hours=1 WHERE id='listen'");expect((await s.change('resume')).statusCode).toBe(409);
+    }
+  });
+  it.each([{actions:['pause','resume','formation','finish','archive','unarchive','cancel']},{actions:['finish','cancel','archive','unarchive']},{actions:['pause','resume']}])('matches original Python event, roster, finance, notice, audit and complete outbox for $actions',async({actions})=>{
     const s=await setup();
     await differential(s,actions,async()=>{for(const action of actions)expect((await s.change(action,'測試狀態原因')).statusCode).toBe(200);});
   });
