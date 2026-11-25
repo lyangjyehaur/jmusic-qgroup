@@ -1,8 +1,8 @@
 # 群聚看板
 
-重構最新進度：[共用功能與實際映像恢復驗收](docs/unified-rebuild/238-common-and-actual-recovery-acceptance.md)。156／166 個既有功能父項本機通過；其餘共用操作、整合及成套回退仍在驗收。目前仍在功能分支，尚未部署。
+統一版已於 2026-11-25 上線，遷移與保全見[切換紀錄](docs/releases/2026-11-25-unified-rebuild.md)。最新前端更新見[手機版面與成分草稿恢復](docs/releases/2026-11-26-frontend-review.md)。
 
-看板與成分的單一產品重構規劃（2026-11-20，隔離實作中、尚未發布；發布範圍 `none`）見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
+看板與成分的單一產品重構規劃及歷史驗收見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
 
 原始碼倉庫：[git.dan.tw/dan/jmusic-qgroup](https://git.dan.tw/dan/jmusic-qgroup)（公開）與 [GitHub lyangjyehaur/jmusic-qgroup](https://github.com/lyangjyehaur/jmusic-qgroup)（公開），主分支為 `main`。兩邊保存相同提交及完整 main 歷史，提交 SHA、作者和時間不變。推送原始碼不會自動部署，線上更新仍按下方 server2 部署與保全流程進行。資料庫、使用者上傳圖片、伺服器環境設定及本機管理憑證不納入 Git。
 
@@ -130,7 +130,7 @@ npm run test:ui
 
 ### 2026-11-25 起的正式服务
 
-已启用[前端独立发布](docs/frontend-release.md)：纯 UI 更新只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。API 当前来源为 `b65e93b05eb8558f8c15d60eb15b2d0cc6cce4cc`，独立前端为 `a381756ecea733e8c41537f52606ec392bb03350`，bot 当前来源为 `515ec4c4938f5111b9bd61f046f7d9106d453104`，消息 ID 修复与实际命令验收见[bot 发布记录](docs/releases/2026-11-25-bot-reply-tokens.md)；前端独立发布详见[启用记录](docs/releases/2026-11-25-independent-frontend.md)。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。最新简繁显示补齐见[发布记录](docs/releases/2026-11-25-chinese-display.md)。
+已启用[前端独立发布](docs/frontend-release.md)：纯 UI 更新只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。API 与 bot 当前来源为 `7b0914ffd05b4418b9065932592d9bd5c33a71c7`，活动直接发布与时间操作见[发布记录](docs/releases/2026-11-26-activity-create-legacy-flow.md)；独立前端为 `f9014a2b991ed7ae64dddabfb1357828e7b90336`，手机布局与成分草稿恢复见[最新前端发布记录](docs/releases/2026-11-26-frontend-review.md)。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。消息 ID 修复与实际命令验收见[bot 发布记录](docs/releases/2026-11-25-bot-reply-tokens.md)，简繁显示见[发布记录](docs/releases/2026-11-25-chinese-display.md)，前端独立发布首次启用见[启用记录](docs/releases/2026-11-25-independent-frontend.md)。
 
 正式站已切换为统一版 TypeScript 网站与 bot，首次切换来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`；迁移、备份及恢复限制见[统一版切换记录](docs/releases/2026-11-25-unified-rebuild.md)。网站此前单边更新活动分类，活动按预定结束时间自动归入往期，详见[活动分类发布记录](docs/releases/2026-11-25-activity-history.md)。当前使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像，叠加 `deploy/frontend-compose.yaml` 挂载独立静态目录；保留的旧版 Compose 共用 `QGROUP_TAG`，不能用它启动当前服务。
 

@@ -54,7 +54,8 @@ test('a simplified activity form preserves the original category protocol and mi
   await chooseOption(page,'活动类型',{label:'运动'});await expect(page.getByLabel('活动类型',{exact:true})).toContainText('运动');
   await expect(page.getByText('正在保存本机原稿…', { exact: true })).toHaveCount(0);await page.reload();await expect(field).toHaveValue('后台發 · 帐号後臺');await expect(page.getByLabel('活动类型', { exact: true })).toContainText('运动');
   await page.getByRole('button',{name:'恢复本机原稿',exact:true}).click();
-  await page.getByLabel('地点',{exact:true}).fill('后台發');await page.getByLabel('开始时间（台北）',{exact:true}).fill('2099-12-12T14:30:25');await page.getByLabel('报名截止（台北）',{exact:true}).fill('2099-12-11T14:30:00');
+  await page.getByLabel('地点',{exact:true}).fill('后台發');await page.getByLabel('活动日期',{exact:true}).fill('2099-12-12');await page.getByLabel('开始时间',{exact:true}).fill('14:30:25');
+  await page.getByRole('button',{name:'进阶设定',exact:false}).click();await page.getByLabel('报名截止',{exact:true}).fill('2099-12-11T14:30:00');
   const sent=page.waitForRequest(request=>request.url().endsWith('/api/v2/activities/drafts')&&request.method()==='POST');
   await page.getByRole('button',{name:'建立活动草稿',exact:true}).click();expect((await sent).postDataJSON().values).toMatchObject({category:'运动',title:'后台發 · 帐号後臺',location:'后台發'});
   await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);await expect(field).toHaveValue('后台發 · 帐号後臺');
