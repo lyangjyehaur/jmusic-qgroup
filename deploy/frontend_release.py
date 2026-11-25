@@ -13,6 +13,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import tarfile
 from datetime import datetime, timezone
 from urllib.parse import urlparse
 from urllib.request import urlopen
@@ -82,6 +83,15 @@ def verify(folder, expected_hash, api_commit):
     return m
 
 
+def pack(folder, output):
+    """Portable transport: omit macOS resource forks and filesystem xattrs."""
+    folder, output = Path(folder), Path(output)
+    with tarfile.open(output, 'x:gz', format=tarfile.PAX_FORMAT) as archive:
+        for path in sorted(folder.rglob('*')):
+            archive.add(path, arcname=path.relative_to(folder).as_posix(), recursive=False)
+    return digest(output.read_bytes())
+
+
 def build(commit, api_commit, output):
     if not SHA.fullmatch(commit) or not SHA.fullmatch(api_commit):
         raise ValueError("Explicit full source and API SHAs are required")
@@ -89,7 +99,8 @@ def build(commit, api_commit, output):
     if approved != commit or fingerprint(commit) != fingerprint(api_commit):
         raise ValueError("Backend inputs changed; deploy and verify the API first")
     output = Path(output)
-    if not output.is_absolute() or output.exists():
+    archive_path = Path(str(output) + '.tar.gz')
+    if not output.is_absolute() or output.exists() or archive_path.exists():
         raise ValueError("A new absolute output directory is required")
     # Only the approved commit enters the build; no checkout files are copied.
     with tempfile.TemporaryDirectory(prefix="qgroup-frontend-build-") as tmp:
@@ -109,7 +120,8 @@ def build(commit, api_commit, output):
         (web / "frontend-release.json").write_bytes(raw)
         verify(web, digest(raw), api_commit)
         shutil.copytree(web, output)
-    return {"artifact": str(output), "manifestSha256": digest(raw), "commit": commit, "apiCommit": api_commit, "buildId": build_id}
+    archive_sha = pack(output, archive_path)
+    return {"artifact": str(output), "archive": str(archive_path), "archiveSha256": archive_sha, "manifestSha256": digest(raw), "commit": commit, "apiCommit": api_commit, "buildId": build_id}
 
 
 def activate(artifact, root, manifest_sha256, api_commit, api_url=None, release_manifest=None):

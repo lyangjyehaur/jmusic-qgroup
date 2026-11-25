@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import subprocess
 import tempfile
+import tarfile
 import unittest
 from unittest.mock import patch
 
@@ -30,6 +31,16 @@ class FrontendSourceTests(unittest.TestCase):
             manifest = dict(version=1, source='origin-main', commit='a' * 40, tree='b' * 40, apiCommit='c' * 40, backendFingerprint='e' * 64, buildId=build_id, files={name: release.digest(data) for name, data in files.items()})
             raw = json.dumps(manifest).encode()
             (artifact / 'frontend-release.json').write_bytes(raw)
+            archive = Path(tmp) / 'frontend.tar.gz'
+            archive_sha = release.pack(artifact, archive)
+            self.assertEqual(archive_sha, release.digest(archive.read_bytes()))
+            extracted = Path(tmp) / 'extracted'
+            with tarfile.open(archive) as transport:
+                self.assertFalse(any(Path(name).name.startswith('._') for name in transport.getnames()))
+                transport.extractall(extracted)
+            release.verify(extracted, release.digest(raw), 'c' * 40)
+            with self.assertRaises(FileExistsError):
+                release.pack(artifact, archive)
             previous = os.umask(0o077)
             try:
                 release.activate(artifact, root, release.digest(raw), 'c' * 40)

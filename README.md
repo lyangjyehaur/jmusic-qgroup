@@ -130,20 +130,21 @@ npm run test:ui
 
 ### 2026-11-25 起的正式服务
 
-纯 UI 更新支持[前端独立发布](docs/frontend-release.md)：只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。首次启用须按该文档更新 web 一次，实际启用状态以正式发布记录为准。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。
+已启用[前端独立发布](docs/frontend-release.md)：纯 UI 更新只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。API 当前来源为 `b65e93b05eb8558f8c15d60eb15b2d0cc6cce4cc`，独立前端为 `459dade75de124453621ae3829067d024f304505`，bot 保持首次切换版本；详见[启用记录](docs/releases/2026-11-25-independent-frontend.md)。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。
 
-正式站已切换为统一版 TypeScript 网站与 bot，首次切换来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`；迁移、备份及恢复限制见[统一版切换记录](docs/releases/2026-11-25-unified-rebuild.md)。网站随后单边更新至 `caa41409c7cb324ddda8637da35bc06ae56352a6`，活动按预定结束时间自动归入往期，bot 保持首次切换版本；实际映像、验证及回退见[活动分类发布记录](docs/releases/2026-11-25-activity-history.md)。当前运行配置使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像；上段共用 `QGROUP_TAG` 的限制针对保留的旧版 Compose，不能用它启动当前服务。
+正式站已切换为统一版 TypeScript 网站与 bot，首次切换来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`；迁移、备份及恢复限制见[统一版切换记录](docs/releases/2026-11-25-unified-rebuild.md)。网站此前单边更新活动分类，活动按预定结束时间自动归入往期，详见[活动分类发布记录](docs/releases/2026-11-25-activity-history.md)。当前使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像，叠加 `deploy/frontend-compose.yaml` 挂载独立静态目录；保留的旧版 Compose 共用 `QGROUP_TAG`，不能用它启动当前服务。
 
 - 正式入口仍为 `https://kanban.danndann.cn`，沿用 1Panel 的 `127.0.0.1:8791` 上游。
 - 当前容器：`qgroup-unified-web-1`、`qgroup-unified-bot-1`。配置位于 `/opt/qgroup-releases/unified-20261125-54107b8/runtime.env`，私有 web／bot 环境文件同目录保留；不在终端打印完整 Compose 配置或环境值。
+- 独立前端：`/opt/qgroup-frontend`；必须挂载父目录，让 `current` 切换可见。当前 Compose 与 override 位于 `/opt/qgroup-releases/frontend-bootstrap-20261125-b65e93b/source/deploy/`。
 - 正式数据库：`/var/lib/qgroup-unified/data/kanban.sqlite3`；独立删除权威目录 `/var/lib/qgroup-erasure`、固定检查点 `/var/lib/qgroup-checkpoint`。恢复业务数据时不得一并覆盖或回退最新删除权威。
 - 原 `qgroup-web`、`qgroup-music`、`qgroup-bot` 已停止并关闭自动重启，旧 systemd 应用服务保持禁用。旧映像与 `/var/lib/qgroup`、`/var/lib/qgroup-music` 原数据保留；尚未重新启动旧版测试站。后续测试必须使用独立副本并隔离真实 QQ 投递。
 - `qgroup-backup.timer` 已改用统一版备份适配，输出到 `/var/backups/qgroup-unified`，包含 SQLite、图片、经独立验证的删除权威副本及检查点，以 `.complete.json` 作为整套成功凭据；原站备份不覆盖。新版网站另有每小时的成套备份。
 
 ```sh
 # 当前正式服务；不要改用下方旧 Compose 的 up/build 指令。
-docker compose --env-file /opt/qgroup-releases/unified-20261125-54107b8/runtime.env -f /opt/qgroup-releases/unified-20261125-54107b8/source/deploy/unified-compose.yaml ps
-docker compose --env-file /opt/qgroup-releases/unified-20261125-54107b8/runtime.env -f /opt/qgroup-releases/unified-20261125-54107b8/source/deploy/unified-compose.yaml logs --tail 50 web bot
+docker compose --env-file /opt/qgroup-releases/unified-20261125-54107b8/runtime.env -f /opt/qgroup-releases/frontend-bootstrap-20261125-b65e93b/source/deploy/unified-compose.yaml -f /opt/qgroup-releases/frontend-bootstrap-20261125-b65e93b/source/deploy/frontend-compose.yaml ps
+docker compose --env-file /opt/qgroup-releases/unified-20261125-54107b8/runtime.env -f /opt/qgroup-releases/frontend-bootstrap-20261125-b65e93b/source/deploy/unified-compose.yaml -f /opt/qgroup-releases/frontend-bootstrap-20261125-b65e93b/source/deploy/frontend-compose.yaml logs --tail 50 web bot
 ```
 
 ### 切换前旧版记录

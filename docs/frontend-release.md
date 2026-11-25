@@ -21,7 +21,7 @@ python3 deploy/frontend_release.py build \
   --output /tmp/qgroup-frontend-RELEASE
 ```
 
-工具執行 `check_release_source.py`，只從核准 SHA 的 archive 在乾淨暫存目錄 `npm ci` 與 `npm run build:frontend`；不執行 API／bot 編譯或 Docker。終行輸出產物目錄及 `manifestSha256`。來源／樹、API 版本、PWA build ID 與每個檔案摘要保存在 `frontend-release.json`。
+工具執行 `check_release_source.py`，只從核准 SHA 的 archive 在乾淨暫存目錄 `npm ci` 與 `npm run build:frontend`；不執行 API／bot 編譯或 Docker。另以 Python tarfile 產生同名 `.tar.gz`，省略 macOS resource fork／xattr，避免運送後多出 `._*` 檔案。終行輸出產物目錄、封裝檔案、`archiveSha256` 及 `manifestSha256`。來源／樹、API 版本、PWA build ID 與每個檔案摘要保存在 `frontend-release.json`。
 
 工具比較來源與實際 API 提交的後端輸入指紋，涵蓋 API、bot、共用 packages、套件與 lockfile、TypeScript 設定、API 建置器及映像定義。任何差異先停止，需部署並驗證 API 或獨立審查相容性，不能只填一個假的 API SHA。這是保守的發布限制，沒有宣稱完整語意相容性自動證明。
 
@@ -54,4 +54,4 @@ python3 /path/to/approved-source/deploy/frontend_release.py activate \
 
 已在隔離資料測試：同一 API 程序內切換與回退 HTML／worker／新檔名資源、保留舊 lazy chunk、API 版本不變、損壞或版本不合時保留舊指標、真實 HTTP API 版本核對及僅更新 runtime manifest 的 frontend 區塊。另驗證壓縮、HEAD／304、快取、簡繁、bot 深連結、未知 API／私有檔案拒絕、靜態資源不耗 API 限流、唯讀獨立掛載與資料目錄分離。後端輸入指紋測試確認純 UI 可接受，API／共用契約／lockfile 改動會擋下純前端建置。
 
-相關單元／整合測試 64 項及 Python 來源測試 3 項通過；PWA／precache 瀏覽器回歸 12 項、型別、完整建置與編譯產物 smoke 通過。9 份 bot 編譯產物與保留版本摘要相同。正式啟用與實際映像另記 `docs/releases/`，本節的隔離測試不等同正式發布成功。
+相關單元／整合測試 64 項及 Python 來源／權限／封裝測試 4 項通過；PWA／precache 瀏覽器回歸 12 項、型別、完整建置與編譯產物 smoke 通過。9 份 bot 編譯產物與保留版本摘要相同。正式啟用見[發布紀錄](releases/2026-11-25-independent-frontend.md)，本節的隔離測試不等同正式環境破壞性驗收。
