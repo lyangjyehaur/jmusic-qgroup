@@ -13,13 +13,13 @@ import { activityDisplayDate } from './activity-summary';
 import { uiText } from './language';
 const statuses = [['all',uiText('全部狀態')],['draft',uiText('草稿')],['open',uiText('報名中')],['full',uiText('已額滿')],['paused',uiText('未開放報名')],['ongoing',uiText('進行中')],['ended',uiText('已結束')],['cancelled',uiText('已取消')],['archived',uiText('已歸檔')]] as const;
 export function listedActivityStatus(event: z.infer<typeof ListedActivity>) {
-  return event.archived?'archived':['draft','ongoing','ended','cancelled'].includes(event.phase)?event.phase:!event.registrationOpen?'paused':event.capacity>0&&event.confirmed>=event.capacity?'full':'open';
+  return event.archived?'archived':event.estimatedOver?'ended':['draft','ongoing','ended','cancelled'].includes(event.phase)?event.phase:!event.registrationOpen?'paused':event.capacity>0&&event.confirmed>=event.capacity?'full':'open';
 }
 export function KimiActivityRow({ event, rooms = false }: { event: z.infer<typeof ListedActivity>; rooms?: boolean }) {
   const to=event.lifecycle==='draft'?'/activities/'+encodeURIComponent(event.id)+'/edit':rooms?'/tools/room-lab?eventId='+encodeURIComponent(event.id):'/activities/'+encodeURIComponent(event.id);
   let day='—', month='';
   try { if(event.timezone){const d=new Date(event.startsAt);day=new Intl.DateTimeFormat('zh-TW',{day:'numeric',timeZone:event.timezone}).formatToParts(d).find(p=>p.type==='day')?.value??'—';month=new Intl.DateTimeFormat('zh-TW',{month:'short',timeZone:event.timezone}).format(d);} } catch { /* Preserve original time below. */ }
-  const status=listedActivityStatus(event), label=statuses.find(([value])=>value===status)?.[1]??event.phase;
+  const status=listedActivityStatus(event), label=event.estimatedOver&&!event.archived?uiText('已過預定時間'):statuses.find(([value])=>value===status)?.[1]??event.phase;
   const mine=event.myRegistration;
   return <article className="activity-row"><div className="activity-date" aria-hidden="true"><strong>{day}</strong><span>{month}</span></div>
     <div className="activity-main"><div className="activity-title-line"><h2><Link to={to}>{event.title}</Link></h2><Badge>{event.category}</Badge></div>
@@ -36,7 +36,7 @@ export function KimiActivitiesPage({ mine = false }: { mine?: boolean }) {
   const parsed=ActivitiesQuery.safeParse({page:params.get('page')??'1',period,q:params.get('q')??'',status:params.get('status')??'all'});
   const queryValue=parsed.success?parsed.data:null;
   const [input,setInput]=useState(params.get('q')??'');useEffect(()=>setInput(params.get('q')??''),[params.get('q')]);
-  const list=useQuery({queryKey:['private',viewer?.scope,'kimi-activities',mine,queryValue],refetchOnMount:'always',enabled:!!viewer&&!!queryValue&&(!mine||viewer.authenticated),queryFn:()=>{
+  const list=useQuery({queryKey:['private',viewer?.scope,'kimi-activities',mine,queryValue],refetchOnMount:'always',refetchInterval:30000,enabled:!!viewer&&!!queryValue&&(!mine||viewer.authenticated),queryFn:()=>{
     const http=scopedHttp(viewer!.scope),q=queryValue!;
     return mine?http.requestContract('GET /api/v2/me/activities',{query:{page:q.page,q:q.q,status:q.status}}):http.requestContract('GET /api/v2/activities',{query:q});
   }});

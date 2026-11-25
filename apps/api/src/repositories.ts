@@ -32,6 +32,7 @@ function serializeEvent(row: EventRow, now: Date): ActivityView {
 type ListFilters = { q?: string; status?: string };
 function listStatus(event: ActivityView) {
   if (event.archived) return 'archived';
+  if (event.estimatedOver) return 'ended';
   if (['draft','ongoing','ended','cancelled'].includes(event.phase)) return event.phase;
   if (!event.registrationOpen) return 'paused';
   return event.capacity > 0 && event.confirmed >= event.capacity ? 'full' : 'open';
@@ -50,21 +51,23 @@ function myActivityRows(db: DB, userId: string) {
   const rows=db.prepare(eventProjection+" WHERE e.status!='deleted' AND ((e.lifecycle='draft' AND (e.owner_id=? OR EXISTS(SELECT 1 FROM event_roles r WHERE r.event_id=e.id AND r.user_id=?))) OR (e.lifecycle!='draft' AND (e.visibility='public' OR e.owner_id=? OR EXISTS(SELECT 1 FROM event_access x WHERE x.event_id=e.id AND x.user_id=?)))) ORDER BY e.starts_at DESC,e.id").all(userId,userId,userId,userId) as (EventRow&{owner_id:string})[];
   return rows.filter(event=>event.owner_id===userId||!!db.prepare('SELECT 1 FROM event_roles WHERE event_id=? AND user_id=?').get(event.id,userId)||!!db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status NOT IN ('withdrawn','invited') AND (user_id=? OR manager_id=?)").get(event.id,userId,userId)||financeSummary(db,eventRow(db,event.id)!,userId).my_balance_cents!==null);
 }
-function listSummary(db: DB, userId: string | null) {
-  const upcoming=(db.prepare(publicEvents + " AND e.archived_at IS NULL AND e.lifecycle NOT IN ('ended','cancelled')").all() as EventRow[]).length;
+function isHistoricalActivity(event: ActivityView) {
+  return event.archived || event.estimatedOver || ['ended','cancelled'].includes(event.phase);
+}
+function listSummary(db: DB, userId: string | null, now: Date) {
+  const upcoming=(db.prepare(publicEvents).all() as EventRow[]).filter(row=>!isHistoricalActivity(serializeEvent(row,now))).length;
   return { upcoming, mine:userId ? myActivityRows(db,userId).length : null };
 }
 export function listActivities(db: DB, page: number, period: 'upcoming' | 'history', now: Date, filters: ListFilters = {}, userId: string | null = null) {
   // Search/status are applied to the complete authorized collection before pagination.
-  // Estimated end never changes a scheduled event into historical actual completion.
-  const condition = period === 'history' ? "(e.archived_at IS NOT NULL OR e.lifecycle IN ('ended','cancelled'))" : "(e.archived_at IS NULL AND e.lifecycle NOT IN ('ended','cancelled'))";
-  const rows = db.prepare(publicEvents + ' AND ' + condition + ` ORDER BY e.starts_at ${period === 'history' ? 'DESC' : 'ASC'},e.id`).all() as EventRow[];
-  const events=rows.map(row=>serializeEvent(row,now)).filter(event=>matchesListFilters(event,filters)),start=(page-1)*20;
-  return { events:events.slice(start,start+20).map(event=>({...event,myRegistration:ownRegistration(db,event.id,userId)})), page, hasMore:events.length>start+20,total:events.length,summary:listSummary(db,userId) };
+  // Browse by planned end without changing actual lifecycle or settlement records.
+  const rows = db.prepare(publicEvents + ` ORDER BY e.starts_at ${period === 'history' ? 'DESC' : 'ASC'},e.id`).all() as EventRow[];
+  const events=rows.map(row=>serializeEvent(row,now)).filter(event=>isHistoricalActivity(event)===(period==='history')&&matchesListFilters(event,filters)),start=(page-1)*20;
+  return { events:events.slice(start,start+20).map(event=>({...event,myRegistration:ownRegistration(db,event.id,userId)})), page, hasMore:events.length>start+20,total:events.length,summary:listSummary(db,userId,now) };
 }
 export function listMyActivities(db:DB,userId:string,page:number,now:Date,filters:ListFilters={}){
   const events=myActivityRows(db,userId).map(row=>serializeEvent(row,now)).filter(event=>matchesListFilters(event,filters)),start=(page-1)*20;
-  return {events:events.slice(start,start+20).map(event=>({...event,myRegistration:ownRegistration(db,event.id,userId)})),page,hasMore:events.length>start+20,total:events.length,summary:listSummary(db,userId)};
+  return {events:events.slice(start,start+20).map(event=>({...event,myRegistration:ownRegistration(db,event.id,userId)})),page,hasMore:events.length>start+20,total:events.length,summary:listSummary(db,userId,now)};
 }
 export function getActivity(db: DB, id: string, now: Date, viewerId: string | null = null) {
   requireActivityAccess(db,id,viewerId);

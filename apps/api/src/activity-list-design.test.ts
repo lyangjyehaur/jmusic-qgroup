@@ -3,7 +3,7 @@ import { openDatabase } from '@qgroup/database';
 import { fixture } from '../testsupport/fixture';
 import { createApp } from './app';
 const cleanup:(()=>Promise<unknown>)[]=[];afterEach(async()=>{for(const close of cleanup.splice(0))await close();});
-async function setup(){const db=openDatabase(':memory:');fixture(db);const app=createApp({db,origin:'http://localhost:5080',now:()=>new Date('2026-11-17T08:00:00Z')});await app.ready();cleanup.push(async()=>{await app.close();db.close();});const cookie='kanban_session=fixture-alice',viewer=(await app.inject({url:'/api/v2/session',headers:{cookie}})).json();return{app,db,headers:{cookie,'x-account-scope':viewer.scope}};}
+async function setup(clock=()=>new Date('2026-11-17T08:00:00Z')){const db=openDatabase(':memory:');fixture(db);const app=createApp({db,origin:'http://localhost:5080',now:clock});await app.ready();cleanup.push(async()=>{await app.close();db.close();});const cookie='kanban_session=fixture-alice',viewer=(await app.inject({url:'/api/v2/session',headers:{cookie}})).json();return{app,db,headers:{cookie,'x-account-scope':viewer.scope}};}
 test('searches all authorized rows before pagination and returns global rather than current-page counts',async()=>{
  const {app,db,headers}=await setup();for(let i=0;i<25;i++)db.prepare("INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,created_at) SELECT ?,owner_id,?,'其他',?,starts_at,deadline,capacity,description,created_at FROM events WHERE id='listen'").run('listed-'+i,'可搜尋 '+i,'台南 '+i);
  const first=(await app.inject('/api/v2/activities')).json();expect(first.events).toHaveLength(20);expect(first.summary.upcoming).toBe(27);expect(first.total).toBe(27);expect(first.summary.mine).toBeNull();
@@ -25,4 +25,38 @@ test('distinguishes capacity, registration pause and actual lifecycle without ch
  expect((await app.inject('/api/v2/activities?status=full')).json().events).toEqual([]);
  expect((await app.inject('/api/v2/activities?period=history&status=ended')).json().events.map((e:{id:string})=>e.id)).toEqual(['past']);
  expect(db.prepare("SELECT status FROM attendees WHERE id='full-self'").get()).toEqual({status:'confirmed'});
+});
+
+test.each(['scheduled','ongoing'])('moves an unsettled %s activity to history exactly at its planned end without mutating business records',async lifecycle=>{
+ let time=new Date('2026-11-17T07:59:59.999Z');const {app,db,headers}=await setup(()=>time);
+ db.prepare("UPDATE events SET lifecycle=?,starts_at='2026-11-17T13:00:00+08:00',duration_hours=3 WHERE id='listen'").run(lifecycle);
+ const tables=['events','attendees','settlements','finance_entries','event_audit','bot_outbox'];
+ const snapshot=()=>Object.fromEntries(tables.map(table=>[table,db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all()]));const before=snapshot();
+ const ids=(result:{events:{id:string}[]})=>result.events.map(event=>event.id);
+ expect(ids((await app.inject('/api/v2/activities')).json())).toContain('listen');
+ expect(ids((await app.inject('/api/v2/activities?period=history')).json())).not.toContain('listen');
+ time=new Date('2026-11-17T08:00:00Z');
+ const upcoming=(await app.inject('/api/v2/activities')).json();expect(ids(upcoming)).toEqual(['karaoke']);expect(upcoming.summary.upcoming).toBe(1);
+ const history=(await app.inject('/api/v2/activities?period=history&status=ended')).json();expect(ids(history)).toContain('listen');expect(history.events.find((event:{id:string})=>event.id==='listen')).toMatchObject({estimatedOver:true,phase:'ongoing',lifecycle});
+ expect(ids((await app.inject('/api/v2/activities?status=ongoing')).json())).not.toContain('listen');
+ const mine=(await app.inject({url:'/api/v2/me/activities?status=ended',headers})).json();expect(ids(mine)).toContain('listen');expect(mine.summary.upcoming).toBe(1);
+ expect(snapshot()).toEqual(before);
+ // Extending the arrangement moves it back without an explicit finish/settlement.
+ db.exec("UPDATE events SET duration_hours=4 WHERE id='listen'");
+ expect(ids((await app.inject('/api/v2/activities')).json())).toContain('listen');
+ expect(ids((await app.inject('/api/v2/activities?period=history')).json())).not.toContain('listen');
+});
+
+test('uses planned end across midnight and explicit offsets whether a bill exists, before filtering and pagination',async()=>{
+ const {app,db}=await setup();
+ for(let i=0;i<25;i++)db.prepare("INSERT INTO events(id,owner_id,title,category,location,starts_at,deadline,capacity,description,created_at,duration_hours,timezone) SELECT ?,owner_id,?,'其他',location,'2026-11-17T00:00:00-05:00',deadline,capacity,description,created_at,3,'America/New_York' FROM events WHERE id='listen'").run('elapsed-'+String(i).padStart(2,'0'),'往期 '+i);
+ db.prepare("INSERT INTO settlements(event_id,total_cents,headcount,note,updated_at) VALUES('elapsed-00',100,1,'已有帳單','before')").run();
+ const history=(await app.inject('/api/v2/activities?period=history')).json();expect(history.total).toBe(26);expect(history.events).toHaveLength(20);expect(history.hasMore).toBe(true);expect(history.summary.upcoming).toBe(2);
+ const second=(await app.inject('/api/v2/activities?period=history&page=2')).json();expect(second.events).toHaveLength(6);expect(second.hasMore).toBe(false);
+ const result=(await app.inject('/api/v2/activities?period=history&q='+encodeURIComponent('往期 0'))).json();expect(result.events.map((event:{id:string})=>event.id)).toEqual(['elapsed-00']);
+ expect((await app.inject('/api/v2/activities?q='+encodeURIComponent('往期'))).json().total).toBe(0);
+ // The same instant represented as a cross-midnight UTC+8 activity is historical too.
+ db.exec("UPDATE events SET starts_at='2026-11-16T23:00:00+08:00',duration_hours=5 WHERE id='listen'");
+ expect((await app.inject('/api/v2/activities?period=history')).json().total).toBe(27);
+ expect(db.prepare("SELECT lifecycle,actual_ended_at FROM events WHERE id='elapsed-00'").get()).toEqual({lifecycle:'scheduled',actual_ended_at:null});
 });

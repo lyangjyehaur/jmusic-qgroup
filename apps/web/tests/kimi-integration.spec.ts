@@ -109,3 +109,22 @@ for (const width of [789, 390]) test(`activity browsing owns polls and hides adm
   }
   await page.goto('/admin'); await expect(page.getByRole('heading', { name: '管理後臺', exact: true })).toBeVisible();
 });
+
+test('elapsed activities use historical labels and leave the personal current list while settlement remains accessible',async({page,context})=>{
+ await login(context);
+ const event=await (await context.request.get('/api/v2/activities/listen')).json();
+ const elapsed={...event,startsAt:'2020-11-17T23:00:00+08:00',durationHours:3,estimatedOver:true,phase:'ongoing',lifecycle:'scheduled'};
+ await page.route(/\/api\/v2\/(?:me\/)?activities(?:\?.*)?$/,async route=>{
+  const url=new URL(route.request().url()),mine=url.pathname.includes('/me/'),history=url.searchParams.get('period')==='history';
+  const events=mine||history?[elapsed]:[];
+  await route.fulfill({json:{events,page:1,hasMore:false,total:events.length,summary:{upcoming:0,mine:1}}});
+ });
+ await page.route('**/api/v2/activities/listen',route=>route.fulfill({json:elapsed}));
+ await page.goto('/activities');await expect(page.getByRole('region',{name:'活動列表',exact:true})).not.toContainText(event.title);
+ await expect(page.locator('.activity-overview')).toContainText('0');
+ await page.getByRole('tab',{name:'往期與歸檔',exact:true}).click();
+ const list=page.getByRole('region',{name:'活動列表',exact:true});await expect(list).toContainText(event.title);await expect(list).toContainText('已過預定時間');await expect(list).not.toContainText('進行中');
+ await list.getByRole('link',{name:event.title,exact:true}).click();await expect(page.locator('.status-strip')).toContainText('已過預定時間');
+ await page.getByRole('tab',{name:'結算',exact:true}).click();await expect(page).toHaveURL('/activities/listen/settlement');await expect(page.getByRole('tab',{name:'結算',exact:true})).toHaveAttribute('aria-selected','true');
+ await page.goto('/me');await expect(page.getByText('目前沒有與你相關的活動。',{exact:true})).toBeVisible();await expect(page.locator('.me-activity-list')).toHaveCount(0);await expect(page.getByRole('link',{name:'全部活動',exact:true})).toBeVisible();
+});
