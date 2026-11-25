@@ -24,13 +24,15 @@ export function checkRuntimeCompose(input:unknown){
   if(JSON.stringify(s.tmpfs)!=='["/tmp:rw,nosuid,nodev,noexec,size=64m"]')throw Error('A bounded, non-executable temporary filesystem is required');
   if(JSON.stringify(s.command)!==JSON.stringify(['node','.rebuild-dist/'+(name==='web'?'api':'bot')+'/start.mjs']))throw Error('Unexpected service command');
   const health=obj(s.healthcheck),test=health.test;if(health.disable||!Array.isArray(test)||test[0]!=='CMD'||test[1]!=='node'||(name==='bot'?(test.length!==4||test[2]!=='.rebuild-dist/bot/start.mjs'||test[3]!=='--check-health'):(test.length!==4||test[2]!=='-e'||typeof test[3]!=='string'||!test[3].includes('/api/v2/health')||!test[3].includes('r.ok')||!test[3].includes('AbortSignal.timeout(3000)'))))throw Error('An active bounded service health check is required');
-  const targets=name==='web'?['/var/lib/qgroup','/var/lib/qgroup-erasure','/var/lib/qgroup-checkpoint']:['/var/lib/qgroup'];
+  const externalFrontend=name==='web'&&obj(s.environment).REBUILD_FRONTEND_ROOT!==undefined;
+  if(externalFrontend&&obj(s.environment).REBUILD_FRONTEND_ROOT!=='/var/lib/qgroup-frontend')throw Error('Unexpected frontend release root');
+  const targets=name==='web'?['/var/lib/qgroup','/var/lib/qgroup-erasure','/var/lib/qgroup-checkpoint',...(externalFrontend?['/var/lib/qgroup-frontend']:[])]:['/var/lib/qgroup'];
   if(!Array.isArray(s.volumes)||s.volumes.length!==targets.length)throw Error('Only the explicit service data and web erasure mounts are allowed');
   const mounts=s.volumes.map(obj);
   if(JSON.stringify(mounts.map(mount=>mount.target).sort())!==JSON.stringify([...targets].sort()))throw Error('Service mount targets differ');
   for(const mount of mounts){
    if(mount.type!=='bind'||typeof mount.source!=='string'||!isAbsolute(mount.source)||resolve(mount.source)!==mount.source||['/','/var','/etc'].includes(mount.source)||obj(mount.bind).create_host_path!==false)throw Error('Explicit existing canonical bind sources are required');
-   if(mount.target==='/var/lib/qgroup-checkpoint'?mount.read_only!==true:mount.read_only!==undefined&&mount.read_only!==false)throw Error('Authority must be writable and checkpoint must be read-only');
+   if(['/var/lib/qgroup-checkpoint','/var/lib/qgroup-frontend'].includes(String(mount.target))?mount.read_only!==true:mount.read_only!==undefined&&mount.read_only!==false)throw Error('Authority must be writable; checkpoint and frontend must be read-only');
   }
   const mount=mounts.find(mount=>mount.target==='/var/lib/qgroup')!;
   const dataSource=mount.source as string;

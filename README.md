@@ -126,9 +126,11 @@ npm run test:ui
 
 ## server2 部署与保全
 
-发布范围、单边更新条件、混合版本验证及回退规则见 [Web／bot 发布与相容性规则](docs/deployment-policy.md)。项目级 `AGENTS.md` 也引用同一份规则；以经过验证的 web／bot 版本组合为准，不强制两边同版。当前 Compose 仍共用 `QGROUP_TAG`，独立版本锁定及自动发布检查尚未实现。
+发布范围、单边更新条件、混合版本验证及回退规则见 [Web／bot 发布与相容性规则](docs/deployment-policy.md)。项目级 `AGENTS.md` 也引用同一份规则；以经过验证的前端／API／bot 版本组合为准，不强制同版。正式统一版已分别指定 web／bot 不可变映像；保留的旧 Compose 仍共用 `QGROUP_TAG`，完整自动发布流程尚未实现。
 
 ### 2026-11-25 起的正式服务
+
+纯 UI 更新支持[前端独立发布](docs/frontend-release.md)：只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。首次启用须按该文档更新 web 一次，实际启用状态以正式发布记录为准。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。
 
 正式站已切换为统一版 TypeScript 网站与 bot，首次切换来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`；迁移、备份及恢复限制见[统一版切换记录](docs/releases/2026-11-25-unified-rebuild.md)。网站随后单边更新至 `caa41409c7cb324ddda8637da35bc06ae56352a6`，活动按预定结束时间自动归入往期，bot 保持首次切换版本；实际映像、验证及回退见[活动分类发布记录](docs/releases/2026-11-25-activity-history.md)。当前运行配置使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像；上段共用 `QGROUP_TAG` 的限制针对保留的旧版 Compose，不能用它启动当前服务。
 

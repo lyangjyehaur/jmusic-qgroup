@@ -28,6 +28,20 @@ it('rejects mutable image tags, unbounded resources, privilege escalation, extra
  expect(()=>checkRuntimeCompose({services:{web:runtimeComposeService('web'),bot:runtimeComposeService('bot'),other:runtimeComposeService('web')}})).toThrow();
 });
 
+it('allows only a separate read-only frontend parent mount with its explicit runtime setting',()=>{
+ const make=()=>{const source=runtimeComposeService('web'),web={...source,environment:{...source.environment} as Record<string,string|undefined>};web.environment.REBUILD_FRONTEND_ROOT='/var/lib/qgroup-frontend';web.volumes.push({type:'bind',source:'/isolated/frontend',target:'/var/lib/qgroup-frontend',read_only:true,bind:{create_host_path:false}});return web;};
+ expect(checkRuntimeCompose({services:{web:make(),bot:runtimeComposeService('bot')}}).deploymentPerformed).toBe(false);
+ for(const change of ['writable','overlap','missing env','wrong root','missing mount']){
+  const web=make();
+  if(change==='writable')web.volumes[3]!.read_only=false;
+  if(change==='overlap')web.volumes[3]!.source=web.volumes[0]!.source+'/frontend';
+  if(change==='missing env')delete web.environment.REBUILD_FRONTEND_ROOT;
+  if(change==='wrong root')web.environment.REBUILD_FRONTEND_ROOT='/app';
+  if(change==='missing mount')web.volumes.pop();
+  expect(()=>checkRuntimeCompose({services:{web,bot:runtimeComposeService('bot')}})).toThrow();
+ }
+});
+
 it.each(['missing authority','missing checkpoint','duplicate target','extra mount','writable checkpoint','read-only authority','auto create','source overlap','source same','noncanonical','wrong root','wrong checkpoint','missing pin','mutable pin','development web','development bot'])('rejects %s before candidate services can be started',change=>{
  const web=runtimeComposeService('web'),bot=runtimeComposeService('bot');
  if(change==='missing authority')web.volumes=web.volumes.filter(m=>m.target!=='/var/lib/qgroup-erasure');

@@ -88,8 +88,9 @@ import { createMusicClaims, registerMusicClaims } from './music-claim';
 import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
 import { registerPublicAPI } from './public-api';
+import {registerFrontendRelease} from './frontend-release';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; frontendRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
 export function createApp(options: AppOptions) {
   const { db } = options;
   assertDatabaseUsable(db);
@@ -243,7 +244,10 @@ export function createApp(options: AppOptions) {
         return result;
       }).immediate();
     });
-    if (options.staticRoot) {
+    if(options.frontendRoot){
+      if(options.staticRoot||!options.runtimeInfo?.commit)throw Error('Independent frontend requires one root and a versioned API');
+      await registerFrontendRelease(app,options.frontendRoot,options.runtimeInfo.commit);
+    } else if (options.staticRoot) {
       const shell=readFileSync(join(options.staticRoot,'index.html'),'utf8');
       const sendShell=(request:import('fastify').FastifyRequest,reply:import('fastify').FastifyReply)=>{
         const language=displayLanguage(request.headers['accept-language']);

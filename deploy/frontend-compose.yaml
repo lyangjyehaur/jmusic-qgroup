@@ -1,0 +1,12 @@
+# Merge with unified-compose.yaml. Mount the parent, never current itself:
+# Docker resolves a bind source symlink once and would pin the old release.
+services:
+  web:
+    environment:
+      REBUILD_FRONTEND_ROOT: /var/lib/qgroup-frontend
+    volumes:
+      - type: bind
+        source: ${QGROUP_FRONTEND_DIR:?Set the independent frontend release directory}
+        target: /var/lib/qgroup-frontend
+        read_only: true
+        bind: {create_host_path: false}
