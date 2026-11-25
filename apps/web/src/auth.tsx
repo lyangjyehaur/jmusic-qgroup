@@ -2,7 +2,10 @@ import { errorText, uiText } from './language';
 import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { Avatar, Badge, Button } from './kimi-ui';
+import { Check, Laptop } from 'lucide-react';
+import { ActionLink } from './action-link';
 
 import { type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -130,21 +133,22 @@ export function Accounts() {
     } finally { setBusy(false); }
   }
   return <><PageIntro title="帳號" />{params.has('returnTo') && <Link className="back" to={localReturn(params.get('returnTo'))}>回到原任務</Link>}{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : !viewer?.authenticated ? <Link to={loginLink(localReturn(params.get('returnTo')) === '/' ? '/me/accounts' : localReturn(params.get('returnTo')))}>登入</Link> : <>
-    <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><Link to="/me/profile">修改站內稱呼</Link>{viewer.qq.bound && <QQAvatar url={viewer.qq.avatarUrl} nickname={viewer.qq.nickname} />}<Text>{viewer.qq.bound ? `${uiText("已綁定 QQ：")}${viewer.qq.nickname}` : '尚未綁定 QQ'}</Text>
-      {viewer.qqEnabled && <Link to="/login?mode=bind&returnTo=%2Fme%2Faccounts">{viewer.qq.needsReauth ? '重新授權原 QQ' : viewer.qq.bound ? '核對 QQ 綁定' : '綁定 QQ'}</Link>}
-      {viewer.qq.needsReauth && <Text>尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</Text>}
-    </Surface>
-    <Surface className="detail auth-panel"><Heading level={2}>此裝置已授權的帳號</Heading><Text>切換帳號會保留各自資料。</Text>{accounts.isPending ? <Notice>正在讀取授權…</Notice> : accounts.error ? <Failure error={accounts.error} retry={() => void accounts.refetch()} /> : <ul className="account-list">{accounts.data.accounts.map(account => <li key={account.scope}><span>{account.nickname}{account.current ? '（目前帳號）' : ''}</span>{!account.current && <Button variant="secondary" disabled={busy} onClick={() => void switchTo(account.scope)}>切換至 {account.nickname}</Button>}</li>)}</ul>}</Surface>
-    <Link className="back" to="/me/payment-codes">我的收款碼</Link>
-    <Link className="back" to="/me/devices">裝置與帳號紀錄</Link>
-    <Link className="back" to="/me/privacy">隱私與資料刪除</Link>
-    <Link className="back" to="/me/privacy/consent">{viewer.privacyAccepted ? '查看政策同意紀錄' : '確認統一隱私政策'}</Link>
-    {viewer.administrator && <Link className="back" to="/admin/registration">註冊設定</Link>}
-    <Surface className="detail auth-panel"><Text>登出會撤銷此裝置的所有帳號授權並清除本機原稿；其他裝置不受影響。</Text><Button variant="secondary" disabled={busy || cleanup} onClick={() => void logout()}>登出此裝置</Button></Surface>
+    <div className="settings-grid account-settings"><section className="form-section"><div className="section-heading"><span>帳號</span><div><h2>站內資料與 QQ 綁定</h2></div></div><div className="binding-row"><div><strong>{viewer.nickname}</strong></div><ActionLink size="sm" to="/me/profile">修改站內稱呼</ActionLink></div>
+      <div className="binding-row">{viewer.qq.bound&&<QQAvatar url={viewer.qq.avatarUrl} nickname={viewer.qq.nickname}/>}<div><strong>QQ 綁定</strong><span>{viewer.qq.bound ? `${uiText("已綁定 QQ：")}${viewer.qq.nickname}` : '尚未綁定 QQ'}</span></div>{viewer.qqEnabled&&<ActionLink size="sm" to="/login?mode=bind&returnTo=%2Fme%2Faccounts">{viewer.qq.needsReauth?'重新授權原 QQ':viewer.qq.bound?'核對 QQ 綁定':'綁定 QQ'}</ActionLink>}</div>
+      {viewer.qq.needsReauth&&<p className="settings-help">尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</p>}
+      <div className="binding-row"><div><strong>收款碼</strong></div><ActionLink size="sm" to="/me/payment-codes">我的收款碼</ActionLink></div>
+      <div className="settings-navigation"><Link to="/me/privacy">隱私與資料刪除</Link><Link to="/me/privacy/consent">{viewer.privacyAccepted?'查看政策同意紀錄':'確認統一隱私政策'}</Link>{viewer.administrator&&<Link to="/admin/registration">註冊設定</Link>}</div>
+    </section><section className="form-section"><div className="section-heading"><span>切換</span><div><h2>此裝置已授權的帳號</h2></div></div><p className="settings-help">切換帳號會保留各自資料。</p>{accounts.isPending?<Notice>正在讀取授權…</Notice>:accounts.error?<Failure error={accounts.error} retry={()=>void accounts.refetch()}/>:<div className="account-switch-list">{accounts.data.accounts.map(account=><button type="button" key={account.scope} className={account.current?'active':''} disabled={busy||account.current} aria-label={account.current?account.nickname+'（目前帳號）':'切換至 '+account.nickname} onClick={()=>void switchTo(account.scope)}><Avatar user={{name:account.nickname,avatar:account.nickname.slice(0,1),color:'var(--moss)'}}/><span><strong>{account.nickname}</strong><small>{account.current?'目前帳號':'已授權'}</small></span>{account.current?<Check size={17}/>:<span>切換</span>}</button>)}</div>}</section>
+    <AccountDevices viewer={viewer}/><section className="form-section span-full"><p className="settings-help">登出會撤銷此裝置的所有帳號授權並清除本機原稿；其他裝置不受影響。</p><Button variant="secondary" disabled={busy||cleanup} onClick={()=>void logout()}>登出此裝置</Button></section></div>
   </>}
     {cleanup && <Button loading={busy} onClick={() => {
       setBusy(true); void clearDeviceDrafts().then(async () => { setCleanup(false); await changed('/me', true); }).catch(() => setError(uiText("仍無法清除本機原稿，請檢查瀏覽器儲存設定。"))).finally(() => setBusy(false));
     }}>重試清除本機原稿</Button>}
     {error && <Text role="alert">{error}</Text>}
   </>;
+}
+
+function AccountDevices({viewer}:{viewer:Extract<Viewer,{authenticated:true}>}){
+ const devices=useQuery({queryKey:['private',viewer.scope,'devices'],queryFn:()=>createWebHttpClient({context:()=>({scope:viewer.scope})}).requestContract('GET /api/v2/me/devices',{})});
+ return <section className="form-section span-full"><div className="section-title-row"><div className="section-heading"><span>裝置</span><div><h2>登入裝置</h2></div></div><Link className="text-link" to="/me/devices">裝置與帳號紀錄</Link></div>{devices.isPending?<Notice>正在讀取裝置…</Notice>:devices.error?<Failure error={devices.error} retry={()=>void devices.refetch()}/>:<div className="device-list">{devices.data.devices.map((device,index)=><div key={device.id}><Laptop size={20}/><span><strong>{device.current?'目前裝置':'其他裝置 '+index}</strong><small>授權於 {new Date(device.createdAt).toLocaleString('zh-TW')}</small></span>{device.current?<Badge tone="green">目前</Badge>:<ActionLink size="sm" to="/me/devices">管理</ActionLink>}</div>)}</div>}</section>;
 }

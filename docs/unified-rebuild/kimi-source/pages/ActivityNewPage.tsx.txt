@@ -1,0 +1,112 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, ChevronDown, Eye, Info, Send } from 'lucide-react';
+import { useApp, mockService } from '../services/AppStore';
+import type { Activity } from '../types';
+import { Badge, Button, Field, Modal, PageHeader, Select, cn } from '../components/UI';
+
+const initialForm = {
+  name: '', category: '約唱', location: '', address: '', description: '', start: '2026-12-19T18:30', duration: 4,
+  timezone: 'Asia/Taipei', signupDeadline: '2026-12-17T23:59', cancelDeadline: '2026-12-17T12:00', capacity: 12,
+  minimum: 6, feeRule: 'AA｜包間費按實際出席均攤，餐飲另計', estimatedFee: 680, visibility: '公開' as '公開' | '邀請', qqSync: true,
+};
+
+export default function ActivityNewPage() {
+  const { activities, currentUser, createActivity, updateActivity, showToast } = useApp();
+  const [params] = useSearchParams();
+  const editing = activities.find((a) => a.id === params.get('edit'));
+  const source = editing ?? activities.find((a) => a.id === params.get('copy'));
+  const base = useMemo(() => source ? {
+    name: editing ? source.name : `${source.name}（複製）`, category: source.category, location: source.location, address: source.address, description: source.description,
+    start: source.start, duration: source.duration, timezone: source.timezone, signupDeadline: source.signupDeadline, cancelDeadline: source.cancelDeadline,
+    capacity: source.capacity, minimum: source.minimum, feeRule: source.feeRule, estimatedFee: source.estimatedFee, visibility: source.visibility, qqSync: source.qqSync,
+  } : { ...initialForm, start: params.get('start') ?? initialForm.start }, [source, editing, params]);
+  const [form, setForm] = useState(base);
+  const [advanced, setAdvanced] = useState(false);
+  const [review, setReview] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [dirty, setDirty] = useState(false);
+  const [saving, setSaving] = useState<'草稿' | '發布' | null>(null);
+  const [saveError, setSaveError] = useState('');
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
+  const set = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => { setForm((f) => ({ ...f, [key]: value })); setDirty(true); setErrors((e) => ({ ...e, [key]: '' })); setSaveError(''); };
+  const validate = (publishing: boolean) => {
+    const next: Record<string, string> = {};
+    if (!form.name.trim()) next.name = '請填寫活動名稱';
+    if (publishing && !form.location.trim()) next.location = '發布前請填寫集合地點';
+    if (!form.start) next.start = '請選擇開始時間';
+    if (publishing && form.minimum > form.capacity) next.minimum = '最低成團人數不可超過容量';
+    if (publishing && form.signupDeadline > form.start) next.signupDeadline = '報名期限應早於開始時間';
+    setErrors(next);
+    return Object.keys(next).length === 0;
+  };
+
+  const save = async (publish: boolean) => {
+    if (!validate(publish)) { document.querySelector('.field-error')?.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (publish && !review) { setReview(true); return; }
+    setSaving(publish ? '發布' : '草稿'); setSaveError('');
+    const id = editing?.id ?? `a${Date.now()}`;
+    const activity: Activity = {
+      ...form, id, name: form.name.trim(), location: form.location.trim() || '待定', status: publish ? '報名中' : '草稿',
+      organizerId: editing?.organizerId ?? currentUser.id, coOrganizerIds: editing?.coOrganizerIds ?? [], signupPaused: editing?.signupPaused ?? false, version: editing?.version ?? 1,
+      participants: publish ? [{ id: `p${Date.now()}`, userId: currentUser.id, name: currentUser.name, status: '正式', attendance: '未簽到', feeFactor: 1, paid: 0, createdAt: '剛剛' }] : [],
+      rooms: editing?.rooms ?? [], history: [...(editing?.history ?? []), { time: '剛剛', text: publish ? '發布活動，發起者已加入報名' : '保存草稿；尚未開放報名或發送群通知' }],
+    };
+    try {
+      await mockService.write(activity);
+      if (editing) updateActivity(editing.id, () => activity); else createActivity(activity);
+      setDirty(false); setReview(false);
+      showToast(publish ? '活動已發布，發起者已加入報名' : '草稿已保存，尚未開放報名');
+      navigate(publish ? `/activities/${id}` : '/me?tab=drafts');
+    } catch (error) { setSaveError(error instanceof Error ? error.message : '保存失敗，請重試'); }
+    finally { setSaving(null); }
+  };
+
+  return <div className="page form-page">
+    <PageHeader title={editing ? '編輯草稿' : source ? '複製活動' : '新增活動'} description={editing ? '草稿不開放報名，保存後仍可直接發布。' : source ? '僅帶入活動安排，不包含人員、款項或歷史。' : '建立約唱或聚會安排'} back={<Link to="/activities" className="back-link"><ArrowLeft size={18} /><span>活動列表</span></Link>} />
+    {saveError && <div className="inline-alert error" role="alert"><Info size={17} /><span>{saveError} 表單原稿尚未清除。</span><Button size="sm" variant="secondary" onClick={() => save(false)}>重試保存</Button></div>}
+    <form onSubmit={(e) => { e.preventDefault(); save(true); }} className="activity-form">
+      <section className="form-section"><div className="section-heading"><span>01</span><div><h2>基本資料</h2><p>用於列表、通知與分享卡片</p></div></div><div className="form-grid">
+        <Field label="活動名稱" required error={errors.name} className="span-2"><input value={form.name} onChange={(e) => set('name', e.target.value)} placeholder="例如：年末 J-ROCK 約唱" maxLength={80} /></Field>
+        <Field label="類別" required><Select value={form.category} onChange={(e) => set('category', e.target.value)}>{['約唱', '聚會', '試聽', '看演出', '其他'].map((v) => <option key={v}>{v}</option>)}</Select></Field>
+        <Field label="可見性"><Select value={form.visibility} onChange={(e) => set('visibility', e.target.value as '公開' | '邀請')}><option>公開</option><option>邀請</option></Select></Field>
+        <Field label="集合地點" required error={errors.location} className="span-2"><input value={form.location} onChange={(e) => set('location', e.target.value)} placeholder="場館或集合點名稱" /></Field>
+        <Field label="詳細地址" hint="地圖導航會使用此地址" className="span-2"><input value={form.address} onChange={(e) => set('address', e.target.value)} placeholder="地址或交通說明" /></Field>
+        <Field label="活動說明" className="span-2"><textarea value={form.description} onChange={(e) => set('description', e.target.value)} rows={4} placeholder="曲目、攜帶物品或其他參加者需要知道的安排" maxLength={800} /></Field>
+      </div></section>
+
+      <section className="form-section"><div className="section-heading"><span>02</span><div><h2>時間安排</h2><p>所有時間以活動時區為準</p></div></div><div className="form-grid three-cols">
+        <Field label="開始時間" required error={errors.start}><input type="datetime-local" value={form.start} onChange={(e) => set('start', e.target.value)} /></Field>
+        <Field label="持續時間"><Select value={form.duration} onChange={(e) => set('duration', Number(e.target.value))}>{[1, 2, 3, 4, 5, 6, 8].map((n) => <option key={n} value={n}>{n} 小時</option>)}</Select></Field>
+        <Field label="時區"><Select value={form.timezone} onChange={(e) => set('timezone', e.target.value)}><option value="Asia/Taipei">台北 UTC+8</option><option value="Asia/Tokyo">東京 UTC+9</option><option value="Asia/Shanghai">上海 UTC+8</option></Select></Field>
+      </div></section>
+
+      <section className="form-section"><div className="section-heading"><span>03</span><div><h2>報名與費用</h2><p>發布前請確認名額與分攤方式</p></div></div><div className="form-grid three-cols">
+        <Field label="報名期限" required error={errors.signupDeadline}><input type="datetime-local" value={form.signupDeadline} onChange={(e) => set('signupDeadline', e.target.value)} /></Field>
+        <Field label="退出期限" required><input type="datetime-local" value={form.cancelDeadline} onChange={(e) => set('cancelDeadline', e.target.value)} /></Field>
+        <div className="paired-fields"><Field label="容量" required><input type="number" min={1} max={200} value={form.capacity} onChange={(e) => set('capacity', Number(e.target.value))} /></Field><Field label="最低成團" error={errors.minimum}><input type="number" min={1} max={200} value={form.minimum} onChange={(e) => set('minimum', Number(e.target.value))} /></Field></div>
+        <Field label="費用規則" className="span-2"><Select value={form.feeRule} onChange={(e) => set('feeRule', e.target.value)}><option>AA｜包間費按實際出席均攤，餐飲另計</option><option>半 A｜部分成員減半分攤</option><option>免共同費｜各自支付店內消費</option><option>低消各自支付</option></Select></Field>
+        <Field label="每人預估" hint="實際以結算帳單為準"><div className="money-input"><span>¥</span><input type="number" min={0} value={form.estimatedFee} onChange={(e) => set('estimatedFee', Number(e.target.value))} /></div></Field>
+      </div></section>
+
+      <section className={cn('advanced-section', advanced && 'open')}><button type="button" className="advanced-toggle" onClick={() => setAdvanced((v) => !v)} aria-expanded={advanced}><span><ChevronDown size={17} />進階設定</span><small>QQ 群同步、地址與通知安排</small></button>{advanced && <div className="advanced-content">
+        <label className="switch-row"><span><strong>同步至 QQ 群</strong><small>原型僅產生模擬投遞，不發送真實訊息</small></span><input type="checkbox" checked={form.qqSync} onChange={(e) => set('qqSync', e.target.checked)} /><i /></label>
+        {form.qqSync && <div className="sync-preview"><Badge tone="amber">模擬</Badge><span>日音曲目交換所</span><p>發布後建立活動卡片；草稿不發送通知。</p></div>}
+      </div>}</section>
+
+      <div className="sticky-save-bar"><div className="save-state">{dirty ? <><span className="unsaved-dot" />有未保存修改</> : <span>所有修改已保存</span>}<small>草稿不開放報名或群通知</small></div><div><Button type="button" variant="secondary" loading={saving === '草稿'} onClick={() => save(false)}>保存草稿</Button><Button type="submit" loading={saving === '發布'}><Send size={16} />發布活動</Button></div></div>
+    </form>
+
+    {review && <Modal title="發布前核對" description="發布後將開放報名，發起者會自動加入。" onClose={() => !saving && setReview(false)} footer={<><Button variant="secondary" onClick={() => setReview(false)}>返回修改</Button><Button loading={saving === '發布'} onClick={() => save(true)}><Eye size={16} />確認發布</Button></>}>
+      <dl className="review-list"><div><dt>活動</dt><dd>{form.name}</dd></div><div><dt>時間</dt><dd>{form.start.replace('T', ' ')}・{form.duration} 小時</dd></div><div><dt>地點</dt><dd>{form.location || '待定'}</dd></div><div><dt>報名</dt><dd>{form.capacity} 人上限・{form.minimum} 人成團</dd></div><div><dt>費用</dt><dd>預估 ¥{form.estimatedFee}／人<br /><small>{form.feeRule}</small></dd></div><div><dt>群同步</dt><dd>{form.qqSync ? '建立模擬投遞，不發送真實訊息' : '不同步'}</dd></div></dl>
+      <div className="inline-alert"><Info size={17} /><span>發起者「{currentUser.name}」將以正式成員加入，並占用 1 個名額。</span></div>
+    </Modal>}
+  </div>;
+}

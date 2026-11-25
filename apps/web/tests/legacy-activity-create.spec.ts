@@ -1,7 +1,7 @@
 import { createHash,randomBytes } from 'node:crypto';
 import type { BrowserContext,Page } from '@playwright/test';
 import { test,expect } from './fixtures';
-const origin='http://127.0.0.1:5082',scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex');
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex');
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function auth(context:BrowserContext){const s=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':s.scope,'X-CSRF-Token':s.csrf};}
 function original(lifecycle='scheduled',patch:Record<string,unknown>={}){const data={title:'原建立活動',category:'约K',location:'原場地',capacity:8,starts_at:'2099-12-11T18:00:00+08:00',deadline:'2099-12-10T00:00:00Z',timezone:'Asia/Taipei',duration_hours:4,lifecycle,bot_enabled:true,join_owner:true,client_intent:randomBytes(8).toString('hex'),...patch},method='POST' as const,path='/api/events',requestKey=createHash('sha256').update('create '+data.client_intent).digest('hex'),key='request:'+scope+':'+createHash('sha256').update(method+' '+path+' '+JSON.stringify(data)).digest('hex');return {key,scope,requestKey,path,method,data,status:'pending',at:1234567};}

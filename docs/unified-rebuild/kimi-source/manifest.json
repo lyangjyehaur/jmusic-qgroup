@@ -1,0 +1,28 @@
+{
+  "source": "/Users/danersaka/Projects/jmusic-design/kimi/src",
+  "sha256": {
+    "App.tsx": "44e2dc0b9cf36ed2ab6e9db5680618a8be2e79fad67a1bd8448201d03b20a2b0",
+    "main.tsx": "37aebba3866c9666e05186a5e0e25d5799b1faecb71f953b159754d428812f88",
+    "styles.css": "3dc0183e69a7f1d02bcd17efa79ea826582550888bbb48c63bc4b6f6cf9ec59a",
+    "types.ts": "ae3ef2183c7f1f352cb76e678cc565c6e93c5d9237b8d25f65abfed67eb9df8f",
+    "components/Layout.tsx": "935e77814578e278f62ed0971575da7c3097511d8dccf99f7e6beb9e55038124",
+    "components/UI.tsx": "7a7d2af1509bf87327ca40c35c79e54f341c3f65bbe602beaf20c36706406e30",
+    "theme/YahhaTheme.tsx": "0e41709eda0dffa2cd58cd9c3b62b68393e238b67b0f0247073b55e2ad18e759",
+    "data/mockData.ts": "3c045e34d2c494847f6b40c0f1565be71d10172edc7038aef329941878c233df",
+    "pages/AdminPage.tsx": "781fec9cc1143d80de4c7e530f1215593bc2558ef2fd7d409c1b82bd35f35276",
+    "pages/MePage.tsx": "25d10a7c48e8aa9409bd96709f4a04f56576c4077cfff3b187d2b1fcfaf4b7b6",
+    "pages/LedgerPage.tsx": "8a4b3911b2d7d86a4088573eef87b02d9a4ead978a444e0db913ea0e7d77983a",
+    "pages/VotesPage.tsx": "51b3c94f196024cc6025475a30899a02544efb23bc39ff11083b8bc7579101e2",
+    "pages/InboxPage.tsx": "3bdd4ea8bc68eb9672a599b14011f93b15db365e95337399d1023b083fa9e62a",
+    "pages/ComparePage.tsx": "47a202f36fc8e8e51912270649bd7ab5338fdd0abaf2c86db285b8db8b5e256d",
+    "pages/PeoplePage.tsx": "09ae7047524a52aa38727f9468d19aa22ebe734e080da51d6a36fe8851283882",
+    "pages/UiKitPage.tsx": "d10ac84d82744265023c254de61b1d951ea9a26e2a3cc42a7d6078e2f21a1409",
+    "pages/ActivityNewPage.tsx": "2d6fffaecee20d63138d507c7e476c91b4d826f21023deccf80c96af97c6f67e",
+    "pages/MyMusicPage.tsx": "db8d6ea8145f1661400bdf19cc9e8de22e1284d19633233ceb683b4f4fa30726",
+    "pages/MusicPage.tsx": "44deeefe7c3a88a1e1c905bfa551fd3a4c1887732cb4076c0f50b51db7ac1a1d",
+    "pages/RoomsPage.tsx": "13d84fea669e0055e12be39273af88a8791230ed4b8913eac670f1153d05df11",
+    "pages/ActivityDetailPage.tsx": "d6a30cacaf67a69c7057e8dac9f9298e072d763278cda08cfda22b40b079f45c",
+    "pages/ActivitiesPage.tsx": "40b03cca90f82eeaa491b41fcb9b59809b84f58b3fe53acf41142ee8b2e21e24",
+    "services/AppStore.tsx": "720d6aa136197d980758ed6805457cb7828296a073d8bc9f351b3f97dd4aa613"
+  }
+}

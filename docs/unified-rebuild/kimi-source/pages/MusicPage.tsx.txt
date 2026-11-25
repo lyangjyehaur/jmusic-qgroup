@@ -1,0 +1,72 @@
+import { useMemo, useState, type CSSProperties } from 'react';
+import { Link, useNavigate, useParams } from 'react-router-dom';
+import { ArrowLeft, ArrowRight, BarChart3, BookOpen, Check, ChevronRight, Grid3x3, ListMusic, Plus, TrendingUp, UsersRound } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import type { Term } from '../types';
+import { Avatar, Badge, Button, EmptyState, Modal, PageHeader, SearchInput, Select, Tabs, cn } from '../components/UI';
+
+const phonetic: Record<string, string> = { t001: 'ztmy zhenye zutomayo', t002: 'yoluka yelv yrs', t004: 'yudutian guang ydtyg', t007: 'zhiming linqing xmlq', t013: 'mijin xuanshi mjxs', t017: 'chuyin weilai cywl' };
+
+export default function MusicPage() {
+  const { terms, users, draftSelections, setDraftSelections, showToast } = useApp();
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [query, setQuery] = useState('');
+  const [view, setView] = useState('popular');
+  const [kind, setKind] = useState('全部類型');
+  const [category, setCategory] = useState('全部分類');
+  const selectedTerm = terms.find((term) => term.id === id);
+  const categories = [...new Set(terms.map((term) => term.category))];
+
+  const filtered = useMemo(() => terms.filter((term) => {
+    const q = query.trim().toLowerCase();
+    const matches = !q || `${term.name} ${term.aliases.join(' ')} ${term.reading} ${phonetic[term.id] ?? ''}`.toLowerCase().includes(q);
+    return matches && (kind === '全部類型' || term.kind === kind) && (category === '全部分類' || term.category === category);
+  }), [terms, query, kind, category]);
+
+  const popular = [...filtered].sort((a, b) => b.users - a.users).slice(0, 30);
+  const domains = filtered.filter((term) => term.kind === '領域');
+  const totalUsers = new Set(users.filter((u) => u.selections.length > 0).map((u) => u.id)).size;
+  const changes = terms.reduce((sum, term) => sum + term.change24h, 0);
+
+  const addTerm = (term: Term) => {
+    if (draftSelections.some((s) => s.termId === term.id)) { navigate('/me/music'); return; }
+    const domainCount = draftSelections.filter((s) => terms.find((t) => t.id === s.termId)?.kind === '領域').length;
+    const subCount = draftSelections.length - domainCount;
+    if (term.kind === '領域' && domainCount >= 5) { showToast('最多選擇 5 個領域，請先移除一項', 'error'); return; }
+    if (term.kind === '細分' && subCount >= 15) { showToast('最多選擇 15 個細分，請先移除一項', 'error'); return; }
+    setDraftSelections([...draftSelections, { termId: term.id, familiarity: '常聽' }]);
+    showToast(`已將「${term.name}」加入成分原稿`);
+  };
+
+  return <div className="page music-page">
+    <PageHeader title="音樂" description="搜尋詞條、探索分類並編輯個人成分" actions={<Link to="/me/music"><Button><ListMusic size={17} />我的成分<Badge tone="green">{draftSelections.length}</Badge></Button></Link>} />
+    <div className="music-stats"><span><strong>{totalUsers}</strong> 份成分</span><i /><span><strong>{terms.length}</strong> 個詞條</span><i /><span><TrendingUp size={14} /><strong>+{changes}</strong> 近 24 小時選用</span><Link to="/me/music?tab=trends">音樂趨勢<ArrowRight size={14} /></Link></div>
+    <div className="music-explorer">
+      <div className="music-search-area"><SearchInput value={query} onChange={setQuery} placeholder="搜尋名稱、別名、拼音或首字母，例如 ZTMY" /><div className="music-filters"><Select value={kind} onChange={(e) => setKind(e.target.value)} aria-label="詞條類型"><option>全部類型</option><option>領域</option><option>細分</option></Select><Select value={category} onChange={(e) => setCategory(e.target.value)} aria-label="詞條分類"><option>全部分類</option>{categories.map((item) => <option key={item}>{item}</option>)}</Select><span>{filtered.length} 個結果</span></div></div>
+      <div className="explorer-tabs"><Tabs value={view} onChange={setView} items={[{ value: 'popular', label: '熱門排行' }, { value: 'all', label: '完整詞庫' }, { value: 'domains', label: '領域／細分' }, { value: 'bubbles', label: '氣泡視圖' }]} /></div>
+
+      {view !== 'bubbles' && view !== 'domains' && <section className="term-list">{ (view === 'popular' ? popular : filtered).map((term, index) => <TermRow key={term.id} term={term} rank={view === 'popular' ? index + 1 : undefined} selected={draftSelections.some((s) => s.termId === term.id)} onAdd={() => addTerm(term)} />)}{filtered.length === 0 && <EmptyState title="找不到詞條" description="可嘗試別名、拼音，或到我的詞條建立新條目。" action={<Link to="/me/music?tab=terms"><Button variant="secondary">建立詞條</Button></Link>} />}</section>}
+
+      {view === 'domains' && <section className="domain-browser">{domains.map((domain) => { const children = terms.filter((term) => term.domain === domain.id && `${term.name}${term.aliases.join('')}`.toLowerCase().includes(query.toLowerCase())); return <div className="domain-group" key={domain.id}><div className="domain-heading"><div><Badge tone="green">領域</Badge><h2>{domain.name}</h2><span>{domain.users} 人選用</span></div><Button size="sm" variant={draftSelections.some((s) => s.termId === domain.id) ? 'secondary' : 'ghost'} onClick={() => addTerm(domain)}>{draftSelections.some((s) => s.termId === domain.id) ? <Check size={14} /> : <Plus size={14} />}{draftSelections.some((s) => s.termId === domain.id) ? '已選' : '選取'}</Button></div><div className="domain-children">{children.map((term) => <Link key={term.id} to={`/music/term/${term.id}`}><span>{term.name}</span><small>{term.users} 人</small><ChevronRight size={14} /></Link>)}</div></div>; })}</section>}
+
+      {view === 'bubbles' && <section className="bubble-view"><div className="bubble-legend"><span><i className="bubble-domain" />領域</span><span><i />細分</span><small>大小代表選用人數</small></div><div className="bubble-canvas">{[...filtered].sort((a, b) => b.users - a.users).slice(0, 38).map((term) => <Link to={`/music/term/${term.id}`} key={term.id} className={cn('term-bubble', term.kind === '領域' && 'domain')} style={{ '--bubble-size': `${Math.max(66, Math.min(132, 48 + term.users * 2))}px` } as CSSProperties}><span>{term.name}</span><small>{term.users}</small></Link>)}</div></section>}
+    </div>
+
+    {selectedTerm && <Modal title={selectedTerm.name} description={`${selectedTerm.kind}・${selectedTerm.category}`} onClose={() => navigate('/music')} wide footer={<><Button variant="secondary" onClick={() => navigate('/music')}>返回詞庫</Button><Button onClick={() => addTerm(selectedTerm)}>{draftSelections.some((s) => s.termId === selectedTerm.id) ? <ListMusic size={16} /> : <Plus size={16} />}{draftSelections.some((s) => s.termId === selectedTerm.id) ? '編輯我的成分' : '加入我的成分'}</Button></>}>
+      <TermDetail term={selectedTerm} />
+    </Modal>}
+  </div>;
+}
+
+function TermRow({ term, rank, selected, onAdd }: { term: Term; rank?: number; selected: boolean; onAdd: () => void }) {
+  return <article className="term-row"><span className="term-rank">{rank ? String(rank).padStart(2, '0') : term.kind === '領域' ? <Grid3x3 size={16} /> : <BookOpen size={16} />}</span><div className="term-name"><Link to={`/music/term/${term.id}`}>{term.name}</Link><span>{term.aliases.slice(0, 2).join('・')}</span></div><div className="term-category"><Badge tone={term.kind === '領域' ? 'green' : 'neutral'}>{term.kind}</Badge><span>{term.category}</span></div><div className="term-users"><UsersRound size={14} /><strong>{term.users}</strong>{term.change24h > 0 && <small>+{term.change24h}</small>}</div><Button variant={selected ? 'secondary' : 'ghost'} size="sm" onClick={onAdd}>{selected ? <Check size={15} /> : <Plus size={15} />}{selected ? '已選' : '選取'}</Button><Link className="row-arrow" to={`/music/term/${term.id}`} aria-label={`查看 ${term.name}`}><ChevronRight size={17} /></Link></article>;
+}
+
+function TermDetail({ term }: { term: Term }) {
+  const { terms, users, draftSelections } = useApp();
+  const selectedUsers = users.filter((user) => user.selections.some((s) => s.termId === term.id)).slice(0, 8);
+  const related = term.related.map((id) => terms.find((item) => item.id === id)).filter(Boolean) as Term[];
+  const selection = draftSelections.find((s) => s.termId === term.id);
+  return <div className="term-detail"><div className="term-detail-main"><p>{term.description}</p><dl className="inline-definitions"><div><dt>別名</dt><dd>{term.aliases.join('、')}</dd></div><div><dt>選用人數</dt><dd>{term.users} 人・近 24 小時 +{term.change24h}</dd></div><div><dt>建立者</dt><dd>{term.creator}</dd></div>{selection && <div><dt>我的熟悉度</dt><dd><Badge tone="green">{selection.familiarity}</Badge><span className="unsaved-label">原稿</span></dd></div>}</dl><section><h3>選取者</h3><div className="selected-user-list">{selectedUsers.map((user) => <Link to={`/people/card/${user.id}`} key={user.id}><Avatar user={user} size="sm" /><span>{user.name}</span><Badge>{user.selections.find((s) => s.termId === term.id)?.familiarity}</Badge></Link>)}{selectedUsers.length === 0 && <p className="muted">目前尚無公開選取者。</p>}</div></section></div><aside><div className="section-title-row"><h3>相關詞條</h3><Link to="/me/music?tab=terms" className="text-link">編輯入口</Link></div>{related.map((item) => <Link className="related-term" to={`/music/term/${item.id}`} key={item.id}><span>{item.name}<small>{item.kind}・{item.users} 人</small></span><ChevronRight size={15} /></Link>)}</aside></div>;
+}

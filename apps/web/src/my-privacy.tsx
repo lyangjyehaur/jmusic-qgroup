@@ -2,7 +2,8 @@ import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { EraseData, ErasureResult, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -102,7 +103,7 @@ function PrivacyOptions({ viewer, busy, submit }: { viewer: Extract<Viewer, { au
   if (summary.error) return <Failure error={summary.error} retry={() => void summary.refetch()} />;
   const blocked = target !== 'music' && (summary.data.activeEvents > 0 || summary.data.activePolls > 0);
   const noProfile = target !== 'account' && !summary.data.profile;
-  return <Surface className="detail auth-panel"><Heading level={2}>{viewer.nickname}</Heading><fieldset disabled={busy}><legend>刪除範圍</legend>{([['music', uiText('只刪除成分')], ['account', uiText('只關閉帳號')], ['both', uiText('關閉帳號並刪除成分')]] as const).map(([value, label]) => <label className="consent" key={value}><input type="radio" name="erase-target" checked={target === value} onChange={() => { setTarget(value); setConfirmed(false); }} />{label}</label>)}</fieldset>
+  return <div className="settings-grid privacy-settings"><section className="form-section"><div className="section-heading"><span>恢復</span><div><h2>舊版資料</h2></div></div><div className="settings-navigation"><Link to="/me/music/recover">找回舊成分</Link><Link to="/me/accounts">帳號與裝置</Link></div></section><section className="form-section danger-zone"><div className="section-heading"><span>注意</span><div><h2>資料刪除</h2></div></div><fieldset disabled={busy}><legend>刪除範圍</legend>{([['music', uiText('只刪除成分')], ['account', uiText('只關閉帳號')], ['both', uiText('關閉帳號並刪除成分')]] as const).map(([value, label]) => <label className="consent" key={value}><input type="radio" name="erase-target" checked={target === value} onChange={() => { setTarget(value); setConfirmed(false); }} />{label}</label>)}</fieldset>
     <Text>{target === 'music' ? '移除目前成分選擇與成分修改歷史，並清除此瀏覽器的成分草稿；保留帳號、活動與帳務。' : target === 'account' ? '撤銷所有裝置登入、QQ 綁定與管理權，清除此裝置的本機原稿。原成分及其歷史保留並解除關聯；共享活動、帳務或歷史紀錄另行審核。' : '刪除目前成分並撤銷所有裝置登入、QQ 綁定與管理權，清除此裝置的本機原稿；共享活動、帳務或歷史紀錄另行審核。'}</Text>
     {blocked && <Text role="alert">仍由你管理的活動 {summary.data.activeEvents} 個、時間投票 {summary.data.activePolls} 個；請先轉交、結束或取消，再關閉帳號。</Text>}
     {noProfile && <Text>目前沒有可刪除的成分。</Text>}
@@ -111,5 +112,5 @@ function PrivacyOptions({ viewer, busy, submit }: { viewer: Extract<Viewer, { au
       const bytes = crypto.getRandomValues(new Uint8Array(32));
       submit({ scope: viewer.scope, input: { target, confirm: true, requestId: crypto.randomUUID(), secret: Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join(''), profileId: summary.data.profile?.id ?? null, profileRevision: summary.data.profile?.revision ?? 0 } });
     }}>{target === 'music' ? '確認刪除成分' : target === 'account' ? '確認關閉帳號' : '確認關閉並刪除'}</Button>
-  </Surface>;
+  </section></div>;
 }

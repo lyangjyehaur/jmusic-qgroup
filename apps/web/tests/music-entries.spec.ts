@@ -1,7 +1,8 @@
+import { toggleMusicTerm, chooseOption, expectMusicTerm } from './kimi-controls';
 import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
-const origin = 'http://127.0.0.1:5082',
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,
   endpoint = '/me/music/entries';
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([
@@ -59,10 +60,10 @@ test('creates a first term and blank profile, edits its classification and prote
   await page.getByLabel('詞條分類', { exact: true }).selectOption('组合');
   await save(page, '保存詞條');
   await page.getByRole('link', { name: '我的成分', exact: true }).click();
-  await page.getByRole('button', { name: '樂團新名稱', exact: true }).click();
+  await toggleMusicTerm(page,'樂團新名稱');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '我的詞條', exact: true }).click();
+  await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
   await expect(page.getByText('細分 · 組合 · 1 人選用', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '刪除 樂團新名稱', exact: true }).click();
   await expect(page.getByText('已有 1 人選用，不能刪除。', { exact: true })).toBeVisible();
@@ -79,13 +80,15 @@ test('uses public classifications, alias/name normalization, independent type fi
   const id = await seed(context, 'Ｓtraße');
   await page.goto('/music');
   await page.getByLabel('搜尋音樂詞條', { exact: true }).fill('STRASSE');
-  await expect(page.locator('.music-ranking li')).toHaveCount(1);
-  await page.getByLabel('詞庫分類', { exact: true }).selectOption('乐队');
-  await page.getByLabel('詞庫類型', { exact: true }).selectOption('main');
+  await expect(page.locator('.term-row')).toHaveCount(1);
+  await chooseOption(page,'詞庫分類','乐队');
+  await chooseOption(page,'詞庫類型','main');
   await expect(page.getByText('沒有符合目前搜尋與篩選的詞條。', { exact: true })).toBeVisible();
-  await page.getByLabel('詞庫類型', { exact: true }).selectOption('sub');
+  await chooseOption(page,'詞庫類型','sub');
   await page.getByRole('link', { name: 'Ｓtraße', exact: true }).click();
-  await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toContainText('建立者：小青');
+  await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toContainText('建立者');
+  await expect(page.getByRole('region',{name:'詞條資料',exact:true})).toContainText('小青');
+  await page.getByRole('button',{name:'返回詞庫',exact:true}).click();
   await page.getByRole('button', { name: '清除搜尋', exact: true }).click();
   await page.getByRole('heading', { name: '音樂', exact: true }).click();
   await page.keyboard.press('/');
@@ -228,22 +231,16 @@ test('preserves selection drafts while creating terms, isolates switched account
 }) => {
   await login(context);
   await page.goto('/me/music');
-  await page.getByRole('button', { name: 'YOASOBI', exact: true }).click();
-  await page.getByRole('link', { name: '我的詞條', exact: true }).click();
+  await toggleMusicTerm(page, 'YOASOBI');
+  await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
   await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
   await page.getByRole('link', { name: '建立詞條', exact: true }).click();
   await field(page).fill('自己的詞條');
   await save(page);
   await page.getByRole('link', { name: '我的成分', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
-  await expect(page.getByRole('button', { name: '自己的詞條', exact: true })).toHaveAttribute(
-    'aria-pressed',
-    'false',
-  );
-  await page.getByRole('link', { name: '我的詞條', exact: true }).click();
+  await expectMusicTerm(page,'YOASOBI',true);
+  await expectMusicTerm(page,'自己的詞條',false);
+  await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
   await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
   await page.getByRole('link', { name: '建立詞條', exact: true }).click();
   await field(page).fill('小青尚未送出');

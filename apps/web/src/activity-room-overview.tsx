@@ -2,7 +2,8 @@ import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { ActivityRoomOverview, type Viewer } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { scopedHttp } from './http';
@@ -84,7 +85,7 @@ export function ActivityRoomOverviewSection({ eventId, viewer }: { eventId: stri
       scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/rooms/overview', { params: { id: eventId } }),
   });
   return (
-    <Surface className="detail" id="rooms" role="region" aria-label="包間安排">
+    <Surface className="plain-section" id="rooms" role="region" aria-label="包間安排">
       <div className="roster-title">
         <Heading level={2}>{query.data?.kind === 'actual' ? '實際包間' : '預分包間'}</Heading>
         <Button variant="secondary" loading={query.isFetching} onClick={() => void query.refetch()}>

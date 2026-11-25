@@ -31,7 +31,7 @@
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "5dac56f128e020118db3048f686c17d8b6f944f7f947c5768e7e62e9737fb7a7",
+    "apps/api/src/app.ts": "2263f27bbc1d5b8a48e668b93824db35ef5243c61164981410a9df1c9dd8d3dc",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
@@ -65,7 +65,7 @@
     "apps/api/src/privacy-consent.ts": "f296772294485e7eeefe2dc95b37f304c41aa3d2c0913469b3448316961c2e85",
     "apps/api/src/privacy.ts": "96757aa6e1dac2c04d4e64bf7c3c94c5603f49edd167253fae7bb5fc8f853043",
     "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
-    "apps/api/src/repositories.ts": "000eac65cc65b1fa5a5187384943e74a1a925d2711d7ab29586dfa5cbcea5574",
+    "apps/api/src/repositories.ts": "91a25ce56bbde23bb948629a36626427e11c8e17be3c2dea4b77a939cdb2d9b6",
     "apps/api/src/room-plan-command.ts": "70f540303955a965f9be4227064012954a77768372d42d19bdeb7eb66e281210",
     "apps/api/src/search.ts": "62d69e955c64106d4dc81b513028b1ff35049b82cb9bf5e50453a17c3dcd62ee",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
@@ -81,7 +81,7 @@
     "packages/contracts/src/bot-deliveries.ts": "0cf32a07305aaa17bfe173c8e9761f2194d101dc4dd86efb6fffb8c7c82c5171",
     "packages/contracts/src/create-intents.ts": "afabd8cd5dca2d384ca6cbee590b73f89128a28ab23d862afd624e58b54b683c",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
-    "packages/contracts/src/index.ts": "5a6ba85e313fd5906645d5e1da4e743d6d4c42fdfc2313ae4b7f1a8e7c2f027b",
+    "packages/contracts/src/index.ts": "e4f55ba1a11032a88b3c589787cf60460b12cbf501ce17beb5ddd1f45430cb93",
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
@@ -116,7 +116,9 @@
     "apps/api/src/settlement-notice.ts": "3765f4116434e868839b9e67ef34e0f6dd8b16571fe56d3fd5a30c23c0773cf5",
     "packages/contracts/src/settlements.ts": "76ae1443fc3559f60ab4be3b49e415f62b169977ca57ac338c673a8339840a34",
     "packages/contracts/src/legacy-rooms.ts": "45dc3a9462b2696fa9ef45a7e29a9c0f174a145582657d8a056ed490161e8b1f",
-    "packages/contracts/src/finance.ts": "2b72e44683f1ccf42797ce6d28f70a90a355165f5a95fcdaa20d44e76495e60d"
+    "packages/contracts/src/finance.ts": "2b72e44683f1ccf42797ce6d28f70a90a355165f5a95fcdaa20d44e76495e60d",
+    "packages/contracts/src/http-queries.ts": "ce59f2b54926f90c39cfb229fa636ac121aacf2be62fb369abcb4533dced766a",
+    "apps/api/src/finance-context.ts": "66f8757393af19b736333bcec5a613ef92f0d21f6b05e3cb27857c17109ab113"
   },
   "operations": [
     {
@@ -141,15 +143,25 @@
     {
       "id": "GET /api/v2/activities",
       "file": "apps/api/src/app.ts",
-      "mode": "public",
-      "conditions": [],
+      "mode": "optional-scoped-member",
+      "conditions": [
+        "Without x-account-scope return only public events and no private mine/registration counts.",
+        "With scope validate the current device; scope mismatches fail before returning personalized counts.",
+        "Filters apply to the authorized collection before pagination; summary and per-event registration disclose only the current member."
+      ],
       "dependencies": [
         "packages/contracts/package.json",
         "packages/contracts/src/bot-deliveries.ts",
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/activity-roster.ts",
+        "apps/api/src/security.ts",
+        "apps/api/src/repositories.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/finance-context.ts",
+        "packages/contracts/src/http-queries.ts"
       ],
       "additionalHeaders": []
     },
@@ -1476,7 +1488,9 @@
       "id": "GET /api/v2/me/activities",
       "file": "apps/api/src/app.ts",
       "mode": "scoped-member",
-      "conditions": [],
+      "conditions": [
+        "Search and status filters apply after existing participation and activity access checks, before pagination; counts use the same scoped membership rule."
+      ],
       "dependencies": [
         "apps/api/src/security.ts",
         "packages/contracts/package.json",
@@ -1484,7 +1498,11 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/repositories.ts",
+        "apps/api/src/activity-access.ts",
+        "apps/api/src/finance-context.ts",
+        "packages/contracts/src/http-queries.ts"
       ],
       "additionalHeaders": []
     },

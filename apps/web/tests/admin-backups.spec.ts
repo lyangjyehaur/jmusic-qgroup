@@ -1,10 +1,11 @@
+import { openAdminTool } from './kimi-controls';
 import { readFileSync } from 'node:fs';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 const confirm = '確認下載並保管私人資料';
 async function login(context: BrowserContext, user = 'registration-admin') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
-async function open(page: Page, context: BrowserContext) { await login(context); await page.goto('/admin'); await page.getByRole('link', { name: '成分匯出與歷史備份', exact: true }).click(); await expect(page.getByRole('button', { name: '更新備份清單', exact: true })).toBeEnabled(); }
+async function open(page: Page, context: BrowserContext) { await login(context); await page.goto('/admin'); await openAdminTool(page,'成分匯出與歷史備份'); await expect(page.getByRole('button', { name: '更新備份清單', exact: true })).toBeEnabled(); }
 async function download(page: Page, historical = false) {
   const promise = page.waitForEvent('download');
   await (historical ? page.getByRole('button', { name: /^下載 \d/ }).first() : page.getByRole('button', { name: '下載目前成分 JSON', exact: true })).click();

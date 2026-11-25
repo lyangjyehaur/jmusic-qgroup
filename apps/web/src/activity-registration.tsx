@@ -2,9 +2,10 @@ import { errorText, uiText } from './language';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { ChangeRegistration, RegistrationAction, RegistrationContext, RegistrationPreview, RegistrationValues, SubmitRegistration } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -12,6 +13,7 @@ import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
+import { useActivityAction } from './activity-action-context';
 type Context=z.infer<typeof RegistrationContext>;
 type Person=Context['people'][number];
 type Action=z.infer<typeof RegistrationAction>;
@@ -27,9 +29,13 @@ type DraftValue=z.infer<typeof Draft>;
 const companion=()=>({isSelf:false,name:'',note:'',payerKind:'manager' as const});
 const empty=(data:Context):DraftValue=>({revision:data.revision,values:{people:data.selfRegistered?[companion()]:[{isSelf:true,name:'',note:'',payerKind:'self'}],queueMode:'individual',intent:'registered'},personId:'',action:'edit',name:'',note:'',payerKind:'self',reason:''});
 function actions(person:Person|undefined):Action[]{return person?[...(person.canChange?['edit' as const,...(person.status==='tentative'?['confirm' as const]:[]),...(person.status==='waiting'&&person.queueMode==='together'?['split' as const]:[])]:[]),...(person.canWithdraw?['withdraw' as const]:[]),...(person.canDecide?['approve' as const,'reject' as const]:[])]:[];}
+function preferredAction(person:Person|undefined,preset:string|null):Action{
+  const available=actions(person),parsed=RegistrationAction.safeParse(preset);
+  return parsed.success&&available.includes(parsed.data)?parsed.data:available[0]??'edit';
+}
 export function ActivityRegistrationPage({manage=false}:{manage?:boolean}){
-  const {id=''}=useParams();
-  return <><PageIntro title={manage?'管理報名':'新增報名'}/><div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+(manage?'/signup':'/registration')}>{manage?'新增本人／同行報名':'管理現有報名'}</Link><Link to={'/activities/'+encodeURIComponent(id)+'/invitations'}>補報名邀請</Link><Link to={'/activities/'+encodeURIComponent(id)+'/claims'}>代報認領</Link></div><MemberAccess>{viewer=><Loader key={viewer.scope+':'+id+':'+manage} viewer={viewer} id={id} manage={manage}/>}</MemberAccess></>;
+  const {id=''}=useParams(),inActivity=useActivityAction();
+  return <><PageIntro title={manage?'管理報名':'新增報名'}/>{!inActivity&&<div className="page-actions"><Link to={'/activities/'+encodeURIComponent(id)}>回到活動</Link><Link to={'/activities/'+encodeURIComponent(id)+(manage?'/signup':'/registration')}>{manage?'新增本人／同行報名':'管理現有報名'}</Link><Link to={'/activities/'+encodeURIComponent(id)+'/invitations'}>補報名邀請</Link><Link to={'/activities/'+encodeURIComponent(id)+'/claims'}>代報認領</Link></div>}<MemberAccess>{viewer=><Loader key={viewer.scope+':'+id+':'+manage} viewer={viewer} id={id} manage={manage}/>}</MemberAccess></>;
 }
 function Loader({viewer,id,manage}:{viewer:Member;id:string;manage:boolean}){
   const query=useQuery({queryKey:['private',viewer.scope,'activity-registration',id],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/registration', { params: { id: id } }),refetchOnWindowFocus:false});
@@ -40,12 +46,14 @@ function when(value:string,timezone:string|null){
   try{return new Intl.DateTimeFormat('zh-TW',{dateStyle:'medium',timeStyle:'short',timeZone:timezone}).format(new Date(value));}catch{return value;}
 }
 function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:boolean}){
+  const navigate=useNavigate(),inActivity=useActivityAction();
   const [search]=useSearchParams(),client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:registration:v1:'+viewer.scope+':'+initial.id+':'+(manage?'manage':'signup');
   const [data,setData]=useState(initial),[message,setMessage]=useState(''),[confirm,setConfirm]=useState(false),[partial,setPartial]=useState(false),[preview,setPreview]=useState<z.infer<typeof RegistrationPreview>|null>(null);
+  const [completionMessage,setCompletionMessage]=useState('');
   const seed=():DraftValue=>{
     const next=empty(data);
     if(!manage){if(search.get('preset')==='party')next.values.people=[companion()];if(search.get('preset')==='tentative')next.values.intent='tentative';}
-    else {const person=data.people.find(item=>item.id===search.get('person'));if(person)Object.assign(next,{personId:person.id,name:person.name,note:person.note,payerKind:person.payerKind,action:search.get('preset')==='withdraw'&&person.canWithdraw?'withdraw':actions(person)[0]??'edit'});}
+    else {const person=data.people.find(item=>item.id===search.get('person'))??(data.people.length===1?data.people[0]:undefined);if(person)Object.assign(next,{personId:person.id,name:person.name,note:person.note,payerKind:person.payerKind,action:preferredAction(person,search.get('preset'))});}
     return next;
   };
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>{
@@ -54,12 +62,15 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
   },needsRestore:raw=>JSON.stringify({...Draft.parse(JSON.parse(raw)),revision:data.revision})!==JSON.stringify(empty(data)),dirty:value=>JSON.stringify(value)!==JSON.stringify(empty(data)),pending:value=>!!value.pending});
   const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist}=record;
   const locked=record.locked,stale=draft.revision!==data.revision;
+  useEffect(()=>{
+    if(inActivity&&completionMessage&&!record.busy&&!record.saving&&!record.dirty&&record.blocker.state==='unblocked')void navigate('/activities/'+encodeURIComponent(data.id),{replace:true,state:{activityNotice:completionMessage}});
+  },[inActivity,completionMessage,record.busy,record.saving,record.dirty,record.blocker.state,navigate,data.id]);
   const selected=data.people.find(person=>person.id===draft.personId),availableActions=actions(selected),available=manage?availableActions.includes(draft.action):!data.signupBlocker;
   const reasonRequired=!!selected&&(selected.requiresReason||(draft.action==='withdraw'&&selected.needsWithdrawalRequest)||['approve','reject'].includes(draft.action));
   const mixed=!!preview?.allocation.some(person=>person.status==='confirmed')&&preview.allocation.some(person=>person.status==='waiting');
   useEffect(()=>{setConfirm(false);setPartial(false);setPreview(null);},[record.epoch]);
   function edit(patch:Partial<DraftValue>){record.change({...draft,...patch});setConfirm(false);setPartial(false);setPreview(null);setMessage('');}
-  function choose(personId:string){const person=data.people.find(item=>item.id===personId);edit({personId,name:person?.name??'',note:person?.note??'',payerKind:person?.payerKind??'self',action:search.get('preset')==='withdraw'&&person?.canWithdraw?'withdraw':actions(person)[0]??'edit',reason:''});}
+  function choose(personId:string){const person=data.people.find(item=>item.id===personId);edit({personId,name:person?.name??'',note:person?.note??'',payerKind:person?.payerKind??'self',action:preferredAction(person,search.get('preset')),reason:''});}
   async function latest(){return scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/registration', { params: { id: data.id } });}
   function update(fresh:Context){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-registration',data.id],fresh);}
   async function rebase(){
@@ -96,6 +107,7 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
       else await authHttp(viewer).requestContract('POST /api/v2/activities/:id/attendees/:personId/registration', { params: { id: data.id, personId: operation.personId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;
       const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?uiText("報名已保存。"):uiText("報名操作已保存。"));
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-lifecycle','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
+      if(inActivity)setCompletionMessage(operation.kind==='signup'?uiText('報名已保存。'):uiText('報名操作已保存。'));
     }catch(error){
       if(!active.current)return;
       if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(errorText(error));}
@@ -103,7 +115,8 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
     }finally{if(active.current)setBusy(false);}
   }
   const consent=manage?uiText('已核對此人的報名，確認')+labels[draft.action]:uiText('已核對第 ')+data.conditionsVersion+uiText(' 版安排、費用與逐人分配，代表本人及代報者接受安排');
-  return <><Surface className="detail"><Heading level={2}>{data.title}</Heading><dl><dt>目前安排</dt><dd>第 {data.conditionsVersion} 版</dd><dt>時間</dt><dd>{when(data.arrangement.starts_at,data.arrangement.timezone)}（{data.arrangement.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{data.arrangement.duration_hours===null?'未設定':data.arrangement.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{data.arrangement.location}</dd><dt>退出期限</dt><dd>{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}</dd>{data.arrangement.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{data.arrangement.fee_policy}</dd></>}{data.arrangement.description&&<><dt>注意事項</dt><dd className="preserve-lines">{data.arrangement.description}</dd></>}</dl><Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看完整安排與版本</Link></Surface>
+  const arrangement=<Surface className="detail"><Heading level={2}>{data.title}</Heading><dl><dt>目前安排</dt><dd>第 {data.conditionsVersion} 版</dd><dt>時間</dt><dd>{when(data.arrangement.starts_at,data.arrangement.timezone)}（{data.arrangement.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{data.arrangement.duration_hours===null?'未設定':data.arrangement.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{data.arrangement.location}</dd><dt>退出期限</dt><dd>{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}</dd>{data.arrangement.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{data.arrangement.fee_policy}</dd></>}{data.arrangement.description&&<><dt>注意事項</dt><dd className="preserve-lines">{data.arrangement.description}</dd></>}</dl><Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看完整安排與版本</Link></Surface>;
+  return <>{inActivity?<><Text><strong>{data.title}</strong> · 第 {data.conditionsVersion} 版安排</Text><Text className="preserve-lines">{data.arrangement.fee_policy||'未填費用規則。'}</Text><details className="registration-arrangement"><summary>核對完整活動安排</summary>{arrangement}</details></>:arrangement}
     <Surface className="detail activity-editor"><Heading level={2}>{manage?'現有報名':'本人與同行'}</Heading>
       {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新資料。</Notice>}
       {manage&&<><ul>{data.people.map(person=><li key={person.id}>{person.name} · {statusLabels[person.status]??person.status}{person.withdrawalRequested?' · 退出申請中':''} · 付款：{person.payerName}</li>)}</ul>{!data.people.length&&<Notice>目前沒有可由此帳號管理的有效報名。</Notice>}</>}
@@ -121,23 +134,25 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
           <div className="account-field"><label htmlFor="registration-reason">原因{reasonRequired?'（必填）':'（選填）'}</label><textarea id="registration-reason" rows={2} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></div></>}
         </>:<>
           {data.selfRegistered&&<Notice>你已有本人報名；可在此新增同行，或前往管理現有報名。</Notice>}
-          {draft.values.people.map((person,index)=><fieldset key={index} className="registration-person"><legend>參加者 {index+1}</legend>
+          {draft.values.people.map((person,index)=><fieldset key={index} className="registration-person"><legend>參加者 {index+1}</legend><details open={!person.isSelf||!!person.note||undefined}><summary>{person.isSelf?'本人（'+data.nickname+'）· 備註與設定':'同行資料'}</summary>
             <div className="account-field"><label htmlFor={'signup-person-'+index}>身分</label><select id={'signup-person-'+index} value={person.isSelf?'self':'guest'} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,isSelf:event.target.value==='self',payerKind:event.target.value==='self'?'self':'manager'}:p)}})}><option value="guest">同行／代報</option><option value="self" disabled={data.selfRegistered||draft.values.people.some((p,i)=>i!==index&&p.isSelf)}>本人（{data.nickname}）</option></select></div>
             <div className="account-field"><label htmlFor={'signup-name-'+index}>稱呼</label><input id={'signup-name-'+index} disabled={person.isSelf} maxLength={48} value={person.isSelf?data.nickname:person.name} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,name:event.target.value}:p)}})}/></div>
             <div className="account-field"><label htmlFor={'signup-note-'+index}>公開備註</label><textarea id={'signup-note-'+index} rows={2} maxLength={200} value={person.note} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,note:event.target.value}:p)}})}/></div>
             <div className="account-field"><label htmlFor={'signup-payer-'+index}>付款歸屬</label><select id={'signup-payer-'+index} disabled={person.isSelf} value={person.payerKind} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,payerKind:event.target.value as 'self'|'manager'}:p)}})}><option value="self">參加者本人</option><option value="manager">代報管理人</option></select></div>
             {draft.values.people.length>1&&<Button variant="ghost" onClick={()=>edit({values:{...draft.values,people:draft.values.people.filter((_,i)=>i!==index)}})}>移除參加者 {index+1}</Button>}
-          </fieldset>)}
+          </details></fieldset>)}
           <Button variant="secondary" disabled={draft.values.people.length>=20} onClick={()=>edit({values:{...draft.values,people:[...draft.values.people,companion()]}})}>新增同行</Button>
+          <details className="registration-options" open={draft.values.people.length>1||draft.values.queueMode==='together'||draft.values.intent==='tentative'||undefined}><summary>排隊與參加意願</summary>
           <div className="account-field"><label htmlFor="signup-mode">排隊方式</label><select id="signup-mode" value={draft.values.queueMode} onChange={event=>edit({values:{...draft.values,queueMode:event.target.value as 'individual'|'together'}})}><option value="individual">逐人分配名額</option><option value="together">整組一起參加</option></select></div>
           <Text>整組名額不足時全組候補，並阻擋後方候補；分開排隊可能部分正式、部分候補。</Text>
           <div className="account-field"><label htmlFor="signup-intent">參加意願</label><select id="signup-intent" value={draft.values.intent} onChange={event=>edit({values:{...draft.values,intent:event.target.value as 'registered'|'tentative'}})}><option value="registered">確認參加</option><option value="tentative">待確認（不占名額）</option></select></div>
-          <Button variant="secondary" disabled={!!data.signupBlocker||stale} onClick={()=>void makePreview()}>預覽逐人分配</Button>
+          </details>
+          <Button variant={preview?'secondary':'primary'} disabled={!!data.signupBlocker||stale} onClick={()=>void makePreview()}>預覽逐人分配</Button>
           {preview&&<section aria-label="報名預覽"><Heading level={3}>逐人分配</Heading><ol>{preview.allocation.map((person,index)=><li key={index}>{person.name} · {statusLabels[person.status]}</li>)}</ol>{mixed&&<label className="consent"><input type="checkbox" checked={partial} onChange={event=>{setPartial(event.target.checked);setConfirm(false);}}/><span>接受部分正式、部分候補的分配</span></label>}</section>}
         </>}
-        {(!manage||draft.personId)&&<label className="consent"><input type="checkbox" disabled={!available||stale||(!manage&&(!preview||(mixed&&!partial)))} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>{consent}</span></label>}
-      </fieldset>{(!manage||draft.personId||draft.pending)&&<Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認報名操作結果':manage?'提交報名操作':'提交報名'}</Button>}</form>}
-      {!draft.pending&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新資料，保留輸入</Button>}
+        {((!manage&&preview)||manage&&draft.personId)&&<label className="consent"><input type="checkbox" disabled={!available||stale||(!manage&&(!preview||(mixed&&!partial)))} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>{consent}</span></label>}
+      </fieldset>{(preview||manage&&draft.personId||draft.pending)&&<Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認報名操作結果':manage?'提交報名操作':'提交報名'}</Button>}</form>}
+      {!draft.pending&&(!inActivity||stale||message)&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新資料，保留輸入</Button>}
       {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record}/>
     </Surface></>;
 }

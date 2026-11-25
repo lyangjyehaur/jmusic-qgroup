@@ -1,0 +1,75 @@
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
+import { ThemeProvider, type ThemeName, type ThemeTokens } from 'yahha-ui';
+
+/** 四種外觀：群聚是依既有品牌色調校的語義覆寫，其餘為元件庫原色。 */
+export type YahhaPreset = 'gunju' | 'pink' | 'blue' | 'yellow';
+
+const STORAGE_KEY = 'gunju.yahhaPreset';
+const PRESETS: YahhaPreset[] = ['gunju', 'pink', 'blue', 'yellow'];
+
+export const presetLabels: Record<YahhaPreset, string> = {
+  gunju: '群聚・苔綠',
+  pink: '粉色',
+  blue: '淺藍',
+  yellow: '淺黃',
+};
+
+const themeMap: Record<YahhaPreset, ThemeName> = {
+  gunju: 'yellow',
+  pink: 'pink',
+  blue: 'blue',
+  yellow: 'yellow',
+};
+
+/**
+ * 只使用 ThemeProvider 公開的語義顏色入口。
+ * line 同時覆寫輪廓色，紙面細邊與其餘語義色在 styles.css 的 [data-yahha-theme] 層統一調和，
+ * 讓 Portal 內的 Dialog / Select / Popover 也套用同一套配色。
+ */
+const gunjuTokens: ThemeTokens = {
+  ink: '#252923',
+  muted: '#6d7469',
+  accent: '#cfe1cd',
+  accentHover: '#bbd3b8',
+  accentSoft: '#eef4ec',
+  focus: '#355441',
+  surface: '#fdfcf9',
+  fieldBackground: '#ffffff',
+  error: '#a33e4f',
+  line: '#4e5c4a',
+};
+
+interface PresetContextValue {
+  preset: YahhaPreset;
+  setPreset: (preset: YahhaPreset) => void;
+  presets: YahhaPreset[];
+}
+
+const PresetContext = createContext<PresetContextValue>({
+  preset: 'gunju',
+  setPreset: () => {},
+  presets: PRESETS,
+});
+
+export function YahhaThemeRoot({ children }: { children: ReactNode }) {
+  const [preset, setPreset] = useState<YahhaPreset>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY) as YahhaPreset | null;
+    return saved && PRESETS.includes(saved) ? saved : 'gunju';
+  });
+
+  useEffect(() => {
+    try { localStorage.setItem(STORAGE_KEY, preset); } catch { /* 僅影響外觀記憶 */ }
+  }, [preset]);
+
+  return <PresetContext.Provider value={{ preset, setPreset, presets: PRESETS }}>
+    <ThemeProvider
+      theme={themeMap[preset]}
+      tokens={preset === 'gunju' ? gunjuTokens : undefined}
+      className="yahha-root"
+    >
+      {children}
+    </ThemeProvider>
+  </PresetContext.Provider>;
+}
+
+export const useYahhaPreset = () => useContext(PresetContext);

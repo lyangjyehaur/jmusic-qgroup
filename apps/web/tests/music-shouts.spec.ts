@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({ musicShouts: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function refresh(page: Page) { await page.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); }); }
@@ -23,7 +23,7 @@ test('details, author profiles, clipboard fallbacks and all history pages preser
   await page.getByRole('button', { name: '複製找搭子內容', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取找搭子內容手動複製。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取號碼手動複製。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '查看發布者成分', exact: true }).click(); await page.getByRole('link', { name: '比較成分', exact: true }).click();
-  await page.getByRole('link', { name: '查看同好成分', exact: true }).click(); await page.getByRole('link', { name: '回到找搭子', exact: true }).click();
+  await page.getByRole('link', { name: '查看同好成分', exact: true }).click();await expect(page.getByRole('dialog')).toBeVisible(); await page.getByRole('dialog').getByRole('link', { name: '回到找搭子', exact: true }).click();
   await expect(detail(page)).toContainText('週末一起聽音樂'); await page.getByRole('link', { name: '回到找搭子', exact: true }).click();
   await page.getByRole('link', { name: '找搭子歷史', exact: true }).click(); await expect(page.getByRole('heading', { name: '歷史 · 25 則', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '下一頁', exact: true }).click(); await page.getByRole('button', { name: '下一頁', exact: true }).click();
@@ -61,7 +61,7 @@ test('lost publication responses keep the exact operation across reload and do n
 test('administrators recover an unknown deletion even after the detail is gone and can moderate history', async ({ page, context }) => {
   await login(context, 'registration-admin'); const keys: string[] = []; let fail = true;
   await page.route('**/api/v2/admin/shouts/*/delete', async route => { keys.push(route.request().headers()['idempotency-key']!); const response = await route.fetch(); if (fail) { fail = false; await route.fulfill({ response, body: '{' }); } else await route.fulfill({ response }); });
-  await page.goto('/admin'); await page.getByRole('link', { name: '找搭子管理', exact: true }).click(); await page.getByRole('button', { name: '移除這則內容', exact: true }).click();
+  await page.goto('/admin');await page.getByRole('tab',{name:'活動與內容',exact:true}).click(); await page.getByRole('link', { name: '找搭子管理', exact: true }).click(); await page.getByRole('button', { name: '移除這則內容', exact: true }).click();
   await page.getByRole('checkbox', { name: '確認永久移除這則內容，發布者資料不會保留在刪除紀錄中', exact: true }).check(); await page.getByRole('button', { name: '確認刪除找搭子', exact: true }).click();
   await expect(page.getByText('尚未確認刪除結果。', { exact: false })).toBeVisible(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
   await page.getByRole('button', { name: '確認刪除結果', exact: true }).click(); await expect(page.getByText('已刪除找搭子內容。', { exact: true })).toBeVisible();

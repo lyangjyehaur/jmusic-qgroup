@@ -1,15 +1,18 @@
+import { Badge, PageHeader, Tabs } from './kimi-ui';
+import { AlertCircle, ArrowRight, Bell, ChevronRight } from 'lucide-react';
 import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { InboxTodos, MarkNotificationsRead } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { createWebHttpClient } from './http';
 import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
-import { Failure, Notice, PageIntro } from './shared';
+import { Failure, Notice } from './shared';
 import { pendingOperations, type PendingOperation } from './pending-operations';
 import { erasureInventory } from './erasure-store';
 import { listDurableDrafts, listDurableVersions } from './draft-store';
@@ -21,14 +24,19 @@ const scopedHttp=(viewer:Member)=>createWebHttpClient({context:()=>({scope:viewe
 const labels:Record<z.infer<typeof InboxTodos>['todos'][number]['kind'],string>={conditions:uiText("確認變更後的安排"),claims:uiText("核對報名認領"),withdrawal:uiText("處理退出申請"),formation:uiText("決定是否成團"),finish:uiText("確認活動結束／延長"),settlement:uiText("核對並發布結算"),reports:uiText("款項申報待核對"),payment:uiText("我的款項待補"),refund:uiText("我的退款／墊付待收回"),reconcile:uiText("核對收退款與結清")};
 const destinations:Record<keyof typeof labels,string>={conditions:'conditions',claims:'claims',withdrawal:'registration',formation:'lifecycle',finish:'lifecycle',settlement:'?task=settlement',reports:'finance',payment:'finance',refund:'finance',reconcile:'finance'};
 function TodoList({todos}:{todos:z.infer<typeof InboxTodos>['todos']}){
-  const groups=new Map<string,typeof todos>();for(const todo of todos){const group=groups.get(todo.eventId);if(group)group.push(todo);else groups.set(todo.eventId,[todo]);}
-  return <>{[...groups].map(([id,items])=><div key={id}><Heading level={3} className="inbox-event-title"><Link to={'/activities/'+encodeURIComponent(id)}>{items[0]!.title}</Link></Heading><ul className="inbox-list">{items.map(todo=>{const suffix=destinations[todo.kind],money=todo.amountCents===undefined?'':' · ¥'+(todo.amountCents/100).toFixed(2);return <li key={todo.kind}><Link to={'/activities/'+encodeURIComponent(id)+(suffix.startsWith('?')?'':'/')+suffix}>{todo.count?todo.count+' 筆':''}{labels[todo.kind]}{money}</Link></li>;})}</ul></div>)}</>;
+  return <ul className="inbox-list notification-list">{todos.map(todo=>{const suffix=destinations[todo.kind],money=todo.amountCents===undefined?'':' · ¥'+(todo.amountCents/100).toFixed(2),to='/activities/'+encodeURIComponent(todo.eventId)+(suffix.startsWith('?')?'':'/')+suffix;return <li className="notification-item unread" key={todo.eventId+':'+todo.kind}><Link className="notification-main" to={to}><span className="notification-marker"><AlertCircle size={18}/></span><div><div className="notification-title"><Badge tone="amber">待辦</Badge><Heading level={3}>{todo.count?todo.count+' 筆':''}{labels[todo.kind]}{money}</Heading></div><p>{todo.title}</p></div><ChevronRight size={18}/></Link><div className="notification-actions"><Link to={to}>前往處理<ArrowRight size={14}/></Link></div></li>;})}</ul>;
 }
-export function InboxLink({viewer}:{viewer:Member}){
+export function InboxLink({viewer}:{viewer?:Member}){
+  return viewer?<MemberInboxLink viewer={viewer}/>:<InboxButton/>;
+}
+function InboxButton({unreadCount=0,failed=false}:{unreadCount?:number;failed?:boolean}){
+  return <Link to="/inbox" className="inbox-button icon-button" title="收件匣" aria-label={failed?'收件匣（讀取失敗）':'收件匣'+(unreadCount?'，'+unreadCount+' 則未讀':'')}><Bell size={19} aria-hidden="true"/>{unreadCount>0&&<span className="unread-count" aria-hidden="true">{unreadCount}</span>}</Link>;
+}
+function MemberInboxLink({viewer}:{viewer:Member}){
   const query=useQuery({queryKey:['private',viewer.scope,'notification-count'],queryFn:()=>scopedHttp(viewer).requestContract('GET /api/v2/me/notifications/count',{}),refetchInterval:30000});
-  return <Link to="/inbox">收件匣{query.error?'（讀取失敗）':query.data?.unreadCount?'（'+query.data.unreadCount+' 未讀）':''}</Link>;
+  return <InboxButton unreadCount={query.data?.unreadCount} failed={!!query.error}/>;
 }
-export function InboxPage(){return <><PageIntro title="收件匣"/><LegacyLocalLink/><MemberAccess>{viewer=><Inbox key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
+export function InboxPage(){return <div className="kimi page inbox-page"><PageHeader title="收件匣"/><LegacyLocalLink/><MemberAccess>{viewer=><Inbox key={viewer.scope} viewer={viewer}/>}</MemberAccess></div>;}
 function PendingOperations({viewer}:{viewer:Member}){
   const [inventory,setInventory]=useState<{rows:PendingOperation[];error:string}>({rows:[],error:''}),[results,setResults]=useState<Record<string,string>>({}),[busy,setBusy]=useState('');const active=useRef(true);
   async function read(){
@@ -67,6 +75,8 @@ function Inbox({viewer}:{viewer:Member}){
   const notifications=useInfiniteQuery({queryKey:['private',viewer.scope,'notifications'],initialPageParam:null as string|null,queryFn:({pageParam})=>scopedHttp(viewer).requestContract('GET /api/v2/me/notifications',{query:{before:pageParam||undefined}}),getNextPageParam:last=>last.nextBefore??undefined});
   const todos=useQuery({queryKey:['private',viewer.scope,'inbox-todos',event],queryFn:()=>scopedHttp(viewer).requestContract('GET /api/v2/me/todos',{query:{event:event||undefined}}),refetchInterval:30000});
   const messages=notifications.data?.pages.flatMap(page=>page.notifications)??[];
+  const [tab,setTab]=useState('all');
+  const visibleMessages=tab==='unread'?messages.filter(n=>!n.readAt):messages;
   async function mark(ids:string[]){
     const pending=operation??{key:crypto.randomUUID(),input:MarkNotificationsRead.parse({ids})};if(!begin())return;
     setMessage('');let committed=false;
@@ -85,10 +95,11 @@ function Inbox({viewer}:{viewer:Member}){
   }
   return <>{event&&<div className="page-actions"><Link to="/inbox">全部待辦</Link><Link to={'/activities/'+encodeURIComponent(event)}>回到活動</Link></div>}
     <PendingOperations viewer={viewer}/>
-    <Surface role="region" className="detail inbox-section" aria-label="目前待辦"><Heading level={2}>目前待辦{todos.data?.eventTitle?' · '+todos.data.eventTitle:''}</Heading>{todos.isPending?<Notice>正在核對待辦…</Notice>:todos.error?<Failure error={todos.error} retry={()=>void todos.refetch()}/>:todos.data.todos.length?<TodoList todos={todos.data.todos}/>:<Text>目前沒有待辦事項。</Text>}<Button variant="secondary" disabled={todos.isFetching} onClick={()=>void todos.refetch()}>重新核對待辦</Button></Surface>
-    <Surface role="region" className="detail inbox-section" aria-label="站內通知"><Heading level={2}>站內通知{notifications.data?' · '+notifications.data.pages[0]!.unreadCount+' 未讀':''}</Heading>
+    <Tabs label="收件匣內容" value={tab} onChange={setTab} items={[{value:'all',label:uiText('全部')},{value:'unread',label:uiText('未讀'),count:notifications.data?.pages[0]?.unreadCount},{value:'todo',label:uiText('待辦'),count:todos.data?.todos.length}]}/>
+    <Surface hidden={tab==='unread'} role="region" className="plain-section inbox-section" aria-label="目前待辦"><Heading level={2}>目前待辦{todos.data?.eventTitle?' · '+todos.data.eventTitle:''}</Heading>{todos.isPending?<Notice>正在核對待辦…</Notice>:todos.error?<Failure error={todos.error} retry={()=>void todos.refetch()}/>:todos.data.todos.length?<TodoList todos={todos.data.todos}/>:<Text>目前沒有待辦事項。</Text>}<Button variant="secondary" disabled={todos.isFetching} onClick={()=>void todos.refetch()}>重新核對待辦</Button></Surface>
+    <Surface hidden={tab==='todo'} role="region" className="plain-section inbox-section" aria-label="站內通知"><Heading level={2}>站內通知{notifications.data?' · '+notifications.data.pages[0]!.unreadCount+' 未讀':''}</Heading>
       <DraftFeedback form={record} navigation={false}/>
       {message&&<Text role="status">{message}</Text>}{operation&&<Notice>有一筆已讀操作的結果待確認。<Button disabled={busy||unavailable} onClick={()=>void mark([])}>確認原已讀操作結果</Button></Notice>}
-      {notifications.isPending?<Notice>正在讀取通知…</Notice>:notifications.error&&!notifications.data?<Failure error={notifications.error} retry={()=>void notifications.refetch()}/>:<>{!messages.length?<Text>尚未收到站內通知。</Text>:<><Button variant="secondary" disabled={locked||!messages.some(n=>!n.readAt)} onClick={()=>void mark(messages.filter(n=>!n.readAt).slice(0,100).map(n=>n.id))}>將已載入的通知標為已讀（最多 100 筆）</Button><ul className="inbox-list">{messages.map(n=><li key={n.id}><Text className="preserve-lines">{n.message}</Text><Text tone="muted">{n.readAt?'已讀':'未讀'} · {n.createdAt.replace('T',' ')}</Text><Link to={'/activities/'+encodeURIComponent(n.eventId)}>查看活動</Link>{!n.readAt&&<Button variant="ghost" disabled={locked} onClick={()=>void mark([n.id])}>標為已讀</Button>}</li>)}</ul></>}{notifications.error&&<Failure error={notifications.error} retry={()=>void (notifications.isFetchNextPageError?notifications.fetchNextPage():notifications.refetch())}/>} {notifications.hasNextPage&&<Button variant="secondary" disabled={notifications.isFetching} onClick={()=>void notifications.fetchNextPage()}>載入更早通知</Button>}</>}
+      {notifications.isPending?<Notice>正在讀取通知…</Notice>:notifications.error&&!notifications.data?<Failure error={notifications.error} retry={()=>void notifications.refetch()}/>:<>{!messages.length?<Text>尚未收到站內通知。</Text>:<><Button variant="secondary" disabled={locked||!messages.some(n=>!n.readAt)} onClick={()=>void mark(messages.filter(n=>!n.readAt).slice(0,100).map(n=>n.id))}>將已載入的通知標為已讀（最多 100 筆）</Button><ul className="notification-list inbox-list">{visibleMessages.map(n=><li className={'notification-item'+(!n.readAt?' unread':'')} key={n.id}><div className="notification-main"><span className="notification-marker">{!n.readAt?<i/>:<span/>}</span><div><div className="notification-title"><Badge>{n.kind}</Badge><Heading level={3} className="preserve-lines">{n.message}</Heading></div><small>{n.readAt?'已讀':'未讀'} · {n.createdAt.replace('T',' ')}</small></div><ChevronRight size={18}/></div><div className="notification-actions"><Link to={'/activities/'+encodeURIComponent(n.eventId)}>查看活動<ArrowRight size={14}/></Link>{!n.readAt&&<Button variant="text" size="sm" disabled={locked} onClick={()=>void mark([n.id])}>標為已讀</Button>}</div></li>)}</ul></>}{notifications.error&&<Failure error={notifications.error} retry={()=>void (notifications.isFetchNextPageError?notifications.fetchNextPage():notifications.refetch())}/>} {notifications.hasNextPage&&<Button variant="secondary" disabled={notifications.isFetching} onClick={()=>void notifications.fetchNextPage()}>載入更早通知</Button>}</>}
     </Surface></>;
 }

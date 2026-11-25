@@ -2,7 +2,7 @@ import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import { durableRows,denyDraftWrites,damageDraft } from './draft-helpers';
 import { readFile } from 'node:fs/promises';
-const origin='http://127.0.0.1:5082',prefix=':room-lab:',calc='**/api/v2/music/rooms/calculate*';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,prefix=':room-lab:',calc='**/api/v2/music/rooms/calculate*';
 test.use({adminCatalog:true,musicRooms:true});
 const button=(p:Page,name:string)=>p.getByRole('button',{name,exact:true}),rooms=(p:Page)=>p.getByRole('region',{name:'分房安排',exact:true});
 async function login(c:BrowserContext,user='alice'){await c.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}

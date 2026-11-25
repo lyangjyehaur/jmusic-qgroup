@@ -1,0 +1,35 @@
+import { useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, Check, ChevronDown, FileClock, MoreHorizontal, QrCode, ReceiptText, RotateCcw, ShieldCheck, WalletCards } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import { Badge, Button, Modal, PageHeader, Tabs, cn, statusTone } from '../components/UI';
+
+export default function LedgerPage() {
+  const { activityId = 'a001' } = useParams();
+  const { activities, bills, ledger, currentUser, declareBill, verifyBill, showToast } = useApp();
+  const activity = activities.find((a) => a.id === activityId);
+  const [tab, setTab] = useState('bills');
+  const [qrOpen, setQrOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const mine = activity?.participants.find((p) => p.userId === currentUser.id);
+  const activityBills = bills.filter((b) => b.activityId === activityId);
+  const myBill = activityBills.find((b) => b.participantId === mine?.id) ?? activityBills.find((b) => b.participantId === 'p002');
+  const isSettler = activity?.organizerId === currentUser.id || activity?.coOrganizerIds.includes(currentUser.id);
+  if (!activity) return null;
+  const pending = activityBills.filter((b) => b.status !== '已結清').reduce((sum, b) => sum + b.due, 0);
+  const received = activityBills.filter((b) => b.status === '已結清').reduce((sum, b) => sum + b.due, 0);
+
+  return <div className="page ledger-page">
+    <PageHeader title="結算與帳本" description={activity.name} back={<Link to={`/activities/${activity.id}`} className="back-link"><ArrowLeft size={18} /><span>返回活動</span></Link>} actions={<><Button variant="secondary" onClick={() => setQrOpen(true)}><QrCode size={16} />收款碼</Button><Button variant="ghost" onClick={() => setHistoryOpen(true)}><FileClock size={16} />版本歷史</Button></>} />
+    <div className="payment-notice"><AlertTriangle size={17} /><p>指定付款人、申報已付或展示收款碼都不代表真實付款完成。所有款項在此均為模擬狀態。</p></div>
+    <section className="my-bill-summary"><div><small>本人應付</small><strong>¥{myBill?.due ?? 0}</strong><span>{myBill?.title ?? '目前無帳單'}</span></div><div>{myBill && <Badge tone={statusTone(myBill.status)} dot>{myBill.status}</Badge>}<p>{myBill?.status === '待核對' ? `已於 ${myBill.declaredAt} 申報，等待核對` : `已核對 ¥${myBill?.status === '已結清' ? myBill.due : 0}・尚未核對 ¥${myBill?.status === '已結清' ? 0 : myBill?.due ?? 0}`}</p></div>{myBill?.status === '待付款' && <Button onClick={() => { declareBill(myBill.id); showToast('付款申報已送出，仍需核對到帳'); }}>申報已付</Button>}{myBill?.status === '待核對' && isSettler && <Button onClick={() => { verifyBill(myBill.id); showToast('已核對款項並結清帳單（模擬）'); }}><Check size={16} />核對到帳</Button>}</section>
+    <div className="ledger-totals"><div><span>帳單總額</span><strong>¥{activityBills.reduce((sum, b) => sum + b.amount, 0)}</strong></div><div><span>已核對收款</span><strong>¥{received}</strong></div><div><span>待補／待核對</span><strong>¥{pending}</strong></div><div><span>待退</span><strong>¥0</strong></div></div>
+    <Tabs value={tab} onChange={setTab} items={[{ value: 'bills', label: '逐人帳單', count: activityBills.length }, { value: 'ledger', label: '款項紀錄', count: ledger.length }, { value: 'items', label: '費用項目' }, { value: 'actions', label: '更多款項操作' }]} />
+    {tab === 'bills' && <section className="tab-panel"><div className="section-title-row"><div><h2>應付帳單與實際款項</h2><p>AA／半 A／免共同費分別計算</p></div><Button size="sm" variant="secondary" onClick={() => showToast('已建立帳單預覽，尚未通知成員')}>建立帳單預覽</Button></div><div className="responsive-table"><table><thead><tr><th>成員</th><th>費用項目</th><th>應付</th><th>申報／核對</th><th>狀態</th><th>操作</th></tr></thead><tbody>{activityBills.map((bill) => { const person = activity.participants.find((p) => p.id === bill.participantId); return <tr key={bill.id}><td><strong>{person?.name}</strong><small>{person?.feeFactor === 0.5 ? '半 A' : person?.feeFactor === 0 ? '免共同費' : 'AA'}</small></td><td>{bill.title}</td><td>¥{bill.due}<small>原帳單 ¥{bill.amount}</small></td><td>{bill.declaredAt ?? '尚未申報'}<small>{bill.method}</small></td><td><Badge tone={statusTone(bill.status)}>{bill.status}</Badge></td><td>{bill.status === '待核對' && isSettler ? <Button size="sm" variant="text" onClick={() => { verifyBill(bill.id); showToast('已核對此筆款項'); }}>核對</Button> : bill.status === '待付款' && bill.id === myBill?.id ? <Button size="sm" variant="text" onClick={() => declareBill(bill.id)}>申報已付</Button> : <span className="muted">—</span>}</td></tr>; })}</tbody></table></div></section>}
+    {tab === 'ledger' && <section className="tab-panel"><div className="section-title-row"><div><h2>款項流水</h2><p>付款申報、收款與更正值不可互相取代</p></div><Button size="sm" variant="secondary" onClick={() => showToast('已記錄一筆模擬收款草稿')}>記錄收款</Button></div><div className="ledger-entry-list">{ledger.map((entry) => <article key={entry.id}><span className={cn('ledger-type', !entry.verified && 'pending')}>{entry.type}</span><div><strong>{entry.person}</strong><p>{entry.note}</p><small>{entry.time}</small></div><strong className={entry.type === '退款' ? 'negative' : ''}>{entry.type === '退款' ? '-' : '+'}¥{entry.amount}</strong><Badge tone={entry.verified ? 'green' : 'amber'}>{entry.verified ? '已核對' : '待核對'}</Badge></article>)}</div></section>}
+    {tab === 'items' && <section className="tab-panel"><div className="section-title-row"><div><h2>費用項目與指定分攤</h2><p>包間消費可另立項目，不混入預估帳單</p></div><Button size="sm" onClick={() => showToast('已新增自訂費用項目草稿')}>新增項目</Button></div>{[['包間基本費', '¥4,080', '6 人 AA・1 人半 A'], ['包間訂金', '¥1,200', '朝霧墊付・待償還'], ['現場飲品（預留）', '¥0', '活動後依實際消費指定分攤']].map((item) => <div className="fee-item" key={item[0]}><ReceiptText size={19} /><span><strong>{item[0]}</strong><small>{item[2]}</small></span><strong>{item[1]}</strong><Button size="sm" variant="text" onClick={() => showToast(`已開啟「${item[0]}」分攤預覽`)}>分攤預覽</Button></div>)}</section>}
+    {tab === 'actions' && <section className="ledger-action-grid">{[['多人合付／代付', '指定實際付款人與代付對象'], ['退款', '建立應退與實際退款紀錄'], ['墊付與償還', '分開記錄墊付人和後續償還'], ['訂金／押金', '保留用途與後續轉費或退回'], ['轉款', '記錄成員間轉移款項'], ['更正／沖銷', '保留原紀錄並建立反向沖銷'], ['結清／重新開啟', '結清帳期或重新開啟待核對項']].map((item) => <button key={item[0]} onClick={() => showToast(`已開啟「${item[0]}」操作預覽（模擬）`)}><strong>{item[0]}</strong><span>{item[1]}</span><MoreHorizontal size={17} /></button>)}</section>}
+    {qrOpen && <Modal title="收款碼（模擬）" description="僅供畫面演示，不連接真實支付帳戶" onClose={() => setQrOpen(false)} footer={<Button onClick={() => setQrOpen(false)}>關閉</Button>}><div className="fake-qr" aria-label="非真實收款碼">{Array.from({ length: 81 }, (_, i) => <i key={i} className={(i * 7 + Math.floor(i / 9) * 3) % 5 < 2 ? 'dark' : ''} />)}</div><div className="inline-alert"><ShieldCheck size={17} />這不是可用的支付 QR Code，掃描不應視為付款依據。</div></Modal>}
+    {historyOpen && <Modal title="帳單版本歷史" description="每次更動保留原始金額與操作原因" onClose={() => setHistoryOpen(false)}><ol className="history-list"><li><i /><span><strong>版本 3・黒猫ハウス 改為全額分攤</strong><small>今天 10:40</small></span></li><li><i /><span><strong>版本 2・加入包間訂金墊付</strong><small>11-23 18:00</small></span></li><li><i /><span><strong>版本 1・建立預估帳單</strong><small>11-20 19:30</small></span></li></ol></Modal>}
+  </div>;
+}

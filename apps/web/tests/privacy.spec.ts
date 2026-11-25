@@ -1,10 +1,11 @@
+import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { denyWrite } from './erasure-test-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, user = 'bob') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function saveMusic(page: Page) {
-  await page.goto('/me/music'); await page.getByRole('button', { name: 'Aimer', exact: true }).click();
+  await page.goto('/me/music'); await toggleMusicTerm(page, 'Aimer');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
 }
 async function confirm(page: Page, label: string, button: string) {
@@ -16,16 +17,16 @@ test('music erasure clears stale drafts in other tabs, retains the account and e
   await login(context); await saveMusic(page);
   const viewer = await (await context.request.get('/api/v2/session')).json();
   const before = await (await context.request.get('/api/v2/me/music', { headers: { 'X-Account-Scope': viewer.scope } })).json();
-  const other = await context.newPage(); await other.goto('/me/music'); await expect(other.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  const other = await context.newPage(); await other.goto('/me/music'); await expectMusicTerm(other, 'Aimer', true);
   await page.goto('/me/accounts'); await page.getByRole('link', { name: '隱私與資料刪除', exact: true }).click();
   await page.setViewportSize({ width: 360, height: 800 });
   await expect(page.getByRole('button', { name: '確認刪除成分', exact: true })).toBeDisabled();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-privacy-mobile.png', fullPage: true });
   await confirm(page, '只刪除成分', '確認刪除成分'); await expect(page.getByRole('heading', { name: '成分已刪除', exact: true })).toBeVisible();
-  await expect(other.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expectMusicTerm(other, 'Aimer', false);
   expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(true);
-  await other.getByRole('button', { name: 'YOASOBI', exact: true }).click(); await other.getByRole('button', { name: '保存我的成分', exact: true }).click();
+  await toggleMusicTerm(other, 'YOASOBI'); await other.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(other.getByText('已保存。', { exact: true })).toBeVisible();
   const after = await (await context.request.get('/api/v2/me/music', { headers: { 'X-Account-Scope': viewer.scope } })).json(); expect(after.id).not.toBe(before.id);
   await other.close();

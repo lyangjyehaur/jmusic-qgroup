@@ -2,7 +2,7 @@ import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import { readFile } from 'node:fs/promises';
-const origin='http://127.0.0.1:5082',prefix=':claim:',startURL='**/api/v2/music/claim/start';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,prefix=':claim:',startURL='**/api/v2/music/claim/start';
 const pinField=(p:Page)=>p.getByLabel('原口令',{exact:true}),submit=(p:Page)=>p.getByRole('button',{name:'驗證原口令',exact:true}),refresh=(p:Page)=>p.getByRole('button',{name:'核對找回狀態',exact:true});
 async function login(c:BrowserContext,user='bob'){await c.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function draft(p:Page){return(await durableRows(p)).find(r=>r.key.includes(prefix)&&r.raw!=='null')!;}

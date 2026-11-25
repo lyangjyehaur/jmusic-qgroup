@@ -3,7 +3,7 @@ import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import sharp from 'sharp';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 function suite(kind:Kind,body:()=>void){test.describe(kind,()=>{test.use({adminCatalog:kind==='catalog',musicShouts:kind==='shouts'});body();});}
 async function login(context:BrowserContext){await context.addCookies([{name:'kanban_session',value:'fixture-registration-admin',url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function auth(context:BrowserContext){const viewer=await(await context.request.get(origin+'/api/v2/session')).json(),access=await(await context.request.get(origin+'/api/v2/admin/session',{headers:{'X-Account-Scope':viewer.scope}})).json();return {viewer,access};}

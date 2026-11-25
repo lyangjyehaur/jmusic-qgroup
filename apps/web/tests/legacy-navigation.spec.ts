@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 import { denyDraftWrites, durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext,id='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+id,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const viewer=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()};}
 async function published(context:BrowserContext){
@@ -42,8 +42,8 @@ test('copy starts an independent draft, clears dates and notification consent, a
   expect((await(await context.request.get('/api/v2/activities/'+id+'/draft',{headers:await headers(context)})).json()).values.botEnabled).toBe(false);await page.goto('/activities/new');await expect(page.getByLabel('活動名稱',{exact:true})).toHaveValue('原本的新活動草稿');
 });
 test('old music hashes and HTML aliases enter native pages; replace redirects preserve back navigation',async({page})=>{
-  await page.goto('/contact');await expect(page.getByRole('heading',{name:'聯絡與投訴',exact:true})).toBeVisible();await page.goto('/music/index.html#rest');await expect(page).toHaveURL('/music?library=all');await expect(page.getByRole('heading',{name:'音樂詞庫',exact:true})).toBeVisible();await page.goBack();await expect(page).toHaveURL('/contact');
-  await page.goto('/music/#event');await expect(page).toHaveURL('/activities?task=rooms');await page.getByRole('link',{name:'分析活動成分',exact:true}).first().click();await expect(page).toHaveURL(/\/tools\/room-lab\?eventId=/);
+  await page.goto('/contact');await expect(page.getByRole('heading',{name:'聯絡與投訴',exact:true})).toBeVisible();await page.goto('/music/index.html#rest');await expect(page).toHaveURL('/music?library=all');await expect(page.getByRole('region',{name:'音樂詞庫',exact:true})).toBeVisible();await page.goBack();await expect(page).toHaveURL('/contact');
+  await page.goto('/music/#event');await expect(page).toHaveURL('/activities?task=rooms');await page.getByRole('link',{name:/^分析活動成分：/}).first().click();await expect(page).toHaveURL(/\/tools\/room-lab\?eventId=/);
   await page.goto('/music/admin.html');await expect(page).toHaveURL('/admin');await page.goto('/music/privacy.html');await expect(page).toHaveURL('/privacy');await expect(page.getByRole('heading',{name:'隱私政策',exact:true})).toBeVisible();
   await page.setViewportSize({width:360,height:800});await page.goto('/contact.html');await expect(page.getByRole('link',{name:'203008876@qq.com',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

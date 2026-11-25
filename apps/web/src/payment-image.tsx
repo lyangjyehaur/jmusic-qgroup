@@ -1,6 +1,7 @@
 import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
-import { Button, Text } from 'yahha-ui';
+import { Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { apiRaw } from './api';
 
 function dataURL(blob: Blob) {

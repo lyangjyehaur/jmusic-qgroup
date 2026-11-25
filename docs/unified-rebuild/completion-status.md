@@ -1,5 +1,9 @@
 # 實作與驗收收斂清單
 
+2026-11-25 原始碼整合：依使用者要求將重構版整合至 main，舊 main 用 `archive/main-before-unified-20261125` 保留完整歷史；來源、同步及仍暫緩的 Docker／正式切換界線見[第 253 批](253-main-integration.md)。以下較早文件的「未合入 main」屬當時狀態，不代表已部署或取得發布批准。
+
+2026-11-25 補註：以下是第 241 批固定來源的歷史驗收結論，不涵蓋其後未提交的 Kimi 接入與 UI 修正。[上線前功能對照](251-prelaunch-feature-parity-audit.md)保留原始問題；後續功能修復與當前來源驗證另見[第 252 批](252-kimi-functional-finish.md)。Docker 依使用者要求暫緩，正式來源及切換尚未執行，不能沿用以下「全部通過」批准當前候選上線。
+
 更新：2026-11-23。**P0–P6 的實作及完整本機驗收已完成：166／166 既有功能與 U01–U03 全部通過。** 任務不包含 P7 正式切換；沒有合併 main、部署或向 QQ 發送消息。發布範圍：`none`。
 
 [第 241 批完整報告](241-complete-local-acceptance.md)記錄最後 O12–O14 與連續恢復／回退／forward；[本機測試指南](local-testing.md)提供可操作預覽。`original_p6_complete=true`；候選尚未合入遠端 main，`release_source_approved=false`、`release_eligible=false`。本機驗收與正式來源批准分開，不以功能通過宣稱可直接發布。

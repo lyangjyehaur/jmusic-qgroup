@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { damageDraft, durableRows } from './draft-helpers';
 import { readFile } from 'node:fs/promises';
-const origin='http://127.0.0.1:5082', confirmation='我已核對目標群、發送模式與重送內容';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, confirmation='我已核對目標群、發送模式與重送內容';
 const activity='/activities/listen/bot-deliveries', poll='/time-polls/poll-exact/bot-deliveries';
 test.use({botDeliveryExamples:true});
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}

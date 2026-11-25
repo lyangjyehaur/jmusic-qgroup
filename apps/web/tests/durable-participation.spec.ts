@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 type Family='lifecycle'|'consent'|'attendance'|'onsite'|'signup'|'manage';
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const viewer=await(await context.request.get(origin+'/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()};}
@@ -33,6 +33,7 @@ async function prepare(page:Page,family:Family,id:string,person:string){
   if(family==='attendance'){await page.locator('#attendance-person').selectOption(person);await page.locator('#attendance-state').selectOption('present');}
   if(family==='onsite'){await page.locator('#attendance-mode').selectOption('onsite');await page.locator('#attendance-reason').fill('現場核對並保留原隊序');}
   if(family==='manage')await page.locator('#registration-person').selectOption(person);
+  if(family==='signup')await page.locator('.registration-person summary').click();
   await page.locator(flow.field).fill('原稿內容');
   if(family==='signup')await page.getByRole('button',{name:'預覽逐人分配',exact:true}).click();
   if(family==='onsite')await page.getByLabel(/^已與現場參加者核對並接受第/).check();
@@ -44,10 +45,15 @@ for(const flow of flows){
     const {id,person}=await setup(context,flow.family);await prepare(page,flow.family,id,person);
     const [before]=await durableRows(page);expect(before).toBeDefined();expect(JSON.parse(before!.raw).pending).toBeUndefined();await page.close();
     const fresh=await context.newPage();await fresh.goto(origin+'/activities/'+id+'/'+flow.path+(flow.family==='onsite'?'?preset=onsite':''));
-    await expect(fresh.locator(flow.field)).toHaveValue('原稿內容');await expect(fresh.locator(flow.field)).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(fresh.locator(flow.field)).toBeEnabled();
+    await expect(fresh.locator(flow.field)).toHaveValue('原稿內容');await expect(fresh.locator(flow.field)).toBeVisible();await expect(fresh.locator(flow.field)).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(fresh.locator(flow.field)).toBeEnabled();
     expect((await durableRows(fresh))[0]!.raw).toBe(before!.raw);
     const checks=fresh.locator('.activity-editor input[type="checkbox"]');for(let i=0;i<await checks.count();i++)await expect(checks.nth(i)).not.toBeChecked();
-    if(flow.family==='signup')await expect(fresh.getByRole('region',{name:'報名預覽',exact:true})).toHaveCount(0);
+    if(flow.family==='signup'){
+      await expect(fresh.getByRole('region',{name:'報名預覽',exact:true})).toHaveCount(0);
+      await expect(fresh.getByRole('button',{name:flow.submit,exact:true})).toHaveCount(0);
+      await fresh.getByRole('button',{name:'預覽逐人分配',exact:true}).click();
+      await expect(fresh.getByLabel(/^已核對第 .* 版安排、費用與逐人分配/)).not.toBeChecked();
+    }
     await expect(fresh.getByRole('button',{name:flow.submit,exact:true})).toBeDisabled();
   });
   test(flow.family+' resolves an uncertain operation from a new-tab inbox with its original UUID and body',async({page,context})=>{

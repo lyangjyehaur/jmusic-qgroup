@@ -1,6 +1,7 @@
+import { toggleMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const baseURL = 'http://127.0.0.1:5082';
+const baseURL = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function adminContext(context: BrowserContext) {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-registration-admin', url: baseURL, httpOnly: true, sameSite: 'Lax' }]);
 }
@@ -43,8 +44,8 @@ test('default closure, administrator confirmation and independent registration r
     await page.goto('/me/accounts'); await expect(page.getByRole('heading', { name: '名稱註冊測試', exact: true })).toBeVisible();
     await expect(page.getByRole('link', { name: '註冊設定', exact: true })).toHaveCount(0);
     await page.goto('/admin/registration'); await expect(page.getByLabel('管理救援憑證', { exact: true })).toBeVisible();
-    await page.goto('/me/music'); await page.getByRole('button', { name: 'Aimer', exact: true }).click();
-    await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
+    await page.goto('/me/music'); await toggleMusicTerm(page, 'Aimer');
+    await page.getByRole('button', { name: '保存詞條變動', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   } finally { await setting(admin, false); await admin.close(); }
 });
 test('an unreadable registration result blocks repeat creation and checks the actual account', async ({ page, browser }) => {

@@ -14,14 +14,14 @@ test('cold activity navigation loads its page without downloading unrelated mana
   await expect(page.getByRole('heading',{name:'活動',exact:true})).toBeVisible();
   expect(scripts.some(path=>/\/activities-[^/]+\.js$/.test(path))).toBe(true);
   expect(scripts.filter(path=>/\/(?:admin-bot|admin-backups|music-rooms|guide)-[^/]+\.js$/.test(path))).toEqual([]);
-  await expect(page.locator('header.header')).toHaveCount(1);
+  await expect(page.getByRole('banner')).toHaveCount(1);
 });
 
 test('a delayed page keeps the existing navigation mounted and starts no room operations before its bundle loads',async({page,context})=>{
-  await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:'http://127.0.0.1:5082',httpOnly:true,sameSite:'Lax'}]);
+  await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);
   await page.goto('/people');
   await expect(page.getByRole('heading',{name:'同好',exact:true})).toBeVisible();
-  await page.locator('header.header').evaluate(node=>node.setAttribute('data-loading-fixture','persisted'));
+  await page.getByRole('banner').evaluate(node=>node.setAttribute('data-loading-fixture','persisted'));
   let release!:()=>void,downloadStarted=false;
   const gate=new Promise<void>(resolve=>{release=resolve;});
   const operations:string[]=[];
@@ -31,12 +31,12 @@ test('a delayed page keeps the existing navigation mounted and starts no room op
     await page.getByRole('link',{name:'自由分房',exact:true}).click();
     await expect.poll(()=>downloadStarted).toBe(true);
     await expect(page.getByRole('status').filter({hasText:'正在載入頁面…'})).toBeVisible();
-    await expect(page.locator('header.header')).toHaveAttribute('data-loading-fixture','persisted');
+    await expect(page.getByRole('banner')).toHaveAttribute('data-loading-fixture','persisted');
     await expect(page.getByRole('navigation',{name:'主要導覽'})).toBeVisible();
     expect(operations).toEqual([]);
     release();
     await expect(page.getByRole('heading',{name:'自由分房',exact:true})).toBeVisible();
-    await expect(page.locator('header.header')).toHaveAttribute('data-loading-fixture','persisted');
+    await expect(page.getByRole('banner')).toHaveAttribute('data-loading-fixture','persisted');
     await expect(page.getByRole('status').filter({hasText:'正在載入頁面…'})).toHaveCount(0);
     expect(operations.every(method=>method==='GET')).toBe(true);
   }finally{release();}

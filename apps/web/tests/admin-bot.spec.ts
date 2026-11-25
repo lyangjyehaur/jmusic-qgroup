@@ -1,7 +1,8 @@
+import { openAdminTool } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { denyDraftWrites, durableRows } from './draft-helpers';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, user = 'registration-admin') {
   await context.addCookies([
     {
@@ -38,7 +39,7 @@ test('administrator edits shared policy, previews templates, retains disabled gr
   await login(context);
   await page.setViewportSize({ width: 360, height: 800 });
   await page.goto('/admin');
-  await page.getByRole('link', { name: 'bot 設定', exact: true }).click();
+  await openAdminTool(page,'bot 設定');
   await page.getByLabel('啟用主動通知', { exact: true }).check();
   await page.getByLabel('發送模式', { exact: true }).selectOption('simulate');
   await page.getByLabel('沿用部署目標群', { exact: true }).uncheck();

@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { PrivacyConsentReceipt } from '@qgroup/contracts';
 import { ApiError } from './api';

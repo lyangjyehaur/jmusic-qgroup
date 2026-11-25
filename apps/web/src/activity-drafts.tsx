@@ -6,7 +6,8 @@ import { requireLegacyAvailable } from './legacy-local-availability';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { z } from 'zod';
 import { ActivityCopy, ActivityArrangementInput, ActivityDraft, ActivityDraftResult } from '@qgroup/contracts';
 import { CreateIntentLookup } from './create-intents';
@@ -16,6 +17,8 @@ import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
+import { Button, Field, PageHeader, Select } from './kimi-ui';
+import { ActionLink } from './action-link';
 
 type Saved = z.infer<typeof ActivityDraft> & {assisted?:boolean};
 type Values = z.infer<typeof ActivityArrangementInput>;
@@ -39,7 +42,7 @@ function DraftList({viewer}:{viewer:Member}){
 }
 export function ActivityDraftPage(){
   const {id}=useParams(),[search]=useSearchParams(),copyId=search.get('copyFrom');
-  return <><PageIntro title={id?'活動草稿':'新增活動草稿'}/><div className="page-actions"><Link to="/me/activities/drafts">活動草稿</Link><Link to="/activities">所有活動</Link></div><MemberAccess>{viewer=>id?<Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>:copyId?<CopyLoader key={viewer.scope+':copy:'+copyId} viewer={viewer} id={copyId}/>:<Editor key={viewer.scope+':new'} viewer={viewer} initial={null}/>}</MemberAccess></>;
+  return <div className="kimi page form-page"><PageHeader title={id?'活動草稿':'新增活動'} back={<Link to="/activities" className="back-link"><ArrowLeft size={18}/><span>所有活動</span></Link>} actions={<ActionLink to="/me/activities/drafts">活動草稿</ActionLink>}/><MemberAccess>{viewer=>id?<Loader key={viewer.scope+':'+id} viewer={viewer} id={id}/>:copyId?<CopyLoader key={viewer.scope+':copy:'+copyId} viewer={viewer} id={copyId}/>:<Editor key={viewer.scope+':new'} viewer={viewer} initial={null}/>}</MemberAccess></div>;
 }
 function CopyLoader({viewer,id}:{viewer:Member;id:string}){
   const probe=useQuery({queryKey:['private',viewer.scope,'activity-copy-local',id],queryFn:async()=>{const saved=await openDraft('qgroup:rebuild:activity-draft:v1:'+viewer.scope+':copy:'+id,viewer.scope);return saved.raw!==null;},refetchOnWindowFocus:false});
@@ -145,7 +148,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
       if(published){void client.invalidateQueries({queryKey:['activities']});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-conditions',result.id]});void client.invalidateQueries({queryKey:['private',viewer.scope,'activity-roster',result.id]});}
     }catch(error){
       if(!active.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);setMessage(errorText(error));}
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,pending:undefined};if(await persist(next))setDraft(next);if(published)setAdvanced(true);setMessage(errorText(error));}
       else setMessage(published?uiText("尚未確認活動安排保存結果。原操作已保留，請按「確認安排操作結果」安全重試。"):uiText("尚未確認活動草稿操作結果。原操作已保留，請按「確認草稿操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
@@ -155,32 +158,44 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   const f=draft.form;const owner=saved?.isOwner??true;
+  const [advanced,setAdvanced]=useState(published);
   return <>{blocker.state==='blocked'&&<Surface role="alert"><Text>仍有活動草稿或待確認操作。</Text><Button onClick={()=>blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={()=>void record.leave()}>保留草稿並離開</Button></Surface>}
     {saved&&<div className="page-actions"><Link to={'/activities/'+encodeURIComponent(saved.id)+'/delegation'}>管理分工</Link></div>}
     {comparison&&saved&&<Comparison saved={saved}/>}
     {draft.legacySource&&<Notice>已帶入舊稿；原保存版本：{draft.legacySource.baseRevision??'未記錄'}。{draft.legacySource.reviewRequired?'請先核對目前安排，輸入仍保留。':''}{draft.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}</Notice>}
     {published&&saved?.assisted&&<Notice>以管理員身分協助修改，必須填寫原因；不授予名單或帳務權限。原退出期限若連動報名截止，會一併連動。</Notice>}
     {published&&saved?.canEdit===false&&<Notice>目前不能修改活動安排；請核對活動狀態與管理權限。</Notice>}
-    <Surface className="detail activity-editor"><form noValidate onSubmit={event=>{event.preventDefault();void submit();}}>
-      <fieldset disabled={locked}><legend className="sr-only">活動安排</legend>
-        <label className="account-field">活動名稱<input required value={f.title} maxLength={120} onChange={e=>edit({title:e.target.value})}/></label>
-        <div className="account-field"><label htmlFor="activity-category">活動類型</label><select id="activity-category" value={f.category} onChange={e=>edit({category:e.target.value})}>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</select></div>
-        <label className="account-field">地點<input required value={f.location} maxLength={240} onChange={e=>edit({location:e.target.value})}/></label>
-        <div className="activity-fields"><label className="account-field">開始時間（台北）<input type="datetime-local" step="1" required value={f.startsAt} onChange={e=>edit({startsAt:e.target.value})}/></label><label className="account-field">報名截止（台北）<input type="datetime-local" step="1" required value={f.deadline} onChange={e=>edit({deadline:e.target.value})}/></label></div>
-        <div className="activity-fields"><label className="account-field">持續時間（小時）<input type="number" min="1" max="24" step="1" required value={f.durationHours} onChange={e=>edit({durationHours:e.target.value})}/></label><label className="account-field">人數上限<input type="number" min="0" max="500" step="1" required value={f.capacity} onChange={e=>edit({capacity:e.target.value})} aria-describedby="capacity-help"/></label><label className="account-field">最低成團人數<input type="number" min="0" max="500" step="1" required value={f.minimumParticipants} onChange={e=>edit({minimumParticipants:e.target.value})}/></label></div><Text id="capacity-help">上限 0 表示不限；最低人數 0 表示不設定成團門檻。</Text>
-        <label className="account-field">活動顯示時區<input value={f.timezone} maxLength={100} placeholder="Asia/Taipei" onChange={e=>edit({timezone:e.target.value})} aria-describedby="timezone-help"/></label><Text id="timezone-help">填寫 IANA 時區或留空。此表單的時間均以台北時間（UTC+08:00）輸入。</Text>
-        <label className="account-field">退出期限（台北）<input type="datetime-local" step="1" value={f.withdrawalDeadline} disabled={!owner||locked} onChange={e=>edit({withdrawalDeadline:e.target.value})} aria-describedby="withdrawal-help"/></label><Text id="withdrawal-help">留空時依報名截止時間；僅發起者可修改。</Text>
-        <div className="account-field"><label htmlFor="activity-visibility">可見性</label><select id="activity-visibility" value={f.visibility} disabled={!owner||locked} onChange={e=>edit({visibility:e.target.value as FormValue['visibility'],botEnabled:e.target.value==='public'?f.botEnabled:false})}><option value="public">公開</option><option value="invitation">邀請可見</option></select></div>
-        <label className="consent"><input type="checkbox" checked={f.botEnabled} disabled={!owner||f.visibility!=='public'||locked} onChange={e=>edit({botEnabled:e.target.checked})}/><span>{published?'同步到 QQ 群':'發布後同步到 QQ 群'}</span></label><Text>{published?'邀請可見活動不能同步到公開群。':'草稿不會發送群通知；邀請可見活動不能同步到公開群。'}</Text>
-        <div className="account-field"><label htmlFor="activity-fee">費用規則</label><textarea id="activity-fee" rows={3} value={f.feePolicy} maxLength={2000} disabled={!owner||locked} onChange={e=>edit({feePolicy:e.target.value})}/></div>
-        <div className="account-field"><label htmlFor="activity-description">活動說明</label><textarea id="activity-description" rows={5} value={f.description} maxLength={6000} onChange={e=>edit({description:e.target.value})}/></div>
-        {saved&&<label className="account-field">{published?'修改原因（重要安排或管理員協助必填）':'修改原因（選填）'}<input value={draft.reason} maxLength={400} onChange={e=>record.change({...draft,reason:e.target.value})}/></label>}
+    <div className="activity-editor"><form className="activity-form" noValidate onSubmit={event=>{event.preventDefault();void submit();}}>
+      <fieldset className="activity-form-fields" disabled={locked}><legend className="sr-only">活動安排</legend>
+      <section className="form-section"><div className="section-heading"><span>01</span><div><h2>基本資料</h2></div></div><div className="form-grid">
+        <Field label="活動名稱" required className="span-2"><input value={f.title} maxLength={120} onChange={e=>edit({title:e.target.value})}/></Field>
+        <Field label="活動類型"><Select value={f.category} onChange={e=>edit({category:e.target.value})}>{categories.map(([value,label])=><option key={value} value={value}>{label}</option>)}</Select></Field>
+        <Field label="可見性"><Select value={f.visibility} disabled={!owner||locked} onChange={e=>edit({visibility:e.target.value as FormValue['visibility'],botEnabled:e.target.value==='public'?f.botEnabled:false})}><option value="public">公開</option><option value="invitation">邀請可見</option></Select></Field>
+        <Field label="地點" required className="span-2"><input value={f.location} maxLength={240} onChange={e=>edit({location:e.target.value})}/></Field>
+        <Field label="活動說明" className="span-2"><textarea id="activity-description" rows={4} value={f.description} maxLength={6000} onChange={e=>edit({description:e.target.value})}/></Field>
+      </div></section>
+      <section className="form-section"><div className="section-heading"><span>02</span><div><h2>時間安排</h2></div></div><div className="form-grid three-cols">
+        <Field label="開始時間（台北）" required><input type="datetime-local" step="1" value={f.startsAt} onChange={e=>edit({startsAt:e.target.value})}/></Field>
+        <Field label="持續時間（小時）" required><input type="number" min="1" max="24" step="1" value={f.durationHours} onChange={e=>edit({durationHours:e.target.value})}/></Field>
+        <Field label="活動顯示時區" hint="時間以台北 UTC+8 輸入；顯示時區可填 IANA 名稱或留空。"><input value={f.timezone} maxLength={100} placeholder="Asia/Taipei" onChange={e=>edit({timezone:e.target.value})}/></Field>
+      </div></section>
+      <section className="form-section"><div className="section-heading"><span>03</span><div><h2>報名與費用</h2></div></div><div className="form-grid registration-grid">
+        <Field label="報名截止（台北）" required><input type="datetime-local" step="1" value={f.deadline} onChange={e=>edit({deadline:e.target.value})}/></Field>
+        <Field label="退出期限（台北）" hint="留空依報名截止時間；僅發起者可修改。"><input type="datetime-local" step="1" value={f.withdrawalDeadline} disabled={!owner||locked} onChange={e=>edit({withdrawalDeadline:e.target.value})}/></Field>
+        <Field label="人數上限" required hint="0 表示不限"><input type="number" min="0" max="500" step="1" value={f.capacity} onChange={e=>edit({capacity:e.target.value})}/></Field>
+        <Field label="最低成團人數" required hint="0 表示不設定門檻"><input type="number" min="0" max="500" step="1" value={f.minimumParticipants} onChange={e=>edit({minimumParticipants:e.target.value})}/></Field>
+        <Field label="費用規則" className="span-2"><textarea id="activity-fee" rows={3} value={f.feePolicy} maxLength={2000} disabled={!owner||locked} onChange={e=>edit({feePolicy:e.target.value})}/></Field>
+      </div></section>
+      <section className={'advanced-section'+(advanced?' open':'')}><button type="button" className="advanced-toggle" aria-expanded={advanced} onClick={()=>setAdvanced(value=>!value)}><span><ChevronDown size={17}/>進階設定</span><small>群同步與修改紀錄</small></button><div hidden={!advanced} className="advanced-content">
+        <label className="switch-row"><span><strong>{published?'同步到 QQ 群':'發布後同步到 QQ 群'}</strong><small>草稿不發送通知；邀請可見活動不能同步到公開群。</small></span><input type="checkbox" aria-label={published?'同步到 QQ 群':'發布後同步到 QQ 群'} checked={f.botEnabled} disabled={!owner||f.visibility!=='public'||locked} onChange={e=>edit({botEnabled:e.target.checked})}/><i/></label>
+        {saved&&<Field label={published?'修改原因（重要安排或管理員協助必填）':'修改原因（選填）'}><input value={draft.reason} maxLength={400} onChange={e=>record.change({...draft,reason:e.target.value})}/></Field>}
+      </div></section>
       </fieldset>
-      <Button type="submit" loading={busy} disabled={alreadyCreated||!!draft.legacySource?.reviewRequired||!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button>
+      <div className="draft-save-bar sticky-save-bar"><Text>{draft.pending?'操作結果待確認':dirty?'有未保存修改':'目前安排已保存'}</Text><Button type="submit" loading={busy} disabled={alreadyCreated||!!draft.legacySource?.reviewRequired||!!readError||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'建立活動草稿'}</Button></div>
     </form>{saved&&saved.canEdit&&!draft.pending&&<Button variant="secondary" disabled={busy||!!readError} onClick={()=>void rebase()}>核對目前安排，保留輸入</Button>}
     {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!!draft.legacySource?.reviewRequired||!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!!draft.legacySource?.reviewRequired||!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
     {message&&<Text role="status">{message}</Text>}{completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
     {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy} onExisting={id=>setLookedUp({id,scope:viewer.scope,intent:draft.clientIntent!,epoch:record.epoch})}/>}
     <DraftFeedback form={record} navigation={false}/>
-    </Surface></>;
+    </div></>;
 }

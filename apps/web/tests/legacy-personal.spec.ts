@@ -5,7 +5,7 @@ import { deflateSync } from 'node:zlib';
 const chunk=(kind:string,payload:Buffer)=>{const data=Buffer.concat([Buffer.from(kind),payload]);let crc=0xffffffff;for(const byte of data){crc^=byte;for(let bit=0;bit<8;bit++)crc=crc&1?(crc>>>1)^0xedb88320:crc>>>1;}const n=Buffer.alloc(4),c=Buffer.alloc(4);n.writeUInt32BE(payload.length);c.writeUInt32BE((crc^0xffffffff)>>>0);return Buffer.concat([n,data,c]);};
 const ihdr=Buffer.alloc(13);ihdr.writeUInt32BE(1);ihdr.writeUInt32BE(1,4);ihdr[8]=8;ihdr[9]=2;const png=Buffer.concat([Buffer.from('89504e470d0a1a0a','hex'),chunk('IHDR',ihdr),chunk('IDAT',deflateSync(Buffer.from([0,255,255,255]))),chunk('IEND',Buffer.alloc(0))]);
 test.use({paymentExamples:true,inboxExamples:true});
-const origin='http://127.0.0.1:5082',image=png.toString('base64');
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,image=png.toString('base64');
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function auth(context:BrowserContext){const s=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':s.scope,'X-CSRF-Token':s.csrf,'Idempotency-Key':crypto.randomUUID()};}
 function original(path:string,data:Record<string,unknown>,method:'POST'|'DELETE'='POST'){const scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex'),requestKey=randomBytes(16).toString('hex'),key='request:'+scope+':'+createHash('sha256').update(method+' '+path+' '+JSON.stringify(data)).digest('hex');return {key,scope,requestKey,path,method,data,status:'pending',at:1234567};}

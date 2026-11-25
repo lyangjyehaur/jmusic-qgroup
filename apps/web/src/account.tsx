@@ -1,14 +1,11 @@
 import { Link, useLocation } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { EmptyState, Heading, Surface, Text } from 'yahha-ui';
+import { EmptyState, Surface } from 'yahha-ui';
 import { Failure, Notice, PageIntro, sessionQuery } from './shared';
-import { ProfileEditor } from './music-editor';
+import { KimiProfileEditor as ProfileEditor } from './kimi-music-editor';
 import { useMusicWorkspace } from './music-selection';
 import { loginLink } from './auth';
-export function MyPage() {
-  const session = useQuery(sessionQuery);
-  return <><PageIntro title="我的" />{session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : session.isPending ? <Notice>正在確認帳號…</Notice> : <Surface className="detail"><Heading level={2}>{session.data.authenticated ? session.data.nickname : '尚未登入'}</Heading>{!session.data.authenticated && !session.data.qqEnabled && !session.data.nameRegistrationEnabled && <Text>目前沒有可用的登入方式。</Text>}<div className="page-actions"><Link to="/me/music">我的成分</Link><Link to="/me/payment-codes">我的收款碼</Link><Link to="/inbox">收件匣</Link><Link to="/admin">管理後台</Link><Link to="/me/appearance">外觀</Link><Link to="/me/app">應用程式</Link>{session.data.authenticated ? <Link to="/me/accounts">帳號</Link> : <Link to={loginLink('/me')}>登入</Link>}</div></Surface>}<div className="page-actions"><Link to="/guide">使用說明</Link><Link to="/privacy">隱私政策</Link><Link to="/contact">聯絡與投訴</Link></div></>;
-}
+export { KimiMePage as MyPage } from './kimi-me';
 export function MyMusic() {
   const location = useLocation();
   const workspace = useMusicWorkspace();

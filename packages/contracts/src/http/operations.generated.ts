@@ -74,7 +74,7 @@ export const HttpOperations = Object.freeze({
   "GET /api/v2/health": Object.freeze({ method: "GET", path: "/api/v2/health", query: null, params: Object.freeze([] as const) } as const),
   "GET /api/v2/me/account-history": Object.freeze({ method: "GET", path: "/api/v2/me/account-history", query: contracts.OptionalPositiveCursorQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/me/accounts": Object.freeze({ method: "GET", path: "/api/v2/me/accounts", query: null, params: Object.freeze([] as const) } as const),
-  "GET /api/v2/me/activities": Object.freeze({ method: "GET", path: "/api/v2/me/activities", query: contracts.PageQuery, params: Object.freeze([] as const) } as const),
+  "GET /api/v2/me/activities": Object.freeze({ method: "GET", path: "/api/v2/me/activities", query: contracts.MyActivitiesQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/me/activity-drafts": Object.freeze({ method: "GET", path: "/api/v2/me/activity-drafts", query: contracts.PageQuery, params: Object.freeze([] as const) } as const),
   "GET /api/v2/me/devices": Object.freeze({ method: "GET", path: "/api/v2/me/devices", query: null, params: Object.freeze([] as const) } as const),
   "GET /api/v2/me/music": Object.freeze({ method: "GET", path: "/api/v2/me/music", query: null, params: Object.freeze([] as const) } as const),

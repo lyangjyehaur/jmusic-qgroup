@@ -1,7 +1,8 @@
+import { chooseOption, expectOption, toggleMusicTerm, openMusicContact } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows, damageDraft } from './draft-helpers';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({ musicMatches: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function auth(context: BrowserContext) { const viewer = await (await context.request.get('/api/v2/session')).json(); return { Origin: origin, 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() }; }
@@ -25,8 +26,8 @@ test('shares current unsaved choices, exact ordered text and optional identities
   await login(context); await inspectCanvas(page); const headers = await auth(context), own = await (await context.request.get('/api/v2/me/music', { headers })).json();
   expect((await context.request.put('/api/v2/me/music/contact', { headers, data: { profileId: own.id, musicEpoch: 0, revision: 0, contactQQ: '123456' } })).status()).toBe(200);
   let writes = 0; page.on('request', request => { if (!['GET','HEAD'].includes(request.method())) writes++; });
-  await page.goto('/me/music'); await page.getByRole('button', { name: '米津玄師', exact: true }).click(); await page.getByLabel('米津玄師喜歡程度', { exact: true }).selectOption('1');
-  await page.getByRole('link', { name: '分享成分', exact: true }).click(); await ready(page);
+  await page.goto('/me/music'); await toggleMusicTerm(page,'米津玄師'); await chooseOption(page,'米津玄師喜歡程度','1');
+  await page.getByRole('tab', { name: '分享圖片', exact: true }).click(); await ready(page);
   await expect(page.getByText('使用目前草稿產生分享，不會自動保存。推薦同好仍依已保存成分計算。', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
   const expected = 'J-POP、動畫歌曲、YOASOBI、ヨルシカ、Aimer、ずっと真夜中でいいのに。、米津玄師';
@@ -36,17 +37,17 @@ test('shares current unsaved choices, exact ordered text and optional identities
   expect(drawn.join('')).not.toMatch(/123456|234567|留言|性別|private-pin|token|csrf/);
   await redraw(page, () => page.getByRole('checkbox', { name: '包含我的聯絡 QQ', exact: true }).check()); expect((await lines(page)).join('')).toContain('123456');
   await redraw(page, () => page.getByRole('checkbox', { name: '包含同好的聯絡 QQ', exact: true }).check()); expect((await lines(page)).join('')).toContain('234567');
-  await redraw(page, () => page.getByLabel('分享推薦排序', { exact: true }).selectOption('familiar')); expect((await lines(page)).join('')).toContain('共同本命'); expect((await lines(page)).join('')).toContain('345678');
+  await redraw(page, () => chooseOption(page,'分享推薦排序','familiar')); expect((await lines(page)).join('')).toContain('共同本命'); expect((await lines(page)).join('')).toContain('345678');
   await redraw(page, () => page.getByRole('checkbox', { name: '包含推薦同好', exact: true }).uncheck()); expect((await lines(page)).join('')).not.toMatch(/共同本命|345678|匹配度/);
-  await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await expect(page.getByLabel('米津玄師喜歡程度', { exact: true })).toHaveValue('1'); expect(writes).toBe(0);
+  await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await expectOption(page,'米津玄師喜歡程度','1'); expect(writes).toBe(0);
 });
 test('downloads a real complete PNG, supports dark rendering and revokes replaced image URLs', async ({ page, context }) => {
-  await login(context); await inspectCanvas(page); await page.goto('/me/music/share'); await ready(page);
+  await login(context); await inspectCanvas(page); await page.goto('/me/music/share'); await ready(page);await redraw(page,()=>chooseOption(page,'圖片配色','light'));
   let download = page.waitForEvent('download'); await page.getByRole('link', { name: '下載圖片', exact: true }).click(); const light = await download; expect(light.suggestedFilename()).toBe('我的音樂成分.png'); await light.saveAs('test-results/unified-music-share-light.png');
   const size = await image(page).evaluate((element: HTMLImageElement) => ({ width: element.naturalWidth, height: element.naturalHeight })); expect(size.width).toBe(1440); expect(size.height).toBeGreaterThan(1000);
   expect((await lines(page)).filter(value => ['J-POP','動畫歌曲','YOASOBI','ヨルシカ','Aimer','ずっと真夜中でいいのに。'].includes(value))).toHaveLength(6);
-  await redraw(page, () => page.getByLabel('圖片配色', { exact: true }).selectOption('dark'));
-  const pixel = await image(page).evaluate((element: HTMLImageElement) => { const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1; const context = canvas.getContext('2d')!; context.drawImage(element,0,0); return [...context.getImageData(0,0,1,1).data]; }); expect(pixel).toEqual([23,30,40,255]);
+  await redraw(page, () => chooseOption(page,'圖片配色','dark'));
+  const pixel = await image(page).evaluate((element: HTMLImageElement) => { const canvas = document.createElement('canvas'); canvas.width = 1; canvas.height = 1; const context = canvas.getContext('2d')!; context.drawImage(element,0,0); return [...context.getImageData(0,0,1,1).data]; }); expect(pixel).toEqual([45,68,52,255]);
   download = page.waitForEvent('download'); await page.getByRole('link', { name: '下載圖片', exact: true }).click(); await (await download).saveAs('test-results/unified-music-share-dark.png');
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click();
   await expect(page).toHaveURL('/me/music');
@@ -84,7 +85,7 @@ test('canvas and blob failures retain the full text export and offer a working i
 });
 test('metadata failures remove the old preview, keep local copying and recover without a write', async ({ page, context }) => {
   await login(context); await inspectCanvas(page); let failed = false; await page.route('**/api/v2/me/music/share?*', route => failed ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'READ_FAILURE', message: '分享資料暫時無法讀取' }) }) : route.continue());
-  await page.goto('/me/music/share'); await ready(page); failed = true; await page.getByLabel('分享推薦排序', { exact: true }).selectOption('familiar'); await expect(page.getByRole('alert')).toContainText('分享資料暫時無法讀取'); await expect(image(page)).toHaveCount(0); await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('已複製詞條清單。', { exact: true })).toBeVisible();
+  await page.goto('/me/music/share'); await ready(page); failed = true; await chooseOption(page,'分享推薦排序','familiar'); await expect(page.getByRole('alert')).toContainText('分享資料暫時無法讀取'); await expect(image(page)).toHaveCount(0); await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('已複製詞條清單。', { exact: true })).toBeVisible();
   await page.unroute('**/api/v2/me/music/share?*'); await page.getByRole('button', { name: '重新讀取', exact: true }).click(); await ready(page);
 });
 test('late share metadata cannot cross an account switch and delayed PNG conversion cannot survive logout', async ({ page, context }) => {
@@ -101,7 +102,7 @@ test('late share metadata cannot cross an account switch and delayed PNG convers
 });
 test('supports a first unsaved profile and preserves pending or damaged draft recovery instead of exporting a fallback', async ({ page, context }) => {
   await login(context, 'auth-owner'); await inspectCanvas(page); await page.goto('/me/music/share'); await expect(page.getByText('尚未選擇可分享的詞條', { exact: false })).toBeVisible();
-  await page.getByRole('link', { name: '選擇成分', exact: true }).click(); await page.getByRole('button', { name: 'YOASOBI', exact: true }).click(); await page.getByRole('link', { name: '分享成分', exact: true }).click(); await ready(page); expect((await lines(page)).join('')).toContain('1 項 · 目前草稿'); expect((await lines(page)).join('')).not.toContain('成分 ID');
+  await page.getByRole('link', { name: '選擇成分', exact: true }).click(); await toggleMusicTerm(page,'YOASOBI'); await page.getByRole('tab', { name: '分享圖片', exact: true }).click(); await ready(page); expect((await lines(page)).join('')).toContain('1 項 · 目前草稿'); expect((await lines(page)).join('')).not.toContain('成分 ID');
   await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
   const row=(await durableRows(page)).find(row=>row.key.includes('music:v1:'))!, draft=JSON.parse(row.raw);draft.requestKey=crypto.randomUUID();
   await damageDraft(page,'music:v1:',JSON.stringify(draft)); page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByText('成分保存結果尚未確認，請回到我的成分確認結果。', { exact: true })).toBeVisible(); await expect(image(page)).toHaveCount(0);
@@ -110,7 +111,7 @@ test('supports a first unsaved profile and preserves pending or damaged draft re
 test('erasure removes prior images and rebuilt drafts use a fresh epoch; mobile controls remain legible', async ({ page, context }) => {
   await login(context); await inspectCanvas(page); await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/me/music/share'); await ready(page); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-music-share-mobile.png', fullPage: true });
   const privacy = await context.newPage(); await privacy.goto('/me/privacy'); await privacy.getByRole('radio', { name: '只刪除成分', exact: true }).check(); await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click(); await expect(image(page)).toHaveCount(0); await expect(page.getByRole('link', { name: '選擇成分', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '選擇成分', exact: true }).click(); await page.getByRole('button', { name: 'Aimer', exact: true }).click(); await page.getByRole('link', { name: '分享成分', exact: true }).click(); await ready(page); expect((await lines(page)).join('')).not.toMatch(/我的成分|共同最多/); expect((await lines(page)).join('')).toContain('Aimer'); await privacy.close();
+  await page.getByRole('link', { name: '選擇成分', exact: true }).click(); await toggleMusicTerm(page,'Aimer'); await page.getByRole('tab', { name: '分享圖片', exact: true }).click(); await ready(page); expect((await lines(page)).join('')).not.toMatch(/我的成分|共同最多/); expect((await lines(page)).join('')).toContain('Aimer'); await privacy.close();
 });
 
 test('renders all 20 choices with long grapheme names, keeps full copy text and bounds every image line', async ({ page, context }) => {
@@ -123,7 +124,7 @@ test('renders all 20 choices with long grapheme names, keeps full copy text and 
   const drawn = await lines(page); expect(drawn).toContain('20 項 · 已保存成分'); expect(drawn).toContain('領域 · 5 項'); expect(drawn).toContain('細分 · 15 項');
   for (const pick of selections) expect(drawn.some(line => line.startsWith(pick.entryId + '👩🏽‍🎤'))).toBe(true);
   const rows = await page.evaluate(() => (window as unknown as { shareDraws: { text: string; x: number; y: number; width: number }[] }).shareDraws);
-  expect(rows.every(row => row.x + row.width <= 672)).toBe(true); expect(rows.every((row, i) => i === 0 || row.y > rows[i - 1]!.y)).toBe(true);
+  expect(rows.every(row => row.x + row.width <= 672)).toBe(true); expect(rows.every((row,i)=>rows.slice(0,i).filter(previous=>previous.x===row.x).every(previous=>previous.y<row.y))).toBe(true);
   const download = page.waitForEvent('download'); await page.getByRole('link', { name: '下載圖片', exact: true }).click(); await (await download).saveAs('test-results/unified-music-share-full.png');
 });
 test('a failed native share cannot start a fallback download after the account has logged out', async ({ page, context }) => {
@@ -140,20 +141,20 @@ test('cross-tab edits refresh share identity and contact without ever drawing th
   const editor = await context.newPage(); await editor.goto('/me/music/details'); await editor.getByLabel('成分稱呼', { exact: true }).fill('分享用新稱呼'); await editor.getByLabel('私人留言', { exact: true }).fill('不可匯出私人留言');
   await editor.getByRole('button', { name: '保存成分資料', exact: true }).click(); await expect(editor.getByText('成分資料已保存。', { exact: true })).toBeVisible();
   await expect.poll(async () => (await lines(page))[1]).toBe('分享用新稱呼'); await expect(image(page)).not.toHaveAttribute('src', old!); expect((await lines(page)).join('')).not.toMatch(/不可匯出|不可外洩性別/);
-  await editor.getByRole('link', { name: '聯絡 QQ', exact: true }).click(); await editor.getByLabel('聯絡 QQ', { exact: true }).fill('556677'); await editor.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(editor.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
+  await openMusicContact(editor); await editor.getByLabel('聯絡 QQ', { exact: true }).fill('556677'); await editor.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(editor.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   await expect(page.getByRole('checkbox', { name: '包含我的聯絡 QQ', exact: true })).toBeEnabled(); await redraw(page, () => page.getByRole('checkbox', { name: '包含我的聯絡 QQ', exact: true }).check()); expect((await lines(page)).join('')).toContain('556677'); await editor.close();
 });
 
 test('recommendations and sharing reuse the original saved sort preference with URL override and blocked-storage recovery', async ({ page, context }) => {
   await login(context); await inspectCanvas(page); await page.addInitScript(() => { if (!sessionStorage.getItem('share-pref-seeded')) { localStorage.setItem('jpm.matchSort', 'familiar'); sessionStorage.setItem('share-pref-seeded', '1'); } });
-  await page.goto('/people'); await expect(page.getByLabel('排序', { exact: true })).toHaveValue('familiar');
-  await page.goto('/me/music/share'); await ready(page); await expect(page.getByLabel('分享推薦排序', { exact: true })).toHaveValue('familiar'); expect((await lines(page)).join('')).toContain('共同本命');
-  await page.goto('/me/music/share?sort=rare'); await ready(page); await expect(page.getByLabel('分享推薦排序', { exact: true })).toHaveValue('rare');
-  await redraw(page, () => page.getByLabel('分享推薦排序', { exact: true }).selectOption('familiar')); await redraw(page, () => page.getByLabel('分享推薦排序', { exact: true }).selectOption('rare'));
-  await page.goto('/people'); await expect(page.getByLabel('排序', { exact: true })).toHaveValue('rare');
+  await page.goto('/people'); await expectOption(page,'排序','familiar');
+  await page.goto('/me/music/share'); await ready(page); await expectOption(page,'分享推薦排序','familiar'); expect((await lines(page)).join('')).toContain('共同本命');
+  await page.goto('/me/music/share?sort=rare'); await ready(page); await expectOption(page,'分享推薦排序','rare');
+  await redraw(page, () => chooseOption(page,'分享推薦排序','familiar')); await redraw(page, () => chooseOption(page,'分享推薦排序','rare'));
+  await page.goto('/people'); await expectOption(page,'排序','rare');
   await page.evaluate(() => { Object.defineProperty(window, 'localStorage', { configurable: true, get() { throw new DOMException('Denied'); } }); });
-  await page.getByLabel('排序', { exact: true }).selectOption('familiar'); await expect(page).toHaveURL('/people?sort=familiar');
-  await page.getByRole('navigation').getByRole('link', { name: '我的', exact: true }).click(); await page.getByRole('link', { name: '我的成分', exact: true }).click(); await page.getByRole('link', { name: '分享成分', exact: true }).click(); await ready(page); await expect(page.getByLabel('分享推薦排序', { exact: true })).toHaveValue('rare');
+  await chooseOption(page,'排序','familiar'); await expect(page).toHaveURL('/people?sort=familiar');
+  await page.getByRole('navigation',{name:'主要導覽',exact:true}).getByRole('link', { name: '我的', exact: true }).click(); await page.getByRole('link', { name: '編輯我的成分', exact: true }).click(); await page.getByRole('tab', { name: '分享圖片', exact: true }).click(); await ready(page); await expectOption(page,'分享推薦排序','rare');
 });
 
 test('a stalled native PNG conversion still produces the latest valid image and ignores late callbacks', async ({ page, context }) => {

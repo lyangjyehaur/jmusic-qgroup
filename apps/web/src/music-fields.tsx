@@ -4,7 +4,8 @@ import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { Button, Field, Select } from './kimi-ui';
 import { z } from 'zod';
 import { MusicFields, SaveMusicFields } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -23,7 +24,7 @@ function draftFor(fields: Fields, epoch: number): DraftValue {
 }
 const valueOf = (draft: DraftValue) => ({ profileId: draft.profileId, musicEpoch: draft.musicEpoch, revision: draft.revision, name: draft.name, note: draft.note, gender: draft.genderChoice === 'custom' ? draft.genderCustom : draft.genderChoice, genderPublic: draft.genderPublic });
 export function MusicFieldsPage() {
-  return <><PageIntro title="成分資料" /><div className="page-actions"><Link to="/me/music">回到我的成分</Link><Link to="/me/music/contact">聯絡 QQ</Link></div><MusicMemberAccess purpose={uiText("編輯成分資料")}>{viewer => <Loader key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
+  return <><PageIntro title="成分資料" /><div className="page-actions"><Link to="/me/music">回到我的成分</Link></div><MusicMemberAccess purpose={uiText("編輯成分資料")}>{viewer => <Loader key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess></>;
 }
 function Loader({ viewer }: { viewer: Member }) {
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-fields', viewer.musicEpoch], queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/fields', {}), refetchOnWindowFocus: false });
@@ -76,14 +77,14 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
   }
   return <>
     {comparison && <Surface aria-label="目前已保存的成分資料"><h2>目前已保存的成分資料</h2><dl><dt>成分稱呼</dt><dd>{saved.name}</dd><dt>性別</dt><dd>{saved.gender === 'female' ? '女' : saved.gender === 'male' ? '男' : saved.gender || '不填'} · {saved.genderPublic ? '公開' : '不公開'}</dd><dt>私人留言</dt><dd>{saved.note || '未填寫'}</dd></dl></Surface>}
-    <Surface className="detail auth-panel"><form onSubmit={event => { event.preventDefault(); void save(); }}>
-      <label className="account-field">成分稱呼<input value={draft.name} maxLength={Math.max(32, initial.name.length)} disabled={locked} onChange={event => edit({ name: event.target.value })} aria-describedby="music-name-help" /></label><Text id="music-name-help">1–16 字。可與帳號稱呼不同；修改不影響活動名冊或帳務。</Text>
-      <div className="account-field"><label htmlFor="music-gender">性別</label><select id="music-gender" value={draft.genderChoice} disabled={locked} onChange={event => { const choice = GenderChoice.parse(event.target.value); edit({ genderChoice: choice, genderPublic: choice ? draft.genderPublic : false }); }}><option value="">不填</option><option value="female">女</option><option value="male">男</option><option value="custom">自訂</option></select></div>
-      {draft.genderChoice === 'custom' && <label className="account-field">自訂性別<input value={draft.genderCustom} maxLength={Math.max(24, initial.gender.length)} disabled={locked} onChange={event => edit({ genderCustom: event.target.value })} /></label>}
+    <div className="settings-grid music-profile-settings"><section className="form-section"><div className="section-heading"><span>ID</span><div><h2>固定成分資料</h2></div></div><dl className="inline-definitions"><div><dt>成分 ID</dt><dd>{saved.profileId}</dd></div><div><dt>成分稱呼</dt><dd>{saved.name}</dd></div></dl><div className="settings-navigation"><Link to="/me/music/contact">聯絡 QQ</Link></div></section><Surface className="form-section"><div className="section-heading"><span>資料</span><div><h2>資料與可見性</h2></div></div><form onSubmit={event => { event.preventDefault(); void save(); }}>
+      <Field label="成分稱呼"><input value={draft.name} maxLength={Math.max(32, initial.name.length)} disabled={locked} onChange={event => edit({ name: event.target.value })} aria-describedby="music-name-help" /></Field><Text id="music-name-help">1–16 字。可與帳號稱呼不同；修改不影響活動名冊或帳務。</Text>
+      <Field label="性別"><Select id="music-gender" value={draft.genderChoice} disabled={locked} onChange={event => { const choice = GenderChoice.parse(event.target.value); edit({ genderChoice: choice, genderPublic: choice ? draft.genderPublic : false }); }}><option value="">不填</option><option value="female">女</option><option value="male">男</option><option value="custom">自訂</option></Select></Field>
+      {draft.genderChoice === 'custom' && <Field label="自訂性別"><input value={draft.genderCustom} maxLength={Math.max(24, initial.gender.length)} disabled={locked} onChange={event => edit({ genderCustom: event.target.value })} /></Field>}
       <label className="consent"><input type="checkbox" checked={draft.genderPublic} disabled={locked || !draft.genderChoice} onChange={event => edit({ genderPublic: event.target.checked })} /><span>在成分卡公開性別</span></label><Text>未公開的性別不會提供給其他成分會員。</Text>
-      <div className="account-field"><label htmlFor="music-private-note">私人留言</label><textarea id="music-private-note" rows={3} maxLength={Math.max(280, initial.note.length)} value={draft.note} disabled={locked} onChange={event => edit({ note: event.target.value })} aria-describedby="music-note-help" /></div><Text id="music-note-help">最多 140 字，可清空。成分會員的所選排序推薦首位可顯示你的留言；成分卡與比較頁僅對預設排序將你列為首位的會員顯示。資料較少的推薦不顯示留言。</Text>
+      <Field label="私人留言"><textarea id="music-private-note" rows={3} maxLength={Math.max(280, initial.note.length)} value={draft.note} disabled={locked} onChange={event => edit({ note: event.target.value })} aria-describedby="music-note-help" /></Field><Text id="music-note-help">最多 140 字，可清空。成分會員的所選排序推薦首位可顯示你的留言；成分卡與比較頁僅對預設排序將你列為首位的會員顯示。資料較少的推薦不顯示留言。</Text>
       <Button type="submit" loading={busy} disabled={!dirty || unavailable}>{draft.pending ? '確認成分資料結果' : '保存成分資料'}</Button>
     </form>{dirty && !draft.pending && <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前成分資料，保留輸入</Button>}
       {message && <Text role="status">{message}</Text>}<DraftFeedback form={record}/>
-    </Surface></>;
+    </Surface></div></>;
 }

@@ -32,7 +32,7 @@ async function host(){
       await new Promise(resolve=>setTimeout(resolve,25));
       const gate=gates.get(path);if(gate){gate.reached=true;await gate.promise;}
       if(state.failPath===path){response.writeHead(503,{'Content-Type':'text/plain','Cache-Control':'no-store'});response.end('Synthetic asset unavailable');return;}
-      const upstream=await fetch('http://127.0.0.1:5082'+path,{headers:{'Accept-Encoding':'identity'},signal:AbortSignal.timeout(10000)});
+      const upstream=await fetch(`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`+path,{headers:{'Accept-Encoding':'identity'},signal:AbortSignal.timeout(10000)});
       for(const [key,value] of upstream.headers)if(!['content-length','content-encoding','transfer-encoding','connection'].includes(key))response.setHeader(key,value);
       const bytes=Buffer.from(await upstream.arrayBuffer());state.bytes+=bytes.length;response.statusCode=upstream.status;response.end(bytes);
     }catch{response.writeHead(502,{'Content-Type':'text/plain','Cache-Control':'no-store'});response.end('Synthetic upstream unavailable');}

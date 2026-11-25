@@ -1,7 +1,8 @@
+import { openAdminTool } from './kimi-controls';
 import { test,expect } from './fixtures';
 import { denyWrite } from './erasure-test-helpers';
 import type { BrowserContext,Page } from '@playwright/test';
-const origin='http://127.0.0.1:5082',bob='m_'+'b'.repeat(32),orphan='m_'+'c'.repeat(32);
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,bob='m_'+'b'.repeat(32),orphan='m_'+'c'.repeat(32);
 test.use({adminCatalog:true});
 async function login(context:BrowserContext,user='registration-admin'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 const review=(page:Page)=>page.getByRole('region',{name:'刪除範圍核對',exact:true});
@@ -13,7 +14,7 @@ test('profile-free administrators navigate to removal, review exact scope and re
   const catalog=await (await context.request.get('/api/v2/music/catalog')).json();expect(catalog.entries.find((e:any)=>e.id==='sub-1')).toMatchObject({creatorName:'',count:1});
 });
 test('full reset requires its own confirmation, works at 360px and preserves activities and logged-in accounts',async({page,context})=>{
-  await login(context);await page.setViewportSize({width:360,height:800});await page.goto('/admin');await page.getByRole('link',{name:'重置成分與詞庫',exact:true}).click();
+  await login(context);await page.setViewportSize({width:360,height:800});await page.goto('/admin');await openAdminTool(page,'重置成分與詞庫');
   await expect(review(page)).toContainText('3 份成分 · 7 項選擇');await expect(review(page)).toContainText('22 個詞條將刪除');await page.getByLabel('輸入 RESET 確認',{exact:true}).fill('DELETE');await expect(page.getByRole('button',{name:'重置成分與詞庫',exact:true})).toBeDisabled();
   expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'test-results/unified-admin-music-reset-mobile.png',fullPage:true});await confirm(page,true);
   await expect(page.getByText('已刪除 3 份成分、22 個詞條。',{exact:true})).toBeVisible();await page.goto('/activities');await expect(page.getByRole('link',{name:'週末一起聽日系音樂',exact:true})).toBeVisible();

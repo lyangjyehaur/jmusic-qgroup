@@ -1,0 +1,78 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, ArrowUpRight, Check, Download, Image, Music2, Plus, RotateCcw, Save, Search, Share2, Trash2, UserRound, X } from 'lucide-react';
+import { useApp, mockService } from '../services/AppStore';
+import type { Familiarity, Term } from '../types';
+import { Badge, Button, CopyButton, Field, Modal, PageHeader, SearchInput, Select, Tabs, cn } from '../components/UI';
+
+const familiarityOptions: Familiarity[] = ['本命', '常聽', '聽過一些', '只聽過幾首'];
+
+export default function MyMusicPage() {
+  const { terms, currentUser, savedSelections, draftSelections, setDraftSelections, saveSelections, updateUser, saveTerm, deleteTerm, showToast } = useApp();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') ?? 'edit';
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState('');
+  const [addQuery, setAddQuery] = useState('');
+  const [termEditor, setTermEditor] = useState<Term | 'new' | null>(null);
+  const dirty = JSON.stringify(savedSelections) !== JSON.stringify(draftSelections);
+  const selectedTerms = draftSelections.map((selection) => ({ selection, term: terms.find((t) => t.id === selection.termId) })).filter((item) => item.term) as { selection: { termId: string; familiarity: Familiarity }; term: Term }[];
+  const domainCount = selectedTerms.filter((item) => item.term.kind === '領域').length;
+  const subCount = selectedTerms.length - domainCount;
+
+  useEffect(() => {
+    const handler = (event: BeforeUnloadEvent) => { if (dirty) { event.preventDefault(); event.returnValue = ''; } };
+    window.addEventListener('beforeunload', handler);
+    return () => window.removeEventListener('beforeunload', handler);
+  }, [dirty]);
+
+  const save = async () => {
+    setSaving(true); setSaveError('');
+    try { await mockService.write(draftSelections); saveSelections(draftSelections); showToast('我的音樂成分已保存'); }
+    catch { setSaveError('保存未完成，選擇與熟悉度原稿仍保留。'); }
+    finally { setSaving(false); }
+  };
+  const remove = (id: string) => setDraftSelections(draftSelections.filter((s) => s.termId !== id));
+  const setFamiliarity = (id: string, familiarity: Familiarity) => setDraftSelections(draftSelections.map((s) => s.termId === id ? { ...s, familiarity } : s));
+  const add = (term: Term) => {
+    if (draftSelections.some((s) => s.termId === term.id)) return;
+    if ((term.kind === '領域' && domainCount >= 5) || (term.kind === '細分' && subCount >= 15)) { showToast('已達此類型的選擇上限', 'error'); return; }
+    setDraftSelections([...draftSelections, { termId: term.id, familiarity: '常聽' }]); setAddQuery('');
+  };
+  const addResults = useMemo(() => addQuery.trim() ? terms.filter((t) => `${t.name}${t.aliases.join('')}${t.reading}`.toLowerCase().includes(addQuery.toLowerCase()) && !draftSelections.some((s) => s.termId === t.id)).slice(0, 6) : [], [addQuery, terms, draftSelections]);
+  const myTerms = terms.filter((term) => term.creator === currentUser.name);
+
+  return <div className="page my-music-page">
+    <PageHeader title="我的成分" description="最多 5 個領域、15 個細分，合計 20 個" actions={<Link to="/music"><Button variant="secondary"><Search size={16} />探索詞條</Button></Link>} back={<Link to="/music" className="back-link"><ArrowLeft size={18} /><span>音樂詞庫</span></Link>} />
+    <Tabs value={tab} onChange={(value) => setParams(value === 'edit' ? {} : { tab: value })} items={[{ value: 'edit', label: '成分編輯' }, { value: 'profile', label: '成分資料' }, { value: 'terms', label: '我的詞條', count: myTerms.length }, { value: 'share', label: '分享圖片' }, { value: 'trends', label: '音樂趨勢' }]} />
+
+    {tab === 'edit' && <>
+      {saveError && <div className="inline-alert error"><AlertTriangle size={17} />{saveError}<Button size="sm" variant="secondary" onClick={save}>重試保存</Button></div>}
+      <div className="selection-layout"><section className="selection-workspace"><div className="selection-toolbar"><div><h2>已選詞條</h2><p>熟悉度會用於同好排序與共同喜好比較</p></div><div className="selection-limits"><span className={domainCount >= 5 ? 'at-limit' : ''}>領域 <strong>{domainCount}</strong>/5</span><span className={subCount >= 15 ? 'at-limit' : ''}>細分 <strong>{subCount}</strong>/15</span></div></div>
+        <div className="quick-add"><SearchInput value={addQuery} onChange={setAddQuery} placeholder="直接搜尋並加入詞條" />{addResults.length > 0 && <div className="quick-add-results">{addResults.map((term) => <button key={term.id} onClick={() => add(term)}><Plus size={14} /><span>{term.name}</span><Badge>{term.kind}</Badge><small>{term.category}</small></button>)}</div>}</div>
+        <div className="selection-groups">{familiarityOptions.map((familiarity) => { const items = selectedTerms.filter((item) => item.selection.familiarity === familiarity); return <section className="familiarity-group" key={familiarity}><header><h3>{familiarity}</h3><span>{items.length}</span></header>{items.length ? items.map(({ term }) => <div className="selection-row" key={term.id}><div className="selection-term"><Badge tone={term.kind === '領域' ? 'green' : 'neutral'}>{term.kind}</Badge><Link to={`/music/term/${term.id}`}>{term.name}</Link><small>{term.category}</small></div><Select value={familiarity} onChange={(e) => setFamiliarity(term.id, e.target.value as Familiarity)} aria-label={`${term.name} 熟悉度`}>{familiarityOptions.map((option) => <option key={option}>{option}</option>)}</Select><button className="remove-selection" onClick={() => remove(term.id)} aria-label={`移除 ${term.name}`}><X size={16} /></button></div>) : <p className="empty-group">將詞條的熟悉度設為「{familiarity}」後會歸入此處。</p>}</section>; })}</div>
+      </section><aside className="selection-summary"><div className="summary-count"><strong>{selectedTerms.length}</strong><span>/ 20 項</span></div><div className="limit-bar"><i style={{ width: `${selectedTerms.length / 20 * 100}%` }} /></div><dl><div><dt>領域</dt><dd>{domainCount} / 5</dd></div><div><dt>細分</dt><dd>{subCount} / 15</dd></div><div><dt>本命</dt><dd>{selectedTerms.filter((i) => i.selection.familiarity === '本命').length}</dd></div></dl><div className="selection-preview-tags">{selectedTerms.slice(0, 6).map(({ term }) => <span key={term.id}>{term.name}</span>)}{selectedTerms.length > 6 && <small>另 {selectedTerms.length - 6} 項</small>}</div><Button onClick={save} loading={saving} disabled={!dirty}><Save size={16} />{dirty ? '保存成分' : '已保存'}</Button>{dirty && <Button variant="text" onClick={() => setDraftSelections(savedSelections)}><RotateCcw size={14} />還原未保存修改</Button>}<p>選擇與熟悉度會在切換詞庫、詳情及同好頁時保留。</p></aside></div>
+      <div className="mobile-selection-save"><span>{dirty ? '有未保存修改' : '成分已保存'}・{selectedTerms.length}/20</span><Button size="sm" onClick={save} loading={saving} disabled={!dirty}>保存</Button></div>
+    </>}
+
+    {tab === 'profile' && <div className="profile-music-grid"><section className="form-section"><div className="section-heading"><span>ID</span><div><h2>固定成分資料</h2><p>用於查詢、分享與找回舊成分</p></div></div><dl className="review-list"><div><dt>固定成分 ID</dt><dd className="copy-value">{currentUser.profileId}<CopyButton value={currentUser.profileId} /></dd></div><div><dt>聯絡 QQ（虛構）</dt><dd className="copy-value">{currentUser.qq}<CopyButton value={currentUser.qq} /></dd></div><div><dt>站內稱呼</dt><dd>{currentUser.name}</dd></div></dl><div className="inline-alert"><UserRound size={17} />成分 ID 不會因修改稱呼而改變；QQ 僅為虛構示例。</div></section><section className="form-section"><div className="section-heading"><span>隱私</span><div><h2>可見性</h2><p>同好卡只顯示你授權的資料</p></div></div>{([['messageVisible', '留言'], ['genderVisible', '性別'], ['qqVisible', '聯絡 QQ']] as const).map(([key, label]) => <label className="switch-row" key={key}><span><strong>{label}可見</strong><small>僅在同好卡與成分比較中顯示</small></span><input type="checkbox" checked={currentUser[key]} onChange={(e) => { updateUser(currentUser.id, { [key]: e.target.checked }); showToast(`已更新${label}可見性`); }} /><i /></label>)}<Field label="公開留言"><textarea rows={3} value={currentUser.message ?? ''} onChange={(e) => updateUser(currentUser.id, { message: e.target.value })} placeholder="給同好的簡短留言" /></Field><Button variant="secondary" onClick={() => showToast('已提交舊成分找回申請（模擬）')}><RotateCcw size={15} />找回舊成分</Button></section></div>}
+
+    {tab === 'terms' && <section className="tab-panel"><div className="section-title-row"><div><h2>我的詞條</h2><p>建立或維護社群詞庫；刪除會同步移除選擇</p></div><Button onClick={() => setTermEditor('new')}><Plus size={16} />建立詞條</Button></div><div className="my-term-list">{myTerms.map((term) => <div key={term.id}><span><strong>{term.name}</strong><small>{term.kind}・{term.category}・{term.users} 人選用</small></span><Button variant="text" size="sm" onClick={() => setTermEditor(term)}>修改</Button><Button variant="text" size="sm" onClick={() => { if (window.confirm(`確定刪除「${term.name}」？此操作會移除相關選擇。`)) { deleteTerm(term.id); showToast('詞條已刪除', 'info'); } }}>刪除</Button></div>)}</div></section>}
+
+    {tab === 'share' && <div className="share-layout"><section className="music-card-preview"><header><span className="brand-mark"><i /><i /><i /></span><strong>群聚・我的音樂成分</strong></header><div><small>{currentUser.profileId}</small><h2>{currentUser.name}</h2><p>{currentUser.message}</p></div><div className="music-card-terms">{selectedTerms.map(({ term, selection }) => <span key={term.id} className={selection.familiarity === '本命' ? 'favorite' : ''}>{term.name}<small>{selection.familiarity}</small></span>)}</div><footer>虛構示例資料・{new Date().toLocaleDateString('zh-TW')}</footer></section><aside><h2>分享圖片</h2><p>預覽使用目前成分原稿，不會自動公開隱私資料。</p><Button onClick={() => showToast('分享圖片已記錄為待匯出；正式 PNG 產生尚未完成', 'info')}><Download size={16} />匯出 PNG（待完成）</Button><Button variant="secondary" onClick={() => showToast('已複製成分卡分享資訊')}><Share2 size={16} />複製分享資訊</Button></aside></div>}
+
+    {tab === 'trends' && <section className="tab-panel"><div className="section-title-row"><div><h2>音樂趨勢</h2><p>近 24 小時選用變化・虛構統計</p></div><Badge tone="green">+{terms.reduce((sum, t) => sum + t.change24h, 0)} 次選用</Badge></div><div className="trend-list">{[...terms].filter((t) => t.change24h > 0).sort((a, b) => b.change24h - a.change24h).slice(0, 12).map((term, index) => <Link to={`/music/term/${term.id}`} key={term.id}><span>{String(index + 1).padStart(2, '0')}</span><strong>{term.name}</strong><small>{term.users} 人選用</small><Badge tone="green">+{term.change24h}</Badge><ArrowUpRight size={15} /></Link>)}</div></section>}
+
+    {termEditor && <TermEditor term={termEditor === 'new' ? undefined : termEditor} onClose={() => setTermEditor(null)} onSave={(term) => { saveTerm(term); setTermEditor(null); showToast('詞條已保存'); }} />}
+  </div>;
+}
+
+function TermEditor({ term, onClose, onSave }: { term?: Term; onClose: () => void; onSave: (term: Term) => void }) {
+  const { currentUser } = useApp();
+  const [name, setName] = useState(term?.name ?? '');
+  const [kind, setKind] = useState(term?.kind ?? '細分');
+  const [category, setCategory] = useState(term?.category ?? '歌手／組合');
+  const [aliases, setAliases] = useState(term?.aliases.join('、') ?? '');
+  const [description, setDescription] = useState(term?.description ?? '');
+  return <Modal title={term ? '修改詞條' : '建立詞條'} description="詞條保存後會出現在完整詞庫" onClose={onClose} footer={<><Button variant="secondary" onClick={onClose}>取消</Button><Button disabled={!name.trim()} onClick={() => onSave({ id: term?.id ?? `t${Date.now()}`, name: name.trim(), kind, category, aliases: aliases.split('、').filter(Boolean), reading: `${name} ${aliases}`.toLowerCase(), description, users: term?.users ?? 0, change24h: 0, related: term?.related ?? [], creator: currentUser.name, domain: term?.domain ?? 'd01' })}>保存詞條</Button></>}><div className="form-grid"><Field label="名稱" required className="span-2"><input autoFocus value={name} onChange={(e) => setName(e.target.value)} /></Field><Field label="類型"><Select value={kind} onChange={(e) => setKind(e.target.value as Term['kind'])}><option>領域</option><option>細分</option></Select></Field><Field label="分類"><Select value={category} onChange={(e) => setCategory(e.target.value)}>{['歌手／組合', '樂團', '音樂類型', '作品／廠牌', 'J-POP', 'J-ROCK', 'VOCALOID', '偶像歌曲'].map((v) => <option key={v}>{v}</option>)}</Select></Field><Field label="別名" hint="以頓號分隔" className="span-2"><input value={aliases} onChange={(e) => setAliases(e.target.value)} /></Field><Field label="說明" className="span-2"><textarea rows={3} value={description} onChange={(e) => setDescription(e.target.value)} /></Field></div></Modal>;
+}

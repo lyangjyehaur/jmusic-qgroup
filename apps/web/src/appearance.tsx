@@ -1,21 +1,19 @@
 import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
-import { Button,Surface,Text } from 'yahha-ui';
 
 import { createWebHttpClient } from './http';
-import { Failure,Notice,PageIntro } from './shared';
-import { Field } from './settlement-controls';
+import { Failure,Notice } from './shared';
 import { useAppearance } from './appearance-preferences';
+import { AppearanceControls } from './appearance-controls';
 export const appearanceQuery={queryKey:['appearance'],queryFn:({signal}:{signal:AbortSignal})=>createWebHttpClient().requestContract('GET /api/v2/appearance',{signal}),refetchOnWindowFocus:'always' as const};
 export function AppearancePage(){
-  const prefs=useAppearance(),walls=useQuery(appearanceQuery);
-  return <><PageIntro title="外觀"/><Link className="back" to="/me">我的</Link><Surface className="detail auth-panel">
-    <Field label="主題"><select value={prefs.value.theme} onChange={event=>prefs.change({theme:event.target.value as 'system'|'light'|'dark'})}><option value="system">跟隨系統</option><option value="light">淺色</option><option value="dark">深色</option></select></Field>
-    <label className="consent"><input type="checkbox" checked={prefs.value.wallpapers} onChange={event=>prefs.change({wallpapers:event.target.checked})}/><span>顯示壁紙</span></label><Text>偏好只保存在這個瀏覽器，套用至所有頁面。</Text>
-    {prefs.error&&<div role="alert"><Text>{prefs.error}</Text><Button onClick={prefs.retry}>重試保存偏好</Button><Button variant="secondary" onClick={prefs.repair}>保全原偏好後保存</Button></div>}
-    {walls.isPending?<Notice>正在讀取壁紙設定…</Notice>:walls.error?<Failure error={walls.error} retry={()=>void walls.refetch()}/>:<Text>{walls.data.items.length?'可用壁紙 '+walls.data.items.length+' 張 · 輪播間隔 '+walls.data.rotateSeconds+' 秒。':'目前沒有啟用的壁紙。'}系統要求減少動態效果時只顯示單張。</Text>}
-  </Surface></>;
+  const walls=useQuery(appearanceQuery);
+  return <><div className="settings-grid appearance-settings"><section className="form-section"><div className="section-heading"><span>外觀</span><div><h2>外觀設定</h2></div></div>
+    <AppearanceControls/><p className="settings-help">偏好只保存在這個瀏覽器，套用至所有頁面。</p>
+    {walls.isPending?<Notice>正在讀取壁紙設定…</Notice>:walls.error?<Failure error={walls.error} retry={()=>void walls.refetch()}/>:<p className="settings-help">{walls.data.items.length?'可用壁紙 '+walls.data.items.length+' 張 · 輪播間隔 '+walls.data.rotateSeconds+' 秒。':'目前沒有啟用的壁紙。'}系統要求減少動態效果時只顯示單張。</p>}
+    </section><section className="form-section"><div className="section-heading"><span>隱私</span><div><h2>資料可見與同意</h2></div></div><div className="settings-navigation"><Link to="/me/music/details">成分資料與公開性別</Link><Link to="/me/music/contact">公開聯絡 QQ</Link><Link to="/me/privacy/consent">政策同意紀錄</Link><Link to="/me/privacy">隱私與資料刪除</Link></div></section></div><Link className="back" to="/me">回到我的</Link></>;
+
 }
 type Frame={id:string;objectURL:string;portrait:boolean};
 export function WallpaperLayer(){

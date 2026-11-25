@@ -1,7 +1,8 @@
+import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 import { durableRows } from './draft-helpers';
-const baseURL = 'http://127.0.0.1:5082';
+const baseURL = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(page: Page, code: string, destination = '/me/accounts') {
   await page.route('**/__test/qq?*', async route => {
     const url = new URL(route.request().url()); url.searchParams.set('code', code); await route.continue({ url: url.href });
@@ -43,8 +44,8 @@ test('two devices grant explicitly, switch separately and revoke without changin
     const source = await sourceContext.newPage(); const target = await targetContext.newPage();
     const errors: string[] = []; for (const page of [source, target]) page.on('pageerror', e => errors.push(e.message));
     await login(source, 'device-source'); await login(target, 'device-target');
-    await target.goto('/me/music'); await target.getByRole('button', { name: 'Aimer', exact: true }).click();
-    await target.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(target.getByText('已保存。')).toBeVisible();
+    await target.goto('/me/music'); await toggleMusicTerm(target,'Aimer');
+    await target.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(target.getByText('已保存。', { exact: true })).toBeVisible();
     const link = await issue(source); const token = new URL(link).hash.slice(7);
     const apiUrls: string[] = []; target.on('request', request => { if (request.url().includes('/api/')) apiUrls.push(request.url()); });
     await target.goto(link);
@@ -73,7 +74,7 @@ test('two devices grant explicitly, switch separately and revoke without changin
     await recheckSession(target);
     await expect(target.getByRole('heading', { name: '測試帳號 device-target', exact: true })).toBeVisible();
     await expect(target.getByRole('button', { name: '切換至 測試帳號 device-source', exact: true })).toHaveCount(0);
-    await target.goto('/me/music'); await expect(target.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await target.goto('/me/music'); await expectMusicTerm(target,'Aimer',true);
     expect(apiUrls.every(url => !url.includes(token))).toBe(true); expect(errors).toEqual([]);
   } finally { await sourceContext.close(); await targetContext.close(); }
 });
@@ -132,7 +133,7 @@ test('storage failure keeps the link visible for recovery and blocks sending aut
 test('logout clears the same browser other tab private views and music drafts without reloading', async ({ page, context }) => {
   await login(page, 'device-tabs');
   const editor = await context.newPage(); await editor.goto('/me/music');
-  await editor.getByRole('button', { name: 'YOASOBI', exact: true }).click();
+  await toggleMusicTerm(editor,'YOASOBI');
   await expect.poll(async () => (await durableRows(editor)).some(row => row.key.startsWith('qgroup:rebuild:music:'))).toBe(true);
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
   await expect(editor.getByRole('heading', { name: '登入後才能保存成分', exact: true })).toBeVisible();
@@ -142,12 +143,12 @@ test('logout clears the same browser other tab private views and music drafts wi
 test('switching accounts updates another tab while preserving its original account draft', async ({ page, context }) => {
   await login(page, 'device-tab-original');
   const editor = await context.newPage(); await editor.goto('/me/music');
-  await editor.getByRole('button', { name: 'ヨルシカ', exact: true }).click();
+  await toggleMusicTerm(editor,'ヨルシカ');
   await login(page, 'device-tab-switch');
   await expect(editor.locator('.viewer')).toHaveText('測試帳號 device-tab-switch');
-  await expect(editor.getByRole('button', { name: 'ヨルシカ', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await expectMusicTerm(editor,'ヨルシカ',false);
   await page.getByRole('button', { name: '切換至 測試帳號 device-tab-original', exact: true }).click();
   await expect(editor.locator('.viewer')).toHaveText('測試帳號 device-tab-original');
-  await expect(editor.getByRole('button', { name: 'ヨルシカ', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectMusicTerm(editor,'ヨルシカ',true);
   await editor.close();
 });

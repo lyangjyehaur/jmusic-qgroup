@@ -2,7 +2,7 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext) { await context.addCookies([{ name: 'kanban_session', value: 'fixture-registration-admin', url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function closeMember(browser: Browser, shared: boolean) {
   const member = await browser.newContext({ baseURL: origin });

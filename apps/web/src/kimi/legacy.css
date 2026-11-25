@@ -1,0 +1,3 @@
+/* Business-only styles remain available; prototype and component rules win. */
+@import '../style.css' layer(retained);
+@import '../kimi.css' layer(retained);

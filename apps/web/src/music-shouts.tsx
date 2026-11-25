@@ -2,7 +2,8 @@ import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useLocation,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
-import { Button,Heading,Surface,Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { MusicShout, PublishMusicShout } from '@qgroup/contracts';
 import { musicText } from '@qgroup/domain';
@@ -31,15 +32,15 @@ function Shouts({viewer,history}:{viewer:Member;history:boolean}){
   const profile=useQuery({queryKey:['private',viewer.scope,'music',viewer.musicEpoch],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music',{})});
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
   return <>{query.isPending||!query.isFetchedAfterMount?<Notice>正在讀取找搭子…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
-    {!history&&profile.data&&<Compose key={profile.data.id} viewer={viewer} profileId={profile.data.id} nextAllowedAt={query.data.nextAllowedAt} serverTime={query.data.now} onDenied={()=>setDenied(true)}/>}
+    <div className={history?'partner-history':'partner-layout'}>{!history&&profile.data&&<Compose key={profile.data.id} viewer={viewer} profileId={profile.data.id} nextAllowedAt={query.data.nextAllowedAt} serverTime={query.data.now} onDenied={()=>setDenied(true)}/>}
     <section aria-label={history?'歷史找搭子名單':'目前找搭子名單'}><Heading level={2}>{history?'歷史':'目前'} · {query.data.total} 則</Heading>
       {history&&<Text size="sm">過期或由新發布取代的內容；最多保留最近 500 則。</Text>}
-      {!query.data.items.length?<Notice>{offset?'這一頁已沒有內容，請返回上一頁。':history?'尚無歷史找搭子內容。':'目前沒有有效的找搭子內容。'}</Notice>:<ul className="shout-list">{query.data.items.map(item=><li key={item.id}><Surface className="shout-card">
+      {!query.data.items.length?<Notice>{offset?'這一頁已沒有內容，請返回上一頁。':history?'尚無歷史找搭子內容。':'目前沒有有效的找搭子內容。'}</Notice>:<ul className="shout-list">{query.data.items.map(item=><li key={item.id}><Surface className="shout-card partner-post">
         <Heading level={3}><Link to={'/people/shouts/'+encodeURIComponent(item.id)+'?'+new URLSearchParams({from:location.pathname+location.search})}>{item.text}</Link></Heading>
         <Text>{item.mine?'我 · ':''}{item.name} · {shoutDate(item.createdAt)}</Text><Text size="sm">{item.archivedAt===null?'有效至 '+shoutDate(item.expiresAt):'已歸檔 · '+shoutDate(item.archivedAt)}</Text>
       </Surface></li>)}</ul>}
       <div className="page-actions"><Button variant="secondary" disabled={offset<=0} onClick={()=>setParams({offset:String(Math.max(0,offset-10))})}>上一頁</Button><Button variant="secondary" disabled={offset+10>=query.data.total} onClick={()=>setParams({offset:String(offset+10)})}>下一頁</Button></div>
-    </section>
+    </section></div>
   </>}</>;
 }
 function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Member;profileId:string;nextAllowedAt:number;serverTime:number;onDenied:()=>void}){
@@ -76,7 +77,7 @@ function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Me
   }
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
   return <><DraftFeedback form={record}/>
-    <Surface className="shout-compose"><Heading level={2}>發布找搭子</Heading><Text id="shout-publish-help" size="sm">內容、成分稱呼與聯絡 QQ 會提供給成分會員。每 24 小時一則，30 天後歸檔；新發布會取代本人上一則。</Text>
+    <Surface className="shout-compose form-section"><Heading level={2}>發布找搭子</Heading><Text id="shout-publish-help" size="sm">內容、成分稱呼與聯絡 QQ 會提供給成分會員。每 24 小時一則，30 天後歸檔；新發布會取代本人上一則。</Text>
       <form onSubmit={event=>{event.preventDefault();void publish();}}><div className="account-field"><label htmlFor="shout-content">找搭子內容</label><textarea id="shout-content" rows={4} value={draft.text} maxLength={4096} disabled={locked} aria-describedby="shout-publish-help shout-count" onChange={event=>{record.change({...draft,text:event.target.value});setMessage('');}}/></div>
         <Text id="shout-count" size="sm">{count} / 140 字</Text>{cooling&&<Text role="status">下次可發布：{shoutDate(nextAllowedAt)}</Text>}
         <Button type="submit" loading={busy} disabled={draft.pending?busy||unavailable:locked||cooling||!normalized||count>140}>{draft.pending?'確認發布結果':'發布找搭子'}</Button>

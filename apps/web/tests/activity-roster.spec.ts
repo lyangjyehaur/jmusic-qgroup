@@ -1,6 +1,6 @@
 import {test,expect} from './fixtures';
 import type {BrowserContext} from '@playwright/test';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({rosterExamples:true});
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function seed(context:BrowserContext,user='alice'){
@@ -18,7 +18,7 @@ test('activity attendees open their own shared music in one modal and return fro
 });
 test('guests can read the public roster and members without music get an activity return when saving their first profile',async({page,context})=>{
   await page.goto('/activities/listen');const roster=page.locator('#participants');await expect(roster.getByText('小白',{exact:true})).toBeVisible();await expect(roster.getByRole('button',{name:/查看 .* 的成分/})).toHaveCount(0);await roster.getByRole('link',{name:'登入查看成分',exact:true}).first().click();await expect(page).toHaveURL('/login?returnTo=%2Factivities%2Flisten%23participants');
-  await seed(context,'bob');await login(context);await page.goto('/activities/listen');await roster.getByRole('button',{name:'查看 小白 的成分',exact:true}).click();const dialog=page.getByRole('dialog');await expect(dialog.getByRole('status')).toHaveText('請先保存成分，再查看共同喜好。');await dialog.getByRole('link',{name:'保存成分',exact:true}).click();await expect(page).toHaveURL('/me/music?from=%2Factivities%2Flisten%23participants');await page.getByRole('button',{name:'Aimer',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'← 回到剛才的活動',exact:true}).click();await expect(page).toHaveURL('/activities/listen#participants');
+  await seed(context,'bob');await login(context);await page.goto('/activities/listen');await roster.getByRole('button',{name:'查看 小白 的成分',exact:true}).click();const dialog=page.getByRole('dialog');await expect(dialog.getByRole('status')).toHaveText('請先保存成分，再查看共同喜好。');await dialog.getByRole('link',{name:'保存成分',exact:true}).click();await expect(page).toHaveURL('/me/music?from=%2Factivities%2Flisten%23participants');await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill('Aimer');await page.locator('.quick-add-results').getByRole('button').filter({hasText:'Aimer'}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'← 回到剛才的活動',exact:true}).click();await expect(page).toHaveURL('/activities/listen#participants');
 });
 test('failed music reads are recoverable, unclaimed companions never borrow the manager music, and updates keep every attendee',async({page,context})=>{
   await seed(context);let fail=true;await page.route('**/api/v2/activities/listen/attendees/self-listen/music',route=>fail?route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({code:'UNAVAILABLE',message:'測試暫時無法讀取'})}):route.continue());

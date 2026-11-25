@@ -1,5 +1,6 @@
 import { useId, useState } from 'react';
-import { Button, Text } from 'yahha-ui';
+import { Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 function todayInZone(zone: string) {
   try {
     return new Intl.DateTimeFormat('en-CA', {

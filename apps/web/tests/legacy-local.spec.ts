@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import type { BrowserContext,Page } from '@playwright/test';
 import { test,expect } from './fixtures';
-const origin='http://127.0.0.1:5082',scope=(id='alice')=>createHash('sha256').update('kanban-drafts-v1:'+id).digest('hex');
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,scope=(id='alice')=>createHash('sha256').update('kanban-drafts-v1:'+id).digest('hex');
 const fields=[{name:'title',value:'舊活動原文字',checked:undefined},{name:'id',value:''}];
 const draft=(suffix='event:new',data:unknown={fields,dataset:{intent:'fixed-original-intent',revision:'7'}})=>({key:'draft:'+scope()+':'+suffix,data,at:1234567});
 const operation=()=>({key:'request:'+scope()+':'+'b'.repeat(64),scope:scope(),requestKey:'c'.repeat(64),path:'/api/events',method:'POST',data:{client_intent:'fixed-original-intent',title:'原請求內容',base_revision:7},status:'pending',at:1234567});

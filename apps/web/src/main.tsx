@@ -9,8 +9,13 @@ import { EmptyState } from 'yahha-ui';
 import { LegacyLocalGuard } from './legacy-local';
 import { LegacyEntryLayout } from './activity-entry';
 import { MusicWorkspace } from './music-selection';
+import './kimi/legacy.css';
 import 'yahha-ui/style.css';
-import './style.css';
+import './kimi/button-links.css';
+import './kimi/scoped.css';
+import './kimi/adapter.css';
+import './kimi/theme.css';
+import './music-save-dock.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 const AdminBotPage = lazyPage(() => import('./admin-bot').then(module => ({ default: module.AdminBotPage })));
 const AdminBotDeliveriesPage = lazyPage(() => import('./bot-deliveries').then(module => ({ default: module.AdminBotDeliveriesPage })));
@@ -23,7 +28,7 @@ const AdminMusicErasurePage = lazyPage(() => import('./admin-music-erasure').the
 const InboxPage = lazyPage(() => import('./inbox').then(module => ({ default: module.InboxPage })));
 const LegacyLocalPage = lazyPage(() => import('./legacy-local').then(module => ({ default: module.LegacyLocalPage })));
 const Activities = lazyPage(() => import('./activities').then(module => ({ default: module.Activities })));
-const ActivityDetail = lazyPage(() => import('./activities').then(module => ({ default: module.ActivityDetail })));
+const ActivityWorkspace = lazyPage(() => import('./activity-workspace').then(module => ({ default: module.ActivityWorkspace })));
 const ActivityDraftPage = lazyPage(() => import('./activity-drafts').then(module => ({ default: module.ActivityDraftPage })));
 const ActivityDraftsPage = lazyPage(() => import('./activity-drafts').then(module => ({ default: module.ActivityDraftsPage })));
 const ActivityArrangementPage = lazyPage(() => import('./activity-drafts').then(module => ({ default: module.ActivityArrangementPage })));
@@ -95,7 +100,7 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'time-polls', element: <TimePollsPage /> }, { path: 'time-polls/new', element: <LegacyLocalGuard><NewTimePollPage /></LegacyLocalGuard> }, { path: 'time-polls/:id', element: <TimePollPage /> }, { path: 'time-polls/:id/manage', element: <TimePollPage manage /> },
   { path: 'admin/bot', element: <AdminBotPage /> },
   { path: 'admin/bot/deliveries', element: <AdminBotDeliveriesPage /> },
-  { path: 'activities/:id/bot-deliveries', element: <BotDeliveriesPage entity="activity" /> },
+
   { path: 'time-polls/:id/bot-deliveries', element: <BotDeliveriesPage entity="poll" /> },
   { path: 'admin/appearance', element: <AdminAppearancePage /> },
   { path: 'admin/backups', element: <AdminBackupsPage /> },
@@ -103,30 +108,45 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'me/appearance', element: <AppearancePage /> },
   { path: 'inbox', element: <InboxPage /> },
   { path: 'me/local-history', element: <LegacyLocalPage /> },
-  { index: true, element: <Activities /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityDetail /> },
+  { index: true, element: <Activities /> }, { path: 'activities', element: <Activities /> }, { path: 'activities/:id', element: <ActivityWorkspace />, children: [
+    { index: true },
+    { path: 'share', element: <ActivitySharePage/> },
+    { path: 'arrangements', element: <LegacyLocalGuard><ActivityArrangementPage /></LegacyLocalGuard> },
+    { path: 'conditions', element: <ActivityConditionsPage /> },
+    { path: 'settlement', element: <ActivitySettlementPage /> },
+    { path: 'settlement/edit', element: <LegacyLocalGuard><ActivitySettlementEditor /></LegacyLocalGuard> },
+    { path: 'rooms', element: <LegacyLocalGuard><ActivityRoomsPage /></LegacyLocalGuard> },
+    { path: 'rooms/history', element: <RoomPlanHistoryPage /> },
+    { path: 'finance', element: <LegacyLocalGuard><ActivityFinancePage /></LegacyLocalGuard> },
+    { path: 'settlement/images', element: <SettlementImagesPage /> },
+    { path: 'history', element: <ActivityHistoryPage /> },
+    { path: 'attendance', element: <ActivityAttendancePage /> },
+    { path: 'delegation', element: <ActivityDelegationPage /> },
+    { path: 'claims', element: <ActivityClaimsPage /> },
+    { path: 'invitations', element: <ActivityInvitationsPage /> },
+    { path: 'lifecycle', element: <ActivityLifecyclePage /> },
+    { path: 'signup', element: <ActivityRegistrationPage /> },
+    { path: 'registration', element: <ActivityRegistrationPage manage /> },
+    { path: 'bot-deliveries', element: <BotDeliveriesPage entity="activity" /> },
+  ] },
   { path: 'contact', element: <ContactPage/> }, { path: 'guide', element: <GuidePage/> }, { path: 'me/activities', element: <Activities mine/> },
-  { path: 'activities/:id/access/:token', element: <ActivityAccessPage/> }, { path: 'activities/:id/share', element: <ActivitySharePage/> },
+  { path: 'activities/:id/access/:token', element: <ActivityAccessPage/> },
   { path: 'activities/new', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'activities/:id/edit', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
-  { path: 'activities/:id/arrangements', element: <LegacyLocalGuard><ActivityArrangementPage /></LegacyLocalGuard> }, { path: 'activities/:id/conditions', element: <ActivityConditionsPage /> },
-  { path: 'activities/:id/settlement', element: <ActivitySettlementPage /> },
-  { path: 'activities/:id/settlement/edit', element: <LegacyLocalGuard><ActivitySettlementEditor /></LegacyLocalGuard> },
-  { path: 'activities/:id/rooms', element: <LegacyLocalGuard><ActivityRoomsPage /></LegacyLocalGuard> }, { path: 'activities/:id/rooms/history', element: <RoomPlanHistoryPage /> },
-  { path: 'activities/:id/finance', element: <LegacyLocalGuard><ActivityFinancePage /></LegacyLocalGuard> },
-  { path: 'activities/:id/settlement/images', element: <SettlementImagesPage /> },
-  { path: 'activities/:id/history', element: <ActivityHistoryPage /> },
-  { path: 'activities/:id/attendance', element: <ActivityAttendancePage /> },
-  { path: 'activities/:id/delegation', element: <ActivityDelegationPage /> }, { path: 'activities/:id/delegation/:token', element: <AcceptActivityDelegationPage /> },
-  { path: 'activities/:id/claims', element: <ActivityClaimsPage /> }, { path: 'activities/:id/claims/:token', element: <RequestAttendeeClaimPage /> },
-  { path: 'activities/:id/invitations', element: <ActivityInvitationsPage /> }, { path: 'activities/:id/invitations/:token', element: <AcceptActivityInvitationPage /> },
-  { path: 'activities/:id/lifecycle', element: <ActivityLifecyclePage /> },
-  { path: 'activities/:id/signup', element: <ActivityRegistrationPage /> }, { path: 'activities/:id/registration', element: <ActivityRegistrationPage manage /> },
-  { element: <MusicWorkspace />, children: [{ path: 'search', element: <SearchPage /> }, { path: 'music', element: <Music /> }, { path: 'music/trends', element: <MusicTrendPage /> }, { path: 'music/entries/:id', element: <MusicEntryPage /> }, { path: 'me/music', element: <MyMusic /> }, { path: 'me/music/share', element: <MusicSharePage /> }] }, { path: 'people', element: <People /> }, { path: 'me', element: <MyPage /> },
+
+  { path: 'activities/:id/delegation/:token', element: <AcceptActivityDelegationPage /> },
+  { path: 'activities/:id/claims/:token', element: <RequestAttendeeClaimPage /> },
+  { path: 'activities/:id/invitations/:token', element: <AcceptActivityInvitationPage /> },
+
+  { element: <MusicWorkspace />, children: [
+    { path: 'search', element: <SearchPage /> }, { path: 'music', element: <Music /> }, { path: 'music/trends', element: <MusicTrendPage /> }, { path: 'music/entries/:id', element: <MusicEntryPage /> }, { path: 'me/music', element: <MyMusic /> }, { path: 'me/music/share', element: <MusicSharePage /> },
+    { path: 'people', element: <People /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },
+  ] }, { path: 'me', element: <MyPage /> },
   { path: 'me/music/entries', element: <MyMusicEntriesPage /> }, { path: 'me/music/entries/new', element: <MusicEntryEditorPage command="create" /> },
   { path: 'me/music/entries/:id/edit', element: <MusicEntryEditorPage command="update" /> }, { path: 'me/music/entries/:id/delete', element: <MusicEntryEditorPage command="delete" /> }, { path: '*', element: <Missing /> },
-  { path: 'me/music/contact', element: <MusicContactPage /> }, { path: 'people/:id', element: <PersonMusic /> }, { path: 'people/:id/compare', element: <MusicComparisonPage /> },
-  { path: 'people/shouts', element: <MusicShoutsPage /> }, { path: 'people/shouts/history', element: <MusicShoutsPage history /> }, { path: 'people/shouts/:id', element: <MusicShoutPage /> }, { path: 'admin/shouts', element: <AdminShoutsPage /> }, { path: 'admin/music-entries', element: <AdminMusicCatalogPage /> },
+  { path: 'me/music/contact', element: <MusicContactPage /> },
+  { path: 'people/shouts', element: <MusicShoutsPage /> }, { path: 'people/shouts/history', element: <MusicShoutsPage history /> }, { path: 'people/shouts/:id', element: <MusicShoutPage /> }, { path: 'people/circles', element: <MusicCirclesPage /> },
+  { path: 'admin/shouts', element: <AdminShoutsPage /> }, { path: 'admin/music-entries', element: <AdminMusicCatalogPage /> },
   { path: 'tools/room-lab', element: <MusicRoomsPage /> },
-  { path: 'people/circles', element: <MusicCirclesPage /> },
   { path: 'me/music/recover', element: <MusicRecovery /> },
   { path: 'me/music/details', element: <MusicFieldsPage /> },
   { path: 'admin/music', element: <AdminMusicDirectory /> }, { path: 'admin/music/:id/erase', element: <AdminMusicErasurePage /> }, { path: 'admin/music-reset', element: <AdminMusicErasurePage reset /> }, { path: 'admin/music/:id', element: <AdminMusicPage /> },

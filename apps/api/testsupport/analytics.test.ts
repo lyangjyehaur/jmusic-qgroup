@@ -10,6 +10,9 @@ it('keeps the manifest consistent with current static route and control declarat
   expect(readFileSync('apps/web/src/analytics-manifest.ts','utf8')).toBe(analyticsManifestSource(resolve('.')));
 });
 it('classifies native pages without sending record IDs, invitations, queries or unknown paths', () => {
+  expect(analyticsRoute('/activities/PRIVATE_EVENT/settlement/edit')).toBe('/activities/:id/settlement/edit');
+  expect(analyticsRoute('/activities/PRIVATE_EVENT/finance')).toBe('/activities/:id/finance');
+  expect(analyticsRoute('/share')).toBe('/unknown');
   for(const [path,expected] of [['/activities/new','/activities/new'],['/time-polls/new','/time-polls/new'],['/activities/PRIVATE_EVENT/share','/activities/:id/share'],['/activities/PRIVATE_EVENT/access/SECRET_TOKEN','/activities/:id/access/:id'],['/me/devices/accept','/me/devices/accept'],['/music/entries/PRIVATE_ID','/music/entries/:id'],['/admin/users/PRIVATE_PERSON','/admin/users/:id'],['/PRIVATE_PATH/SECRET','/unknown']])expect(analyticsRoute(path!)).toBe(expected);
 });
 it('classifies known write endpoints by complete templates rather than preserving guessed words or parameter values', () => {

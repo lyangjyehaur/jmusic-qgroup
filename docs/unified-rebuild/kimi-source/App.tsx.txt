@@ -1,0 +1,53 @@
+import { useEffect } from 'react';
+import { Navigate, Route, Routes, useParams } from 'react-router-dom';
+import Layout from './components/Layout';
+import ActivitiesPage from './pages/ActivitiesPage';
+import ActivityNewPage from './pages/ActivityNewPage';
+import ActivityDetailPage from './pages/ActivityDetailPage';
+import MusicPage from './pages/MusicPage';
+import MyMusicPage from './pages/MyMusicPage';
+import PeoplePage from './pages/PeoplePage';
+import ComparePage from './pages/ComparePage';
+import RoomsPage from './pages/RoomsPage';
+import VotesPage from './pages/VotesPage';
+import LedgerPage from './pages/LedgerPage';
+import MePage from './pages/MePage';
+import InboxPage from './pages/InboxPage';
+import AdminPage from './pages/AdminPage';
+import UiKitPage from './pages/UiKitPage';
+
+export default function App() {
+  useEffect(() => {
+    document.documentElement.dataset.density = localStorage.getItem('gunju.density') === '緊湊' ? 'compact' : 'comfortable';
+  }, []);
+  return <Routes>
+    <Route element={<Layout />}>
+      <Route index element={<Navigate to="/activities" replace />} />
+      <Route path="/activities" element={<ActivitiesPage />} />
+      <Route path="/activities/new" element={<ActivityNewPage />} />
+      <Route path="/activities/:id/*" element={<ActivityDetailPage />} />
+      <Route path="/music" element={<MusicPage />} />
+      <Route path="/music/term/:id" element={<MusicPage />} />
+      <Route path="/me/music" element={<MyMusicPage />} />
+      <Route path="/people" element={<PeoplePage />} />
+      <Route path="/people/card/:id" element={<PeoplePage />} />
+      <Route path="/people/compare/:id" element={<ComparePage />} />
+      <Route path="/rooms/:activityId" element={<RoomsPage />} />
+      <Route path="/votes" element={<VotesPage />} />
+      <Route path="/ledger/:activityId" element={<LedgerPage />} />
+      <Route path="/me" element={<MePage />} />
+      <Route path="/inbox" element={<InboxPage />} />
+      <Route path="/admin" element={<AdminPage />} />
+      <Route path="/ui-kit" element={<UiKitPage />} />
+      <Route path="/activity/:id" element={<LegacyActivity />} />
+      <Route path="/invite/:id" element={<LegacyActivity />} />
+      <Route path="/bot/activity/:id" element={<LegacyActivity />} />
+      <Route path="/claim/:id" element={<LegacyClaim />} />
+      <Route path="/vote" element={<Navigate to="/votes" replace />} />
+      <Route path="*" element={<Navigate to="/activities" replace />} />
+    </Route>
+  </Routes>;
+}
+
+function LegacyActivity() { const { id } = useParams(); return <Navigate to={`/activities/${id}`} replace />; }
+function LegacyClaim() { const { id } = useParams(); return <Navigate to={`/activities/${id}/manage`} replace />; }

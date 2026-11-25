@@ -1,6 +1,7 @@
+import { chooseOption, expectOption } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 const id = (n: number) => 'm_' + n.toString(16).padStart(24, '0');
 test.use({ musicMatches: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
@@ -13,10 +14,17 @@ const main = (page: Page) => page.getByRole('region', { name: '推薦名單', ex
 const comparison = (page: Page) => page.locator('.music-comparison');
 test('both rankings keep all matches, sparse separation, familiarity and authorized first notes', async ({ page, context }) => {
   await login(context); await page.goto('/people');
-  await expect(main(page).getByRole('heading', { name: '推薦名單 · 6 人', exact: true })).toBeVisible();
+  await expect(main(page).getByRole('heading', { name: '推薦名單 · 6 人', exact: true })).toHaveText('推薦名單 · 6 人');
   const visible = main(page).locator('.match-card:visible'); await expect(visible).toHaveCount(3);
-  await expect(visible.first().getByRole('heading', { name: '共同最多', exact: true })).toBeVisible();
+  await expect(visible.first().getByRole('link', { name: '共同最多', exact: true })).toBeVisible();
   await expect(visible.first()).toContainText('共同詞條4（領域 2／細分 2）');
+  await visible.first().getByText('更多成分資料',{exact:true}).click(); const breakdown = visible.first().locator('.match-breakdown');
+  await expect(breakdown).toHaveJSProperty('open', false);
+  await expect(breakdown.getByText('嚴格重合', { exact: true })).not.toBeVisible();
+  await breakdown.getByText('匹配詳情', { exact: true }).click();
+  await expect(breakdown.getByText('嚴格重合', { exact: true })).toBeVisible();
+  await expect(breakdown.getByText('共同冷門詞條', { exact: true })).toBeVisible();
+  await breakdown.getByText('匹配詳情', { exact: true }).click();
   await expect(visible.first()).toContainText('你：聽過一些／對方：聽過一些');
   await expect(visible.first()).toContainText('你：只聽過幾首／對方：只聽過幾首');
   await expect(visible.first()).toContainText('對方的留言：留言 共同最多');
@@ -25,13 +33,13 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
   const sparse = page.getByRole('group', { name: '資料較少的同好', exact: true });
   await sparse.locator('summary').first().click(); await expect(sparse.locator('.match-card:visible')).toHaveCount(4);
   await expect(sparse).toContainText('資料較少：你 6 項，對方 1 項。'); await expect(sparse.locator('.match-note')).toHaveCount(0);
-  await expect(sparse).toContainText('匹配度 36%');
-  await page.getByLabel('排序', { exact: true }).selectOption('familiar'); await expect(page).toHaveURL('/people?sort=familiar');
-  await expect(visible.first().getByRole('heading', { name: '共同本命', exact: true })).toBeVisible();
-  await expect(visible.first()).toContainText('對方的留言：留言 共同本命'); await expect(visible.first()).toContainText('共同本命2');
+  await expect(sparse.locator('.match-score strong').first()).toHaveText('36%');
+  await chooseOption(page,'排序','familiar'); await expect(page).toHaveURL('/people?sort=familiar');
+  await expect(visible.first().getByRole('link', { name: '共同本命', exact: true })).toBeVisible();
+  await expect(visible.first()).toContainText('對方的留言：留言 共同本命'); await expect(visible.first()).toContainText('共同本命 2');
   await expect(recommendations(page)).not.toContainText('對方的留言：留言 共同最多'); await expect(recommendations(page)).not.toContainText('不可外洩性別');
-  await page.reload(); await expect(main(page).locator('.match-card:visible').first()).toContainText('共同本命'); await expect(page.getByLabel('排序', { exact: true })).toHaveValue('familiar');
-  await main(page).locator('.match-card').first().getByRole('heading').getByRole('link').click();
+  await page.reload(); await expect(main(page).locator('.match-card:visible').first()).toContainText('共同本命'); await expectOption(page,'排序','familiar');
+  await main(page).locator('.match-card').first().getByRole('link',{name:'共同本命',exact:true}).click();
   await expect(page.getByRole('heading', { name: '共同本命', level: 2, exact: true })).toBeVisible();
   await page.getByRole('link', { name: '比較成分', exact: true }).click();
   await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people?sort=familiar');
@@ -41,7 +49,7 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
   await expect(page.getByRole('link', { name: '回到同好推薦', exact: true })).toHaveAttribute('href', '/people?sort=familiar');
 });
 test('alias comparisons reject self and missing members, use safe IDs in URLs and preserve all comparison groups', async ({ page, context }) => {
-  await login(context); await page.goto('/people');
+  await login(context); await page.goto('/people'); await page.getByRole('tab',{name:'查詢／比較',exact:true}).click();
   const query = page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true });
   await query.fill(id(1)); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('這是你自己的成分，請選擇另一份成分');
   await query.fill('999999'); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
@@ -59,7 +67,7 @@ test('comparison terms use the shared selection workspace and return with saved 
   await login(context); const back = '/people/' + id(2) + '/compare?from=%2Fpeople%3Fsort%3Dfamiliar'; await page.goto(back);
   await comparison(page).getByText('只有對方選擇 · 1 項', { exact: true }).click(); await comparison(page).getByRole('link', { name: '米津玄師', exact: true }).click();
   await expect(page.getByRole('heading', { name: '米津玄師', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await page.getByLabel('米津玄師喜歡程度', { exact: true }).selectOption('4');
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await chooseOption(page,'米津玄師喜歡程度','4');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到同好成分', exact: true }).click(); await expect(page).toHaveURL(back);
   await expect(comparison(page).getByRole('region', { name: '共同喜歡', exact: true })).toContainText('米津玄師');
@@ -67,18 +75,17 @@ test('comparison terms use the shared selection workspace and return with saved 
   await expect(comparison(page).getByRole('heading', { name: '只有對方選擇 · 0 項', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到同好推薦', exact: true }).click(); await expect(page).toHaveURL('/people?sort=familiar');
 });
-test('leaving a comparison term keeps the draft and provides explicit leave confirmation', async ({ page, context }) => {
+test('returning from a comparison term keeps the draft in the shared workspace', async ({ page, context }) => {
   await login(context); await page.goto('/people?sort=familiar'); const card = main(page).locator('.match-card').first();
-  await card.getByText('對方獨有 · 2 項', { exact: true }).click(); await card.getByRole('link', { name: '宇多田光', exact: true }).click();
+  await card.getByText('更多成分資料',{exact:true}).click(); await card.getByText('對方獨有 · 2 項', { exact: true }).click(); await card.getByRole('link', { name: '宇多田光', exact: true }).click();
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible(); await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
-  await expect(page.getByRole('button', { name: '取消選取', exact: true })).toBeVisible(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
-  await expect(page).toHaveURL('/people?sort=familiar'); await page.goto('/me/music'); await expect(page.getByRole('button', { name: '宇多田光', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL('/people?sort=familiar'); await page.goto('/me/music'); await expect(page.getByLabel('宇多田光喜歡程度')).toBeVisible();
 });
 test('cross-tab saved selections refresh ranking and revoke notes that no longer qualify', async ({ page, context }) => {
   await login(context); await page.goto('/people'); await expect(main(page)).toContainText('對方的留言：留言 共同最多');
   const editor = await context.newPage(); await editor.goto('/me/music');
-  for (const name of ['J-POP', '動畫歌曲', 'Aimer', 'ずっと真夜中でいいのに。']) await editor.getByRole('button', { name, exact: true }).click();
+  for (const name of ['J-POP', '動畫歌曲', 'Aimer', 'ずっと真夜中でいいのに。']) await editor.getByRole('button', { name:'移除'+name, exact: true }).click();
   await editor.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(editor.getByText('已保存。', { exact: true })).toBeVisible();
   await expect(main(page).locator('.match-card').first()).toContainText('共同本命'); await expect(main(page)).not.toContainText('對方的留言：留言 共同最多'); await editor.close();
 });
@@ -86,7 +93,7 @@ test('sort changes discard late responses and comparison errors support retry', 
   await login(context); let release!: () => void, captured!: () => void;
   const pending = new Promise<void>(resolve => { release = resolve; }), ready = new Promise<void>(resolve => { captured = resolve; });
   await page.route('**/api/v2/music/matches?sort=rare', async route => { const response = await route.fetch(); captured(); await pending; await route.fulfill({ response }).catch(() => {}); });
-  await page.goto('/people'); await ready; await page.getByLabel('排序', { exact: true }).selectOption('familiar');
+  await page.goto('/people'); await ready; await chooseOption(page,'排序','familiar');
   await expect(main(page).locator('.match-card').first()).toContainText('共同本命'); release(); await expect(main(page).locator('.match-card').first()).not.toContainText('共同最多');
   let fail = true; await page.route('**/api/v2/music/profiles/*/comparison', route => fail ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'READ_FAILED', message: '比較暫時無法讀取' }) }) : route.continue());
   await page.goto('/people/' + id(2) + '/compare'); await expect(page.getByRole('alert')).toContainText('比較暫時無法讀取');
@@ -105,7 +112,7 @@ test('erasure and account switching clear private recommendation and comparison 
 test('copy controls, mobile layout, keyboard term links and safe return destinations remain usable', async ({ page, context }) => {
   await login(context); await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (value: string) => Object.assign(window, { musicCopied: value }) }, configurable: true }));
   await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/people'); const card = main(page).locator('.match-card').first();
-  await card.getByRole('button', { name: '複製名稱', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('共同最多');
+  await card.getByText('更多成分資料',{exact:true}).click(); await card.getByText('複製資料',{exact:true}).click(); await card.getByRole('button', { name: '複製名稱', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('共同最多');
   await card.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('234567');
   await card.getByRole('button', { name: '複製成分 ID', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe(id(2));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-matches-mobile.png', fullPage: true });

@@ -1,3 +1,4 @@
+import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
 import { createServer, type ServerResponse } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { once } from 'node:events';
@@ -26,7 +27,7 @@ async function host() {
             const headers: Record<string, string> = {};
             if (request.headers.cookie)
                 headers.Cookie = request.headers.cookie;
-            const upstream = await fetch('http://127.0.0.1:5082' + request.url, { headers, redirect: 'manual' });
+            const upstream = await fetch(`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}` + request.url, { headers, redirect: 'manual' });
             for (const [key, value] of upstream.headers)
                 if (!['content-length', 'content-encoding', 'transfer-encoding', 'connection'].includes(key))
                     response.setHeader(key, value);
@@ -72,7 +73,7 @@ test('root and installed legacy manifests preserve one app identity and expose v
     await expect(page.getByRole('heading', { name: '應用程式', exact: true })).toBeVisible();
     expect(await page.evaluate(() => document.querySelector<HTMLLinkElement>('link[rel="manifest"]')?.getAttribute('href'))).toBe('/manifest.webmanifest');
     await page.setViewportSize({ width: 360, height: 800 });
-    await expect(page.locator('header.header')).toHaveCount(1);
+    await expect(page.getByRole('banner')).toHaveCount(1);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
     await page.screenshot({ path: 'test-results/unified-pwa-mobile.png', fullPage: true });
 });
@@ -90,14 +91,14 @@ test('the active root worker preserves the complete synthetic QQ redirect and a 
     page.on('request', request => { if (request.url().includes('/api/v2/activities/') && ['POST','PUT','DELETE'].includes(request.method())) activityWrites++; });
     await page.goto('/?event=listen&action=join');
     await expect(page).toHaveURL('/activities/listen/signup');
-    await expect(page.getByRole('heading', { name: '週末一起聽日系音樂', exact: true })).toBeVisible();
+    await expect(page.getByRole('dialog').locator('p strong').filter({ hasText: '週末一起聽日系音樂' })).toBeVisible();
     expect(activityWrites).toBe(0);
     await page.goto('/me/music');
-    await page.getByRole('button', { name: 'Aimer', exact: true }).click();
+    await toggleMusicTerm(page, 'Aimer');
     await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
     await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
     await page.reload();
-    await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expectMusicTerm(page, 'Aimer', true);
 });
 test('offline navigation reveals no cached account or activity, and SW ignores all API/auth methods and poisoned caches', async ({ page, context }) => {
     const h = await host();

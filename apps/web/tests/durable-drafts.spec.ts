@@ -1,3 +1,4 @@
+import { toggleMusicTerm } from './kimi-controls';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -5,7 +6,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { denyDraftWrites, durableRows } from './draft-helpers';
 test.use({ settlementExamples: true, pollExamples: true });
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 const title = (page: Page) => page.getByLabel('投票名稱', { exact: true });
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]);
@@ -120,7 +121,7 @@ test('migrates exact session payloads only after IDB commits and never imports p
 });
 for (const kind of ['logout','music-erasure'] as const) test('fences a stale tab after '+kind+' even when BroadcastChannel is unavailable', async ({page,context})=>{
   await login(context); page.on('dialog',d=>void d.accept());
-  await page.goto('/me/music'); await page.getByRole('button',{name:'YOASOBI',exact:true}).click();
+  await page.goto('/me/music'); await toggleMusicTerm(page, 'YOASOBI');
   await page.getByRole('button',{name:'保存我的成分',exact:true}).click(); await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
   await page.goto('/time-polls/new'); await title(page).fill('保留活動草稿'); await saved(page);
   const stale=await context.newPage(); await stale.addInitScript(()=>{Object.defineProperty(window,'BroadcastChannel',{value:undefined});});
@@ -175,7 +176,7 @@ test('keeps the editor open when retaining the draft on navigation cannot commit
   expect(JSON.parse((await durableRows(page))[0]!.raw).value.title).toBe('已保存原稿');
 });
 for(const kind of ['logout','admin-logout','music-erasure'] as const)test('retries local cleanup after '+kind+' without repeating the committed server action',async({page,context})=>{
-  await login(context,kind==='admin-logout'?'registration-admin':'alice');await page.goto('/me/music');await page.getByRole('button',{name:'YOASOBI',exact:true}).click();
+  await login(context,kind==='admin-logout'?'registration-admin':'alice');await page.goto('/me/music');await toggleMusicTerm(page, 'YOASOBI');
   await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
   await page.goto('/me/music/entries/new');await page.getByLabel('詞條名稱（最多 24 字）',{exact:true}).fill('待清除原稿');await saved(page);
   page.on('dialog',d=>void d.accept());await page.goto(kind==='logout'?'/me/accounts':kind==='admin-logout'?'/admin':'/me/privacy');
@@ -203,7 +204,7 @@ for(const kind of ['logout','admin-logout','music-erasure'] as const)test('retri
   await expect(page.getByText(kind!=='music-erasure'?'此裝置已登出，但本機原稿清除失敗。請重試清除。':'伺服器刪除已完成，但本機原稿清除失敗。請重試清除。',{exact:kind!=='admin-logout'})).toBeVisible();
   expect(await durableRows(page)).toEqual(beforeCleanup);
   await page.getByRole('button',{name:'重試清除本機原稿',exact:true}).click();
-  if(kind==='logout')await expect(page.getByRole('heading',{name:'尚未登入',exact:true})).toBeVisible();
+  if(kind==='logout'){await expect(page.getByRole('button',{name:'重試清除本機原稿',exact:true})).toHaveCount(0);await expect(page.getByRole('heading',{name:'尚未登入',exact:true})).toBeVisible();}
   else if(kind==='music-erasure') await expect(page.getByRole('button',{name:'完成',exact:true})).toBeEnabled();
   else await expect(page.getByRole('button',{name:'重試清除本機原稿',exact:true})).toHaveCount(0);
   expect(await durableRows(page)).toEqual([]);expect(writes).toBe(1);

@@ -2,7 +2,7 @@ import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ settlementExamples: true });
-const origin = 'http://127.0.0.1:5082',
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,
   base = '/activities/listen/settlement';
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([
@@ -193,11 +193,9 @@ test('keeps original UUID and body through uncertain save, reload and inbox reco
   await page.reload();
   await expect(page.getByRole('button', { name: '確認原結算發布結果', exact: true })).toBeVisible();
   expect(keys).toHaveLength(1);
-  await page
-    .locator('header')
-    .getByRole('link', { name: /^收件匣/ })
-    .click();
+  await page.getByRole('button', { name: '返回活動', exact: true }).click();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+  await page.locator('header').getByRole('link', { name: /^收件匣/ }).click();
   await expect(page.getByRole('link', { name: '逐人結算', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '逐人結算', exact: true }).click();
   await page.getByRole('button', { name: '確認原結算發布結果', exact: true }).click();
@@ -408,8 +406,9 @@ test('rebases concurrent changes without losing edits and rejects an account-swi
   await login(context);
   await page.reload();
   await expect(page.getByLabel('費用金額', { exact: true })).toHaveValue('7.25');
-  await page.locator('header').getByRole('link', { name: '我的', exact: true }).click();
+  await page.getByRole('button', { name: '返回活動', exact: true }).click();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+  await page.getByRole('navigation').getByRole('link', { name: '我的', exact: true }).click();
   await page.getByRole('link', { name: '帳號', exact: true }).click();
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible();

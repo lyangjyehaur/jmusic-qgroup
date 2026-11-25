@@ -1,6 +1,7 @@
 import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
-import { Button, Text } from 'yahha-ui';
+import { Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { musicShareLines } from '@qgroup/domain';
 import { Notice } from './shared';
 import { musicShareBlob } from './music-share-canvas';

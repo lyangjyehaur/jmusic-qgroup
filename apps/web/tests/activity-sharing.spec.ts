@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, id = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + id, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function headers(context: BrowserContext) { const viewer = await (await context.request.get('/api/v2/session')).json(); return { Origin: origin, 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() }; }
 async function published(context: BrowserContext, invitation = false) {

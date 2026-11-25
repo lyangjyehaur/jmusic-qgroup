@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { damageDraft, denyDraftWrites, durableRows } from './draft-helpers';
 import { readFile } from 'node:fs/promises';
-const origin = 'http://127.0.0.1:5082', interval = '主動發送最小間隔（秒）', confirmation = '我已核對發送模式、群政策與設定變更';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, interval = '主動發送最小間隔（秒）', confirmation = '我已核對發送模式、群政策與設定變更';
 type Command = 'save' | 'revert';
 async function login(context: BrowserContext, user = 'registration-admin') {
   await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);

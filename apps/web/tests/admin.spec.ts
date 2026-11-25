@@ -1,15 +1,16 @@
+import { chooseOption } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
-const origin = 'http://127.0.0.1:5082'; const rescueKey = 'synthetic-admin-rescue-' + 'x'.repeat(32);
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`; const rescueKey = 'synthetic-admin-rescue-' + 'x'.repeat(32);
 async function login(context: BrowserContext, user = 'registration-admin') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function metadata(page: Page, note: string, qq = '') { await page.getByLabel('內部備註', { exact: true }).fill(note); await page.getByLabel('人工 QQ', { exact: true }).fill(qq); await page.getByRole('button', { name: '保存備註', exact: true }).click(); }
 test('member administrators search exact QQ status and keep private metadata outside the member profile', async ({ page, context }) => {
   await login(context); await page.goto('/admin'); await page.getByRole('link', { name: '使用者管理', exact: true }).click();
   await page.getByLabel('搜尋使用者', { exact: true }).fill('原 QQ'); await page.getByRole('button', { name: '搜尋', exact: true }).click();
   await expect(page.getByText('共 1 個帳號', { exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: '舊帳號', exact: true })).toBeVisible();
-  await page.getByLabel('QQ／UnionID 狀態', { exact: true }).selectOption('bound'); await expect(page.getByText('沒有符合條件的帳號。', { exact: true })).toBeVisible();
-  await page.getByLabel('QQ／UnionID 狀態', { exact: true }).selectOption('missing'); await expect(page.getByRole('link', { name: '舊帳號', exact: true })).toBeVisible();
+  await chooseOption(page,'QQ／UnionID 狀態','bound'); await expect(page.getByText('沒有符合條件的帳號。', { exact: true })).toBeVisible();
+  await chooseOption(page,'QQ／UnionID 狀態','missing'); await expect(page.getByRole('link', { name: '舊帳號', exact: true })).toBeVisible();
   await page.goto('/admin/users/bob'); await page.setViewportSize({ width: 360, height: 800 });
   await metadata(page, '人工核對 <script>\n第二行備註', '123456789'); await expect(page.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-admin-user-mobile.png', fullPage: true });

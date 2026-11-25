@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
-const local='http://127.0.0.1:5082',production='https://kanban.danndann.cn',tracker='https://u.danndann.cn';
+const local=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,production='https://kanban.danndann.cn',tracker='https://u.danndann.cn';
 async function records(page:Page){return page.evaluate(()=>(window as unknown as {analyticsRecords:Record<string,unknown>[]}).analyticsRecords);}
 async function isolatedProduction(context:BrowserContext,mode='ready'){
   await context.addInitScript(()=>{(window as unknown as {analyticsRecords:unknown[]}).analyticsRecords=[];});

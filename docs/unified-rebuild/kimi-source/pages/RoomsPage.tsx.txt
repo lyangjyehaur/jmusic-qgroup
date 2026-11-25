@@ -1,0 +1,72 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useParams } from 'react-router-dom';
+import { ArrowLeft, Check, Download, FlaskConical, LayoutGrid, RotateCcw, Share2, ShieldCheck, UsersRound } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import type { Participant, Room } from '../types';
+import { Avatar, Badge, Button, EmptyState, Field, Modal, PageHeader, Select } from '../components/UI';
+
+interface TrialRoom extends Room { score: number }
+
+export default function RoomsPage() {
+  const { activityId = 'a001' } = useParams();
+  const { activities, users, currentUser, updateActivity, showToast } = useApp();
+  const activity = activities.find((a) => a.id === activityId);
+  const eligible = activity?.participants.filter((p) => p.status === '正式') ?? [];
+  const [selected, setSelected] = useState<string[]>(() => eligible.map((p) => p.id));
+  const [roomCount, setRoomCount] = useState(2);
+  const [capacity, setCapacity] = useState(6);
+  const [customCapacities, setCustomCapacities] = useState<number[]>([6, 6, 6, 6]);
+  const [adoptOpen, setAdoptOpen] = useState(false);
+  const storageKey = `gunju.trial.${activityId}`;
+  const [rooms, setRooms] = useState<TrialRoom[]>(() => {
+    try { const raw = localStorage.getItem(storageKey); if (raw) return JSON.parse(raw); } catch { /* use empty */ }
+    return [];
+  });
+
+  useEffect(() => { try { localStorage.setItem(storageKey, JSON.stringify(rooms)); } catch { /* keep in memory */ } }, [rooms, storageKey]);
+  if (!activity) return <div className="page"><EmptyState title="找不到分房活動" description="請由活動詳情重新進入。" action={<Link to="/activities"><Button>返回活動</Button></Link>} /></div>;
+  const isOrganizer = activity.organizerId === currentUser.id || activity.coOrganizerIds.includes(currentUser.id);
+
+  const calculate = () => {
+    const people = eligible.filter((p) => selected.includes(p.id));
+    const next: TrialRoom[] = Array.from({ length: roomCount }, (_, i) => ({ id: `trial-${i + 1}`, name: `${String.fromCharCode(65 + i)} 室`, capacity: customCapacities[i] || capacity, participantIds: [], score: 0 }));
+    people.forEach((person) => {
+      const personTerms = users.find((u) => u.id === person.userId)?.selections.map((s) => s.termId) ?? [];
+      const candidates = next.filter((room) => room.participantIds.length < room.capacity);
+      const target = (candidates.length ? candidates : next).reduce((best, room) => {
+        const score = room.participantIds.reduce((sum, pid) => {
+          const other = eligible.find((p) => p.id === pid);
+          const otherTerms = users.find((u) => u.id === other?.userId)?.selections.map((s) => s.termId) ?? [];
+          return sum + personTerms.filter((id) => otherTerms.includes(id)).length;
+        }, 0) - room.participantIds.length * 0.08;
+        return score > best.score ? { room, score } : best;
+      }, { room: (candidates.length ? candidates : next)[0], score: -Infinity }).room;
+      target.participantIds.push(person.id);
+    });
+    next.forEach((room) => {
+      let pairs = 0; let shared = 0;
+      room.participantIds.forEach((pid, i) => room.participantIds.slice(i + 1).forEach((otherPid) => {
+        const a = users.find((u) => u.id === eligible.find((p) => p.id === pid)?.userId)?.selections.map((s) => s.termId) ?? [];
+        const b = users.find((u) => u.id === eligible.find((p) => p.id === otherPid)?.userId)?.selections.map((s) => s.termId) ?? [];
+        pairs += 1; shared += a.filter((id) => b.includes(id)).length;
+      }));
+      room.score = pairs ? Math.round(shared / pairs * 10) / 10 : 0;
+    });
+    setRooms(next); showToast('已依共同音樂成分重新計分');
+  };
+
+  const move = (participantId: string, targetId: string) => setRooms((items) => items.map((room) => ({ ...room, participantIds: room.id === targetId ? [...room.participantIds.filter((id) => id !== participantId), participantId] : room.participantIds.filter((id) => id !== participantId) })));
+  const adopt = () => {
+    updateActivity(activity.id, (a) => ({ ...a, rooms: rooms.map(({ score, ...room }) => room), version: a.version + 1, history: [...a.history, { time: '剛剛', text: `採用自由分房試算為正式安排（版本 ${a.version + 1}）` }] }));
+    setAdoptOpen(false); showToast('已採用為正式分房，安排版本已更新');
+  };
+
+  return <div className="page rooms-page">
+    <PageHeader title="分房試算" description={activity.name} back={<Link to={`/activities/${activity.id}`} className="back-link"><ArrowLeft size={18} /><span>返回活動</span></Link>} actions={<Link to={`/activities/${activity.id}`}><Button variant="secondary">查看正式安排</Button></Link>} />
+    <div className="trial-notice"><FlaskConical size={18} /><div><strong>自由試算不會變更正式分房</strong><p>依共同音樂成分提供分組建議；採用前會預覽並確認權限。</p></div><Badge tone="amber">試算模式</Badge></div>
+    <div className="room-workspace"><aside className="room-controls"><section><div className="section-title-row"><h2>選取人員</h2><Badge>{selected.length}/{eligible.length}</Badge></div><div className="room-people-checks">{eligible.map((p) => { const user = users.find((u) => u.id === p.userId); return <label key={p.id}><input type="checkbox" checked={selected.includes(p.id)} onChange={(e) => setSelected((items) => e.target.checked ? [...items, p.id] : items.filter((id) => id !== p.id))} /><span>{p.name}<small>{user?.selections.length ?? 0} 項成分</small></span></label>; })}</div></section><section className="room-settings"><Field label="房數"><Select value={roomCount} onChange={(e) => setRoomCount(Number(e.target.value))}>{[1, 2, 3, 4].map((n) => <option key={n} value={n}>{n} 間</option>)}</Select></Field><Field label="預設每房容量"><input type="number" min={1} max={20} value={capacity} onChange={(e) => { setCapacity(Number(e.target.value)); setCustomCapacities((items) => items.map(() => Number(e.target.value))); }} /></Field><div className="custom-capacities">{Array.from({ length: roomCount }, (_, i) => <Field key={i} label={`${String.fromCharCode(65 + i)} 室人數`}><input type="number" min={1} max={30} value={customCapacities[i] ?? capacity} onChange={(e) => setCustomCapacities((items) => items.map((v, index) => index === i ? Number(e.target.value) : v))} /></Field>)}</div><Button onClick={calculate} disabled={selected.length === 0}><RotateCcw size={16} />{rooms.length ? '重新計算與計分' : '開始試算'}</Button></section></aside>
+      <section className="room-results"><div className="section-title-row"><div><h2>試算結果</h2><p>每人均可手動移房，修改會保留於此裝置</p></div>{rooms.length > 0 && <Button size="sm" variant="secondary" onClick={() => showToast('試算分享圖片尚未匯出；目前可先使用正式分享資訊', 'info')}><Share2 size={15} />分享圖片</Button>}</div>{rooms.length ? <div className="trial-room-grid">{rooms.map((room) => <article className="trial-room" key={room.id}><header><div><h3>{room.name}</h3><span>{room.participantIds.length}/{room.capacity} 人</span></div><div className="room-score"><strong>{room.score}</strong><span>平均共同項</span></div></header><div className="room-members">{room.participantIds.map((pid) => { const p = eligible.find((item) => item.id === pid); const user = users.find((u) => u.id === p?.userId); if (!p) return null; return <div key={pid}>{user ? <Avatar user={user} size="sm" /> : <Avatar user={{ name: p.name, avatar: p.name[0], color: '#777' }} size="sm" />}<span>{p.name}</span><Select value={room.id} onChange={(e) => move(pid, e.target.value)} aria-label={`移動 ${p.name}`}>{rooms.map((target) => <option value={target.id} key={target.id}>移至 {target.name}</option>)}</Select></div>; })}</div>{room.participantIds.length > room.capacity && <p className="room-warning">超過設定容量，請手動調整。</p>}</article>)}</div> : <EmptyState title="尚未開始試算" description="選取人員、設定房數與容量後開始計算。" />}{rooms.length > 0 && <div className="adopt-bar"><div><ShieldCheck size={18} /><span>{isOrganizer ? '你是發起者／協辦，可預覽後採用。' : '你沒有變更正式分房的權限。'}</span></div><Button disabled={!isOrganizer} onClick={() => setAdoptOpen(true)}><Check size={16} />採用為正式安排</Button></div>}</section>
+    </div>
+    {adoptOpen && <Modal title="採用試算結果" description="將取代目前正式分房，並增加安排版本。" onClose={() => setAdoptOpen(false)} footer={<><Button variant="secondary" onClick={() => setAdoptOpen(false)}>取消</Button><Button onClick={adopt}>確認採用</Button></>}><div className="adopt-preview">{rooms.map((room) => <div key={room.id}><strong>{room.name}・{room.participantIds.length}/{room.capacity}</strong><p>{room.participantIds.map((pid) => eligible.find((p) => p.id === pid)?.name).join('、')}</p></div>)}</div><div className="inline-alert"><ShieldCheck size={17} />已確認你具有此活動的分房管理權限。成員仍需重新確認安排。</div></Modal>}
+  </div>;
+}

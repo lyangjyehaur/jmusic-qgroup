@@ -3,7 +3,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows } from './draft-helpers';
 import { checkAdminReceipt } from './operation-helpers';
 
-const origin = 'http://127.0.0.1:5082', rescueKey = 'synthetic-admin-rescue-' + 'x'.repeat(32);
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, rescueKey = 'synthetic-admin-rescue-' + 'x'.repeat(32);
 const found = '此操作編號已有回執，請回原頁核對內容及目前權限。';
 const missing = '尚未查到此操作編號的回執，請回原頁確認原操作結果。';
 async function login(context: BrowserContext, user = 'registration-admin') {
@@ -91,7 +91,8 @@ test('receipt HTTP and parsing failures stay visible, clear an earlier result an
 test('renewed rescue authority reports the original scope mismatch instead of a missing member receipt', async ({ page, context }) => {
   await login(context, 'bob'); await page.goto(origin + '/admin');
   await page.getByLabel('管理救援憑證', { exact: true }).fill(rescueKey); await page.getByRole('button', { name: '使用救援憑證登入', exact: true }).click();
-  await expect(page.getByRole('link', { name: 'bot 設定', exact: true })).toBeVisible();
+  await page.getByRole('tab',{name:'QQ bot',exact:true}).click();
+  await expect(page.locator('.admin-workspace').getByRole('link', { name: 'bot 設定', exact: true })).toBeVisible();
   const pending = await prepare(page, context), original = await auth(context);
   const renewed = await context.request.post(origin + '/api/v2/admin/login', { headers: original.headers, data: { key: rescueKey, confirm: true } }); expect(renewed.ok()).toBe(true);
   expect((await auth(context)).access.scope).not.toBe(original.access.scope);

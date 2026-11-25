@@ -1,0 +1,53 @@
+.music-save-dock.kimi {
+  position: fixed; z-index: 40; bottom: calc(20px + var(--visual-viewport-inset, 0px));
+  left: calc(var(--sidebar-width) + (100% - var(--sidebar-width)) / 2); transform: translateX(-50%);
+  width: min(680px, calc(100% - var(--sidebar-width) - 32px)); max-height: 40dvh; overflow-y: auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 16px;
+  padding: 12px 18px; color: var(--app-ink); background: var(--app-surface);
+  border: 1px solid var(--app-contour); border-radius: var(--yahha-radius-panel); box-shadow: 0 6px 24px var(--app-shadow);
+}
+.music-save-dock[hidden] { display: none !important; }
+.music-save-summary { display: grid; gap: 4px; min-width: 0; font-size: 12px; overflow-wrap: anywhere; }
+.music-save-summary > span { color: var(--app-muted); font-size: 11px; }
+.music-save-summary p { margin: 0; }
+.music-save-dock > .button { flex-shrink: 0; }
+.music-save-summary { flex: 1; }
+.music-save-dock .music-save-review { min-width: 32px; width: 32px; min-height: 36px; padding: 4px; }
+/* Reserve the same tail space in every selection/save state. */
+html.music-workspace-active .kimi-shell .main { padding-bottom: 256px; }
+.kimi-shell:has(.music-save-dock:not([hidden])) .back-to-top { bottom: calc(var(--mobile-dock-height) + var(--music-save-dock-height, 96px) + var(--visual-viewport-inset, 0px) + 36px); }
+.kimi.yj-dialog:has(.music-save-dock) { display: flex; flex-direction: column; overflow: hidden; }
+.kimi.yj-dialog:has(.music-save-dock) [class*="dialogBody"] { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 120px; }
+.kimi.yj-dialog [class*="dialogFooter"]:has(.music-save-dock) { flex: none; flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 0; }
+.kimi.yj-dialog [class*="dialogFooter"]:has(> .music-save-dock:only-child) { padding: 0; border: 0; }
+.kimi.yj-dialog .music-save-dock {
+  position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--music-dialog-footer-height, 68px) + 12px);
+  width: calc(100% - 44px); max-width: none; max-height: 25dvh; margin: 0;
+  box-shadow: 0 6px 24px var(--app-shadow); background: var(--app-surface);
+}
+.kimi.yj-dialog .music-save-dock > .button { flex: 0 0 auto; }
+@media(max-width:768px) {
+  .music-save-dock.kimi { left: 50%; width: calc(100% - 24px); bottom: calc(var(--mobile-dock-height) + var(--visual-viewport-inset, 0px) + 12px); gap: 10px; padding: 10px 12px; }
+  .kimi.yj-dialog .music-save-dock { width: calc(100% - 32px); }
+}
+
+/* Feedback is mounted in one overlay stack, never between headings and rows. */
+.feedback-layer.kimi, .app-status-notices {
+  position: fixed; z-index: 90; right: 24px; width: min(480px, calc(100% - 32px));
+  display: grid; gap: 8px; max-height: 45dvh; overflow-y: auto;
+}
+.feedback-layer.kimi { top: calc(var(--topbar-height, 64px) + 24px); }
+.app-status-notices { bottom: calc(var(--mobile-dock-height, 0px) + var(--music-save-dock-height, 0px) + var(--visual-viewport-inset, 0px) + 42px); max-height: 25dvh; }
+.kimi-shell:has(.app-status-notices:not(:empty)) .back-to-top { bottom: calc(var(--mobile-dock-height, 0px) + var(--music-save-dock-height, 0px) + var(--app-status-notice-height, 0px) + var(--visual-viewport-inset, 0px) + 56px); }
+.feedback-layer:empty, .app-status-notices:empty { display: none; }
+.feedback-layer > *, .app-status-notices > .notice {
+  position: static; margin: 0; padding: 12px 16px; min-width: 0; max-width: 100%;
+  color: var(--app-ink); background: var(--app-surface); border: 1px solid var(--app-contour);
+  border-radius: var(--yahha-radius-note); box-shadow: 0 6px 24px var(--app-shadow); overflow-wrap: anywhere;
+}
+.feedback-layer > .music-save-result { font-size: 13px; }
+.kimi.yj-dialog .feedback-layer { position: absolute; top: 60px; right: 16px; z-index: 50; width: min(480px, calc(100% - 32px)); }
+@media(max-width:768px) {
+  .feedback-layer.kimi, .app-status-notices { right: 12px; width: calc(100% - 24px); }
+  .kimi.yj-dialog .feedback-layer { right: 16px; width: calc(100% - 32px); }
+}

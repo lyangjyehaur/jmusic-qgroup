@@ -1,0 +1,141 @@
+export type ID = string;
+export type Familiarity = '本命' | '常聽' | '聽過一些' | '只聽過幾首';
+export type TermKind = '領域' | '細分';
+export type ActivityStatus = '草稿' | '報名中' | '已額滿' | '進行中' | '已結束' | '已取消' | '已歸檔';
+export type RegistrationStatus = '正式' | '候補' | '待確認' | '已退出' | '逾期退出申請';
+export type Attendance = '未簽到' | '出席' | '遲到' | '早退' | '缺席';
+
+export interface User {
+  id: ID;
+  name: string;
+  avatar: string;
+  color: string;
+  profileId: string;
+  qq: string;
+  message?: string;
+  gender?: string;
+  messageVisible: boolean;
+  genderVisible: boolean;
+  qqVisible: boolean;
+  role: '發起者' | '協辦' | '成員' | '管理員';
+  selections: Selection[];
+}
+
+export interface Term {
+  id: ID;
+  name: string;
+  aliases: string[];
+  reading: string;
+  category: string;
+  kind: TermKind;
+  domain?: string;
+  description: string;
+  users: number;
+  change24h: number;
+  related: ID[];
+  creator: string;
+}
+
+export interface Selection {
+  termId: ID;
+  familiarity: Familiarity;
+}
+
+export interface Participant {
+  id: ID;
+  userId?: ID;
+  name: string;
+  status: RegistrationStatus;
+  attendance: Attendance;
+  companionOf?: ID;
+  feeFactor: number;
+  paid: number;
+  note?: string;
+  createdAt: string;
+}
+
+export interface Activity {
+  id: ID;
+  name: string;
+  category: string;
+  location: string;
+  address: string;
+  description: string;
+  start: string;
+  duration: number;
+  timezone: string;
+  signupDeadline: string;
+  cancelDeadline: string;
+  capacity: number;
+  minimum: number;
+  feeRule: string;
+  estimatedFee: number;
+  visibility: '公開' | '邀請';
+  qqSync: boolean;
+  status: ActivityStatus;
+  organizerId: ID;
+  coOrganizerIds: ID[];
+  participants: Participant[];
+  signupPaused: boolean;
+  version: number;
+  history: { time: string; text: string }[];
+  rooms: Room[];
+}
+
+export interface Room {
+  id: ID;
+  name: string;
+  capacity: number;
+  participantIds: ID[];
+}
+
+export interface AppNotification {
+  id: ID;
+  title: string;
+  body: string;
+  time: string;
+  read: boolean;
+  todo: boolean;
+  done: boolean;
+  type: '活動' | '款項' | '同好' | '系統';
+  link: string;
+  error?: boolean;
+}
+
+export interface Bill {
+  id: ID;
+  activityId: ID;
+  participantId: ID;
+  title: string;
+  amount: number;
+  due: number;
+  status: '待付款' | '待核對' | '已結清' | '待退款';
+  declaredAt?: string;
+  method?: string;
+}
+
+export interface LedgerEntry {
+  id: ID;
+  time: string;
+  type: '付款申報' | '收款' | '退款' | '墊付' | '償還' | '訂金' | '押金' | '轉款' | '更正' | '沖銷';
+  person: string;
+  amount: number;
+  note: string;
+  verified: boolean;
+}
+
+export interface VoteOption {
+  id: ID;
+  label: string;
+  votes: Record<ID, '可以' | '可能' | '不行'>;
+  final?: boolean;
+}
+
+export interface BotDelivery {
+  id: ID;
+  group: string;
+  content: string;
+  time: string;
+  status: '已投遞（模擬）' | '待重試' | '失敗';
+  error?: string;
+}

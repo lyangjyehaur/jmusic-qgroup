@@ -1,0 +1,154 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { AlertTriangle, ArrowLeft, ArrowRight, CalendarClock, Check, ChevronDown, CircleEllipsis, ClipboardCheck, Clock3, Copy, ExternalLink, History, MapPin, Navigation, Plus, Share2, ShieldCheck, UserPlus, UsersRound, WalletCards, X } from 'lucide-react';
+import { useApp, mockService } from '../services/AppStore';
+import type { Activity, Participant } from '../types';
+import { Avatar, Badge, Button, EmptyState, Field, IconButton, Modal, PageHeader, Select, Tabs, cn, formatDateTime, statusTone } from '../components/UI';
+
+const activeStatuses = ['正式', '候補', '待確認', '逾期退出申請'];
+
+export default function ActivityDetailPage() {
+  const { id = '' } = useParams();
+  const { activities, currentUser, users, bills, updateActivity, duplicateActivity, updateParticipant, register, showToast } = useApp();
+  const activity = activities.find((item) => item.id === id);
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [tab, setTab] = useState('overview');
+  const [moreOpen, setMoreOpen] = useState(false);
+  const [walkIn, setWalkIn] = useState(false);
+  const [walkInName, setWalkInName] = useState('');
+  const [advancedAction, setAdvancedAction] = useState('');
+  const modalMode = location.pathname.endsWith('/signup') ? 'signup' : location.pathname.endsWith('/manage') ? 'manage' : null;
+
+  useEffect(() => { setTab('overview'); setMoreOpen(false); }, [id]);
+  if (!activity) return <div className="page"><EmptyState title="找不到活動" description="舊連結可能已失效，或活動已被移除。" action={<Link to="/activities"><Button>返回活動列表</Button></Link>} /></div>;
+
+  const mine = activity.participants.find((p) => p.userId === currentUser.id && activeStatuses.includes(p.status));
+  const companions = activity.participants.filter((p) => p.companionOf === mine?.id && activeStatuses.includes(p.status));
+  const formal = activity.participants.filter((p) => ['正式', '待確認'].includes(p.status));
+  const waitlist = activity.participants.filter((p) => p.status === '候補');
+  const isOrganizer = activity.organizerId === currentUser.id || activity.coOrganizerIds.includes(currentUser.id);
+  const organizer = users.find((u) => u.id === activity.organizerId);
+  const myBill = bills.find((b) => b.activityId === activity.id && b.participantId === mine?.id);
+  const canSignup = activity.status === '報名中' && !activity.signupPaused;
+  const closeModal = () => navigate(`/activities/${activity.id}`);
+
+  const share = async () => {
+    const data = `${activity.name}\n${formatDateTime(activity.start)}\n${activity.location}\n${window.location.origin}/activities/${activity.id}`;
+    try { await navigator.clipboard.writeText(data); showToast('活動資訊與連結已複製'); } catch { showToast('無法使用剪貼簿，請複製網址列連結', 'info'); }
+  };
+  const lifecycle = () => {
+    const patch: Partial<Activity> = {};
+    if (advancedAction === '暫停報名') patch.signupPaused = true;
+    if (advancedAction === '恢復報名') patch.signupPaused = false;
+    if (advancedAction === '開始活動') patch.status = '進行中';
+    if (advancedAction === '結束活動') patch.status = '已結束';
+    if (advancedAction === '取消活動') patch.status = '已取消';
+    if (advancedAction === '歸檔活動') patch.status = '已歸檔';
+    updateActivity(activity.id, (a) => ({ ...a, ...patch, history: [...a.history, { time: '剛剛', text: `${currentUser.name} 執行「${advancedAction}」` }] }));
+    showToast(`已${advancedAction}`); setAdvancedAction(''); setMoreOpen(false);
+  };
+
+  return <div className="page activity-detail-page">
+    <div className="detail-back-row"><Link to="/activities" className="back-link"><ArrowLeft size={17} />活動列表</Link><span>活動 ID・{activity.id}</span></div>
+    <PageHeader title={activity.name} description={`${activity.category}・${activity.visibility}可見・安排版本 ${activity.version}`} actions={<><Button variant="secondary" onClick={share}><Share2 size={16} />分享</Button><div className="more-wrap"><IconButton label="更多活動操作" onClick={() => setMoreOpen((v) => !v)}><CircleEllipsis size={21} /></IconButton>{moreOpen && <div className="popover action-menu">
+      <Link to={`/activities/new?copy=${activity.id}`}><Copy size={15} />複製安排</Link>
+      <Link to={`/votes?activity=${activity.id}`}><CalendarClock size={15} />建立時間投票</Link>
+      {isOrganizer && <><button onClick={() => { setAdvancedAction(activity.signupPaused ? '恢復報名' : '暫停報名'); setMoreOpen(false); }}>{activity.signupPaused ? '恢復報名' : '暫停報名'}</button><button onClick={() => { setAdvancedAction(activity.status === '進行中' ? '結束活動' : '開始活動'); setMoreOpen(false); }}>{activity.status === '進行中' ? '結束活動' : '開始活動'}</button><button onClick={() => showToast('已複製協辦與結算人邀請連結（模擬）', 'info')}>邀請協辦／結算人</button><button onClick={() => showToast('發起者交接需由對方確認，原型保留此流程', 'info')}>發起者交接</button><button className="danger-text" onClick={() => { setAdvancedAction('取消活動'); setMoreOpen(false); }}>取消活動</button></>}
+      {['已結束', '已取消'].includes(activity.status) && <button onClick={() => { setAdvancedAction('歸檔活動'); setMoreOpen(false); }}>歸檔活動</button>}
+    </div>}</div></>} />
+
+    <div className="status-strip"><Badge tone={statusTone(activity.status)} dot>{activity.status}</Badge>{activity.signupPaused && <Badge tone="amber">已暫停報名</Badge>}<span><UsersRound size={15} />{formal.length} / {activity.capacity} 人{waitlist.length > 0 && `・候補 ${waitlist.length}`}</span><span>發起者 {organizer?.name}</span></div>
+
+    <div className="detail-layout">
+      <div className="detail-primary">
+        <section className="event-facts">
+          <div><Clock3 size={19} /><span><small>日期與時間</small><strong>{formatDateTime(activity.start)}</strong><p>{activity.duration} 小時・{activity.timezone}</p></span></div>
+          <div><MapPin size={19} /><span><small>集合地點</small><strong>{activity.location}</strong><p>{activity.address || '地址尚未填寫'}</p>{activity.address && <a href={`https://apis.map.qq.com/uri/v1/search?keyword=${encodeURIComponent(activity.address)}&referer=gunju.prototype`} target="_blank" rel="noreferrer">地圖導航<Navigation size={12} /></a>}</span></div>
+          <div><WalletCards size={19} /><span><small>費用規則</small><strong>預估 ¥{activity.estimatedFee}／人</strong><p>{activity.feeRule}</p></span></div>
+        </section>
+
+        <section className="next-step-panel">
+          <div className="next-step-copy"><small>我的下一步</small>{mine ? <><h2>目前為「{mine.status}」</h2><p>{mine.status === '待確認' ? '安排已更新，請確認最新時間與費用。' : mine.status === '候補' ? '有名額釋出時會依序遞補，可隨時退出候補。' : mine.status === '逾期退出申請' ? '發起者尚未確認退出，目前仍保留在名單中。' : myBill?.status === '待核對' ? '付款申報已送出，請等待結算人核對到帳。' : '請於活動前再次確認安排與款項。'}</p></> : <><h2>{activity.status === '草稿' ? '此活動仍是草稿' : activity.signupPaused ? '目前暫停報名' : canSignup || activity.status === '已額滿' ? '查看安排並選擇報名方式' : '目前未開放新報名'}</h2><p>{activity.status === '已額滿' ? '仍可加入候補；提交前會顯示逐人分配。' : `報名期限 ${activity.signupDeadline.replace('T', ' ')}`}</p></>}</div>
+          <div className="next-step-actions">{mine ? <Link to={`/activities/${activity.id}/manage`}><Button><ClipboardCheck size={16} />管理本人報名</Button></Link> : (canSignup || activity.status === '已額滿') && <Link to={`/activities/${activity.id}/signup`}><Button><UserPlus size={16} />{activity.status === '已額滿' ? '本人報名／候補' : '本人報名'}</Button></Link>}<Link to={mine ? `/activities/${activity.id}/signup` : `/activities/${activity.id}/signup?companion=1`} className={cn(!canSignup && activity.status !== '已額滿' && 'disabled-link')}><Button variant="secondary" disabled={!canSignup && activity.status !== '已額滿'}><Plus size={16} />同行／代報名</Button></Link></div>
+        </section>
+
+        <Tabs value={tab} onChange={setTab} items={[{ value: 'overview', label: '總覽' }, { value: 'people', label: '名單', count: activity.participants.filter((p) => p.status !== '已退出').length }, { value: 'rooms', label: '分房', count: activity.rooms.length }, { value: 'fees', label: '費用' }, { value: 'history', label: '操作歷史' }]} />
+
+        {tab === 'overview' && <div className="tab-stack">
+          <section className="plain-section"><div className="section-title-row"><h2>活動說明</h2>{isOrganizer && <Button variant="text" size="sm" onClick={() => showToast('安排編輯將另開子頁；目前可透過複製建立新版本', 'info')}>編輯安排</Button>}</div><p className="activity-description">{activity.description || '尚未填寫活動說明。'}</p><div className="confirmation-row"><span>安排版本 {activity.version}・請於出發前重新確認</span><Button size="sm" variant="secondary" onClick={() => { updateActivity(activity.id, (a) => ({ ...a, history: [...a.history, { time: '剛剛', text: `${currentUser.name} 已確認版本 ${a.version}` }] })); showToast(`已確認安排版本 ${activity.version}`); }}><Check size={14} />確認目前版本</Button></div></section>
+          <section className="plain-section"><div className="section-title-row"><h2>參加名單</h2><button className="text-link" onClick={() => setTab('people')}>查看全部<ArrowRight size={14} /></button></div><ParticipantList activity={activity} users={users} currentUserId={currentUser.id} isOrganizer={isOrganizer} limit={6} updateParticipant={updateParticipant} onWalkIn={() => setWalkIn(true)} /></section>
+          <section className="plain-section split-overview"><div><div className="section-title-row"><h2>正式分房</h2><Link to={`/rooms/${activity.id}`} className="text-link">調整分房<ArrowRight size={14} /></Link></div>{activity.rooms.length ? <div className="room-mini-grid">{activity.rooms.map((room) => <div key={room.id}><strong>{room.name}</strong><span>{room.participantIds.length} / {room.capacity} 人</span></div>)}</div> : <p className="muted">尚未建立包間安排，可先進行自由試算。</p>}</div><div><div className="section-title-row"><h2>我的費用</h2><Link to={`/ledger/${activity.id}`} className="text-link">查看帳本<ArrowRight size={14} /></Link></div>{myBill ? <div className="my-fee"><strong>¥{myBill.due}</strong><Badge tone={statusTone(myBill.status)}>{myBill.status}</Badge><p>{myBill.title}・展示金額不代表已付款</p></div> : <p className="muted">目前沒有本人帳單，將於結算人建立後顯示。</p>}</div></section>
+        </div>}
+
+        {tab === 'people' && <section className="tab-panel"><div className="section-title-row"><div><h2>報名與出席名單</h2><p>正式、候補與同行人分別標記</p></div>{isOrganizer && <Button size="sm" variant="secondary" onClick={() => setWalkIn(true)}><Plus size={15} />現場補錄</Button>}</div><ParticipantList activity={activity} users={users} currentUserId={currentUser.id} isOrganizer={isOrganizer} updateParticipant={updateParticipant} onWalkIn={() => setWalkIn(true)} /></section>}
+        {tab === 'rooms' && <section className="tab-panel"><div className="section-title-row"><div><h2>正式包間安排</h2><p>自由試算結果不會自動變更此名單</p></div><Link to={`/rooms/${activity.id}`}><Button size="sm">開啟分房</Button></Link></div>{activity.rooms.length ? <div className="room-cards">{activity.rooms.map((room) => <div className="room-card" key={room.id}><header><strong>{room.name}</strong><span>{room.participantIds.length}/{room.capacity}</span></header>{room.participantIds.map((pid) => { const p = activity.participants.find((item) => item.id === pid); return p ? <span key={pid}>{p.name}</span> : null; })}</div>)}</div> : <EmptyState title="尚未分房" description="可選取已報名人員，依音樂成分試算後再採用。" />}</section>}
+        {tab === 'fees' && <section className="tab-panel"><div className="section-title-row"><div><h2>應付帳單</h2><p>帳單、付款申報與實際款項分開記錄</p></div><Link to={`/ledger/${activity.id}`}><Button size="sm">進入結算與帳本</Button></Link></div><div className="responsive-table"><table><thead><tr><th>成員</th><th>項目</th><th>應付</th><th>款項狀態</th></tr></thead><tbody>{bills.filter((b) => b.activityId === activity.id).map((bill) => <tr key={bill.id}><td>{activity.participants.find((p) => p.id === bill.participantId)?.name}</td><td>{bill.title}</td><td>¥{bill.due}</td><td><Badge tone={statusTone(bill.status)}>{bill.status}</Badge></td></tr>)}</tbody></table></div></section>}
+        {tab === 'history' && <section className="tab-panel"><div className="section-title-row"><div><h2>操作歷史</h2><p>安排、報名與權限操作的時間序</p></div><History size={19} /></div><ol className="history-list">{[...activity.history].reverse().map((entry, index) => <li key={index}><i /><span><strong>{entry.text}</strong><small>{entry.time}</small></span></li>)}</ol></section>}
+      </div>
+      <aside className="detail-aside"><section><h2>報名資訊</h2><dl className="side-definitions"><div><dt>報名截止</dt><dd>{activity.signupDeadline.replace('T', ' ')}</dd></div><div><dt>退出截止</dt><dd>{activity.cancelDeadline.replace('T', ' ')}</dd></div><div><dt>最低成團</dt><dd>{activity.minimum} 人</dd></div><div><dt>群組同步</dt><dd>{activity.qqSync ? '已啟用（模擬）' : '未啟用'}</dd></div></dl></section><section><h2>我的同行</h2>{companions.length ? companions.map((p) => <div className="companion-row" key={p.id}><span>{p.name}</span><Badge tone={statusTone(p.status)}>{p.status}</Badge></div>) : <p className="muted">尚無同行或代報人員</p>}<Link to={`/activities/${activity.id}/signup?companion=1`} className="text-link">新增同行／代報<Plus size={14} /></Link></section><section className="aside-note"><ShieldCheck size={17} /><p>頁面中的群通知與付款均為模擬狀態，不會發送訊息或操作真實款項。</p></section></aside>
+    </div>
+
+    {modalMode && <RegistrationDialog activity={activity} mode={modalMode} mine={mine} companions={companions} onClose={closeModal} />}
+    {walkIn && <Modal title="現場補錄" description="新增未事先報名的出席者，費用仍需另行核對。" onClose={() => setWalkIn(false)} footer={<><Button variant="secondary" onClick={() => setWalkIn(false)}>取消</Button><Button disabled={!walkInName.trim()} onClick={() => { register(activity.id, [{ name: walkInName.trim(), feeFactor: 1 }], '個別候補'); const created = activity.participants; showToast('已補錄人員，請在名單更新出席'); setWalkIn(false); setWalkInName(''); }}>確認補錄</Button></>}><Field label="現場人員稱呼" required><input autoFocus value={walkInName} onChange={(e) => setWalkInName(e.target.value)} placeholder="不使用真實個資" /></Field></Modal>}
+    {advancedAction && <Modal title={advancedAction} description={advancedAction === '取消活動' ? '取消不會自動退款，仍需在帳本處理應退款項。' : '此操作會寫入活動歷史。'} onClose={() => setAdvancedAction('')} footer={<><Button variant="secondary" onClick={() => setAdvancedAction('')}>返回</Button><Button variant={advancedAction === '取消活動' ? 'danger' : 'primary'} onClick={lifecycle}>確認{advancedAction}</Button></>}><div className="inline-alert"><AlertTriangle size={17} />目前為原型操作，群通知僅記錄模擬狀態。</div></Modal>}
+  </div>;
+}
+
+function ParticipantList({ activity, users, currentUserId, isOrganizer, limit, updateParticipant, onWalkIn }: { activity: Activity; users: ReturnType<typeof useApp>['users']; currentUserId: string; isOrganizer: boolean; limit?: number; updateParticipant: ReturnType<typeof useApp>['updateParticipant']; onWalkIn: () => void }) {
+  const visible = activity.participants.filter((p) => p.status !== '已退出').slice(0, limit);
+  return <div className="participant-list">{visible.map((p) => {
+    const user = users.find((u) => u.id === p.userId);
+    return <div className="participant-row" key={p.id}>
+      {user ? <Link to={`/people/card/${user.id}`} state={{ from: `/activities/${activity.id}` }}><Avatar user={user} /></Link> : <Avatar user={{ name: p.name, avatar: p.name.slice(0, 1), color: '#777b70' }} />}
+      <div className="participant-name"><div>{user ? <Link to={`/people/card/${user.id}`} state={{ from: `/activities/${activity.id}` }}>{p.name}</Link> : <strong>{p.name}</strong>}{p.userId === currentUserId && <Badge>本人</Badge>}{p.companionOf && <Badge>同行</Badge>}</div><span>{user ? `${user.profileId}・${user.selections.length} 項音樂成分` : '未綁定帳號・可認領'}{p.note ? `・${p.note}` : ''}</span></div>
+      <Badge tone={statusTone(p.status)}>{p.status}</Badge>
+      <div className="attendance-cell">{isOrganizer ? <Select value={p.attendance} onChange={(e) => updateParticipant(activity.id, p.id, { attendance: e.target.value as Participant['attendance'] })} aria-label={`${p.name} 出席狀態`}>{['未簽到', '出席', '遲到', '早退', '缺席'].map((v) => <option key={v}>{v}</option>)}</Select> : <span>{p.attendance}</span>}</div>
+      <div className="participant-actions">{!p.userId && <Button size="sm" variant="text" onClick={() => updateParticipant(activity.id, p.id, { userId: currentUserId, name: users.find((u) => u.id === currentUserId)?.name })}>認領</Button>}{isOrganizer && p.status === '待確認' && <Button size="sm" variant="text" onClick={() => updateParticipant(activity.id, p.id, { status: '正式' })}>確認</Button>}{isOrganizer && p.status === '逾期退出申請' && <Button size="sm" variant="text" onClick={() => updateParticipant(activity.id, p.id, { status: '已退出' })}>同意退出</Button>}</div>
+    </div>;
+  })}{visible.length === 0 && <p className="muted">尚無報名人員。</p>}</div>;
+}
+
+function RegistrationDialog({ activity, mode, mine, companions, onClose }: { activity: Activity; mode: 'signup' | 'manage'; mine?: Participant; companions: Participant[]; onClose: () => void }) {
+  const { currentUser, register, updateParticipant, showToast } = useApp();
+  const [step, setStep] = useState<'edit' | 'preview'>('edit');
+  const [includeSelf, setIncludeSelf] = useState(!mine);
+  const [extraPeople, setExtraPeople] = useState<{ name: string; feeFactor: number }[]>([]);
+  const [waitlistMode, setWaitlistMode] = useState<'個別候補' | '整組候補'>('個別候補');
+  const [agree, setAgree] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState('');
+  const people = useMemo<Pick<Participant, 'name' | 'userId' | 'companionOf' | 'feeFactor'>[]>(() => [
+    ...(includeSelf && !mine ? [{ name: currentUser.name, userId: currentUser.id, feeFactor: 1 }] : []),
+    ...extraPeople.filter((p) => p.name.trim()).map((p) => ({ ...p, companionOf: mine?.id })),
+  ], [includeSelf, mine, extraPeople, currentUser]);
+  const estimated = people.reduce((sum, p) => sum + activity.estimatedFee * p.feeFactor, 0);
+  const canSubmit = people.length > 0 && agree;
+
+  const submit = async () => {
+    setSubmitting(true); setError('');
+    try {
+      await mockService.write(people);
+      register(activity.id, people, waitlistMode);
+      showToast(`已提交 ${people.length} 人報名`);
+      onClose();
+    } catch (e) { setError('提交結果未知，原稿已保留。請先查看名單，再決定是否重試。'); setStep('edit'); }
+    finally { setSubmitting(false); }
+  };
+
+  return <Modal title={mode === 'manage' ? '管理本人報名' : mine ? '同行／代報名' : '活動報名'} description={activity.name} onClose={onClose} wide footer={mode === 'signup' || !mine ? step === 'edit' ? <><Button variant="secondary" onClick={onClose}>取消</Button><Button disabled={people.length === 0} onClick={() => setStep('preview')}>預覽分配與費用<ArrowRight size={15} /></Button></> : <><Button variant="secondary" onClick={() => setStep('edit')}>返回修改</Button><Button loading={submitting} disabled={!canSubmit} onClick={submit}>確認提交報名</Button></> : <Button variant="secondary" onClick={onClose}>完成</Button>}>
+    {error && <div className="inline-alert error"><AlertTriangle size={17} />{error}<Button size="sm" variant="secondary" onClick={submit}>重試提交</Button></div>}
+    {mode === 'manage' && mine ? <div className="manage-registration"><div className="manage-status"><div><small>目前狀態</small><h3>{mine.status}</h3><p>報名時間 {mine.createdAt}</p></div><Badge tone={statusTone(mine.status)} dot>{mine.status}</Badge></div>
+      {mine.status === '待確認' && <Button onClick={() => { updateParticipant(activity.id, mine.id, { status: '正式' }); showToast('已確認最新安排'); onClose(); }}><Check size={16} />確認最新安排</Button>}
+      <section><h3>我的同行</h3>{companions.length ? companions.map((p) => <div className="companion-manage-row" key={p.id}><span>{p.name}<small>{p.status}・費用係數 {p.feeFactor}</small></span><Button size="sm" variant="text" onClick={() => updateParticipant(activity.id, p.id, { status: '已退出' })}>退出</Button></div>) : <p className="muted">沒有同行人員</p>}</section>
+      {!['已退出', '逾期退出申請'].includes(mine.status) && <section className="cancel-zone"><h3>退出報名</h3><p>目前時間若在退出期限後，只會提交逾期退出申請，需由發起者確認。</p><Button variant="danger" onClick={() => { const late = new Date() > new Date(activity.cancelDeadline); updateParticipant(activity.id, mine.id, { status: late ? '逾期退出申請' : '已退出' }); showToast(late ? '已提交逾期退出申請' : '已退出報名', 'info'); onClose(); }}>{new Date() > new Date(activity.cancelDeadline) ? '申請逾期退出' : '退出報名'}</Button></section>}
+    </div> : step === 'edit' ? <div className="signup-form">
+      <section><div className="section-title-row"><h3>報名人員</h3><Badge>{activity.participants.filter((p) => p.status === '正式').length}/{activity.capacity} 已報</Badge></div>
+        <label className={cn('person-check', mine && 'disabled')}><input type="checkbox" checked={mine ? true : includeSelf} disabled={!!mine} onChange={(e) => setIncludeSelf(e.target.checked)} /><Avatar user={currentUser} /><span><strong>{currentUser.name}（本人）</strong><small>{mine ? `目前已報名・${mine.status}` : `費用係數 1・預估 ¥${activity.estimatedFee}`}</small></span></label>
+        {extraPeople.map((person, index) => <div className="companion-input" key={index}><Field label={`同行人 ${index + 1}`}><input value={person.name} onChange={(e) => setExtraPeople((items) => items.map((item, i) => i === index ? { ...item, name: e.target.value } : item))} placeholder="站內稱呼或自訂稱呼" /></Field><Field label="費用"><Select value={person.feeFactor} onChange={(e) => setExtraPeople((items) => items.map((item, i) => i === index ? { ...item, feeFactor: Number(e.target.value) } : item))}><option value={1}>AA・全額</option><option value={0.5}>半 A</option><option value={0}>免共同費</option></Select></Field><IconButton label="移除此同行人" onClick={() => setExtraPeople((items) => items.filter((_, i) => i !== index))}><X size={17} /></IconButton></div>)}
+        <Button variant="secondary" size="sm" onClick={() => setExtraPeople((items) => [...items, { name: '', feeFactor: 1 }])}><Plus size={15} />新增同行／代報</Button>
+      </section>
+      <section><Field label="名額不足時" hint="整組候補可避免只有部分人員遞補"><Select value={waitlistMode} onChange={(e) => setWaitlistMode(e.target.value as '個別候補' | '整組候補')}><option>個別候補</option><option>整組候補</option></Select></Field><div className="inline-alert"><ShieldCheck size={17} />提交後仍可管理本人報名；同行人退出需分別處理。</div></section>
+    </div> : <div className="registration-preview"><h3>逐人分配與費用確認</h3><div className="allocation-list">{people.map((person, index) => { const projected = activity.participants.filter((p) => ['正式', '待確認'].includes(p.status)).length + index; const status = waitlistMode === '整組候補' && projected >= activity.capacity ? '整組候補' : projected >= activity.capacity ? '候補' : '正式'; return <div key={index}><span><strong>{person.name}</strong><small>{person.userId ? '本人報名' : '同行／代報'}・費用係數 {person.feeFactor}</small></span><Badge tone={status === '正式' ? 'green' : 'amber'}>{status}</Badge><strong>¥{activity.estimatedFee * person.feeFactor}</strong></div>; })}</div><div className="cost-total"><span>本次預估合計<small>不是實際扣款，依最終帳單為準</small></span><strong>¥{estimated}</strong></div><label className="agree-check"><input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} /><span>我已確認活動時間、費用規則與退出期限，並了解候補分配方式。</span></label></div>}
+  </Modal>;
+}

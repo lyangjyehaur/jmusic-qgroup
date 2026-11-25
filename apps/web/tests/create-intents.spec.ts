@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test,expect } from './fixtures';
 import { damageDraft,durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082',scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex');
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex');
 async function login(context:BrowserContext,id='alice') {await context.addCookies([{name:'kanban_session',value:'fixture-'+id,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 const key=(kind:'activity'|'poll')=>'qgroup:rebuild:activity-draft:'+(kind==='activity'?'v1:':'poll-create:v1:')+scope+':new';
 const name=(kind:'activity'|'poll')=>kind==='activity'?'活動名稱':'投票名稱';

@@ -1,8 +1,9 @@
 import { uiText } from './language';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { ActivityCategory, CreateTimePoll, ManageTimePoll, PollChoice, TimePoll, TimePollResult, VoteTimePoll, type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
@@ -398,12 +399,16 @@ function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; 
     </>
   );
 }
+function PollTally({option:o}:{option:Poll['options'][number]}){
+ const total=Math.max(1,o.yes+o.maybe+o.no);
+ return <div className="vote-stats" aria-label="填答分佈">{[[o.yes,'可以'],[o.maybe,'勉強可以'],[o.no,'不行']].map(([count,label],index)=><span key={index} style={{'--vote-width':Number(count)/total*100+'%'} as CSSProperties}>{label} {count}</span>)}</div>;
+}
 function PollResults({ poll: p }: { poll: Poll }) {
   return (
     <section aria-label="投票統計">
       {p.options.map((o) => (
-        <Surface key={o.id}>
-          <Heading level={2}>{label(o, p)}</Heading>
+        <Surface key={o.id} className="vote-option">
+          <Heading level={2}>{label(o, p)}</Heading><PollTally option={o}/>
           <Text>
             {o.expired ? '已過期 · ' : ''}
             {p.leading_option_ids.includes(o.id) ? '最高票 · ' : ''}
@@ -499,7 +504,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
             ))}
           </div>
           {p.options.map((o) => (
-            <fieldset key={o.id} disabled={o.expired} className="poll-choice">
+            <fieldset key={o.id} disabled={o.expired} className="poll-choice vote-option">
               <legend>
                 {label(o, p)}
                 {o.expired ? ' · 已過期' : ''}
@@ -509,7 +514,7 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
                 可以 {o.yes} · 勉強可以 {o.maybe} · 不行 {o.no}
                 {p.selected_option_id === o.id ? ' · 已定案' : ''}
               </Text>
-              <div className="poll-answers">
+              <PollTally option={o}/><div className="poll-answers">
                 {Object.entries(choices).map(([choice, text]) => (
                   <label key={choice}>
                     <input

@@ -4,7 +4,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { durableRows } from './draft-helpers';
 import { legacyRaw } from '../src/legacy-local-codec';
-const origin = 'http://127.0.0.1:5082', scope = createHash('sha256').update('kanban-drafts-v1:alice').digest('hex');
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, scope = createHash('sha256').update('kanban-drafts-v1:alice').digest('hex');
 const intent = '11111111-1111-4111-8111-111111111111';
 const draft = (data: unknown = { fields: [{ name: 'id', value: '' }, { name: 'title', value: '匯入原文字', checked: undefined }], dataset: { intent, revision: '7' } }, suffix = 'event:new') => ({ key: 'draft:' + scope + ':' + suffix, data, at: 1234567 });
 const activity = () => draft({ react: 1, value: { id: '', _intent: intent, _revision: '', _lifecycle: '', title: '匯入活動', category: '约K', location: '台北', description: '原說明\n第二行', fee_policy: '原費用', capacity_unlimited: false, capacity: '8', minimum_participants: '2', timezone: 'Asia/Taipei', visibility: 'public', event_date: '2099-12-12', start_time: '18:30', start_day_offset: '0', duration_hours: '3', deadline: '2099-12-10T18:00', withdrawal_deadline: '2099-12-09T20:00', bot_enabled: false, reason: '原修改原因' }, revision: undefined });

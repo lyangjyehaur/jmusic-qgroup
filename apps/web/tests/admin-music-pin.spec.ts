@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import { denyDraftWrites,durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 const confirmation='確認已核對成分及申請人，重設找回口令';
 const success='口令重設已完成，該成分的舊找回授權已失效。';
 const unknown='尚未確認口令重設結果。口令未保存，請先查詢操作結果。';

@@ -2,7 +2,7 @@ import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import { readFile } from 'node:fs/promises';
-const origin='http://127.0.0.1:5082',consent='確認接受活動查看邀請',unknown='尚未確認邀請結果，原操作已保留，請確認原邀請操作結果。';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,consent='確認接受活動查看邀請',unknown='尚未確認邀請結果，原操作已保留，請確認原邀請操作結果。';
 async function login(context:BrowserContext,id='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+id,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const viewer=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()};}
 async function published(context:BrowserContext){

@@ -13,6 +13,6 @@ export function nicknameFixture(db: DB) {
       VALUES(?,'synthetic',?,?,?,'{"template_version":1}',?,2,'existing-claim','simulation-only','before')`).run(event, channel + '-' + status, channel, 'synthetic-group', status);
   }
   db.prepare("INSERT INTO attendees(id,event_id,manager_id,user_id,name,payer_kind,status,created_at,updated_at) VALUES('manager-only','karaoke','alice','bob','frozen','manager','confirmed','before','before')").run();
-  db.prepare("INSERT INTO finance_entries(id,event_id,kind,payload_json,occurred_at,actor_id,actor_name,created_at) VALUES('money','listen','expense','{\"amount_cents\":12345}','before','alice','小青','before')").run();
+  db.prepare("INSERT INTO finance_entries(id,event_id,kind,payload_json,occurred_at,actor_id,actor_name,created_at) VALUES('money','listen','expense','{\"amount_cents\":12345,\"funding\":\"payer\",\"payer_id\":\"synthetic-nickname-payer\"}','before','alice','小青','before')").run();
   db.prepare("INSERT INTO settlements(event_id,total_cents,headcount,updated_at,note) VALUES('listen',12345,2,'before','frozen nickname 小青')").run();
 }

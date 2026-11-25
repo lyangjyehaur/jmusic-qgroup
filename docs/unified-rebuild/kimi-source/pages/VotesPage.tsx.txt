@@ -1,0 +1,23 @@
+import { useState, type CSSProperties } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { ArrowLeft, CalendarPlus, Check, Info, Vote } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import { Badge, Button, Modal, PageHeader, cn } from '../components/UI';
+
+export default function VotesPage() {
+  const { voteOptions, users, currentUser, setVote, finalizeVote, showToast } = useApp();
+  const [finalizing, setFinalizing] = useState<string | null>(null);
+  const navigate = useNavigate();
+  const people = Object.keys(voteOptions[0]?.votes ?? {}).length;
+  return <div className="page votes-page">
+    <PageHeader title="時間投票" description="年末 J-ROCK 再約・投票截止 12 月 1 日 20:00" back={<Link to="/activities" className="back-link"><ArrowLeft size={18} /><span>活動列表</span></Link>} actions={<Button variant="secondary" onClick={() => showToast('已複製投票連結')}>分享投票</Button>} />
+    <div className="inline-alert"><Info size={17} /><span>投票不等於報名。定案後仍需建立活動並由參加者正式報名。</span></div>
+    <section className="vote-workspace"><div className="vote-heading"><div><h2>選擇可參加的時段</h2><p>{people} 人已投票・精確時段・台北 UTC+8</p></div><Badge tone="green" dot>投票中</Badge></div><div className="vote-options">{voteOptions.map((option) => {
+      const yes = Object.values(option.votes).filter((v) => v === '可以').length;
+      const maybe = Object.values(option.votes).filter((v) => v === '可能').length;
+      const no = Object.values(option.votes).filter((v) => v === '不行').length;
+      return <article className={cn('vote-option', option.final && 'final')} key={option.id}><div className="vote-option-title"><div>{option.final && <Badge tone="green"><Check size={12} />已定案</Badge>}<h3>{option.label}</h3></div><strong>{yes + maybe * 0.5}<small> 可用分</small></strong></div><div className="vote-stats"><span style={{ '--vote-width': `${yes / people * 100}%` } as CSSProperties}>可以 {yes}</span><span style={{ '--vote-width': `${maybe / people * 100}%` } as CSSProperties}>可能 {maybe}</span><span style={{ '--vote-width': `${no / people * 100}%` } as CSSProperties}>不行 {no}</span></div><div className="vote-avatars">{Object.entries(option.votes).map(([uid, value]) => { const user = users.find((u) => u.id === uid); return user ? <span key={uid} title={`${user.name}：${value}`} className={`vote-${value}`}>{user.name.slice(0, 1)}<small>{value}</small></span> : null; })}</div><div className="my-vote"><span>我的選擇</span><div>{(['可以', '可能', '不行'] as const).map((value) => <button key={value} className={cn(option.votes[currentUser.id] === value && 'selected', `vote-button-${value}`)} onClick={() => { setVote(option.id, value); showToast(`已將此時段標為「${value}」`); }}>{value}</button>)}</div><Button size="sm" variant="text" onClick={() => setFinalizing(option.id)}>定案此時段</Button></div></article>;
+    })}</div></section>
+    {finalizing && <Modal title="定案投票時段" description={voteOptions.find((o) => o.id === finalizing)?.label} onClose={() => setFinalizing(null)} footer={<><Button variant="secondary" onClick={() => setFinalizing(null)}>取消</Button><Button onClick={() => { finalizeVote(finalizing); setFinalizing(null); showToast('投票時段已定案，尚未建立活動或報名'); }}>確認定案</Button></>}><p>定案只記錄共識，不會自動報名。下一步可帶入此時段建立活動。</p><Button variant="secondary" onClick={() => { finalizeVote(finalizing); navigate(`/activities/new?start=${finalizing === 'v02' ? '2026-12-20T14:00' : finalizing === 'v03' ? '2026-12-26T18:30' : '2026-12-19T18:30'}`); }}><CalendarPlus size={16} />定案並建立活動</Button></Modal>}
+  </div>;
+}

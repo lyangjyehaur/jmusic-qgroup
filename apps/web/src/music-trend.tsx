@@ -10,7 +10,7 @@ import { createWebHttpClient, scopedHttp } from './http';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicMemberAccess, type Member } from './member-access';
 import { useMusicWorkspace } from './music-selection';
-import { SelectionPanel } from './music-editor';
+import { KimiSelectionSummary } from './kimi-music-editor';
 import { musicEntryPath } from './music-entry';
 import { categoryLabel } from './music-entries';
 type Trend = z.infer<typeof MusicTrend>;
@@ -26,19 +26,19 @@ export function MusicTrendPage() {
   const back = '/music' + location.search, from = new URLSearchParams(location.search); from.set('from', '/music/trends' + location.search);
   const entryPath = (id: string) => musicEntryPath(id, from.toString());
   return <><PageIntro title="音樂趨勢" /><Link className="back" to={back}>回到音樂詞庫</Link>
-    <div className={selection ? 'content-columns music-editor' : undefined}><section>
+    <div className={selection?.dirty ? 'content-columns music-trend-layout' : undefined}><section>
       {query.isPending ? <Notice>正在讀取趨勢…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
         <dl className="music-stats" aria-label="趨勢統計">{([[uiText('24 小時新增'), query.data.recent24h], [uiText('7 天新增'), query.data.new7d], [uiText('總計'), query.data.totals]] as const).map(([label, counts]) => <div key={label}><dt>{label}</dt><dd>{counts.entries} 詞條 · {counts.members} 成分</dd></div>)}</dl>
-        <TrendChart trend={query.data} entryPath={entryPath} />
-        <Surface className="detail music-trend-recent"><Heading level={2}>最近新增詞條</Heading>
-          {query.data.recentEntries.length ? <ul>{query.data.recentEntries.map(entry => <li key={entry.id}><Link to={entryPath(entry.id)}>{entry.name}</Link>
+        <details className="trend-history"><summary>詞條選用變化</summary><TrendChart trend={query.data} entryPath={entryPath}/></details>
+        <section className="music-trend-recent"><Heading level={2}>最近新增詞條</Heading>
+          {query.data.recentEntries.length ? <ul className="trend-entry-list">{query.data.recentEntries.map((entry,index) => <li key={entry.id}><span className="trend-rank">{String(index+1).padStart(2,'0')}</span><Link to={entryPath(entry.id)}>{entry.name}</Link>
             <Text size="sm">{entry.kind === 'main' ? '領域' : '細分'} · {categoryLabel(entry.category)} · {entry.count} 人選用 · <Created time={entry.createdAt} /></Text></li>)}</ul> : <Notice>詞庫尚無詞條。</Notice>}
-        </Surface>
+        </section>
       </>}
       <section className="music-trend-recent" aria-label="最近新增同好"><Heading level={2}>最近新增同好</Heading>
         <MusicMemberAccess purpose={uiText("查看新增同好")}>{viewer => <RecentMembers key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess>
       </section>
-    </section>{selection && <SelectionPanel selection={selection} />}</div>
+    </section>{selection?.dirty && <KimiSelectionSummary selection={selection}/> }</div>
   </>;
 }
 function RecentMembers({ viewer }: { viewer: Member }) {
@@ -47,7 +47,7 @@ function RecentMembers({ viewer }: { viewer: Member }) {
     queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/trend/members', { signal }), refetchOnMount: 'always', refetchInterval: 30000 });
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在讀取新增同好…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
-  return query.data.members.length ? <ul className="music-entry-members">{query.data.members.map(member => <li key={member.id}>
+  return query.data.members.length ? <ul className="trend-member-list">{query.data.members.map(member => <li key={member.id}>
     <Link to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: location.pathname + location.search })}>{member.name}</Link>
     <Text size="sm">成分 ID：{member.id} · <Created time={member.createdAt} /></Text>
   </li>)}</ul> : <Notice>尚無同好成分。</Notice>;

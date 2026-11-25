@@ -1,6 +1,7 @@
+import { chooseOption, expectOption } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]);
 }
@@ -24,10 +25,11 @@ test('keeps selector identities behind login and saved-profile gates on inline a
   await expect(members).toContainText('請先保存成分，再查看選取者。');
   expect(reads).toBe(0);
   await members.getByRole('link', { name: '保存成分', exact: true }).click();
-  await page.getByRole('button', { name: 'YOASOBI', exact: true }).click();
+  await page.getByLabel('尋找喜歡的音樂', { exact: true }).fill('YOASOBI');
+  await page.locator('.quick-add-results').getByRole('button').filter({hasText:'YOASOBI'}).click();
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click();
   await page.getByRole('link', { name: 'Aimer', exact: true }).click();
   await expect(members.getByRole('link', { name: '舊成分 10001', exact: true })).toBeVisible();
 });
@@ -37,19 +39,19 @@ test('shares the draft and filters with the direct page but adds selectors only 
   const members = page.getByRole('region', { name: '誰選了', exact: true });
   await expect(members.getByRole('listitem')).toHaveCount(3);
   await detail.getByRole('button', { name: '選取此詞條', exact: true }).click();
-  await page.getByLabel('Aimer喜歡程度').selectOption('4');
+  await chooseOption(page,'Aimer喜歡程度','4');
   await expect(members.getByRole('link', { name: '小青', exact: true })).toHaveCount(0);
-  await detail.getByRole('link', { name: '開啟詞條頁面', exact: true }).click();
-  await expect(page).toHaveURL('/music/entries/sub-2?q=ai');
+  await expect(detail.getByRole('link', { name: '開啟詞條頁面', exact: true })).toHaveCount(0);
+  await expect(detail.getByRole('button', { name: '關閉詞條資料', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '還有未保存的選擇' })).toHaveCount(0);
-  await expect(page.getByLabel('Aimer喜歡程度')).toHaveValue('4');
-  await expect(detail.getByText('細分 · 其他 · 3 人選用', { exact: true })).toBeVisible();
+  await expectOption(page,'Aimer喜歡程度','4');
+  await expect(detail.locator('.inline-definitions')).toContainText('3 人');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(members.getByRole('listitem')).toHaveCount(4);
-  await expect(detail.getByText('細分 · 其他 · 4 人選用', { exact: true })).toBeVisible();
+  await expect(detail.locator('.inline-definitions')).toContainText('4 人');
   await members.getByRole('link', { name: '舊成分 10001', exact: true }).click();
   await expect(page.getByRole('heading', { name: '舊成分 10001', exact: true })).toBeVisible();
-  await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
+  await page.locator('.profile-all-picks > summary').click();await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
   await expect(page.getByText(/private note|private gender/)).toHaveCount(0);
   await page.getByRole('link', { name: '回到詞條資料', exact: true }).click();
   await expect(page).toHaveURL('/music/entries/sub-2?q=ai');
@@ -61,16 +63,13 @@ test('shares the draft and filters with the direct page but adds selectors only 
 test('preserves unfinished selections when visiting a selector and restores the term and filters on return', async ({ page, context }) => {
   await seed(context); await page.goto('/music?entry=sub-2&q=ai&kind=sub');
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
-  await page.getByLabel('Aimer喜歡程度').selectOption('1');
+  await chooseOption(page,'Aimer喜歡程度','1');
   await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
-  await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
-  await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
+  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '舊成分 10001', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到詞條資料', exact: true }).click();
   await expect(page).toHaveURL('/music/entries/sub-2?q=ai&kind=sub');
-  await expect(page.getByLabel('Aimer喜歡程度')).toHaveValue('1');
+  await expectOption(page,'Aimer喜歡程度','1');
   await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: '誰選了', exact: true }).getByRole('listitem')).toHaveCount(3);
 });
@@ -130,17 +129,17 @@ test('refreshes selector names and cleared self-reported contacts when returning
   await page.goto('/music?entry=sub-2');
   await expect(page.getByText('234567 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
-  await page.getByRole('link', { name: '成分資料', exact: true }).click();
+  await page.getByRole('tab', { name: '成分資料', exact: true }).click();
   await page.getByLabel('成分稱呼', { exact: true }).fill('目前成分名稱');
   await page.getByRole('button', { name: '保存成分資料', exact: true }).click();
   await expect(page.getByText('成分資料已保存。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click();
-  await page.getByRole('link', { name: '聯絡 QQ', exact: true }).click();
+  await page.locator('.music-profile-tools > summary').click();await page.getByRole('link', { name: '聯絡 QQ', exact: true }).click();
   await page.getByLabel('聯絡 QQ', { exact: true }).fill('');
   await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click();
   await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click();
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click();
   await page.getByRole('link', { name: 'Aimer', exact: true }).click();
   const member = page.getByRole('region', { name: '誰選了', exact: true }).getByRole('listitem').filter({ has: page.getByRole('link', { name: '目前成分名稱', exact: true }) });
   await expect(member.getByText('固定成分 ID：' + profile.id, { exact: true })).toBeVisible();
@@ -188,6 +187,7 @@ test('waits for a fresh profile check before displaying cached selectors when re
   const { headers, profile } = await seed(context);
   await page.goto('/music/entries/sub-2');
   await expect(page.getByRole('region', { name: '誰選了', exact: true }).getByRole('listitem')).toHaveCount(3);
+  await page.getByRole('button', { name: '返回原頁', exact: true }).click();
   await page.getByRole('navigation').getByRole('link', { name: '我的', exact: true }).click();
   const erased = await context.request.post('/api/v2/me/privacy/erase', { headers, data: {
     target: 'music', profileId: profile.id, profileRevision: profile.revision, requestId: crypto.randomUUID(), secret: 'a'.repeat(64), confirm: true,
@@ -254,10 +254,12 @@ test('initializes the selection controller before mounting search so a delayed p
   release();
   const search = page.getByLabel('搜尋音樂詞條', { exact: true });
   await search.fill('mijin');
-  await expect(page.locator('.music-ranking li')).toHaveCount(1);
+  await expect(page.locator('.term-row')).toHaveCount(1);
   await page.getByRole('link', { name: '米津玄師', exact: true }).click();
+  await expect(page.locator('.music-search-area input[type=search]')).toHaveValue('mijin');
+  await expect(page.getByRole('dialog').getByRole('heading',{name:'米津玄師',exact:true})).toBeVisible();
+  await page.getByRole('button', { name: '返回詞庫', exact: true }).click();
   await expect(search).toHaveValue('mijin');
-  await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toContainText('米津玄師');
-  await page.getByRole('link', { name: '開啟詞條頁面', exact: true }).click();
+  await page.getByRole('link', { name: '查看 米津玄師', exact: true }).click();
   await expect(page).toHaveURL('/music/entries/sub-4?q=mijin');
 });

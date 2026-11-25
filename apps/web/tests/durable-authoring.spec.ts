@@ -2,7 +2,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { durableRows } from './draft-helpers';
 test.use({ financeExamples: true, paymentExamples: true });
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 const title=(page:Page)=>page.getByLabel('活動名稱',{exact:true});
 async function fill(page:Page,name:string){await title(page).fill(name);await page.getByLabel('地點',{exact:true}).fill('台北');await page.getByLabel('開始時間（台北）',{exact:true}).fill('2099-12-12T18:00:00');await page.getByLabel('報名截止（台北）',{exact:true}).fill('2099-12-11T18:00:00');}
@@ -79,7 +79,7 @@ test('preserves a receipt code after closing the tab, isolates accounts and bloc
   const img=page.getByRole('img',{name:'待保存收款碼',exact:true});await expect(img).toBeVisible();const src=await img.getAttribute('src');await saved(page);await page.close();
   const fresh=await context.newPage();await fresh.addInitScript(()=>{Object.defineProperty(window,'BroadcastChannel',{value:undefined});});await fresh.goto(origin+'/me/payment-codes');
   await expect(fresh.getByRole('img',{name:'待保存收款碼',exact:true})).toHaveAttribute('src',src!);await expect(fresh.getByLabel('名稱（選填）',{exact:true})).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
-  const other=await context.newPage();await login(context,'bob');await other.goto(origin+'/me/payment-codes');await expect(other.getByRole('img')).toHaveCount(0);
+  const other=await context.newPage();await login(context,'bob');await other.goto(origin+'/me/payment-codes');await expect(other.locator('.payment-asset img')).toHaveCount(0);
   await login(context);await other.goto(origin+'/me/accounts');await other.getByRole('button',{name:'登出此裝置',exact:true}).click();await expect(other.getByRole('heading',{name:'尚未登入',exact:true})).toBeVisible();
   await fresh.getByLabel('名稱（選填）',{exact:true}).fill('不能復活的原圖');await expect(fresh.getByText('此原稿已因登出或資料刪除失效，請重新載入頁面。',{exact:false})).toBeVisible();expect(await durableRows(fresh)).toEqual([]);
 });

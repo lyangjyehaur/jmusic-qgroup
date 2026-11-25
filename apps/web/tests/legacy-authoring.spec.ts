@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import type { BrowserContext,Page,Locator } from '@playwright/test';
 import { test,expect } from './fixtures';
 import { durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082',scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex'),intent='11111111-1111-4111-8111-111111111111';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex'),intent='11111111-1111-4111-8111-111111111111';
 const activity=()=>({id:'',_intent:intent,_revision:'',_lifecycle:'',title:'舊稿活動',category:'约K',location:'原地點',description:'原說明\n第二行',fee_policy:'原費用',capacity_unlimited:false,capacity:'8',minimum_participants:'2',timezone:'America/New_York',visibility:'public',event_date:'2099-12-12',start_time:'18:30',start_day_offset:'0',duration_hours:'3',deadline:'2099-12-10T18:00',withdrawal_deadline:'2099-12-09T20:00',bot_enabled:true,reason:'原修改原因'});
 const poll=()=>({title:'舊稿投票',category:'约K',location:'原地點',description:'原投票說明',timezone:'America/New_York',bot_enabled:false,duration_hours:'3',capacity:'8',minimum_participants:'2',deadline_date:'2099-12-10',deadline_time:'12:34',exact_time:false,slots:[{key:'second',date:'2099-12-24',time:'20:00'},{key:'first',date:'2099-12-23',time:'18:00'}],client_intent:intent,deadlineTouched:true});
 function source(value:ReturnType<typeof activity>|ReturnType<typeof poll>,format:'react'|'fields'='react',suffix='event:new'){

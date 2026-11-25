@@ -1,0 +1,85 @@
+import { useMemo, useState } from 'react';
+import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { ArrowRight, ChevronDown, ChevronRight, CircleHelp, Copy, GitCompareArrows, History, ListFilter, MessageCircle, Music2, Search, SlidersHorizontal, Sparkles, UsersRound, X } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import type { Selection, Term, User } from '../types';
+import { Avatar, Badge, Button, CopyButton, EmptyState, Modal, PageHeader, SearchInput, Select, Tabs, cn } from '../components/UI';
+
+const familiarityWeight = { '本命': 4, '常聽': 3, '聽過一些': 2, '只聽過幾首': 1 };
+
+export interface MatchResult {
+  user: User;
+  common: { term: Term; mine: Selection; theirs: Selection }[];
+  strict: number;
+  favorite: number;
+  rare: number;
+  score: number;
+  match: number;
+}
+
+export function calculateMatch(currentUser: User, user: User, terms: Term[]): MatchResult {
+  const common = currentUser.selections.flatMap((mine) => {
+    const theirs = user.selections.find((s) => s.termId === mine.termId);
+    const term = terms.find((t) => t.id === mine.termId);
+    return theirs && term ? [{ term, mine, theirs }] : [];
+  });
+  const strict = common.filter((item) => item.mine.familiarity === item.theirs.familiarity).length;
+  const favorite = common.filter((item) => item.mine.familiarity === '本命' && item.theirs.familiarity === '本命').length;
+  const rare = common.reduce((sum, item) => sum + Math.max(0, 36 - item.term.users), 0);
+  const score = common.length * 12 + strict * 4 + favorite * 8 + rare * 0.3;
+  const match = Math.min(99, Math.round(common.length ? 28 + (common.length / Math.max(currentUser.selections.length, user.selections.length)) * 48 + strict * 4 + favorite * 6 : 0));
+  return { user, common, strict, favorite, rare, score, match };
+}
+
+export default function PeoplePage() {
+  const { users, currentUser, terms, showToast } = useApp();
+  const { id } = useParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') ?? 'recommend';
+  const [sort, setSort] = useState('common');
+  const [expanded, setExpanded] = useState(false);
+  const [query, setQuery] = useState('');
+  const cardUser = users.find((user) => user.id === id);
+
+  const matches = useMemo(() => users.filter((user) => user.id !== currentUser.id).map((user) => calculateMatch(currentUser, user, terms)).map((result) => {
+    const familiarityScore = result.common.reduce((sum, item) => sum + familiarityWeight[item.mine.familiarity], 0);
+    return { ...result, sortScore: sort === 'common' ? result.score + result.rare : result.score + familiarityScore * 5 };
+  }).sort((a, b) => b.sortScore - a.sortScore), [users, currentUser, terms, sort]);
+  const recommended = matches.filter((m) => m.common.length > 0 && m.user.selections.length > 2);
+  const sparse = matches.filter((m) => m.user.selections.length <= 2);
+  const searchResults = query.trim() ? users.filter((user) => user.id !== currentUser.id && `${user.profileId}${user.qq}${user.name}`.toLowerCase().includes(query.trim().toLowerCase())) : [];
+
+  return <div className="page people-page">
+    <PageHeader title="同好" description="從共同音樂成分找到可以一起參加活動的人" actions={<Link to="/me/music"><Button variant="secondary"><Music2 size={16} />編輯我的成分</Button></Link>} />
+    <Tabs value={tab} onChange={(value) => setParams(value === 'recommend' ? {} : { tab: value })} items={[{ value: 'recommend', label: '同好推薦' }, { value: 'search', label: '查詢／比較' }, { value: 'circles', label: '同好圈子' }, { value: 'partners', label: '找搭子' }, { value: 'history', label: '歷史' }]} />
+
+    {tab === 'recommend' && <>
+      <div className="recommend-toolbar"><div><h2>與你聽得相近的人</h2><p>依已保存成分計算，共 {recommended.length} 位有共同喜好</p></div><Select value={sort} onChange={(e) => { setSort(e.target.value); setExpanded(false); }} aria-label="推薦排序"><option value="common">共同項／冷門優先</option><option value="familiarity">我的熟悉度優先</option></Select></div>
+      <details className="sort-rules"><summary><CircleHelp size={15} />匹配與完整排序規則<ChevronDown size={15} /></summary><div><ol><li><strong>嚴格重合</strong>：相同詞條且雙方熟悉度一致，額外加權。</li><li><strong>領域／細分重合</strong>：共同詞條數先形成基礎分，不區分類型隱藏任何共同項。</li><li><strong>共同本命</strong>：雙方皆標為本命時額外加權，但不覆蓋共同項數。</li><li><strong>冷門詞條</strong>：選用人數較少的共同詞條獲得較高權重。</li><li><strong>我的熟悉度優先</strong>：本命、常聽、聽過一些、只聽過幾首分別以 4、3、2、1 加權。</li></ol><p>匹配度僅供排序，不代表對方同意公開聯絡資料或參加活動。</p></div></details>
+      <section className="people-grid">{recommended.slice(0, 3).map((result, index) => <PersonCard key={result.user.id} result={result} rank={index + 1} sort={sort} />)}</section>
+      {recommended.length > 3 && <section className="more-people"><button className="expand-people" onClick={() => setExpanded((v) => !v)} aria-expanded={expanded}><span>{expanded ? '收起其餘同好' : `展開其餘 ${recommended.length - 3} 位同好`}</span><ChevronDown size={17} /></button>{expanded && <div className="people-grid compact">{recommended.slice(3).map((result) => <PersonCard key={result.user.id} result={result} sort={sort} />)}</div>}</section>}
+      <section className="sparse-section"><div className="section-title-row"><div><h2>資料較少的同好</h2><p>成分 0–2 項，匹配結果僅供參考</p></div><Badge>{sparse.length} 位</Badge></div><div className="sparse-list">{sparse.slice(0, 6).map((result) => <Link to={`/people/card/${result.user.id}`} key={result.user.id}><Avatar user={result.user} /><span><strong>{result.user.name}</strong><small>{result.user.selections.length === 0 ? '尚未建立成分' : `${result.user.selections.length} 項成分・共同 ${result.common.length} 項`}</small></span><ChevronRight size={16} /></Link>)}</div></section>
+    </>}
+
+    {tab === 'search' && <section className="people-search-panel"><div className="people-search-box"><h2>以固定成分 ID 或聯絡 QQ 查詢</h2><p>也支援站內稱呼；所有示例 QQ 均為虛構資料。</p><SearchInput value={query} onChange={setQuery} placeholder="例如 GJ-1025 或 100000002" /></div>{query && <div className="search-people-results">{searchResults.map((user) => <div key={user.id}><Avatar user={user} /><span><strong>{user.name}</strong><small>{user.profileId}・{user.selections.length} 項成分</small></span><Link to={`/people/card/${user.id}`}><Button size="sm" variant="secondary">成分卡</Button></Link><Link to={`/people/compare/${user.id}`} state={{ from: '/people?tab=search' }}><Button size="sm"><GitCompareArrows size={14} />比較</Button></Link></div>)}{searchResults.length === 0 && <EmptyState title="沒有符合的同好" description="請確認完整成分 ID 或虛構 QQ。" />}</div>}</section>}
+
+    {tab === 'circles' && <section className="circle-grid">{[['深夜派', 'ZUTOMAYO、ヨルシカ與夜間曲目交換', 18], [' band sound 研究會', '日搖編曲、現場與樂團演出', 12], ['City Pop 試聽室', '舊譜、黑膠與城市流行', 9]].map(([name, description, count], index) => <article key={String(name)}><div className={`circle-symbol symbol-${index}`}><Music2 size={23} /></div><Badge>{count} 位成員</Badge><h2>{name}</h2><p>{description}</p><Button variant="secondary" onClick={() => showToast(`已將「${name}」加入待加入清單（模擬）`)}>查看圈子</Button></article>)}</section>}
+    {tab === 'partners' && <div className="partner-layout"><section className="tab-panel"><div className="section-title-row"><div><h2>找搭子</h2><p>依活動與共同喜好尋找同行者</p></div><Button onClick={() => showToast('找搭子草稿已建立，可於歷史中查看')}>發布找搭子</Button></div>{[['12/05 深夜音樂交換會', '水無瀨 澪', '缺 1 位・希望有共同本命'], ['年末アニソン縛りカラオケ', '葉山', '可一起候補・台北出發']].map((item) => <article className="partner-post" key={item[0]}><div><Badge tone="green">招募中</Badge><h3>{item[0]}</h3><p>{item[1]}・{item[2]}</p></div><Link to="/activities/a001"><Button variant="secondary" size="sm">查看活動</Button></Link></article>)}</section><aside className="linked-tools"><h2>相關工具</h2><Link to="/rooms/a001"><UsersRound size={18} /><span>自由分房<small>依音樂成分試算</small></span><ArrowRight size={15} /></Link><Link to="/me/music?tab=trends"><Music2 size={18} /><span>音樂趨勢<small>近 24 小時詞條變化</small></span><ArrowRight size={15} /></Link></aside></div>}
+    {tab === 'history' && <section className="tab-panel"><div className="section-title-row"><div><h2>同好互動歷史</h2><p>比較、找搭子與圈子操作</p></div><History size={19} /></div><ol className="history-list"><li><i /><span><strong>與 水無瀨 澪 比較成分</strong><small>今天 12:20</small></span></li><li><i /><span><strong>收藏「12/05 深夜音樂交換會」找搭子</strong><small>昨天 22:08</small></span></li><li><i /><span><strong>加入「深夜派」圈子</strong><small>11-20 19:42</small></span></li></ol></section>}
+
+    {cardUser && <Modal title={cardUser.name} description={`固定成分 ID・${cardUser.profileId}`} onClose={() => navigate((location.state as { from?: string } | null)?.from ?? '/people')} wide footer={<><Button variant="secondary" onClick={() => navigate(-1)}>返回</Button><Link to={`/people/compare/${cardUser.id}`} state={{ from: location.pathname }}><Button><GitCompareArrows size={16} />比較成分</Button></Link></>}><PersonProfile user={cardUser} /></Modal>}
+  </div>;
+}
+
+function PersonCard({ result, rank, sort }: { result: MatchResult; rank?: number; sort: string }) {
+  const { user, common, match, strict, favorite } = result;
+  return <article className="person-card"><header><div className="person-identity">{rank && <span className="recommend-rank">0{rank}</span>}<Avatar user={user} size="lg" /><div><Link to={`/people/card/${user.id}`} state={{ from: `/people?sort=${sort}` }}>{user.name}</Link><span>{user.profileId}</span></div></div><div className="match-score"><strong>{match}<small>%</small></strong><span>匹配度</span></div></header><div className="common-summary"><span>共同喜好 <strong>{common.length}</strong></span>{strict > 0 && <Badge>嚴格重合 {strict}</Badge>}{favorite > 0 && <Badge tone="green">共同本命 {favorite}</Badge>}</div><div className="common-terms">{common.slice(0, 4).map(({ term, mine, theirs }) => <div key={term.id}><Link to={`/music/term/${term.id}`}>{term.name}</Link><span><em className={mine.familiarity === '本命' ? 'favorite' : ''}>我・{mine.familiarity}</em><i /><em className={theirs.familiarity === '本命' ? 'favorite' : ''}>對方・{theirs.familiarity}</em></span></div>)}{common.length === 0 && <p className="muted">尚無共同詞條，可查看完整成分。</p>}</div><footer><div><Link to={`/people/card/${user.id}`} state={{ from: `/people?sort=${sort}` }}><Button variant="secondary" size="sm">成分卡</Button></Link><Link to={`/people/compare/${user.id}`} state={{ from: `/people?sort=${sort}` }}><Button variant="ghost" size="sm"><GitCompareArrows size={14} />比較</Button></Link></div><ChevronRight size={17} /></footer></article>;
+}
+
+function PersonProfile({ user }: { user: User }) {
+  const { terms, currentUser } = useApp();
+  const result = calculateMatch(currentUser, user, terms);
+  return <div className="person-profile"><section className="profile-summary"><div className="profile-avatar-line"><Avatar user={user} size="xl" /><div><h3>{user.name}</h3><span className="copy-value">{user.profileId}<CopyButton value={user.profileId} /></span></div><strong>{result.match}%<small>匹配度</small></strong></div>{user.messageVisible && user.message && <blockquote>{user.message}</blockquote>}<dl className="inline-definitions"><div><dt>稱呼</dt><dd className="copy-value">{user.name}<CopyButton value={user.name} /></dd></div>{user.genderVisible && <div><dt>性別</dt><dd>{user.gender}</dd></div>}{user.qqVisible ? <div><dt>聯絡 QQ（虛構）</dt><dd className="copy-value">{user.qq}<CopyButton value={user.qq} /></dd></div> : <div><dt>聯絡資料</dt><dd>對方未公開</dd></div>}</dl></section><section className="profile-common"><h3>共同喜好・{result.common.length}</h3>{result.common.map(({ term, mine, theirs }) => <div key={term.id}><Link to={`/music/term/${term.id}`}>{term.name}</Link><span>{mine.familiarity}</span><span>{theirs.familiarity}</span></div>)}{result.common.length === 0 && <p className="muted">沒有共同詞條，仍可在比較頁查看雙方完整成分。</p>}</section></div>;
+}

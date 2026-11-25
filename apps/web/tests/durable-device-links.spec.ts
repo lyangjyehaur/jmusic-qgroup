@@ -1,6 +1,6 @@
 import {test,expect} from './fixtures';
 import type {BrowserContext,Page} from '@playwright/test';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function issue(page:Page){await page.goto('/me/devices');await page.getByRole('checkbox',{name:'只授權自己的另一臺裝置',exact:true}).check();await page.getByRole('button',{name:'產生限時連結',exact:true}).click();const field=page.getByRole('textbox',{name:'裝置連結（可手動複製）',exact:true});await expect(field).toBeVisible();return field.inputValue();}
 async function linkRows(page:Page){return page.evaluate(async()=>{const r=indexedDB.open('qgroup-device-links-v1',1),db=await new Promise<IDBDatabase>(resolve=>r.onsuccess=()=>resolve(r.result));try{return await new Promise<{key:string;raw:string}[]>(resolve=>{const tx=db.transaction('links','readonly'),r=tx.objectStore('links').openCursor(),rows:{key:string;raw:string}[]=[];r.onsuccess=()=>{if(r.result){rows.push({key:String(r.result.key),raw:r.result.value});r.result.continue();}};tx.oncomplete=()=>resolve(rows);});}finally{db.close();}});}

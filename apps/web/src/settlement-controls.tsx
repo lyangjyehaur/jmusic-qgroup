@@ -1,5 +1,6 @@
 import { cloneElement, useId, type ReactElement } from 'react';
-import { Button, Text } from 'yahha-ui';
+import { Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import type { SettlementPayer, SettlementRosterPerson } from '@qgroup/contracts';
 import type { z } from 'zod';
 export type Payer = z.infer<typeof SettlementPayer>;

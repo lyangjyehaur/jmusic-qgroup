@@ -1,0 +1,23 @@
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertCircle, ArrowRight, Check, CheckCheck, ChevronRight } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import { Badge, Button, EmptyState, PageHeader, Tabs, cn } from '../components/UI';
+
+export default function InboxPage() {
+  const { notifications, updateNotification } = useApp();
+  const [tab, setTab] = useState('all');
+  const navigate = useNavigate();
+  const filtered = notifications.filter((n) => tab === 'all' || tab === 'unread' && !n.read || tab === 'todo' && n.todo && !n.done);
+  const unread = notifications.filter((n) => !n.read).length;
+  const todos = notifications.filter((n) => n.todo && !n.done).length;
+  return <div className="page inbox-page">
+    <PageHeader title="收件匣" description={`${unread} 則未讀・${todos} 項待辦`} actions={<Button variant="secondary" onClick={() => { notifications.forEach((n) => updateNotification(n.id, { read: true })); }}><CheckCheck size={16} />全部標為已讀</Button>} />
+    <div className="inline-alert"><AlertCircle size={16} /><span>已讀不代表待辦完成；待辦需另按「完成」。</span></div>
+    <Tabs value={tab} onChange={setTab} items={[{ value: 'all', label: '全部', count: notifications.length }, { value: 'unread', label: '未讀', count: unread }, { value: 'todo', label: '待辦', count: todos }]} />
+    <section className="notification-list">{filtered.map((notification) => <article className={cn('notification-item', !notification.read && 'unread', notification.done && 'done')} key={notification.id}>
+      <button className="notification-main" onClick={() => { updateNotification(notification.id, { read: true }); navigate(notification.link); }}><span className="notification-marker">{notification.error ? <AlertCircle size={18} /> : !notification.read ? <i /> : <span />}</span><div><div className="notification-title"><Badge tone={notification.error ? 'red' : notification.type === '款項' ? 'amber' : 'neutral'}>{notification.type}</Badge><h2>{notification.title}</h2>{notification.todo && !notification.done && <Badge tone="amber">待辦</Badge>}{notification.done && <Badge tone="green">已完成</Badge>}</div><p>{notification.body}</p><small>{notification.time}</small></div><ChevronRight size={18} /></button>
+      <div className="notification-actions">{!notification.read && <Button variant="text" size="sm" onClick={() => updateNotification(notification.id, { read: true })}>標為已讀</Button>}{notification.todo && !notification.done && <Button variant="text" size="sm" onClick={() => updateNotification(notification.id, { done: true, read: true })}><Check size={14} />完成待辦</Button>}<Button variant="text" size="sm" onClick={() => { updateNotification(notification.id, { read: true }); navigate(notification.link); }}>前往處理<ArrowRight size={14} /></Button></div>
+    </article>)}{filtered.length === 0 && <EmptyState title="這裡沒有項目" description={tab === 'todo' ? '目前待辦都已完成。' : '目前沒有未讀通知。'} />}</section>
+  </div>;
+}

@@ -2,7 +2,9 @@ import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { Button, Field, Select } from './kimi-ui';
+import { Download } from 'lucide-react';
 
 import { musicSharePicks, musicSelectionText } from '@qgroup/domain';
 import { useMusicMatchSort } from './music-match-sort';
@@ -26,7 +28,7 @@ function ShareEditor({ selection }: { selection: MusicSelection }) {
     queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music/share', { signal, query: { sort } }),
     refetchOnMount: 'always', refetchOnWindowFocus: 'always', staleTime: 0, refetchInterval: 10000 });
   const picks = musicSharePicks(selection.draft.selections, selection.entries), text = musicSelectionText(picks);
-  const [contact, setContact] = useState(false), [topMatch, setTopMatch] = useState(true), [topContact, setTopContact] = useState(false), [dark, setDark] = useState(false);
+  const [contact, setContact] = useState(false), [topMatch, setTopMatch] = useState(true), [topContact, setTopContact] = useState(false), [dark, setDark] = useState(true);
   if (selection.unavailable) return <Notice>請先在本機原稿提示中完成恢復或保全，再產生分享內容。</Notice>;
   if (selection.readError || selection.draft.requestKey) return <Notice>{selection.readError ? '請回到我的成分保全原稿，再產生分享內容。' : '成分保存結果尚未確認，請回到我的成分確認結果。'}</Notice>;
   if (!picks.length) return <Notice>尚未選擇可分享的詞條，請<Link to={'/me/music?' + params}>選擇成分</Link>。</Notice>;
@@ -37,16 +39,16 @@ function ShareEditor({ selection }: { selection: MusicSelection }) {
   return <>
     {selection.dirty && <Notice>使用目前草稿產生分享，不會自動保存。推薦同好仍依已保存成分計算。</Notice>}
     {picks.length !== selection.draft.selections.length && <Notice>{selection.draft.selections.length - picks.length} 個已移除詞條不會包含在分享中；原草稿仍保留。</Notice>}
-    <Surface className="detail music-share-options"><label className="consent"><input type="checkbox" checked={contact} disabled={!current?.contactQQ} onChange={event => setContact(event.target.checked)} /><span>包含我的聯絡 QQ</span></label>
+    <div className="share-layout"><Surface className="form-section music-share-options"><div className="section-heading"><span>分享</span><div><h2>分享圖片</h2></div></div><label className="consent"><input type="checkbox" checked={contact} disabled={!current?.contactQQ} onChange={event => setContact(event.target.checked)} /><span>包含我的聯絡 QQ</span></label>
       <label className="consent"><input type="checkbox" checked={topMatch} onChange={event => setTopMatch(event.target.checked)} /><span>包含推薦同好</span></label>
-      {topMatch && <><label className="account-field">推薦排序<select aria-label="分享推薦排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}><option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option></select></label>
+      {topMatch && <><Field label="分享推薦排序"><Select aria-label="分享推薦排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}><option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option></Select></Field>
         <label className="consent"><input type="checkbox" checked={topContact} disabled={!current?.topMatch?.contactQQ} onChange={event => setTopContact(event.target.checked)} /><span>包含同好的聯絡 QQ</span></label></>}
-      <label className="account-field">圖片配色<select aria-label="圖片配色" value={dark ? 'dark' : 'light'} onChange={event => setDark(event.target.value === 'dark')}><option value="light">淺色</option><option value="dark">深色</option></select></label>
+      <Field label="圖片配色"><Select aria-label="圖片配色" value={dark ? 'dark' : 'light'} onChange={event => setDark(event.target.value === 'dark')}><option value="light">淺色</option><option value="dark">深色</option></Select></Field>
       <Text>圖片包含成分稱呼、固定 ID、詞條與選用人數；勾選後也會包含推薦同好或聯絡 QQ。不包含私人留言與性別。</Text>
     </Surface>
     {context.isPending || !context.isFetchedAfterMount ? <Notice>正在讀取分享資料…</Notice> : context.error ? <Failure error={context.error} retry={() => void context.refetch()} />
       : stale ? <Notice>目前成分已刪除、重建或移交；請回到我的成分核對並保留原稿。</Notice> : null}
-    {input && <ShareImage signature={JSON.stringify(input)} />}
+    {input && <ShareImage signature={JSON.stringify(input)} />}</div>
     <SelectionText key={viewer.scope + ':' + text} text={text} />
   </>;
 }
@@ -57,7 +59,7 @@ function SelectionText({ text }: { text: string }) {
     try { await navigator.clipboard.writeText(text); if (active.current) setMessage(uiText("已複製詞條清單。")); }
     catch { if (active.current) setMessage(uiText("無法自動複製，請選取下方詞條清單手動複製。")); }
   }
-  return <Surface className="detail auth-panel"><label className="account-field">詞條清單<textarea rows={5} readOnly value={text} /></label>
+  return <Surface className="form-section share-text"><Field label="詞條清單"><textarea rows={5} readOnly value={text} /></Field>
     <Button variant="secondary" onClick={() => void copy()}>複製詞條清單</Button>{message && <Text role="status">{message}</Text>}</Surface>;
 }
 function ShareImage({ signature }: { signature: string }) {
@@ -97,7 +99,7 @@ function ShareImage({ signature }: { signature: string }) {
   }
   return <section aria-label="分享圖片" className="music-share-preview">
     {signature && (error ? <div role="alert"><Text>{error}</Text><Button variant="secondary" onClick={() => setAttempt(value => value + 1)}>重新產生圖片</Button></div>
-      : image ? <><img src={image.url} onError={() => setError(uiText("圖片無法顯示，請重新產生；仍可複製詞條清單。"))} alt="音樂成分分享圖片；完整詞條可見下方清單" /><div className="page-actions"><a href={image.url} download={filename}>下載圖片</a><Button variant="secondary" loading={busy} onClick={() => void share()}>分享圖片</Button></div></> : <Notice>正在產生圖片…</Notice>)}
+      : image ? <><img src={image.url} onError={() => setError(uiText("圖片無法顯示，請重新產生；仍可複製詞條清單。"))} alt="音樂成分分享圖片；完整詞條可見下方清單" /><div className="page-actions"><a className="text-link" href={image.url} download={filename}><Download size={16}/>下載圖片</a><Button variant="secondary" loading={busy} onClick={() => void share()}>分享圖片</Button></div></> : <Notice>正在產生圖片…</Notice>)}
     {message && <Text role="status">{message}</Text>}
   </section>;
 }

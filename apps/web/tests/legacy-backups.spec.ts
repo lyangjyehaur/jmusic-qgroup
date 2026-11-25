@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { test, expect } from './fixtures';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({legacyHistoryExamples:true});
 test('downloads both original formats through the unified admin page with private confirmation, source labels and no browser persistence',async({page,context})=>{
   await page.setViewportSize({width:360,height:800});await context.addCookies([{name:'kanban_session',value:'fixture-registration-admin',url:origin,httpOnly:true,sameSite:'Lax'}]);

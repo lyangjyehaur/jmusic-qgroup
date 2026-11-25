@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import type { BrowserContext, Page } from '@playwright/test';
 import { damageDraft, denyDraftWrites, durableRows } from './draft-helpers';
 
-const origin = 'http://127.0.0.1:5082', success = '通知已標為已讀；待辦仍按目前狀態計算。';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, success = '通知已標為已讀；待辦仍按目前狀態計算。';
 const unknown = '尚未確認已讀結果，原操作已保留，請確認原操作結果。';
 const retry = (page: Page) => page.getByRole('button', { name: '確認原已讀操作結果', exact: true });
 const notices = (page: Page) => page.getByRole('region', { name: '站內通知', exact: true });

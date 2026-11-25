@@ -2,7 +2,7 @@ import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 import { durableRows } from './draft-helpers';
 import { rows as erasureRows } from './erasure-test-helpers';
-const origin='http://127.0.0.1:5082',raw='后台發 · 帐号後臺';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,raw='后台發 · 帐号後臺';
 async function setup(context:BrowserContext,language:string,account='alice'){
   await context.route(origin+'/**',route=>route.continue({headers:{...route.request().headers(),'accept-language':language}}));
   await context.addCookies([{name:'kanban_session',value:'fixture-'+account,url:origin,httpOnly:true,sameSite:'Lax'}]);

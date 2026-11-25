@@ -1,0 +1,34 @@
+import { Link, useLocation, useParams } from 'react-router-dom';
+import { ArrowLeft, GitCompareArrows } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import { calculateMatch } from './PeoplePage';
+import { Avatar, Badge, Button, CopyButton, EmptyState, PageHeader } from '../components/UI';
+
+export default function ComparePage() {
+  const { id = '' } = useParams();
+  const { users, currentUser, terms } = useApp();
+  const location = useLocation();
+  const other = users.find((user) => user.id === id);
+  const back = (location.state as { from?: string } | null)?.from ?? '/people';
+  if (!other) return <div className="page"><EmptyState title="找不到這位同好" description="請返回同好頁重新查詢。" action={<Link to="/people"><Button>返回同好</Button></Link>} /></div>;
+  const result = calculateMatch(currentUser, other, terms);
+  const mineOnly = currentUser.selections.filter((s) => !other.selections.some((o) => o.termId === s.termId));
+  const theirsOnly = other.selections.filter((s) => !currentUser.selections.some((o) => o.termId === s.termId));
+  const term = (id: string) => terms.find((t) => t.id === id);
+
+  return <div className="page compare-page">
+    <PageHeader title="成分比較" description="共同項、各自獨有與完整成分" back={<Link to={back} className="back-link"><ArrowLeft size={18} /><span>返回原推薦與排序</span></Link>} />
+    <section className="compare-header"><div><Avatar user={currentUser} size="lg" /><span><strong>{currentUser.name}</strong><small>{currentUser.profileId}</small></span></div><div className="compare-match"><GitCompareArrows size={20} /><strong>{result.match}%</strong><span>共同 {result.common.length}・嚴格重合 {result.strict}・共同本命 {result.favorite}</span></div><div><Avatar user={other} size="lg" /><span><strong>{other.name}</strong><small>{other.profileId}</small></span></div></section>
+    <div className="compare-summary"><span>共同 <strong>{result.common.length}</strong></span><i /><span>只有我選 <strong>{mineOnly.length}</strong></span><i /><span>只有對方選 <strong>{theirsOnly.length}</strong></span></div>
+    <div className="compare-columns">
+      <CompareColumn title="共同詞條" tone="green" items={result.common.map((item) => ({ id: item.term.id, name: item.term.name, kind: item.term.kind, left: item.mine.familiarity, right: item.theirs.familiarity }))} leftName="我" rightName={other.name} />
+      <CompareColumn title="只有我選" items={mineOnly.map((s) => ({ id: s.termId, name: term(s.termId)?.name ?? s.termId, kind: term(s.termId)?.kind ?? '細分', left: s.familiarity }))} leftName="我" />
+      <CompareColumn title={`只有 ${other.name} 選`} items={theirsOnly.map((s) => ({ id: s.termId, name: term(s.termId)?.name ?? s.termId, kind: term(s.termId)?.kind ?? '細分', left: s.familiarity }))} leftName={other.name} />
+    </div>
+    <section className="full-composition"><div className="section-title-row"><div><h2>雙方完整成分</h2><p>熟悉度並排顯示，無成分者不隱藏</p></div></div><div className="full-composition-grid"><div><header><Avatar user={currentUser} size="sm" /><strong>{currentUser.name}</strong><span>{currentUser.selections.length} 項</span></header>{currentUser.selections.map((s) => <div key={s.termId}><Link to={`/music/term/${s.termId}`}>{term(s.termId)?.name}</Link><Badge tone={s.familiarity === '本命' ? 'green' : 'neutral'}>{s.familiarity}</Badge></div>)}</div><div><header><Avatar user={other} size="sm" /><strong>{other.name}</strong><span>{other.selections.length} 項</span></header>{other.selections.length ? other.selections.map((s) => <div key={s.termId}><Link to={`/music/term/${s.termId}`}>{term(s.termId)?.name}</Link><Badge tone={s.familiarity === '本命' ? 'green' : 'neutral'}>{s.familiarity}</Badge></div>) : <p className="muted">對方尚未建立音樂成分。</p>}</div></div></section>
+  </div>;
+}
+
+function CompareColumn({ title, items, leftName, rightName, tone }: { title: string; items: { id: string; name: string; kind: string; left: string; right?: string }[]; leftName: string; rightName?: string; tone?: string }) {
+  return <section className="compare-column"><header><h2>{title}</h2><Badge tone={tone === 'green' ? 'green' : 'neutral'}>{items.length}</Badge></header><div>{items.map((item) => <article key={item.id}><Link to={`/music/term/${item.id}`}>{item.name}</Link><small>{item.kind}</small><div><span><em>{leftName}</em><strong>{item.left}</strong></span>{item.right && <span><em>{rightName}</em><strong>{item.right}</strong></span>}</div></article>)}{items.length === 0 && <p className="empty-compare">沒有此類詞條</p>}</div></section>;
+}

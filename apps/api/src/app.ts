@@ -1,3 +1,4 @@
+import { MyActivitiesQuery } from '@qgroup/contracts';
 import { registerLegacyPersonal } from './legacy-personal';
 import { registerLegacyParticipants } from './legacy-participants';
 import { registerLegacyInvitations } from './legacy-invitations';
@@ -31,7 +32,7 @@ import { registerAdminMusicErasure } from './admin-music-erasure';
 import Fastify from 'fastify';
 import cookie from '@fastify/cookie';
 import helmet from '@fastify/helmet';
-import { ActivitiesQuery,PageQuery, ANALYTICS_HOST, ANALYTICS_ORIGIN, displayLanguage } from '@qgroup/contracts';
+import { ActivitiesQuery, ANALYTICS_HOST, ANALYTICS_ORIGIN, displayLanguage } from '@qgroup/contracts';
 import { readFileSync } from 'node:fs';
 import { join,resolve } from 'node:path';
 import rateLimit from '@fastify/rate-limit';
@@ -208,12 +209,12 @@ export function createApp(options: AppOptions) {
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
     app.get('/api/v2/me/activities', async request => {
-      const user=security.scopedMember(request),query=PageQuery.parse(request.query);
-      return db.transaction(()=>listMyActivities(db,user.id,query.page,now()))();
+      const user=security.scopedMember(request),query=MyActivitiesQuery.parse(request.query);
+      return db.transaction(()=>listMyActivities(db,user.id,query.page,now(),query))();
     });
     app.get('/api/v2/activities', async request => {
       const query = ActivitiesQuery.parse(request.query);
-      return listActivities(db, query.page, query.period, now());
+      return db.transaction(()=>listActivities(db, query.page, query.period, now(), query, activityViewer(security,request)))();
     });
     app.get('/api/v2/activities/:id', async request => {
       const { id } = ActivityPath.parse(request.params);

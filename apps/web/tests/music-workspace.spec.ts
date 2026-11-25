@@ -1,33 +1,34 @@
+import { chooseOption, expectOption, toggleMusicTerm, expectMusicTerm, openMusicCatalog } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]);
 }
 test('shares one selection, search, levels and activity return across catalog and profile without duplicate drafts', async ({ page, context }) => {
   await login(context);
-  await page.goto('/me/music?from=%2Factivities%2Flisten');
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
+  await page.goto('/me/music?q=mijin&from=%2Factivities%2Flisten');
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
   await page.getByLabel('尋找喜歡的音樂', { exact: true }).fill('mijin');
-  await page.getByRole('button', { name: '米津玄師', exact: true }).click();
-  await page.getByLabel('米津玄師喜歡程度').selectOption('4');
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await toggleMusicTerm(page, '米津玄師');
+  await chooseOption(page,'米津玄師喜歡程度','4');
+  await openMusicCatalog(page);
   await expect(page.getByRole('heading', { name: '還有未保存的選擇' })).toHaveCount(0);
   await expect(page.getByLabel('搜尋音樂詞條', { exact: true })).toHaveValue('mijin');
-  await expect(page.getByLabel('米津玄師喜歡程度')).toHaveValue('4');
   await page.getByRole('link', { name: '米津玄師', exact: true }).click();
+  await expectOption(page,'米津玄師喜歡程度','4');
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('button', { name: '取消選取', exact: true }).click();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
   await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
-  await expect(page.getByRole('button', { name: '米津玄師', exact: true })).toHaveAttribute('aria-pressed', 'true');
-  await expect(page.getByLabel('米津玄師喜歡程度')).toHaveValue('3');
-  await page.getByLabel('米津玄師喜歡程度').selectOption('4');
+  await expectMusicTerm(page, '米津玄師', true);
+  await expectOption(page,'米津玄師喜歡程度','3');
+  await chooseOption(page,'米津玄師喜歡程度','4');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
   const drafts=(await durableRows(page)).filter(row=>row.key.includes('music:v1:'));
   expect(drafts).toHaveLength(1);
   await page.getByRole('link', { name: '回到剛才的活動' }).click();
@@ -45,29 +46,37 @@ test('uses pinyin, kana initials and alias search with keyboard clearing, classi
   await page.getByRole('heading', { name: '我的成分', exact: true }).click();
   await page.keyboard.press('/');
   await expect(search).toBeFocused();
+  await expect(page).toHaveURL('/me/music');
+  await page.keyboard.press('Control+k');
+  await expect(page.getByRole('dialog').getByRole('heading',{name:'全站搜尋',exact:true})).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(page).toHaveURL('/me/music');
   for (const [query, name] of [['mjxs', '米津玄師'], ['xuanshi', '米津玄師'], ['yrsk', 'ヨルシカ'], ['ｙｒｓｋ', 'ヨルシカ'], ['alias', '米津玄師']]) {
     await search.fill(query!);
-    await expect(page.locator('.choice-list button')).toHaveCount(1);
-    await expect(page.getByRole('button', { name: name!, exact: true })).toBeVisible();
+    await expect(page.locator('.quick-add-results button')).toHaveCount(1);
+    await expect(page.locator('.quick-add-results button')).toContainText(name!);
   }
   await search.press('Escape');
   await expect(search).toHaveValue('');
-  await page.getByLabel('詞庫類型').selectOption('main');
-  await expect(page.getByRole('button', { name: '米津玄師', exact: true })).toHaveCount(0);
-  await page.getByLabel('詞庫分類').selectOption('领域');
-  await page.getByText('領域 · 6 項', { exact: true }).click();
-  await expect(page.getByRole('button', { name: 'J-POP', exact: true })).toBeHidden();
-  await page.getByText('領域 · 6 項', { exact: true }).click();
-  await page.getByRole('button', { name: 'J-POP', exact: true }).click();
+  await openMusicCatalog(page);
+  await chooseOption(page,'詞庫類型','main');
+  await expect(page.getByRole('link',{name:'米津玄師',exact:true})).toHaveCount(0);
+  await chooseOption(page,'詞庫分類',{label:'領域'});
+  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();
+  await page.getByRole('link',{name:/^我的成分/}).click();
   await expect(page.getByLabel('J-POP喜歡程度')).toHaveCount(0);
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
-  await expect(page.getByLabel('詞庫類型')).toHaveValue('main');
-  await expect(page.getByLabel('詞庫分類')).toHaveValue('领域');
+  await page.getByRole('button',{name:'收合領域',exact:true}).click();
+  await expect(page.getByRole('button',{name:'移除J-POP',exact:true})).toBeHidden();
+  await page.getByRole('button',{name:'展開領域',exact:true}).click();
+  await expectMusicTerm(page,'J-POP',true);
+  await openMusicCatalog(page);
+  await expectOption(page,'詞庫類型','main');
+  await expectOption(page,'詞庫分類','領域');
 });
 test('recovers one original save UUID and body after moving workspace during a lost response', async ({ page, context }) => {
   await login(context);
   await page.goto('/me/music');
-  await page.getByRole('button', { name: 'YOASOBI', exact: true }).click();
+  await toggleMusicTerm(page, 'YOASOBI');
   const keys: string[] = [], bodies: string[] = [];
   await page.route('**/api/v2/me/music', async route => {
     if (route.request().method() !== 'PUT') return route.continue();
@@ -77,7 +86,7 @@ test('recovers one original save UUID and body after moving workspace during a l
   });
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByRole('button', { name: '確認保存結果', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await openMusicCatalog(page);
   await page.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
   await page.getByRole('link', { name: 'YOASOBI', exact: true }).click();
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toBeDisabled();
@@ -88,7 +97,7 @@ test('recovers one original save UUID and body after moving workspace during a l
   await page.getByRole('button', { name: '確認保存結果', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); expect(bodies[0]).toBe(bodies[1]);
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
 });
 test('keeps account drafts separate on the catalog and clears them after logout without writing selections', async ({ page, context }) => {
   await login(context);
@@ -112,7 +121,7 @@ test('keeps account drafts separate on the catalog and clears them after logout 
 test('keeps storage denial and damaged drafts visible and non-writable from both workspace pages', async ({ page, context }) => {
   await login(context);await page.goto('/music?entry=sub-0');await denyDraftWrites(page,'music:v1:');let writes=0;page.on('request',request=>{if(request.method()==='PUT')writes++;});
   await page.getByRole('button',{name:'選取此詞條',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'編輯我的成分',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);
-  const clean=await context.newPage();await clean.goto('/me/music');await clean.getByRole('button',{name:'Aimer',exact:true}).click();await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'music:v1:','DAMAGED_SHARED_SELECTION');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await clean.getByRole('link',{name:'音樂詞庫',exact:true}).click();await clean.getByRole('button',{name:'展開細分前 20 名',exact:true}).click();await clean.getByRole('link',{name:'YOASOBI',exact:true}).click();await expect(clean.getByRole('button',{name:'選取此詞條',exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();await expect(clean.getByRole('button',{name:'選取此詞條',exact:true})).toBeEnabled();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('DAMAGED_SHARED_SELECTION');await clean.close();
+  const clean=await context.newPage();await clean.goto('/me/music');await toggleMusicTerm(clean, 'Aimer');await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'music:v1:','DAMAGED_SHARED_SELECTION');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await openMusicCatalog(clean);await clean.getByRole('button',{name:'展開細分前 20 名',exact:true}).click();await clean.getByRole('link',{name:'YOASOBI',exact:true}).click();await expect(clean.getByRole('button',{name:'選取此詞條',exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();await expect(clean.getByRole('button',{name:'選取此詞條',exact:true})).toBeEnabled();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('DAMAGED_SHARED_SELECTION');await clean.close();
 });
 test('keeps mobile selection, long labels and save controls usable and hides the bar after save', async ({ page, context }) => {
   await login(context); await page.setViewportSize({ width: 360, height: 800 });
@@ -127,21 +136,23 @@ test('keeps mobile selection, long labels and save controls usable and hides the
 });
 test('enforces separate 5/15 limits across both pages and allows removal without changing other levels', async ({ page, context }) => {
   await login(context); await page.goto('/me/music');
-  for (const name of ['J-POP', '動畫歌曲', '搖滾', '電子', '獨立音樂']) await page.getByRole('button', { name, exact: true }).click();
-  await page.getByRole('button', { name: '古典', exact: true }).click();
+  for (const name of ['J-POP', '動畫歌曲', '搖滾', '電子', '獨立音樂']) await toggleMusicTerm(page,name);
+  await toggleMusicTerm(page,'古典');
   await expect(page.getByText('領域最多 5 項、細分最多 15 項，合計最多 20 項。', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: '古典', exact: true })).toHaveAttribute('aria-pressed', 'false');
-  const sub = page.locator('.selection-group').filter({ has: page.getByRole('heading', { name: /^細分/ }) }).locator('.choice-list button');
-  const names = await sub.allTextContents();
-  for (const name of names.slice(0, 15)) await page.getByRole('button', { name, exact: true }).click();
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
-  await page.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
+  await expectMusicTerm(page,'古典',false);
+  const catalog=await(await context.request.get('/api/v2/music/catalog')).json();
+  const names=catalog.entries.filter((entry:{kind:string})=>entry.kind==='sub').map((entry:{name:string})=>entry.name) as string[];
+  expect(names.length).toBeGreaterThan(15);
+  for (const name of names.slice(0,15)) await toggleMusicTerm(page,name);
+  await openMusicCatalog(page);
+  await page.getByRole('tab',{name:'完整詞庫',exact:true}).click();
   await page.getByRole('link', { name: names[15]!, exact: true }).click();
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
   await expect(page.getByText('領域最多 5 項、細分最多 15 項，合計最多 20 項。', { exact: true })).toBeVisible();
+  await page.getByRole('link',{name:'編輯我的成分',exact:true}).click();
   await page.getByRole('button', { name: '移除' + names[0]!, exact: true }).click();
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
-  await page.getByLabel(names[1]! + '喜歡程度').selectOption('1');
+  await toggleMusicTerm(page,names[15]!);
+  await chooseOption(page,names[1]! + '喜歡程度','1');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   const session = await (await context.request.get('/api/v2/session')).json();
@@ -150,9 +161,10 @@ test('enforces separate 5/15 limits across both pages and allows removal without
   expect(result.selections.find((s: { entryId: string }) => s.entryId === 'main-5')).toBeUndefined();
   expect(result.selections.filter((s: { level: number }) => s.level === 1)).toHaveLength(1);
 });
+
 test('retains one in-flight save while moving between pages and does not re-enable selection early', async ({ page, context }) => {
   await login(context); await page.goto('/me/music');
-  await page.getByRole('button', { name: 'Aimer', exact: true }).click();
+  await toggleMusicTerm(page, 'Aimer');
   let release!: () => void, started!: () => void, writes = 0;
   const gate = new Promise<void>(resolve => { release = resolve; });
   const sent = new Promise<void>(resolve => { started = resolve; });
@@ -163,13 +175,13 @@ test('retains one in-flight save while moving between pages and does not re-enab
   });
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await sent;
-  await page.getByRole('link', { name: '音樂詞庫', exact: true }).click();
+  await openMusicCatalog(page);
   await page.getByRole('link', { name: 'Aimer', exact: true }).click();
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toBeDisabled();
   release();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toBeEnabled();
-  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled();
   expect(writes).toBe(1);
 });
 test('does not restore private selection or cleared drafts when a save response arrives after another tab logs out', async ({ page, context }) => {

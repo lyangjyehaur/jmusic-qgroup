@@ -4,7 +4,8 @@ import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { AccountProfile, SaveNickname, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -71,7 +72,7 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
   }
   return <>
     <Surface className="detail auth-panel"><form onSubmit={event => { event.preventDefault(); void save(); }}>
-      <Text>目前稱呼：{saved.nickname}</Text><label className="account-field">站內稱呼<input value={draft.nickname} maxLength={48} autoComplete="nickname" disabled={locked} onChange={event => { record.change({ ...draft, nickname: event.target.value }); setMessage(''); }} aria-describedby="nickname-help" /></label>
+      <Text>目前稱呼：{saved.nickname}</Text><Field label="站內稱呼"><input value={draft.nickname} maxLength={48} autoComplete="nickname" disabled={locked} onChange={event => { record.change({ ...draft, nickname: event.target.value }); setMessage(''); }} aria-describedby="nickname-help" /></Field>
       <Text id="nickname-help">1–24 字。修改會更新名冊顯示，不更換帳號，也不修改 QQ 暱稱、付款歸屬或既有帳單。</Text>
       <Button type="submit" loading={sending} disabled={!dirty || unavailable || !SaveNickname.safeParse({ nickname: draft.nickname, revision: draft.revision }).success}>{draft.requestKey ? '確認修改結果' : '保存稱呼'}</Button>
       {message && <Text role="status">{message}</Text>}

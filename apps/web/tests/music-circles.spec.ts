@@ -1,6 +1,7 @@
+import { chooseOption } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 const id = (n: number) => 'm_c' + n.toString(16).padStart(23, '0');
 test.use({ musicCircles: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
@@ -35,9 +36,9 @@ test('thresholds persist through member and comparison navigation, keyboard link
   const member = circles(page).getByRole('link', { name: '同名0', exact: true }).last(); await member.focus(); await page.keyboard.press('Enter');
   await expect(page).toHaveURL('/people/' + id(11) + '?from=%2Fpeople%2Fcircles%3FminLink%3D100');
   await page.getByRole('link', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('heading', { name: '成分比較', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '查看同好成分', exact: true }).click(); await page.getByRole('link', { name: '回到同好圈子', exact: true }).click();
-  await expect(page).toHaveURL('/people/circles?minLink=100'); await expect(page.getByLabel('圈子連結門檻', { exact: true })).toHaveValue('100');
-  await page.getByLabel('圈子連結門檻', { exact: true }).selectOption('40'); await expect(circles(page).getByRole('heading', { name: '圈子 1 · 3 人', exact: true })).toBeVisible();
+  await page.getByRole('link', { name: '查看同好成分', exact: true }).click(); await page.getByRole('dialog').getByRole('link', { name: '回到同好圈子', exact: true }).click();
+  await expect(page).toHaveURL('/people/circles?minLink=100'); await expect(page.getByLabel('圈子連結門檻',{exact:true})).toContainText('嚴格重合 100%');
+  await chooseOption(page,'圈子連結門檻',{label:'嚴格重合 40%'}); await expect(circles(page).getByRole('heading', { name: '圈子 1 · 3 人', exact: true })).toBeVisible();
   await circles(page).getByText('其餘圈子 · 4 個', { exact: true }).click(); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-music-circles-mobile.png', fullPage: true });
 });
@@ -59,7 +60,7 @@ test('late threshold responses are discarded; failures remove old results and ca
   await login(context); let arrived!: () => void, release!: () => void;
   const captured = new Promise<void>(resolve => { arrived = resolve; }), pending = new Promise<void>(resolve => { release = resolve; });
   await page.route('**/api/v2/music/circles?minLink=40', async route => { const response = await route.fetch(); arrived(); await pending; await route.fulfill({ response }).catch(() => {}); });
-  await page.goto('/people/circles'); await captured; await page.getByLabel('圈子連結門檻', { exact: true }).selectOption('100');
+  await page.goto('/people/circles'); await captured; await chooseOption(page,'圈子連結門檻',{label:'嚴格重合 100%'});
   await expect(stats(page).filter({ hasText: '11 個' })).toHaveCount(1); release(); await expect(singles(page).getByRole('link', { name: '鏈首', exact: true })).toBeVisible();
   let fail = true; await page.route('**/api/v2/music/circles?minLink=100', route => fail ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'FAIL', message: '圈子暫時無法讀取' }) }) : route.continue());
   await refresh(page); await expect(page.getByRole('alert')).toContainText('圈子暫時無法讀取'); await expect(circles(page)).toHaveCount(0);
@@ -85,9 +86,9 @@ test('cross-tab saved selections and name changes refresh circles; erasure revok
 test('empty data and unmatched thresholds provide useful guidance; URL thresholds and return paths are bounded', async ({ page, context }) => {
   await login(context); let empty = false;
   await page.route('**/api/v2/music/circles?*', async route => { const response = await route.fetch(), body = await response.json(); body.clusters = []; if (empty) Object.assign(body, { membersWithSelection: 0, singles: 0, singleMembers: [] }); await route.fulfill({ response, json: body }); });
-  await page.goto('/people/circles?minLink=55'); await expect(page.getByLabel('圈子連結門檻', { exact: true })).toHaveValue('55'); await expect(page.getByText('目前門檻下沒有兩人以上的圈子，可調整連結門檻。', { exact: true })).toBeVisible();
+  await page.goto('/people/circles?minLink=55'); await expect(page.getByLabel('圈子連結門檻',{exact:true})).toContainText('嚴格重合 55%'); await expect(page.getByText('目前門檻下沒有兩人以上的圈子，可調整連結門檻。', { exact: true })).toBeVisible();
   empty = true; await refresh(page); await expect(page.getByRole('link', { name: '保存成分選擇', exact: true })).toBeVisible(); await expect(singles(page)).toHaveCount(0);
-  await page.goto('/people/circles?minLink=999'); await expect(page.getByLabel('圈子連結門檻', { exact: true })).toHaveValue('40');
+  await page.goto('/people/circles?minLink=999'); await expect(page.getByLabel('圈子連結門檻',{exact:true})).toContainText('嚴格重合 40%');
   await page.goto('/people/' + id(2) + '/compare?from=%2F%2Fevil.example'); await expect(page.getByRole('link', { name: '回到同好圈子', exact: true })).toHaveCount(0);
   await page.goto('/music/entries/chain-b?from=%2Fpeople%2Fcircles-extra'); await expect(page.getByRole('link', { name: '回到同好圈子', exact: true })).toHaveCount(0);
 });
@@ -99,7 +100,7 @@ test('same-name tags retain their separate term links and long names wrap on mob
   await expect(card).toContainText('· 4 次'); await expect(card.getByRole('link', { name: '領域 · chain-a', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await card.getByRole('link', { name: '細分 · chain-b', exact: true }).focus(); await page.keyboard.press('Enter');
-  await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toContainText('圈子詞 chain-b');
+  await expect(page.getByRole('dialog').getByRole('heading',{name:'圈子詞 chain-b',exact:true})).toBeVisible();
   await page.getByRole('link', { name: '回到同好圈子', exact: true }).click(); await expect(page).toHaveURL('/people/circles?minLink=40');
 });
 

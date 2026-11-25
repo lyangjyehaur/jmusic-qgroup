@@ -1,7 +1,7 @@
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ settlementExamples: true });
-const origin = 'http://127.0.0.1:5082',
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,
   p1 = 'aaaaaaaaaaaaaaaa',
   p2 = 'bbbbbbbbbbbbbbbb',
   p3 = 'cccccccccccccccc',

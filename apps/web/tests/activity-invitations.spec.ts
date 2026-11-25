@@ -1,7 +1,8 @@
+import { openActivityTool } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const viewer=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()};}
 async function published(context:BrowserContext,patch:Record<string,unknown>={}){
@@ -13,7 +14,7 @@ const accept=(page:Page)=>page.getByLabel(/^已核對本人身分與第 /);
 const issue=(page:Page)=>page.getByLabel('已核對受邀者與原因，確認建立邀請',{exact:true});
 async function fill(page:Page){await page.locator('#invite-name-0').fill('受邀同行');await page.getByLabel('邀請原因',{exact:true}).fill('核對補報名');await issue(page).check();}
 test('batch invitations reserve no seats, expose individual links and let each person accept the current arrangement',async({page,context})=>{
-  const id=await published(context);await page.goto('/activities/'+id);await page.getByRole('link',{name:'補報名邀請',exact:true}).click();await fill(page);await page.getByRole('button',{name:'新增受邀者',exact:true}).click();await page.locator('#invite-name-1').fill('受邀乙');await issue(page).check();await page.getByRole('button',{name:'建立邀請',exact:true}).click();await expect(page.getByText('邀請已建立。',{exact:true})).toBeVisible();const list=await invitations(context,id);expect(list.people).toHaveLength(2);
+  const id=await published(context);await page.goto('/activities/'+id);await openActivityTool(page,'補報名邀請');await fill(page);await page.getByRole('button',{name:'新增受邀者',exact:true}).click();await page.locator('#invite-name-1').fill('受邀乙');await issue(page).check();await page.getByRole('button',{name:'建立邀請',exact:true}).click();await expect(page.getByText('邀請已建立。',{exact:true})).toBeVisible();const list=await invitations(context,id);expect(list.people).toHaveLength(2);
   const recipient=await page.getByRole('link',{name:'受邀者連結（受邀同行）',exact:true}).getAttribute('href');expect((await(await context.request.get('/api/v2/activities/'+id)).json()).confirmed).toBe(1);await login(context,'bob');await page.goto(recipient!);await expect(page.getByText('受邀費用規則',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'接受邀請',exact:true})).toBeDisabled();await accept(page).check();await page.getByRole('button',{name:'接受邀請',exact:true}).click();await expect(page.getByText('已接受邀請並保存報名。',{exact:true})).toBeVisible();await page.getByRole('link',{name:'查看活動與報名',exact:true}).click();await expect(page.locator('#participants')).toContainText('小白');expect((await(await context.request.get('/api/v2/activities/'+id)).json()).confirmed).toBe(2);
 });
 test('private links retain their token through the legacy entry and login gate, granting activity access only on acceptance',async({page,context})=>{

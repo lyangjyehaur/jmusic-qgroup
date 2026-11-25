@@ -1,7 +1,8 @@
+import { openAdminTool, openActivityTool } from './kimi-controls';
 import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import { denyDraftWrites } from './draft-helpers';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({botDeliveryExamples:true});
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function confirm(page:Page){await page.getByRole('checkbox',{name:'我已核對目標群、發送模式與重送內容',exact:true}).check();await page.getByRole('button',{name:'建立重送工作',exact:true}).click();}
@@ -9,7 +10,7 @@ async function rows(context:BrowserContext,root='/activities/listen/bot-deliveri
   const viewer=await(await context.request.get('/api/v2/session')).json();return (await context.request.get('/api/v2'+root,{headers:{'X-Account-Scope':viewer.scope}})).json();
 }
 test('administrator reviews metadata and blocked uncertainty on mobile; site administration does not grant activity ownership',async({page,context})=>{
-  await login(context,'registration-admin');await page.setViewportSize({width:360,height:800});await page.goto('/admin');await page.getByRole('link',{name:'bot 投遞紀錄',exact:true}).click();
+  await login(context,'registration-admin');await page.setViewportSize({width:360,height:800});await page.goto('/admin');await openAdminTool(page,'bot 投遞紀錄');
   await expect(page.getByText('DO NOT EXPOSE PAYLOAD')).toHaveCount(0);await page.getByRole('button',{name:'核對通知 #3',exact:true}).click();await expect(page.getByRole('region',{name:'通知核對 #3',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'建立重送工作',exact:true})).toHaveCount(0);
   await page.getByRole('link',{name:'前往授權核對入口',exact:true}).click();await expect(page.getByText('目前帳號或通知核對權限已變更。')).toBeVisible();await expect(page.getByText('合成未確認通知內容',{exact:true})).toHaveCount(0);
   await page.goto('/admin/bot/deliveries');await page.getByRole('combobox',{name:'投遞狀態',exact:true}).selectOption('failed');await expect(page.getByRole('button',{name:'核對通知 #3',exact:true})).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'test-results/unified-bot-deliveries-mobile.png',fullPage:true});
@@ -17,7 +18,7 @@ test('administrator reviews metadata and blocked uncertainty on mobile; site adm
 test('lost retry response survives reload and is recovered without creating a second intent',async({page,context})=>{
   await login(context);let lose=true;const writes:{key:string|undefined;body:string|null}[]=[];
   await page.route('**/api/v2/activities/listen/bot-deliveries/1/retry',async route=>{writes.push({key:route.request().headers()['idempotency-key'],body:route.request().postData()});if(!lose)return route.continue();lose=false;const response=await route.fetch();await route.fulfill({response,body:'{'});});
-  await page.goto('/activities/listen');await page.getByRole('link',{name:'群通知紀錄',exact:true}).click();await page.getByRole('button',{name:'核對通知 #1',exact:true}).click();await expect(page.getByText('合成失敗通知內容',{exact:true}).last()).toBeVisible();await expect(page.getByRole('button',{name:'建立重送工作',exact:true})).toBeDisabled();await confirm(page);
+  await page.goto('/activities/listen');await openActivityTool(page,'群通知紀錄');await page.getByRole('button',{name:'核對通知 #1',exact:true}).click();await expect(page.getByText('合成失敗通知內容',{exact:true}).last()).toBeVisible();await expect(page.getByRole('button',{name:'建立重送工作',exact:true})).toBeDisabled();await confirm(page);
   await expect(page.getByText('尚未確認重送結果；請先查回原操作，避免重複建立工作。',{exact:true})).toBeVisible();await page.reload();await page.getByRole('button',{name:'查回原重送結果',exact:true}).click();await expect(page.getByText(/已建立待送工作 #7/)).toBeVisible();expect(writes).toHaveLength(1);expect((await rows(context)).entries.filter((r:{status:string})=>r.status==='pending')).toHaveLength(2);
 });
 test('a missing original result requires a deliberate resend using the exact saved UUID and body',async({page,context})=>{

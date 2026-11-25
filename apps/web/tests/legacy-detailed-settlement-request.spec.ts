@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 const testPNG=()=>Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC','base64');
 import type { BrowserContext,Page } from '@playwright/test';
 import { test,expect } from './fixtures';
-const origin='http://127.0.0.1:5082',scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex'),fixed='dddddddddddddddd';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,scope=createHash('sha256').update('kanban-drafts-v1:alice').digest('hex'),fixed='dddddddddddddddd';
 test.use({settlementExamples:true});
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function auth(context:BrowserContext){const s=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':s.scope,'X-CSRF-Token':s.csrf};}

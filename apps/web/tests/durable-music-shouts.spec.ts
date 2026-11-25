@@ -2,7 +2,7 @@ import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import { readFile } from 'node:fs/promises';
-const origin='http://127.0.0.1:5082',endpoint='**/api/v2/me/music/shouts',unknown='尚未確認發布結果。內容與操作編號已保留，請按「確認發布結果」安全重試。';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,endpoint='**/api/v2/me/music/shouts',unknown='尚未確認發布結果。內容與操作編號已保留，請按「確認發布結果」安全重試。';
 test.use({musicShouts:true});
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 const field=(page:Page)=>page.getByRole('textbox',{name:'找搭子內容',exact:true});

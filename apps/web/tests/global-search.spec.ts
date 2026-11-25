@@ -1,8 +1,9 @@
+import { expectOption } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 
 test.use({ musicShouts: true });
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 const field = '搜尋活動、詞條或成分稱呼';
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]);
@@ -51,7 +52,7 @@ test('lets a member without music search activities and terms without inventing 
 test('returns from a visible person and comparison to the same submitted name search', async ({ page, context }) => {
   await login(context); await page.goto('/search?' + new URLSearchParams({ q: '找搭子乙' }));
   await page.getByRole('link', { name: '找搭子乙', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '同好成分', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog').getByRole('heading', { name: '找搭子乙', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '比較成分', exact: true }).click();
   await expect(page.getByRole('heading', { name: '成分比較', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expect(page.getByLabel(field)).toHaveValue('找搭子乙');
@@ -66,7 +67,7 @@ test('keeps the shared unsaved music selection while visiting search, a term and
   await page.getByRole('link', { name: '米津玄師', exact: true }).click();
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
-  await expect(page.getByRole('button', { name: '米津玄師', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectOption(page,'米津玄師喜歡程度','3');
   await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expect(page.getByLabel(field)).toHaveValue('mjxs');
 });
 
@@ -108,12 +109,14 @@ for (const width of [360, 390, 614, 768, 1280]) test(width + 'px: keeps the shar
   await expect(page.getByRole('region', { name: '活動搜尋結果' })).toBeVisible();
   await expect(page.getByLabel(field)).toBeVisible(); await expect(page.getByRole('button', { name: '搜尋', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(width);
-  const nav = page.getByRole('navigation', { name: '主要導覽' });
-  for (const label of ['活動', '音樂', '同好', '我的']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
   for (const label of ['全部', '活動', '音樂詞條', '同好']) {
     const control = page.getByLabel('搜尋分類').getByRole('link', { name: label, exact: true });
     await expect(control).toBeVisible();
     const bounds = await control.boundingBox(); expect(bounds!.width).toBeGreaterThanOrEqual(44); expect(bounds!.height).toBeGreaterThanOrEqual(44);
   }
   const screenshot = await page.screenshot({ fullPage: true }); await info.attach('search-' + width + 'px', { body: screenshot, contentType: 'image/png' });
+  await page.getByRole('button', { name: '返回原頁', exact: true }).click();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  const nav = page.getByRole('navigation', { name: width <= 768 ? '手機主要導覽' : '主要導覽' });
+  for (const label of ['活動', '音樂', '同好', '我的']) await expect(nav.getByRole('link', { name: label, exact: true })).toBeVisible();
 });

@@ -1,6 +1,6 @@
 import {test,expect} from './fixtures';
 import type {BrowserContext,Page} from '@playwright/test';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext){await context.addCookies([{name:'kanban_session',value:'fixture-registration-admin',url:origin,httpOnly:true,sameSite:'Lax'}]);}
 const review=(page:Page)=>page.getByRole('region',{name:'刪除範圍核對',exact:true});
 async function confirm(page:Page){await page.getByLabel('輸入 RESET 確認',{exact:true}).fill('RESET');await page.getByRole('checkbox',{name:'我已核對刪除範圍及不可復原的影響',exact:true}).check();await page.getByRole('button',{name:'重置成分與詞庫',exact:true}).click();}

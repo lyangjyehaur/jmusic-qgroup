@@ -1,7 +1,8 @@
 import { uiText } from './language';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Text } from 'yahha-ui';
+import { Avatar, Button } from './kimi-ui';
 import { MusicCatalog } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { createWebHttpClient, scopedHttp } from './http';
@@ -9,9 +10,12 @@ import { Failure, Notice, PageIntro } from './shared';
 import { MusicMemberAccess, type Member } from './member-access';
 import { categoryLabel } from './music-entries';
 import { useMusicWorkspace } from './music-selection';
-import { SelectionPanel } from './music-editor';
+import { KimiSelectionSummary } from './kimi-music-editor';
 import { musicPeopleReturn, musicTrendReturn, musicCircleReturn } from './music-return';
 import { CopyMusicValue } from './music-copy';
+import { useDiscoveryDetails } from './discovery-details';
+import { useContext, useState } from 'react';
+import { DialogPageContext } from './discovery-dialog';
 
 export function musicEntryPath(id: string, search = '') {
   const params = new URLSearchParams(search);
@@ -26,23 +30,21 @@ export function musicEntryReturn(value: string | null) {
   return url.pathname + url.search === value ? value : null;
 }
 
-export function MusicEntryDetails({ entry, close }: {
-  entry: z.infer<typeof MusicCatalog>['entries'][number]; close?: () => void;
+export function MusicEntryDetails({ entry }: {
+  entry: z.infer<typeof MusicCatalog>['entries'][number];
 }) {
   const workspace = useMusicWorkspace(), location = useLocation();
+  const inDialog=useContext(DialogPageContext);
+  useDiscoveryDetails(entry.name,(entry.kind==='main'?'領域':'細分')+'・'+categoryLabel(entry.category));
   const selection = workspace.state === 'ready' ? workspace.selection : null;
   const detailPath = musicEntryPath(entry.id, location.search);
-  return <Surface className="detail music-entry-detail" role="region" aria-label="詞條資料">
-    <Heading level={2}>{entry.name}</Heading>
-    <Text>{entry.kind === 'main' ? '領域' : '細分'} · {categoryLabel(entry.category)} · {entry.count} 人選用</Text>
-    {entry.aliases.length > 0 && <Text>別名：{entry.aliases.join('、')}</Text>}
-    {entry.creatorName && <Text>建立者：{entry.creatorName}</Text>}
+  return <section className="music-entry-detail" role="region" aria-label="詞條資料">
+    {!inDialog&&<Heading level={2}>{entry.name}</Heading>}
+    <dl className="inline-definitions">{entry.aliases.length>0&&<div><dt>別名</dt><dd>{entry.aliases.join('、')}</dd></div>}<div><dt>選用人數</dt><dd>{entry.count} 人</dd></div>{entry.creatorName&&<div><dt>建立者</dt><dd>{entry.creatorName}</dd></div>}</dl>
     <div className="page-actions">
       {selection ? <Button aria-pressed={selection.selected.has(entry.id)} disabled={selection.locked}
         onClick={() => selection.toggle(entry)}>{selection.selected.has(entry.id) ? '取消選取' : '選取此詞條'}</Button>
         : <Link to={'/me/music' + location.search}>編輯我的選擇</Link>}
-      {close && <><Link to={detailPath}>開啟詞條頁面</Link>
-        <Button variant="ghost" onClick={close}>關閉詞條資料</Button></>}
     </div>
     {workspace.state !== 'error' && <section aria-label="誰選了">
       <Heading level={3}>誰選了</Heading>
@@ -50,23 +52,25 @@ export function MusicEntryDetails({ entry, close }: {
         key={viewer.scope + ':' + viewer.musicEpoch + ':' + entry.id} viewer={viewer} id={entry.id} returnTo={detailPath} />}</MusicMemberAccess>
       }
     </section>}
-  </Surface>;
+  </section>;
 }
 function EntryMembers({ viewer, id, returnTo }: { viewer: Member; id: string; returnTo: string }) {
+  const [copyFeedback,setCopyFeedback]=useState<Record<string,string>>({});
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-entry-members', viewer.musicEpoch, id],
     queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/entries/:id/members',
       { signal, params: { id } }), refetchOnMount: 'always' });
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在讀取選取者…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   if (!query.data.members.length) return <Notice>尚無人選用此詞條。</Notice>;
-  return <ul className="music-entry-members">{query.data.members.map(member => <li key={member.id}>
-    <Link to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: returnTo })}>{member.name}</Link>
+  return <ul className="entry-selector-list">{query.data.members.map(member => <li key={member.id}>
+    <Link className="entry-selector-identity" aria-label={member.name} to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: returnTo })}><Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--moss)'}} size="sm"/><span>{member.name}</span></Link>
     <Text>{member.contactQQ ? member.contactQQ + ' · ' + (member.contactSource === 'legacy' ? '舊成分查詢號碼' : '自填號碼') + '，未經騰訊驗證'
       : '固定成分 ID：' + member.id}</Text>
-    <div className="page-actions">
-      <CopyMusicValue key={member.name} value={member.name} label="名稱" />
-      <CopyMusicValue key={member.contactQQ || member.id} value={member.contactQQ || member.id} label={member.contactQQ ? '聯絡 QQ' : '成分 ID'} />
+    <div className="page-actions entry-selector-copy">
+      <CopyMusicValue key={member.name} value={member.name} label="名稱" compact onMessage={message=>setCopyFeedback(previous=>({...previous,[member.id]:message}))}/>
+      <CopyMusicValue key={member.contactQQ || member.id} value={member.contactQQ || member.id} label={member.contactQQ ? '聯絡 QQ' : '成分 ID'} compact onMessage={message=>setCopyFeedback(previous=>({...previous,[member.id]:message}))}/>
     </div>
+    {copyFeedback[member.id]&&<p className="entry-selector-feedback" role="status">{copyFeedback[member.id]}</p>}
   </li>)}</ul>;
 }
 export function MusicEntryPage() {
@@ -79,9 +83,9 @@ export function MusicEntryPage() {
   const trendBack = musicTrendReturn(params.get('from'));
   return <><PageIntro title="詞條資料" /><div className="page-actions">{trendBack && <Link to={trendBack}>回到音樂趨勢</Link>}{peopleBack && <Link to={peopleBack}>{peopleBack.startsWith('/people/shouts') ? '回到找搭子' : musicCircleReturn(peopleBack) ? '回到同好圈子' : '回到同好成分'}</Link>}<Link to={'/music' + (back.size ? '?' + back : '')}>回到音樂詞庫</Link></div>
     {workspace.state === 'error' && !query.error && <Failure error={workspace.error} retry={workspace.retry} />}
-    <div className={selection ? 'content-columns music-editor' : undefined}><section>
+    <div className="term-detail"><section className="term-detail-main">
       {query.isPending ? <Notice>正在讀取詞條…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} />
         : entry ? <MusicEntryDetails key={entry.id} entry={entry} /> : <Notice>這個詞條不存在或已刪除。</Notice>}
-    </section>{selection && <SelectionPanel selection={selection} />}</div>
+    </section>{selection && entry && <KimiSelectionSummary selection={selection} compact entryId={entry.id}/>}</div>
   </>;
 }

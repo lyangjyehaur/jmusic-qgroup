@@ -1,7 +1,7 @@
 import { durableRows,damageDraft } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082',
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,
   profile = (letter: string) => 'm_' + letter.repeat(32);
 test.use({ adminCatalog: true, musicRooms: true });
 async function login(context: BrowserContext, user = 'alice') {

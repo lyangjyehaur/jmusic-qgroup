@@ -29,17 +29,42 @@ function serializeEvent(row: EventRow, now: Date): ActivityView {
     confirmed: row.confirmed, waiting: row.waiting, tentative: row.tentative,
     feePolicy:row.fee_policy,withdrawalDeadline:row.withdrawal_deadline,conditionsVersion:row.conditions_version,changeSummary:row.change_summary,visibility:row.visibility };
 }
-export function listActivities(db: DB, page: number, period: 'upcoming' | 'history', now: Date) {
+type ListFilters = { q?: string; status?: string };
+function listStatus(event: ActivityView) {
+  if (event.archived) return 'archived';
+  if (['draft','ongoing','ended','cancelled'].includes(event.phase)) return event.phase;
+  if (!event.registrationOpen) return 'paused';
+  return event.capacity > 0 && event.confirmed >= event.capacity ? 'full' : 'open';
+}
+function matchesListFilters(event: ActivityView, filters: ListFilters) {
+  const q = (filters.q ?? '').trim().toLocaleLowerCase();
+  return (!q || (event.title + ' ' + event.location + ' ' + event.category).toLocaleLowerCase().includes(q)) &&
+    (!filters.status || filters.status === 'all' || listStatus(event) === filters.status);
+}
+function ownRegistration(db: DB, eventId: string, userId: string | null) {
+  if (!userId) return null;
+  return (db.prepare("SELECT status FROM attendees WHERE event_id=? AND user_id=? AND status IN ('confirmed','waiting','tentative') ORDER BY created_at,id LIMIT 1").get(eventId,userId) as {status:'confirmed'|'waiting'|'tentative'}|undefined)?.status ?? null;
+}
+/** Same participation rule as the existing personal list; an access grant alone is not participation. */
+function myActivityRows(db: DB, userId: string) {
+  const rows=db.prepare(eventProjection+" WHERE e.status!='deleted' AND ((e.lifecycle='draft' AND (e.owner_id=? OR EXISTS(SELECT 1 FROM event_roles r WHERE r.event_id=e.id AND r.user_id=?))) OR (e.lifecycle!='draft' AND (e.visibility='public' OR e.owner_id=? OR EXISTS(SELECT 1 FROM event_access x WHERE x.event_id=e.id AND x.user_id=?)))) ORDER BY e.starts_at DESC,e.id").all(userId,userId,userId,userId) as (EventRow&{owner_id:string})[];
+  return rows.filter(event=>event.owner_id===userId||!!db.prepare('SELECT 1 FROM event_roles WHERE event_id=? AND user_id=?').get(event.id,userId)||!!db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status NOT IN ('withdrawn','invited') AND (user_id=? OR manager_id=?)").get(event.id,userId,userId)||financeSummary(db,eventRow(db,event.id)!,userId).my_balance_cents!==null);
+}
+function listSummary(db: DB, userId: string | null) {
+  const upcoming=(db.prepare(publicEvents + " AND e.archived_at IS NULL AND e.lifecycle NOT IN ('ended','cancelled')").all() as EventRow[]).length;
+  return { upcoming, mine:userId ? myActivityRows(db,userId).length : null };
+}
+export function listActivities(db: DB, page: number, period: 'upcoming' | 'history', now: Date, filters: ListFilters = {}, userId: string | null = null) {
+  // Search/status are applied to the complete authorized collection before pagination.
   // Estimated end never changes a scheduled event into historical actual completion.
   const condition = period === 'history' ? "(e.archived_at IS NOT NULL OR e.lifecycle IN ('ended','cancelled'))" : "(e.archived_at IS NULL AND e.lifecycle NOT IN ('ended','cancelled'))";
-  const rows = db.prepare(publicEvents + ' AND ' + condition + ` ORDER BY e.starts_at ${period === 'history' ? 'DESC' : 'ASC'},e.id LIMIT 21 OFFSET ?`).all((page - 1) * 20) as EventRow[];
-  return { events: rows.slice(0, 20).map(r => serializeEvent(r, now)), page, hasMore: rows.length > 20 };
+  const rows = db.prepare(publicEvents + ' AND ' + condition + ` ORDER BY e.starts_at ${period === 'history' ? 'DESC' : 'ASC'},e.id`).all() as EventRow[];
+  const events=rows.map(row=>serializeEvent(row,now)).filter(event=>matchesListFilters(event,filters)),start=(page-1)*20;
+  return { events:events.slice(start,start+20).map(event=>({...event,myRegistration:ownRegistration(db,event.id,userId)})), page, hasMore:events.length>start+20,total:events.length,summary:listSummary(db,userId) };
 }
-/** Include historical obligations after withdrawal; an access grant alone is not participation. */
-export function listMyActivities(db:DB,userId:string,page:number,now:Date){
-  const rows=db.prepare(eventProjection+" WHERE e.status!='deleted' AND ((e.lifecycle='draft' AND (e.owner_id=? OR EXISTS(SELECT 1 FROM event_roles r WHERE r.event_id=e.id AND r.user_id=?))) OR (e.lifecycle!='draft' AND (e.visibility='public' OR e.owner_id=? OR EXISTS(SELECT 1 FROM event_access x WHERE x.event_id=e.id AND x.user_id=?)))) ORDER BY e.starts_at DESC,e.id").all(userId,userId,userId,userId) as (EventRow&{owner_id:string})[];
-  const mine=rows.filter(event=>event.owner_id===userId||!!db.prepare('SELECT 1 FROM event_roles WHERE event_id=? AND user_id=?').get(event.id,userId)||!!db.prepare("SELECT 1 FROM attendees WHERE event_id=? AND status NOT IN ('withdrawn','invited') AND (user_id=? OR manager_id=?)").get(event.id,userId,userId)||financeSummary(db,eventRow(db,event.id)!,userId).my_balance_cents!==null);
-  const start=(page-1)*20;return {events:mine.slice(start,start+20).map(event=>serializeEvent(event,now)),page,hasMore:mine.length>start+20};
+export function listMyActivities(db:DB,userId:string,page:number,now:Date,filters:ListFilters={}){
+  const events=myActivityRows(db,userId).map(row=>serializeEvent(row,now)).filter(event=>matchesListFilters(event,filters)),start=(page-1)*20;
+  return {events:events.slice(start,start+20).map(event=>({...event,myRegistration:ownRegistration(db,event.id,userId)})),page,hasMore:events.length>start+20,total:events.length,summary:listSummary(db,userId)};
 }
 export function getActivity(db: DB, id: string, now: Date, viewerId: string | null = null) {
   requireActivityAccess(db,id,viewerId);

@@ -1,7 +1,8 @@
 import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button,Text,Heading } from 'yahha-ui';
+import { Text, Heading } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { LegacyRoomsInspection,LegacyRequestReceipt,decodeLegacyRooms,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';

@@ -1,7 +1,8 @@
+import { chooseOption, expectOption, toggleMusicTerm, expectMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows, denyDraftWrites } from './draft-helpers';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function session(context:BrowserContext){return(await context.request.get(origin+'/api/v2/session')).json();}
 async function headers(context:BrowserContext){const viewer=await session(context);return {Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()};}
@@ -18,15 +19,15 @@ async function setup(context:BrowserContext,kind:Kind){
 const control=(page:Page,kind:Kind)=>kind==='selection'?page.getByLabel('YOASOBI喜歡程度'):page.getByLabel(kind==='nickname'?'站內稱呼':kind==='contact'?'聯絡 QQ':'私人留言',{exact:true});
 async function fill(page:Page,kind:Kind){
   await page.goto(origin+flows.find(f=>f.kind===kind)!.path);
-  if(kind==='selection'){await page.getByRole('button',{name:'YOASOBI',exact:true}).click();await control(page,kind).selectOption('4');}
+  if(kind==='selection'){await toggleMusicTerm(page, 'YOASOBI');await chooseOption(page,'YOASOBI喜歡程度','4');}
   else await control(page,kind).fill(kind==='contact'?'123456':'關頁後的原稿');
-  if(kind==='fields'){await page.getByLabel('性別',{exact:true}).selectOption('custom');await page.getByLabel('自訂性別',{exact:true}).fill('原自訂性別');await page.getByLabel('在成分卡公開性別',{exact:true}).check();}
+  if(kind==='fields'){await chooseOption(page,'性別','custom');await page.getByLabel('自訂性別',{exact:true}).fill('原自訂性別');await page.getByLabel('在成分卡公開性別',{exact:true}).check();}
   await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
 }
 for(const flow of flows){
   test(flow.kind+' restores the exact closed-tab draft and requires explicit recovery before saving',async({page,context})=>{
     await setup(context,flow.kind);await fill(page,flow.kind);const before=await durableRows(page);expect(before).toHaveLength(1);await page.close();
-    const fresh=await context.newPage();await fresh.goto(origin+flow.path);await expect(control(fresh,flow.kind)).toHaveValue(flow.kind==='contact'?'123456':flow.kind==='selection'?'4':'關頁後的原稿');await expect(control(fresh,flow.kind)).toBeDisabled();await expect(fresh.getByRole('button',{name:flow.submit,exact:true})).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(control(fresh,flow.kind)).toBeEnabled();expect(await durableRows(fresh)).toEqual(before);
+    const fresh=await context.newPage();await fresh.goto(origin+flow.path);if(flow.kind==='selection')await expectOption(fresh,'YOASOBI喜歡程度','4');else await expect(control(fresh,flow.kind)).toHaveValue(flow.kind==='contact'?'123456':'關頁後的原稿');await expect(control(fresh,flow.kind)).toBeDisabled();await expect(fresh.getByRole('button',{name:flow.submit,exact:true})).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(control(fresh,flow.kind)).toBeEnabled();expect(await durableRows(fresh)).toEqual(before);
     if(flow.kind==='fields'){await expect(fresh.getByLabel('自訂性別',{exact:true})).toHaveValue('原自訂性別');await expect(fresh.getByLabel('在成分卡公開性別',{exact:true})).toBeChecked();}
   });
   test(flow.kind+' resolves a closed-tab unknown result via the inbox with original UUID, body and identity',async({page,context})=>{
@@ -45,7 +46,7 @@ for(const flow of flows){
 test('selection receipts read newer server choices instead of restoring the old accepted snapshot',async({page,context})=>{
   await setup(context,'selection');await fill(page,'selection');let first=true;await page.route('**/api/v2/me/music',async route=>{if(route.request().method()!=='PUT')return route.continue();const response=await route.fetch();await route.fulfill(first?{response,body:'{'}:{response});first=false;});await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByRole('button',{name:'確認保存結果',exact:true})).toBeVisible();
   const current=await(await context.request.get(origin+'/api/v2/me/music',{headers:await headers(context)})).json();expect((await context.request.put(origin+'/api/v2/me/music',{headers:await headers(context),data:{profileId:current.id,musicEpoch:0,revision:current.revision,selections:[{entryId:'sub-2',level:1}]}})).status()).toBe(200);
-  await page.getByRole('button',{name:'確認保存結果',exact:true}).click();await expect(page.getByText('原操作已保存，成分已再次變更；請核對目前選擇。',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'YOASOBI',exact:true})).toHaveAttribute('aria-pressed','false');await expect(page.getByLabel('Aimer喜歡程度')).toHaveValue('1');
+  await page.getByRole('button',{name:'確認保存結果',exact:true}).click();await expect(page.getByText('原操作已保存，成分已再次變更；請核對目前選擇。',{exact:true})).toBeVisible();await expectMusicTerm(page, 'YOASOBI', false);await expectOption(page,'Aimer喜歡程度','1');
 });
 test('a conflicted private field version keeps the original target and both drafts, with download and mobile recovery',async({page,context})=>{
   await setup(context,'fields');await fill(page,'fields');const other=await context.newPage();await other.goto(origin+'/me/music/details');await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await control(page,'fields').fill('第一分頁私人原稿');await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await control(other,'fields').fill('第二分頁私人原稿');await expect(other.getByText(/其他分頁已更新原稿/)).toBeVisible();await other.getByRole('button',{name:'讀取已保存版本',exact:true}).click();await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(control(other,'fields')).toHaveValue('第一分頁私人原稿');await other.getByText('本機保全版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expect(control(other,'fields')).toHaveValue('第二分頁私人原稿');

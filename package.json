@@ -33,7 +33,7 @@
     "test:rebuild": "vitest run --config vitest.rebuild.config.ts",
     "build:analytics:rebuild": "tsx tools/rebuild/build-analytics-manifest.ts",
     "build:error-displays:rebuild": "tsx tools/rebuild/build-error-displays.ts",
-    "build:rebuild": "npm run check:http-contracts:rebuild && npm run build:error-displays:rebuild && npm run build:analytics:rebuild && npm run typecheck:rebuild && vite build --config apps/web/vite.config.ts && node tools/rebuild/build-api.mjs",
+    "build:rebuild": "node tools/rebuild/build-kimi-button-links.mjs && node tools/rebuild/scope-kimi-css.mjs && npm run check:http-contracts:rebuild && npm run build:error-displays:rebuild && npm run build:analytics:rebuild && npm run typecheck:rebuild && vite build --config apps/web/vite.config.ts && node tools/rebuild/build-api.mjs",
     "test:e2e:rebuild": "playwright test --config apps/web/playwright.config.ts",
     "test:build:rebuild": "node tools/rebuild/smoke-build.mjs",
     "test:retained-python:rebuild": "node tools/rebuild/smoke-retained-python.mjs",

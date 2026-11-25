@@ -1,0 +1,43 @@
+import type { Page } from '@playwright/test';
+const labels:Record<string,string>={main:'領域',sub:'細分','领域':'領域','乐队':'樂隊','组合':'組合','社团':'社團','企划':'企劃','1':'只聽過幾首','2':'聽過一些','3':'常聽','4':'本命',public:'公開',invitation:'邀請可見','运动':'運動','约K':'約 K','游戏':'遊戲','出游':'出遊',system:'跟隨系統',light:'淺色',dark:'深色',comfortable:'舒適',compact:'緊湊',gunju:'苔綠',pink:'粉色',blue:'淺藍',yellow:'淺黃',bound:'已取得 UnionID',missing:'QQ 已綁定、缺少 UnionID',unbound:'未綁定 QQ',custom:'自訂',female:'女',male:'男',rare:'共同項／冷門優先',familiar:'我的熟悉度優先'};
+export async function chooseOption(page:Page,label:string|RegExp,value:string|{label:string}){
+ const control=page.getByLabel(label,{exact:true});
+ if(await control.evaluate(el=>el.tagName==='SELECT'))return control.selectOption(value);
+ await control.click();await page.getByRole('option',{name:typeof value==='string'?(labels[value]??value):value.label,exact:true}).click();
+}
+export async function expectOption(page:Page,label:string|RegExp,value:string){
+ const {expect}=await import('@playwright/test');const control=page.getByLabel(label,{exact:true});
+ if(await control.evaluate(el=>el.tagName==='SELECT'))await expect(control).toHaveValue(value);
+ else await expect(control).toContainText(labels[value]??value);
+}
+
+export async function toggleMusicTerm(page:Page,name:string){
+ await page.locator('.selection-workspace').waitFor();
+ const selected=page.getByRole('button',{name:'移除'+name,exact:true});
+ if(await selected.count()){await selected.click();return;}
+ await page.locator('.quick-add input').fill(name);
+ await page.locator('.quick-add-results').getByRole('button').filter({hasText:name}).click();
+}
+export async function expectMusicTerm(page:Page,name:string,selected=true){
+ await page.locator('.selection-workspace').waitFor();
+ const {expect}=await import('@playwright/test');await expect(page.getByRole('button',{name:'移除'+name,exact:true})).toHaveCount(selected?1:0);
+}
+export async function openMusicContact(page:Page){
+ const tools=page.locator('.music-profile-tools'),contact=page.getByRole('link',{name:'聯絡 QQ',exact:true});await contact.or(tools.locator('summary')).first().waitFor();if(await tools.count()&&!await tools.evaluate(el=>(el as HTMLDetailsElement).open))await tools.locator('summary').click();
+ await contact.click();
+}
+
+export async function openAdminTool(page:Page,name:string){
+ const tab=['bot 設定','bot 投遞紀錄'].includes(name)?'QQ bot':['重置成分與詞庫','刪除申請'].includes(name)?'隱私審核':name==='成分匯出與歷史備份'?'備份紀錄':name==='音樂詞庫管理'?'活動與內容':'成員／權限';
+ await page.getByRole('tab',{name:tab,exact:true}).click();
+ await page.locator('.admin-workspace').getByRole('link',{name,exact:true}).click();
+}
+
+export async function openActivityTool(page:Page,name:string){
+ await page.getByRole('tab',{name:'管理',exact:true}).click();
+ await page.getByRole('link',{name,exact:true}).click();
+}
+
+export async function openMusicCatalog(page:Page){
+ await page.getByRole('link',{name:'音樂詞庫',exact:true}).and(page.locator('.back-link')).click();
+}

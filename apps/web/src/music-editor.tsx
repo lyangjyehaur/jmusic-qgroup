@@ -1,6 +1,7 @@
 import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { categoryLabel } from './music-entries';
 import type { MusicSelection } from './music-selection';
 import { MusicSearch, useMusicSearch } from './music-search';
@@ -39,11 +40,11 @@ export function ProfileEditor({ selection: form }: { selection: MusicSelection }
   const filters = useMusicSearch(form.entries);
   const filtered = new Set(filters.filtered.map(entry => entry.id));
   const categories = [...new Set(form.entries.map(entry => entry.category))];
-  return <><PageIntro title="我的成分" /><div className="page-actions">
+  return <div className="profile-editor"><PageIntro title="我的成分" /><nav className="tabs profile-tabs" aria-label="我的成分功能"><Link to="/me/music" aria-current="page">成分編輯</Link>
     <Link to="/me/music/entries">我的詞條</Link>{form.saved ? <>
       <Link to="/me/music/details">成分資料</Link><Link to="/me/music/contact">聯絡 QQ</Link>
       <Link to={'/people/' + form.saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回舊成分</Link>}
-    </div>{form.returnTo && <Link className="back" to={form.returnTo}>{form.returnTo.startsWith('/people/shouts') ? '回到找搭子' : form.returnTo.startsWith('/people/circles') ? '回到同好圈子' : form.returnTo.startsWith('/people') ? '回到同好成分' : form.returnTo.startsWith('/music/trends') ? '回到音樂趨勢' : '← 回到剛才的活動'}</Link>}
+    </nav>{form.returnTo && <Link className="back" to={form.returnTo}>{form.returnTo.startsWith('/people/shouts') ? '回到找搭子' : form.returnTo.startsWith('/people/circles') ? '回到同好圈子' : form.returnTo.startsWith('/people') ? '回到同好成分' : form.returnTo.startsWith('/music/trends') ? '回到音樂趨勢' : '← 回到剛才的活動'}</Link>}
     <div className="content-columns music-editor"><section>
       <MusicSearch filters={filters} categories={categories} label="尋找喜歡的音樂" />
       {(['main', 'sub'] as const).map(kind => {
@@ -60,5 +61,5 @@ export function ProfileEditor({ selection: form }: { selection: MusicSelection }
           </details>)}{!entries.length && <Text tone="muted">{filters.search || filters.kind || filters.category ? '沒有符合的詞條。' : '詞庫尚無詞條。'}</Text>}
         </Surface>;
       })}
-    </section><SelectionPanel selection={form} /></div></>;
+    </section><SelectionPanel selection={form} /></div></div>;
 }

@@ -1,0 +1,80 @@
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Bell, CalendarDays, CheckSquare, ChevronDown, CircleUserRound, Command, Music2, Search, Settings, UsersRound, X } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import { Avatar, Badge, IconButton, Modal, SearchInput, ToastHost, cn } from './UI';
+
+const navItems = [
+  { to: '/activities', label: '活動', icon: CalendarDays },
+  { to: '/music', label: '音樂', icon: Music2 },
+  { to: '/people', label: '同好', icon: UsersRound },
+  { to: '/me', label: '我的', icon: CircleUserRound },
+];
+
+export default function Layout() {
+  const { currentUser, notifications, activities, terms, users, updateNotification } = useApp();
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const location = useLocation();
+  const navigate = useNavigate();
+  const searchRef = useRef<HTMLInputElement>(null);
+  const unread = notifications.filter((n) => !n.read).length;
+
+  useEffect(() => { setSearchOpen(false); setAccountOpen(false); setQuery(''); }, [location.pathname]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') { event.preventDefault(); setSearchOpen(true); }
+      if (event.key === '/' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((event.target as HTMLElement).tagName)) { event.preventDefault(); setSearchOpen(true); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+
+  const results = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return [
+      ...activities.filter((a) => `${a.name}${a.location}`.toLowerCase().includes(q)).slice(0, 4).map((a) => ({ id: a.id, type: '活動', title: a.name, meta: a.location, to: `/activities/${a.id}` })),
+      ...terms.filter((t) => `${t.name}${t.aliases.join('')}${t.reading}`.toLowerCase().includes(q)).slice(0, 5).map((t) => ({ id: t.id, type: '詞條', title: t.name, meta: t.category, to: `/music/term/${t.id}` })),
+      ...users.filter((u) => `${u.name}${u.profileId}${u.qq}`.toLowerCase().includes(q)).slice(0, 3).map((u) => ({ id: u.id, type: '同好', title: u.name, meta: u.profileId, to: `/people/card/${u.id}` })),
+    ];
+  }, [query, activities, terms, users]);
+
+  const openNotification = (id: string, link: string) => { updateNotification(id, { read: true }); navigate(link); };
+
+  return <div className="app-shell">
+    <aside className="sidebar">
+      <Link to="/activities" className="brand" aria-label="群聚首頁"><span className="brand-mark"><i /><i /><i /></span><span>群聚</span></Link>
+      <nav className="side-nav" aria-label="主導航">{navItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => cn('nav-item', isActive && 'active')}><Icon size={19} strokeWidth={1.8} /><span>{label}</span></NavLink>)}</nav>
+      <div className="sidebar-bottom">
+        <Link className="nav-item subtle" to="/votes"><CheckSquare size={18} /><span>時間投票</span></Link>
+        <Link className="nav-item subtle" to="/admin"><Settings size={18} /><span>管理後台</span></Link>
+        <button className="sidebar-account" onClick={() => setAccountOpen((v) => !v)}><Avatar user={currentUser} size="sm" /><span><strong>{currentUser.name}</strong><small>{currentUser.profileId}</small></span><ChevronDown size={14} /></button>
+      </div>
+    </aside>
+
+    <div className="main-column">
+      <header className="topbar">
+        <Link to="/activities" className="mobile-brand"><span className="brand-mark"><i /><i /><i /></span><span>群聚</span></Link>
+        <button className="global-search" onClick={() => setSearchOpen(true)}><Search size={16} /><span>搜尋活動、詞條或同好</span><kbd><Command size={11} /> K</kbd></button>
+        <div className="topbar-actions">
+          <IconButton label="全站搜尋" className="mobile-search-button" onClick={() => setSearchOpen(true)}><Search size={19} /></IconButton>
+          <IconButton label={`收件匣，${unread} 則未讀`} className="inbox-button" onClick={() => navigate('/inbox')}><Bell size={19} />{unread > 0 && <span className="unread-count">{unread}</span>}</IconButton>
+          <div className="account-wrap"><button className="top-account" onClick={() => setAccountOpen((v) => !v)}><Avatar user={currentUser} size="sm" /><span>{currentUser.name}</span><ChevronDown size={14} /></button>
+            {accountOpen && <div className="account-menu popover"><div className="account-summary"><strong>{currentUser.name}</strong><span>{currentUser.profileId}</span></div><Link to="/me">帳號與設定</Link><Link to="/me/music">編輯我的成分</Link><Link to="/admin">管理後台</Link><button onClick={() => setAccountOpen(false)}>關閉選單</button></div>}
+          </div>
+        </div>
+      </header>
+      <main className="main-content"><Outlet /></main>
+    </div>
+
+    <nav className="mobile-dock" aria-label="手機主導航">{navItems.map(({ to, label, icon: Icon }) => <NavLink key={to} to={to} className={({ isActive }) => cn('dock-item', isActive && 'active')}><Icon size={21} strokeWidth={1.8} /><span>{label}</span></NavLink>)}</nav>
+
+    {searchOpen && <Modal title="全站搜尋" description="可搜尋名稱、別名、成分 ID 或模擬 QQ" onClose={() => setSearchOpen(false)}>
+      <SearchInput value={query} onChange={setQuery} placeholder="輸入關鍵字" autoFocus />
+      <div className="global-results">{query && results.length === 0 && <p className="muted search-empty">沒有符合的結果，試試藝人別名或完整成分 ID。</p>}{results.map((result) => <Link key={`${result.type}-${result.id}`} to={result.to} className="global-result"><Badge>{result.type}</Badge><span><strong>{result.title}</strong><small>{result.meta}</small></span><span>↗</span></Link>)}{!query && <div className="search-suggestions"><span>快速前往</span><Link to="/activities/new">新增活動</Link><Link to="/me/music">編輯成分</Link><Link to="/ledger/a001">我的帳單</Link></div>}</div>
+    </Modal>}
+    <ToastHost />
+  </div>;
+}

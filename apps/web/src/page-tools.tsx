@@ -5,7 +5,7 @@ export function PageTools() {
   useEffect(() => {
     const root = document.documentElement;
     const viewport = window.visualViewport;
-    const mobile = window.matchMedia('(max-width: 700px)');
+    const mobile = window.matchMedia('(max-width: 768px)');
     const main = document.getElementById('main');
     let actions: Element | null = null;
     const setLength = (name: string, value: number) => {
@@ -15,7 +15,7 @@ export function PageTools() {
     const update = () => {
       const inset = viewport?.scale === 1 ? Math.max(0, innerHeight - viewport.height - viewport.offsetTop) : 0;
       setLength('--visual-viewport-inset', inset);
-      const next = main?.querySelector('.editor-actions') ?? null;
+      const next = main?.querySelector('.music-save-dock:not([hidden])') ?? main?.querySelector('.mobile-selection-save') ?? main?.querySelector('.editor-actions') ?? null;
       if (next !== actions) {
         if (actions) sizes.unobserve(actions);
         actions = next;
@@ -23,6 +23,7 @@ export function PageTools() {
       }
       const height = mobile.matches && actions && getComputedStyle(actions).position === 'fixed' ? actions.getBoundingClientRect().height : 0;
       setLength('--mobile-actions-height', height);
+      setLength('--music-save-dock-height', actions?.classList.contains('music-save-dock') && getComputedStyle(actions).position === 'fixed' ? actions.getBoundingClientRect().height : 0);
       setVisible(scrollY > Math.min(320, innerHeight / 2) && inset === 0);
     };
     const sizes = new ResizeObserver(update);
@@ -43,6 +44,7 @@ export function PageTools() {
       mobile.removeEventListener('change', update);
       root.style.removeProperty('--visual-viewport-inset');
       root.style.removeProperty('--mobile-actions-height');
+      root.style.removeProperty('--music-save-dock-height');
     };
   }, []);
   if (!visible) return null;

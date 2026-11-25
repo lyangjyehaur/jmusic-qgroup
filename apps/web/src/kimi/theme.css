@@ -1,0 +1,57 @@
+/* Runtime colors for prototype regions as well as Yahha's portal containers.
+   Keep the supplied prototype source intact; semantic statuses stay independent
+   of the selected accent, and the paper remains neutral across color presets. */
+:root [data-yahha-theme] {
+  --yahha-paper-line: var(--app-line) !important;
+  --yahha-neutral-line: var(--app-line);
+  --yahha-neutral-surface: var(--app-bg);
+  --yahha-disabled-surface: var(--app-bg);
+}
+:root[data-theme=dark] [data-yahha-theme] {
+  --yahha-success-surface: #213d36; --yahha-success-ink: #b3e5cf; --yahha-success-line: #72aa94;
+  --yahha-warning-surface: #443820; --yahha-warning-ink: #f3d8a0; --yahha-warning-line: #ad925b;
+  --yahha-error-surface: #432b35; --yahha-error-field: #432b35;
+  --yahha-info-surface: #263c50; --yahha-info-ink: #c7e4f7; --yahha-info-line: #7ca6c2;
+}
+.kimi-shell .nav-item.active { color: var(--app-nav-ink); }
+.kimi-shell .nav-item:not(.active) { color: var(--muted); }
+.kimi-shell .nav-item:not(.active):hover { color: var(--ink); background: var(--paper); }
+.kimi-shell .top-account:hover { background: var(--paper); }
+.kimi-shell .global-search:hover { border-color: var(--app-contour); }
+.kimi-shell .global-search kbd { color: var(--muted); }
+:where(.kimi, .kimi-shell) ::selection { color: var(--ink); background: var(--moss-soft); }
+.kimi :is(input, textarea)::placeholder { color: var(--muted); }
+.kimi :is(.field-label, .activity-description, .term-detail-main > p, .next-step-copy p, .profile-summary blockquote) { color: var(--muted); }
+.kimi :is(.field input, .field textarea, .money-input input) { border-color: var(--line); }
+.kimi :is(.field input, .field textarea, .money-input input):focus {
+  border-color: var(--moss); box-shadow: 0 0 0 3px color-mix(in srgb, var(--moss) 12%, transparent);
+}
+.kimi :is(.music-search-area, .music-search-area .search-input, .expand-people) { border-color: var(--app-contour); }
+.kimi :is(.confirmation-row, th, .trial-room > header, .sort-rules, .selection-limits span, .tab .tab-count) { background: var(--app-bg); }
+.kimi :is(.quick-add-results, .music-filters .select-wrap select) { background: var(--paper-strong); }
+.kimi .limit-bar { background: var(--line); }
+.kimi .switch-row > i { background: var(--line); }
+.kimi .switch-row input:checked + i { background: var(--moss); }
+.kimi .sticky-save-bar { background: color-mix(in srgb, var(--bg) 96%, transparent); }
+.kimi :is(.activity-row:hover, .sparse-list a) { background: var(--paper); }
+.kimi :is(.bubble-legend i, .term-bubble) { color: var(--moss); background: var(--moss-soft); border-color: var(--app-contour); }
+.kimi .term-bubble:hover { background: var(--app-button); }
+.kimi :is(.term-bubble.domain, .my-vote > div button.selected) { color: var(--app-nav-ink); background: var(--moss); }
+.kimi .bubble-legend i.bubble-domain { background: var(--moss); }
+.kimi .vote-option.final { border-color: var(--app-contour); }
+.kimi .vote-stats > span:first-child { background: var(--moss-soft); }
+.kimi .account-switch-list button.active { border-color: var(--app-contour); }
+.kimi .notification-item.unread { background: var(--moss-soft); }
+.kimi :is(.my-bill-summary, .bot-status) { color: var(--app-nav-ink); }
+.kimi :is(.my-bill-summary > div:first-child small, .my-bill-summary > div:first-child span, .my-bill-summary > div:nth-child(2) p) { color: inherit; }
+.kimi .my-bill-summary .badge { color: var(--app-nav-ink); background: transparent; border-color: currentColor; }
+.kimi .my-bill-summary > .button { color: var(--ink); background: var(--paper); }
+.kimi :is(.inline-alert, .inline-alert.error, .payment-notice) { color: var(--ink); }
+.kimi .inline-alert { background: var(--moss-soft); border-left-color: var(--moss); }
+.kimi .inline-alert.error { background: var(--red-soft); border-left-color: var(--red); }
+.kimi.yj-dialog [class*="dialogFooter"] { background: var(--paper); }
+/* A successful registration remains green even in the pink/blue/yellow presets. */
+.kimi .badge.badge-green { color: var(--yahha-success-ink); background: var(--yahha-success-surface); border-color: var(--yahha-success-line); }
+.kimi .badge.badge-amber { border-color: var(--yahha-warning-line); }
+.kimi .badge.badge-red { border-color: var(--app-error); }
+.kimi .badge.badge-blue { border-color: var(--yahha-info-line); }

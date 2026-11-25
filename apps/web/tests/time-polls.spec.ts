@@ -2,7 +2,7 @@ import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ pollExamples: true });
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([
     { name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' },
@@ -48,7 +48,7 @@ test('creates date/exact polls with durable incomplete drafts and dynamic candid
 }) => {
   await login(context);
   await page.goto('/activities');
-  await page.getByRole('link', { name: '時間投票', exact: true }).click();
+  await page.locator('main').getByRole('link', { name: '時間投票', exact: true }).click();
   await page.getByRole('link', { name: '發起時間投票', exact: true }).click();
   await definition(page);
   await page.getByRole('button', { name: '新增候選', exact: true }).click();
@@ -135,7 +135,7 @@ test('requires latest vote counts before date finalization, preserves reasoned c
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '查看定案活動並報名', exact: true }).click();
   await expect(page.getByRole('heading', { name: '時間投票 date', exact: true })).toBeVisible();
-  await expect(page.getByText('1 / 5 人 · 最低 1 人', { exact: true })).toBeVisible();
+  await expect(page.locator('.status-strip')).toContainText('1 / 5 人');await expect(page.locator('.side-definitions > div').filter({hasText:'最低成團'})).toContainText('1 人');
   await login(context, 'bob');
   await page.goto('/inbox');
   await expect(page.getByText('時間投票 date 的时间已确定，请查看安排后报名', { exact: true })).toBeVisible();

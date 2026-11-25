@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082', version = 'unified-2026-11-18';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, version = 'unified-2026-11-18';
 const checkbox = (page: Page) => page.getByRole('checkbox', { name: '我已閱讀並同意目前版本的統一隱私政策', exact: true });
 async function login(context: BrowserContext, user = 'bob') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function submit(page: Page) { await checkbox(page).check(); await page.getByRole('button', { name: '確認同意', exact: true }).click(); }

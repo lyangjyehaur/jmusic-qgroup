@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ paymentExamples: true });
-const baseURL = 'http://127.0.0.1:5082';
+const baseURL = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, account = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + account, url: baseURL, httpOnly: true, sameSite: 'Lax' }]); }
 async function image(page: Page, type = 'image/png') {
   const value = await page.evaluate(type => { const canvas = document.createElement('canvas'); canvas.width = 240; canvas.height = 200; const context = canvas.getContext('2d')!; context.fillStyle = '#123456'; context.fillRect(0, 0, 240, 200); return canvas.toDataURL(type).split(',')[1]!; }, type);
@@ -54,11 +54,11 @@ test('archives only after confirmation, recovers unknown deletion and keeps prev
   await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); page.on('dialog', dialog => void dialog.accept()); await page.reload(); await page.getByRole('button', { name: '確認操作結果', exact: true }).click();
   await expect(page.getByText('已從我的收款碼移除。', { exact: true })).toBeVisible(); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); await expect(page.getByRole('heading', { name: '已保存（0／30）', exact: true })).toBeVisible();
   await page.goto('/activities/past/settlement/images?version=1'); await expect(page.getByRole('img', { name: '微信收款碼', exact: true })).toBeVisible(); await expect(page.getByRole('img', { name: '消費憑證 · 店家單據', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '第 2 版 · ¥2.00 · 小白', exact: true }).click(); await expect(page.getByText('本版未附收款碼或消費憑證。', { exact: true })).toBeVisible(); await expect(page.getByRole('img')).toHaveCount(0);
+  await page.getByRole('button', { name: '第 2 版 · ¥2.00 · 小白', exact: true }).click(); await expect(page.getByText('本版未附收款碼或消費憑證。', { exact: true })).toBeVisible(); await expect(page.locator('.payment-asset img')).toHaveCount(0);
 });
 test('public version assets allow anonymous read, preserve private access and only allow the original publisher to save a code', async ({ page, context }) => {
   await page.goto('/activities/past/settlement/images?version=1'); await expect(page.getByRole('img', { name: '微信收款碼', exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: '保存到我的收款碼', exact: true })).toHaveCount(0);
-  await page.goto('/activities/invite/settlement/images?version=1'); await expect(page.getByText('找不到活動或尚未公開', { exact: true })).toBeVisible(); await expect(page.getByRole('img')).toHaveCount(0);
+  await page.goto('/activities/invite/settlement/images?version=1'); await expect(page.getByText('找不到活動或尚未公開', { exact: true })).toBeVisible(); await expect(page.locator('.payment-asset img')).toHaveCount(0);
   await login(context, 'bob'); await page.goto('/activities/past/settlement/images?version=1'); await expect(page.getByRole('img', { name: '微信收款碼', exact: true })).toBeVisible(); await expect(page.getByRole('link', { name: '保存到我的收款碼', exact: true })).toHaveCount(0);
   await page.goto('/me/payment-codes?event=past&version=1&kind=wechat'); await expect(page.getByText('只能保存自己發布結算時使用的收款碼。', { exact: true })).toBeVisible(); await expect(page.getByRole('button', { name: '帶入原版收款碼', exact: true })).toHaveCount(0);
   await page.goto('/activities/past/settlement/images?version=invalid'); await expect(page.getByText('結算版本格式不正確，請重新選擇。', { exact: true })).toBeVisible();
@@ -69,7 +69,7 @@ test('image and metadata failures expose retry, retain history and never show a 
   await page.goto('/activities/past/settlement/images?version=1'); await expect(page.getByText('圖片暫時無法讀取，請稍後重試', { exact: true })).toBeVisible(); await expect(page.getByRole('img', { name: '消費憑證 · 店家單據', exact: true })).toBeVisible();
   failImage = false; await page.getByRole('button', { name: '重試圖片', exact: true }).click(); await expect(page.getByRole('img', { name: '微信收款碼', exact: true })).toBeVisible();
   let failMetadata = true; await page.route('**/api/v2/activities/past/settlement/history/2/assets', async route => failMetadata ? route.fulfill({ status: 503, contentType: 'application/json', body: JSON.stringify({ code: 'TEMPORARY', message: '合成版本讀取失敗' }) }) : route.continue());
-  await page.getByRole('button', { name: '第 2 版 · ¥2.00 · 小白', exact: true }).click(); await expect(page.getByText('合成版本讀取失敗', { exact: true })).toBeVisible(); await expect(page.getByRole('img')).toHaveCount(0);
+  await page.getByRole('button', { name: '第 2 版 · ¥2.00 · 小白', exact: true }).click(); await expect(page.getByText('合成版本讀取失敗', { exact: true })).toBeVisible(); await expect(page.locator('.payment-asset img')).toHaveCount(0);
   failMetadata = false; await page.getByRole('button', { name: '重新讀取', exact: true }).click(); await expect(page.getByText('本版未附收款碼或消費憑證。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '第 1 版 · ¥1.00 · 小青', exact: true }).click(); await expect(page.getByRole('img', { name: '微信收款碼', exact: true })).toBeVisible();
 });
@@ -82,7 +82,7 @@ test('blocked storage prevents upload writes and damaged originals require prese
 test('account refresh removes private images, keeps each account draft separate and clears all image drafts on device logout', async ({ page, context }) => {
   await login(context); await page.goto('/me/payment-codes'); await upload(page, '原帳號草稿');
   await login(context, 'bob'); const signal = await context.newPage(); await signal.goto('/activities'); await signal.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); });
-  await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue(''); await expect(page.getByRole('img')).toHaveCount(0); await upload(page, '另一帳號草稿');
+  await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue(''); await expect(page.locator('.payment-asset img')).toHaveCount(0); await upload(page, '另一帳號草稿');
   await login(context); await signal.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); });
   await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue('原帳號草稿'); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.getByRole('button', { name: '登出此裝置', exact: true }).click();

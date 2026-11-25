@@ -1,6 +1,7 @@
 import { uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
-import { Button, Surface, Text } from 'yahha-ui';
+import { Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { parseErasure, type ErasureValue } from './erasure-record';
 import { migrateErasure, observeErasures, readErasure, replaceRaw, writeErasure } from './erasure-store';
 export function useErasureLocal<T extends ErasureValue>(key: string, legacyKey: string, convert: (raw: string) => T) {

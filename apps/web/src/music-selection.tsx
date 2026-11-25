@@ -1,8 +1,9 @@
 import { errorText, uiText } from './language';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { Outlet, useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface } from 'yahha-ui';
+import { Heading, Surface } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { MusicCatalog, Profile, SaveProfile, Selection, type MusicProfile } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -13,14 +14,18 @@ import { announceAccountChange } from './account-session';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import type { Member } from './member-access';
+import { DiscoveryLayer } from './discovery-dialog';
+import { MusicSaveDock } from './music-save-dock';
+import { FeedbackLayer } from './feedback-layer';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
-const isWorkspace = (pathname: string) => pathname === '/search' || pathname === '/music' || pathname === '/music/trends' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname);
+const isWorkspace = (pathname: string) => pathname === '/search' || pathname === '/music' || pathname === '/music/trends' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname) || pathname === '/people' || /^\/people\/m_[a-f0-9]{24,40}(?:\/compare)?$/.test(pathname);
 const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
 type DraftValue = z.infer<typeof Draft>;
 function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initial: MusicProfile; entries: CatalogEntry[] }) {
   const http=createWebHttpClient({context:()=>({scope:viewer.scope,csrf:viewer.csrf})});
   const storageKey = 'qgroup:rebuild:music:v1:' + viewer.scope;
   const [saved,setSaved]=useState(initial),[message,setMessage]=useState('');
+  useEffect(()=>{if(message!==uiText('已保存。'))return;const timer=setTimeout(()=>setMessage(''),4000);return()=>clearTimeout(timer);},[message]);
   const fallback=(profile:MusicProfile):DraftValue=>({profileId:profile?.id??null,musicEpoch:viewer.musicEpoch,revision:profile?.revision??0,selections:profile?.selections??[]});
   const record=useDurableRecord<DraftValue>({key:storageKey,scope:viewer.scope,seed:()=>fallback(saved),parse:raw=>{
     const value=Draft.parse(JSON.parse(raw)),baseline=fallback(initial);
@@ -85,7 +90,7 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   function level(entryId:string,value:number){if(!locked)edit({...draft,selections:draft.selections.map(s=>s.entryId===entryId?{...s,level:value}:s)});}
   function remove(entryId:string){if(!locked)edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entryId)});}
   return {viewer,initial,entries,draft,saved,dirty,selected,mainCount,subCount,returnTo,record,
-    storageError:record.storageError,readError:record.readError,message,sending,blocker:record.blocker,save,rebase,toggle,level,remove,locked,unavailable};
+    storageError:record.storageError,readError:record.readError,message,sending,blocker:record.blocker,save,rebase,toggle,level,remove,locked,unavailable,reset:()=>{if(!locked)edit(fallback(saved));}};
 }
 export type MusicSelection = ReturnType<typeof useMusicSelection>;
 type Workspace = { state: 'ready'; selection: MusicSelection } | { state: 'pending' | 'guest' } | { state: 'error'; error: Error; retry: () => void };
@@ -108,17 +113,29 @@ export function MusicWorkspace() {
     void session.refetch(); if (viewer) void profile.refetch(); void catalog.refetch();
   }} />;
   if (session.isPending || viewer) return <Notice>正在確認成分…</Notice>;
-  return <Context.Provider value={{ state: 'guest' }}><Outlet /></Context.Provider>;
+  return <Context.Provider value={{ state: 'guest' }}><DiscoveryLayer /></Context.Provider>;
 }
 function ReadyWorkspace(props: { viewer: Member; initial: MusicProfile; entries: CatalogEntry[] }) {
   const selection = useMusicSelection(props);
+  useEffect(()=>{document.documentElement.classList.add('music-workspace-active');return()=>document.documentElement.classList.remove('music-workspace-active');},[]);
+  const location = useLocation();
+  const inline = location.pathname === '/music' && props.entries.some(entry => entry.id === new URLSearchParams(location.search).get('entry'));
+  const saveDock = <MusicSaveDock selection={selection}/>;
   return <Context.Provider value={{ state: 'ready', selection }}>
+    <DiscoveryLayer feedback={!inline && <MusicWorkspaceFeedback />} selectionActions={!inline && saveDock}/>
+  </Context.Provider>;
+}
+export function MusicWorkspaceFeedback() {
+  const workspace = useMusicWorkspace();
+  if (workspace.state !== 'ready') return null;
+  const { selection } = workspace;
+  return <FeedbackLayer>
     {selection.blocker.state === 'blocked' && <Surface className="leave-prompt" role="alert">
       <Heading level={2}>還有未保存的選擇</Heading>
       <Button onClick={() => selection.blocker.reset?.()}>繼續編輯</Button>
       <Button variant="secondary" disabled={selection.sending||selection.record.loading} onClick={() => void selection.record.leave()}>保留草稿並離開</Button>
     </Surface>}
-    <DraftFeedback form={selection.record} navigation={false}/>
-    <Outlet />
-  </Context.Provider>;
+    <DraftFeedback form={selection.record} navigation={false} showProgress={false}/>
+    {selection.message && <p className="music-save-result" role="status">{selection.message}</p>}
+  </FeedbackLayer>;
 }

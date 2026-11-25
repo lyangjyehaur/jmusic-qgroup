@@ -1,7 +1,8 @@
 import { errorText, uiText } from './language';
 import { useEffect,useId,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button,Text } from 'yahha-ui';
+import { Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { Notice } from './shared';
 import type { Member } from './member-access';
 import { decodeSettlement } from './legacy-settlement';

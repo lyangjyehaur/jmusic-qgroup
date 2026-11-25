@@ -1,8 +1,9 @@
+import { toggleMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { denyWrite, rows } from './erasure-test-helpers';
 import type { BrowserContext,Page } from '@playwright/test';
 import { readFile } from 'node:fs/promises';
-const origin='http://127.0.0.1:5082',bob='m_'+'b'.repeat(32);
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,bob='m_'+'b'.repeat(32);
 test.use({adminCatalog:true});
 async function login(context:BrowserContext,user='bob'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function memberConfirm(page:Page){await expect(page.getByRole('radio').first()).toBeVisible();await page.getByRole('radio',{name:'只關閉帳號',exact:true}).check();await page.getByRole('checkbox').check();await page.getByRole('button',{name:'確認關閉帳號',exact:true}).click();}
@@ -64,7 +65,7 @@ test('reviewed proofs are excluded from generic drafts, versions and safe inbox 
   page.on('dialog',d=>void d.accept());await page.goto('/inbox');await page.getByRole('button',{name:'重新檢查本機操作',exact:true}).click();await expect(page.getByRole('region',{name:'未完成操作',exact:true})).toContainText('資料刪除');expect(await page.content()).not.toContain(input.secret);await page.getByRole('link',{name:'資料刪除',exact:true}).click();await expect(page.getByRole('button',{name:'確認刪除結果',exact:true})).toBeVisible();
 });
 test('member cleanup failure survives reopen and retry only clears local data',async({page,context})=>{
-  await login(context);await page.goto('/me/music');await page.getByRole('button',{name:'Aimer',exact:true}).click();await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();await page.goto('/me/privacy');await expect(page.getByRole('radio').first()).toBeVisible();
+  await login(context);await page.goto('/me/music');await toggleMusicTerm(page, 'Aimer');await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();await page.goto('/me/privacy');await expect(page.getByRole('radio').first()).toBeVisible();
   await page.evaluate(()=>{const original=IDBObjectStore.prototype.delete;IDBObjectStore.prototype.delete=function(key){const r=original.call(this,key);if(this.name==='drafts'){const tx=this.transaction;r.addEventListener('success',()=>{IDBObjectStore.prototype.delete=original;tx.abort();});}return r;};});
   let writes=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith('/privacy/erase'))writes++;});await page.getByRole('checkbox').check();await page.getByRole('button',{name:'確認刪除成分',exact:true}).click();await expect(page.getByRole('button',{name:'重試清除本機原稿',exact:true})).toBeVisible();expect(JSON.parse((await rows(page))[0]!.raw).cleaned).toBe(false);await page.close();
   const next=await context.newPage();await next.goto('/me/privacy');await expect(next.getByRole('heading',{name:'成分已刪除',exact:true})).toBeVisible();await expect(next.getByRole('button',{name:'完成',exact:true})).toBeDisabled();await next.getByRole('button',{name:'重試清除本機原稿',exact:true}).click();await expect(next.getByRole('button',{name:'完成',exact:true})).toBeEnabled();expect(writes).toBe(1);

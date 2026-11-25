@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 type Kind='invite-issue'|'invite-accept'|'claim-issue'|'claim-decide'|'claim-request'|'manager-invite'|'manager-revoke'|'manager-accept';
 const flows:{kind:Kind;family:string;label:string;submit:string;retry:string;done:string}[]=[
   {kind:'invite-issue',family:'invitations',label:'補報名邀請',submit:'建立邀請',retry:'確認邀請操作結果',done:'邀請已建立。'},

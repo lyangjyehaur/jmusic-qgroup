@@ -1,7 +1,8 @@
+import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
-const baseURL = 'http://127.0.0.1:5082';
+const baseURL = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function loginFixture(context: BrowserContext, account = 'alice') {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + account, url: baseURL, httpOnly: true, sameSite: 'Lax' }]);
 }
@@ -22,7 +23,7 @@ test('changing a nickname updates other tabs while preserving the account, music
   await page.route('https://q1.qlogo.cn/**', async route => { avatarRequests++; await route.abort(); });
   await page.goto('/login?returnTo=%2Fme%2Faccounts'); await authorize(page, '前往 QQ 登入');
   await expect(page.getByRole('img', { name: 'QQ 頭像無法載入', exact: true })).toBeVisible();
-  await page.goto('/me/music'); await page.getByRole('button', { name: 'Aimer', exact: true }).click();
+  await page.goto('/me/music'); await toggleMusicTerm(page,'Aimer');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   const before = await (await context.request.get('/api/v2/session')).json();
   const other = await context.newPage(); await other.route('https://q1.qlogo.cn/**', route => route.abort()); await other.goto('/me/accounts');
@@ -33,7 +34,7 @@ test('changing a nickname updates other tabs while preserving the account, music
   await expect(other.getByRole('heading', { name: '新的站內稱呼', exact: true })).toBeVisible();
   await expect(other.getByText('已綁定 QQ：測試帳號 avatar-source', { exact: true })).toBeVisible();
   const after = await (await context.request.get('/api/v2/session')).json(); expect(after.scope).toBe(before.scope); expect(after.qq).toEqual(before.qq);
-  await page.goto('/me/music'); await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.goto('/me/music'); await expectMusicTerm(page,'Aimer',true);
   expect(avatarRequests).toBeGreaterThan(0); await other.close();
 });
 test('an unreadable nickname response survives reload and retries the same operation exactly once', async ({ page, context }) => {

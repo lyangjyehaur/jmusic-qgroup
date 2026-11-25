@@ -2,7 +2,6 @@
 export const analyticsManifest = {
   "routes": [
     "/",
-    "/*",
     "/activities",
     "/activities/:id",
     "/activities/:id/access/:token",
@@ -273,11 +272,9 @@ export const analyticsManifest = {
     "/api/v2/version"
   ],
   "controls": [
-    "activity-category",
     "activity-description",
     "activity-fee",
     "activity-summary-kind",
-    "activity-visibility",
     "admin",
     "admin-union-status",
     "admin-user-note",
@@ -290,10 +287,10 @@ export const analyticsManifest = {
     "attendance-state",
     "attendee-music-title",
     "broadcast-target",
-    "capacity-help",
     "claim-decision",
     "claim-reason",
     "claim-target",
+    "clock",
     "condition-decision",
     "condition-person",
     "condition-reason",
@@ -318,6 +315,7 @@ export const analyticsManifest = {
     "invite-reason",
     "lifecycle-action",
     "lifecycle-reason",
+    "location",
     "main",
     "music",
     "music-circle-tags-help",
@@ -329,6 +327,7 @@ export const analyticsManifest = {
     "music-private-note",
     "nickname-help",
     "nickname-limit",
+    "palette",
     "participants",
     "payment-kind",
     "people",
@@ -352,13 +351,14 @@ export const analyticsManifest = {
     "section-7",
     "section-8",
     "section-9",
+    "settings",
     "shout-content",
     "shout-count",
     "shout-period",
     "shout-publish-help",
     "signup-intent",
     "signup-mode",
-    "timezone-help",
-    "withdrawal-help"
+    "votes",
+    "wallet"
   ]
 } as const;

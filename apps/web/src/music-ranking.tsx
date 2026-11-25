@@ -1,7 +1,8 @@
 import { uiText } from './language';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Button, Heading, Text } from 'yahha-ui';
+import { Heading, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import type { z } from 'zod';
 import type { MusicCatalogEntry } from '@qgroup/contracts';
 import { rankMusic, musicRankLimit, musicBubbleLayout, musicBubbleLabel } from '@qgroup/domain';
@@ -17,16 +18,20 @@ export function MusicRanking({ entries, kind, complete, params, update, selected
   const expanded = params.get(kind + 'Expanded') === '1', bubbles = params.get(kind + 'View') === 'bubbles';
   const limit = musicRankLimit(kind, expanded, complete);
   return <section aria-label={name + '排行'} className="music-rank-group">
-    <Heading level={3}>{name} · {entries.length} 項</Heading>
-    <div className="page-actions" aria-label={name + '顯示方式'}>
-      <Button variant="secondary" aria-pressed={!bubbles} onClick={() => update(kind + 'View', '')}>{name}清單</Button>
-      <Button variant="secondary" aria-pressed={bubbles} onClick={() => update(kind + 'View', 'bubbles')}>{name}氣泡</Button>
+    <div className="music-rank-header"><Heading level={3}>{name} · {entries.length} 項</Heading>
+    <div className="page-actions music-view-switch" aria-label={name + '顯示方式'}>
+      <Button size="sm" variant="secondary" aria-pressed={!bubbles} onClick={() => update(kind + 'View', '')}>{name}清單</Button>
+      <Button size="sm" variant="secondary" aria-pressed={bubbles} onClick={() => update(kind + 'View', 'bubbles')}>{name}氣泡</Button>
+    </div>
     </div>
     {bubbles ? <MusicBubbles entries={sorted} selected={selected} name={name} search={params.toString()} /> : <>
-      <ol className="music-ranking">
-        {sorted.slice(0, limit).map(entry => <li key={entry.id} className={selected?.has(entry.id) ? 'is-selected' : undefined}>
+      <ol className="music-ranking" role="list">
+        {sorted.slice(0, limit).map((entry, index) => <li key={entry.id} className={selected?.has(entry.id) ? 'is-selected' : undefined}>
+          <span className="music-rank-position" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
+          <div className="music-rank-copy">
           <Link to={'/music?' + new URLSearchParams({ ...Object.fromEntries(params), entry: entry.id })}>{entry.name}</Link>
-          <Text>{entry.count} 人 · {categoryLabel(entry.category)}{selected?.has(entry.id) ? ' · 已選' : ''}</Text>
+          <Text>{categoryLabel(entry.category)}{selected?.has(entry.id) ? ' · 已選' : ''}</Text>
+          </div><Text className="music-rank-count">{entry.count} 人</Text>
         </li>)}
       </ol>
       {!complete && sorted.length > 10 && <div className="page-actions">

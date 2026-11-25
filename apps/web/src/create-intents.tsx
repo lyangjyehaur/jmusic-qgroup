@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
-import { Button } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { CreateIntentResult } from '@qgroup/contracts';
 import { authHttp } from './auth';
 import type { Member } from './member-access';

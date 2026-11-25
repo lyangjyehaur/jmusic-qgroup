@@ -1,0 +1,286 @@
+import { useState, type ReactNode } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
+import {
+  Accordion, Alert, Avatar, Badge, Button, Checkbox, Dialog, Divider, DropdownMenu,
+  EmptyState, Form, Heading, Icon, IconButton, Image, Input, Link, Pagination,
+  Popover, Progress, RadioGroup, SegmentedControl, Select, Skeleton, Spinner,
+  Surface, Switch, Tabs, Text, Textarea, Toast, Tooltip,
+  BookmarkIcon, CheckIcon, CloseIcon, CopyIcon, ErrorIcon, InfoIcon, PlusIcon,
+  SearchIcon, SuccessIcon, WarningIcon,
+} from 'yahha-ui';
+import { PageHeader } from '../components/UI';
+import { presetLabels, useYahhaPreset, type YahhaPreset } from '../theme/YahhaTheme';
+
+type Usage = '已用於原型' | '對照用';
+
+function Card({ name, purpose, usage, where, children, note }: {
+  name: string; purpose: string; usage: Usage; where?: string; children: ReactNode; note?: string;
+}) {
+  return <article className="ui-kit-card">
+    <span className={usage === '已用於原型' ? 'ui-kit-tag used' : 'ui-kit-tag'}>{usage}{where ? `｜${where}` : ''}</span>
+    <h3>{name}</h3>
+    <p>{purpose}</p>
+    <div className="ui-kit-demo">{children}</div>
+    {note && <p className="ui-kit-note">{note}</p>}
+  </article>;
+}
+
+function Group({ index, title, description, children }: {
+  index: string; title: string; description: string; children: ReactNode;
+}) {
+  return <section className="form-section ui-kit-section">
+    <div className="section-heading"><span>{index}</span><div><h2>{title}</h2><p>{description}</p></div></div>
+    <div className="ui-kit-grid">{children}</div>
+  </section>;
+}
+
+export default function UiKitPage() {
+  const { preset, setPreset, presets } = useYahhaPreset();
+  const [text, setText] = useState('年末 J-ROCK 約唱');
+  const [memo, setMemo] = useState('集合後先確認包間與費用規則。');
+  const [sortValue, setSortValue] = useState('common');
+  const [checked, setChecked] = useState(true);
+  const [radio, setRadio] = useState('common');
+  const [segment, setSegment] = useState('hot');
+  const [switchOn, setSwitchOn] = useState(true);
+  const [page, setPage] = useState(2);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [toastOpen, setToastOpen] = useState(false);
+  const [menuAction, setMenuAction] = useState('尚未選擇');
+  const [formResult, setFormResult] = useState('尚未送出');
+
+  return <div className="page ui-kit-page">
+    <PageHeader title="元件對照" description="Yahha UI 0.2.0・32 個元件與實際使用位置" />
+
+    <div className="inline-alert">本頁逐一列出元件的具體用途；標記「已用於原型」者可在活動、音樂、同好等頁面操作。付款、群通知與 bot 連線仍為模擬狀態。</div>
+
+    <div className="ui-kit-toolbar">
+      <div><h2>主題配色</h2><p className="muted">切換後全站與 Portal 視窗同步更新，設定保存在此瀏覽器</p></div>
+      <SegmentedControl
+        label="主題配色"
+        value={preset}
+        onValueChange={(value) => setPreset(value as YahhaPreset)}
+        options={presets.map((item) => ({ value: item, label: presetLabels[item] }))}
+      />
+      <RouterLink to="/me?tab=privacy" className="text-link">回到外觀設定</RouterLink>
+    </div>
+
+    <Group index="01" title="通用" description="觸發操作與顯示圖示">
+      <Card name="Button" purpose="觸發操作；提供主要、次要、幽靈、危險與載入狀態，不內建確認或刪除行為。" usage="已用於原型" where="活動詳情、新增活動">
+        <Button>主要操作</Button>
+        <Button variant="secondary">次要操作</Button>
+        <Button variant="ghost">幽靈按鈕</Button>
+        <Button variant="primary" destructive>危險操作</Button>
+        <Button size="sm" loading>處理中</Button>
+      </Card>
+      <Card name="IconButton" purpose="僅以圖示呈現的操作；必須提供可存取名稱，不承擔文字說明。" usage="已用於原型" where="全站搜尋、收件匣">
+        <IconButton aria-label="收藏"><BookmarkIcon size="sm" /></IconButton>
+        <IconButton aria-label="複製"><CopyIcon size="sm" /></IconButton>
+        <IconButton aria-label="關閉"><CloseIcon size="sm" /></IconButton>
+      </Card>
+      <Card name="Icon" purpose="包住自訂 SVG，或直接使用內建功能圖示；不依賴圖示字體或遠端資源。" usage="對照用">
+        <Icon size="md" tone="accent" viewBox="0 0 24 24"><path d="M12 3l2.6 6.4L21 12l-6.4 2.6L12 21l-2.6-6.4L3 12l6.4-2.6z" fill="currentColor" /></Icon>
+        <SearchIcon size="md" /><CheckIcon size="md" /><InfoIcon size="md" /><SuccessIcon size="md" /><WarningIcon size="md" /><ErrorIcon size="md" /><PlusIcon size="md" />
+      </Card>
+    </Group>
+
+    <Group index="02" title="排版" description="文字層級與語義">
+      <Card name="Heading" purpose="h1–h6 原生標題層級；level 決定語義元素，decoration 只是可選的墨線裝飾。" usage="已用於原型" where="所有頁首">
+        <div className="ui-kit-stack"><Heading level={2}>活動詳情</Heading><Heading level={4}>參加名單</Heading><Heading level={6} decoration="underline">操作歷史</Heading></div>
+      </Card>
+      <Card name="Text" purpose="正文、摘要與輔助說明；以 size 與 tone 區分層級，不是標題。" usage="已用於原型" where="頁首描述">
+        <div className="ui-kit-stack"><Text>正文：報名期限與費用規則以活動時區為準。</Text><Text size="sm" tone="muted">次要：草稿不開放報名，也不發送群通知。</Text></div>
+      </Card>
+      <Card name="Link" purpose="前往頁面或外部資源，保留原生連結行為；external 會開新分頁並補上安全 rel。" usage="對照用" note="原型中的地圖導航使用原生 a 標籤並加註來源，未改用此元件。">
+        <Link href="https://yahhaui.com/" external>開啟元件庫文件</Link>
+      </Card>
+      <Card name="Divider" purpose="水平、垂直或裝飾性分隔線；hr 為空元素，不放內容。" usage="對照用">
+        <div className="ui-kit-stack"><Divider /><Divider decorative /></div>
+      </Card>
+    </Group>
+
+    <Group index="03" title="佈局" description="內容分組容器">
+      <Card name="Surface" purpose="組織需要分組的內容，提供紙面與便箋兩種外觀；只改變視覺，不賦予語義角色。" usage="對照用" note="原型多數區塊使用無邊框的 plain-section，避免每段文字都包卡片。">
+        <Surface variant="paper">報名資訊與費用規則</Surface>
+        <Surface variant="note">成分卡片摘要</Surface>
+      </Card>
+      <Card name="Divider" purpose="在分組之間建立細緻分隔；裝飾性用法不影響閱讀順序。" usage="對照用">
+        <div className="ui-kit-stack"><span>共同詞條</span><Divider /><span>完整排序規則</span></div>
+      </Card>
+    </Group>
+
+    <Group index="04" title="表單" description="欄位、選擇與驗證">
+      <Card name="Form" purpose="集中管理扁平欄位值、驗證、錯誤回顯、送出與重置；綁定明確指向既有控制項。" usage="對照用" note="原型的新增活動有自己的未保存原稿、失敗重試與恢復流程，故未改用此表單管理器。">
+        <Form<{ email: string; agree: boolean }>
+          initialValues={{ email: '', agree: false }}
+          validate={(values) => values.email.includes('@') ? {} : { email: '請輸入含 @ 的信箱' }}
+          onSubmit={(values) => setFormResult(`已驗證：${values.email}`)}
+        >
+          {(form) => <div className="ui-kit-stack">
+            <Input label="訂閱信箱" placeholder="name@example.com" {...form.input('email')} />
+            <Checkbox label="同意接收通知" {...form.checked('agree')} />
+            <Button onClick={() => void form.submit()}>驗證並送出</Button>
+            <small className="muted">{formResult}</small>
+          </div>}
+        </Form>
+      </Card>
+      <Card name="Input" purpose="單行輸入；label、hint、error 與 leading／trailing 插槽由元件管理。" usage="已用於原型" where="新增活動、現場補錄">
+        <Input label="活動名稱" value={text} onChange={(e) => setText(e.target.value)} hint="用於列表與通知" />
+      </Card>
+      <Card name="Textarea" purpose="多行文字，例如留言或活動說明；可垂直調整高度或啟用 autoSize。" usage="已用於原型" where="活動說明、公開留言">
+        <Textarea label="安排備註" rows={3} value={memo} onChange={(e) => setMemo(e.target.value)} />
+      </Card>
+      <Card name="Select" purpose="從固定選項選一項；值選擇用它，動作選單用 DropdownMenu。不含搜尋與多選。" usage="已用於原型" where="篩選列、出席狀態">
+        <Select
+          label="推薦排序"
+          value={sortValue}
+          onValueChange={(value) => setSortValue(value ?? 'common')}
+          options={[
+            { value: 'common', label: '共同項／冷門優先' },
+            { value: 'familiar', label: '我的熟悉度優先' },
+            { value: 'sparse', label: '資料較少優先', disabled: true },
+          ]}
+        />
+      </Card>
+      <Card name="Checkbox" purpose="原生的勾選、半選與必選約束；indeterminate 只影響外觀，不改變送出的值。" usage="對照用">
+        <div className="ui-kit-stack">
+          <Checkbox label="公開留言" checked={checked} onChange={(e) => setChecked(e.target.checked)} />
+          <Checkbox label="部分成員待確認" indeterminate hint="半選獨立的視覺狀態" />
+        </div>
+      </Card>
+      <Card name="RadioGroup" purpose="帶選項說明的受控單選組；適合互斥且需要解釋的選項。" usage="對照用">
+        <RadioGroup
+          label="比對方式"
+          value={radio}
+          onValueChange={setRadio}
+          options={[
+            { value: 'common', label: '共同項優先', description: '先比較共同詞條數' },
+            { value: 'rare', label: '冷門優先', description: '稀有詞條加權' },
+          ]}
+        />
+      </Card>
+      <Card name="Switch" purpose="即時生效的開關設定，使用原生 checkbox 狀態；不適合作為表單提交值。" usage="對照用" where="隱私與外觀">
+        <Switch label="顯示我的音樂成分" checked={switchOn} onChange={(e) => setSwitchOn(e.target.checked)} hint="關閉後同好卡不顯示成分" />
+      </Card>
+      <Card name="SegmentedControl" purpose="緊湊的受控單選組，用於同一區域內少量互斥檢視切換。" usage="對照用" where="本頁主題切換">
+        <SegmentedControl
+          label="詞庫範圍"
+          value={segment}
+          onValueChange={setSegment}
+          options={[{ value: 'hot', label: '熱門' }, { value: 'all', label: '完整詞庫' }, { value: 'bubble', label: '氣泡' }]}
+        />
+      </Card>
+    </Group>
+
+    <Group index="05" title="內容展示" description="標記、人物與展開內容">
+      <Card name="Badge" purpose="分類、標籤與狀態的靜態標記；stamp 外觀為可選的虛線章邊，不代表可點擊。" usage="已用於原型" where="活動狀態、名單">
+        <Badge>預設</Badge><Badge tone="accent">強調</Badge><Badge tone="success">正式</Badge><Badge tone="success" appearance="stamp">已核對</Badge>
+      </Card>
+      <Card name="Avatar" purpose="人物頭像、姓名縮寫與圖片失敗回退；本身不具互動行為。" usage="已用於原型" where="名單、同好卡">
+        <Avatar name="小野" size="sm" /><Avatar name="佐藤" size="md" /><Avatar name="田中" size="lg" fallback="田" />
+      </Card>
+      <Card name="Image" purpose="封面或配圖；設定替代文字、比例與失敗回退，避免版面跳動。" usage="對照用" note="原型為避免外部素材與真實圖片，統一以文字與頭像呈現。">
+        <Image alt="示意封面" src="data:image/png;base64,invalid-payload" aspectRatio="16 / 9" fallback={<span>圖片載入失敗時的替代內容</span>} />
+      </Card>
+      <Card name="Accordion" purpose="FAQ 與補充說明的展開收起；適合「嚴格重合／冷門詞條／完整排序規則」這類長規則。" usage="對照用" note="原型同好頁目前以自訂展開區塊呈現排序規則。">
+        <Accordion
+          defaultValue={['rule']}
+          items={[
+            { value: 'rule', title: '完整排序規則', content: '共同詞條數 → 冷門詞條加權 → 雙方熟悉度 → 資料完整度。' },
+            { value: 'strict', title: '嚴格重合', content: '領域與細分皆相同才算嚴格重合。' },
+          ]}
+        />
+      </Card>
+    </Group>
+
+    <Group index="06" title="導航" description="同一區域切換與分頁">
+      <Card name="Tabs" purpose="在同一區域切換標籤對應的內容面板；受控 value、鍵盤操作與面板掛載由元件管理。" usage="已用於原型" where="活動詳情、我的">
+        <Tabs
+          label="詞庫範圍"
+          defaultValue="hot"
+          appearance="ink"
+          items={[
+            { value: 'hot', label: '熱門排行', content: <Text size="sm">近 24 小時選用次數較多的詞條。</Text> },
+            { value: 'all', label: '完整詞庫', content: <Text size="sm">150 個詞條，可依名稱、別名與拼音搜尋。</Text> },
+          ]}
+        />
+      </Card>
+      <Card name="Pagination" purpose="列表分頁；頁碼與網址更新由應用管理，支援真實連結。" usage="對照用" note="元件庫的上一頁／下一頁標籤為內建簡體且無覆寫入口；原型以「展開其餘」取代分頁，故未用於主要流程。">
+        <Pagination currentPage={page} totalPages={5} onPageChange={setPage} aria-label="詞庫分頁" />
+      </Card>
+    </Group>
+
+    <Group index="07" title="浮層" description="動作選單、對話框與補充說明">
+      <Card name="DropdownMenu" purpose="可鍵盤操作的單層動作選單；值選擇應改用 Select。" usage="對照用" note="原型活動詳情的進階生命週期操作收納在自訂選單中。">
+        <DropdownMenu
+          trigger={<Button variant="secondary">進階操作</Button>}
+          items={[
+            { id: 'pause', label: '暫停報名', onSelect: () => setMenuAction('暫停報名') },
+            { id: 'transfer', label: '發起者交接', onSelect: () => setMenuAction('發起者交接') },
+            { id: 'cancel', label: '取消活動', destructive: true, onSelect: () => setMenuAction('取消活動') },
+          ]}
+        />
+        <small className="muted">已選：{menuAction}</small>
+      </Card>
+      <Card name="Dialog" purpose="受控模態視窗；負責焦點、Portal、Esc 與關閉，適合報名或確認操作。" usage="已用於原型" where="報名、管理本人報名">
+        <Dialog
+          trigger={<Button>開啟對話框</Button>}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          title="確認安排版本"
+          description="版本更新後，待確認成員需重新確認時間與費用。"
+          footer={<Button onClick={() => setDialogOpen(false)}>知道了</Button>}
+        >對話框內容可包含表單與說明，關閉後回到原頁面。</Dialog>
+      </Card>
+      <Card name="Popover" purpose="錨定在觸發器旁的非模態面板，可放說明或短表單，頁面仍可繼續操作。" usage="對照用">
+        <Popover trigger={<Button variant="secondary">配色說明</Button>} title="語義顏色" description="只覆寫元件庫公開的顏色入口。">
+          <Badge tone="accent">accent</Badge>
+        </Popover>
+      </Card>
+      <Card name="Tooltip" purpose="純文字的視覺補充；觸發器必須有自己的可存取名稱，互動內容改用 Popover。" usage="對照用">
+        <Tooltip trigger={<Button variant="secondary" aria-label="冷門詞條說明">冷門優先</Button>} content="選用人數少的詞條會提高匹配權重" />
+      </Card>
+    </Group>
+
+    <Group index="08" title="回饋" description="提示、等待與空狀態">
+      <Card name="Alert" purpose="頁面內持續可見的資訊、結果與錯誤提示；緊急動態回饋需自行加 role=&quot;alert&quot;。" usage="對照用" note="原型使用 inline-alert 呈現風險與驗證提示。">
+        <div className="ui-kit-stack">
+          <Alert tone="info" title="安排已更新">請重新確認時間與費用。</Alert>
+          <Alert tone="warning" title="名額不足">提交前會顯示逐人分配。</Alert>
+          <Alert tone="error" title="保存失敗">表單原稿已保留，可重試。</Alert>
+        </div>
+      </Card>
+      <Card name="Toast" purpose="回饋保存等操作結果；顯示與關閉由呼叫方管理，不內建計時器或佇列。" usage="已用於原型" where="保存、複製回饋">
+        <Button variant="secondary" onClick={() => setToastOpen(true)}>顯示回饋</Button>
+        <Toast open={toastOpen} onClose={() => setToastOpen(false)} title="已保存草稿" description="尚未開放報名或發送群通知" tone="success" />
+      </Card>
+      <Card name="EmptyState" purpose="列表為空或搜尋無結果時的說明與操作入口；不管理應用狀態。" usage="已用於原型" where="空名單、無搜尋結果">
+        <EmptyState title="尚未分房" description="可選取已報名人員，依音樂成分試算後再採用。" action={<Button size="sm">開啟分房</Button>} />
+      </Card>
+      <Card name="Progress" purpose="唯讀的任務完成比例；value 缺失時為未知進度，不是載入動畫。" usage="對照用">
+        <div className="ui-kit-stack"><Progress label="報名進度" value={68} /><Progress label="結算進度" value={null} /></div>
+      </Card>
+      <Card name="Spinner" purpose="帶可讀狀態文字的等待標記；不表示完成百分比。" usage="對照用">
+        <Spinner label="載入中" /><Spinner label="載入中" size="sm" variant="biscuit" />
+      </Card>
+      <Card name="Skeleton" purpose="依內容形狀預留載入空間；不獨立播報狀態，需由內容區塊加上 aria-busy。" usage="對照用">
+        <div className="ui-kit-stack"><Skeleton variant="text" width="72%" /><Skeleton variant="rect" width="100%" height="40px" /></div>
+      </Card>
+    </Group>
+
+    <Group index="09" title="主題" description="配色與 Portal 傳播">
+      <Card name="ThemeProvider" purpose="設定 pink／blue／yellow 預設，並以 tokens 覆寫語義顏色；顏色會傳入 Dialog、Select、Popover、Tooltip 的 Portal。" usage="已用於原型" where="全站">
+        <div className="ui-kit-stack">
+          <Text size="sm">目前配色：{presetLabels[preset]}。尺寸、圓角與字階由本專案的調和層統一，三套預設只改變強調色。</Text>
+          <Badge tone="accent">語義標記</Badge>
+        </div>
+      </Card>
+      <Card name="ThemeTokens" purpose="公開的語義顏色入口：ink、muted、accent、accentHover、accentSoft、line、focus、surface、fieldBackground、error。" usage="已用於原型" where="群聚・苔綠">
+        <div className="ui-kit-stack">
+          <Text size="sm">輪廓與紙面細邊分離：line 產生深色暖墨輪廓，紙面邊線維持細灰線，避免整頁都是重框線。</Text>
+          <RouterLink to="/activities" className="text-link">回到活動列表查看實際效果</RouterLink>
+        </div>
+      </Card>
+    </Group>
+  </div>;
+}

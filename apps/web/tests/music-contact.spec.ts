@@ -1,7 +1,8 @@
+import { toggleMusicTerm, expectMusicTerm, openMusicContact } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = 'http://127.0.0.1:5082';
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function seed(context: BrowserContext, user = 'alice') {
   await login(context, user); const viewer = await (await context.request.get('/api/v2/session')).json();
@@ -14,7 +15,7 @@ async function save(page: Page, number: string) { await input(page).fill(number)
 test('a member edits, finds, copies and clears a contact while keeping the same music and one navigation flow', async ({ page, context }) => {
   const { profile, viewer } = await seed(context);
   await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (text: string) => Object.assign(window, { copiedContact: text }) }, configurable: true }));
-  await page.goto('/me/music'); await page.getByRole('link', { name: '聯絡 QQ', exact: true }).click();
+  await page.goto('/me/music'); await openMusicContact(page);
   await save(page, '123456'); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   await expect(page.getByText('123456 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); await expect(page.getByText('已複製聯絡 QQ。', { exact: true })).toBeVisible();
@@ -22,12 +23,12 @@ test('a member edits, finds, copies and clears a contact while keeping the same 
   await page.setViewportSize({ width: 360, height: 800 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-contact-mobile.png', fullPage: true });
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click();
-  await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true'); await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toHaveCount(0);
-  await page.getByRole('navigation').getByRole('link', { name: '同好', exact: true }).click();
+  await expectMusicTerm(page,'Aimer',true); await expect(page.getByRole('button', { name: '保存我的成分', exact: true }).and(page.locator(':enabled'))).toHaveCount(0);
+  await page.getByRole('navigation',{name:'手機主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true }).or(page.getByRole('navigation',{name:'主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true })).click();await page.getByRole('tab',{name:'查詢／比較',exact:true}).click();
   await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
-  await expect(page).toHaveURL('/people/' + profile.id); await expect(page.getByRole('heading', { name: '小青', exact: true })).toBeVisible(); await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL('/people/' + profile.id); await expect(page.getByRole('heading', { name: '小青', exact: true })).toBeVisible(); await page.locator('.profile-all-picks > summary').click();await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
   await page.goto('/me/music/contact'); await save(page, ''); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible(); await expect(page.getByText('尚未填寫聯絡 QQ。', { exact: true })).toBeVisible();
-  await page.goto('/people'); await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
+  await page.goto('/people?tab=search'); await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
   const after = await (await context.request.get('/api/v2/me/music', { headers: { 'X-Account-Scope': viewer.scope } })).json(); expect(after.id).toBe(profile.id); expect(after.selections).toEqual(profile.selections);
 });
@@ -72,13 +73,13 @@ test('member cards offer manual copy recovery and visitors cannot read or query 
   await page.goto('/people'); await expect(page.getByRole('button', { name: '查詢成分', exact: true })).toHaveCount(0);
 });
 test('editing a contact preserves an unfinished selection draft and requires a fresh revision before saving it', async ({ page, context }) => {
-  await seed(context); await page.goto('/me/music'); await page.getByRole('button', { name: 'YOASOBI', exact: true }).click();
-  await page.getByRole('link', { name: '聯絡 QQ', exact: true }).click(); await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible();
+  await seed(context); await page.goto('/me/music'); await toggleMusicTerm(page,'YOASOBI');
+  await openMusicContact(page); await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await save(page, '123456'); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expectMusicTerm(page,'YOASOBI',true);
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('成分已有更新；你的選擇仍保留，請核對最新版本', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '核對最新版本，保留我的選擇', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true'); await expect(page.getByRole('button', { name: 'YOASOBI', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expectMusicTerm(page,'Aimer',true); await expectMusicTerm(page,'YOASOBI',true);
 });
 test('music erasure clears another tab contact draft and a rebuilt profile begins with no contact', async ({ page, context }) => {
   await seed(context); await page.goto('/me/music/contact'); await input(page).fill('123456');
@@ -86,12 +87,12 @@ test('music erasure clears another tab contact draft and a rebuilt profile begin
   await privacy.getByRole('checkbox', { name: '我已確認範圍，瞭解此操作無法復原', exact: true }).check(); await privacy.getByRole('button', { name: '確認刪除成分', exact: true }).click();
   await expect(input(page)).toHaveCount(0); await expect(page.getByText('請先保存成分，再設定聯絡 QQ', { exact: true })).toBeVisible();
   expect((await durableRows(page)).filter(row=>row.key.includes('qgroup:rebuild:music:'))).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);
-  await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await page.getByRole('button', { name: 'Aimer', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '聯絡 QQ', exact: true }).click(); await expect(input(page)).toHaveValue(''); await privacy.close();
+  await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await toggleMusicTerm(page,'Aimer'); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
+  await openMusicContact(page); await expect(input(page)).toHaveValue(''); await privacy.close();
 });
 test('a signed-in account without music gets an actionable entry and cannot query member contacts', async ({ page, context }) => {
   await login(context); await page.goto('/people'); await expect(page.getByRole('button', { name: '查詢成分', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('status')).toHaveText('請先保存成分，再查看同好成分。'); await page.getByRole('link', { name: '保存成分', exact: true }).click();
-  await page.getByRole('button', { name: 'Aimer', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await page.getByRole('navigation').getByRole('link', { name: '同好', exact: true }).click(); await expect(page.getByRole('button', { name: '查詢成分', exact: true })).toBeVisible();
+  await expect(page.getByText('請先保存成分，再查看同好成分。',{exact:true})).toBeVisible(); await page.getByRole('link', { name: '保存成分', exact: true }).click();
+  await toggleMusicTerm(page,'Aimer'); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
+  await page.getByRole('navigation',{name:'手機主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true }).or(page.getByRole('navigation',{name:'主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true })).click();await page.getByRole('tab',{name:'查詢／比較',exact:true}).click(); await expect(page.getByRole('button', { name: '查詢成分', exact: true })).toBeVisible();
 });

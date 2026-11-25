@@ -3,7 +3,7 @@ import { test,expect } from './fixtures';
 import { readFile } from 'node:fs/promises';
 import type { BrowserContext,Page } from '@playwright/test';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
-const origin='http://127.0.0.1:5082',pin='654321',reason='私人核對原因',linkConfirm='確認已核對成分與目標帳號，執行此關聯變更',pinConfirm='確認已核對成分及申請人，重設找回口令';
+const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,pin='654321',reason='私人核對原因',linkConfirm='確認已核對成分與目標帳號，執行此關聯變更',pinConfirm='確認已核對成分及申請人，重設找回口令';
 type Kind='link'|'pin';
 async function login(context:BrowserContext,user='registration-admin'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const v=await(await context.request.get(origin+'/api/v2/session')).json(),a=await(await context.request.get(origin+'/api/v2/admin/session',{headers:{'X-Account-Scope':v.scope}})).json();return {Origin:origin,'X-Account-Scope':v.scope,'X-CSRF-Token':v.csrf,'X-Admin-CSRF':a.adminCsrf,'Idempotency-Key':crypto.randomUUID()};}

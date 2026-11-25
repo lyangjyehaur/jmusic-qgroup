@@ -1,6 +1,7 @@
 import { uiText } from './language';
 import { useEffect, useId, useRef, useState } from 'react';
-import { Button, Text } from 'yahha-ui';
+import { Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 
 export function ActivityLocation({ value }: { value: string }) {
   return <>{value}{value.trim() && <> <a className="text-link" href={'https://uri.amap.com/search?keyword=' + encodeURIComponent(value)} target="_blank" rel="noopener noreferrer">高德導航</a></>}</>;

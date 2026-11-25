@@ -1,3 +1,4 @@
+import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { Page } from '@playwright/test';
 async function identity(page: Page, code: string) {
@@ -35,9 +36,9 @@ test('guest completes explicit login, edits music, returns to the activity and r
   await page.screenshot({ path: 'test-results/unified-auth-confirm-desktop.png', fullPage: true });
   await page.getByRole('button', { name: '確認登入', exact: true }).click();
   await expect(page).toHaveURL(/\/me\/music\?from=%2Factivities%2Flisten/);
-  await page.getByRole('button', { name: 'J-POP', exact: true }).click();
+  await toggleMusicTerm(page, 'J-POP');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
-  await expect(page.getByText('已保存。')).toBeVisible();
+  await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到剛才的活動' }).click();
   await expect(page).toHaveURL(/\/activities\/listen$/);
   await page.goto('/me/accounts');
@@ -52,7 +53,7 @@ test('cancel preserves guest identity and the exact invite task without creating
   const task = '/activities/listen?invite=synthetic-invite&action=join#roster';
   await authorize(page, 'cancel-only', task);
   await page.getByRole('button', { name: '取消並返回' }).click();
-  await expect(page).toHaveURL('http://127.0.0.1:5082' + task);
+  await expect(page).toHaveURL(`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}` + task);
   expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(false);
   await authorize(page, 'cancel-only', task);
   await expect(page.getByText('建立帳號並登入', { exact: true })).toBeVisible();
@@ -63,13 +64,13 @@ test('cancel preserves guest identity and the exact invite task without creating
 test('authorized account switching keeps private music data scoped to each account', async ({ page }) => {
   await authorize(page, 'switch-first'); await page.getByRole('button', { name: '確認登入', exact: true }).click();
   await expect(page.getByRole('heading', { name: '測試帳號 switch-first', exact: true })).toBeVisible();
-  await page.goto('/me/music'); await page.getByRole('button', { name: 'Aimer', exact: true }).click();
-  await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。')).toBeVisible();
+  await page.goto('/me/music'); await toggleMusicTerm(page, 'Aimer');
+  await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await authorize(page, 'switch-second');
   await expect(page.getByText('目前帳號「測試帳號 switch-first」的授權會保留', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '確認登入', exact: true }).click();
   await expect(page.getByRole('heading', { name: '測試帳號 switch-second', exact: true })).toBeVisible();
-  await page.goto('/me/music'); await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'false');
+  await page.goto('/me/music'); await expectMusicTerm(page, 'Aimer', false);
   await page.goto('/me/accounts'); await page.getByRole('button', { name: '切換至 測試帳號 switch-first', exact: true }).click();
   await expect(page.getByRole('heading', { name: '測試帳號 switch-first', exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
@@ -79,10 +80,10 @@ test('authorized account switching keeps private music data scoped to each accou
   await page.screenshot({ path: 'test-results/unified-accounts-mobile-bottom.png' });
   await page.evaluate(() => scrollTo(0, 0));
   await page.screenshot({ path: 'test-results/unified-accounts-mobile.png', fullPage: true });
-  await page.goto('/me/music'); await expect(page.getByRole('button', { name: 'Aimer', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.goto('/me/music'); await expectMusicTerm(page, 'Aimer', true);
 });
 test('binding conflict prevents replacement and allows an explicit return to the current account', async ({ page, context }) => {
-  await context.addCookies([{ name: 'kanban_session', value: 'fixture-auth-owner', url: 'http://127.0.0.1:5082', httpOnly: true, sameSite: 'Lax' }]);
+  await context.addCookies([{ name: 'kanban_session', value: 'fixture-auth-owner', url: `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, httpOnly: true, sameSite: 'Lax' }]);
   await identity(page, 'different-qq');
   await page.goto('/login?mode=bind&returnTo=%2Fme%2Faccounts');
   await page.getByRole('checkbox').check();
@@ -115,6 +116,6 @@ test('an unreadable finish response blocks repeats and checks the actual account
   await page.getByRole('link', { name: '核對目前帳號', exact: true }).click();
   await expect(page.getByRole('heading', { name: '測試帳號 uncertain-result', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到原任務', exact: true }).click();
-  await expect(page).toHaveURL('http://127.0.0.1:5082/activities/listen?invite=retry#roster');
+  await expect(page).toHaveURL(`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}/activities/listen?invite=retry#roster`);
   expect(finishes).toBe(1);
 });

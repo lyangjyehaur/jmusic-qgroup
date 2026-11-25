@@ -1,0 +1,59 @@
+import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
+import { ArrowUpRight, CalendarPlus, Clock3, MapPin, UsersRound } from 'lucide-react';
+import { useApp } from '../services/AppStore';
+import { Badge, Button, EmptyState, PageHeader, SearchInput, Select, Tabs, formatDateTime, statusTone } from '../components/UI';
+
+export default function ActivitiesPage() {
+  const { activities, currentUser } = useApp();
+  const [tab, setTab] = useState('all');
+  const [query, setQuery] = useState('');
+  const [status, setStatus] = useState('全部狀態');
+
+  const counts = useMemo(() => ({
+    upcoming: activities.filter((a) => ['報名中', '已額滿'].includes(a.status)).length,
+    mine: activities.filter((a) => a.organizerId === currentUser.id || a.participants.some((p) => p.userId === currentUser.id)).length,
+    todo: activities.reduce((sum, a) => sum + a.participants.filter((p) => ['待確認', '逾期退出申請'].includes(p.status)).length, 0),
+  }), [activities, currentUser.id]);
+
+  const filtered = activities.filter((activity) => {
+    const isPast = ['已結束', '已歸檔', '已取消'].includes(activity.status);
+    const isMine = activity.organizerId === currentUser.id || activity.participants.some((p) => p.userId === currentUser.id);
+    if (tab === 'past' && !isPast) return false;
+    if (tab === 'mine' && !isMine) return false;
+    if (tab === 'all' && isPast) return false;
+    if (status !== '全部狀態' && activity.status !== status) return false;
+    const haystack = `${activity.name} ${activity.location} ${activity.category}`.toLowerCase();
+    return haystack.includes(query.trim().toLowerCase());
+  }).sort((a, b) => tab === 'past' ? b.start.localeCompare(a.start) : a.start.localeCompare(b.start));
+
+  return <div className="page activities-page">
+    <PageHeader title="活動" description="約唱、聚會與同行安排" actions={<Link to="/activities/new"><Button><CalendarPlus size={17} />新增活動</Button></Link>} />
+    <div className="activity-overview" aria-label="活動摘要">
+      <div><strong>{counts.upcoming}</strong><span>近期活動</span></div><i />
+      <div><strong>{counts.mine}</strong><span>與我有關</span></div><i />
+      <div><strong>{counts.todo}</strong><span>待確認報名</span></div>
+      <Link to="/inbox">查看待辦<ArrowUpRight size={14} /></Link>
+    </div>
+    <div className="list-toolbar">
+      <Tabs value={tab} onChange={setTab} items={[{ value: 'all', label: '所有活動' }, { value: 'mine', label: '我的活動' }, { value: 'past', label: '往期' }]} />
+      <div className="filter-row"><SearchInput value={query} onChange={setQuery} placeholder="搜尋活動或地點" /><Select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="篩選活動狀態"><option>全部狀態</option>{['草稿', '報名中', '已額滿', '進行中', '已結束', '已取消'].map((item) => <option key={item}>{item}</option>)}</Select></div>
+    </div>
+    <div className="activity-list-header" aria-hidden="true"><span>活動安排</span><span>人數</span><span>狀態</span><span /></div>
+    <section className="activity-list" aria-label="活動列表">
+      {filtered.map((activity) => {
+        const formal = activity.participants.filter((p) => ['正式', '待確認'].includes(p.status)).length;
+        const mine = activity.participants.find((p) => p.userId === currentUser.id && p.status !== '已退出');
+        const waitlist = activity.participants.filter((p) => p.status === '候補').length;
+        return <article className="activity-row" key={activity.id}>
+          <div className="activity-date"><strong>{new Date(activity.start).getDate()}</strong><span>{new Intl.DateTimeFormat('zh-TW', { month: 'short' }).format(new Date(activity.start))}</span></div>
+          <div className="activity-main"><div className="activity-title-line"><Link to={`/activities/${activity.id}`}>{activity.name}</Link><Badge>{activity.category}</Badge></div><div className="activity-meta"><span><Clock3 size={14} />{formatDateTime(activity.start)}</span><span><MapPin size={14} />{activity.location}</span></div>{mine && <div className="my-registration">我的報名 <Badge tone={statusTone(mine.status)} dot>{mine.status}</Badge>{mine.status === '待確認' && <Link to={`/activities/${activity.id}/manage`}>前往確認</Link>}</div>}</div>
+          <div className="activity-capacity"><span><UsersRound size={15} /><strong>{formal}</strong> / {activity.capacity}</span>{waitlist > 0 && <small>候補 {waitlist} 人</small>}</div>
+          <div className="activity-status"><Badge tone={statusTone(activity.status)} dot>{activity.status}</Badge>{activity.visibility === '邀請' && <small>僅邀請可見</small>}</div>
+          <Link className="row-arrow" to={`/activities/${activity.id}`} aria-label={`查看 ${activity.name}`}><ArrowUpRight size={18} /></Link>
+        </article>;
+      })}
+      {filtered.length === 0 && <EmptyState title="沒有符合的活動" description="可清除搜尋或切換狀態篩選。" action={<Button variant="secondary" onClick={() => { setQuery(''); setStatus('全部狀態'); }}>清除篩選</Button>} />}
+    </section>
+  </div>;
+}

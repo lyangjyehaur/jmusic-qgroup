@@ -1,10 +1,12 @@
+import { useActivityAction } from './activity-action-context';
 import { errorText, uiText } from './language';
 import { DraftFeedback } from './draft-feedback';
 export { DraftFeedback } from './draft-feedback';
 import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { SaveSettlement, SettlementBill, SettlementContext, SettlementHistory, SettlementInput, SettlementPreview, StoredSettlementSnapshot, type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
@@ -188,6 +190,7 @@ export function ActivitySettlementPage() {
   );
 }
 function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
+  const embedded=useActivityAction();
   const query = useQuery({
       queryKey: ['private', viewer.scope, 'settlement', id],
       queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/settlement', { params: { id } }),
@@ -227,7 +230,7 @@ function SettlementLoader({ id, viewer }: { id: string; viewer: Viewer }) {
   const bill = search.get('version') ? selected.data : query.data.bill;
   return (
     <>
-      <Heading level={2}>{query.data.title}</Heading>
+      {!embedded&&<Heading level={2}>{query.data.title}</Heading>}
       {query.data.can_manage && (
         <div className="page-actions">
           <Link to={base(id) + '/settlement/edit'}>核對並發布逐人結算</Link>

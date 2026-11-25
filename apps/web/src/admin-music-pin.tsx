@@ -1,7 +1,8 @@
 import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
-import { Button, Heading, Surface, Text } from 'yahha-ui';
+import { Heading, Surface, Text } from 'yahha-ui';
+import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicProfile, ResetMusicPin, type Viewer } from '@qgroup/contracts';
 import { adminHttp, adminReadHttp, type Access } from './admin';

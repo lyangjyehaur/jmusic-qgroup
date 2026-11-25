@@ -125,7 +125,8 @@ export const Activity = z.object({
   feePolicy:z.string(),withdrawalDeadline:z.string().nullable(),conditionsVersion:z.number().int(),changeSummary:z.string(),visibility:z.string(),
 });
 export type ActivityView = z.infer<typeof Activity>;
-export const ActivityList = z.object({ events: z.array(Activity), page: z.number().int(), hasMore: z.boolean() });
+export const ListedActivity = Activity.extend({ myRegistration: z.enum(['confirmed','waiting','tentative']).nullable().optional() });
+export const ActivityList = z.object({ events: z.array(ListedActivity), page: z.number().int(), hasMore: z.boolean(), total: z.number().int().nonnegative().optional(), summary: z.object({ upcoming: z.number().int().nonnegative(), mine: z.number().int().nonnegative().nullable() }).optional() });
 export const ApiFailure = z.object({ code: z.string(), message: z.string(), messageDisplay: z.object({hans:z.string(),hant:z.string()}).strict().optional() });
 
 export const AdminPrivacyRequest = z.object({ id: z.string(), userId: z.string(), status: z.enum(['completed', 'shared_review']), createdAt: z.string(), updatedAt: z.string(), note: z.string(), revision: z.string().regex(/^[a-f0-9]{64}$/), sharedRecords: z.record(z.string(), z.number().int().positive()) });
