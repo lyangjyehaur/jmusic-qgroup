@@ -24,7 +24,7 @@ export function localDiscoveryReturn(value: unknown): string | null {
 }
 export function RetainedPage({ location, children, inactive = false }: { location: Location; children: ReactNode; inactive?: boolean }) {
   const context = useContext(UNSAFE_LocationContext);
-  const ownsPage=['/activities','/music','/me','/me/music','/me/music/share','/me/activities','/people','/admin','/inbox'].includes(location.pathname)||location.pathname.startsWith('/activities/')||location.pathname.startsWith('/me/music/')||location.pathname==='/music/trends'||/^\/people\/(?:circles|shouts)(?:\/|$)/.test(location.pathname)||/^\/me\/(?:accounts|devices|profile|payment-codes|appearance|privacy|app)(?:\/|$)/.test(location.pathname);
+  const ownsPage=['/activities','/time-polls','/music','/me','/me/music','/me/music/share','/me/activities','/people','/admin','/inbox'].includes(location.pathname)||/^\/time-polls\/[^/]+(?:\/manage)?$/.test(location.pathname)||location.pathname.startsWith('/activities/')||location.pathname.startsWith('/me/music/')||location.pathname==='/music/trends'||/^\/people\/(?:circles|shouts)(?:\/|$)/.test(location.pathname)||/^\/me\/(?:accounts|devices|profile|payment-codes|appearance|privacy|app)(?:\/|$)/.test(location.pathname);
   return <UNSAFE_LocationContext.Provider value={{ ...context, location }}><InactivePageContext.Provider value={inactive}><div className="retained-page" inert={inactive || undefined} aria-hidden={inactive || undefined}>{ownsPage?children:<div className="kimi page retained-business">{children}</div>}</div></InactivePageContext.Provider></UNSAFE_LocationContext.Provider>;
 }
 

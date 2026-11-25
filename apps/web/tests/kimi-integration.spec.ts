@@ -86,3 +86,26 @@ test('personal and music subpages preserve their frame, native URLs and return t
  await page.getByRole('tab',{name:'隱私與外觀',exact:true}).click();await expect(page).toHaveURL('/me/appearance');await expect(page.getByLabel('主題',{exact:true})).toBeVisible();await page.getByRole('tab',{name:'總覽',exact:true}).click();await expect(page).toHaveURL('/me');
  await page.goto('/me/music');await page.getByRole('tab',{name:'成分資料',exact:true}).click();await expect(page).toHaveURL('/me/music/details');await expect(page.getByRole('tab',{name:'成分資料',exact:true})).toHaveAttribute('aria-selected','true');await expect(page.getByRole('link',{name:'回到我的成分',exact:true})).toBeVisible();
 });
+
+for (const width of [789, 390]) test(`activity browsing owns polls and hides administration at ${width}px`, async ({ page, context }) => {
+  await login(context, 'registration-admin'); await page.setViewportSize({ width, height: 925 });
+  await page.goto('/activities');
+  await expect(page.locator('a[href="/admin"]')).toHaveCount(0);
+  await expect(page.locator('.sidebar a[href="/time-polls"]')).toHaveCount(0);
+  const date = page.locator('.activity-row .activity-meta').first();
+  await expect(date).toContainText('2099'); await expect(date).not.toContainText('GMT'); await expect(date).not.toContainText('Asia/');
+  await page.getByRole('tab', { name: '時間投票', exact: true }).click();
+  await expect(page).toHaveURL('/time-polls');
+  await expect(page.getByRole('tab', { name: '時間投票', exact: true })).toHaveAttribute('aria-selected', 'true');
+  await expect(page.locator(width > 768 ? '.side-nav a[href="/activities"]' : '.mobile-dock a[href="/activities"]')).toHaveClass(/active/);
+  await expect(page.getByRole('link', { name: '發起時間投票', exact: true })).toBeVisible();
+  await page.getByRole('tab', { name: '往期與歸檔', exact: true }).click();
+  await expect(page).toHaveURL('/activities?period=history');
+  await page.getByRole('tab', { name: '近期活動', exact: true }).click();
+  await expect(page).toHaveURL('/activities');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  for (const path of ['/me', '/me/accounts', '/guide']) {
+    await page.goto(path); await expect(page.locator('a[href^="/admin"]')).toHaveCount(0);
+  }
+  await page.goto('/admin'); await expect(page.getByRole('heading', { name: '管理後臺', exact: true })).toBeVisible();
+});

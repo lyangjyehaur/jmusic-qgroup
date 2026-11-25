@@ -1,6 +1,6 @@
 import { it, expect } from 'vitest';
 import type { ActivityView } from '@qgroup/contracts';
-import { activityDate, activityShareURL, activitySummary, activityTimeRange } from '../../web/src/activity-summary';
+import { activityDisplayDate, activityDate, activityShareURL, activitySummary, activityTimeRange } from '../../web/src/activity-summary';
 const event: ActivityView = { id: 'one', title: '原名 台灣音乐 <b>字</b>', category: '约K', location: '原地點 &keyword=其他 #地址', startsAt: '2099-12-12T23:00:00+09:00', deadline: '2099-12-11T23:00:00+09:00', durationHours: 3, timezone: 'Asia/Tokyo', description: '用戶原文\n第二行', capacity: 5, minimumParticipants: 0, lifecycle: 'scheduled', phase: 'scheduled', registrationOpen: true, estimatedOver: false, archived: false, confirmed: 1, waiting: 0, tentative: 0, feePolicy: '費用按原約定', withdrawalDeadline: '2099-12-12T20:00:00+09:00', conditionsVersion: 2, changeSummary: '更改地點', visibility: 'public' };
 it('copies complete displayed activity values without transforming user content or adding private roster or finance values', () => {
   const text = activitySummary(event, 'https://fixture.example/activities/one', 'activity');
@@ -29,4 +29,16 @@ it('only accepts the matching canonical activity link or complete invitation lin
   expect(activityShareURL(origin, id, { id, path, invitation: false })).toBe(origin + path);
   expect(activityShareURL(origin, id, { id, path: path + '/access/' + 'a'.repeat(32), invitation: true })).toContain('/access/');
   for (const share of [{ id: 'other', path, invitation: false }, { id, path: '//external.example', invitation: false }, { id, path: path + '?secret=x', invitation: false }, { id, path: path + '/access/short', invitation: true }, { id, path: path + '/access/' + 'a'.repeat(32) + '/extra', invitation: true }]) expect(() => activityShareURL(origin, id, share)).toThrow();
+});
+
+it('omits only the default UTC+8 label on screen while keeping other offsets and shared summaries explicit', () => {
+  for (const zone of ['Asia/Taipei', 'Asia/Shanghai', 'Asia/Hong_Kong']) {
+    const date = activityDisplayDate('2026-11-11T16:00:00Z', zone);
+    expect(date).toContain('2026/11/12'); expect(date).toContain('00:00');
+    expect(date).not.toMatch(/GMT|Asia|\[|\]/);
+  }
+  expect(activityDisplayDate('2026-11-11T16:00:00Z', 'Asia/Tokyo')).toContain('01:00（GMT+9）');
+  expect(activityDisplayDate('2026-07-01T00:00:00Z', 'America/New_York')).toContain('GMT-4');
+  expect(activityDisplayDate(event.startsAt, null)).toBe(activityDate(event.startsAt, null));
+  expect(activityDate('2026-11-11T16:00:00Z', 'Asia/Taipei')).toContain('Asia/Taipei');
 });

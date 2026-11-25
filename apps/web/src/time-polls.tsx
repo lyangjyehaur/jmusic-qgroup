@@ -3,12 +3,16 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Badge, Button, EmptyState, PageHeader, Select } from './kimi-ui';
+import { ArrowLeft, ArrowUpRight, CalendarPlus, Clock3, Copy, MapPin, UsersRound, Vote } from 'lucide-react';
+import { activityDisplayDate } from './activity-summary';
+import { ActivityBrowseTabs } from './activity-browse-tabs';
+import { ActionLink } from './action-link';
 import { z } from 'zod';
 import { ActivityCategory, CreateTimePoll, ManageTimePoll, PollChoice, TimePoll, TimePollResult, VoteTimePoll, type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
 import { authHttp } from './auth';
-import { Failure, Notice, PageIntro, useSession } from './shared';
+import { Failure, Notice, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
 import { LegacyLocalGuard } from './legacy-local';
@@ -28,8 +32,6 @@ const label = (o: Poll['options'][number], p: Poll) =>
         new Date(o.starts_at),
       )
     : o.date;
-const localTime = (value: string, zone: string) =>
-  new Intl.DateTimeFormat('zh-TW', { timeZone: zone, dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
 export function TimePollsPage() {
   const session = useSession(),
     [search, setSearch] = useSearchParams(),
@@ -42,23 +44,13 @@ export function TimePollsPage() {
       scopedHttp(session.data!.scope).requestContract('GET /api/v2/time-polls', { query: { period, page } }),
   });
   return (
-    <>
-      <PageIntro title="時間投票" />
-      <div className="page-actions">
-        <Link to="/activities">活動</Link>
-        <Link to="/time-polls/new">發起時間投票</Link>
-      </div>
-      <div className="tabs">
-        {(['active', 'history'] as const).map((p) => (
-          <Button
-            key={p}
-            variant={period === p ? 'primary' : 'ghost'}
-            aria-pressed={period === p}
-            onClick={() => setSearch({ period: p })}
-          >
-            {p === 'active' ? '開放與待定案' : '往期投票'}
-          </Button>
-        ))}
+    <div className="kimi page activities-page polls-page">
+      <PageHeader title="時間投票" actions={<ActionLink variant="primary" to="/time-polls/new" startIcon={<CalendarPlus size={17}/>}>發起時間投票</ActionLink>}/>
+      <div className="list-toolbar">
+        <ActivityBrowseTabs value="polls"/>
+        <div className="filter-row poll-period-filter"><Select aria-label="投票範圍" value={period} onChange={event => setSearch({ period: event.target.value })}>
+          <option value="active">開放與待定案</option><option value="history">往期投票</option>
+        </Select></div>
       </div>
       {session.error ? (
         <Failure error={session.error} retry={() => void session.refetch()} />
@@ -66,36 +58,28 @@ export function TimePollsPage() {
         <Notice>正在讀取投票…</Notice>
       ) : query.error ? (
         <Failure error={query.error} retry={() => void query.refetch()} />
-      ) : (
-        <>
-          <div className="event-grid">
-            {query.data.polls.map((p) => (
-              <Surface key={p.id}>
-                <Heading level={2}>
-                  <Link to={base(p.id)}>{p.title}</Link>
-                </Heading>
-                <Text>
-                  {states[p.status]} · {p.respondent_count} 人填答 · {p.options.length} 項候選
-                </Text>
-                <Text>
-                  {p.location} · {p.timezone}
-                </Text>
-                <Text>截止 {localTime(p.deadline, p.timezone)}</Text>
-              </Surface>
-            ))}
-          </div>
-          {!query.data.polls.length && <Notice>這個篩選下沒有時間投票。</Notice>}
-          <div className="pagination">
-            {page > 1 && <Button onClick={() => setSearch({ period, page: String(page - 1) })}>上一頁</Button>}
-            {query.data.hasMore && (
-              <Button onClick={() => setSearch({ period, page: String(page + 1) })}>下一頁</Button>
-            )}
-          </div>
-        </>
-      )}
-    </>
+      ) : <>
+        <section className="time-poll-list" aria-label="時間投票列表">
+          {query.data.polls.map(p => <article className="time-poll-row" key={p.id}>
+            <div className="poll-row-icon" aria-hidden="true"><Vote size={21}/></div>
+            <div className="poll-row-main"><h2><Link to={base(p.id)}>{p.title}</Link></h2>
+              <div className="poll-row-meta"><span><MapPin size={14}/>{p.location}</span><span><Clock3 size={14}/>截止 {activityDisplayDate(p.deadline, p.timezone)}</span></div>
+            </div>
+            <div className="poll-row-counts"><span><strong>{p.respondent_count}</strong> 人填答</span><small>{p.options.length} 項候選</small></div>
+            <div className="poll-row-status"><Badge dot tone={p.status==='open'?'green':p.status==='cancelled'?'red':p.status==='finalized'?'blue':'neutral'}>{states[p.status]}</Badge></div>
+            <Link className="row-arrow poll-row-arrow" to={base(p.id)} aria-label={'查看時間投票：'+p.title}><ArrowUpRight size={18}/></Link>
+          </article>)}
+          {!query.data.polls.length && <EmptyState title="這個篩選下沒有時間投票" description="可切換投票範圍，或發起新的時間投票。"/>}
+        </section>
+        {(page>1||query.data.hasMore)&&<div className="pagination">
+          {page>1&&<Button variant="secondary" onClick={()=>setSearch({period,page:String(page-1)})}>上一頁</Button>}
+          {query.data.hasMore&&<Button variant="secondary" onClick={()=>setSearch({period,page:String(page+1)})}>下一頁</Button>}
+        </div>}
+      </>}
+    </div>
   );
 }
+
 const emptyDefinition = ():z.infer<typeof EditableDefinition> => ({
   client_intent: crypto.randomUUID(),
   title: '',
@@ -113,13 +97,9 @@ const emptyDefinition = ():z.infer<typeof EditableDefinition> => ({
   options: ['', ''],
 });
 export function NewTimePollPage() {
-  return (
-    <>
-      <PageIntro title="發起時間投票" />
-      <Link to="/time-polls">回到時間投票</Link>
-      <MemberAccess>{(viewer) => <CreatePoll key={viewer.scope} viewer={viewer} />}</MemberAccess>
-    </>
-  );
+  return <div className="kimi page poll-create-page form-page"><PageHeader title="發起時間投票" back={<Link to="/time-polls" className="back-link"><ArrowLeft size={18}/><span>時間投票</span></Link>}/>
+    <MemberAccess>{viewer => <CreatePoll key={viewer.scope} viewer={viewer}/>}</MemberAccess>
+  </div>;
 }
 function CreatePoll({ viewer }: { viewer: Member }) {
   const navigate = useNavigate(),
@@ -163,7 +143,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
   const resolvedId=v.legacySource?.resolvedId??(lookedUp&&lookedUp.scope===viewer.scope&&lookedUp.epoch===form.epoch&&lookedUp.intent===v.client_intent?lookedUp.id:undefined);
   const alreadyCreated=!!resolvedId;
   return (
-    <Surface className="detail activity-editor">
+    <Surface className="detail activity-editor poll-create-form">
       <Notice>投票公開可見，請勿填寫私人資訊。投票不占名額，定案後須另行報名。</Notice>
       {v.legacySource&&<Notice>{alreadyCreated?'原投票已建立，此後續草稿保留，不能另建投票。':'已帶入舊稿，候選順序保留。'}{v.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}{alreadyCreated&&<Link to={'/time-polls/'+encodeURIComponent(resolvedId!)}>查看原投票</Link>}</Notice>}
       <form
@@ -267,7 +247,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
               </Button>
             </div>
           ))}
-          <Button variant="secondary" onClick={() => edit({ options: [...v.options, ''] })}>
+          <Button className="poll-add-option" variant="secondary" onClick={() => edit({ options: [...v.options, ''] })}>
             新增候選
           </Button>
           <Field label="投票截止（含時區）">
@@ -317,9 +297,8 @@ export function TimePollPage({ manage = false }: { manage?: boolean }) {
     };
   }, [query.data]);
   return (
-    <>
-      <Link to="/time-polls">← 時間投票</Link>
-      {manage&&<Link to={'/time-polls/'+encodeURIComponent(id)+'/bot-deliveries'}>群通知紀錄</Link>}
+    <div className="kimi page poll-detail-page">
+      <Link to="/time-polls" className="back-link"><ArrowLeft size={18}/><span>時間投票</span></Link>
       {session.error ? (
         <Failure error={session.error} retry={() => void session.refetch()} />
       ) : query.isPending ? (
@@ -329,95 +308,36 @@ export function TimePollPage({ manage = false }: { manage?: boolean }) {
       ) : (
         <PollDetails key={viewer!.scope + ':' + id + ':' + manage} poll={query.data} viewer={viewer!} manage={manage} />
       )}
-    </>
+    </div>
   );
 }
 function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; manage: boolean }) {
   const [share, setShare] = useState('');
-  return (
-    <>
-      <PageIntro title={p.title}>{states[p.status]}</PageIntro>
-      <div className="page-actions">
-        {manage ? (
-          <Link to={base(p.id)}>返回填答與結果</Link>
-        ) : (
-          p.is_owner && <Link to={base(p.id) + '/manage'}>管理時間投票</Link>
-        )}
-      </div>
-      <Surface className="detail">
-        <dl>
-          <dt>地點</dt>
-          <dd>{p.location}</dd>
-          <dt>時區</dt>
-          <dd>{p.timezone}</dd>
-          <dt>截止</dt>
-          <dd>{localTime(p.deadline, p.timezone)}</dd>
-          <dt>人數</dt>
-          <dd>
-            上限 {p.capacity || '不限'} · 最低 {p.minimum_participants}
-          </dd>
-          <dt>發起者</dt>
-          <dd>{p.owner_name}</dd>
-        </dl>
-        {p.description && <Text className="description">{p.description}</Text>}
-        {p.fee_policy && <Text>費用：{p.fee_policy}</Text>}
-        <Text>{p.respondent_count} 人填答</Text>
-        {p.duration_hours !== null && <Text>每場預計 {p.duration_hours} 小時</Text>}
-        <Notice>投票不占名額；定案後請核對活動安排再報名。</Notice>
-        {p.reason && <Text>原因：{p.reason}</Text>}
-        {p.event_id && <Link to={'/activities/' + encodeURIComponent(p.event_id)}>查看定案活動並報名</Link>}
-        {p.event_deleted && <Notice>定案活動已移除，原投票結果保留。</Notice>}
-        <Button
-          variant="secondary"
-          onClick={() =>
-            void navigator.clipboard.writeText(p.title + uiText('\n一起選擇活動時間：\n') + location.origin + base(p.id)).then(
-              () => setShare(uiText('已複製投票連結。')),
-              () => setShare(uiText('無法複製，請複製瀏覽器網址。')),
-            )
-          }
-        >
-          複製投票連結
-        </Button>
-        {share && <Notice>{share}</Notice>}
-        {!viewer.authenticated && (
-          <Notice>
-            <Link to={'/login?returnTo=' + encodeURIComponent(base(p.id))}>登入</Link>後可填答。
-          </Notice>
-        )}
-      </Surface>
-      {manage ? (
-        p.is_owner && viewer.authenticated ? (
-          <LegacyLocalGuard><PollManager key={'manage:' + viewer.scope} viewer={viewer} initial={p} /></LegacyLocalGuard>
-        ) : (
-          <Notice>只有發起者可以管理時間投票。</Notice>
-        )
-      ) : viewer.authenticated ? (
-        <LegacyLocalGuard><VoteEditor key={'votes:' + viewer.scope} viewer={viewer} initial={p} /></LegacyLocalGuard>
-      ) : (
-        <PollResults poll={p} />
-      )}
-    </>
-  );
+  return <>
+    <div className="poll-detail-header"><PageHeader title={p.title} actions={<>
+      <Button variant="secondary" onClick={() => void navigator.clipboard.writeText(p.title + uiText('\n一起選擇活動時間：\n') + location.origin + base(p.id)).then(() => setShare(uiText('已複製投票連結。')), () => setShare(uiText('無法複製，請複製瀏覽器網址。')))}><Copy size={15}/>複製投票連結</Button>
+      {manage ? <ActionLink to={base(p.id)}>返回填答與結果</ActionLink> : p.is_owner && <ActionLink variant="primary" to={base(p.id)+'/manage'}>管理時間投票</ActionLink>}
+      {manage&&p.is_owner&&<ActionLink to={base(p.id)+'/bot-deliveries'}>群通知紀錄</ActionLink>}
+    </>}/>{share&&<p className="poll-share-status" role="status">{share}</p>}</div>
+    <div className="poll-detail-status"><Badge dot tone={p.status==='open'?'green':p.status==='cancelled'?'red':p.status==='finalized'?'blue':'neutral'}>{states[p.status]}</Badge><Badge>{p.category}</Badge><span>{p.time_mode==='date'?'按日期投票':'精確時段投票'}</span></div>
+    <section className="poll-summary-panel" aria-label="投票安排">
+      <dl className="poll-summary-facts"><div><dt><MapPin size={15}/>地點</dt><dd>{p.location}</dd></div><div><dt><Clock3 size={15}/>投票截止</dt><dd>{activityDisplayDate(p.deadline,p.timezone)}</dd></div><div><dt><UsersRound size={15}/>填答人數</dt><dd><strong>{p.respondent_count}</strong> 人填答<span> · {p.options.length} 項候選</span></dd></div></dl>
+      {p.description&&<p className="poll-description preserve-lines">{p.description}</p>}
+      {p.reason&&<p className="poll-decision-reason preserve-lines">原因：{p.reason}</p>}
+      <details className="poll-arrangement-details"><summary>完整投票安排</summary><dl><dt>時區</dt><dd>{p.timezone}</dd><dt>人數</dt><dd>上限 {p.capacity||'不限'} · 最低 {p.minimum_participants}</dd><dt>發起者</dt><dd>{p.owner_name}</dd>{p.duration_hours!==null&&<><dt>每場預計</dt><dd>{p.duration_hours} 小時</dd></>}{p.fee_policy&&<><dt>費用</dt><dd className="preserve-lines">{p.fee_policy}</dd></>}</dl></details>
+    </section>
+    <div className="poll-guidance"><Notice>投票不占名額；定案後請核對活動安排再報名。</Notice>{p.event_id&&<ActionLink variant="primary" to={'/activities/'+encodeURIComponent(p.event_id)}>查看定案活動並報名</ActionLink>}{p.event_deleted&&<Notice>定案活動已移除，原投票結果保留。</Notice>}{!viewer.authenticated&&<Notice><Link to={'/login?returnTo='+encodeURIComponent(base(p.id))}>登入</Link>後可填答。</Notice>}</div>
+    {manage ? p.is_owner&&viewer.authenticated ? <div className="poll-management-layout"><LegacyLocalGuard><PollManager key={'manage:'+viewer.scope} viewer={viewer} initial={p}/></LegacyLocalGuard><PollResults poll={p}/></div> : <Notice>只有發起者可以管理時間投票。</Notice> : viewer.authenticated ? <LegacyLocalGuard><VoteEditor key={'votes:'+viewer.scope} viewer={viewer} initial={p}/></LegacyLocalGuard> : <PollResults poll={p}/>}
+  </>;
 }
 function PollTally({option:o}:{option:Poll['options'][number]}){
  const total=Math.max(1,o.yes+o.maybe+o.no);
  return <div className="vote-stats" aria-label="填答分佈">{[[o.yes,'可以'],[o.maybe,'勉強可以'],[o.no,'不行']].map(([count,label],index)=><span key={index} style={{'--vote-width':Number(count)/total*100+'%'} as CSSProperties}>{label} {count}</span>)}</div>;
 }
 function PollResults({ poll: p }: { poll: Poll }) {
-  return (
-    <section aria-label="投票統計">
-      {p.options.map((o) => (
-        <Surface key={o.id} className="vote-option">
-          <Heading level={2}>{label(o, p)}</Heading><PollTally option={o}/>
-          <Text>
-            {o.expired ? '已過期 · ' : ''}
-            {p.leading_option_ids.includes(o.id) ? '最高票 · ' : ''}
-            {p.selected_option_id === o.id ? '已定案 · ' : ''}可以 {o.yes} · 勉強可以 {o.maybe} · 不行 {o.no}
-          </Text>
-        </Surface>
-      ))}
-    </section>
-  );
+  return <section className="poll-results-panel" aria-label="投票統計"><div className="vote-heading"><Heading level={2}>候選統計</Heading><span>{p.respondent_count} 人填答</span></div><div className="vote-options">
+    {p.options.map(o=><article key={o.id} className={'vote-option'+(p.selected_option_id===o.id?' final':'')+(o.expired?' expired':'')}><div className="vote-option-title"><Heading level={3}>{label(o,p)}</Heading><div className="poll-option-badges">{o.expired&&<Badge>已過期</Badge>}{p.leading_option_ids.includes(o.id)&&<Badge tone="green">最高票</Badge>}{p.selected_option_id===o.id&&<Badge tone="blue">已定案</Badge>}</div></div><PollTally option={o}/></article>)}
+  </div></section>;
 }
 const EditableVotes = z
   .object({ revision: z.number().int().nonnegative(), ballot_token: VoteTimePoll.shape.ballot_token, choices: z.record(z.string(), PollChoice) })
@@ -461,11 +381,8 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
     filled = active.filter((o) => !!v.choices[o.id]).length;
   const stale = v.revision !== p.revision || !v.ballot_token || v.ballot_token !== p.ballot_token;
   return (
-    <Surface className="detail">
-      <Heading level={2}>我的填答</Heading>
-      <Text>
-        已填 {filled} / {active.length} 個有效候選
-      </Text>
+    <section className="poll-vote-card vote-workspace">
+      <div className="vote-heading"><Heading level={2}>我的填答</Heading><span role="status">已填 {filled} / {active.length} 個有效候選</span></div>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -480,13 +397,14 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
             });
         }}
       >
-        <fieldset disabled={form.locked || !p.can_vote}>
-          <legend>逐項意願</legend>
-          <div className="page-actions">
+        <fieldset className="poll-ballot-fields" disabled={form.locked || !p.can_vote}>
+          <legend className="sr-only">逐項意願</legend>
+          <div className="poll-bulk-actions"><span>未填項全選</span><div>
             {Object.entries(choices).map(([choice, text]) => (
               <Button
                 key={choice}
                 variant="secondary"
+                size="sm" type="button" aria-label={'未填項全選'+text}
                 onClick={() =>
                   form.edit({
                     ...v,
@@ -499,21 +417,18 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
                   })
                 }
               >
-                未填項全選{text}
+                {text}
               </Button>
             ))}
-          </div>
-          {p.options.map((o) => (
-            <fieldset key={o.id} disabled={o.expired} className="poll-choice vote-option">
-              <legend>
+          </div></div>
+          <div className="vote-options">{p.options.map((o) => (
+            <fieldset key={o.id} disabled={o.expired} className={'poll-choice vote-option'+(p.selected_option_id===o.id?' final':'')+(o.expired?' expired':'')}>
+              <legend className="sr-only">
                 {label(o, p)}
                 {o.expired ? ' · 已過期' : ''}
                 {p.leading_option_ids.includes(o.id) ? ' · 最高票' : ''}
               </legend>
-              <Text>
-                可以 {o.yes} · 勉強可以 {o.maybe} · 不行 {o.no}
-                {p.selected_option_id === o.id ? ' · 已定案' : ''}
-              </Text>
+              <div className="vote-option-title"><Heading level={3}>{label(o,p)}</Heading><div className="poll-option-badges">{o.expired&&<Badge>已過期</Badge>}{p.leading_option_ids.includes(o.id)&&<Badge tone="green">最高票</Badge>}{p.selected_option_id===o.id&&<Badge tone="blue">已定案</Badge>}</div></div>
               <PollTally option={o}/><div className="poll-answers">
                 {Object.entries(choices).map(([choice, text]) => (
                   <label key={choice}>
@@ -529,26 +444,26 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
                 ))}
               </div>
             </fieldset>
-          ))}
+          ))}</div>
         </fieldset>
         {stale && <Notice>填答或投票安排已變更，請核對最新版；原選擇保留。</Notice>}
-        <Button
+        <div className="poll-submit-actions"><Button
           type="submit"
           loading={form.busy}
           disabled={!!form.readError || (!form.draft.pending && (!p.can_vote || stale || filled !== active.length))}
         >
           {form.draft.pending ? '確認原填答結果' : p.has_voted ? '保存改票' : '提交填答'}
         </Button>
-      </form>
       <Button
-        variant="secondary"
+        variant="text" type="button"
         disabled={form.locked}
         onClick={() => void form.refresh((old, fresh) => ({ ...old, revision: fresh.revision, ballot_token: fresh.ballot_token }))}
       >
         核對最新候選，保留選擇
-      </Button>
+      </Button></div>
+      </form>
       <DraftFeedback form={form} />
-    </Surface>
+    </section>
   );
 }
 const ManagerEditable = z.object({
@@ -648,7 +563,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
       setConfirmed(false);
     };
   return (
-    <Surface className="detail activity-editor">
+    <section className="poll-manager-panel activity-editor">
       <Heading level={2}>管理時間投票</Heading>
       <form
         noValidate
@@ -663,8 +578,8 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             }
         }}
       >
-        <fieldset disabled={form.locked}>
-          <legend>操作</legend>
+        <fieldset className="poll-manager-fields" disabled={form.locked}>
+          <legend className="sr-only">操作</legend>
           <Field label="管理操作">
             <select
               value={v.action}
@@ -788,7 +703,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
         核對最新票數與安排，保留輸入
       </Button>
       <DraftFeedback form={form} />
-      <details>
+      <details className="poll-admin-disclosure">
         <summary>填答者 · {p.respondent_count} 人</summary>
         {p.respondents?.map((r, i) => (
           <div key={i}>
@@ -807,7 +722,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           </div>
         ))}
       </details>
-      <details>
+      <details className="poll-admin-disclosure">
         <summary>群通知狀態</summary>
         <Text>
           {!p.bot_feature_enabled
@@ -824,7 +739,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           </Text>
         ))}
       </details>
-      <details>
+      <details className="poll-admin-disclosure">
         <summary>管理歷史</summary>
         {p.history?.map((h, i) => (
           <Text key={i}>
@@ -844,6 +759,6 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           </Text>
         ))}
       </details>
-    </Surface>
+    </section>
   );
 }

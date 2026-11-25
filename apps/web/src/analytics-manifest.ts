@@ -351,14 +351,12 @@ export const analyticsManifest = {
     "section-7",
     "section-8",
     "section-9",
-    "settings",
     "shout-content",
     "shout-count",
     "shout-period",
     "shout-publish-help",
     "signup-intent",
     "signup-mode",
-    "votes",
     "wallet"
   ]
 } as const;

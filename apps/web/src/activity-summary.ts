@@ -2,15 +2,24 @@ import { uiText } from './language';
 import type { ActivityView } from '@qgroup/contracts';
 
 const instant = (value: string) => /(?:Z|[+-]\d{2}:\d{2})$/.test(value) && Number.isFinite(Date.parse(value));
-function formatter(zone: string | null) {
+function formatter(zone: string | null, withOffset = true) {
   if (!zone) return null;
   try {
-    return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone, timeZoneName: 'shortOffset' });
+    return new Intl.DateTimeFormat('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hourCycle: 'h23', timeZone: zone, ...(withOffset ? { timeZoneName: 'shortOffset' as const } : {}) });
   } catch { return null; }
 }
 export function activityDate(value: string, zone: string | null) {
   const format = formatter(zone);
   return `${format && instant(value) ? format.format(new Date(value)) : value.replace('T', ' ')}（${zone || uiText('未指定時區')}）`;
+}
+/** On-screen dates omit the site's default UTC+8 offset; shared summaries remain explicit. */
+export function activityDisplayDate(value: string, zone: string | null) {
+  const format = formatter(zone);
+  if (!format || !instant(value)) return activityDate(value, zone);
+  const parts = format.formatToParts(new Date(value));
+  const offset = parts.find(part => part.type === 'timeZoneName')?.value;
+  const date = formatter(zone, false)!.format(new Date(value));
+  return date + (offset && offset !== 'GMT+8' ? `（${offset}）` : '');
 }
 export function activityTimeRange(event: Pick<ActivityView, 'startsAt' | 'durationHours' | 'timezone'>) {
   const start = activityDate(event.startsAt, event.timezone), hours = event.durationHours;

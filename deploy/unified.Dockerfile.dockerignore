@@ -11,6 +11,8 @@
 !tools/
 !tools/rebuild/
 !tools/rebuild/build-api.mjs
+!tools/rebuild/build-kimi-button-links.mjs
+!tools/rebuild/scope-kimi-css.mjs
 !tools/rebuild/build-http-contracts.ts
 !tools/rebuild/http-openapi.ts
 !tools/rebuild/http-access.ts

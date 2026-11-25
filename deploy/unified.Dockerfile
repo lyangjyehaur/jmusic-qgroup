@@ -7,6 +7,7 @@ COPY package.json package-lock.json tsconfig.rebuild.json ./
 COPY apps/ ./apps/
 COPY packages/ ./packages/
 COPY tools/rebuild/build-api.mjs ./tools/rebuild/build-api.mjs
+COPY tools/rebuild/build-kimi-button-links.mjs tools/rebuild/scope-kimi-css.mjs ./tools/rebuild/
 COPY tools/rebuild/build-http-contracts.ts ./tools/rebuild/build-http-contracts.ts
 COPY tools/rebuild/http-openapi.ts tools/rebuild/http-access.ts ./tools/rebuild/
 COPY tools/rebuild/schemas/openapi-3.1.json tools/rebuild/schemas/http-access-review.json ./tools/rebuild/schemas/

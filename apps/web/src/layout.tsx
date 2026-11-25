@@ -73,11 +73,11 @@ export function Layout() {
     window.addEventListener('keydown', shortcut); return () => window.removeEventListener('keydown', shortcut);
   }, [navigate, location.pathname, location.search, location.hash]);
   const nickname = session.data?.authenticated ? session.data.nickname : uiText('訪客');
-  const navigation = navItems.map(([to, label, icon]) => <NavLink key={to} to={to} className={({ isActive }) => 'nav-item' + (isActive || to === '/activities' && location.pathname === '/' ? ' active' : '')}><InterfaceIcon name={icon}/><span>{label}</span></NavLink>);
+  const navigation = navItems.map(([to, label, icon]) => <NavLink key={to} to={to} className={({ isActive }) => 'nav-item' + (isActive || to === '/activities' && (location.pathname === '/' || location.pathname.startsWith('/time-polls')) ? ' active' : '')}><InterfaceIcon name={icon}/><span>{label}</span></NavLink>);
   return <div className="app-shell kimi-shell" ref={shell}><WallpaperLayer/><a className="skip" href="#main">跳至主要內容</a>
     <aside className="sidebar"><Link to="/activities" className="brand" aria-label="群聚首頁"><BrandMark/><span>群聚</span></Link>
       <nav className="side-nav" aria-label="主要導覽">{navigation}</nav>
-      <div className="sidebar-bottom"><Link className="nav-item subtle" to="/time-polls"><InterfaceIcon name="votes"/>時間投票</Link><Link className="nav-item subtle" to="/admin" aria-label="開啟管理後台"><InterfaceIcon name="settings"/>管理後台</Link><Link className="sidebar-account" to="/me"><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span><strong>{nickname}</strong><small>{session.data?.authenticated ? '帳號與設定' : '登入或註冊'}</small></span></Link></div>
+      <div className="sidebar-bottom"><Link className="sidebar-account" to="/me"><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span><strong>{nickname}</strong><small>{session.data?.authenticated ? '帳號與設定' : '登入或註冊'}</small></span></Link></div>
     </aside>
     <div className="main-column"><header className="topbar">
       <Link to="/activities" className="mobile-brand" aria-label="群聚首頁"><BrandMark/><span>群聚</span></Link>
@@ -85,10 +85,10 @@ export function Layout() {
       <div className="topbar-actions">
         <details className="shell-menu appearance-menu"><summary aria-label="外觀設定" title="外觀設定"><InterfaceIcon name="palette"/><span>外觀</span></summary><div className="shell-popover"><AppearanceControls quick/></div></details>
         <InboxLink key={session.data?.scope??'guest'} viewer={session.data?.authenticated?session.data:undefined}/>
-        <details className="shell-menu account-menu"><summary aria-label="帳號選單"><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span className="viewer">{nickname}</span><ChevronDown size={14}/></summary><div className="shell-popover"><strong>{nickname}</strong><Link to="/me">帳號與設定</Link><Link to="/me/music">編輯我的成分</Link><Link to="/admin">管理後台</Link></div></details>
+        <details className="shell-menu account-menu"><summary aria-label="帳號選單"><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span className="viewer">{nickname}</span><ChevronDown size={14}/></summary><div className="shell-popover"><strong>{nickname}</strong><Link to="/me">帳號與設定</Link><Link to="/me/music">編輯我的成分</Link></div></details>
       </div>
     </header>
     <main id="main" ref={heading} tabIndex={-1} className="main"><PWAUpdateNotice/>{typeof location.state?.accountMessage === 'string' && <Notice>{location.state.accountMessage}</Notice>}{session.data?.authenticated && ['/', '/activities', '/me'].includes(location.pathname) && !location.search && !location.hash && <QQReauthReminder key={session.data.scope} viewer={session.data} returnTo={location.pathname} />}{searchBack && !overlay && <Link className="back" to={searchBack}>← 回到搜尋</Link>}{!discoveryPage && !overlay ? <RetainedPage location={location}>{outlet}</RetainedPage> : overlay && background.current && <RetainedPage location={background.current.location} inactive>{background.current.content}</RetainedPage>}{discoveryPage && outlet}</main>
-    </div><nav className="mobile-dock" aria-label="手機主要導覽">{navItems.map(([to,label,icon])=><NavLink key={to} to={to} className={({isActive})=>'dock-item'+(isActive?' active':'')}><InterfaceIcon name={icon} size={21}/><span>{label}</span></NavLink>)}</nav><PageTools />
+    </div><nav className="mobile-dock" aria-label="手機主要導覽">{navItems.map(([to,label,icon])=><NavLink key={to} to={to} className={({isActive})=>'dock-item'+(isActive||to==='/activities'&&location.pathname.startsWith('/time-polls')?' active':'')}><InterfaceIcon name={icon} size={21}/><span>{label}</span></NavLink>)}</nav><PageTools />
   </div>;
 }

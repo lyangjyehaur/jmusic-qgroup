@@ -6,6 +6,48 @@
   --yahha-neutral-line: var(--app-line);
   --yahha-neutral-surface: var(--app-bg);
   --yahha-disabled-surface: var(--app-bg);
+  /* Kimi content uses the neutral paper ink; Yahha headings, labels and field
+     values must resolve to the same token instead of the library's plum ink. */
+  --yahha-ink: var(--app-ink);
+  --yahha-muted: var(--app-muted);
+  --yahha-focus: var(--app-focus);
+  --yahha-control-border-width: 1px;
+}
+/* Shared tokens for outlines and large tinted panels. Preset identity is kept
+   (every preset resolves a different value) without a saturated fill or a
+   coloured outline on every control. */
+:root {
+  --app-panel-tint: color-mix(in srgb, var(--app-soft) 38%, var(--app-surface));
+  --app-control-line: color-mix(in srgb, var(--app-line) 76%, var(--app-ink));
+}
+:root[data-theme] .kimi :is(.activity-overview, .next-step-panel, .music-search-area, .activity-participation) { background: var(--app-panel-tint); }
+:root[data-theme] .kimi :is(.music-search-area, .music-search-area .search-input) { border-color: var(--app-control-line); }
+/* Field wrappers get a neutral outline; select triggers and links keep the
+   accent contour as their text/icon colour. */
+.kimi :is(.yj-field, .search-input) { --yahha-contour: var(--app-control-line); }
+/* Status banners should read like the other restrained panels: a light preset
+   tint instead of the saturated --app-soft fill, and a rule that follows the
+   active preset. Error / payment / unread states keep their semantic tones. */
+:root[data-theme] .kimi .notice,
+:root[data-theme] .kimi .inline-alert:not(.error),
+:root[data-theme] .kimi .match-note {
+  background: var(--app-panel-tint);
+  border-left-color: var(--app-accent);
+}
+/* Floating toasts keep an opaque surface and an even outline on every side. */
+:root[data-theme] :is(.feedback-layer, .app-status-notices) > .notice {
+  background: var(--app-surface);
+  border-left-color: var(--app-contour);
+}
+/* The search dialog has no tinted panel behind the borderless field wrapper. */
+:root[data-theme] .kimi.yj-dialog .global-search-form .yj-search-wrap {
+  border: 1px solid var(--app-control-line);
+}
+@media (max-width: 768px) {
+  .kimi .yj-tabs-list { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .kimi .activity-row { padding-block: 14px; gap: 8px; }
+  .kimi .activity-meta { gap: 3px 10px; }
+  .kimi :is(.activity-capacity, .activity-status) { margin-top: 2px; }
 }
 :root[data-theme=dark] [data-yahha-theme] {
   --yahha-success-surface: #213d36; --yahha-success-ink: #b3e5cf; --yahha-success-line: #72aa94;

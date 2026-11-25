@@ -1,3 +1,4 @@
+import { chooseOption } from './kimi-controls';
 import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -48,7 +49,7 @@ test('creates date/exact polls with durable incomplete drafts and dynamic candid
 }) => {
   await login(context);
   await page.goto('/activities');
-  await page.locator('main').getByRole('link', { name: '時間投票', exact: true }).click();
+  await page.getByRole('tab', { name: '時間投票', exact: true }).click();
   await page.getByRole('link', { name: '發起時間投票', exact: true }).click();
   await definition(page);
   await page.getByRole('button', { name: '新增候選', exact: true }).click();
@@ -413,4 +414,61 @@ test('restores a pre-token local draft without losing choices and blocks sending
   await page.getByRole('button', { name: '提交填答', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   expect((await readPoll(context, 'poll-date')).my_choices).toEqual({ 'poll-date-1': 'maybe', 'poll-date-2': 'no' });
+});
+
+for (const width of [789, 390]) test(`poll list keeps one browse navigation and full-width rows at ${width}px`, async ({page, context}) => {
+  await login(context); await page.setViewportSize({width, height:925});
+  let writes=0; page.on('request', request=>{if(['POST','PUT','PATCH','DELETE'].includes(request.method()))writes++;});
+  await page.goto('/time-polls');
+  const list=page.getByRole('region',{name:'時間投票列表',exact:true});
+  await expect(list.locator('.time-poll-row').first()).toBeVisible();
+  await expect(page.getByRole('tablist',{name:'活動篩選',exact:true})).toHaveCount(1);
+  await expect(page.getByLabel('投票範圍',{exact:true})).toBeVisible();
+  await expect(page.locator('.event-grid')).toHaveCount(0);
+  await expect(list).not.toContainText('Asia/');
+  const geometry=await page.evaluate(()=>{
+    const header=document.querySelector('.polls-page > .page-header')!.getBoundingClientRect();
+    const toolbar=document.querySelector('.polls-page > .list-toolbar')!.getBoundingClientRect();
+    const list=document.querySelector('.time-poll-list')!.getBoundingClientRect();
+    const row=document.querySelector('.time-poll-row')!.getBoundingClientRect();
+    const tabs=document.querySelector('.activity-browse-tabs .yj-tabs-list')!;
+    return {tabsOverflow:tabs.scrollWidth>tabs.clientWidth,headerHeight:header.height,left:Math.abs(header.left-list.left),width:Math.abs(header.width-list.width),row:Math.abs(row.width-list.width),gap:list.top-toolbar.bottom,overflow:document.documentElement.scrollWidth>innerWidth};
+  });
+  expect(geometry.tabsOverflow).toBe(false);expect(geometry.headerHeight).toBeLessThanOrEqual(64);expect(geometry.left).toBeLessThanOrEqual(1);expect(geometry.width).toBeLessThanOrEqual(1);expect(geometry.row).toBeLessThanOrEqual(2);expect(geometry.gap).toBeGreaterThanOrEqual(16);expect(geometry.overflow).toBe(false);
+  await page.screenshot({path:`artifacts/private/poll-layout-20261125/polls-${width}.png`,fullPage:true});
+  await chooseOption(page,'投票範圍',{label:'往期投票'});await expect(page).toHaveURL('/time-polls?period=history');
+  await expect(page.getByRole('tab',{name:'時間投票',exact:true})).toHaveAttribute('aria-selected','true');expect(writes).toBe(0);
+});
+
+for (const width of [1440,789,390]) test(`poll detail and management retain usable layouts at ${width}px`,async({page,context})=>{
+  await login(context,'bob');await page.setViewportSize({width,height:925});await page.goto('/time-polls/poll-exact');
+  await expect(page.getByRole('heading',{name:'我的填答',exact:true})).toBeVisible();
+  await expect(page.getByRole('region',{name:'投票安排',exact:true})).toBeVisible();
+  await expect(page.getByRole('button',{name:'未填項全選可以',exact:true})).toBeVisible();
+  await expect(page.locator('.poll-ballot-fields')).not.toHaveCSS('border-top-style','groove');
+  const ballots=await page.locator('.poll-choice').evaluateAll(rows=>rows.map(row=>{
+    const box=row.getBoundingClientRect();const labels=[...row.querySelectorAll('.poll-answers label')].map(el=>el.getBoundingClientRect());
+    return {right:box.right,labels:labels.every(rect=>rect.height>=44&&rect.left>=box.left&&rect.right<=box.right),overflow:row.scrollWidth>row.clientWidth};
+  }));expect(ballots.length).toBeGreaterThan(0);for(const box of ballots){expect(box.right).toBeLessThanOrEqual(width);expect(box.labels).toBe(true);expect(box.overflow).toBe(false);}
+  await page.screenshot({path:`artifacts/private/poll-detail-20261125/ballot-${width}.png`,fullPage:true});
+  if(width===390){
+    await page.evaluate(()=>window.scrollTo(0,document.documentElement.scrollHeight));
+    const submit=await page.getByRole('button',{name:'保存改票',exact:true}).boundingBox();
+    const dock=await page.getByRole('navigation',{name:'手機主要導覽',exact:true}).boundingBox();
+    expect(submit!.y+submit!.height).toBeLessThanOrEqual(dock!.y);
+    await page.screenshot({path:'artifacts/private/poll-detail-20261125/ballot-submit-390.png'});
+  }
+  await login(context);await page.goto('/time-polls/poll-exact/manage');await management(page,'finalize');
+  await expect(page.getByLabel('定案候選',{exact:true})).toBeVisible();await expect(page.getByLabel('正式報名截止（含時區）',{exact:true})).toBeVisible();
+  await expect(page.getByRole('region',{name:'投票統計',exact:true})).toBeVisible();
+  if(width===390){await page.getByLabel('外觀設定',{exact:true}).click();await chooseOption(page,'快速明暗模式','dark');await page.keyboard.press('Escape');}
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.screenshot({path:`artifacts/private/poll-detail-20261125/manager-${width}.png`,fullPage:true});
+  const creation=await context.newPage();
+  try {
+    await creation.setViewportSize({width,height:925});await creation.goto('/time-polls/new');
+    await expect(creation.getByLabel('投票名稱',{exact:true})).toBeVisible();
+    expect(await creation.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+    await creation.screenshot({path:`artifacts/private/poll-detail-20261125/create-${width}.png`,fullPage:true});
+  } finally {await creation.close();}
 });

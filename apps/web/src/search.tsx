@@ -9,7 +9,7 @@ import { ArrowUpRight } from 'lucide-react';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { scopedHttp } from './http';
 import { searchParameters } from './search-return';
-import { activityDate } from './activity-summary';
+import { activityDisplayDate } from './activity-summary';
 import { categoryLabel } from './music-entries';
 import { loginLink } from './auth';
 
@@ -46,7 +46,7 @@ function SearchContent() {
       {result.isPending || !result.isFetchedAfterMount ? <Notice>正在搜尋…</Notice> : result.error ? <Failure error={result.error} retry={() => void result.refetch()} /> : <>
         <div className="search-groups">
           {(query.group === 'all' || query.group === 'activities') && <section aria-label="活動搜尋結果"><Heading level={2}>活動（{result.data.activities.total}）</Heading>
-            {result.data.activities.items.length ? <ul>{result.data.activities.items.map(item => <li key={item.id}><Link className="global-result" aria-label={item.title} to={target('/activities/' + encodeURIComponent(item.id) + (item.phase === 'draft' ? '/edit' : ''))}><Badge>活動</Badge><span><strong>{item.title}</strong><small>{activityDate(item.startsAt, item.timezone)} · {item.location}</small></span><ArrowUpRight size={16}/></Link></li>)}</ul> : <Notice>沒有符合條件且可查看的活動。</Notice>}
+            {result.data.activities.items.length ? <ul>{result.data.activities.items.map(item => <li key={item.id}><Link className="global-result" aria-label={item.title} to={target('/activities/' + encodeURIComponent(item.id) + (item.phase === 'draft' ? '/edit' : ''))}><Badge>活動</Badge><span><strong>{item.title}</strong><small>{activityDisplayDate(item.startsAt, item.timezone)} · {item.location}</small></span><ArrowUpRight size={16}/></Link></li>)}</ul> : <Notice>沒有符合條件且可查看的活動。</Notice>}
             {query.group === 'all' && result.data.activities.hasMore && <Link state={location.state} to={searchPath(query.q, 'activities')}>查看所有活動結果</Link>}
           </section>}
           {(query.group === 'all' || query.group === 'music') && <section aria-label="音樂搜尋結果"><Heading level={2}>音樂詞條（{result.data.music.total}）</Heading>

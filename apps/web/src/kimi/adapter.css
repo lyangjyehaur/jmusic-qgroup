@@ -151,7 +151,7 @@
 .kimi .music-stats dd { margin: 0; font-size: 16px; line-height: inherit; }
 .kimi .music-stats dt { font-size: 12px; }
 .kimi .term-row.is-selected { background: transparent; }
-.kimi .term-group-title { margin: 14px 0 0; font-size: 12px; color: var(--muted); }
+.kimi .term-group-title { margin: 18px 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
 .kimi .profile-extras { margin-top: 12px; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 11px; }
 .kimi .profile-extras > summary { color: var(--muted); cursor: pointer; }
 .kimi .profile-extras .match-breakdown { margin-top: 12px; }
@@ -325,3 +325,154 @@
 }
 
 .kimi .selection-group-toggle { margin-left:auto; display:flex; align-items:center; gap:8px; border:0; padding:0; background:transparent; color:inherit; font:inherit; cursor:pointer; }.kimi .selection-group-toggle[aria-expanded="false"] svg { transform:rotate(-90deg); }.kimi .selection-group-toggle:focus-visible { outline:2px solid var(--app-accent); outline-offset:4px; }
+
+/* Keep activity browsing and time polls together at intermediate widths. */
+.kimi .activity-browse-tabs { min-width: 0; max-width: 100%; }
+.kimi .activity-browse-tabs .yj-tabs-list { flex-wrap: nowrap; }
+.kimi .list-toolbar { flex-wrap: wrap; }
+.kimi .list-toolbar > .activity-browse-tabs { flex: 1 1 420px; }
+.kimi .list-toolbar > .filter-row { flex: 1 1 300px; }
+@media (max-width: 768px) {
+ .kimi .list-toolbar > .activity-browse-tabs, .kimi .list-toolbar > .filter-row { flex-basis: auto; }
+}
+
+/* Poll browsing follows the activity list's full-width rhythm. */
+.kimi.polls-page .poll-period-filter { flex: 0 1 184px; }
+.kimi.polls-page .poll-period-filter > * { width: 100%; }
+.kimi .time-poll-list { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.kimi .time-poll-row { display: grid; grid-template-columns: 40px minmax(0,1fr) 100px 88px 20px; gap: 16px; align-items: center; padding: 24px 12px; border-bottom: 1px solid var(--line-soft); }
+.kimi .time-poll-row:last-child { border-bottom: 0; }
+.kimi .poll-row-icon { display: grid; place-items: center; width: 36px; height: 36px; border-radius: 12px; background: var(--app-panel-tint); color: var(--moss); }
+.kimi .poll-row-main { min-width: 0; }
+.kimi .poll-row-main h2 { margin: 0 0 10px; font-size: 17px; line-height: 1.5; overflow-wrap: anywhere; }
+.kimi .poll-row-main h2 a { color: var(--ink); }
+.kimi .poll-row-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 12px; }
+.kimi .poll-row-meta > span { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; overflow-wrap: anywhere; }
+.kimi .poll-row-meta svg { flex: 0 0 14px; align-self: center; }
+.kimi .poll-row-counts { display: grid; gap: 5px; color: var(--muted); font-size: 12px; }
+.kimi .poll-row-counts strong { color: var(--ink); font-size: 18px; font-weight: 600; }
+.kimi .poll-row-counts small { font-size: 11px; }
+.kimi .poll-row-status { justify-self: start; }
+@media (max-width: 768px) {
+ .kimi.polls-page .poll-period-filter { flex-basis: auto; width: 100%; }
+ .kimi .time-poll-row { grid-template-columns: 32px minmax(0,1fr) auto; gap: 12px; padding: 20px 0; }
+ .kimi .poll-row-icon { width: 30px; height: 30px; border-radius: 10px; align-self: start; }
+ .kimi .poll-row-main { grid-column: 2; }
+ .kimi .poll-row-main h2 { font-size: 16px; }
+ .kimi .poll-row-meta { display: grid; gap: 6px; }
+ .kimi .poll-row-counts { grid-column: 2; grid-row: 2; display: flex; align-items: baseline; flex-wrap: wrap; gap: 6px 12px; }
+ .kimi .poll-row-status { grid-column: 3; grid-row: 2; }
+ .kimi .poll-row-arrow { grid-column: 3; grid-row: 1; align-self: start; }
+}
+@media (max-width: 768px) {
+ .kimi.polls-page > .page-header { flex-direction: row; align-items: center; gap: 12px; }
+ .kimi.polls-page > .page-header .page-actions { width: auto; }
+}
+@media (max-width: 768px) {
+ .kimi.polls-page .activity-browse-tabs .yj-tabs-list { gap: 8px; }
+ .kimi.polls-page .activity-browse-tabs .tab { font-size: 12px; padding-inline: 6px; }
+}
+
+/* Poll details, ballots and management use one page rhythm. */
+.kimi.poll-detail-page > .back-link { margin-bottom: 18px; }
+.kimi .poll-detail-header { position: relative; }
+.kimi .poll-detail-header .page-header { margin-bottom: 12px; }
+.kimi .poll-detail-header .page-heading { flex: 1; }
+.kimi .poll-detail-header .page-actions { justify-content: flex-end; flex-wrap: wrap; }
+.kimi .poll-detail-header .page-heading h1 { font-size: 26px; line-height: 1.4; }
+.kimi .poll-share-status { position: absolute; right: 0; top: 100%; z-index: 2; padding: 8px 12px; border: 1px solid var(--line); background: var(--paper); font-size: 12px; }
+.kimi .poll-detail-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 20px; }
+.kimi .poll-detail-status > span:last-child { color: var(--muted); font-size: 12px; }
+.kimi .poll-summary-panel { padding: 20px 0; border-block: 1px solid var(--line); }
+.kimi .poll-summary-facts { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 20px; margin: 0; }
+.kimi .poll-summary-facts > div { min-width: 0; }
+.kimi .poll-summary-facts dt { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; color: var(--muted); font-size: 12px; }
+.kimi .poll-summary-facts dd { margin: 0; font-size: 14px; line-height: 1.6; overflow-wrap: anywhere; }
+.kimi .poll-summary-facts dd strong { font-size: 18px; font-weight: 600; }
+.kimi .poll-summary-facts dd span { color: var(--muted); font-size: 12px; }
+.kimi .poll-description { margin: 18px 0 0; font-size: 14px; }
+.kimi .poll-decision-reason { margin: 18px 0 0; padding: 12px 16px; border-left: 3px solid var(--app-accent); background: var(--app-panel-tint); font-size: 14px; overflow-wrap: anywhere; }
+.kimi .poll-arrangement-details { margin-top: 16px; font-size: 12px; color: var(--muted); }
+.kimi .poll-arrangement-details summary { width: fit-content; cursor: pointer; }
+.kimi .poll-arrangement-details dl { display: grid; grid-template-columns: 80px minmax(0,1fr); gap: 8px 16px; margin: 14px 0 0; padding: 16px; background: var(--app-panel-tint); }
+.kimi .poll-arrangement-details dd { margin: 0; overflow-wrap: anywhere; color: var(--ink); }
+.kimi .poll-guidance { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0 24px; }
+.kimi .poll-guidance .notice { margin: 0; padding: 10px 14px; }
+.kimi .poll-vote-card, .kimi .poll-manager-panel, .kimi .poll-results-panel { min-width: 0; padding: 24px; border: 1px solid var(--line); border-radius: var(--yahha-radius-panel); background: var(--paper); }
+.kimi.poll-detail-page .vote-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.kimi.poll-detail-page .vote-heading h2, .kimi .poll-manager-panel > h2 { margin: 0; font-size: 19px; }
+.kimi.poll-detail-page .vote-heading > span { color: var(--muted); font-size: 12px; text-align: right; }
+.kimi .poll-ballot-fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+.kimi .poll-bulk-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding-bottom: 16px; border-bottom: 1px solid var(--line-soft); }
+.kimi .poll-bulk-actions > span { color: var(--muted); font-size: 12px; }
+.kimi .poll-bulk-actions > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.kimi.poll-detail-page .vote-options { display: grid; gap: 14px; margin-top: 18px; }
+.kimi.poll-detail-page .poll-choice.vote-option, .kimi .poll-results-panel .vote-option { min-width: 0; margin: 0; padding: 18px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper); }
+.kimi.poll-detail-page .vote-option.final { border-color: var(--app-success); box-shadow: inset 3px 0 var(--app-success); }
+.kimi.poll-detail-page .vote-option.expired { background: var(--app-bg); }
+.kimi.poll-detail-page .vote-option-title { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.kimi.poll-detail-page .vote-option-title h3 { margin: 0; font-size: 16px; line-height: 1.5; }
+.kimi .poll-option-badges { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.kimi.poll-detail-page .vote-stats { height: 28px; gap: 4px; margin: 14px 0; }
+.kimi.poll-detail-page .vote-stats > span { min-width: 64px; display: flex; align-items: center; justify-content: center; padding: 3px 6px; border-radius: 4px; font-size: 11px; }
+.kimi.poll-detail-page .vote-stats > span:first-child { color: var(--yahha-success-ink); background: var(--yahha-success-surface); }
+.kimi.poll-detail-page .poll-answers { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; margin-top: 16px; }
+.kimi.poll-detail-page .poll-answers > label { display: flex; justify-content: center; align-items: center; gap: 6px; min-width: 0; min-height: 44px; padding: 8px 6px; border-radius: var(--yahha-radius-field); font-size: 13px; }
+.kimi.poll-detail-page .poll-answers input { width: 15px; height: 15px; margin: 0; flex-shrink: 0; accent-color: var(--app-accent); }
+.kimi.poll-detail-page .poll-answers > label:has(:checked) { color: var(--ink); background: var(--app-soft); border-color: var(--app-accent); }
+.kimi.poll-detail-page .poll-answers > label:has(:disabled) { cursor: default; opacity: .65; }
+.kimi .poll-submit-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding-top: 22px; }
+.kimi .poll-management-layout { display: grid; grid-template-columns: minmax(0,1.25fr) minmax(0,1fr); gap: 24px; align-items: start; }
+.kimi .poll-manager-fields { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; border: 0; margin: 20px 0; padding: 0; min-width: 0; }
+.kimi .poll-manager-fields > .account-field:first-of-type, .kimi .poll-manager-fields > .account-field:has(textarea), .kimi .poll-manager-fields > .consent, .kimi .poll-manager-fields > .notice { grid-column: 1 / -1; }
+.kimi .poll-manager-fields .account-field { margin: 0; min-width: 0; }
+.kimi :is(.poll-manager-panel,.poll-create-form) .account-field > label { font-size: 12px; color: var(--muted); }
+.kimi :is(.poll-manager-panel,.poll-create-form) :is(input:not([type=checkbox]),select,textarea) { width: 100%; min-width: 0; min-height: 42px; padding: 9px 12px; border: 1px solid var(--app-control-line); border-radius: var(--yahha-radius-field); background: var(--app-field); color: var(--ink); font-size: 14px; }
+.kimi .poll-manager-panel textarea { min-height: 96px; }
+.kimi .poll-manager-panel > .button { margin: 12px 0 20px; }
+.kimi .poll-admin-disclosure { padding: 16px 0; border-top: 1px solid var(--line-soft); font-size: 12px; }
+.kimi .poll-admin-disclosure > summary { font-size: 13px; font-weight: 600; cursor: pointer; }
+.kimi .poll-admin-disclosure p { overflow-wrap: anywhere; margin: 12px 0 6px; }
+.kimi .poll-admin-disclosure ul { padding-left: 20px; line-height: 1.8; }
+.kimi .poll-create-form { padding: 24px; }
+.kimi .poll-create-form > form > fieldset { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+.kimi .poll-create-form > form > fieldset > :is(.notice,.poll-calendar,.poll-option-input,.page-actions,.consent) { grid-column: 1 / -1; }
+.kimi .poll-create-form > form > fieldset > legend { margin-bottom: 20px; font-size: 18px; font-weight: 600; }
+.kimi .poll-create-form .account-field { margin: 0; min-width: 0; }
+.kimi .poll-create-form .poll-add-option { grid-column: 1 / -1; justify-self: start; align-self: start; }
+.kimi .poll-create-form .poll-calendar { margin: 8px 0; padding: 20px; border: 1px solid var(--line); border-radius: var(--yahha-radius-field); background: var(--app-bg); }
+.kimi .poll-create-form .poll-calendar > p { margin: 0; font-size: 13px; }
+.kimi .poll-create-form .poll-month-navigation { display: grid; grid-template-columns: auto minmax(0,1fr) auto auto; gap: 8px; margin-block: 14px; }
+.kimi .poll-create-form .poll-month-navigation label { min-width: 0; display: grid; gap: 6px; color: var(--muted); font-size: 12px; }
+.kimi .poll-create-form .poll-month-navigation input { width: 100%; }
+.kimi .poll-create-form .poll-month-navigation > .button { align-self: end; }
+.kimi .poll-create-form .poll-calendar-days { max-width: none; gap: 6px; margin-bottom: 12px; }
+.kimi .poll-create-form .poll-calendar-days > span { color: var(--muted); font-size: 12px; }
+.kimi .poll-create-form .poll-calendar-days button { border-color: var(--line); border-radius: var(--yahha-radius-field); background: var(--paper); color: var(--ink); font: inherit; font-size: 13px; }
+.kimi .poll-create-form .poll-calendar-days button[aria-pressed=true] { border-color: var(--app-accent); background: var(--app-soft); color: var(--ink); box-shadow: inset 0 0 0 1px var(--app-accent); }
+.kimi .poll-create-form .poll-calendar-days button[aria-current=date] { border-color: var(--app-accent); font-weight: 700; }
+.kimi .poll-create-form .poll-calendar-days button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.kimi .poll-create-form .poll-option-input { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 10px; }
+@media (max-width: 1100px) {
+ .kimi .poll-management-layout { grid-template-columns: minmax(0,1fr); }
+}
+@media (max-width: 768px) {
+ .kimi .poll-detail-header .page-header { gap: 16px; }
+ .kimi .poll-detail-header .page-heading h1 { font-size: 23px; }
+ .kimi .poll-detail-header .page-actions { justify-content: flex-start; gap: 10px; }
+ .kimi .poll-summary-facts { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; }
+ .kimi .poll-summary-facts > div:nth-child(2) { grid-column: 1 / -1; grid-row: 2; }
+ .kimi .poll-vote-card, .kimi .poll-manager-panel, .kimi .poll-results-panel { padding: 16px; }
+ .kimi.poll-detail-page .vote-option-title h3 { font-size: 14px; }
+ .kimi.poll-detail-page .poll-choice.vote-option, .kimi .poll-results-panel .vote-option { padding: 14px; }
+ .kimi.poll-detail-page .poll-answers > label { font-size: 12px; gap: 4px; }
+ .kimi .poll-manager-fields, .kimi .poll-create-form > form > fieldset { grid-template-columns: minmax(0,1fr); }
+ .kimi .poll-create-form { padding: 18px 16px; }
+ .kimi .poll-create-form .poll-calendar { padding: 14px 10px; }
+ .kimi .poll-create-form .poll-month-navigation { grid-template-columns: repeat(3,minmax(0,1fr)); }
+ .kimi .poll-create-form .poll-month-navigation label { grid-column: 1 / -1; grid-row: 1; }
+ .kimi .poll-create-form .poll-calendar-days { gap: 4px; }
+ .kimi .poll-create-form .poll-option-input .account-field { min-width: 0; }
+ .kimi.poll-detail-page .vote-heading { align-items: flex-start; }
+ .kimi.poll-detail-page .vote-heading > span { max-width: 120px; }
+}
