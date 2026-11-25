@@ -1,4 +1,6 @@
 import importlib.util
+import json
+import os
 from pathlib import Path
 import subprocess
 import tempfile
@@ -11,6 +13,33 @@ spec.loader.exec_module(release)
 
 
 class FrontendSourceTests(unittest.TestCase):
+    def test_public_parent_directories_remain_readable_with_restrictive_deployment_umask(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            artifact, root = Path(tmp) / 'artifact', Path(tmp) / 'public'
+            artifact.mkdir()
+            files = {name: b'fixture' for name in release.FIXED}
+            build_id = 'd' * 64
+            files['index.html'] = f'<html><meta name="qgroup-build" content="{build_id}" /></html>'.encode()
+            files['sw.js'] = files['music/sw.js'] = build_id.encode()
+            files['assets/page-12345678.js'] = b'export const version=1'
+            files['assets/page-12345678.css'] = b'.fixture{}'
+            for name, data in files.items():
+                (artifact / name).parent.mkdir(parents=True, exist_ok=True)
+                (artifact / name).write_bytes(data)
+            manifest = dict(version=1, source='origin-main', commit='a' * 40, tree='b' * 40, apiCommit='c' * 40, backendFingerprint='e' * 64, buildId=build_id, files={name: release.digest(data) for name, data in files.items()})
+            raw = json.dumps(manifest).encode()
+            (artifact / 'frontend-release.json').write_bytes(raw)
+            previous = os.umask(0o077)
+            try:
+                release.activate(artifact, root, release.digest(raw), 'c' * 40)
+            finally:
+                os.umask(previous)
+            for directory in [root, root / 'assets', root / 'releases', (root / 'current').resolve()]:
+                self.assertEqual(directory.stat().st_mode & 0o777, 0o755)
+            (root / 'private-config').write_text('fixture')
+            with self.assertRaisesRegex(ValueError, 'unrelated'):
+                release.activate(artifact, root, release.digest(raw), 'c' * 40)
+
     def test_frontend_changes_keep_backend_fingerprint_but_api_shared_and_lock_changes_do_not(self):
         with tempfile.TemporaryDirectory() as tmp, patch.object(release, "ROOT", Path(tmp)):
             root = Path(tmp)

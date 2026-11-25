@@ -132,7 +132,11 @@ def activate(artifact, root, manifest_sha256, api_commit, api_url=None, release_
     artifact, root = Path(artifact).resolve(), Path(root)
     if not root.is_absolute() or root.is_symlink() or str(root) in ("/", "/var", "/etc", "/opt"):
         raise ValueError("An explicit frontend-only root is required")
+    managed = {'assets', 'releases', 'current', 'activation.json', '.release.lock'}
+    if root.exists() and any(p.name not in managed for p in root.iterdir()):
+        raise ValueError('Refusing a directory containing unrelated files')
     root.mkdir(parents=True, exist_ok=True, mode=0o755)
+    root.chmod(0o755)  # Deployment commonly runs with umask 077.
     with (root / ".release.lock").open("a") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
         for directory in ("assets", "releases"):
@@ -140,6 +144,7 @@ def activate(artifact, root, manifest_sha256, api_commit, api_url=None, release_
             if path.is_symlink():
                 raise ValueError("Release storage must not be a symlink")
             path.mkdir(exist_ok=True, mode=0o755)
+            path.chmod(0o755)
         release_id = m["commit"] + "-" + manifest_sha256[:16]
         target = root / "releases" / release_id
         if target.exists():
