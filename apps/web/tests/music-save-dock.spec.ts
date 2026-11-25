@@ -1,6 +1,6 @@
 import { test, expect } from './fixtures';
 import { chooseOption } from './kimi-controls';
-import { denyDraftWrites } from './draft-helpers';
+import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { Page } from '@playwright/test';
 const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT??5082}`;
 
@@ -121,7 +121,7 @@ test('local draft write failure retains the floating reminder without sending ch
   await startLayoutAudit(page);
   await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();
   await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();
-  await expect(dock).toBeInViewport();await expect(dock).toContainText('有未保存的詞條變動');expect(writes).toBe(0);
+  await expect(dock).toBeInViewport();await expect(dock).toContainText('本機草稿保存失敗');await expect(dock).toContainText('瀏覽器儲存空間或網站儲存權限');expect(writes).toBe(0);
   await expect(page.locator('.feedback-layer')).toHaveCSS('position','fixed');await expectStableLayout(page);
 });
 
@@ -144,4 +144,73 @@ test('lost save response keeps the dock visible and retries the original operati
   await expect(dock).toHaveCount(0);await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
   expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);expect(bodies[0]).toBe(bodies[1]);
   await expectStableLayout(page);
+});
+
+for(const width of [1440,390])test(`catalog conflicts offer recovery in place and retain choices at ${width}px`,async({page,context})=>{
+  await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:origin}]);
+  const viewer=await(await context.request.get('/api/v2/session')).json();
+  const headers={Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf};
+  const first=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'sub-2',level:4}]}});
+  expect(first.status()).toBe(200);const profile=await first.json();
+  await page.setViewportSize({width,height:900});await page.goto('/music?library=all');
+  await page.getByRole('button',{name:'選取YOASOBI',exact:true}).click();
+  const remote=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:profile.id,musicEpoch:0,revision:profile.revision,selections:[{entryId:'sub-2',level:1}]}});
+  expect(remote.status()).toBe(200);
+  const dock=page.getByRole('region',{name:'詞條變動保存',exact:true});const requests:{key:string,body:any}[]=[];
+  page.on('request',r=>{if(r.method()==='PUT'&&r.url().endsWith('/me/music'))requests.push({key:r.headers()['idempotency-key']!,body:r.postDataJSON()});});
+  await startLayoutAudit(page);
+  await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();
+  await expect(dock).toContainText('成分版本不同，尚未保存');await expect(dock).toContainText('請先讀取最新版本再保存');
+  await expect(dock.getByRole('button',{name:'保存詞條變動',exact:true})).toHaveCount(0);
+  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
+  let fail=true;await page.route('**/api/v2/me/music',async route=>{
+    if(route.request().method()==='GET'&&fail){fail=false;return route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'暫時無法讀取'}});}return route.continue();
+  });
+  await dock.getByRole('button',{name:'讀取最新版本',exact:true}).click();await expect(dock).toContainText('暫時無法讀取');
+  await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
+  await dock.getByRole('button',{name:'讀取最新版本',exact:true}).click();
+  await expect(dock).toContainText('已讀取最新版本，你的勾選已保留。');expect(requests).toHaveLength(1);
+  await dock.locator('summary').click();await expect(dock).toContainText('Aimer · 只聽過幾首');
+  await expect(page.getByRole('button',{name:'取消選取YOASOBI',exact:true})).toBeEnabled();
+  await expectStableLayout(page);
+  await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
+  expect(requests).toHaveLength(2);expect(requests[1]!.key).not.toBe(requests[0]!.key);
+  const saved=await(await context.request.get('/api/v2/me/music',{headers:{'X-Account-Scope':viewer.scope}})).json();
+  expect(saved.selections).toEqual([{entryId:'sub-2',level:4},{entryId:'sub-0',level:3},{entryId:'main-0',level:3}]);
+});
+
+test('restoring a stale draft explains the block before sending and pending saves never rebase',async({page,context})=>{
+  await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:origin}]);
+  await page.goto('/music?library=all');await page.getByRole('button',{name:'選取Aimer',exact:true}).click();
+  const viewer=await(await context.request.get('/api/v2/session')).json();
+  const headers={Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf};
+  const remote=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'sub-0',level:3}]}});expect(remote.status()).toBe(200);
+  page.on('dialog',dialog=>void dialog.accept());await page.reload();
+  const dock=page.getByRole('region',{name:'詞條變動保存',exact:true});
+  await expect(dock).toContainText('還沒有保存到成分');await expect(dock.getByRole('button',{name:'保存詞條變動',exact:true})).toBeDisabled();
+  await dock.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();await expect(page.getByRole('button',{name:'取消選取Aimer',exact:true})).toBeEnabled();
+  await dock.getByRole('button',{name:'讀取最新版本',exact:true}).click();
+  const keys:string[]=[],bodies:string[]=[];await page.route('**/api/v2/me/music',async route=>{
+    if(route.request().method()!=='PUT')return route.continue();keys.push(route.request().headers()['idempotency-key']!);bodies.push(route.request().postData()!);
+    const response=await route.fetch();await route.fulfill({response,...(keys.length===1?{body:'{'}:{})});
+  });
+  await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();
+  await expect(dock.getByRole('button',{name:'確認詞條保存結果',exact:true})).toBeEnabled();await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toHaveCount(0);
+  await page.reload();await expect(dock).toContainText('請確認保存結果後再繼續編輯');
+  await dock.getByRole('button',{name:'確認詞條保存結果',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
+  expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);expect(bodies[0]).toBe(bodies[1]);
+});
+
+test('a draft from a newer data snapshot must also read the current version without losing choices',async({page,context})=>{
+  await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:origin}]);
+  await page.goto('/music?library=all');await page.getByRole('button',{name:'選取Aimer',exact:true}).click();
+  const dock=page.getByRole('region',{name:'詞條變動保存',exact:true});await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();
+  await expect(page.getByText('已保存。',{exact:true})).toBeVisible();await page.getByRole('button',{name:'選取YOASOBI',exact:true}).click();
+  await expect.poll(async()=>{const rows=await durableRows(page);return rows.some(row=>row.key.includes('music:v1:')&&JSON.parse(row.raw).selections.length===2);}).toBe(true);
+  const row=(await durableRows(page)).find(row=>row.key.includes('music:v1:'))!;const draft=JSON.parse(row.raw);draft.revision+=10;await damageDraft(page,'music:v1:',JSON.stringify(draft));
+  page.on('dialog',dialog=>void dialog.accept());await page.reload();await dock.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
+  await dock.getByRole('button',{name:'讀取最新版本',exact:true}).click();await expect(page.getByRole('button',{name:'取消選取YOASOBI',exact:true})).toBeEnabled();
+  await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
 });

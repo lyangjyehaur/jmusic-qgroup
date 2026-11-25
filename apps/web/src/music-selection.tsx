@@ -15,7 +15,7 @@ import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import type { Member } from './member-access';
 import { DiscoveryLayer } from './discovery-dialog';
-import { MusicSaveDock } from './music-save-dock';
+import { MusicSaveDock, musicSaveDockVisible } from './music-save-dock';
 import { FeedbackLayer } from './feedback-layer';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
 const isWorkspace = (pathname: string) => pathname === '/search' || pathname === '/music' || pathname === '/music/trends' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname) || pathname === '/people' || /^\/people\/m_[a-f0-9]{24,40}(?:\/compare)?$/.test(pathname);
@@ -25,6 +25,8 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   const http=createWebHttpClient({context:()=>({scope:viewer.scope,csrf:viewer.csrf})});
   const storageKey = 'qgroup:rebuild:music:v1:' + viewer.scope;
   const [saved,setSaved]=useState(initial),[message,setMessage]=useState('');
+  const [conflict,setConflict]=useState(false),[reviewed,setReviewed]=useState(false);
+  const [operation,setOperation]=useState<'save'|'read'|null>(null);
   useEffect(()=>{if(message!==uiText('已保存。'))return;const timer=setTimeout(()=>setMessage(''),4000);return()=>clearTimeout(timer);},[message]);
   const fallback=(profile:MusicProfile):DraftValue=>({profileId:profile?.id??null,musicEpoch:viewer.musicEpoch,revision:profile?.revision??0,selections:profile?.selections??[]});
   const record=useDurableRecord<DraftValue>({key:storageKey,scope:viewer.scope,seed:()=>fallback(saved),parse:raw=>{
@@ -49,6 +51,10 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
     record.change(fallback(initial));setSaved(initial);
   },[initial,saved,dirty,locked,record.saving]);
   const selected=new Map(draft.selections.map(s=>[s.entryId,s.level])),mainCount=entries.filter(e=>e.kind==='main'&&selected.has(e.id)).length,subCount=entries.filter(e=>e.kind==='sub'&&selected.has(e.id)).length;
+  // A resumed draft can already be stale before its first save. Pending requests
+  // must always confirm the original operation, even if a newer revision exists.
+  const latestKnown=initial&&(initial.revision>(saved?.revision??-1))?initial:saved;
+  const needsRebase=!draft.requestKey&&(conflict||draft.profileId!==(latestKnown?.id??null)||draft.revision!==(latestKnown?.revision??0));
   function edit(next:DraftValue){record.change(next);setMessage('');}
   function toggle(entry:CatalogEntry){
     if(locked)return;
@@ -57,40 +63,40 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
     else edit({...draft,selections:[...draft.selections,{entryId:entry.id,level:3}]});
   }
   async function save(){
-    if(unavailable||sending)return;
+    if(unavailable||sending||needsRebase)return;
     const parsed=SaveProfile.safeParse({profileId:draft.profileId,musicEpoch:draft.musicEpoch,revision:draft.revision,selections:draft.selections});
     if(!parsed.success){setMessage(uiText("請至少選擇一個詞條，再保存。"));return;}
     const pending={...draft,requestKey:draft.requestKey??crypto.randomUUID()};
-    if(!begin())return;if(!await persist(pending)||!mounted.current){if(mounted.current)setSending(false);return;}setDraft(pending);setMessage('');let accepted=false;
+    if(!begin())return;setOperation('save');if(!await persist(pending)||!mounted.current){if(mounted.current){setSending(false);setOperation(null);}return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       const result=await http.requestContract('PUT /api/v2/me/music',{body:parsed.data,requestId:pending.requestKey,requestScope:viewer.scope});accepted=true;
       await queryClient.cancelQueries({queryKey:['private',viewer.scope,'music',draft.musicEpoch]});
       const latest=await http.requestNarrowed('GET /api/v2/me/music',{},Profile.unwrap());
       if(!mounted.current)return;const next=fallback(latest);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
-      setSaved(latest);setDraft(next);queryClient.setQueryData(['private',viewer.scope,'music',draft.musicEpoch],latest);
+      setSaved(latest);setDraft(next);setConflict(false);setReviewed(false);queryClient.setQueryData(['private',viewer.scope,'music',draft.musicEpoch],latest);
       for(const key of ['music-catalog','music-trend'])void queryClient.invalidateQueries({queryKey:[key]});
       for(const key of ['music-trend-members','music-entries','music-entry-members','member-music','music-matches','music-circles','music-comparison','music-share'])void queryClient.invalidateQueries({queryKey:['private',viewer.scope,key]});
       announceAccountChange();setMessage(latest.revision===result.revision?uiText("已保存。"):uiText("原操作已保存，成分已再次變更；請核對目前選擇。"));
     }catch(error){
       if(!mounted.current)return;
-      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,requestKey:undefined};if(await persist(next))setDraft(next);setMessage(errorText(error));}
+      if(!accepted&&error instanceof ApiError&&error.status<500&&error.status!==429){const next={...pending,requestKey:undefined};if(await persist(next))setDraft(next);if(error.code==='REVISION_CONFLICT'){setConflict(true);setMessage('');}else setMessage(errorText(error));}
       else setMessage(uiText("尚未確認保存結果。操作編號已保留，請按「確認保存結果」安全重試。"));
-    }finally{if(mounted.current)setSending(false);}
+    }finally{if(mounted.current){setSending(false);setOperation(null);}}
   }
   async function rebase(){
-    if(locked||!begin())return;
+    if(locked||!begin())return;setOperation('read');setMessage('');
     try{
       const latest=await http.requestContract('GET /api/v2/me/music',{}),session=await http.requestContract('GET /api/v2/session',{});
       if(!mounted.current)return;if(!session.authenticated||session.scope!==viewer.scope)throw Error('目前帳號已變更，請重新整理');
       if(session.musicEpoch!==draft.musicEpoch||draft.profileId!==null&&(latest?.id??null)!==draft.profileId)throw Error('目前成分已改變，請保全原稿後重新開啟目前成分。');
-      const next={...draft,profileId:latest?.id??null,revision:latest?.revision??0};if(!await persist(next))return;
-      queryClient.setQueryData(['private',viewer.scope,'music',session.musicEpoch],latest);setSaved(latest);setDraft(next);setMessage(uiText("已取得最新版本；你的選擇仍保留，請核對後再保存。"));
-    }catch(error){if(mounted.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(mounted.current)setSending(false);}
+      const next={...draft,profileId:latest?.id??null,revision:latest?.revision??0};if(!await persist(next,false,uiText('無法保存最新版本資訊，尚未更新草稿；請重試讀取。')))return;
+      queryClient.setQueryData(['private',viewer.scope,'music',session.musicEpoch],latest);setSaved(latest);setDraft(next);setConflict(false);setReviewed(true);setMessage(uiText("已讀取最新版本，你的勾選已保留。"));
+    }catch(error){if(mounted.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗，請重試讀取最新版本。"));}finally{if(mounted.current){setSending(false);setOperation(null);}}
   }
   function level(entryId:string,value:number){if(!locked)edit({...draft,selections:draft.selections.map(s=>s.entryId===entryId?{...s,level:value}:s)});}
   function remove(entryId:string){if(!locked)edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entryId)});}
   return {viewer,initial,entries,draft,saved,dirty,selected,mainCount,subCount,returnTo,record,
-    storageError:record.storageError,readError:record.readError,message,sending,blocker:record.blocker,save,rebase,toggle,level,remove,locked,unavailable,reset:()=>{if(!locked)edit(fallback(saved));}};
+    storageError:record.storageError,readError:record.readError,message,sending,operation,needsRebase,reviewed,blocker:record.blocker,save,rebase,toggle,level,remove,locked,unavailable,reset:()=>{if(!locked){setConflict(false);setReviewed(false);edit(fallback(saved));}}};
 }
 export type MusicSelection = ReturnType<typeof useMusicSelection>;
 type Workspace = { state: 'ready'; selection: MusicSelection } | { state: 'pending' | 'guest' } | { state: 'error'; error: Error; retry: () => void };
@@ -135,7 +141,7 @@ export function MusicWorkspaceFeedback() {
       <Button onClick={() => selection.blocker.reset?.()}>繼續編輯</Button>
       <Button variant="secondary" disabled={selection.sending||selection.record.loading} onClick={() => void selection.record.leave()}>保留草稿並離開</Button>
     </Surface>}
-    <DraftFeedback form={selection.record} navigation={false} showProgress={false}/>
-    {selection.message && <p className="music-save-result" role="status">{selection.message}</p>}
+    {!musicSaveDockVisible(selection)&&<DraftFeedback form={selection.record} navigation={false} showProgress={false}/>}
+    {!musicSaveDockVisible(selection)&&selection.message && <p className="music-save-result" role="status">{selection.message}</p>}
   </FeedbackLayer>;
 }

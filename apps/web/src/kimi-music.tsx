@@ -11,12 +11,14 @@ import { MusicWorkspaceFeedback, useMusicWorkspace } from './music-selection';
 import { MusicEntryDetails, musicEntryPath } from './music-entry';
 import { MusicRanking } from './music-ranking';
 import { KimiSelectionSummary } from './kimi-music-editor';
-import { Badge, Button, Modal, PageHeader, SearchInput, Select, Tabs } from './kimi-ui';
+import { Badge, Button, Modal, PageHeader, SearchInput, Select } from './kimi-ui';
 import { ActionLink } from './action-link';
 import { categoryLabel } from './music-entries';
 import { DialogPageContext, InactivePageContext } from './discovery-dialog';
 import { uiText } from './language';
 import { MusicSaveDock } from './music-save-dock';
+import { OverviewStats } from './overview-stats';
+import { MusicBrowseTabs } from './music-browse-tabs';
 export function KimiMusicPage() {
   const query=useQuery({queryKey:['music-catalog'],queryFn:({signal})=>createWebHttpClient().requestContract('GET /api/v2/music/catalog',{signal}),refetchInterval:10000});
   const filters=useMusicSearch(query.data?.entries??[]), {params,update}=filters;
@@ -32,9 +34,14 @@ export function KimiMusicPage() {
   const title=complete?uiText('音樂詞庫'):uiText('熱門排行');
   function chooseView(value:string){const next=new URLSearchParams(params);next.set('explorer',value);if(value==='all')next.set('library','all');else next.delete('library');if(value==='bubbles'){next.set('mainView','bubbles');next.set('subView','bubbles');}else{next.delete('mainView');next.delete('subView');}update('explorer',value);for(const key of ['library','mainView','subView'])update(key,next.get(key)??'');}
   return <div className="kimi page music-page"><PageHeader title="音樂" actions={<ActionLink variant="primary" to={editorPath} startIcon={<ListMusic size={17}/>}>我的成分{selection&&<Badge tone="green">{selection.selected.size}</Badge>}</ActionLink>}/>
-    {query.data&&<dl className="music-stats" aria-label="音樂統計"><div><dd>{query.data.stats.members}</dd><dt>成分</dt></div><i/><div><dd>{query.data.stats.entries}</dd><dt>詞條</dt></div><i/><div><dd>{query.data.stats.recentMembers24h}</dd><dt>24 小時新增成分</dt></div><i/><div><dd>{query.data.stats.recentEntries24h}</dd><dt>24 小時新增詞條</dt></div><Link to={'/music/trends'+(params.size?'?'+params:'')}>音樂趨勢<ArrowUpRight size={14}/></Link></dl>}
+    {query.data&&<OverviewStats label="音樂統計" items={[
+      {label:uiText('成分'),value:query.data.stats.members},
+      {label:uiText('詞條'),value:query.data.stats.entries},
+      {label:uiText('24 小時新增成分'),value:query.data.stats.recentMembers24h},
+      {label:uiText('24 小時新增詞條'),value:query.data.stats.recentEntries24h},
+    ]}/>}
     <div className="music-explorer"><div className="music-search-area"><SearchInput value={search} onChange={value=>{setSearch(value);update('q',value);}} label="搜尋音樂詞條" placeholder="搜尋名稱、別名、拼音或首字母"/><div className="music-filters"><Select value={filters.kind} onChange={event=>update('kind',event.target.value)} aria-label="詞庫類型"><option value="">全部類型</option><option value="main">領域</option><option value="sub">細分</option></Select><Select value={filters.category} onChange={event=>update('category',event.target.value)} aria-label="詞庫分類"><option value="">全部分類</option>{query.data?.categories.map(category=><option key={category} value={category}>{categoryLabel(category)}</option>)}</Select><span>{entries.length} 個結果</span><ActionLink to="/me/music/entries/new" startIcon={<Plus size={14}/>}>建立詞條</ActionLink></div></div>
-      <div className="explorer-tabs"><Tabs label="詞庫範圍" value={view} onChange={chooseView} items={[{value:'popular',label:uiText('熱門排行')},{value:'all',label:uiText('完整詞庫')},{value:'domains',label:uiText('領域／細分')},{value:'bubbles',label:uiText('氣泡視圖')}]}/></div>
+      <MusicBrowseTabs value={view} onChange={chooseView}/>
       {query.isPending?<Notice>正在讀取詞條…</Notice>:query.error&&!query.data?<Failure error={query.error} retry={()=>void query.refetch()}/>:query.data&&<>
         {query.error&&!selected&&<Failure error={query.error} retry={()=>void query.refetch()}/>}
         {view==='bubbles'?<section className="bubble-view"><div className="bubble-legend"><span><i className="bubble-domain"/>領域</span><span><i/>細分</span><small>大小代表選用人數</small></div><div className="bubble-canvas">{entries.map(entry=><Link key={entry.id} className={'term-bubble'+(entry.kind==='main'?' domain':'')} style={{'--bubble-size':Math.max(66,Math.min(132,48+entry.count*2))+'px'} as CSSProperties} aria-label={entry.name+'，'+entry.count+' 人'} title={entry.name} to={musicEntryPath(entry.id,params.toString())}><span>{entry.name}</span><small>{entry.count}</small></Link>)}</div></section>:view==='domains'?<div className="domain-browser">{(['main','sub'] as const).map(kind=><MusicRanking key={kind} entries={entries.filter(e=>e.kind===kind)} kind={kind} complete={complete} params={params} update={update} selected={selection?.selected??null}/>)}</div>:<section className="term-list" aria-label={title}>{(['main','sub'] as const).map(kind=>{

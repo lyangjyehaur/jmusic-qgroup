@@ -77,7 +77,7 @@ test('editing a contact preserves an unfinished selection draft and requires a f
   await openMusicContact(page); await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await save(page, '123456'); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expectMusicTerm(page,'YOASOBI',true);
-  await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('成分已有更新；你的選擇仍保留，請核對最新版本', { exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled(); await expect(page.getByText('成分版本不同，尚未保存', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '核對最新版本，保留我的選擇', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await expectMusicTerm(page,'Aimer',true); await expectMusicTerm(page,'YOASOBI',true);
 });

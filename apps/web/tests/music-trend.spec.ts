@@ -10,7 +10,7 @@ async function auth(context: BrowserContext) { const viewer = await (await conte
 async function refresh(page: Page) { await page.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); }); }
 test('visitors see aggregate trends, complete legends and recent terms while member identities stay behind the shared gate', async ({ page }) => {
   let writes = 0, privateReads = 0; page.on('request', request => { if (request.url().includes('/api/')) { if (!['GET','HEAD'].includes(request.method())) writes++; if (request.url().includes('/trend/members')) privateReads++; } });
-  await page.goto('/music'); await page.getByRole('link', { name: '音樂趨勢', exact: true }).click(); await expect(page.getByRole('heading', { name: '音樂趨勢', exact: true })).toBeVisible();
+  await page.goto('/music'); await page.getByRole('tab', { name: '音樂趨勢', exact: true }).click(); await expect(page.getByRole('heading', { name: '音樂趨勢', exact: true })).toBeVisible();
   await openChart(page);await expect(page.getByRole('img', { name: '詞條每段新增人數折線圖', exact: true })).toBeVisible();
   await expect(page.getByRole('list', { name: '趨勢圖例', exact: true })).toContainText('J-POP · 新增 5 人');
   await expect(page.getByRole('list', { name: '排行漲幅', exact: true })).toContainText('目前 6 人 · +5 人');
@@ -22,7 +22,7 @@ test('visitors see aggregate trends, complete legends and recent terms while mem
 test('trend terms share the original unsaved selection, preserve search and return without an extra draft or automatic save', async ({ page, context }) => {
   await login(context); let writes = 0; page.on('request', request => { if (request.url().includes('/api/') && !['GET','HEAD'].includes(request.method())) writes++; });
   await page.goto('/me/music?q=Yoa'); await page.getByRole('button', { name: '移除Aimer', exact: true }).click();
-  await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click(); await page.getByRole('link', { name: '音樂趨勢', exact: true }).click();
+  await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click(); await page.getByRole('tab', { name: '音樂趨勢', exact: true }).click();
   await expect(page).toHaveURL('/music/trends?q=Yoa'); await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
   await openChart(page);await page.getByRole('list', { name: '趨勢圖例', exact: true }).getByRole('link', { name: 'J-POP', exact: true }).click();
   await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toBeVisible(); await page.getByRole('button', { name: '取消選取', exact: true }).click();

@@ -11,6 +11,7 @@ import { Failure, Notice, useSession } from './shared';
 import { scopedHttp } from './http';
 import { ActivityBrowseTabs } from './activity-browse-tabs';
 import { activityDisplayDate } from './activity-summary';
+import { OverviewStats } from './overview-stats';
 import { uiText, displayLocale } from './language';
 const statuses = [['all',uiText('全部狀態')],['draft',uiText('草稿')],['open',uiText('報名中')],['full',uiText('已額滿')],['paused',uiText('未開放報名')],['ongoing',uiText('進行中')],['ended',uiText('已結束')],['cancelled',uiText('已取消')],['archived',uiText('已歸檔')]] as const;
 export function listedActivityStatus(event: z.infer<typeof ListedActivity>) {
@@ -45,7 +46,11 @@ export function KimiActivitiesPage({ mine = false }: { mine?: boolean }) {
   const change=(patch:Record<string,string>)=>{const next=new URLSearchParams(params);next.delete('page');for(const [key,value] of Object.entries(patch))value?next.set(key,value):next.delete(key);setParams(next);};
   const path=(target:string)=>target+(params.size?'?'+params:'');
   return <div className="kimi page activities-page"><PageHeader title={mine?'我的活動':rooms?'選擇活動分析成分':'活動'} actions={<Button onClick={()=>navigate('/activities/new')}><CalendarPlus size={17}/>新增活動</Button>}/>
-    {list.data?.summary&&<div className="activity-overview" aria-label="活動摘要"><div><strong>{list.data.summary.upcoming}</strong><span>近期活動</span></div><i/><div>{list.data.summary.mine===null?<Link to="/me">登入查看</Link>:<strong>{list.data.summary.mine}</strong>}<span>與我有關</span></div><i/><div>{viewer?.authenticated?<strong>{todos.data?todos.data.todos.length:todos.error?'—':'…'}</strong>:<Link to="/me">登入查看</Link>}<span>我的待辦</span></div><Link to="/inbox">查看待辦<ArrowUpRight size={14}/></Link></div>}
+    {list.data?.summary&&<OverviewStats label="活動摘要" items={[
+      {label:uiText('近期活動'),value:list.data.summary.upcoming},
+      {label:uiText('與我有關'),value:list.data.summary.mine===null?<Link to="/me">登入查看</Link>:list.data.summary.mine},
+      {label:uiText('我的待辦'),value:viewer?.authenticated?todos.data?todos.data.todos.length:todos.error?'—':'…':<Link to="/me">登入查看</Link>},
+    ]} action={<Link to="/inbox">查看待辦<ArrowUpRight size={14}/></Link>}/>}
     <div className="list-toolbar"><ActivityBrowseTabs value={mine?'mine':period==='history'?'past':'all'} onChange={value=>{if(value==='polls'){navigate('/time-polls');return;}const next=new URLSearchParams(params);next.delete('page');if(value==='past')next.set('period','history');else next.delete('period');if(value==='mine')next.delete('period');const target=value==='mine'?'/me/activities':'/activities';navigateTab(target,next);}}/>
       <form className="filter-row" role="search" onSubmit={event=>{event.preventDefault();change({q:input.trim()});}}><SearchInput value={input} onChange={value=>{setInput(value);if(!value)change({q:''});}} placeholder="搜尋活動或地點"/><button className="sr-only" type="submit">搜尋活動</button><Select value={queryValue?.status??'all'} onChange={event=>change({status:event.target.value})} aria-label="篩選活動狀態">{statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</Select></form>
     </div>

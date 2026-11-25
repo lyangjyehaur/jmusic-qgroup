@@ -1,4 +1,4 @@
-import { displayLocale } from './language';
+import { displayLocale, uiText } from './language';
 import { Text } from 'yahha-ui';
 import { Button } from './kimi-ui';
 import { Notice } from './shared';
@@ -6,9 +6,11 @@ export function DraftFeedback({
   form,
   navigation = true,
   showProgress = true,
+  restoreHint = uiText('有一份本機原稿，請核對後繼續。'),
 }: {
   navigation?: boolean;
   showProgress?: boolean;
+  restoreHint?: string;
   form: {
     message: string;
     readError: string;
@@ -31,7 +33,7 @@ export function DraftFeedback({
     <>
       {showProgress && form.loading && <Text role="status">正在讀取本機原稿…</Text>}
       {showProgress && form.saving && <Text role="status">正在保存本機原稿…</Text>}
-      {form.needsRestore && <Notice>有一份本機原稿，請核對後繼續。<Button onClick={form.restore}>恢復本機原稿</Button></Notice>}
+      {form.needsRestore && <Notice>{restoreHint}<Button onClick={form.restore}>恢復本機原稿</Button></Notice>}
       {form.message && <Text role="status">{form.message}</Text>}
       {form.storageError && <Text role="alert">{form.storageError}</Text>}
       {form.readError && (

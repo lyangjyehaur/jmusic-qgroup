@@ -25,7 +25,7 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
     })}</ul> : <Text tone="muted">請選擇詞條。</Text>}
     {form.dirty && <div className="editor-actions"><span className="mobile-summary" role="status">
       已選 {form.selected.size} / 20<small>{form.draft.requestKey ? '保存結果待確認' : '有未保存的選擇'}</small>
-    </span><Button className="save" loading={form.sending} disabled={form.unavailable}
+    </span><Button className="save" loading={form.sending} disabled={form.unavailable||form.needsRebase}
       onClick={() => void form.save()}>{form.draft.requestKey ? '確認保存結果' : '保存我的成分'}</Button></div>}
     {form.message && <p role="status" className="save-message">{form.message}</p>}
     {!form.draft.requestKey && form.dirty && <Button variant="ghost" disabled={form.locked}

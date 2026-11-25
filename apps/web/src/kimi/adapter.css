@@ -22,7 +22,28 @@
 .kimi .page-header .page-actions, .kimi .page-actions { margin: 0; }.kimi .page-actions > a:not(.action-link) { padding: 0; border: 0; background: transparent; border-radius: 0; min-height: 0; }
 
 .kimi .tabs { display: block; border: 0; margin: 0; overflow: visible; }.kimi .list-toolbar .yj-tabs-list { margin: 0; }
-.kimi .activity-overview { min-height: 64px; margin-bottom: 24px; display: flex; padding: 12px 16px; gap: 24px; background: var(--moss-soft); }
+.kimi .overview-stats { min-height: 64px; margin: 0 0 24px; display: flex; align-items: center; padding: 12px 16px; gap: 0; background: var(--moss-soft); border-inline-start: 3px solid var(--moss); }
+.kimi .overview-stats > div { display: flex; align-items: baseline; gap: 8px; min-width: 0; padding-inline: 24px; border-inline-start: 1px solid var(--line); }
+.kimi .overview-stats > div:first-child { border: 0; padding-inline-start: 0; }
+.kimi .overview-stats > div:last-child { padding-inline-end: 0; }
+.kimi .overview-stats dt { order: 1; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.kimi .overview-stats dd { order: 0; margin: 0; color: var(--ink); font-size: 22px; font-weight: 600; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.kimi .overview-stats .overview-actions { margin-left: auto; border: 0; padding-inline-start: 16px; }
+.kimi .overview-stats .overview-actions dd { font-size: 12px; font-weight: 400; }
+.kimi .overview-actions a { display: inline-flex; align-items: center; gap: 4px; }
+@media (max-width: 768px) {
+ .kimi .page-header { flex-direction: row; flex-wrap: wrap; align-items: center; gap: 12px; }
+ .kimi .page-header > .page-heading { flex: 1 1 0; width: auto; }
+ .kimi .page-header > .page-actions { width: auto; max-width: 100%; flex-wrap: wrap; }
+ .kimi .overview-stats { display: grid; grid-template-columns: repeat(var(--overview-columns), minmax(0,1fr)); gap: 12px 0; padding: 10px 12px; }
+ .kimi .overview-stats > div { flex-direction: column; align-items: start; gap: 4px; padding-inline: 12px; }
+ .kimi .overview-stats dd { font-size: 19px; }
+ .kimi .overview-stats-four > div:nth-child(odd) { border: 0; padding-inline-start: 0; }
+ .kimi .overview-stats .overview-actions { display: none; }
+}
+@media (max-width: 390px) {
+ .kimi .overview-stats dt { font-size: 10px; }
+}
 .kimi .activity-title-line h2 { font-size: 15px; margin: 0; }.kimi .activity-title-line h2 a { color: var(--ink); }
 .kimi .activity-row .row-arrow { min-height: 44px; display: flex; align-items: center; justify-content: center; }
 .kimi .inline-alert { margin-block: 16px; }.kimi .notice { font-size: 12px; }
@@ -104,6 +125,7 @@
 .kimi .person-card.match-card { display: block; }.kimi .person-card.match-card > header { min-height: 48px; }
 
 .kimi .profile-banner > .profile-numbers { margin-left: auto; flex: 0 0 auto; }
+.kimi .profile-banner > div:nth-child(2) span { overflow-wrap: anywhere; }
 .kimi .music-stats > div { flex: 0 0 auto; }.kimi .music-stats > a { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; color: var(--moss); margin-left: auto; }
 @media(max-width:768px){
  .kimi .term-row { grid-template-columns: 24px minmax(0,1fr) 64px 36px; gap: 8px; padding-right: 0; }
@@ -111,6 +133,8 @@
 
  .kimi .music-stats { gap: 8px 16px; margin-bottom: 20px; }.kimi .music-stats > i { display: none; }.kimi .music-stats > a { margin-left: 0; }
  .kimi .yj-tabs-list { gap: 20px; }.kimi .music-filters > span { margin-left: 0; }.kimi .music-filters { gap: 8px; }
+ .kimi .music-browse-tabs .yj-tabs-list { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 0; }
+ .kimi .music-browse-tabs .tab { min-width: 0; justify-content: center; padding-inline: 2px; font-size: 12px; }
  .kimi-shell .mobile-dock { background: var(--paper); bottom: var(--visual-viewport-inset,0px); }
 }
 
@@ -364,15 +388,6 @@
  .kimi .poll-row-status { grid-column: 3; grid-row: 2; }
  .kimi .poll-row-arrow { grid-column: 3; grid-row: 1; align-self: start; }
 }
-@media (max-width: 768px) {
- .kimi.polls-page > .page-header { flex-direction: row; align-items: center; gap: 12px; }
- .kimi.polls-page > .page-header .page-actions { width: auto; }
-}
-@media (max-width: 768px) {
- .kimi.polls-page .activity-browse-tabs .yj-tabs-list { gap: 8px; }
- .kimi.polls-page .activity-browse-tabs .tab { font-size: 12px; padding-inline: 6px; }
-}
-
 /* Poll details, ballots and management use one page rhythm. */
 .kimi.poll-detail-page > .back-link { margin-bottom: 18px; }
 .kimi .poll-detail-header { position: relative; }

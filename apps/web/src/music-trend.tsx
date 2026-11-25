@@ -7,12 +7,16 @@ import { MusicTrend } from '@qgroup/contracts';
 import { musicTrendSeries } from '@qgroup/domain';
 import type { z } from 'zod';
 import { createWebHttpClient, scopedHttp } from './http';
-import { Failure, Notice, PageIntro } from './shared';
+import { Failure, Notice } from './shared';
 import { MusicMemberAccess, type Member } from './member-access';
 import { useMusicWorkspace } from './music-selection';
 import { KimiSelectionSummary } from './kimi-music-editor';
 import { musicEntryPath } from './music-entry';
 import { categoryLabel } from './music-entries';
+import { ListMusic } from 'lucide-react';
+import { ActionLink } from './action-link';
+import { Badge, PageHeader } from './kimi-ui';
+import { MusicBrowseTabs } from './music-browse-tabs';
 type Trend = z.infer<typeof MusicTrend>;
 const colors = [1,2,3,4,5].map(index=>'var(--app-chart-'+index+')');
 const validDate = (t: number) => Number.isFinite(new Date(t * 1000).getTime());
@@ -25,7 +29,8 @@ export function MusicTrendPage() {
   const workspace = useMusicWorkspace(), selection = workspace.state === 'ready' ? workspace.selection : null, location = useLocation();
   const back = '/music' + location.search, from = new URLSearchParams(location.search); from.set('from', '/music/trends' + location.search);
   const entryPath = (id: string) => musicEntryPath(id, from.toString());
-  return <><PageIntro title="音樂趨勢" /><Link className="back" to={back}>回到音樂詞庫</Link>
+  return <div className="kimi page music-page music-trend-page"><PageHeader title="音樂趨勢" actions={<ActionLink variant="primary" to={'/me/music'+location.search} startIcon={<ListMusic size={17}/>}>我的成分{selection&&<Badge tone="green">{selection.selected.size}</Badge>}</ActionLink>}/>
+    <MusicBrowseTabs value="trends"/><Link className="back" to={back}>回到音樂詞庫</Link>
     <div className={selection?.dirty ? 'content-columns music-trend-layout' : undefined}><section>
       {query.isPending ? <Notice>正在讀取趨勢…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
         <dl className="music-stats" aria-label="趨勢統計">{([[uiText('24 小時新增'), query.data.recent24h], [uiText('7 天新增'), query.data.new7d], [uiText('總計'), query.data.totals]] as const).map(([label, counts]) => <div key={label}><dt>{label}</dt><dd>{counts.entries} 詞條 · {counts.members} 成分</dd></div>)}</dl>
@@ -39,7 +44,7 @@ export function MusicTrendPage() {
         <MusicMemberAccess purpose={uiText("查看新增同好")}>{viewer => <RecentMembers key={viewer.scope + ':' + viewer.musicEpoch} viewer={viewer} />}</MusicMemberAccess>
       </section>
     </section>{selection?.dirty && <KimiSelectionSummary selection={selection}/> }</div>
-  </>;
+  </div>;
 }
 function RecentMembers({ viewer }: { viewer: Member }) {
   const location = useLocation();

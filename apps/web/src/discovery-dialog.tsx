@@ -37,7 +37,7 @@ export function DiscoveryLayer({ feedback, selectionActions }: { feedback?: Reac
   const background = useRef<{ location: Location; content: ReactNode } | null>(null);
   const searchSource = useRef<string | null>(null);
   const title = discoveryDialogKind(location), open = !!title;
-  const musicTab=location.pathname==='/me/music/share'?'share':location.pathname==='/music/trends'?'trends':null;
+  const musicTab=location.pathname==='/me/music/share'?'share':null;
   const content=musicTab?<KimiMusicFrame tab={musicTab}>{outlet}</KimiMusicFrame>:outlet;
   const searchBack = searchReturn(new URLSearchParams(location.search).get('from'));
   const editorParams = new URLSearchParams(location.search); editorParams.delete('entry');
