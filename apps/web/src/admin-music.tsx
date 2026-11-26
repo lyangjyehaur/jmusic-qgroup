@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicLinkPreview, AdminMusicProfile, AdminMusicSearch, SaveMusicLink, type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
@@ -56,9 +56,10 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
   const [current, setCurrent] = useState(initial), [preview, setPreview] = useState<z.infer<typeof AdminMusicLinkPreview> | null>(null);
   const [confirmed, setConfirmed] = useState(false), [message, setMessage] = useState('');
   const [pinDirty, setPinDirty] = useState(!initial || /^[0-9]{4,12}$/.test(initial.legacyKey)), [pinBusy,setPinBusy] = useState(pinDirty);
+  const [pinPending,setPinPending] = useState(false);
   const fallback = () => ({ target: current?.owner?.id ?? '', reason: '' });
   const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:fallback,parse:raw=>Draft.parse(JSON.parse(raw)),dirty:value=>value.target!==(current?.owner?.id??'')||!!value.reason,pending:value=>!!value.pending,extraDirty:pinDirty});
-  const {value:draft,replace:setDraft,busy,setBusy,active,locked,unavailable,begin,persist,blocker}=record;
+  const {value:draft,replace:setDraft,busy,setBusy,active,locked,unavailable,begin,persist}=record;
   const ownershipDirty=record.dirty;
   useEffect(()=>{setPreview(null);setConfirmed(false);},[record.epoch]);
   useEffect(()=>{if(initial===null){setCurrent(null);setPreview(null);setConfirmed(false);}},[initial]);
@@ -94,19 +95,18 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
     }finally{if(active.current)setBusy(false);}
   }
   function edit(patch: Partial<z.infer<typeof Draft>>) { if(!current||locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }
-  return <><DraftFeedback form={record} navigation={false}/>{blocker.state === 'blocked' && <Surface role="alert"><Text>{pinDirty ? '仍有未送出的口令或待確認操作；離開後口令不會保存。' : '仍有未保存的關聯草稿或待確認操作。'}</Text><Button onClick={() => blocker.reset()}>繼續編輯</Button><Button variant="secondary" disabled={busy||record.loading||pinBusy} onClick={() => void record.leave()}>{pinDirty ? '保留操作編號並離開' : '保留草稿並離開'}</Button></Surface>}
+  return <><DraftFeedback form={{...record,message:message||record.message,busy:busy||pinBusy,hasPending:record.hasPending||pinPending,leaveHint:pinDirty?uiText('未送出的口令不會保存；已送出的操作編號會保留。'):undefined}}/>
     <Surface className="detail auth-panel">{current ? <><Heading level={2}>{current.name}</Heading><Text>成分 ID：{current.id}</Text>{current.legacyKey && <Text>舊成分查詢標識：{current.legacyKey}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
       <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? `${uiText(" · 程度 ")}${selection.level}` : ''}</li>)}</ul>
       <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice><Text>成分 ID：{id}</Text></>}
       {current && <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>}
       {(current || ownershipDirty) && <><label className="account-field">目標帳號 ID<input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></label>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
-      <div className="account-field"><label htmlFor="music-link-reason">核對原因</label><textarea id="music-link-reason" rows={3} value={draft.reason} maxLength={500} disabled={!current || locked || pinDirty} onChange={event => edit({ reason: event.target.value })} /></div>
+      <Field label="核對原因"><textarea id="music-link-reason" rows={3} value={draft.reason} maxLength={500} disabled={!current || locked || pinDirty} onChange={event => edit({ reason: event.target.value })} /></Field>
       </>}{current && <Button variant="secondary" loading={busy} disabled={pinDirty || locked} onClick={() => void loadPreview()}>預覽關聯變更</Button>}
       {current && preview && <><Text>原帳號：{ownerLabel(preview.profile.owner)}</Text><Text>目標帳號：{ownerLabel(preview.target)}</Text><Text>原選擇、稱呼與聯絡資料保留。舊帳號的保存重試與找回授權將失效。</Text><label className="consent"><input type="checkbox" checked={confirmed} disabled={!current || locked || pinDirty} onChange={event => setConfirmed(event.target.checked)} /><span>確認已核對成分與目標帳號，執行此關聯變更</span></label><Button loading={busy} disabled={pinDirty || unavailable || busy || !confirmed || !draft.reason.trim()} onClick={() => void save()}>保存關聯變更</Button></>}
       {draft.pending && <Button loading={busy} disabled={pinDirty || unavailable || busy} onClick={() => void save()}>確認關聯結果</Button>}
       {ownershipDirty&&<Button variant="secondary" disabled={locked||pinDirty} onClick={()=>{record.change(fallback());setPreview(null);setConfirmed(false);}}>放棄關聯原稿</Button>}
-      {message && <Text role="status">{message}</Text>}
-    </Surface>{(!current || /^[0-9]{4,12}$/.test(current.legacyKey)) && <AdminMusicPin id={id} profile={current} viewer={viewer} access={access} disabled={ownershipDirty || busy || unavailable} onDirty={setPinDirty} onBusy={setPinBusy} onCurrent={profile => { setCurrent(profile); setPreview(null); setConfirmed(false); }} />}{current && <History id={id} viewer={viewer} access={access} />}
+    </Surface>{(!current || /^[0-9]{4,12}$/.test(current.legacyKey)) && <AdminMusicPin id={id} profile={current} viewer={viewer} access={access} disabled={ownershipDirty || busy || unavailable} onDirty={setPinDirty} onBusy={setPinBusy} onPending={setPinPending} onCurrent={profile => { setCurrent(profile); setPreview(null); setConfirmed(false); }} />}{current && <History id={id} viewer={viewer} access={access} />}
   </>;
 }
 function History({ id, viewer, access }: { id: string; viewer: Viewer; access: Access }) {

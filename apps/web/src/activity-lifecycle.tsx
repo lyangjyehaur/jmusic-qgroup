@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { ActivityLifecycle, ActivityLifecycleAction, ChangeActivityLifecycle } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -88,19 +88,19 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
       else setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認狀態操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
-  if(continuing)return <Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading><Text>活動已結束。</Text>{settlement.error?<Failure error={settlement.error} retry={()=>void settlement.refetch()}/>:settlement.isPending?<Notice>正在確認結算權限…</Notice>:!settlement.data.can_manage&&<Text>由發起者或指定結算人核對並發布結算。</Text>}<Link to={'/activities/'+encodeURIComponent(data.id)+'/settlement'}>查看活動結算</Link><DraftFeedback form={record}/></Surface>;
+  if(continuing)return <Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading><Text>活動已結束。</Text>{settlement.error?<Failure error={settlement.error} retry={()=>void settlement.refetch()}/>:settlement.isPending?<Notice>正在確認結算權限…</Notice>:!settlement.data.can_manage&&<Text>由發起者或指定結算人核對並發布結算。</Text>}<Link to={'/activities/'+encodeURIComponent(data.id)+'/settlement'}>查看活動結算</Link><DraftFeedback form={{...record,message:message||record.message}}/></Surface>;
   return <Surface className="detail activity-editor"><Heading level={2}>{data.title}</Heading>
     <dl><dt>目前狀態</dt><dd>{data.removed?'已移除':phases[data.lifecycle]??data.lifecycle}{data.archivedAt?' · 已歸檔':''}</dd><dt>報名開關</dt><dd>{data.registrationOpen?'開啟（仍受截止時間限制）':'關閉'}</dd><dt>成團</dt><dd>{data.formationState==='confirmed'?'已確認':'尚未確認'}</dd><dt>實際開始</dt><dd>{time(data.actualStartedAt)}</dd><dt>實際結束</dt><dd>{time(data.actualEndedAt)}</dd>{data.cancellationReason&&<><dt>取消原因</dt><dd className="preserve-lines">{data.cancellationReason}</dd></>}</dl>
     {data.removed&&<Notice>活動已移除，記錄仍保留。<Link to="/activities">回到活動列表</Link></Notice>}
     {!data.actions.length&&<Notice>目前帳號沒有活動狀態管理權限。</Notice>}
     {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新狀態。</Notice>}
     {(data.actions.length>0||draft.pending)&&<form noValidate onSubmit={event=>{event.preventDefault();void submit();}}><fieldset disabled={locked||data.removed}><legend className="sr-only">變更活動狀態</legend>
-      <div className="account-field"><label htmlFor="lifecycle-action">操作</label><select id="lifecycle-action" value={draft.action} onChange={event=>edit({action:event.target.value as DraftValue['action']})}><option value="">請選擇</option>{data.actions.map(item=><option key={item.action} value={item.action}>{labels[item.action]}</option>)}{draft.action&&!choice&&<option value={draft.action}>{labels[draft.action]}（目前不可操作）</option>}</select></div>
+      <Field label="操作"><select id="lifecycle-action" value={draft.action} onChange={event=>edit({action:event.target.value as DraftValue['action']})}><option value="">請選擇</option>{data.actions.map(item=><option key={item.action} value={item.action}>{labels[item.action]}</option>)}{draft.action&&!choice&&<option value={draft.action}>{labels[draft.action]}（目前不可操作）</option>}</select></Field>
       {draft.action&&<Text>{hints[draft.action]}</Text>}{choice?.blockedReason&&<Notice>{choice.blockedReason}</Notice>}
-      <div className="account-field"><label htmlFor="lifecycle-reason">原因{choice?.requiresReason?'（必填）':'（選填）'}</label><textarea id="lifecycle-reason" rows={3} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></div>
+      <Field label={<>原因{choice?.requiresReason?'（必填）':'（選填）'}</>}><textarea id="lifecycle-reason" rows={3} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></Field>
       <label className="consent"><input type="checkbox" disabled={!available||stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>已核對目前狀態，確認{draft.action?labels[draft.action]:'此操作'}</span></label>
     </fieldset><Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認狀態操作結果':'提交狀態變更'}</Button></form>}
     {!draft.pending&&!data.removed&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新狀態，保留輸入</Button>}
-    {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record}/>
+    <DraftFeedback form={{...record,message:message||record.message}}/>
   </Surface>;
 }

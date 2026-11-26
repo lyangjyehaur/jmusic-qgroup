@@ -136,7 +136,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
   }, [form.data.id, form.dirty]);
   useEffect(() => {
     if (!form.locked && !form.draft.value.client_intent)
-      form.edit({ ...form.draft.value, client_intent: crypto.randomUUID() });
+      form.edit({ ...form.draft.value, client_intent: crypto.randomUUID() }, false);
   }, [form.locked, form.draft.value.client_intent]);
   const v = form.draft.value,
     edit = (patch: Partial<typeof v>) => form.edit({ ...v, ...patch });

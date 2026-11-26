@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { AdminPrivacyRequest, SavePrivacyReview, type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
@@ -71,7 +71,7 @@ function ReviewForm({ initial, viewer, access }: { initial: Request; viewer: Vie
   return <>
     <Surface className="detail auth-panel"><Heading level={2}>{request.id}</Heading><Text>帳號 ID：{request.userId}</Text><Text>申請時間：{request.createdAt}</Text><Text>更新時間：{request.updatedAt}</Text><Text role="status">申請狀態：{status(request)}</Text>
       {Object.keys(request.sharedRecords).length ? <><Text>以下共享紀錄仍保留。保存說明不會刪除這些紀錄，也不能將申請標為全部完成。</Text><ul>{Object.entries(request.sharedRecords).map(([table, count]) => <li key={table}>{labels[table] ?? table}：{count}</li>)}</ul></> : <Text>目前未檢出仍關聯此帳號的共享紀錄；保存處理說明後可完成申請。</Text>}
-      <form onSubmit={event => { event.preventDefault(); void save(); }}><div className="account-field"><label htmlFor="privacy-review-note">處理說明</label><textarea id="privacy-review-note" rows={5} value={draft.note} disabled={locked} onChange={event => record.change({ ...draft, note: event.target.value })} /></div><Text>1–1000 字，僅管理員可見。請勿加入新的個人資料。</Text><label className="consent"><input type="checkbox" checked={confirmed} disabled={locked} onChange={event => setConfirmed(event.target.checked)} /><span>確認已核對目前保留範圍與處理說明</span></label><Button type="submit" loading={busy} disabled={locked || !SavePrivacyReview.safeParse({ note: draft.note, revision: draft.revision, confirm: confirmed }).success}>保存處理說明</Button></form>
+      <form onSubmit={event => { event.preventDefault(); void save(); }}><Field label="處理說明"><textarea id="privacy-review-note" rows={5} value={draft.note} disabled={locked} onChange={event => record.change({ ...draft, note: event.target.value })} /></Field><Text>1–1000 字，僅管理員可見。請勿加入新的個人資料。</Text><label className="consent"><input type="checkbox" checked={confirmed} disabled={locked} onChange={event => setConfirmed(event.target.checked)} /><span>確認已核對目前保留範圍與處理說明</span></label><Button type="submit" loading={busy} disabled={locked || !SavePrivacyReview.safeParse({ note: draft.note, revision: draft.revision, confirm: confirmed }).success}>保存處理說明</Button></form>
     </Surface>{message && <Notice>{message}</Notice>}
     {draft.pending ? <Button disabled={busy || unavailable} onClick={() => void save()}>確認審核結果</Button> : <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前範圍，保留說明</Button>}
     <DraftFeedback form={record}/>

@@ -1,0 +1,78 @@
+/* Shared form and dialog geometry; field shapes use Yahha field tokens. */
+.kimi :is(.account-field,.yj-field,.field) { min-width:0; }
+.kimi :is(.account-field > label,label.account-field,.yj-field > label,.yj-label,.field-label) { font-size:13px; font-weight:500; line-height:1.5; color:var(--muted); }
+.kimi :is(.account-field,.native-select-field) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]),select,textarea) {
+  width:100%; min-width:0; min-height:44px; padding:10px 12px; margin-top:6px; font-size:14px; line-height:1.5;
+  color:var(--ink); background:var(--paper-strong); border:var(--yahha-control-border-width,2px) solid var(--yahha-contour,var(--line)); border-radius:var(--yahha-radius-field,12px);
+}
+.kimi :is(.account-field,.native-select-field) textarea { min-height:80px; resize:vertical; }
+.kimi :is(.account-field,.native-select-field) :is(input,select,textarea):focus-visible { outline:2px solid var(--yahha-focus,var(--moss)); outline-offset:2px; }
+.kimi :is(.account-field,.native-select-field) :disabled { color:var(--muted); background:var(--app-bg); }
+.kimi .activity-editor form > fieldset:not(.registration-person), .kimi .editor-fields { border:0; padding:0; margin:0; min-width:0; }
+.kimi .activity-editor :is(.account-field,.yj-field) { margin-block:0 16px; }
+.kimi .activity-editor .consent { margin-block:16px; display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.6; }
+.kimi .activity-editor .consent input { flex:none; margin-top:3px; }
+.kimi .registration-person { min-width:0; border:1px solid var(--line-soft); border-radius:var(--yahha-radius-panel); margin:16px 0; padding:16px; }
+.kimi .registration-person legend { font-size:13px; padding-inline:4px; }
+.kimi .registration-person summary { font-size:14px; }
+.kimi .registration-context { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; font-size:13px; color:var(--muted); margin-bottom:8px; }
+.kimi .registration-context strong { color:var(--ink); font-weight:600; }
+.kimi .registration-current-state { margin-block:0 16px; font-size:13px; color:var(--muted); }
+.kimi .registration-reason { margin-block:12px; }
+.kimi .registration-reason summary { font-size:13px; color:var(--muted); cursor:pointer; padding-block:6px; }
+.kimi .registration-reason[open] summary { margin-bottom:8px; }
+.kimi .registration-arrangement { margin-block:0 16px; }
+.kimi .registration-arrangement > summary { font-size:13px; font-weight:500; }
+.kimi .registration-arrangement .detail { padding:12px 0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.kimi .registration-arrangement .detail > h2 { display:none; }
+.kimi .registration-arrangement dl { margin:0 0 12px; gap:8px 12px; font-size:13px; }
+.kimi.yj-dialog { display:flex; flex-direction:column; padding:0; overflow:hidden; }
+.kimi:is(.yj-dialog,.draft-confirm-dialog) > [class*="dialogTitle"] {
+  flex:none; display:flex; align-items:center; min-height:64px; margin:0; padding:16px 64px 16px 20px;
+  font-size:20px; line-height:28px; border-bottom:1px solid var(--line-soft);
+}
+.kimi:is(.yj-dialog,.draft-confirm-dialog) > [class*="dialogClose"] { top:10px; inset-inline-end:10px; width:44px; height:44px; min-height:44px; }
+.kimi:is(.yj-dialog,.draft-confirm-dialog) > [class*="dialogBody"] { margin:0; min-width:0; min-height:0; padding:20px; font-size:14px; line-height:1.6; overflow-y:auto; overscroll-behavior:contain; }
+.kimi.yj-dialog > [class*="dialogBody"] { flex:1; }
+.kimi.yj-dialog > [class*="dialogDescription"] { margin:0; padding:12px 20px 0; font-size:13px; }
+.kimi.yj-dialog > [class*="dialogFooter"] { flex:none; margin:0; padding:12px 20px; }
+.kimi.activity-action-dialog :is(.activity-editor,.detail:has(form)) { padding:0; margin:0 0 20px; background:transparent; border:0; border-radius:0; box-shadow:none; }
+.kimi.activity-action-dialog .activity-editor > h2 { font-size:16px; line-height:1.5; margin:0 0 16px; }
+.kimi.activity-action-dialog .activity-editor h2:not(:first-child) { margin-top:20px; }
+.kimi.activity-action-dialog .activity-editor form > .button { margin-top:4px; }
+.kimi.draft-confirm-dialog { width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:0; display:flex; flex-direction:column; overflow:hidden; z-index:120; background:var(--paper); box-shadow:var(--yahha-shadow-dialog); }
+[data-yahha-theme]:has(> .draft-confirm-dialog) > [class*="dialogBackdrop"] { z-index:119; }
+/* Base UI omits a nested backdrop; dim the underlying editor without another focusable layer. */
+[data-yahha-theme]:has(> .draft-confirm-dialog[data-nested])::before { content:""; position:fixed; inset:0; z-index:119; background:var(--yahha-overlay); }
+.kimi.draft-confirm-dialog > [class*="dialogBody"] { flex:1; }
+.kimi.draft-confirm-dialog > [class*="dialogBody"] p { margin:0; }
+.kimi.draft-confirm-dialog > [class*="dialogBody"] [role=alert] { margin-top:12px; color:var(--red); }
+.kimi.draft-confirm-dialog > [class*="dialogFooter"] { margin:0; padding:16px 20px; border-top:1px solid var(--line-soft); }
+.kimi .draft-leave-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+.draft-feedback-float.kimi { position:fixed; z-index:105; top:calc(var(--topbar-height,64px) + 12px); right:20px; width:min(440px,calc(100vw - 32px)); display:grid; gap:6px; max-height:40dvh; overflow:auto; pointer-events:none; }
+.kimi.yj-dialog > .draft-feedback-float { position:absolute; top:calc(68px + env(safe-area-inset-top,0px)); right:16px; }
+.draft-feedback-float :is(button,a,summary) { pointer-events:auto; }
+.kimi .draft-feedback-item { display:grid; gap:6px; }
+.kimi .draft-feedback-notice { padding:12px 16px; background:var(--paper); color:var(--ink); border:1px solid var(--yahha-contour,var(--line)); border-radius:var(--yahha-radius-note); box-shadow:var(--shadow); }
+.kimi .draft-feedback-notice p { margin:0; font-size:13px; line-height:1.6; }
+.kimi .draft-feedback-notice [role=alert] { color:var(--red); }
+.kimi .draft-feedback-message { display:flex; align-items:start; justify-content:space-between; gap:12px; }
+.kimi .draft-feedback-message > .icon-button { flex:none; }
+.kimi .draft-feedback-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.kimi .draft-versions-button { justify-self:end; background:var(--paper); font-size:12px; }
+.kimi .draft-version-list { padding:0; margin:0; list-style:none; }
+.kimi .draft-version-list li { padding-block:12px; border-bottom:1px solid var(--line-soft); }
+.kimi .draft-version-list li:first-child { padding-top:0; }
+.kimi .draft-version-list li:last-child { border-bottom:0; }
+.kimi .draft-feedback-inline .draft-feedback-notice { padding:0; border:0; box-shadow:none; background:transparent; }
+@media(max-width:768px) {
+  .kimi.yj-dialog { padding:0 !important; }
+  .kimi.yj-dialog > [class*="dialogTitle"] { min-height:calc(64px + env(safe-area-inset-top,0px)); padding-top:calc(16px + env(safe-area-inset-top,0px)); }
+  .kimi.yj-dialog > [class*="dialogClose"] { top:calc(10px + env(safe-area-inset-top,0px)); }
+  .kimi.yj-dialog > [class*="dialogBody"] { padding:16px; }
+  .kimi.yj-dialog > [class*="dialogFooter"] { padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
+  .kimi :is(.account-field,.native-select-field) :is(input,select,textarea) { font-size:16px; }
+  .kimi .draft-leave-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+  .kimi .draft-leave-actions > .button-danger { grid-column:1 / -1; }
+  .draft-feedback-float.kimi { right:12px; width:calc(100vw - 24px); }
+}

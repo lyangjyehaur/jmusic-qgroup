@@ -81,7 +81,7 @@ test('reauth reminders defer during editing and invitations, respect the existin
   await page.goto('/activities?invite=synthetic#roster'); await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toHaveCount(0);
   await page.goto('/me/profile'); await page.getByLabel('站內稱呼', { exact: true }).fill('還在編輯');
   await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toHaveCount(0);
-  await page.getByRole('link', { name: '活動', exact: true }).click(); await expect(page.getByText('仍有未完成原稿。',{exact:false})).toBeVisible();
+  await page.getByRole('link', { name: '活動', exact: true }).click(); await expect(page.getByText('尚未提交的修改',{exact:false})).toBeVisible();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toBeVisible();
   await page.getByRole('button', { name: '稍後處理', exact: true }).click(); await page.reload();

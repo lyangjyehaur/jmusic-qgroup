@@ -74,8 +74,8 @@ test('member cards offer manual copy recovery and visitors cannot read or query 
 });
 test('editing a contact preserves an unfinished selection draft and requires a fresh revision before saving it', async ({ page, context }) => {
   await seed(context); await page.goto('/me/music'); await toggleMusicTerm(page,'YOASOBI');
-  await openMusicContact(page); await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await save(page, '123456'); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
+  await openMusicContact(page); await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await save(page, '123456'); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expectMusicTerm(page,'YOASOBI',true);
   await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeDisabled(); await expect(page.getByText('成分版本不同，尚未保存', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '核對最新版本，保留我的選擇', exact: true }).click(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();

@@ -43,7 +43,7 @@ test('shares the draft and filters with the direct page but adds selectors only 
   await expect(members.getByRole('link', { name: '小青', exact: true })).toHaveCount(0);
   await expect(detail.getByRole('link', { name: '開啟詞條頁面', exact: true })).toHaveCount(0);
   await expect(detail.getByRole('button', { name: '關閉詞條資料', exact: true })).toHaveCount(0);
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '尚未提交的修改' })).toHaveCount(0);
   await expectOption(page,'Aimer喜歡程度','4');
   await expect(detail.locator('.inline-definitions')).toContainText('3 人');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
@@ -65,7 +65,7 @@ test('preserves unfinished selections when visiting a selector and restores the 
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
   await chooseOption(page,'Aimer喜歡程度','1');
   await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   await expect(page.getByRole('heading', { name: '舊成分 10001', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到詞條資料', exact: true }).click();
   await expect(page).toHaveURL('/music/entries/sub-2?q=ai&kind=sub');

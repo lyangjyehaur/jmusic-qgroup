@@ -36,7 +36,7 @@ export function MusicSaveDock({ selection: form }: { selection: MusicSelection }
       {mustRead&&<p>目前草稿和已保存的成分版本不同。你的勾選仍保留，請先讀取最新版本再保存。</p>}
       {pending&&!form.message&&<p>上次保存是否成功尚未確認。請確認保存結果後再繼續編輯，避免重複送出。</p>}
       {form.message&&<p role="status">{form.message}</p>}
-      <DraftFeedback form={form.record} navigation={false} showProgress={false} restoreHint={uiText('上次的勾選保存在這台裝置，還沒有保存到成分。請恢復草稿後繼續編輯。')}/>
+      <DraftFeedback form={form.record} navigation={false} showProgress={false} placement="inline" restoreHint={uiText('上次的勾選還沒有保存到成分，可以恢復繼續或捨棄。')}/>
       {form.storageError&&<p>{pending?'排除儲存問題後，請按「確認保存結果」。':mustRead?'請檢查瀏覽器儲存空間或網站儲存權限，再重試讀取。':'請檢查瀏覽器儲存空間或網站儲存權限，再按「重試保存」。'}</p>}
       {form.reviewed&&!form.needsRebase&&form.dirty&&<>
         <p>保存將以你目前勾選的詞條及喜歡程度為準。</p>

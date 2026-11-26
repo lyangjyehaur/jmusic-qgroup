@@ -147,6 +147,24 @@ export async function saveDraft(handle: DraftHandle, raw: string, preserve = fal
   if ('conflict' in result) throw new DraftConflict('其他分頁已更新原稿。這個分頁的內容已保全，請先讀取已保存版本。');
   return result.handle;
 }
+/** Discard this editable draft only. Keep the revision fence and historical snapshots. */
+export async function discardDraft(handle: DraftHandle) {
+  validate(handle.key, handle.scope);
+  const result = await transaction('readwrite', async tx => {
+    const now = await epochs(tx, handle.scope);
+    if (now.deviceEpoch !== handle.deviceEpoch || isMusic(handle.key) && now.musicEpoch !== handle.musicEpoch || isAdmin(handle.key) && now.adminEpoch !== handle.adminEpoch)
+      return { expired: true } as const;
+    const store = tx.objectStore('drafts'), row = await request(store.get(handle.key)) as Row | undefined;
+    if (row && row.scope !== handle.scope) throw Error('原稿帳號不符');
+    if ((row?.revision ?? 0) !== handle.revision) return { conflict: true } as const;
+    const revision = handle.revision + 1;
+    store.put({ key: handle.key, scope: handle.scope, revision, raw: null, at: Date.now() } satisfies Row);
+    return { handle: { ...handle, revision } };
+  });
+  if ('expired' in result) throw expiredError(handle.key);
+  if ('conflict' in result) throw new DraftConflict('其他分頁已更新草稿，尚未捨棄；請先讀取已保存版本。');
+  return result.handle;
+}
 export function draftVersions(key: string, scope: string) {
   validate(key, scope);
   return transaction('readonly', async tx => (await request(tx.objectStore('versions').index('key').getAll(key)) as DraftVersion[])

@@ -39,7 +39,7 @@ test('unwritable and damaged management drafts block writes and can be preserved
   const clean=await context.newPage();await clean.goto(page.url());await clean.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await damageDraft(clean,'admin-music:','damaged synthetic draft');await clean.reload();await expect(clean.getByLabel('目標帳號 ID',{exact:true})).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic draft');await clean.close();
 });
 test('navigation preserves an unsubmitted ownership draft without executing it', async ({ page, context }) => {
-  await login(context); await openProfile(page); await preview(page, 'bob', '未保存的核對草稿'); await page.getByRole('link', { name: '回到成分關聯', exact: true }).click(); await expect(page.getByText('仍有未保存的關聯草稿或待確認操作。', { exact: true })).toBeVisible(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
+  await login(context); await openProfile(page); await preview(page, 'bob', '未保存的核對草稿'); await page.getByRole('link', { name: '回到成分關聯', exact: true }).click(); await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toBeVisible(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
   await expect(page.getByLabel('核對原因', { exact: true })).toHaveValue('未保存的核對草稿');await expect(page.getByLabel('核對原因',{exact:true})).toBeDisabled();await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expect(page.getByText('目前關聯：未關聯', { exact: true })).toBeVisible(); await expect(page.getByRole('button', { name: '保存關聯變更', exact: true })).toHaveCount(0);
 });
 test('a former owner retains an unsaved choice but cannot edit music transferred to another account', async ({ page, context, browser }) => {
@@ -47,7 +47,7 @@ test('a former owner retains an unsaved choice but cannot edit music transferred
   const otherContext = await browser.newContext({ baseURL: origin });
   try {
     await login(otherContext, 'bob'); const other = await otherContext.newPage(); await other.goto('/me/music'); await expectMusicTerm(other, 'Aimer', true); await toggleMusicTerm(other, 'YOASOBI');
-    await preview(page, 'alice', '更正管理權'); await save(page); await done(page); await other.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(other.getByText('成分已有更新；你的選擇仍保留，請核對最新版本', { exact: true })).toBeVisible(); await expectMusicTerm(other, 'YOASOBI', true);
+    await preview(page, 'alice', '更正管理權'); await save(page); await done(page); await other.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(other.getByText('目前草稿和已保存的成分版本不同。你的勾選仍保留，請先讀取最新版本再保存。', { exact: true })).toBeVisible(); await expectMusicTerm(other, 'YOASOBI', true);
     const viewer = await (await context.request.get('/api/v2/session')).json(); const current = await (await context.request.get('/api/v2/admin/music/' + page.url().split('/').pop(), { headers: { 'X-Account-Scope': viewer.scope } })).json(); expect(current.selections.map((selection: { entryId: string }) => selection.entryId)).toEqual(['sub-2']);
   } finally { await otherContext.close(); }
 });

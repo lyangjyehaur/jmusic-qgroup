@@ -47,8 +47,8 @@ test('closing a companion operation preserves the draft and returning restores i
   await page.locator('#signup-name-0').fill('保留的同行');
   await page.getByRole('button', { name: '返回活動', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
-  await expect(page.getByRole('button', { name: '繼續核對', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '繼續核對', exact: true }).click();
+  await expect(page.getByRole('button', { name: '繼續編輯', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
   await expect(page.locator('#signup-name-0')).toHaveValue('保留的同行');
   await page.getByRole('button', { name: '返回活動', exact: true }).click();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();

@@ -71,7 +71,7 @@ test('search from a saved local authoring draft avoids duplicate controllers and
   const errors: string[] = []; page.on('console', message => { if (/only supports one blocker|useBlocker/i.test(message.text())) errors.push(message.text()); });
   await page.getByLabel('活動名稱', { exact: true }).fill('搜尋前的草稿');
   await page.getByRole('link', { name: '全站搜尋', exact: true }).click();
-  await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await expect(page.getByRole('dialog', { name: '全站搜尋', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '返回原頁', exact: true }).click();
   await expect(page).toHaveURL('/activities/new');

@@ -1,3 +1,4 @@
+import { DraftLeaveConfirmation } from './draft-navigation';
 import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link,useBlocker,useParams } from 'react-router-dom';
@@ -87,7 +88,7 @@ function Manager({viewer,access,path,id,reset}:{viewer:Viewer;access:Access;path
     catch{setMessage(uiText("無法清除操作紀錄，原回執仍保留。"));}finally{record.end();}
   }
   return <>
-    {blocker.state==='blocked'&&<Surface role="alert"><Text>仍有刪除確認或待確認操作。離開後可用原操作紀錄查詢結果。</Text><Button onClick={()=>blocker.reset()}>留在此頁</Button><Button variant="secondary" onClick={()=>blocker.proceed()}>保留操作紀錄並離開</Button></Surface>}
+    <DraftLeaveConfirmation form={{blocker,busy,loading:!record.ready,hasPending:!!pending&&!done,canDiscard:!pending||!!done,leave:async()=>{blocker.proceed?.();},discardAndLeave:async()=>{setWord('');setConsent(false);blocker.proceed?.();}}}/>
     <ErasureStorageFeedback record={record}/>
     {!record.ready&&<Notice>正在讀取刪除紀錄…</Notice>}
     {done?<Surface className="detail" role="status"><Text>{done.command==='reset_music'?'成分與詞庫重置已完成。':'成分已刪除，自建詞條保留並移除原建立者資訊。'}</Text><Text>{done.command==='reset_music'&&!done.profiles&&!done.entries?'找搭子與趨勢歷史已清空。':<>已刪除 {done.profiles} 份成分{done.command==='reset_music'?'、'+done.entries+' 個詞條':''}。</>}</Text><Text>操作編號：{done.requestId}</Text><Button variant="secondary" loading={busy} onClick={()=>void dismiss()}>完成</Button><Link to="/admin/music">返回成分關聯</Link></Surface>:<>

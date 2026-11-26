@@ -4,7 +4,7 @@ import { useBlocker } from 'react-router-dom';
 import { z } from 'zod';
 import type { Member } from './member-access';
 import { ApiError } from './api';
-import { DraftConflict, DraftExpired, draftVersions, openDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
+import { DraftConflict, DraftExpired, discardDraft, draftVersions, openDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
 /** Persist the exact account-scoped payload before sending; uncertain delivery requires an explicit retry. */
 export function useReviewedDraft<T, S, F>(options: {
   key: string; viewer: Member; initial: F;
@@ -98,10 +98,10 @@ export function useReviewedDraft<T, S, F>(options: {
     window.addEventListener('beforeunload', leave);
     return () => window.removeEventListener('beforeunload', leave);
   }, [dirty, saving]);
-  function edit(value: T) {
+  function edit(value: T, userEdit = true) {
     if (locked || halted.current || submitting.current) return;
-    const next = { ...draft, value, dirty: true };
-    setDraft(next); void persist(next); setEpoch(n => n + 1); setMessage('');
+    const next = { ...draft, value, dirty: draft.dirty || userEdit };
+    setDraft(next); if (next.dirty) void persist(next); setEpoch(n => n + 1); setMessage('');
   }
   async function refresh(rebase: (old: T, fresh: F) => T) {
     if (locked || halted.current) return;
@@ -188,9 +188,31 @@ export function useReviewedDraft<T, S, F>(options: {
     // Unreadable originals remain untouched; a conflict's competing versions have already committed.
     if (readError || halted.current || await persist(draft)) proceed?.();
   }
+  async function discard() {
+    if (loading || busy || submitting.current || readError || draft.pending) return false;
+    submitting.current = true; setBusy(true);
+    try {
+      await queue.current;
+      if (halted.current || revoked.current || !handle.current) return false;
+      handle.current = await discardDraft(handle.current);
+      if (!active.current) return false;
+      setDraft({ value: options.blank(data), dirty: false }); setNeedsRestore(false); setStorageError(''); setMessage(''); setEpoch(n => n + 1);
+      return true;
+    } catch (error) {
+      if (active.current) {
+        if (error instanceof DraftConflict || error instanceof DraftExpired) {
+          halted.current = true; setReadError(errorText(error)); setConflict(error instanceof DraftConflict); setExpired(error instanceof DraftExpired);
+          if (error instanceof DraftExpired) revoked.current = true;
+        } else setStorageError(uiText('尚未捨棄草稿，請重試；目前內容仍保留。'));
+      }
+      return false;
+    } finally { submitting.current = false; if (active.current) setBusy(false); }
+  }
+  async function discardAndLeave() { const proceed = blocker.proceed; if (await discard()) proceed?.(); }
   return {
     draft, data, locked, busy, dirty, blocker, readError, storageError, message, setMessage,
-    edit, refresh, submit, recover, epoch, active, setBusy, leave,
+    edit, refresh, submit, recover, epoch, active, setBusy, leave, discard, discardAndLeave,
+    hasPending:!!draft.pending, canDiscard:!loading&&!busy&&!readError&&!draft.pending,
     loading, saving: saving > 0, needsRestore, restore: () => setNeedsRestore(false), conflict, expired, versions, restoreVersion,
   };
 }

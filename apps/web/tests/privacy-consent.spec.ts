@@ -86,8 +86,8 @@ test('a historical pending version is preserved, queried and archived before a n
   await page.getByRole('button', { name: '重新提交原同意', exact: true }).click(); await expect(page.getByText('隱私政策版本已變更；', { exact: false })).toBeVisible(); expect(writes).toBe(0);
   await page.getByRole('button', { name: '查詢原同意結果', exact: true }).click(); await page.getByRole('button', { name: '保全原操作並重新確認', exact: true }).click();
   await expect(checkbox(page)).not.toBeChecked(); await expect(page.getByRole('button', { name: '確認同意', exact: true })).toBeDisabled();
-  await expect(page.getByText('本機保全版本', { exact: false })).toBeVisible(); await submit(page); await expect(page.getByText('已同意', { exact: true })).toBeVisible(); expect(writes).toBe(1);
-  await page.getByText('本機保全版本', { exact: false }).click();
+  await expect(page.getByText('草稿版本', { exact: false })).toBeVisible(); await submit(page); await expect(page.getByText('已同意', { exact: true })).toBeVisible(); expect(writes).toBe(1);
+  await page.getByText('草稿版本', { exact: false }).click();
   const download = page.waitForEvent('download'); await page.getByRole('button', { name: '下載保全檔', exact: true }).first().click();
   const saved = await download; const fs = await import('node:fs/promises'); expect(JSON.parse(await fs.readFile((await saved.path())!, 'utf8'))).toEqual(pending);
 });

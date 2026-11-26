@@ -68,7 +68,7 @@ function Manager({viewer,access}:{viewer:Viewer;access:Access}){
   }
   const value=draft.value,item=catalog.data?.items.find(x=>x.id===value.id),labels={upload:uiText("上傳壁紙"),config:uiText("設定輪播間隔"),toggle:value.enabled?uiText('啟用壁紙'):uiText('停用壁紙'),move:value.direction===-1?uiText('上移壁紙'):uiText('下移壁紙'),delete:uiText("刪除壁紙")};
   return <>
-    {message&&<Notice>{message}</Notice>}<DraftFeedback form={record}/>
+    <DraftFeedback form={{...record,message:message||record.message}}/>
     {!!record.storageError&&<Button disabled={busy||unavailable} onClick={()=>void persist(draft)}>重試保存原稿</Button>}
     {value.command!=='none'&&<Surface className="detail appearance-form" role="region" aria-label="壁紙操作核對"><Heading level={2}>{labels[value.command]}</Heading>
       <fieldset disabled={locked}>{value.command==='upload'&&<><Field label="壁紙名稱（選填）"><input value={value.name} onChange={event=>edit({name:event.target.value})}/></Field><Field label="壁紙圖片"><input type="file" accept="image/png,image/jpeg,image/webp" onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void choose(file);}}/></Field><Text>PNG、JPG、WebP，單張最多 2 MiB、4000 萬像素。原圖會公開顯示。</Text>{value.data&&<img className="wallpaper-preview" src={'data:'+value.mime+';base64,'+value.data} alt="待上傳壁紙"/>}</>}

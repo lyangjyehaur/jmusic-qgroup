@@ -29,7 +29,7 @@ test('shares current unsaved choices, exact ordered text and optional identities
   await page.goto('/me/music'); await toggleMusicTerm(page,'米津玄師'); await chooseOption(page,'米津玄師喜歡程度','1');
   await page.getByRole('tab', { name: '分享圖片', exact: true }).click(); await ready(page);
   await expect(page.getByText('使用目前草稿產生分享，不會自動保存。推薦同好仍依已保存成分計算。', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   const expected = 'J-POP、動畫歌曲、YOASOBI、ヨルシカ、Aimer、ずっと真夜中でいいのに。、米津玄師';
   await expect(page.getByRole('textbox', { name: '詞條清單', exact: true })).toHaveValue(expected);
   await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('已複製詞條清單。', { exact: true })).toBeVisible(); expect(await page.evaluate(() => (window as unknown as { shareCopied: string }).shareCopied)).toBe(expected);

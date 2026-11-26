@@ -16,6 +16,7 @@ import './kimi/scoped.css';
 import './kimi/adapter.css';
 import './kimi/theme.css';
 import './music-save-dock.css';
+import './forms.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 const AdminBotPage = lazyPage(() => import('./admin-bot').then(module => ({ default: module.AdminBotPage })));
 const AdminBotDeliveriesPage = lazyPage(() => import('./bot-deliveries').then(module => ({ default: module.AdminBotDeliveriesPage })));

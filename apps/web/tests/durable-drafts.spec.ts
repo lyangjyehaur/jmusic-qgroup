@@ -76,7 +76,7 @@ test('retains both cross-tab versions and blocks stale mutation before it reache
   expect((await durableRows(other, 'versions')).map(row => JSON.parse(row.raw).value.title)).toContain('第二個分頁的內容');
   await other.getByRole('button', { name: '讀取已保存版本', exact: true }).click();
   await expect(title(other)).toHaveValue('第一個分頁');
-  await other.getByText('本機保全版本（1）', { exact: true }).click();
+  await other.getByText('草稿版本（1）', { exact: true }).click();
   await other.getByRole('button', { name: '載入此原稿（保留目前版本）', exact: true }).click();
   await expect(title(other)).toHaveValue('第二個分頁的內容'); await expect(title(other)).toBeEnabled();
   expect((await durableRows(other, 'versions')).map(row => JSON.parse(row.raw).value.title)).toContain('第一個分頁');

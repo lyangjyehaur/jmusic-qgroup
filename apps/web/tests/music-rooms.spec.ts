@@ -57,7 +57,7 @@ async function split(page: Page, event = false) {
   await expect(rooms(page).getByText(/平均/).first()).toBeVisible();
 }
 async function leave(page: Page) {
-  await button(page, '保留分房草稿並離開').click();
+  await button(page, '保留原稿並離開').click();
 }
 test('free rooms analyze, split in three modes, preserve manual moves, lookup and reload scoped drafts', async ({
   page,

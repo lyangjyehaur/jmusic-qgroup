@@ -79,7 +79,7 @@ test('returning from a comparison term keeps the draft in the shared workspace',
   await login(context); await page.goto('/people?sort=familiar'); const card = main(page).locator('.match-card').first();
   await card.getByText('更多成分資料',{exact:true}).click(); await card.getByText('對方獨有 · 2 項', { exact: true }).click(); await card.getByRole('link', { name: '宇多田光', exact: true }).click();
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   await expect(page).toHaveURL('/people?sort=familiar'); await page.goto('/me/music'); await expect(page.getByLabel('宇多田光喜歡程度')).toBeVisible();
 });
 test('cross-tab saved selections refresh ranking and revoke notes that no longer qualify', async ({ page, context }) => {

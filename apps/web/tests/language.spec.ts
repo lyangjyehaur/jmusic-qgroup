@@ -89,7 +89,7 @@ test.describe('simplified bot delivery recovery',()=>{
     await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);
     await page.goto('/activities/listen/bot-deliveries?delivery=1');const other=await context.newPage();await other.goto('/activities/listen/bot-deliveries?delivery=1');await expect(other.getByRole('checkbox',{name:'我已核对目标群、发送模式与重送内容',exact:true})).toBeEnabled();let writes=0;await context.route('**/api/v2/activities/listen/bot-deliveries/1/retry',route=>{writes++;return route.abort();});
     for(const tab of [page,other]){await tab.getByRole('checkbox',{name:'我已核对目标群、发送模式与重送内容',exact:true}).check();await tab.getByRole('button',{name:'建立重送工作',exact:true}).click();}
-    await expect(other.getByRole('status').filter({hasText:'其他分页已更新原稿。这个分页的内容已保全，请先读取已保存版本。'})).toBeVisible();expect(writes).toBe(1);expect((await durableRows(other,'versions')).filter(row=>row.key.includes('bot-delivery:')).length).toBeGreaterThan(0);
+    await expect(other.getByRole('alert').filter({hasText:'其他分页已更新原稿。这个分页的内容已保全，请先读取已保存版本。'})).toBeVisible();expect(writes).toBe(1);expect((await durableRows(other,'versions')).filter(row=>row.key.includes('bot-delivery:')).length).toBeGreaterThan(0);
   });
 });
 for(const language of ['zh-CN','zh-TW']) test(language+' localized summary chunks keep original content and copy-field layout',async({page,context})=>{

@@ -3,7 +3,7 @@ import { useEffect,useState } from 'react';
 import { Link,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { DeleteMusicShout, type Viewer } from '@qgroup/contracts';
 import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
@@ -42,8 +42,8 @@ function Shouts({viewer,access}:{viewer:Viewer;access:Access}){
     }finally{if(active.current)setBusy(false);}
   }
   return <>
-    <div className="account-field"><label htmlFor="shout-period">找搭子範圍</label><select id="shout-period" value={period} disabled={busy||!!draft.pending} onChange={event=>setParams({period:event.target.value})}><option value="active">有效內容</option><option value="history">歷史內容</option></select></div>
-    {message&&<Notice>{message}</Notice>}<DraftFeedback form={record}/>
+    <Field label="找搭子範圍"><select id="shout-period" value={period} disabled={busy||!!draft.pending} onChange={event=>setParams({period:event.target.value})}><option value="active">有效內容</option><option value="history">歷史內容</option></select></Field>
+    <DraftFeedback form={{...record,message:message||record.message}}/>
     {draft.id&&<Surface className="shout-card" role="region" aria-label="刪除找搭子確認"><Heading level={2}>確認移除</Heading>
       {target.isPending?<Notice>正在核對內容…</Notice>:target.error?<Failure error={target.error} retry={()=>void target.refetch()}/>:<><Text className="shout-body">{target.data.text}</Text><Text>{target.data.name} · {shoutDate(target.data.createdAt)} · {target.data.archivedAt===null?'有效':'已歸檔'}</Text></>}
       <label className="consent"><input type="checkbox" checked={confirmed} disabled={locked||!!target.error||!target.data} onChange={event=>setConfirmed(event.target.checked)}/><span>確認永久移除這則內容，發布者資料不會保留在刪除紀錄中</span></label>

@@ -71,7 +71,7 @@ test('unsaved navigation is explicit and mobile selection stays usable', async (
   await page.goto('/me/music');
   await toggleMusicTerm(page,'動畫歌曲');
   await page.getByRole('navigation').getByRole('link', { name: '活動', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '尚未提交的修改' })).toBeVisible();
   await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-music-mobile.png', fullPage: true });

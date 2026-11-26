@@ -76,6 +76,6 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
         <Button type="submit" loading={busy} disabled={!dirty || unavailable}>{draft.requestKey ? '確認聯絡 QQ 結果' : '保存聯絡 QQ'}</Button>
       </form>}
       {dirty && !draft.requestKey && saved.source !== 'legacy' && <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前聯絡 QQ，保留輸入</Button>}
-      {message && <Text role="status">{message}</Text>}<DraftFeedback form={record}/>
+      <DraftFeedback form={{...record,message:message||record.message}}/>
     </Surface></>;
 }

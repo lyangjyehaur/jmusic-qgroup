@@ -14,7 +14,7 @@ test('shares one selection, search, levels and activity return across catalog an
   await toggleMusicTerm(page, '米津玄師');
   await chooseOption(page,'米津玄師喜歡程度','4');
   await openMusicCatalog(page);
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '尚未提交的修改' })).toHaveCount(0);
   await expect(page.getByLabel('搜尋音樂詞條', { exact: true })).toHaveValue('mijin');
   await page.getByRole('link', { name: '米津玄師', exact: true }).click();
   await expectOption(page,'米津玄師喜歡程度','4');

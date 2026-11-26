@@ -75,8 +75,8 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
       <Text>目前稱呼：{saved.nickname}</Text><Field label="站內稱呼"><input value={draft.nickname} maxLength={48} autoComplete="nickname" disabled={locked} onChange={event => { record.change({ ...draft, nickname: event.target.value }); setMessage(''); }} aria-describedby="nickname-help" /></Field>
       <Text id="nickname-help">1–24 字。修改會更新名冊顯示，不更換帳號，也不修改 QQ 暱稱、付款歸屬或既有帳單。</Text>
       <Button type="submit" loading={sending} disabled={!dirty || unavailable || !SaveNickname.safeParse({ nickname: draft.nickname, revision: draft.revision }).success}>{draft.requestKey ? '確認修改結果' : '保存稱呼'}</Button>
-      {message && <Text role="status">{message}</Text>}
+
     </form>{dirty && !draft.requestKey && <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前稱呼，保留輸入</Button>}
-    <DraftFeedback form={record}/></Surface>
+    <DraftFeedback form={{...record,message:message||record.message}}/></Surface>
   </>;
 }

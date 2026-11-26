@@ -168,7 +168,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     blocking: ({ nextLocation, currentLocation }) => nextLocation.pathname !== currentLocation.pathname,
   });
   const { value: draft, replace: setDraft, busy, setBusy, active, unavailable, locked, begin, persist,
-    readError, storageError, blocker } = record;
+    readError, storageError } = record;
   const dirty = record.dirty, stale = !!draft && !!catalog.data && catalog.data.revision !== draft.revision;
   useEffect(() => { setConfirmed(false); setPreview(null); setMessage(''); }, [record.epoch]);
   useEffect(() => {
@@ -284,18 +284,9 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
     groups = value?.groups;
   return (
     <>
-      {blocker.state === 'blocked' && (
-        <Surface role="alert">
-          <Text>仍有 bot 設定原稿或待確認操作。</Text>
-          <Button onClick={() => blocker.reset()}>繼續核對</Button>
-          <Button variant="secondary" disabled={busy || record.loading} onClick={() => void record.leave()}>
-            保留原稿並離開
-          </Button>
-        </Surface>
-      )}
       <Link to="/admin/bot/deliveries">投遞紀錄</Link>
-      {message && <Notice>{message}</Notice>}
-      <DraftFeedback form={record} navigation={false} />
+
+      <DraftFeedback form={{...record,message:message||record.message}} />
       {storageError && <Button disabled={busy || !!readError || record.loading} onClick={() => void persist(draft)}>重試保存原稿</Button>}
       {catalog.isPending || !catalog.isFetchedAfterMount ? (
         <Notice>正在讀取 bot 設定…</Notice>

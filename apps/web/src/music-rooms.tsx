@@ -11,6 +11,7 @@ import { scopedHttp } from './http';
 import { authHttp } from './auth';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { DraftLeaveConfirmation } from './draft-navigation';
 import { musicRoomDraftKey,parseMusicRoomDraft,MusicRoomDraft as Draft } from './music-room-record';
 import { MusicMemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
@@ -115,7 +116,7 @@ function Editor({
     return empty(fresh, includeMe);
   };
   const form=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:newDraft,parse:raw=>parseMusicRoomDraft(raw,fresh.eventId),dirty:d=>d.selected.length>1||!!d.rooms.length||!!d.result||d.mode!=='rooms'||d.value!=='2'||!!d.sizes||d.sameGender,pending:()=>false});
-  const {value:draft,replace:setDraft,busy,setBusy,active,persist,begin,blocker}=form;
+  const {value:draft,replace:setDraft,busy,setBusy,active,persist,begin}=form;
   const [message,setMessage]=useState(''),[denied,setDenied]=useState(false),
     [search,setSearch]=useState(''),[page,setPage]=useState(1),[lookup,setLookup]=useState(''),[shuffle,setShuffle]=useState(()=>Math.random());
   const checking=useRef(false),generation=useRef(0),controller=useRef<AbortController|undefined>(undefined),source=draft.source;
@@ -327,14 +328,13 @@ function Editor({
       (member) => (source.eventId || selected.has(member.id)) && !assigned.has(member.id),
     ).length,
   };
-  if(denied||form.expired)return <><DraftFeedback form={form} navigation={false}/><Notice>目前帳號或成分權限已變更。</Notice></>;
+  if(denied||form.expired)return <><DraftFeedback form={{...form,message:message||form.message}} navigation={false}/><Notice>目前帳號或成分權限已變更。</Notice></>;
   return (
     <>
       {source.eventId && <Heading level={2}>{source.title}</Heading>}
       {readError && <Failure error={readError} retry={() => void recheck()} />}{' '}
       {stale && <Notice>名單、成分或來源狀態已變更。原試算已失效，請核對最新來源再重新計分。</Notice>}
-      <DraftFeedback form={form} navigation={false}/>
-      {message && <Text role="status">{message}</Text>}
+      <DraftFeedback form={{...form,message:message||form.message}} navigation={false}/>
       {current && <section aria-label={current.kind==='actual'?'現有實際包間':'現有預分包間'}>
         <Heading level={2}>{current.kind==='actual'?'現有實際包間':'現有預分包間'} · {current.version}</Heading>
         {current.rooms.map(room=><div key={room.id}>
@@ -595,15 +595,7 @@ function Editor({
           )}
         </section>
       )}
-      {blocker.state === 'blocked' && (
-        <Surface role="alert" className="leave-prompt">
-          <Text>仍有分房草稿。</Text>
-          <Button onClick={() => blocker.reset?.()}>繼續核對</Button>
-          <Button variant="secondary" disabled={form.loading} onClick={() => void leave()}>
-            保留分房草稿並離開
-          </Button>
-        </Surface>
-      )}
+      <DraftLeaveConfirmation form={{...form,leave,discardAndLeave:async()=>{generation.current++;controller.current?.abort();setBusy(false);await form.discardAndLeave();}}}/>
     </>
   );
 }

@@ -56,7 +56,7 @@ test('concurrent settings keep the original input and require a fresh review bef
 });
 test('storage failure blocks writes, corrupt drafts are preserved, and unfinished work protects navigation',async({page,context})=>{
   await login(context);await page.goto('/admin/appearance');await page.getByRole('button',{name:'設定輪播間隔',exact:true}).click();await page.getByLabel('輪播間隔（秒）',{exact:true}).fill('31');await denyDraftWrites(page,'admin-appearance:');let writes=0;page.on('request',request=>{if(request.url().endsWith('/admin/appearance')&&request.method()==='POST')writes++;});
-  await confirm(page);await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);await page.getByRole('link',{name:'管理後臺',exact:true}).click();await expect(page.getByText('仍有未完成原稿。',{exact:false})).toBeVisible();await page.getByRole('button',{name:'繼續核對',exact:true}).click();
+  await confirm(page);await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);await page.getByRole('link',{name:'管理後臺',exact:true}).click();await expect(page.getByText('尚未提交的修改',{exact:false})).toBeVisible();await page.getByRole('button',{name:'繼續編輯',exact:true}).click();
   page.on('dialog',dialog=>void dialog.accept());await page.reload();await damageDraft(page,'admin-appearance:','{damaged');await page.reload();await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(page,'versions')).map(row=>row.raw)).toEqual(['{damaged']);
 });
 test('failed local preferences remain usable without overwriting a damaged original',async({page})=>{

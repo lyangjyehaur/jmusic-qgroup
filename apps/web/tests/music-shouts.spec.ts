@@ -36,7 +36,7 @@ test('details, author profiles, clipboard fallbacks and all history pages preser
 });
 test('drafts survive explicit navigation and reload; Unicode limits, publication and cooldown stay consistent', async ({ page, context }) => {
   await login(context); await page.goto('/people/shouts'); await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('草稿保留');
-  await page.getByRole('link', { name: '回到同好', exact: true }).click(); await expect(page.getByText('仍有未完成原稿。', { exact: false })).toBeVisible();
+  await page.getByRole('link', { name: '回到同好', exact: true }).click(); await expect(page.getByText('尚未提交的修改', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('link', { name: '找搭子', exact: true }).click();
   await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
   await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();

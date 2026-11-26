@@ -53,12 +53,12 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
     }finally{if(active.current)setBusy(false);}
   }
   if(denied)return <Notice>目前帳號或邀請權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
-  return <Surface className="detail"><DraftFeedback form={record} navigation={false}/>{done?<><Notice>已取得活動查看權限。</Notice><Link to={base(id)}>查看活動</Link></>:<>
+  return <Surface className="detail"><DraftFeedback form={{...record,message:message||record.message}} navigation={false}/>{done?<><Notice>已取得活動查看權限。</Notice><Link to={base(id)}>查看活動</Link></>:<>
     {view.isPending?<Notice>正在核對邀請…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<><h2>{view.data.title}</h2><Text>以「{viewer.nickname}」接受後可查看活動；報名仍需另行提交，不會取得管理權限。</Text></>}
     {!pending&&view.data&&!view.error&&<label className="consent"><input type="checkbox" checked={confirmed} disabled={locked||view.isFetching} onChange={event=>setConfirmed(event.target.checked)}/>確認接受活動查看邀請</label>}
     <Button loading={busy} disabled={pending?busy||unavailable:locked||!confirmed||!view.data||!!view.error||view.isFetching} onClick={()=>void accept()}>{pending?'確認原邀請操作結果':'接受查看邀請'}</Button>
     {!pending&&<Button variant="secondary" disabled={locked||view.isFetching} onClick={()=>{setConfirmed(false);void view.refetch();}}>重新核對邀請</Button>}
-  </>}{message&&<Text role="status">{message}</Text>}</Surface>;
+  </>}</Surface>;
 }
 export function ActivitySharePage(){const {id=''}=useParams(),session=useSession();return <><PageIntro title="分享活動"/>{session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:session.data?<Share key={session.data.scope+':'+id} viewer={session.data} id={id}/>:<Notice>正在確認帳號…</Notice>}</>;}
 function Share({viewer,id}:{viewer:Viewer;id:string}){

@@ -23,7 +23,7 @@ test('trend terms share the original unsaved selection, preserve search and retu
   await login(context); let writes = 0; page.on('request', request => { if (request.url().includes('/api/') && !['GET','HEAD'].includes(request.method())) writes++; });
   await page.goto('/me/music?q=Yoa'); await page.getByRole('button', { name: '移除Aimer', exact: true }).click();
   await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click(); await page.getByRole('tab', { name: '音樂趨勢', exact: true }).click();
-  await expect(page).toHaveURL('/music/trends?q=Yoa'); await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL('/music/trends?q=Yoa'); await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   await openChart(page);await page.getByRole('list', { name: '趨勢圖例', exact: true }).getByRole('link', { name: 'J-POP', exact: true }).click();
   await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toBeVisible(); await page.getByRole('button', { name: '取消選取', exact: true }).click();
   await page.getByRole('link', { name: '回到音樂趨勢', exact: true }).click(); await expect(page).toHaveURL('/music/trends?q=Yoa');
@@ -46,7 +46,7 @@ test('saved choices update the live trend without persisting a new snapshot, whi
   await page.goto('/music/trends');await openChart(page);await expect(page.getByRole('list', { name: '排行漲幅', exact: true })).toContainText('目前 5 人'); const after = await (await context.request.get('/api/v2/music/trend')).json();
   expect(after.points.slice(0, -1)).toEqual(before.points.slice(0, -1)); expect(after.points.at(-1).counts['main-0']).toBe(5);
   await page.goto('/me/music');await page.getByRole('button', { name: '移除Aimer', exact: true }).click(); await page.getByRole('navigation').getByRole('link', { name: '活動', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇', exact: true })).toBeVisible(); await page.getByRole('button', { name: '繼續編輯', exact: true }).click(); await expect(page).toHaveURL('/me/music');
+  await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toBeVisible(); await page.getByRole('button', { name: '繼續編輯', exact: true }).click(); await expect(page).toHaveURL('/me/music');
   expect((await context.request.get('/api/v2/me/music', { headers })).status()).toBe(200);
 });
 test('public and private errors offer independent retries and never keep a failed stale chart or send writes', async ({ page, context }) => {

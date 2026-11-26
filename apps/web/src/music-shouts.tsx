@@ -3,7 +3,7 @@ import { useEffect,useRef,useState } from 'react';
 import { Link,useLocation,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { MusicShout, PublishMusicShout } from '@qgroup/contracts';
 import { musicText } from '@qgroup/domain';
@@ -76,12 +76,12 @@ function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Me
     }finally{if(active.current)setBusy(false);}
   }
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
-  return <><DraftFeedback form={record}/>
+  return <><DraftFeedback form={{...record,message:message||record.message}}/>
     <Surface className="shout-compose form-section"><Heading level={2}>發布找搭子</Heading><Text id="shout-publish-help" size="sm">內容、成分稱呼與聯絡 QQ 會提供給成分會員。每 24 小時一則，30 天後歸檔；新發布會取代本人上一則。</Text>
-      <form onSubmit={event=>{event.preventDefault();void publish();}}><div className="account-field"><label htmlFor="shout-content">找搭子內容</label><textarea id="shout-content" rows={4} value={draft.text} maxLength={4096} disabled={locked} aria-describedby="shout-publish-help shout-count" onChange={event=>{record.change({...draft,text:event.target.value});setMessage('');}}/></div>
+      <form onSubmit={event=>{event.preventDefault();void publish();}}><Field label="找搭子內容"><textarea id="shout-content" rows={4} value={draft.text} maxLength={4096} disabled={locked} aria-describedby="shout-publish-help shout-count" onChange={event=>{record.change({...draft,text:event.target.value});setMessage('');}}/></Field>
         <Text id="shout-count" size="sm">{count} / 140 字</Text>{cooling&&<Text role="status">下次可發布：{shoutDate(nextAllowedAt)}</Text>}
         <Button type="submit" loading={busy} disabled={draft.pending?busy||unavailable:locked||cooling||!normalized||count>140}>{draft.pending?'確認發布結果':'發布找搭子'}</Button>
-      </form>{message&&<Text role="status">{message}</Text>}
+      </form>
     </Surface>
   </>;
 }

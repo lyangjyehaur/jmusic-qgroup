@@ -85,6 +85,6 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
       <Field label="私人留言"><textarea id="music-private-note" rows={3} maxLength={Math.max(280, initial.note.length)} value={draft.note} disabled={locked} onChange={event => edit({ note: event.target.value })} aria-describedby="music-note-help" /></Field><Text id="music-note-help">最多 140 字，可清空。成分會員的所選排序推薦首位可顯示你的留言；成分卡與比較頁僅對預設排序將你列為首位的會員顯示。資料較少的推薦不顯示留言。</Text>
       <Button type="submit" loading={busy} disabled={!dirty || unavailable}>{draft.pending ? '確認成分資料結果' : '保存成分資料'}</Button>
     </form>{dirty && !draft.pending && <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前成分資料，保留輸入</Button>}
-      {message && <Text role="status">{message}</Text>}<DraftFeedback form={record}/>
+      <DraftFeedback form={{...record,message:message||record.message}}/>
     </Surface></div></>;
 }

@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { ChangeRegistration, RegistrationAction, RegistrationContext, RegistrationPreview, RegistrationValues, SubmitRegistration } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -62,9 +62,11 @@ function Editor({viewer,initial,manage,quick=false,waiting=false}:{viewer:Member
   const isClean=(value:DraftValue)=>{
     if(value.pending)return false;
     const normalized=JSON.stringify({...value,revision:data.revision});
+    const person=manage?data.people.find(person=>person.id===value.personId):undefined;
+    const selectedBaseline=person?{...empty(data),personId:person.id,name:person.name,note:person.note,payerKind:person.payerKind,action:preferredAction(person,null)}:null;
     // URL presets and resolved signup placeholders contain no user edits.
     // A blank companion placeholder can outlive signup, then self withdrawal.
-    return [empty(data),seed(),...(!manage?[empty({...data,selfRegistered:!data.selfRegistered})]:[])]
+    return [empty(data),seed(),...(selectedBaseline?[selectedBaseline]:[]),...(!manage?[empty({...data,selfRegistered:!data.selfRegistered})]:[])]
       .some(blank=>normalized===JSON.stringify(blank));
   };
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>{
@@ -159,47 +161,48 @@ function Editor({viewer,initial,manage,quick=false,waiting=false}:{viewer:Member
   const consent=manage?uiText('已核對此人的報名，確認')+labels[draft.action]:uiText('已核對第 ')+data.conditionsVersion+uiText(' 版安排、費用與逐人分配，代表本人及代報者接受安排');
   const arrangement=<Surface className="detail"><Heading level={2}>{data.title}</Heading><dl><dt>目前安排</dt><dd>第 {data.conditionsVersion} 版</dd><dt>時間</dt><dd>{when(data.arrangement.starts_at,data.arrangement.timezone)}（{data.arrangement.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{data.arrangement.duration_hours===null?'未設定':data.arrangement.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{data.arrangement.location}</dd><dt>退出期限</dt><dd>{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}</dd>{data.arrangement.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{data.arrangement.fee_policy}</dd></>}{data.arrangement.description&&<><dt>注意事項</dt><dd className="preserve-lines">{data.arrangement.description}</dd></>}</dl><Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看完整安排與版本</Link></Surface>;
   if(quick){
-    if((data.selfRegistered||data.signupBlocker)&&!draft.pending&&!record.dirty&&!record.needsRestore&&!readError&&!record.storageError)return message?<Text role="status">{message}</Text>:null;
+    if((data.selfRegistered||data.signupBlocker)&&!draft.pending&&!record.dirty&&!record.needsRestore&&!readError&&!record.storageError)return message?<DraftFeedback form={{...record,message}}/>:null;
     return <div className="activity-self-registration">
       {stale&&!draft.pending&&<Notice>活動或名單已有更新；請讀取最新安排，備註會保留。</Notice>}
       {selfOnly||draft.pending?.kind==='signup'&&draft.pending.input.people.length===1&&draft.pending.input.people[0]!.isSelf?<form noValidate onSubmit={event=>{event.preventDefault();void directSignup();}}><fieldset disabled={locked}>
-        <legend className="sr-only">本人報名</legend><details className="self-signup-notes"><summary>報名備註與規則</summary><div className="account-field"><label htmlFor="self-signup-note">報名備註（活動內可見）</label><textarea id="self-signup-note" rows={2} maxLength={100} value={draft.values.people[0]?.note??''} onChange={event=>edit({values:{...draft.values,people:[{...draft.values.people[0]!,note:event.target.value}]}})}/></div><Text>退出期限：{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}。期限後退出需申請。</Text></details>
+        <legend className="sr-only">本人報名</legend><details className="self-signup-notes"><summary>報名備註與規則</summary><Field label="報名備註（活動內可見）"><textarea id="self-signup-note" rows={2} maxLength={100} value={draft.values.people[0]?.note??''} onChange={event=>edit({values:{...draft.values,people:[{...draft.values.people[0]!,note:event.target.value}]}})}/></Field><Text>退出期限：{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}。期限後退出需申請。</Text></details>
       </fieldset><Button type="submit" loading={busy} disabled={record.unavailable||(!draft.pending&&(stale||!!data.signupBlocker||data.selfRegistered))}>{draft.pending?'確認報名操作結果':waiting?'本人加入候補':'本人報名'}</Button>
       <p className="self-signup-consent">提交即接受第 {data.conditionsVersion} 版安排與費用規則，名額不足時加入候補。<Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看安排</Link></p></form>:<Link to={'/activities/'+encodeURIComponent(data.id)+'/signup?preset=party'}>繼續原同行／代報名</Link>}
       {!draft.pending&&(stale||message)&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>讀取最新安排，保留備註</Button>}
-      {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record} showProgress={false} restoreHint={uiText('有未完成的報名資料；恢復後可繼續，尚未提交報名。')}/>
+      <DraftFeedback form={{...record,message:message||record.message}} showProgress={false} restoreHint={uiText('有未完成的報名資料；恢復後可繼續，尚未提交報名。')}/>
     </div>;
   }
-  return <>{inActivity?<><Text><strong>{data.title}</strong> · 第 {data.conditionsVersion} 版安排</Text>{data.arrangement.description&&<Text className="preserve-lines">注意事項：{data.arrangement.description}</Text>}{data.arrangement.fee_policy&&<Text className="preserve-lines">費用規則：{data.arrangement.fee_policy}</Text>}<details className="registration-arrangement"><summary>核對完整活動安排</summary>{arrangement}</details></>:arrangement}
-    <Surface className="detail activity-editor"><Heading level={2}>{manage?'現有報名':'本人與同行'}</Heading>
+  return <>{inActivity?<><div className="registration-context"><strong>{data.title}</strong><span>第 {data.conditionsVersion} 版安排</span></div>{!manage&&data.arrangement.description&&<Text className="preserve-lines">注意事項：{data.arrangement.description}</Text>}{!manage&&data.arrangement.fee_policy&&<Text className="preserve-lines">費用規則：{data.arrangement.fee_policy}</Text>}<details className="registration-arrangement"><summary>核對完整活動安排</summary>{arrangement}</details></>:arrangement}
+    <Surface className="detail activity-editor"><Heading level={2}>{manage?'報名資料':'本人與同行'}</Heading>
       {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新資料。</Notice>}
-      {manage&&<><ul>{data.people.map(person=><li key={person.id}>{person.name} · {statusLabels[person.status]??person.status}{person.withdrawalRequested?' · 退出申請中':''} · 付款：{person.payerName}</li>)}</ul>{!data.people.length&&<Notice>目前沒有可由此帳號管理的有效報名。</Notice>}</>}
+      {manage&&!data.people.length&&<Notice>目前沒有可由此帳號管理的有效報名。</Notice>}
       {!manage&&data.signupBlocker&&<Notice>{data.signupBlocker}</Notice>}
-      {(!manage||data.people.length>0||draft.pending||draft.personId)&&<form noValidate onSubmit={event=>{event.preventDefault();void submit();}}><fieldset disabled={locked}><legend className="sr-only">{manage?'管理逐人報名':'新增逐人報名'}</legend>
+      {(!manage||data.people.length>0||draft.pending||draft.personId)&&<form className="registration-form" noValidate onSubmit={event=>{event.preventDefault();void submit();}}><fieldset className="editor-fields" disabled={locked}><legend className="sr-only">{manage?'管理逐人報名':'新增逐人報名'}</legend>
         {manage?<>
-          <div className="account-field"><label htmlFor="registration-person">報名者</label><select id="registration-person" value={draft.personId} onChange={event=>choose(event.target.value)}><option value="">請選擇</option>{data.people.map((person,index)=><option key={person.id} value={person.id}>{index+1}. {person.name}</option>)}{draft.personId&&!selected&&<option value={draft.personId}>原報名目前不可操作</option>}</select></div>
-          {draft.personId&&<><div className="account-field"><label htmlFor="registration-action">報名操作</label><select id="registration-action" value={draft.action} onChange={event=>edit({action:event.target.value as Action})}>{availableActions.map(action=><option key={action} value={action}>{labels[action]}</option>)}{!availableActions.includes(draft.action)&&<option value={draft.action}>{labels[draft.action]}（目前不可操作）</option>}</select></div>
+          <Field label="報名者"><select id="registration-person" value={draft.personId} onChange={event=>choose(event.target.value)}><option value="">請選擇</option>{data.people.map((person,index)=><option key={person.id} value={person.id}>{index+1}. {person.name}</option>)}{draft.personId&&!selected&&<option value={draft.personId}>原報名目前不可操作</option>}</select></Field>
+          {selected&&<p className="registration-current-state">{selected.name} · {statusLabels[selected.status]??selected.status}{selected.withdrawalRequested?' · 退出申請中':''} · 付款：{selected.payerName}</p>}
+          {draft.personId&&<><Field label="報名操作"><select id="registration-action" value={draft.action} onChange={event=>edit({action:event.target.value as Action})}>{availableActions.map(action=><option key={action} value={action}>{labels[action]}</option>)}{!availableActions.includes(draft.action)&&<option value={draft.action}>{labels[draft.action]}（目前不可操作）</option>}</select></Field>
           {selected?.withdrawalReason&&<Text>退出原因／處理結果：{selected.withdrawalReason}</Text>}
-          {draft.action==='edit'&&<><div className="account-field"><label htmlFor="registration-name">同行稱呼</label><input id="registration-name" disabled={!selected?.isGuest} maxLength={48} value={draft.name} onChange={event=>edit({name:event.target.value})}/></div><div className="account-field"><label htmlFor="registration-note">公開備註</label><textarea id="registration-note" rows={2} maxLength={200} value={draft.note} onChange={event=>edit({note:event.target.value})}/></div><div className="account-field"><label htmlFor="registration-payer">付款歸屬</label><select id="registration-payer" disabled={!!selected?.paymentLocked||!selected?.isGuest} value={draft.payerKind} onChange={event=>edit({payerKind:event.target.value as 'self'|'manager'})}><option value="self">參加者本人</option><option value="manager">代報管理人</option></select></div>{selected?.paymentLocked&&<Notice>已保留認領前的付款責任；更正請從結算核對並留版本。</Notice>}</>}
+          {draft.action==='edit'&&<>{selected?.isGuest&&<Field label="同行稱呼"><input id="registration-name" disabled={!selected?.isGuest} maxLength={48} value={draft.name} onChange={event=>edit({name:event.target.value})}/></Field>}<Field label="公開備註"><textarea id="registration-note" rows={2} maxLength={200} value={draft.note} onChange={event=>edit({note:event.target.value})}/></Field>{selected?.isGuest&&<Field label="付款歸屬"><select id="registration-payer" disabled={!!selected?.paymentLocked||!selected?.isGuest} value={draft.payerKind} onChange={event=>edit({payerKind:event.target.value as 'self'|'manager'})}><option value="self">參加者本人</option><option value="manager">代報管理人</option></select></Field>}{selected?.paymentLocked&&<Notice>已保留認領前的付款責任；更正請從結算核對並留版本。</Notice>}</>}
           {draft.action==='confirm'&&<Notice>{selected?.queueMode==='together'?'同組待確認人員一起確認，取得新的隊序。':'確認後取得新的隊序。'}待確認期間不占名額。</Notice>}
           {draft.action==='split'&&<Notice>保留這組的原隊序，改為逐人分配；較早整組仍可能阻擋遞補。</Notice>}
           {draft.action==='withdraw'&&<Notice>{selected?.needsWithdrawalRequest?'已過退出期限，正式名額保留至名單管理者同意退出。':'退出後保留原報名紀錄；重新報名需重新排隊。'}</Notice>}
           {['approve','reject'].includes(draft.action)&&<Notice>處理退出申請會通知原管理人；費用與退款仍依公布結算。</Notice>}
-          <div className="account-field"><label htmlFor="registration-reason">原因{reasonRequired?'（必填）':'（選填）'}</label><textarea id="registration-reason" rows={2} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></div></>}
+          <Field label={<> 原因{reasonRequired?'（必填）':'（選填）'} </>}><textarea id="registration-reason" rows={2} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></Field></>}
         </>:<>
           {data.selfRegistered&&<Notice>你已有本人報名；可在此新增同行，或前往管理現有報名。</Notice>}
           {draft.values.people.map((person,index)=><fieldset key={index} className="registration-person"><legend>參加者 {index+1}</legend><details open={!person.isSelf||!!person.note||undefined}><summary>{person.isSelf?'本人（'+data.nickname+'）· 備註與設定':'同行資料'}</summary>
-            <div className="account-field"><label htmlFor={'signup-person-'+index}>身分</label><select id={'signup-person-'+index} value={person.isSelf?'self':'guest'} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,isSelf:event.target.value==='self',payerKind:event.target.value==='self'?'self':'manager'}:p)}})}><option value="guest">同行／代報</option><option value="self" disabled={data.selfRegistered||draft.values.people.some((p,i)=>i!==index&&p.isSelf)}>本人（{data.nickname}）</option></select></div>
-            <div className="account-field"><label htmlFor={'signup-name-'+index}>稱呼</label><input id={'signup-name-'+index} disabled={person.isSelf} maxLength={48} value={person.isSelf?data.nickname:person.name} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,name:event.target.value}:p)}})}/></div>
-            <div className="account-field"><label htmlFor={'signup-note-'+index}>公開備註</label><textarea id={'signup-note-'+index} rows={2} maxLength={200} value={person.note} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,note:event.target.value}:p)}})}/></div>
-            <div className="account-field"><label htmlFor={'signup-payer-'+index}>付款歸屬</label><select id={'signup-payer-'+index} disabled={person.isSelf} value={person.payerKind} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,payerKind:event.target.value as 'self'|'manager'}:p)}})}><option value="self">參加者本人</option><option value="manager">代報管理人</option></select></div>
+            <Field label="身分"><select id={'signup-person-'+index} value={person.isSelf?'self':'guest'} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,isSelf:event.target.value==='self',payerKind:event.target.value==='self'?'self':'manager'}:p)}})}><option value="guest">同行／代報</option><option value="self" disabled={data.selfRegistered||draft.values.people.some((p,i)=>i!==index&&p.isSelf)}>本人（{data.nickname}）</option></select></Field>
+            <Field label="稱呼"><input id={'signup-name-'+index} disabled={person.isSelf} maxLength={48} value={person.isSelf?data.nickname:person.name} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,name:event.target.value}:p)}})}/></Field>
+            <Field label="公開備註"><textarea id={'signup-note-'+index} rows={2} maxLength={200} value={person.note} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,note:event.target.value}:p)}})}/></Field>
+            <Field label="付款歸屬"><select id={'signup-payer-'+index} disabled={person.isSelf} value={person.payerKind} onChange={event=>edit({values:{...draft.values,people:draft.values.people.map((p,i)=>i===index?{...p,payerKind:event.target.value as 'self'|'manager'}:p)}})}><option value="self">參加者本人</option><option value="manager">代報管理人</option></select></Field>
             {draft.values.people.length>1&&<Button variant="ghost" onClick={()=>edit({values:{...draft.values,people:draft.values.people.filter((_,i)=>i!==index)}})}>移除參加者 {index+1}</Button>}
           </details></fieldset>)}
           <Button variant="secondary" disabled={draft.values.people.length>=20} onClick={()=>edit({values:{...draft.values,people:[...draft.values.people,companion()]}})}>新增同行</Button>
           <details className="registration-options" open={draft.values.people.length>1||draft.values.queueMode==='together'||draft.values.intent==='tentative'||undefined}><summary>排隊與參加意願</summary>
-          <div className="account-field"><label htmlFor="signup-mode">排隊方式</label><select id="signup-mode" value={draft.values.queueMode} onChange={event=>edit({values:{...draft.values,queueMode:event.target.value as 'individual'|'together'}})}><option value="individual">逐人分配名額</option><option value="together">整組一起參加</option></select></div>
+          <Field label="排隊方式"><select id="signup-mode" value={draft.values.queueMode} onChange={event=>edit({values:{...draft.values,queueMode:event.target.value as 'individual'|'together'}})}><option value="individual">逐人分配名額</option><option value="together">整組一起參加</option></select></Field>
           <Text>整組名額不足時全組候補，並阻擋後方候補；分開排隊可能部分正式、部分候補。</Text>
-          <div className="account-field"><label htmlFor="signup-intent">參加意願</label><select id="signup-intent" value={draft.values.intent} onChange={event=>edit({values:{...draft.values,intent:event.target.value as 'registered'|'tentative'}})}><option value="registered">確認參加</option><option value="tentative">待確認（不占名額）</option></select></div>
+          <Field label="參加意願"><select id="signup-intent" value={draft.values.intent} onChange={event=>edit({values:{...draft.values,intent:event.target.value as 'registered'|'tentative'}})}><option value="registered">確認參加</option><option value="tentative">待確認（不占名額）</option></select></Field>
           </details>
           <Button variant={preview?'secondary':'primary'} disabled={!!data.signupBlocker||stale} onClick={()=>void makePreview()}>預覽逐人分配</Button>
           {preview&&<section aria-label="報名預覽"><Heading level={3}>逐人分配</Heading><ol>{preview.allocation.map((person,index)=><li key={index}>{person.name} · {statusLabels[person.status]}</li>)}</ol>{mixed&&<label className="consent"><input type="checkbox" checked={partial} onChange={event=>{setPartial(event.target.checked);setConfirm(false);}}/><span>接受部分正式、部分候補的分配</span></label>}</section>}
@@ -207,6 +210,6 @@ function Editor({viewer,initial,manage,quick=false,waiting=false}:{viewer:Member
         {((!manage&&preview)||manage&&draft.personId)&&<label className="consent"><input type="checkbox" disabled={!available||stale||(!manage&&(!preview||(mixed&&!partial)))} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>{consent}</span></label>}
       </fieldset>{(preview||manage&&draft.personId||draft.pending)&&<Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認報名操作結果':manage?'提交報名操作':'提交報名'}</Button>}</form>}
       {!draft.pending&&(!inActivity||stale||message)&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新資料，保留輸入</Button>}
-      {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record}/>
+      <DraftFeedback form={{...record,message:message||record.message}}/>
     </Surface></>;
 }

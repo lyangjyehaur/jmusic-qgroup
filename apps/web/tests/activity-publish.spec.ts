@@ -47,7 +47,7 @@ for(const kind of ['create','save'] as const)test('a completed '+kind+' raced by
   page.on('dialog',dialog=>void dialog.accept());await page.reload();
   if(kind==='create')await page.unroute('**/api/v2/activities/drafts');
   await page.getByRole('button',{name:'確認草稿操作結果',exact:true}).click();await expect(page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true})).toBeVisible();
-  await page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true}).click();if(kind==='create')await page.getByRole('button',{name:'保留草稿並離開',exact:true}).click();
+  await page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true}).click();if(kind==='create')await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();
   await expect(page).toHaveURL('/activities/'+id);await expectLocation(page,'原始地點');expect(writes).toBe(1);
   expect(await durableRows(page)).toEqual(local);
 });

@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { ArchivePaymentCode, CreatePaymentCode, PaymentCode, PaymentCodeId, PaymentCodeLibrary, PaymentCodeName, PaymentCodeSource, PaymentKind, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -42,7 +42,7 @@ function Library({ viewer }: { viewer: Viewer }) {
   const library = useQuery({ queryKey, queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/payment-codes', {  }) });
   const record = useDurableRecord({ key, scope:viewer.scope, seed:blank, parse:raw=>Draft.parse(JSON.parse(raw)), serialize,
     dirty:value=>!!value.form.image||!!value.form.name||!!value.form.source, pending:value=>!!value.pending });
-  const {value:draft,replace:setDraft,busy,setBusy,active,dirty,blocker} = record;
+  const {value:draft,replace:setDraft,busy,setBusy,active,dirty} = record;
   const [error,setError]=useState(''),[message,setMessage]=useState(''),[remove,setRemove]=useState<z.infer<typeof PaymentCode>>();
   const blocked=record.locked;
   const requestedSource = source.success ? source.data : undefined;
@@ -79,15 +79,14 @@ function Library({ viewer }: { viewer: Viewer }) {
     } finally { if (active.current) setBusy(false); }
   }
   return <>
-    {blocker.state === 'blocked' && <Surface role="alert"><Heading level={2}>還有未完成的收款碼操作</Heading><Text>圖片草稿與操作編號保留在此瀏覽器。</Text><Button onClick={() => blocker.reset()}>繼續處理</Button><Button variant="secondary" disabled={busy} onClick={() => void record.leave()}>保留草稿並離開</Button></Surface>}
     {draft.pending && <Surface role="status"><Text>有待確認的{draft.pending.input.command === 'create' ? '保存' : '移除'}操作。</Text><Button loading={busy} disabled={record.unavailable} onClick={() => void send()}>確認操作結果</Button></Surface>}
-    <DraftFeedback form={record} navigation={false}/>
-    {error && <Text role="alert">{error}</Text>}{message && <Text role="status">{message}</Text>}
+    <DraftFeedback form={{...record,message:message||record.message}}/>
+    {error && <Text role="alert">{error}</Text>}
     {requestedSource && <Surface className="detail"><Heading level={2}>從結算保存收款碼</Heading>{importQuery.isPending ? <Notice>正在核對原版收款碼…</Notice> : importQuery.error ? <Failure error={importQuery.error} retry={() => void importQuery.refetch()} /> : !importQuery.data?.can_save ? <Text role="alert">只能保存自己發布結算時使用的收款碼。</Text> : (() => { const code = importQuery.data.codes.find(code => code.kind === requestedSource.kind); return code ? <><Text>第 {requestedSource.version} 版 · {paymentKindLabels[code.kind]}{code.name ? ' · ' + code.name : ''}</Text><PaymentAssetImage url={code.url} scope={viewer.scope} label="原版收款碼" /><Button disabled={blocked || dirty} onClick={() => { change({ kind: code.kind, name: code.name, image: '', source: requestedSource }); }}>帶入原版收款碼</Button>{dirty && !draft.form.source && <Text>先完成或清除下方圖片草稿，再帶入原版收款碼。</Text>}</> : <Text role="alert">原版收款碼不存在，請重新選擇。</Text>; })()}<Link to={'/activities/' + encodeURIComponent(requestedSource.event_id) + '/settlement/images?version=' + requestedSource.version}>回到結算原圖</Link></Surface>}
     {library.isPending ? <Notice>正在讀取收款碼…</Notice> : library.error ? <Failure error={library.error} retry={() => void library.refetch()} /> : <Surface className="detail"><Heading level={2}>已保存（{library.data.codes.length}／30）</Heading>{library.data.codes.length ? <ul className="payment-library">{library.data.codes.map(code => <li key={code.id}><Heading level={3}>{paymentKindLabels[code.kind]}{code.name ? ' · ' + code.name : ''}</Heading><PaymentAssetImage url={code.url} scope={viewer.scope} label={paymentKindLabels[code.kind] + '收款碼' + (code.name ? ' ' + code.name : '')} /><Button variant="secondary" disabled={blocked} onClick={() => setRemove(code)}>移除 {code.name || paymentKindLabels[code.kind] + '收款碼'}</Button></li>)}</ul> : <Text>尚未保存收款碼，可在下方新增。</Text>}</Surface>}
     {remove && <Surface role="alert"><Heading level={2}>移除 {remove.name || paymentKindLabels[remove.kind] + '收款碼'}？</Heading><Text>已發布帳單及歷史圖片會保留。</Text><Button disabled={blocked} onClick={() => void send({ command: 'archive', id: remove.id, data: { confirm: true } })}>確認移除</Button><Button variant="secondary" onClick={() => setRemove(undefined)}>取消移除</Button></Surface>}
     <Surface className="detail"><Heading level={2}>新增收款碼</Heading><form onSubmit={event => { event.preventDefault(); void send({ command: 'create', data: { kind: draft.form.kind, name: draft.form.name, confirm: true, ...(draft.form.source ? { source: draft.form.source } : { image: draft.form.image }) } }); }}>
-      <fieldset disabled={blocked}><div className="account-field"><label htmlFor="payment-kind">收款方式</label><select id="payment-kind" value={draft.form.kind} onChange={event => change({ ...draft.form, kind: PaymentKind.parse(event.target.value) })}>{Object.entries(paymentKindLabels).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}</select></div>
+      <fieldset disabled={blocked}><Field label="收款方式"><select id="payment-kind" value={draft.form.kind} onChange={event => change({ ...draft.form, kind: PaymentKind.parse(event.target.value) })}>{Object.entries(paymentKindLabels).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}</select></Field>
       <label className="account-field">名稱（選填）<input value={draft.form.name} maxLength={80} onChange={event => change({ ...draft.form, name: event.target.value })} /></label>
       <label className="account-field">收款碼圖片<input type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file); }} /></label>
       <Text>PNG、JPEG 或 WebP，原始檔最多 15 MB；在瀏覽器轉為最長邊 1600 像素、最多 2 MB 的 PNG。圖片只供本人與使用該碼的活動結算讀取。</Text>

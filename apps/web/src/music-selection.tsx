@@ -2,8 +2,6 @@ import { errorText, uiText } from './language';
 import { createContext, useContext, useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Heading, Surface } from 'yahha-ui';
-import { Button } from './kimi-ui';
 import { z } from 'zod';
 import { MusicCatalog, Profile, SaveProfile, Selection, type MusicProfile } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -13,6 +11,7 @@ import { musicPeopleReturn, musicTrendReturn } from './music-return';
 import { announceAccountChange } from './account-session';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { DraftLeaveConfirmation } from './draft-navigation';
 import type { Member } from './member-access';
 import { DiscoveryLayer } from './discovery-dialog';
 import { MusicSaveDock, musicSaveDockVisible } from './music-save-dock';
@@ -136,11 +135,7 @@ export function MusicWorkspaceFeedback() {
   if (workspace.state !== 'ready') return null;
   const { selection } = workspace;
   return <FeedbackLayer>
-    {selection.blocker.state === 'blocked' && <Surface className="leave-prompt" role="alert">
-      <Heading level={2}>還有未保存的選擇</Heading>
-      <Button onClick={() => selection.blocker.reset?.()}>繼續編輯</Button>
-      <Button variant="secondary" disabled={selection.sending||selection.record.loading} onClick={() => void selection.record.leave()}>保留草稿並離開</Button>
-    </Surface>}
+    <DraftLeaveConfirmation form={selection.record}/>
     {!musicSaveDockVisible(selection)&&<DraftFeedback form={selection.record} navigation={false} showProgress={false}/>}
     {!musicSaveDockVisible(selection)&&selection.message && <p className="music-save-result" role="status">{selection.message}</p>}
   </FeedbackLayer>;

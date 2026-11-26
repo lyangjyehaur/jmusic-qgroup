@@ -71,7 +71,7 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
   }
   const value=draft.value,source=catalog.data?.entries.find(e=>e.id===value.id),target=catalog.data?.entries.find(e=>e.id===value.toId),stale=!!catalog.data&&value.revision!==catalog.data.revision;
   return <>
-    {message&&<Notice>{message}</Notice>}<DraftFeedback form={record}/>
+    <DraftFeedback form={{...record,message:message||record.message}}/>
     {value.command!=='none'&&<Surface className="detail" role="region" aria-label="詞條操作核對"><Heading level={2}>{({create:uiText('建立詞條'),update:uiText('編輯詞條'),delete:uiText('刪除詞條'),merge:uiText('合併詞條')} as const)[value.command]}</Heading>
       {source&&<Text>來源：{source.name} · {source.id} · {source.count} 人選用 · {source.creationCount} 份建立紀錄</Text>}
       {value.command!=='create'&&!source&&<Text role="alert">來源詞條已不存在；待確認操作仍可查回原結果。</Text>}

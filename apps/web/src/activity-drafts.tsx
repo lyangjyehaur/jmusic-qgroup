@@ -77,7 +77,7 @@ function PendingResult({viewer,id,published=false}:{viewer:Member;id:string;publ
   const storageKey='qgroup:rebuild:activity-draft:'+(published?'arrangements:v1:':'v1:')+viewer.scope+':'+id;
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed:()=>({...original(null),id}),parse:raw=>Draft.refine(v=>v.id===id).parse(JSON.parse(raw)),dirty:()=>false,pending:value=>!!value.pending,blocking:false});
   const {active,busy,setBusy}=record,pending=record.value.pending;
-  if(record.loading||record.readError)return <DraftFeedback form={record}/>;
+  if(record.loading||record.readError)return <DraftFeedback form={{...record,message:message||record.message}}/>;
   if(!pending)return null;
   async function check(){
     if(!pending||!record.begin())return;
@@ -88,7 +88,7 @@ function PendingResult({viewer,id,published=false}:{viewer:Member;id:string;publ
       else {setCompleted(result.state==='completed'&&result.result.id===id);setMessage(result.state==='not_found'?uiText("尚無操作結果；原稿與操作編號已保留。請恢復活動存取後重試。"):uiText("原操作已保存；活動目前無法以草稿開啟，原稿已保留。"));}
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
-  return <Surface><DraftFeedback form={record}/><Button loading={busy} onClick={()=>void check()}>{published?'確認安排操作結果':'確認草稿操作結果'}</Button>{message&&<Text role="status">{message}</Text>}{completed&&<Link to={'/activities/'+encodeURIComponent(id)}>開啟活動，原稿仍保留</Link>}</Surface>;
+  return <Surface><DraftFeedback form={{...record,message:message||record.message}}/><Button loading={busy} onClick={()=>void check()}>{published?'確認安排操作結果':'確認草稿操作結果'}</Button>{completed&&<Link to={'/activities/'+encodeURIComponent(id)}>開啟活動，原稿仍保留</Link>}</Surface>;
 }
 function Comparison({saved}:{saved:Saved}){
   const v=saved.values;
@@ -101,7 +101,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   const [saved,setSaved]=useState(initial),[message,setMessage]=useState(''),[comparison,setComparison]=useState(false),[confirmRemove,setConfirmRemove]=useState(false),[confirmPublish,setConfirmPublish]=useState(false),[destination,setDestination]=useState(''),[completedId,setCompletedId]=useState('');
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>Draft.refine(value=>(!published||!value.pending||value.pending.kind==='save')&&value.id===(initial?.id??null)).parse(JSON.parse(raw)),
     dirty:value=>!!value.reason||JSON.stringify(value.form)!==JSON.stringify(original(saved).form),pending:value=>!!value.pending,blocking:!destination});
-  const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist,dirty,blocker}=record;
+  const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist,dirty}=record;
   const [lookedUp,setLookedUp]=useState<{scope:string;intent:string;id:string;epoch:number}|null>(null);
   const resolvedId=draft.legacySource?.resolvedId??(lookedUp&&lookedUp.scope===viewer.scope&&lookedUp.epoch===record.epoch&&lookedUp.intent===draft.clientIntent?lookedUp.id:undefined);
   const alreadyCreated=!saved&&!!resolvedId;
@@ -198,7 +198,7 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
   let preview:ReturnType<typeof schedulePreview>|null=null,countdown='';
   try{const start=new Date(wallToISO(formStart(f),f.timezone));preview=schedulePreview(start,new Date(+start+Number(f.durationHours)*3600000),f.timezone);countdown=startCountdownText(start,now);}catch{}
   const [advanced,setAdvanced]=useState(published);
-  return <>{blocker.state==='blocked'&&<Surface role="alert"><Text>仍有活動草稿或待確認操作。</Text><Button onClick={()=>blocker.reset()}>繼續編輯</Button><Button variant="secondary" onClick={()=>void record.leave()}>保留草稿並離開</Button></Surface>}
+  return <>
     {saved&&<div className="page-actions"><Link to={'/activities/'+encodeURIComponent(saved.id)+'/delegation'}>管理分工</Link></div>}
     {comparison&&saved&&<Comparison saved={saved}/>}
     {draft.legacySource&&<Notice>已帶入舊稿；原保存版本：{draft.legacySource.baseRevision??'未記錄'}。{draft.legacySource.reviewRequired?'請先核對目前安排，輸入仍保留。':''}{draft.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}</Notice>}
@@ -242,9 +242,9 @@ function Editor({viewer,initial,published=false,copy,copyId}:{viewer:Member;init
       <Button type="submit" loading={busy} disabled={alreadyCreated||record.unavailable||!!draft.legacySource?.reviewRequired||(!draft.pending&&saved?.canEdit===false)||(!dirty&&!!saved)}>{draft.pending?(draft.pending.kind==='create'&&draft.pending.input.publish?'確認發布結果':published?'確認安排操作結果':'確認草稿操作結果'):saved?(published?'保存活動安排':'保存活動草稿'):'發布活動'}</Button></div>
     </form>{saved&&saved.canEdit&&!draft.pending&&<Button variant="secondary" disabled={busy||!!readError} onClick={()=>void rebase()}>核對目前安排，保留輸入</Button>}
     {!published&&saved&&<><Notice>草稿尚未發布，尚未開放報名。</Notice>{saved.isOwner&&!draft.pending&&<div className="draft-publish"><label className="consent"><input type="checkbox" checked={confirmPublish} disabled={locked||dirty} onChange={e=>setConfirmPublish(e.target.checked)}/><span>已核對保存的安排與費用規則，同意以本人報名並發布活動</span></label>{dirty&&<Text>請先保存修改，再核對並發布。</Text>}<Button disabled={!!draft.legacySource?.reviewRequired||!confirmPublish||locked||dirty} onClick={()=>void submit('publish')}>發布活動</Button></div>}{saved.canRemove&&!draft.pending?<div className="draft-remove"><label className="consent"><input type="checkbox" checked={confirmRemove} disabled={busy||!!readError} onChange={e=>setConfirmRemove(e.target.checked)}/><span>確認刪除此活動草稿；保存的紀錄仍會保留</span></label><Button variant="secondary" disabled={!!draft.legacySource?.reviewRequired||!confirmRemove||busy||!!readError} onClick={()=>void submit('remove')}>刪除活動草稿</Button></div>:saved.isOwner&&saved.removalBlocker&&<Notice>{saved.removalBlocker}</Notice>}</>}
-    {message&&<Text role="status">{message}</Text>}{completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
+    {completedId&&<Link to={'/activities/'+encodeURIComponent(completedId)}>開啟活動，原稿仍保留</Link>}
     {!saved&&draft.clientIntent&&!record.loading&&!readError&&<CreateIntentLookup key={viewer.scope+':'+draft.clientIntent+':'+record.epoch} viewer={viewer} kind="activity" intent={draft.clientIntent} disabled={busy} onExisting={id=>setLookedUp({id,scope:viewer.scope,intent:draft.clientIntent!,epoch:record.epoch})}/>}
     {timeCheck&&preview&&<Modal title="核對活動時間" onClose={()=>setTimeCheck(false)} footer={<><Button variant="secondary" onClick={()=>setTimeCheck(false)}>返回修改</Button><Button loading={busy} disabled={locked} onClick={()=>void submit('publish',true)}>日期無誤，發布活動</Button></>}><p className="activity-schedule-lines">{preview.text}</p><p>發布即以本人報名，並接受以上安排與費用規則。</p></Modal>}
-    <DraftFeedback form={record} navigation={false}/>
+    <DraftFeedback form={{...record,message:message||record.message}}/>
     </div></>;
 }

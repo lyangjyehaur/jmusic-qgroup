@@ -83,7 +83,7 @@ test('preserves both onsite tab versions and requires fresh safety confirmations
   expect((await durableRows(other,'versions')).some(row=>JSON.parse(row.raw).people[0].name==='第二頁現場人員')).toBe(true);
   await other.getByRole('button',{name:'讀取已保存版本',exact:true}).click();await expect(other.locator('#onsite-name-0')).toHaveValue('第一頁現場人員');await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await other.getByLabel(/^已與現場參加者核對並接受第/).check();await other.getByLabel(/^已核對對象、狀態與原因/).check();
-  await other.getByText('本機保全版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expect(other.locator('#onsite-name-0')).toHaveValue('第二頁現場人員');
+  await other.getByText('草稿版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expect(other.locator('#onsite-name-0')).toHaveValue('第二頁現場人員');
   await expect(other.getByLabel(/^已與現場參加者核對並接受第/)).not.toBeChecked();await expect(other.getByLabel(/^已核對對象、狀態與原因/)).not.toBeChecked();await expect(other.getByRole('button',{name:'保存現場補錄',exact:true})).toBeDisabled();
   await other.bringToFront();await other.setViewportSize({width:360,height:800});expect(await other.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await other.screenshot({path:'test-results/unified-onsite-draft-recovery-mobile.png',fullPage:true});
 });

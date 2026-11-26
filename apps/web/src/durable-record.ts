@@ -1,7 +1,7 @@
 import { errorText, uiText } from './language';
 import { useEffect, useRef, useState, type SetStateAction } from 'react';
 import { useBlocker, type BlockerFunction } from 'react-router-dom';
-import { DraftConflict, DraftExpired, draftVersions, openDraft, retireDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
+import { DraftConflict, DraftExpired, discardDraft, draftVersions, openDraft, retireDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
 /** Browser persistence only; each caller keeps its own business validation and exact pending format. */
 type RecordOptions<T> = {
   key: string; scope: string; seed: () => T; parse: (raw: string) => T;
@@ -105,9 +105,22 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
     await queue.current;
     return !!readError || halted.current || await persist(current.current);
   }
+  async function discard() {
+    if (loading || busyRef.current || readError || optionsRef.current.pending(current.current)) return false;
+    setBusy(true);
+    try {
+      await queue.current;
+      if (halted.current || revoked.current || !handle.current || optionsRef.current.pending(current.current)) return false;
+      const cleared = await enqueue(discardDraft, uiText('尚未捨棄草稿，請重試；目前內容仍保留。'));
+      if (!cleared || !active.current) return false;
+      replace(optionsRef.current.seed()); setNeedsRestore(false); setMessage(''); setEpoch(n => n + 1);
+      return true;
+    } finally { if (active.current) setBusy(false); }
+  }
   return { value, change, replace, persist, retire, begin, unavailable, locked, busy, setBusy, active, dirty,
     loading, saving:!!saving, readError, damagedRaw, storageError, message, setMessage, needsRestore, restore:() => {setNeedsRestore(false); setEpoch(n => n + 1);},
-    conflict, expired, versions, recover, restoreVersion, refreshVersions:loadVersions, canLeave, epoch };
+    conflict, expired, versions, recover, restoreVersion, refreshVersions:loadVersions, canLeave, discard,
+    hasPending:options.pending(value), canDiscard:!loading&&!busy&&!readError&&!options.pending(value), epoch };
 }
 
 /** A page owns one router blocker, including any nested memory-only operation. */
@@ -115,10 +128,11 @@ export function useDurableRecord<T>(options: RecordOptions<T> & { blocking?: boo
   const form = useDurableValue(options), dirty = form.dirty || !!options.extraDirty;
   const blocker = useBlocker(transition => (dirty || form.saving || form.busy) && (typeof options.blocking === 'function' ? options.blocking(transition) : options.blocking !== false));
   async function leave() { const proceed = blocker.proceed; if (await form.canLeave()) proceed?.(); }
+  async function discardAndLeave() { const proceed = blocker.proceed; if (await form.discard()) proceed?.(); }
   useEffect(() => {
     if ((!dirty && !form.saving && !form.busy) || options.blocking === false) return;
     const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', leave); return () => window.removeEventListener('beforeunload', leave);
   }, [dirty, form.saving, form.busy, options.blocking]);
-  return { ...form, blocker, leave };
+  return { ...form, blocker, leave, discardAndLeave };
 }

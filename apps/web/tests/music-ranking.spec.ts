@@ -78,7 +78,7 @@ test('opens bubbles by keyboard and preserves draft levels, selection markers an
   await sub.getByRole('button', { name: '細分清單', exact: true }).click();
   await expect(sub.locator('li.is-selected')).toContainText('YOASOBI');
   await expect(sub.locator('li.is-selected')).toContainText('已選');
-  await expect(page.getByRole('heading', { name: '還有未保存的選擇' })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: '尚未提交的修改' })).toHaveCount(0);
 });
 test('shows current aggregates and refreshes another tab after erasing a profile without discarding its catalog view', async ({ page, context }) => {
   await login(context); await page.goto('/music?entry=sub-0&subView=bubbles');

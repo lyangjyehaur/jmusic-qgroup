@@ -38,7 +38,7 @@ test('unknown create results preserve exact input and UUID across reload, appear
   const serialized = (await durableRows(page)).filter(row=>row.key.includes('payment-codes:')).map(row=>JSON.parse(row.raw));
   expect(serialized[0].form.image).toBe(''); expect(serialized[0].pending.input.data.image.length).toBeGreaterThan(0);
   page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); await expect(page.getByLabel('名稱（選填）',{exact:true})).toHaveValue('\ufeff斷線原圖\ufeff'); expect(keys).toHaveLength(1);
-  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.goto('/inbox');
+  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留操作並離開', exact: true }).click(); await page.goto('/inbox');
   await expect(page.getByRole('link', { name: '我的收款碼', exact: true })).toBeVisible(); expect(keys).toHaveLength(1); await page.getByRole('link', { name: '我的收款碼', exact: true }).click();
   await page.getByRole('button', { name: '確認操作結果', exact: true }).click(); await expect(page.getByText('收款碼已保存。', { exact: true })).toBeVisible(); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); expect(bodies[0]).toBe(bodies[1]); await expect(page.getByRole('heading', { name: '已保存（1／30）', exact: true })).toBeVisible();
 });
@@ -85,7 +85,7 @@ test('account refresh removes private images, keeps each account draft separate 
   await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue(''); await expect(page.locator('.payment-asset img')).toHaveCount(0); await upload(page, '另一帳號草稿');
   await login(context); await signal.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); });
   await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue('原帳號草稿'); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留草稿並離開', exact: true }).click(); await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
+  await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible(); expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:payment-codes:')))).toEqual([]); await signal.close();
 });
 test('rejects unsupported files and oversize originals without losing an already selected valid image', async ({ page, context }) => {

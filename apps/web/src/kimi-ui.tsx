@@ -100,7 +100,7 @@ type OwnSelectProps = {
   value?: string | number | readonly string[] | null;
   defaultValue?: string | number | readonly string[] | null;
   onChange?: (event: { target: { value: string } }) => void;
-  label?: string;
+  label?: ReactNode;
   hint?: string;
   error?: string;
   className?: string;
@@ -165,7 +165,7 @@ export function Select({
 
 /** 欄位容器：單一原生 input / textarea / Select 直接交給對應的 Yahha 欄位元件。 */
 export function Field({ label, hint, error, required, children, className }: {
-  label: string; hint?: string; error?: string; required?: boolean; children: ReactNode; className?: string;
+  label: ReactNode; hint?: string; error?: string; required?: boolean; children: ReactNode; className?: string;
 }) {
   const child = isValidElement(children) ? (children as ReactElement<any>) : null;
   const shared = { label, hint, error, required };
@@ -174,6 +174,14 @@ export function Field({ label, hint, error, required, children, className }: {
   }
   if (child && child.type === 'textarea') {
     return <YTextarea {...shared} {...child.props} className={cn('yj-field', className)} />;
+  }
+  // Native selects keep their form/event contract and receive the same field layout.
+  if (child && child.type === 'select') {
+    return <div className={cn('field yj-field native-select-field', className)}>
+      <label className="yj-label" htmlFor={child.props.id}>{label}{required && <span className="required">必填</span>}</label>
+      {child}
+      {(error || hint) && <span className={cn('field-hint', error && 'field-error')}>{error || hint}</span>}
+    </div>;
   }
   if (child && child.type === Select) {
     return <Select

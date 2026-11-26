@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicProfile, ResetMusicPin, type Viewer } from '@qgroup/contracts';
 import { adminHttp, adminReadHttp, type Access } from './admin';
@@ -14,9 +14,9 @@ import { readAdminMusicProfile } from './admin-music-profile';
 
 const Pending = z.object({ requestId: z.string().uuid() }).strict();
 type Profile = z.infer<typeof AdminMusicProfile>;
-export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, onBusy, onCurrent }: {
+export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, onBusy, onPending, onCurrent }: {
   id: string; profile: Profile | null; viewer: Viewer; access: Access; disabled: boolean;
-  onDirty: (dirty: boolean) => void; onBusy: (busy: boolean) => void; onCurrent: (profile: Profile | null) => void;
+  onDirty: (dirty: boolean) => void; onBusy: (busy: boolean) => void; onPending: (pending: boolean) => void; onCurrent: (profile: Profile | null) => void;
 }) {
   const client = useQueryClient();
   const storageKey = 'qgroup:rebuild:admin-music-pin:v1:' + viewer.scope + ':' + access.scope + ':' + id;
@@ -33,6 +33,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
   useEffect(()=>{if(record.expired){setPin('');setReason('');setConfirm(false);}},[record.expired]);
   useEffect(()=>{if(!profile){setPin('');setReason('');setConfirm(false);}},[profile===null]);
   useEffect(() => { onDirty(!!pending || !!pin || !!reason || !!record.readError || legacyInvalid!==null || busy || record.loading || record.saving);onBusy(busy||record.loading||record.saving); }, [pending, pin, reason, record.readError, legacyInvalid, busy, record.loading,record.saving,onDirty,onBusy]);
+  useEffect(() => { onPending(!!pending); }, [pending,onPending]);
   const failed=(error:unknown)=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});};
   const history = useInfiniteQuery({ queryKey: ['private', viewer.scope, 'admin-music-pin-history', access.scope, id], initialPageParam: Number.MAX_SAFE_INTEGER, enabled: expanded && !!profile,
     queryFn: ({ pageParam,signal }) => adminReadHttp(viewer).requestContract('GET /api/v2/admin/music/:id/pin-history', { params: { id }, signal, query: { before: pageParam } }), getNextPageParam: page => page.nextCursor ?? undefined });
@@ -89,7 +90,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
     {disabled && !pending && <Text>請先完成或清除關聯草稿，再重設口令。</Text>}
     <form onSubmit={event => { event.preventDefault(); void save(); }}>
       <label className="account-field">新找回口令<input type="password" inputMode="numeric" autoComplete="off" maxLength={6} value={pin} disabled={disabled || locked} onChange={event => { setPin(event.target.value); setConfirm(false); }} /></label>
-      <div className="account-field"><label htmlFor={'music-pin-reason-' + id}>重設原因</label><textarea id={'music-pin-reason-' + id} rows={2} maxLength={500} value={reason} disabled={disabled || locked} onChange={event => { setReason(event.target.value); setConfirm(false); }} /></div>
+      <Field label="重設原因"><textarea id={'music-pin-reason-' + id} rows={2} maxLength={500} value={reason} disabled={disabled || locked} onChange={event => { setReason(event.target.value); setConfirm(false); }} /></Field>
       <label className="consent"><input type="checkbox" checked={confirm} disabled={disabled || locked} onChange={event => setConfirm(event.target.checked)} /><span>確認已核對成分及申請人，重設找回口令</span></label>
       <Button type="submit" loading={busy} disabled={disabled || locked || !confirm || !reason.trim() || !/^[0-9]{4,6}$/.test(pin.trim())}>重設口令</Button>
     </form>
@@ -100,8 +101,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
     {!pending && profile && <Button variant="secondary" disabled={disabled||locked} onClick={()=>void refresh()}>核對目前成分版本</Button>}
     {notFound && !profile && <Button variant="secondary" disabled={unavailable||busy||legacyInvalid!==null} onClick={()=>void finishMissing()}>保全操作編號並結束核對</Button>}
     {!profile && !pending && !message && !record.loading && !record.readError && damaged===null && <Notice>沒有待確認的口令操作。</Notice>}
-    {message && <Text role="status">{message}</Text>}
-    <DraftFeedback form={damaged!==null&&!record.conflict&&!record.expired?{...record,readError:''}:record} navigation={false}/>
+    <DraftFeedback form={{...record,message:message||record.message,readError:damaged!==null&&!record.conflict&&!record.expired?'':record.readError}} navigation={false}/>
     {damaged!==null&&<div role="alert"><Text>口令操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原始內容不會複製到保全版本。</Text>
       <Button disabled={busy||record.loading||record.expired} onClick={()=>{const url=URL.createObjectURL(new Blob([damaged],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='qgroup-pin-operation-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setDownloaded(true);}}>下載舊操作紀錄</Button>
       <Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void (async()=>{try{if(legacyInvalid!==null){if(sessionStorage.getItem(storageKey)!==legacyInvalid)throw Error('舊紀錄已有變更，請重新載入後核對。');sessionStorage.removeItem(storageKey);setLegacyInvalid(null);}else{if(!await persist(null))return;await record.recover();}}catch(error){setMessage(error instanceof Error?errorText(error):uiText("無法清除操作紀錄。"));}})()}>清除已下載的舊紀錄</Button>

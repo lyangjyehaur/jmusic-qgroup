@@ -91,7 +91,7 @@ test('two tabs preserve competing read commands and send only the saved operatio
   await other.getByRole('button', { name: '讀取已保存版本', exact: true }).click(); expect((await pendingRow(other)).raw).toBe(original.raw);
   await retry(other).click(); await expect(other.getByText(success, { exact: true })).toBeVisible(); expect(writes).toHaveLength(2); expect(writes[1]).toEqual(writes[0]);
   await expect(notices(other).getByRole('heading', { name: '站內通知 · 104 未讀', exact: true })).toBeVisible();
-  await notices(other).getByText('本機保全版本（1）', { exact: true }).click(); await notices(other).getByRole('button', { name: '載入此原稿（保留目前版本）', exact: true }).click();
+  await notices(other).getByText('草稿版本（1）', { exact: true }).click(); await notices(other).getByRole('button', { name: '載入此原稿（保留目前版本）', exact: true }).click();
   await expect(retry(other)).toBeVisible(); expect(writes).toHaveLength(2); expect(JSON.parse((await pendingRow(other)).raw).input.ids).toHaveLength(100);
 });
 
@@ -114,7 +114,7 @@ test('malformed saved commands are preserved for download without sending, inclu
   const raw = JSON.stringify({ key: crypto.randomUUID(), input: { ids: ['PRIVATE_INVALID_ID'] } }); await damageDraft(page, 'notifications-read:', raw);
   await page.reload(); await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。', { exact: false })).toBeVisible(); let writes = 0; page.on('request', request => { if (request.url().endsWith('/notifications/read') && request.method() === 'POST') writes++; });
   await page.getByRole('button', { name: '保全原稿後繼續', exact: true }).click(); expect((await durableRows(page, 'versions')).map(row => row.raw)).toContain(raw); expect(writes).toBe(0);
-  await notices(page).getByText('本機保全版本（1）', { exact: true }).click(); await notices(page).getByRole('button', { name: '載入此原稿（保留目前版本）', exact: true }).click();
+  await notices(page).getByText('草稿版本（1）', { exact: true }).click(); await notices(page).getByRole('button', { name: '載入此原稿（保留目前版本）', exact: true }).click();
   await expect(page.getByText('這份原稿格式無法讀取，請下載保全檔。', { exact: true })).toBeVisible();
   expect(await notices(page).textContent()).not.toContain('PRIVATE_INVALID_ID');
   const download = page.waitForEvent('download'); await notices(page).getByRole('button', { name: '下載保全檔', exact: true }).click(); expect(await readFile((await (await download).path())!, 'utf8')).toBe(raw);
