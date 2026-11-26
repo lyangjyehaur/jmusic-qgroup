@@ -31,7 +31,7 @@ import { LegacyRoomsRecovery } from './legacy-rooms-recovery';
 import { LegacyTimePollRecovery } from './legacy-time-poll-recovery';
 import { LegacyDetailedSettlementRecovery } from './legacy-detailed-settlement-recovery';
 import { deviceDraftEpoch } from './draft-store';
-import { checkLegacySnapshot,importLegacyDraft,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
+import { checkLegacySnapshot,discardLegacyDrafts,isLegacyDraftSnapshot,importLegacyDraft,preserveLegacy,type LegacyInventory,type LegacySnapshot } from './legacy-local-store';
 const endpoint='/me/local-history';
 function useOriginals(viewer:Member){return useQuery({queryKey:['private',viewer.scope,'legacy-local'],queryFn:async()=>{const inventory=await preserveLegacy(viewer.scope),epoch=await deviceDraftEpoch();return {...inventory,mappings:inventory.mappings.filter(m=>m.deviceEpoch===epoch)};},refetchOnWindowFocus:'always',staleTime:0});}
 export function LegacyLocalLink(){return <Link to={endpoint}>舊看板本機紀錄</Link>;}
@@ -45,19 +45,36 @@ export function LegacyLocalGuard({children}:{children:ReactNode}){
 }
 function Guard({viewer,path,children}:{viewer:Member;path:string;children:ReactNode}){
   const query=useOriginals(viewer);
-  if(query.isPending||query.isFetching)return <Notice>正在核對舊本機紀錄…</Notice>;
+  if(query.isPending)return <Notice>正在核對舊本機紀錄…</Notice>;
   if(query.error)return <Failure error={query.error} retry={()=>void query.refetch()}/>;
   const mapped=new Set(query.data.mappings.map(m=>m.id));
-  if(query.data.rows.some(row=>!mapped.has(row.id)&&legacyBlocks(describeLegacy(row.source,viewer.scope),path)))return <Notice>此操作仍有舊看板原稿或原請求。請先核對原結果；目前不會轉成另一筆新版操作。<LegacyLocalLink/></Notice>;
+  if(query.data.draftCleanupPending||query.data.rows.some(row=>!mapped.has(row.id)&&legacyBlocks(describeLegacy(row.source,viewer.scope),path)))return <Notice>{query.data.draftCleanupPending?'舊版草稿清除未完成，請重試。':'此操作仍有舊看板原稿或原請求。請先核對原結果；目前不會轉成另一筆新版操作。'}<LegacyLocalLink/>{(query.data.draftCleanupPending||query.data.rows.some(row=>isLegacyDraftSnapshot(row,viewer.scope)))&&<LegacyDraftCleanup viewer={viewer}/>}</Notice>;
+  if(query.isFetching)return <Notice>正在核對舊本機紀錄…</Notice>;
   return children;
 }
 export function LegacyLocalPage(){return <><PageIntro title="舊看板本機紀錄"/><MemberAccess>{viewer=><Inventory key={viewer.scope} viewer={viewer}/>}</MemberAccess></>;}
+function LegacyDraftCleanup({viewer}:{viewer:Member}){
+  const client=useQueryClient(),active=useRef(false),locked=useRef(false),[busy,setBusy]=useState(false),[message,setMessage]=useState('');
+  useEffect(()=>{active.current=true;return()=>{active.current=false;};},[]);
+  async function clear(){
+    if(locked.current)return;locked.current=true;setBusy(true);setMessage('');
+    try{
+      const epoch=await deviceDraftEpoch(),fresh=await client.fetchQuery({...sessionQuery,staleTime:0});
+      if(!active.current||!fresh.authenticated||fresh.scope!==viewer.scope||await deviceDraftEpoch()!==epoch)throw Error('帳號或本機紀錄已變更，請重新讀取。');
+      await discardLegacyDrafts(viewer.scope,()=>active.current);
+      if(active.current)await client.invalidateQueries({queryKey:['private',viewer.scope,'legacy-local']});
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText('舊版草稿清除未完成，請重試。'));}
+    finally{locked.current=false;if(active.current)setBusy(false);}
+  }
+  return <div className="legacy-conversion"><Text>清除此帳號在本瀏覽器的全部舊版草稿，無法復原。新版草稿保留；已送出的原請求仍須核對。</Text><Button disabled={busy} onClick={()=>void clear()}>{busy?'正在清除舊版草稿…':'清除舊版草稿，重新填寫'}</Button>{message&&<Text role="alert">{message}</Text>}</div>;
+}
 function Inventory({viewer}:{viewer:Member}){
   const query=useOriginals(viewer);
   return <Surface className="detail"><Notice>原草稿與請求按身份保全，原儲存仍保留。先核對原結果，再帶入新版表單或使用原編號重試；未支援的格式保留原紀錄。</Notice>
     {query.isPending?<Notice>正在讀取舊紀錄…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
       {query.data.disabled&&<Notice>已登出清除這台裝置的舊紀錄，舊分頁不能自動寫回。</Notice>}
-      {!query.data.rows.length?<Text>此帳號在這個瀏覽器沒有舊看板紀錄。</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
+      {!query.data.rows.length?<Text>{query.data.draftCleanupPending?'舊版草稿清除未完成，請重試。':'此帳號在這個瀏覽器沒有舊看板紀錄。'}</Text>:<ul className="inbox-list">{query.data.rows.map(row=><li key={row.id}><Snapshot viewer={viewer} inventory={query.data} row={row}/></li>)}</ul>}
+      {(query.data.draftCleanupPending||query.data.rows.some(row=>isLegacyDraftSnapshot(row,viewer.scope)))&&<LegacyDraftCleanup viewer={viewer}/>}
       <ImportDraft viewer={viewer} inventory={query.data}/>
       <Button variant="secondary" disabled={query.isFetching} onClick={()=>void query.refetch()}>重新讀取舊紀錄</Button>
     </>}
