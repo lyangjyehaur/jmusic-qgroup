@@ -14,7 +14,12 @@ export function PageTools() {
       if (root.style.getPropertyValue(name) !== length) root.style.setProperty(name, length);
     };
     const update = () => {
-      const inset = viewport?.scale === 1 ? Math.max(0, innerHeight - viewport.height - viewport.offsetTop) : 0;
+      const focused = document.activeElement;
+      const editing = focused instanceof HTMLElement && focused.matches('input:not([type=checkbox]):not([type=radio]):not([type=button]):not([type=submit]),textarea,[contenteditable]:not([contenteditable=false]),[role=textbox]');
+      const reduction = viewport?.scale === 1 ? Math.max(0, innerHeight - viewport.height - Math.max(0, viewport.offsetTop)) : 0;
+      // Browser chrome and elastic overscroll also change the visual viewport.
+      // Only a substantial reduction while editing should lift save actions.
+      const inset = editing && reduction > 150 ? reduction : 0;
       setLength('--visual-viewport-inset', inset);
       const next = main?.querySelector('.music-save-dock:not([hidden])') ?? main?.querySelector('.mobile-selection-save') ?? main?.querySelector('.editor-actions') ?? null;
       if (next !== actions) {
@@ -34,6 +39,8 @@ export function PageTools() {
     window.addEventListener('resize', update);
     viewport?.addEventListener('resize', update);
     viewport?.addEventListener('scroll', update);
+    document.addEventListener('focusin', update);
+    document.addEventListener('focusout', update);
     mobile.addEventListener('change', update);
     update();
     return () => {
@@ -42,6 +49,8 @@ export function PageTools() {
       window.removeEventListener('resize', update);
       viewport?.removeEventListener('resize', update);
       viewport?.removeEventListener('scroll', update);
+      document.removeEventListener('focusin', update);
+      document.removeEventListener('focusout', update);
       mobile.removeEventListener('change', update);
       root.style.removeProperty('--visual-viewport-inset');
       root.style.removeProperty('--mobile-actions-height');

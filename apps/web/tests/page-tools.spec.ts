@@ -8,8 +8,8 @@ for (const mobile of [false, true]) test(`returning to the top preserves unfinis
   await page.setViewportSize({ width: mobile ? 360 : 1280, height: mobile ? 800 : 600 });
   await page.emulateMedia({ reducedMotion: mobile ? 'reduce' : 'no-preference' });
   await page.goto('/me/music');
-  const dock = page.getByRole('navigation', { name: '主要導覽' });
-  await expect(dock).toHaveCSS('position', mobile ? 'fixed' : 'static');
+  const dock = page.getByRole('navigation', { name: mobile ? '手機主要導覽' : '主要導覽', exact: true });
+  if (mobile) await expect(dock).toHaveCSS('position', 'fixed');
   if (mobile) {
     const box = await dock.boundingBox();
     expect(box!.y + box!.height).toBe(800);
@@ -24,6 +24,7 @@ for (const mobile of [false, true]) test(`returning to the top preserves unfinis
   page.on('request', request => { if (request.method() === 'PUT') writes++; });
   await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
   await expect(top).toBeInViewport();
+  await expect(top).toHaveCSS('position', 'fixed');
   if (mobile) {
     const tool = await top.boundingBox(), save = await page.locator('.music-save-dock:not([hidden])').boundingBox();
     expect(tool!.y + tool!.height).toBeLessThanOrEqual(save!.y);
@@ -70,10 +71,10 @@ test('mobile save stays above a reduced visual viewport and returns after the ke
   });
   const save = page.locator('.music-save-dock:not([hidden])').getByRole('button', { name: '保存詞條變動', exact: true });
   await expect.poll(async () => { const box = await save.boundingBox(); return box!.y + box!.height; }).toBeLessThanOrEqual(470);
-  const keyboardDock = await page.getByRole('navigation', { name: '主要導覽' }).boundingBox();
-  expect(keyboardDock!.y + keyboardDock!.height).toBe(470);
+  const keyboardDock = await page.getByRole('navigation', { name: '手機主要導覽', exact: true }).boundingBox();
+  expect(keyboardDock!.y + keyboardDock!.height).toBe(800);
   const keyboardSave = await page.locator('.music-save-dock:not([hidden])').boundingBox();
-  expect(keyboardSave!.y + keyboardSave!.height).toBeLessThanOrEqual(keyboardDock!.y);
+  expect(keyboardSave!.y + keyboardSave!.height).toBe(458);
   await expect(page.getByRole('button', { name: '回到頂部', exact: true })).toHaveCount(0);
   expect(await durableRows(page)).toEqual(original);
   await page.evaluate(() => {
@@ -82,12 +83,17 @@ test('mobile save stays above a reduced visual viewport and returns after the ke
     (document.activeElement as HTMLElement)?.blur();
     scrollTo(0, document.documentElement.scrollHeight);
   });
-  const dock = page.getByRole('navigation', { name: '主要導覽' });
+  const dock = page.getByRole('navigation', { name: '手機主要導覽', exact: true });
   await expect.poll(async () => { const box = await dock.boundingBox(); return box!.y + box!.height; }).toBe(800);
   const nav = await dock.boundingBox();
   await expect.poll(async () => { const box = await page.locator('.music-save-dock:not([hidden])').boundingBox(); return box!.y + box!.height; }).toBe(nav!.y-12);
   const top = page.getByRole('button', { name: '回到頂部', exact: true });
   await expect(top).toBeInViewport();
+  await expect(top).toHaveCSS('position', 'fixed');
+  await expect.poll(async () => {
+    const tool = (await top.boundingBox())!, bar = (await page.locator('.music-save-dock:not([hidden])').boundingBox())!;
+    return tool.y + tool.height - bar.y;
+  }).toBeLessThanOrEqual(0);
   const tool = await top.boundingBox(), bar = await page.locator('.music-save-dock:not([hidden])').boundingBox();
   expect(tool!.y + tool!.height).toBeLessThanOrEqual(bar!.y);
   await save.click();

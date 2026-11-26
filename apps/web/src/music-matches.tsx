@@ -1,4 +1,4 @@
-import { ChevronDown, ChevronRight, CircleHelp, GitCompareArrows } from 'lucide-react';
+import { ChevronRight, CircleHelp, GitCompareArrows } from 'lucide-react';
 import { Avatar, Badge, Select, Disclosure } from './kimi-ui';
 import { ActionLink } from './action-link';
 import { musicEntryPath } from './music-entry';
@@ -24,7 +24,7 @@ export function MusicRecommendations({ viewer }: { viewer: Member }) {
     <Select aria-label="排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}>
       <option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option>
     </Select></div>
-    <Disclosure className="match-rules sort-rules"  title={<><CircleHelp size={15}/>匹配度與排序規則<ChevronDown size={15}/></>}><Text>嚴格重合按領域 55%、細分 45% 及雙方較低熟悉度計算；四檔權重為 0.3／0.5／0.8／1，只有一種類型時使用該類完整比重。匹配度為 100 × √嚴格重合率；共同 1／2／3 項上限為 36／49／64%。</Text>
+    <Disclosure className="match-rules sort-rules"  title={<><CircleHelp size={15}/>匹配度與排序規則</>}><Text>嚴格重合按領域 55%、細分 45% 及雙方較低熟悉度計算；四檔權重為 0.3／0.5／0.8／1，只有一種類型時使用該類完整比重。匹配度為 100 × √嚴格重合率；共同 1／2／3 項上限為 36／49／64%。</Text>
       <Text>共同項／冷門排序依共同項數、證據折算分及冷門項數；熟悉度排序先看你的共同本命與熟悉度。對方選擇不超過 3 項時另列，按共同項數、嚴格重合及冷門項數由少至多排序；熟悉度排序不使用證據折算分。冷門詞條為不超過 2 人選用。</Text></Disclosure>
     {query.isPending || !query.isFetchedAfterMount ? <Notice>正在尋找同好…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
       {!query.data.mine.length ? <Notice>尚未選擇詞條，請先<Link to="/me/music">保存成分選擇</Link>。</Notice>

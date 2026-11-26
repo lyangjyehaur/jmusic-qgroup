@@ -1,0 +1,83 @@
+/* Shared shell details from the Kimi prototype. The dock stays anchored to the
+   viewport; keyboard avoidance belongs to editing actions, not navigation. */
+:root {
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-area-left: env(safe-area-inset-left, 0px);
+  --safe-area-right: env(safe-area-inset-right, 0px);
+  --mobile-controls-bottom: max(var(--mobile-dock-height, 0px), var(--visual-viewport-inset, 0px));
+}
+.kimi-shell .nav-item { transition: background .15s, color .15s; }
+.kimi-shell :is(.nav-item, .dock-item, .sidebar-account, .menu-trigger),
+.kimi.menu-popover .shell-popover > a,
+.kimi.menu-popover .activity-menu > a { text-decoration: none; }
+/* Keep Yahha's selected paper fill and keyboard focus ring, without its ink line. */
+.kimi .yj-tabs-list > .tab::after,
+.kimi :is(.tabs, .section-links) > :is(button, a)::after { content: none; }
+.kimi :is(.tabs, .section-links) > :is(button, a) { text-decoration: none; }
+.kimi .yj-tabs-list > .tab { padding-block: 10px; }
+.kimi .recommend-rank { flex-shrink: 0; white-space: nowrap; }
+.kimi-shell .global-search-link kbd { display: flex; align-items: center; gap: 2px; }
+/* Yahha buttons are positioned relative; declare floating geometry outside the
+   retained CSS layer so the shared button class cannot undo fixed positioning. */
+.kimi-shell .back-to-top {
+  position: fixed; z-index: 39; right: max(16px, var(--safe-area-right)); left: auto;
+  bottom: max(16px, var(--safe-area-bottom)); width: 44px; height: 44px;
+  padding: 0; border: 1px solid var(--line); border-radius: 50%;
+  color: var(--ink); background: var(--paper); box-shadow: 0 2px 8px var(--app-shadow);
+}
+
+@media (max-width: 768px) {
+  :root, .kimi, .kimi-shell {
+    --topbar-height: calc(56px + var(--safe-area-top));
+    --mobile-dock-height: calc(62px + var(--safe-area-bottom));
+  }
+  /* Prevent page rubber-banding from carrying fixed navigation with it on iOS.
+     Dialogs keep their own scrolling and overscroll containment. */
+  html, body { overscroll-behavior-y: none; }
+  .kimi-shell .topbar {
+    height: var(--topbar-height);
+    padding: var(--safe-area-top) max(16px, var(--safe-area-right)) 0 max(16px, var(--safe-area-left));
+  }
+  .kimi.page,
+  .kimi-shell .main > .retained-page > .kimi,
+  .kimi-shell .main > .retained-page > :not(.kimi) {
+    padding-inline: max(16px, var(--safe-area-left)) max(16px, var(--safe-area-right));
+  }
+  .kimi.yj-dialog > [class*="dialogTitle"] {
+    padding-left: max(20px, var(--safe-area-left));
+    padding-right: calc(max(20px, var(--safe-area-right)) + 44px);
+  }
+  .kimi.yj-dialog > [class*="dialogClose"] { right: max(12px, var(--safe-area-right)); }
+  .kimi.yj-dialog > :is([class*="dialogBody"], [class*="dialogFooter"]) {
+    padding-inline: max(16px, var(--safe-area-left)) max(16px, var(--safe-area-right));
+  }
+  .kimi-shell .topbar .menu-trigger { padding: 0 5px; min-height: 40px; }
+  .kimi-shell .appearance-menu .menu-trigger { width: 40px; justify-content: center; padding: 0; }
+  .kimi-shell .appearance-menu .menu-trigger > span { display: none; }
+  .kimi-shell .topbar .global-search-link { height: 40px; min-height: 40px; }
+  .kimi-shell .global-search-link > svg { width: 19px; height: 19px; }
+  .kimi-shell .global-search-link kbd { display: none; }
+  .kimi-shell .mobile-dock {
+    position: fixed; bottom: 0; left: 0; right: 0; z-index: 40;
+    height: var(--mobile-dock-height); min-height: var(--mobile-dock-height);
+    padding: 5px max(8px, var(--safe-area-right)) var(--safe-area-bottom) max(8px, var(--safe-area-left));
+    background: color-mix(in srgb, var(--paper) 97%, transparent);
+    border-top: 1px solid var(--line); backdrop-filter: blur(14px);
+  }
+  .kimi-shell .mobile-dock .dock-item { min-width: 0; min-height: 52px; }
+  /* Keep page actions above the dock, or directly above an open keyboard. */
+  .kimi .mobile-selection-save,
+  .kimi .activity-form .sticky-save-bar,
+  .kimi .editor-actions { bottom: var(--mobile-controls-bottom); }
+  .kimi .draft-save-bar { bottom: calc(var(--mobile-controls-bottom) + 8px); }
+  .kimi.yj-dialog :is(.mobile-selection-save, .editor-actions, .draft-save-bar) { bottom: 0; }
+  .music-save-dock.kimi { bottom: calc(var(--mobile-controls-bottom) + 12px); }
+  .kimi-shell .back-to-top { bottom: calc(var(--mobile-controls-bottom) + var(--mobile-actions-height, 0px) + 16px); }
+  .kimi-shell:has(.music-save-dock:not([hidden])) .back-to-top {
+    bottom: calc(var(--mobile-controls-bottom) + var(--music-save-dock-height, 96px) + 36px);
+  }
+  .app-status-notices {
+    bottom: calc(var(--mobile-controls-bottom) + var(--music-save-dock-height, 0px) + 42px);
+  }
+}

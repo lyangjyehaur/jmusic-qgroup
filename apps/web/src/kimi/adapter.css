@@ -135,7 +135,6 @@
  .kimi .yj-tabs-list { gap: 20px; }.kimi .music-filters > span { margin-left: 0; }.kimi .music-filters { gap: 8px; }
  .kimi .music-browse-tabs .yj-tabs-list { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 0; }
  .kimi .music-browse-tabs .tab { min-width: 0; justify-content: center; padding-inline: 2px; font-size: 12px; }
- .kimi-shell .mobile-dock { background: var(--paper); bottom: var(--visual-viewport-inset,0px); }
 }
 
 @media(max-width:768px){.kimi-shell .mobile-dock { display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)); }.kimi-shell .mobile-dock .dock-item { display: flex !important; }.kimi-shell .mobile-dock .dock-item > span { display: block !important; }.kimi-shell .sidebar { display: none !important; }}
