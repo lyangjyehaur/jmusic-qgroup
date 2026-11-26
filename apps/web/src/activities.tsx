@@ -16,6 +16,7 @@ import { ActionLink } from './action-link';
 import { ActivityParticipation } from './activity-participation';
 import { ActivityDetailStatus } from './activity-detail-status';
 import { useActivityDetailRefresh } from './activity-detail-refresh';
+import { participationReturn } from './participation-return';
 import { InterfaceIcon } from './interface-icons';
 import { Badge, PageHeader, Tabs, PopupMenu } from './kimi-ui';
 const phaseLabel: Record<string, string> = { draft: uiText("草稿"), scheduled: uiText("即將開始"), ongoing: uiText("進行中"), ended: uiText("已結束"), cancelled: uiText("已取消") };
@@ -23,7 +24,7 @@ export { KimiActivitiesPage as Activities } from './kimi-activities';
 export function ActivityDetail({ panel, activeTab }: { panel?: ReactNode; activeTab?: string } = {}) {
   const location=useLocation(),navigate=useNavigate();
   const { id = '' } = useParams();
-  const [search]=useSearchParams();const task=search.get('task');
+  const [search]=useSearchParams();const task=search.get('task'),participationBack=participationReturn(search.get('from'));
   const session = useSession(); const viewer = session.data;
   useActivityDetailRefresh(id,viewer?.scope,location.pathname==='/activities/'+encodeURIComponent(id));
   const query = useQuery({ queryKey: ['private', viewer?.scope, 'activity', id], queryFn: () => scopedHttp(viewer!.scope).requestContract('GET /api/v2/activities/:id', { params: { id } }), enabled:!!viewer });
@@ -36,7 +37,7 @@ export function ActivityDetail({ panel, activeTab }: { panel?: ReactNode; active
   const base='/activities/'+encodeURIComponent(id);
   const tab=activeTab??(location.hash==='#participants'?'members':['members','rooms','manage'].includes(search.get('view')??'')?search.get('view')!:'overview');
   const tabURL=(value:string)=>{const params=new URLSearchParams(search);params.delete('view');params.delete('task');if(value!=='overview')params.set('view',value);return base+(params.size?'?'+params:'')+(value==='members'?'#participants':'');};
-  return <div className="kimi page activity-detail-page"><div className="detail-back-row"><Link className="back" to="/activities">← 所有活動</Link><span>活動 ID · {id}</span></div>
+  return <div className="kimi page activity-detail-page"><div className="detail-back-row"><Link className="back" to={participationBack ?? '/activities'}>{participationBack ? '← 返回參加紀錄' : '← 所有活動'}</Link><span>活動 ID · {id}</span></div>
     <PageHeader title={event.title} actions={<div className="page-actions"><ActionLink to={base+'/share'}>分享活動</ActionLink><PopupMenu className="activity-more"  title={<>更多活動操作</>}><div className="activity-menu"><Link to={'/activities/new?copyFrom='+encodeURIComponent(id)}>再約一次</Link><Link to={base+'/conditions'}>安排版本與確認</Link><Link to={base+'/history'}>活動歷史</Link>{viewer?.authenticated&&<><ActivityManagementLink key={viewer.scope} eventId={id} viewer={viewer}/><ActivityLifecycleLink key={'state:'+viewer.scope} eventId={id} viewer={viewer}/><Link to={base+'/delegation'}>管理分工</Link><Link to={base+'/bot-deliveries'}>群通知紀錄</Link></>}</div></PopupMenu></div>}/>
     <div className="status-strip"><Badge tone={event.phase==='ongoing'&&!event.estimatedOver?'blue':'neutral'}>{event.archived?'已歸檔':event.estimatedOver?'已過預定時間':phaseLabel[event.phase]??event.phase}</Badge><Badge>{activityCategoryLabel(event.category)}</Badge><span><InterfaceIcon name="people" size={15}/>{event.confirmed} / {event.capacity||'不限'} 人{event.waiting>0?' · 候補 '+event.waiting+' 人':''}</span></div>
     {typeof location.state?.activityNotice==='string'&&<Notice>{location.state.activityNotice}</Notice>}
@@ -44,7 +45,7 @@ export function ActivityDetail({ panel, activeTab }: { panel?: ReactNode; active
     <div className="activity-overview-mount detail-layout"><div className="detail-primary"><section className="event-facts" aria-label="活動安排"><div><InterfaceIcon name="clock"/><span><small>日期與時間</small><strong className="activity-time-range">{activityDisplayTimeRange(event)}</strong></span></div><div><InterfaceIcon name="location"/><span><small>集合地點</small><strong><ActivityLocation value={event.location}/></strong></span></div>{event.description&&<div><InterfaceIcon name="info"/><span><small>注意事項</small><p className="description activity-notes">{event.description}</p></span></div>}{event.feePolicy&&<div className="activity-fee-policy"><InterfaceIcon name="wallet"/><span><small>費用規則</small><p className="description activity-notes">{event.feePolicy}</p></span></div>}</section>
     {viewer&&<ActivityParticipation key={viewer.scope+':'+id} event={event} viewer={viewer}/>}
     {event.estimatedOver && <Notice>預定時間已過，實際結束狀態尚未確認。</Notice>}
-    <Tabs label="活動內容" value={tab} onChange={value=>navigate(value==='settlement'?base+'/settlement':tabURL(value))} items={[{value:'overview',label:uiText('總覽')},{value:'members',label:uiText('成員')},{value:'rooms',label:uiText('分房')},{value:'settlement',label:uiText('結算')},{value:'manage',label:uiText('管理')}]}/>
+    <Tabs label="活動內容" value={tab} onChange={value=>navigate(value==='settlement'?base+'/settlement'+(participationBack?'?'+new URLSearchParams({from:participationBack}):''):tabURL(value))} items={[{value:'overview',label:uiText('總覽')},{value:'members',label:uiText('成員')},{value:'rooms',label:uiText('分房')},{value:'settlement',label:uiText('結算')},{value:'manage',label:uiText('管理')}]}/>
 
     {panel ? <section className="activity-tab-content">{panel}</section> : <>
       {task&&<Notice>已開啟對應活動；此入口不會自動提交報名、確認或款項操作。</Notice>}

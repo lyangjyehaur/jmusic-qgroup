@@ -24,7 +24,7 @@ test('participant records open in the viewport and return to the same real-data 
     await expect(dialog).toBeVisible();
     await expect(dialog.getByRole('heading', { name: person + '的參加紀錄', exact: true })).toBeInViewport();
     await expect(dialog.locator('.participation-record-list li')).toHaveCount(Math.min(count, 20));
-    await dialog.getByRole('button', { name: '返回統計', exact: true }).click();
+    await dialog.getByRole('button', { name: '關閉參加紀錄', exact: true }).click();
     await expect(dialog).toHaveCount(0);
     await expect(rows).toHaveCount(rowCount);
     await expect(trigger).toBeInViewport();
@@ -36,13 +36,68 @@ test('participant records open in the viewport and return to the same real-data 
     await expect(trigger).toBeInViewport();
     await trigger.click();
     await expect(dialog).toBeVisible();
+    const recordsURL = page.url();
     const activity = dialog.locator('.participation-record-list a').first();
     const href = await activity.getAttribute('href');
     await activity.click();
-    await expect(page).toHaveURL(url => url.pathname === href);
+    await expect(page).toHaveURL(new URL(href!, preview!).href);
     await expect(dialog).toHaveCount(0);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await page.reload();
+    const back = page.getByRole('link', { name: '← 返回參加紀錄', exact: true });
+    await expect(back).toBeInViewport();
+    await back.click();
+    await expect(page).toHaveURL(recordsURL);
+    await expect(dialog).toBeVisible();
+    await expect(dialog.getByRole('heading', { name: person + '的參加紀錄', exact: true })).toBeInViewport();
+    await expect(dialog.locator('.participation-record-list li')).toHaveCount(Math.min(count, 20));
+    await dialog.getByRole('button', { name: '關閉參加紀錄', exact: true }).click();
+    await expect(rows).toHaveCount(rowCount);
   }
+});
+
+test('activity detail restores filtered participant and personal record context', async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  const overview = await (await page.request.get('/api/v2/activities/participation')).json() as { periods: string[] };
+  const period = overview.periods.find(value => /^\d{4}$/.test(value)) ?? 'all';
+  await page.goto('/activities/participation?' + new URLSearchParams({ period, category: 'all', page: '1' }));
+  const rows = page.locator('.participation-table tbody tr');
+  await expect(rows.first()).toBeVisible();
+  const next = page.getByRole('button', { name: '下一頁', exact: true });
+  if (await next.count() && await next.isEnabled()) await next.click();
+  const ordinal = await rows.first().locator('.participation-number').innerText();
+  const person = await rows.first().locator('.participation-name').innerText();
+  await rows.first().getByRole('button').click();
+  const dialog = page.getByRole('dialog', { name: '參加紀錄', exact: true });
+  await expect(dialog).toBeVisible();
+  const recordURL = new URL(page.url()); recordURL.searchParams.set('recordPage', '1');
+  await page.goto(recordURL.href);
+  await expect(dialog.locator('.participation-record-list a').first()).toBeVisible();
+  await dialog.locator('.participation-record-list a').first().click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole('tab', { name: '成員', exact: true }).click();
+  await page.getByRole('tab', { name: '結算', exact: true }).click();
+  await page.reload();
+  await page.getByRole('link', { name: '← 返回參加紀錄', exact: true }).click();
+  await expect(page).toHaveURL(recordURL.href);
+  await expect(dialog.getByRole('heading', { name: person + '的參加紀錄', exact: true })).toBeVisible();
+  await dialog.getByRole('button', { name: '關閉參加紀錄', exact: true }).click();
+  await expect(rows.first().locator('.participation-number')).toHaveText(ordinal);
+  await expect(page.getByRole('combobox', { name: '期間', exact: true })).toHaveText(period === 'all' ? '全部期間' : period + ' 年');
+
+  await page.goto('/__test/participation/my');
+  await expect(page.locator('.participation-record-list a').first()).toBeVisible();
+  const personalURL = page.url();
+  const activityPath = new URL((await page.locator('.participation-record-list a').first().getAttribute('href'))!, preview!).pathname;
+  await page.locator('.participation-record-list a').first().click();
+  await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+  await page.reload();
+  await page.getByRole('link', { name: '← 返回參加紀錄', exact: true }).click();
+  await expect(page).toHaveURL(personalURL);
+  await expect(page.getByRole('heading', { name: '我的參加紀錄', exact: true })).toBeVisible();
+  await page.goto(activityPath);
+  await expect(page.getByRole('link', { name: '← 所有活動', exact: true })).toHaveAttribute('href', '/activities');
+  await expect(page.getByRole('link', { name: '← 返回參加紀錄', exact: true })).toHaveCount(0);
 });
 
 test('real-data participant ordinals continue across pages and avatars have a name fallback', async ({ page }) => {

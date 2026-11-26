@@ -10,11 +10,13 @@
 .participation-table .participation-date-column { width: 112px; }
 .participation-table .participation-action { width: 80px; }
 .participation-table td:last-child { text-align: right; }
+.participation-table .participation-record-trigger { min-width: 44px; min-height: 44px; }
 .participation-person { display: flex; align-items: center; gap: 10px; }
 .participation-person > div { min-width: 0; }
 .participation-person .qq-avatar { width: 32px; height: 32px; margin: 0; }
 .participation-name { display: block; overflow-wrap: anywhere; }
 .participation-mobile-date { display: none; }
+.participation-mobile-date time { white-space: nowrap; }
 .participation-record-list { list-style: none; padding: 0; margin: 0; }
 .participation-record-list > li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--app-line); }
 .participation-record-list > li > div:first-child { min-width: 0; display: grid; gap: 4px; }
