@@ -1,9 +1,13 @@
 import { describeLegacy,legacyRaw,legacyScope } from './legacy-local-record';
 import { decodeLegacyDraft } from './legacy-local-import';
 const name='qgroup-legacy-local-v1';
+const draftPrefix=(scope:string)=>'draft:'+scope+':';
+const discardedDraftsKey=(scope:string)=>'discarded-drafts:'+scope;
+const draftCleanupKey=(scope:string)=>'draft-cleanup-pending:'+scope;
+export const isLegacyDraftSnapshot=(row:LegacySnapshot,scope:string)=>row.scope===scope&&row.sourceKey.startsWith(draftPrefix(scope));
 export type LegacySnapshot={id:string;scope:string;sourceKey:string;raw:string;source:unknown;savedAt:number;importedEpoch?:number};
 export type LegacyMapping={id:string;scope:string;sourceId:string;targetKey:string;path:string;deviceEpoch:number;at:number;kind?:'request'|'request-existing'};
-export type LegacyInventory={epoch:number;disabled:boolean;rows:LegacySnapshot[];mappings:LegacyMapping[]};
+export type LegacyInventory={epoch:number;disabled:boolean;rows:LegacySnapshot[];mappings:LegacyMapping[];draftCleanupPending?:boolean};
 function request<T>(r:IDBRequest<T>){return new Promise<T>((resolve,reject)=>{r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});}
 async function database(){return new Promise<IDBDatabase>((resolve,reject)=>{
   let blocked=false;const r=indexedDB.open(name,2);r.onupgradeneeded=()=>{if(!r.result.objectStoreNames.contains('snapshots'))r.result.createObjectStore('snapshots',{keyPath:'id'});if(!r.result.objectStoreNames.contains('state'))r.result.createObjectStore('state');if(!r.result.objectStoreNames.contains('mappings'))r.result.createObjectStore('mappings',{keyPath:'id'});};
@@ -30,7 +34,7 @@ async function originals(scope:string){
   });}finally{db.close();}
 }
 export async function legacyInventory(scope:string):Promise<LegacyInventory>{
-  legacyScope(scope);return transaction(async tx=>({epoch:await request(tx.objectStore('state').get('epoch'))??0,disabled:!!await request(tx.objectStore('state').get('disabled')),rows:(await request(tx.objectStore('snapshots').getAll()) as LegacySnapshot[]).filter(row=>row.scope===scope),mappings:(await request(tx.objectStore('mappings').getAll()) as LegacyMapping[]).filter(row=>row.scope===scope)}));
+  legacyScope(scope);return transaction(async tx=>({epoch:await request(tx.objectStore('state').get('epoch'))??0,disabled:!!await request(tx.objectStore('state').get('disabled')),draftCleanupPending:!!await request(tx.objectStore('state').get(draftCleanupKey(scope))),rows:(await request(tx.objectStore('snapshots').getAll()) as LegacySnapshot[]).filter(row=>row.scope===scope),mappings:(await request(tx.objectStore('mappings').getAll()) as LegacyMapping[]).filter(row=>row.scope===scope)}));
 }
 export async function preserveLegacy(scope:string):Promise<LegacyInventory>{
   legacyScope(scope);const before=await legacyInventory(scope);if(before.disabled)return before;
@@ -42,8 +46,9 @@ export async function preserveLegacy(scope:string):Promise<LegacyInventory>{
   return transaction(async tx=>{
     const epoch=await request(tx.objectStore('state').get('epoch'))??0,disabled=!!await request(tx.objectStore('state').get('disabled'));
     if(disabled||epoch!==before.epoch)throw Error('本機紀錄已因登出清除，不能從舊分頁寫回。');
-    const store=tx.objectStore('snapshots');for(const row of rows)if(!await request(store.get(row.id)))store.put(row);
-    return {epoch,disabled,rows:(await request(store.getAll()) as LegacySnapshot[]).filter(row=>row.scope===scope),mappings:(await request(tx.objectStore('mappings').getAll()) as LegacyMapping[]).filter(row=>row.scope===scope)};
+    const discardedDrafts=!!await request(tx.objectStore('state').get(discardedDraftsKey(scope)));
+    const store=tx.objectStore('snapshots');for(const row of rows)if(!(discardedDrafts&&isLegacyDraftSnapshot(row,scope))&&!await request(store.get(row.id)))store.put(row);
+    return {epoch,disabled,draftCleanupPending:!!await request(tx.objectStore('state').get(draftCleanupKey(scope))),rows:(await request(store.getAll()) as LegacySnapshot[]).filter(row=>row.scope===scope),mappings:(await request(tx.objectStore('mappings').getAll()) as LegacyMapping[]).filter(row=>row.scope===scope)};
   });
 }
 export async function checkLegacySnapshot(scope:string,epoch:number,row:LegacySnapshot){
@@ -70,6 +75,30 @@ export async function importLegacyDraft(scope:string,epoch:number,raw:string,val
 }
 export function legacyInventoryUsable(inventory:LegacyInventory,epoch:number){
   return inventory.epoch===epoch&&(!inventory.disabled||inventory.rows.length>0&&inventory.rows.every(row=>row.importedEpoch===epoch));
+}
+/** Explicitly discard this account's obsolete BoardStore drafts. New unified drafts
+ * live in another database. Original requests remain available, even when done.
+ * Fence automatic re-import before deleting sources so late old tabs stay retired. */
+export async function discardLegacyDrafts(scope:string,active:()=>boolean=()=>true){
+  legacyScope(scope);
+  await transaction(async tx=>{
+    if(!active())throw Error('帳號或頁面已變更，尚未清除舊版草稿。');
+    const state=tx.objectStore('state'),epoch=await request(state.get('epoch'))??0;
+    if(!active())throw Error('帳號或頁面已變更，尚未清除舊版草稿。');
+    state.put(epoch+1,'epoch');state.put(true,discardedDraftsKey(scope));state.put(true,draftCleanupKey(scope));
+    const snapshots=tx.objectStore('snapshots'),mappings=tx.objectStore('mappings');
+    for(const row of await request(snapshots.getAll()) as LegacySnapshot[]){
+      if(isLegacyDraftSnapshot(row,scope)){snapshots.delete(row.id);mappings.delete(row.id);}
+    }
+  });
+  const db=await sourceDatabase();
+  if(db)try{await new Promise<void>((resolve,reject)=>{
+    const tx=db.transaction('entries','readwrite',{durability:'strict'}),prefix=draftPrefix(scope);
+    const r=tx.objectStore('entries').openCursor(IDBKeyRange.bound(prefix,prefix+'\uffff'));
+    r.onsuccess=()=>{const cursor=r.result;if(cursor){cursor.delete();cursor.continue();}};
+    tx.oncomplete=()=>resolve();tx.onabort=()=>reject(tx.error??Error('舊版草稿清除未完成，請重試。'));
+  });}finally{db.close();}
+  await transaction(async tx=>{tx.objectStore('state').delete(draftCleanupKey(scope));});
 }
 export async function clearLegacyLocal(){
   // Fence archive and delayed imports first. A surviving obsolete page may never auto-import again.
