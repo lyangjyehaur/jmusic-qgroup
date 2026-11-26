@@ -1,6 +1,6 @@
 # 群聚看板
 
-統一版已於 2026-11-25 上線，遷移與保全見[切換紀錄](docs/releases/2026-11-25-unified-rebuild.md)。最新前端更新見[手機版面與成分草稿恢復](docs/releases/2026-11-26-frontend-review.md)。
+統一版已於 2026-11-25 上線，遷移與保全見[切換紀錄](docs/releases/2026-11-25-unified-rebuild.md)。最新前端更新見[活動詳情、共用表單與手機 dock](docs/releases/2026-11-26-frontend-detail-controls-dock.md)。
 
 看板與成分的單一產品重構規劃及歷史驗收見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
 
@@ -130,7 +130,7 @@ npm run test:ui
 
 ### 2026-11-25 起的正式服务
 
-已启用[前端独立发布](docs/frontend-release.md)：纯 UI 更新只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。API 与 bot 当前来源为 `7b0914ffd05b4418b9065932592d9bd5c33a71c7`，活动直接发布与时间操作见[发布记录](docs/releases/2026-11-26-activity-create-legacy-flow.md)；独立前端为 `f9014a2b991ed7ae64dddabfb1357828e7b90336`，手机布局与成分草稿恢复见[最新前端发布记录](docs/releases/2026-11-26-frontend-review.md)。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。消息 ID 修复与实际命令验收见[bot 发布记录](docs/releases/2026-11-25-bot-reply-tokens.md)，简繁显示见[发布记录](docs/releases/2026-11-25-chinese-display.md)，前端独立发布首次启用见[启用记录](docs/releases/2026-11-25-independent-frontend.md)。
+已启用[前端独立发布](docs/frontend-release.md)：纯 UI 更新只构建与切换静态文件包，API 和 bot 不重启，不需要重建 Docker 映像。API 与 bot 当前来源为 `7b0914ffd05b4418b9065932592d9bd5c33a71c7`，活动直接发布与时间操作见[发布记录](docs/releases/2026-11-26-activity-create-legacy-flow.md)；独立前端为 `7bd0ce6103b92101c8df3412eb4c67258cfccec1`，活动详情、共用表单、Yahha 元件与手机 dock 见[最新前端发布记录](docs/releases/2026-11-26-frontend-detail-controls-dock.md)。前端 `/frontend-version.json` 与 API `/api/v2/version` 分别回报版本。消息 ID 修复与实际命令验收见[bot 发布记录](docs/releases/2026-11-25-bot-reply-tokens.md)，简繁显示见[发布记录](docs/releases/2026-11-25-chinese-display.md)，前端独立发布首次启用见[启用记录](docs/releases/2026-11-25-independent-frontend.md)。
 
 正式站已切换为统一版 TypeScript 网站与 bot，首次切换来源为 `54107b8a3c07444b1a3bd31188824bcfadaad4a8`；迁移、备份及恢复限制见[统一版切换记录](docs/releases/2026-11-25-unified-rebuild.md)。网站此前单边更新活动分类，活动按预定结束时间自动归入往期，详见[活动分类发布记录](docs/releases/2026-11-25-activity-history.md)。当前使用 `deploy/unified-compose.yaml` 分别指定不可变 web／bot 映像，叠加 `deploy/frontend-compose.yaml` 挂载独立静态目录；保留的旧版 Compose 共用 `QGROUP_TAG`，不能用它启动当前服务。
 

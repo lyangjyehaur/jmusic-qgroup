@@ -91,7 +91,7 @@ test('the active root worker preserves the complete synthetic QQ redirect and a 
     page.on('request', request => { if (request.url().includes('/api/v2/activities/') && ['POST','PUT','DELETE'].includes(request.method())) activityWrites++; });
     await page.goto('/?event=listen&action=join');
     await expect(page).toHaveURL('/activities/listen/signup');
-    await expect(page.getByRole('dialog').locator('p strong').filter({ hasText: '週末一起聽日系音樂' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: '新增報名', exact: true }).getByRole('strong').filter({ hasText: '週末一起聽日系音樂' })).toBeVisible();
     expect(activityWrites).toBe(0);
     await page.goto('/me/music');
     await toggleMusicTerm(page, 'Aimer');
