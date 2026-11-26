@@ -1,6 +1,6 @@
 import { it, expect } from 'vitest';
 import type { ActivityView } from '@qgroup/contracts';
-import { activityDisplayDate, activityDate, activityShareURL, activitySummary, activityTimeRange } from '../../web/src/activity-summary';
+import { activityDisplayDate, activityDisplayTimeRange, activityDate, activityShareURL, activitySummary, activityTimeRange } from '../../web/src/activity-summary';
 const event: ActivityView = { id: 'one', title: '原名 台灣音乐 <b>字</b>', category: '约K', location: '原地點 &keyword=其他 #地址', startsAt: '2099-12-12T23:00:00+09:00', deadline: '2099-12-11T23:00:00+09:00', durationHours: 3, timezone: 'Asia/Tokyo', description: '用戶原文\n第二行', capacity: 5, minimumParticipants: 0, lifecycle: 'scheduled', phase: 'scheduled', registrationOpen: true, estimatedOver: false, archived: false, confirmed: 1, waiting: 0, tentative: 0, feePolicy: '費用按原約定', withdrawalDeadline: '2099-12-12T20:00:00+09:00', conditionsVersion: 2, changeSummary: '更改地點', visibility: 'public' };
 it('copies complete displayed activity values without transforming user content or adding private roster or finance values', () => {
   const text = activitySummary(event, 'https://fixture.example/activities/one', 'activity');
@@ -41,4 +41,23 @@ it('omits only the default UTC+8 label on screen while keeping other offsets and
   expect(activityDisplayDate('2026-07-01T00:00:00Z', 'America/New_York')).toContain('GMT-4');
   expect(activityDisplayDate(event.startsAt, null)).toBe(activityDate(event.startsAt, null));
   expect(activityDate('2026-11-11T16:00:00Z', 'Asia/Taipei')).toContain('Asia/Taipei');
+});
+
+it('shows the complete same-day range immediately without repeating the date or default zone', () => {
+  const text=activityDisplayTimeRange({startsAt:'2026-11-29T04:00:00Z',durationHours:5,timezone:'Asia/Shanghai'});
+  expect(text).toContain('2026/11/29');expect(text).toContain('12:00–17:00');expect(text).toContain('5 小時');
+  expect(text.match(/2026\/11\/29/g)).toHaveLength(1);expect(text).not.toMatch(/GMT|Asia/);
+});
+it('shows both dates and cross-day guidance across a year boundary', () => {
+  const text=activityDisplayTimeRange({startsAt:'2026-12-31T15:00:00Z',durationHours:3,timezone:'Asia/Shanghai'});
+  for(const value of ['2026/12/31','23:00','2027/01/01','02:00','跨日'])expect(text).toContain(value);
+});
+it('distinguishes repeated clocks at both ends of a compact DST range', () => {
+  const text=activityDisplayTimeRange({startsAt:'2026-11-01T01:30:00-04:00',durationHours:1,timezone:'America/New_York'});
+  expect(text.match(/01:30/g)).toHaveLength(2);expect(text).toContain('GMT-4');expect(text).toContain('GMT-5');
+});
+it('keeps uncertain saved time data explicit instead of inventing an end', () => {
+  expect(activityDisplayTimeRange({...event,durationHours:null})).toContain('時長未定');
+  const text=activityDisplayTimeRange({...event,timezone:null});
+  expect(text).toContain('23:00:00+09:00');expect(text).toContain('未指定時區');expect(text).not.toContain('–');
 });

@@ -47,6 +47,6 @@ for(const width of [360,390,768,1440])test('prototype pages preserve responsive 
 
 test('refreshes the original prototype list immediately after a completed signup',async({page,context})=>{
  await login(context,'bob');await page.goto('/activities');const row=()=>page.locator('.activity-row').filter({has:page.getByRole('link',{name:'週末一起聽日系音樂',exact:true})});await expect(row().locator('.my-registration')).toHaveCount(0);
- await row().getByRole('link',{name:'週末一起聽日系音樂',exact:true}).click();await page.getByRole('link',{name:'本人報名',exact:true}).click();await page.getByRole('button',{name:'預覽逐人分配',exact:true}).click();await page.getByLabel(/^已核對第 \d+ 版安排、費用與逐人分配/).check();await page.getByRole('button',{name:'提交報名',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
+ await row().getByRole('link',{name:'週末一起聽日系音樂',exact:true}).click();await page.getByRole('button',{name:'本人報名',exact:true}).click();await expect(page.getByRole('dialog')).toHaveCount(0);
  await page.getByRole('navigation',{name:'主要導覽',exact:true}).getByRole('link',{name:'活動',exact:true}).click();await expect(row().locator('.my-registration')).toContainText('正式');
 });

@@ -41,11 +41,14 @@ function Loader({viewer,id,manage}:{viewer:Member;id:string;manage:boolean}){
   const query=useQuery({queryKey:['private',viewer.scope,'activity-registration',id],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/registration', { params: { id: id } }),refetchOnWindowFocus:false});
   return query.isPending?<Notice>正在讀取報名資料…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<Editor viewer={viewer} initial={query.data} manage={manage}/>;
 }
+export function ActivitySelfRegistration({viewer,initial,waiting=false}:{viewer:Member;initial:Context;waiting?:boolean}) {
+  return <Editor viewer={viewer} initial={initial} manage={false} quick waiting={waiting}/>;
+}
 function when(value:string,timezone:string|null){
   if(!/(?:Z|[+-]\d{2}:\d{2})$/.test(value)||!timezone)return value.replace('T',' ');
   try{return new Intl.DateTimeFormat(displayLocale(),{dateStyle:'medium',timeStyle:'short',timeZone:timezone}).format(new Date(value));}catch{return value;}
 }
-function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:boolean}){
+function Editor({viewer,initial,manage,quick=false,waiting=false}:{viewer:Member;initial:Context;manage:boolean;quick?:boolean;waiting?:boolean}){
   const navigate=useNavigate(),inActivity=useActivityAction();
   const [search]=useSearchParams(),client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:registration:v1:'+viewer.scope+':'+initial.id+':'+(manage?'manage':'signup');
   const [data,setData]=useState(initial),[message,setMessage]=useState(''),[confirm,setConfirm]=useState(false),[partial,setPartial]=useState(false),[preview,setPreview]=useState<z.infer<typeof RegistrationPreview>|null>(null);
@@ -56,12 +59,28 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
     else {const person=data.people.find(item=>item.id===search.get('person'))??(data.people.length===1?data.people[0]:undefined);if(person)Object.assign(next,{personId:person.id,name:person.name,note:person.note,payerKind:person.payerKind,action:preferredAction(person,search.get('preset'))});}
     return next;
   };
+  const isClean=(value:DraftValue)=>{
+    if(value.pending)return false;
+    const normalized=JSON.stringify({...value,revision:data.revision});
+    // URL presets and resolved signup placeholders contain no user edits.
+    // A blank companion placeholder can outlive signup, then self withdrawal.
+    return [empty(data),seed(),...(!manage?[empty({...data,selfRegistered:!data.selfRegistered})]:[])]
+      .some(blank=>normalized===JSON.stringify(blank));
+  };
   const record=useDurableRecord({key:storageKey,scope:viewer.scope,seed,parse:raw=>{
     const saved=Draft.parse(JSON.parse(raw));if(saved.pending&&((saved.pending.kind==='person')!==manage))throw Error('operation target');
-    return JSON.stringify({...saved,revision:data.revision})===JSON.stringify(empty(data))?seed():saved;
-  },needsRestore:raw=>JSON.stringify({...Draft.parse(JSON.parse(raw)),revision:data.revision})!==JSON.stringify(empty(data)),dirty:value=>JSON.stringify(value)!==JSON.stringify(empty(data)),pending:value=>!!value.pending});
+    return isClean(saved)?seed():saved;
+  },needsRestore:raw=>!isClean(Draft.parse(JSON.parse(raw))),dirty:value=>!isClean(value),pending:value=>!!value.pending,
+    // The dialog continues this same scoped draft; don't block its own entry.
+    blocking:quick?({nextLocation})=>nextLocation.pathname!=='/activities/'+encodeURIComponent(data.id)+'/signup':undefined});
   const {value:draft,replace:setDraft,active,busy,setBusy,readError,persist}=record;
   const locked=record.locked,stale=draft.revision!==data.revision;
+  useEffect(()=>{
+    if(!busy&&initial.revision>data.revision){
+      if(isClean(draft))setDraft({...draft,revision:initial.revision});
+      setData(initial);
+    }
+  },[initial,data.revision,busy,draft]);
   useEffect(()=>{
     if(inActivity&&completionMessage&&!record.busy&&!record.saving&&!record.dirty&&record.blocker.state==='unblocked')void navigate('/activities/'+encodeURIComponent(data.id),{replace:true,state:{activityNotice:completionMessage}});
   },[inActivity,completionMessage,record.busy,record.saving,record.dirty,record.blocker.state,navigate,data.id]);
@@ -75,7 +94,7 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
   function update(fresh:Context){setData(fresh);client.setQueryData(['private',viewer.scope,'activity-registration',data.id],fresh);}
   async function rebase(){
     if(locked||!record.begin())return;
-    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(uiText("已取得最新名單與安排；輸入仍保留，請重新預覽或核對後確認。"));}
+    try{const fresh=await latest();if(!active.current)return;const next={...draft,revision:fresh.revision};if(!await persist(next))return;update(fresh);setDraft(next);setConfirm(false);setPartial(false);setPreview(null);setMessage(quick?uiText('已讀取最新安排，備註已保留；核對後可直接報名。'):uiText("已取得最新名單與安排；輸入仍保留，請重新預覽或核對後確認。"));}
     catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗"));}finally{if(active.current)setBusy(false);}
   }
   async function makePreview(){
@@ -101,11 +120,14 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
         operation={kind:'signup',key:crypto.randomUUID(),input:input.data};
       }
     }
-    const pending={...draft,pending:operation};if(!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
+    await send(operation);
+  }
+  async function send(operation:z.infer<typeof Pending>,started=false){
+    const pending={...draft,pending:operation};if(!started&&!record.begin())return;if(!await persist(pending)||!active.current){if(active.current)setBusy(false);return;}setDraft(pending);setMessage('');let accepted=false;
     try{
       if(operation.kind==='signup')await authHttp(viewer).requestContract('POST /api/v2/activities/:id/registration', { params: { id: data.id }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });
       else await authHttp(viewer).requestContract('POST /api/v2/activities/:id/attendees/:personId/registration', { params: { id: data.id, personId: operation.personId }, body: operation.input, requestId: operation.key, requestScope: viewer.scope });accepted=true;
-      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?uiText("報名已保存。"):uiText("報名操作已保存。"));
+      const fresh=await latest();if(!active.current)return;const next=empty(fresh);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');setDraft(next);update(fresh);setConfirm(false);setPartial(false);setPreview(null);setMessage(operation.kind==='signup'?(quick&&fresh.people.some(person=>person.isMe&&person.status==='waiting')?uiText('已加入候補。'):uiText("報名已保存。")):uiText("報名操作已保存。"));
       void client.invalidateQueries({queryKey:['activities']});for(const key of ['activity','activity-roster','activity-lifecycle','activity-conditions'])void client.invalidateQueries({queryKey:['private',viewer.scope,key,data.id]});
       if(inActivity)setCompletionMessage(operation.kind==='signup'?uiText('報名已保存。'):uiText('報名操作已保存。'));
     }catch(error){
@@ -114,9 +136,41 @@ function Editor({viewer,initial,manage}:{viewer:Member;initial:Context;manage:bo
       else setMessage(uiText("尚未確認操作結果。原操作已保留，請按「確認報名操作結果」安全重試。"));
     }finally{if(active.current)setBusy(false);}
   }
+  const selfOnly=draft.values.people.length===1&&draft.values.people[0]!.isSelf&&draft.values.queueMode==='individual'&&draft.values.intent==='registered';
+  async function directSignup(){
+    if(busy||record.unavailable)return;
+    if(draft.pending){await submit();return;}
+    if(locked||stale||data.signupBlocker||!selfOnly)return;
+    const values=RegistrationValues.safeParse(draft.values);
+    if(!values.success){setMessage(uiText('報名備註最多 100 字，請縮短後再提交。'));return;}
+    if(!record.begin())return;
+    try{
+      if(!await persist(draft)||!active.current)return;
+      setMessage('');
+      // Use the existing server allocation/token protocol within the same click.
+      // No business write occurs until the complete request is stored durably.
+      const allocation=await authHttp(viewer).requestContract('POST /api/v2/activities/:id/registration/preview',{params:{id:data.id},body:{...values.data,revision:draft.revision}});
+      if(!active.current)return;
+      const input=SubmitRegistration.parse({...values.data,revision:draft.revision,previewToken:allocation.token,conditionsVersion:allocation.conditionsVersion,acceptConditions:true,acceptPartial:false,confirm:true});
+      await send({kind:'signup',key:crypto.randomUUID(),input},true);
+    }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText('報名失敗，請重試。'));}
+    finally{if(active.current)setBusy(false);}
+  }
   const consent=manage?uiText('已核對此人的報名，確認')+labels[draft.action]:uiText('已核對第 ')+data.conditionsVersion+uiText(' 版安排、費用與逐人分配，代表本人及代報者接受安排');
   const arrangement=<Surface className="detail"><Heading level={2}>{data.title}</Heading><dl><dt>目前安排</dt><dd>第 {data.conditionsVersion} 版</dd><dt>時間</dt><dd>{when(data.arrangement.starts_at,data.arrangement.timezone)}（{data.arrangement.timezone||'未指定時區'}）</dd><dt>持續時間</dt><dd>{data.arrangement.duration_hours===null?'未設定':data.arrangement.duration_hours+' 小時'}</dd><dt>地點</dt><dd>{data.arrangement.location}</dd><dt>退出期限</dt><dd>{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}</dd>{data.arrangement.fee_policy&&<><dt>費用規則</dt><dd className="preserve-lines">{data.arrangement.fee_policy}</dd></>}{data.arrangement.description&&<><dt>注意事項</dt><dd className="preserve-lines">{data.arrangement.description}</dd></>}</dl><Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看完整安排與版本</Link></Surface>;
-  return <>{inActivity?<><Text><strong>{data.title}</strong> · 第 {data.conditionsVersion} 版安排</Text><Text className="preserve-lines">{data.arrangement.fee_policy||'未填費用規則。'}</Text><details className="registration-arrangement"><summary>核對完整活動安排</summary>{arrangement}</details></>:arrangement}
+  if(quick){
+    if((data.selfRegistered||data.signupBlocker)&&!draft.pending&&!record.dirty&&!record.needsRestore&&!readError&&!record.storageError)return message?<Text role="status">{message}</Text>:null;
+    return <div className="activity-self-registration">
+      {stale&&!draft.pending&&<Notice>活動或名單已有更新；請讀取最新安排，備註會保留。</Notice>}
+      {selfOnly||draft.pending?.kind==='signup'&&draft.pending.input.people.length===1&&draft.pending.input.people[0]!.isSelf?<form noValidate onSubmit={event=>{event.preventDefault();void directSignup();}}><fieldset disabled={locked}>
+        <legend className="sr-only">本人報名</legend><details className="self-signup-notes"><summary>報名備註與規則</summary><div className="account-field"><label htmlFor="self-signup-note">報名備註（活動內可見）</label><textarea id="self-signup-note" rows={2} maxLength={100} value={draft.values.people[0]?.note??''} onChange={event=>edit({values:{...draft.values,people:[{...draft.values.people[0]!,note:event.target.value}]}})}/></div><Text>退出期限：{when(data.arrangement.withdrawal_deadline,data.arrangement.timezone)}。期限後退出需申請。</Text></details>
+      </fieldset><Button type="submit" loading={busy} disabled={record.unavailable||(!draft.pending&&(stale||!!data.signupBlocker||data.selfRegistered))}>{draft.pending?'確認報名操作結果':waiting?'本人加入候補':'本人報名'}</Button>
+      <p className="self-signup-consent">提交即接受第 {data.conditionsVersion} 版安排與費用規則，名額不足時加入候補。<Link to={'/activities/'+encodeURIComponent(data.id)+'/conditions'}>查看安排</Link></p></form>:<Link to={'/activities/'+encodeURIComponent(data.id)+'/signup?preset=party'}>繼續原同行／代報名</Link>}
+      {!draft.pending&&(stale||message)&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>讀取最新安排，保留備註</Button>}
+      {message&&<Text role="status">{message}</Text>}<DraftFeedback form={record} showProgress={false} restoreHint={uiText('有未完成的報名資料；恢復後可繼續，尚未提交報名。')}/>
+    </div>;
+  }
+  return <>{inActivity?<><Text><strong>{data.title}</strong> · 第 {data.conditionsVersion} 版安排</Text>{data.arrangement.description&&<Text className="preserve-lines">注意事項：{data.arrangement.description}</Text>}{data.arrangement.fee_policy&&<Text className="preserve-lines">費用規則：{data.arrangement.fee_policy}</Text>}<details className="registration-arrangement"><summary>核對完整活動安排</summary>{arrangement}</details></>:arrangement}
     <Surface className="detail activity-editor"><Heading level={2}>{manage?'現有報名':'本人與同行'}</Heading>
       {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新資料。</Notice>}
       {manage&&<><ul>{data.people.map(person=><li key={person.id}>{person.name} · {statusLabels[person.status]??person.status}{person.withdrawalRequested?' · 退出申請中':''} · 付款：{person.payerName}</li>)}</ul>{!data.people.length&&<Notice>目前沒有可由此帳號管理的有效報名。</Notice>}</>}

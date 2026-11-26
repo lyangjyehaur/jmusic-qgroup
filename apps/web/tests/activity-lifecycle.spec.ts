@@ -15,6 +15,46 @@ async function choose(page:Page,action:string,reason=''){
   await page.getByLabel('操作',{exact:true}).selectOption(action);await page.getByLabel(/^原因（/).fill(reason);await page.getByLabel(/^已核對目前狀態，確認/).check();
 }
 const submit=(page:Page)=>page.getByRole('button',{name:'提交狀態變更',exact:true});
+test('finish and settle opens the owner editor only after confirmation without publishing a bill',async({page,context})=>{
+  const id=await published(context);await page.goto('/activities/'+id);
+  await page.getByRole('link',{name:'結束並結算',exact:true}).click();
+  await expect(page.getByLabel('操作',{exact:true})).toHaveValue('finish');
+  await expect(submit(page)).toBeDisabled();
+  const before=await(await context.request.get('/api/v2/activities/'+id+'/lifecycle',{headers:await headers(context)})).json();expect(before.actualEndedAt).toBeNull();
+  await page.getByLabel('已核對目前狀態，確認標記實際結束',{exact:true}).check();await submit(page).click();
+  await expect(page).toHaveURL('/activities/'+id+'/settlement/edit');
+  await expect(page.getByRole('dialog',{name:'編輯結算',exact:true}).getByLabel('費用金額',{exact:true})).toBeVisible();
+  const bill=await context.request.get('/api/v2/activities/'+id+'/settlement',{headers:await headers(context)});expect(bill.status()).toBe(200);expect((await bill.json()).bill).toBeNull();
+});
+test('finish and settle recovers a lost finish response with the same key before opening the editor',async({page,context})=>{
+  const id=await published(context),keys:string[]=[];let fail=true;
+  await page.route('**/api/v2/activities/'+id+'/lifecycle',async route=>{
+    if(route.request().method()!=='POST')return route.continue();keys.push(route.request().headers()['idempotency-key']!);
+    if(fail){fail=false;await route.fetch();await route.abort('failed');}else await route.continue();
+  });
+  await page.goto('/activities/'+id);await page.getByRole('link',{name:'結束並結算',exact:true}).click();
+  await page.getByLabel('已核對目前狀態，確認標記實際結束',{exact:true}).check();await submit(page).click();
+  await expect(page.getByRole('button',{name:'確認狀態操作結果',exact:true})).toBeVisible();
+  const first=await(await context.request.get('/api/v2/activities/'+id+'/lifecycle',{headers:await headers(context)})).json();
+  page.on('dialog',dialog=>void dialog.accept());await page.reload();
+  await page.getByRole('button',{name:'確認狀態操作結果',exact:true}).click();
+  await expect(page).toHaveURL('/activities/'+id+'/settlement/edit');expect(keys).toHaveLength(2);expect(keys[0]).toBe(keys[1]);
+  const second=await(await context.request.get('/api/v2/activities/'+id+'/lifecycle',{headers:await headers(context)})).json();
+  expect(second.actualEndedAt).toBe(first.actualEndedAt);expect(second.revision).toBe(first.revision);
+});
+test('schedule cohost can finish but is not sent to an unauthorized settlement editor',async({page,context})=>{
+  const id=await published(context),h=await headers(context);
+  const current=await(await context.request.get('/api/v2/activities/'+id+'/delegation',{headers:h})).json();
+  expect((await context.request.post('/api/v2/activities/'+id+'/delegation/invitations',{headers:await headers(context),data:{revision:current.revision,kind:'cohost',targetName:'日程協辦',attendeeId:null,permissions:['schedule'],reason:'日程分工',confirm:true}})).status()).toBe(200);
+  const invitation=(await(await context.request.get('/api/v2/activities/'+id+'/delegation',{headers:await headers(context)})).json()).invitations.at(-1);
+  await login(context,'bob');const preview=await(await context.request.get('/api/v2/activities/'+id+'/delegation/preview/'+invitation.token,{headers:await headers(context)})).json();
+  expect((await context.request.post('/api/v2/activities/'+id+'/delegation/preview/'+invitation.token+'/accept',{headers:await headers(context),data:{revision:preview.revision,acceptResponsibility:true,confirm:true}})).status()).toBe(200);
+  await page.goto('/activities/'+id);await page.getByRole('link',{name:'結束並結算',exact:true}).click();
+  await page.getByLabel('已核對目前狀態，確認標記實際結束',{exact:true}).check();await submit(page).click();
+  await expect(page.getByText('由發起者或指定結算人核對並發布結算。',{exact:true})).toBeVisible();
+  await expect(page).toHaveURL('/activities/'+id+'/lifecycle?preset=finish&next=settlement');
+  const bill=await context.request.get('/api/v2/activities/'+id+'/settlement',{headers:await headers(context)});expect(bill.status()).toBe(200);expect((await bill.json()).bill).toBeNull();
+});
 test('activity lifecycle shares the detail flow, confirms low attendance, records actual times and preserves cancellation through archive',async({page,context})=>{
   const id=await published(context);await page.goto('/activities/'+id);await openActivityTool(page,'管理活動狀態');await expect(page.getByText('已排定',{exact:true})).toBeVisible();
   await choose(page,'formation');await submit(page).click();await expect(page.getByText('此操作必須填寫原因。',{exact:true})).toBeVisible();await page.getByLabel('原因（必填）',{exact:true}).fill('已協調仍決定成團');await expect(page.getByLabel(/^已核對目前狀態，確認/)).not.toBeChecked();await page.getByLabel(/^已核對目前狀態，確認/).check();await submit(page).click();await expect(page.getByText('已確認',{exact:true})).toBeVisible();

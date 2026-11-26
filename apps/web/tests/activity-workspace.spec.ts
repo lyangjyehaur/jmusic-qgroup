@@ -32,15 +32,11 @@ test('signup returns to the mounted activity with current personal status and ro
   const id = await setup(context);
   await page.goto('/activities/' + id);
   await page.locator('.activity-overview-mount').evaluate(node => node.setAttribute('data-retained', 'yes'));
-  await page.getByRole('link', { name: '本人報名', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: '新增報名', exact: true })).toBeVisible();
-  await expect(page.getByLabel('排隊方式', { exact: true })).not.toBeVisible();
-  await expect(page.getByRole('button', { name: '提交報名', exact: true })).toHaveCount(0);
-  await submit(page);
+  await page.getByRole('button', { name: '本人報名', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('報名已保存。', { exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: '管理本人報名', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: '本人報名', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('button', { name: '本人報名', exact: true })).toHaveCount(0);
   await expect(page.locator('#participants')).toContainText('小白');
   await expect(page.locator('.activity-overview-mount')).toHaveAttribute('data-retained', 'yes');
 });
@@ -76,7 +72,26 @@ test('a roster withdrawal targets that person and refreshes the activity after c
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await expect(page.getByText('報名操作已保存。', { exact: true })).toBeVisible();
   await expect(page.locator('#participants')).not.toContainText('小白');
-  await expect(page.getByRole('link', { name: '本人報名', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '本人報名', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '本人報名', exact: true }).click();
+  await expect(page.getByRole('link', { name: '管理本人報名', exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+});
+test('a self note can continue in the companion dialog without a competing navigation blocker', async ({ page, context }) => {
+  const id = await setup(context);
+  await page.goto('/activities/' + id);
+  await page.getByText('報名備註與規則', { exact: true }).click();
+  await page.getByLabel('報名備註（活動內可見）', { exact: true }).fill('本人的原備註');
+  await page.getByRole('link', { name: '同行／代報名', exact: true }).click();
+  await expect(page.getByRole('dialog')).toBeVisible();
+  await page.getByRole('dialog').getByRole('button', { name: '恢復本機原稿', exact: true }).click();
+  await expect(page.locator('#signup-note-0')).toHaveValue('本人的原備註');
+  await page.getByRole('button', { name: '新增同行', exact: true }).click();
+  await page.locator('#signup-name-1').fill('新增同行');
+  await submit(page);
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await expect(page.locator('#participants')).toContainText('本人的原備註');
+  await expect(page.locator('#participants')).toContainText('新增同行');
 });
 test('a lost signup response stays in the operation until the same request is confirmed', async ({ page, context }) => {
   const id = await setup(context), keys: string[] = [];
@@ -104,7 +119,7 @@ test('activity and operation stay usable on narrow and wide screens', async ({ p
   for (const width of [360, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await page.getByRole('link', { name: '本人報名', exact: true }).click();
+    await page.getByRole('link', { name: '同行／代報名', exact: true }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
     const dialog = page.getByRole('dialog');
     await expect(dialog).toHaveCSS('opacity', '1');
