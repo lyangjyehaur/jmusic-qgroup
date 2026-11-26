@@ -15,7 +15,7 @@ import { musicEntryPath } from './music-entry';
 import { categoryLabel } from './music-entries';
 import { ListMusic } from 'lucide-react';
 import { ActionLink } from './action-link';
-import { Badge, PageHeader } from './kimi-ui';
+import { Badge, PageHeader, Disclosure } from './kimi-ui';
 import { MusicBrowseTabs } from './music-browse-tabs';
 type Trend = z.infer<typeof MusicTrend>;
 const colors = [1,2,3,4,5].map(index=>'var(--app-chart-'+index+')');
@@ -34,7 +34,7 @@ export function MusicTrendPage() {
     <div className={selection?.dirty ? 'content-columns music-trend-layout' : undefined}><section>
       {query.isPending ? <Notice>正在讀取趨勢…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
         <dl className="music-stats" aria-label="趨勢統計">{([[uiText('24 小時新增'), query.data.recent24h], [uiText('7 天新增'), query.data.new7d], [uiText('總計'), query.data.totals]] as const).map(([label, counts]) => <div key={label}><dt>{label}</dt><dd>{counts.entries} 詞條 · {counts.members} 成分</dd></div>)}</dl>
-        <details className="trend-history"><summary>詞條選用變化</summary><TrendChart trend={query.data} entryPath={entryPath}/></details>
+        <Disclosure className="trend-history"  title={<>詞條選用變化</>}><TrendChart trend={query.data} entryPath={entryPath}/></Disclosure>
         <section className="music-trend-recent"><Heading level={2}>最近新增詞條</Heading>
           {query.data.recentEntries.length ? <ul className="trend-entry-list">{query.data.recentEntries.map((entry,index) => <li key={entry.id}><span className="trend-rank">{String(index+1).padStart(2,'0')}</span><Link to={entryPath(entry.id)}>{entry.name}</Link>
             <Text size="sm">{entry.kind === 'main' ? '領域' : '細分'} · {categoryLabel(entry.category)} · {entry.count} 人選用 · <Created time={entry.createdAt} /></Text></li>)}</ul> : <Notice>詞庫尚無詞條。</Notice>}
@@ -83,10 +83,10 @@ function TrendChart({ trend, entryPath }: { trend: Trend; entryPath: (id: string
       </svg>
       <ul className="music-trend-legend" aria-label="趨勢圖例">{series.map((row, i) => <li key={row.id}><span aria-hidden="true" style={{ background: colors[i] }} /><Link to={entryPath(row.id)}>{row.name}</Link> · 新增 {row.gain} 人</li>)}</ul>
       <Heading level={3}>排行漲幅</Heading>{gains.length ? <ol aria-label="排行漲幅">{gains.map(row => <li key={row.id}><Link to={entryPath(row.id)}>{row.name}</Link> · 目前 {row.count} 人 · +{row.gain} 人</li>)}</ol> : <Notice>這段時間沒有新增選用人數。</Notice>}
-      <details><summary>快照資料表</summary><div className="music-trend-table" tabIndex={0} role="region" aria-label="快照資料表，可橫向捲動"><table><caption>每段新增人數；欄位對應折線圖例</caption>
+      <Disclosure   title={<>快照資料表</>}><div className="music-trend-table" tabIndex={0} role="region" aria-label="快照資料表，可橫向捲動"><table><caption>每段新增人數；欄位對應折線圖例</caption>
         <thead><tr><th scope="col">時間（本機）</th>{series.map(row => <th scope="col" key={row.id}>{row.name}</th>)}</tr></thead>
         <tbody>{points.map((point, p) => <tr key={p}><th scope="row">{date(point.t)}</th>{series.map(row => <td key={row.id}>{row.values[p]}</td>)}</tr>)}</tbody>
-      </table></div></details>
+      </table></div></Disclosure>
     </>}</div>
   </Surface>;
 }

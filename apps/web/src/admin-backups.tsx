@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminReadHttp, type Access } from './admin';
 import { ApiError } from './api';
@@ -46,7 +46,7 @@ function Downloads({ viewer, access }: { viewer: Viewer; access: Access }) {
     finally { if (active.current) { setBusy(false); controller.current = undefined; } }
   }
   return <><Surface className="detail auth-panel"><Text>JSON 含私人留言、聯絡號與成分口令雜湊，請妥善保存。歷史下載套用最新刪除、關聯與聯絡號；這份 JSON 不能完整恢復系統。</Text>
-    <label className="consent"><input type="checkbox" checked={confirmed} disabled={busy} onChange={event => setConfirmed(event.target.checked)} /><span>確認下載並保管私人資料</span></label>
+    <Checkbox className="consent" checked={confirmed} disabled={busy} onChange={event => setConfirmed(event.target.checked)} label={<><span>確認下載並保管私人資料</span></>} />
     <Button disabled={!confirmed || busy} onClick={() => void download()}>下載目前成分 JSON</Button>{message && <Text role="status">{message}</Text>}
   </Surface><Surface className="detail auth-panel"><Heading level={2}>歷史備份</Heading><Button variant="secondary" disabled={busy || list.isFetching} onClick={() => void list.refetch()}>更新備份清單</Button>
     {list.isPending || !list.isFetchedAfterMount ? <Notice>正在讀取備份…</Notice> : list.error ? <Failure error={list.error} retry={() => void list.refetch()} /> : !list.data.available ? <Text>目前未啟用持久配對備份。</Text> : !list.data.backups.length ? <Text>尚無歷史備份；系統啟動、每小時及管理寫入前會建立配對備份。</Text> : <><Text>新版配對備份保留最近 30 份、最多 14 天；匯入的舊備份另行保留。此處下載成分 JSON；完整備份由維運人員保管。</Text>{list.data.backups.some(item=>item.source!=='native') && <Text>舊備份顯示原始檔名時間，時區未經確認。</Text>}<ul className="history-list">{list.data.backups.map(item => <li key={item.id}><Text>{backupLabel(item)} · {item.source==='legacy_pair'?'舊配對備份':item.source==='legacy_json'?'舊 JSON':'新版配對備份'} · {(item.size / 1024).toFixed(1)} KiB</Text><Button variant="secondary" disabled={!confirmed || busy} onClick={() => void download(item.id)}>下載 {backupLabel(item)}{item.source==='legacy_pair'?' 舊配對':item.source==='legacy_json'?' 舊 JSON':''}</Button></li>)}</ul></>}

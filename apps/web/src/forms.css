@@ -1,28 +1,21 @@
 /* Shared form and dialog geometry; field shapes use Yahha field tokens. */
 .kimi :is(.account-field,.yj-field,.field) { min-width:0; }
 .kimi :is(.account-field > label,label.account-field,.yj-field > label,.yj-label,.field-label) { font-size:13px; font-weight:500; line-height:1.5; color:var(--muted); }
-.kimi :is(.account-field,.native-select-field) :is(input:not([type=checkbox]):not([type=radio]):not([type=file]):not([type=color]),select,textarea) {
-  width:100%; min-width:0; min-height:44px; padding:10px 12px; margin-top:6px; font-size:14px; line-height:1.5;
-  color:var(--ink); background:var(--paper-strong); border:var(--yahha-control-border-width,2px) solid var(--yahha-contour,var(--line)); border-radius:var(--yahha-radius-field,12px);
-}
-.kimi :is(.account-field,.native-select-field) textarea { min-height:80px; resize:vertical; }
-.kimi :is(.account-field,.native-select-field) :is(input,select,textarea):focus-visible { outline:2px solid var(--yahha-focus,var(--moss)); outline-offset:2px; }
-.kimi :is(.account-field,.native-select-field) :disabled { color:var(--muted); background:var(--app-bg); }
 .kimi .activity-editor form > fieldset:not(.registration-person), .kimi .editor-fields { border:0; padding:0; margin:0; min-width:0; }
 .kimi .activity-editor :is(.account-field,.yj-field) { margin-block:0 16px; }
 .kimi .activity-editor .consent { margin-block:16px; display:flex; gap:10px; align-items:flex-start; font-size:13px; line-height:1.6; }
 .kimi .activity-editor .consent input { flex:none; margin-top:3px; }
 .kimi .registration-person { min-width:0; border:1px solid var(--line-soft); border-radius:var(--yahha-radius-panel); margin:16px 0; padding:16px; }
 .kimi .registration-person legend { font-size:13px; padding-inline:4px; }
-.kimi .registration-person summary { font-size:14px; }
+.kimi .registration-person .disclosure-trigger { font-size:14px; }
 .kimi .registration-context { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; font-size:13px; color:var(--muted); margin-bottom:8px; }
 .kimi .registration-context strong { color:var(--ink); font-weight:600; }
 .kimi .registration-current-state { margin-block:0 16px; font-size:13px; color:var(--muted); }
 .kimi .registration-reason { margin-block:12px; }
-.kimi .registration-reason summary { font-size:13px; color:var(--muted); cursor:pointer; padding-block:6px; }
-.kimi .registration-reason[open] summary { margin-bottom:8px; }
+.kimi .registration-reason .disclosure-trigger { font-size:13px; color:var(--muted); cursor:pointer; padding-block:6px; }
+.kimi .registration-reason[data-open] .disclosure-trigger { margin-bottom:8px; }
 .kimi .registration-arrangement { margin-block:0 16px; }
-.kimi .registration-arrangement > summary { font-size:13px; font-weight:500; }
+.kimi .registration-arrangement > .disclosure-item > .disclosure-heading > .disclosure-trigger { font-size:13px; font-weight:500; }
 .kimi .registration-arrangement .detail { padding:12px 0; border:0; border-radius:0; background:transparent; box-shadow:none; }
 .kimi .registration-arrangement .detail > h2 { display:none; }
 .kimi .registration-arrangement dl { margin:0 0 12px; gap:8px 12px; font-size:13px; }
@@ -51,7 +44,7 @@
 .kimi .draft-leave-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
 .draft-feedback-float.kimi { position:fixed; z-index:105; top:calc(var(--topbar-height,64px) + 12px); right:20px; width:min(440px,calc(100vw - 32px)); display:grid; gap:6px; max-height:40dvh; overflow:auto; pointer-events:none; }
 .kimi.yj-dialog > .draft-feedback-float { position:absolute; top:calc(68px + env(safe-area-inset-top,0px)); right:16px; }
-.draft-feedback-float :is(button,a,summary) { pointer-events:auto; }
+.draft-feedback-float :is(button,a,.disclosure-trigger) { pointer-events:auto; }
 .kimi .draft-feedback-item { display:grid; gap:6px; }
 .kimi .draft-feedback-notice { padding:12px 16px; background:var(--paper); color:var(--ink); border:1px solid var(--yahha-contour,var(--line)); border-radius:var(--yahha-radius-note); box-shadow:var(--shadow); }
 .kimi .draft-feedback-notice p { margin:0; font-size:13px; line-height:1.6; }
@@ -71,8 +64,50 @@
   .kimi.yj-dialog > [class*="dialogClose"] { top:calc(10px + env(safe-area-inset-top,0px)); }
   .kimi.yj-dialog > [class*="dialogBody"] { padding:16px; }
   .kimi.yj-dialog > [class*="dialogFooter"] { padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
-  .kimi :is(.account-field,.native-select-field) :is(input,select,textarea) { font-size:16px; }
   .kimi .draft-leave-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
   .kimi .draft-leave-actions > .button-danger { grid-column:1 / -1; }
   .draft-feedback-float.kimi { right:12px; width:calc(100vw - 24px); }
+}
+/* Yahha control layout. Library classes own the actual inputs and interaction states. */
+.kimi :is(.yj-field,.select-wrap) { min-width:0; }
+.kimi :is(.yj-field,.select-wrap) > label { display:block; margin:0; font-size:13px; line-height:1.5; color:var(--muted); }
+.kimi .yj-trigger { width:100%; min-width:0; min-height:44px; border-radius:var(--yahha-radius-field); }
+.kimi .yj-value { white-space:normal; overflow-wrap:anywhere; text-align:start; }
+.kimi .select-no-label .yj-trigger { color:var(--ink); }
+.yj-select-popup { max-width:calc(100vw - 24px); z-index:130; }
+.yj-select-popup .yj-option { min-height:44px; white-space:normal; overflow-wrap:anywhere; }
+.kimi .yj-checkbox.consent { display:block; margin-block:16px; font-size:13px; line-height:1.6; }
+.kimi .yj-checkbox.consent > label { display:flex; align-items:flex-start; gap:10px; min-height:44px; }
+.kimi .yj-checkbox.consent input { flex:none; margin-top:3px; }
+.kimi .yj-checkbox.consent > label > span { flex:1; min-width:0; }
+.kimi .yj-switch.switch-row { display:block; min-height:56px; }
+.kimi .yj-switch.switch-row > label { display:flex; align-items:center; min-height:56px; gap:16px; }
+.kimi .yj-switch.switch-row > label > span { flex:1; min-width:0; order:-1; }
+.kimi .yj-radio-group { border:0; padding:0; min-width:0; }
+.kimi .broadcast-target { margin-block:16px; }
+.kimi .poll-answer-group { margin:0; }
+.kimi .poll-answer-group .poll-answers { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.kimi .poll-answer-group .poll-answers > label { display:flex; align-items:center; justify-content:center; padding:8px 6px; min-width:0; min-height:44px; border-radius:var(--yahha-radius-field); }
+.kimi .poll-answer-group .poll-answers > label:has(:checked) { background:var(--app-soft); color:var(--ink); border-color:var(--app-accent); }
+.kimi .poll-answer-group .poll-answers > label:has(:disabled) { opacity:.65; }
+.kimi .disclosure { min-width:0; }
+.kimi .disclosure-item { border:0; background:transparent; box-shadow:none; border-radius:0; }
+.kimi .disclosure-heading { margin:0; font-size:inherit; }
+.kimi .disclosure-trigger { width:100%; min-width:0; min-height:44px; padding-inline:0; text-align:start; line-height:1.6; }
+.kimi .disclosure-trigger > span { min-width:0; white-space:normal; overflow-wrap:anywhere; }
+.kimi .disclosure-panel > div { padding:8px 0 0; }
+.kimi.menu-popover { max-width:calc(100vw - 24px); z-index:110; color:var(--ink); background:var(--paper); }
+.kimi.menu-popover :is(.shell-popover,.activity-menu) { position:static; width:260px; max-width:100%; padding:0; border:0; border-radius:0; box-shadow:none; background:transparent; }
+.kimi.menu-popover .shell-popover > strong { display:block; margin-bottom:8px; overflow-wrap:anywhere; }
+.kimi.menu-popover .shell-popover > a { display:flex; align-items:center; min-height:44px; color:var(--ink); }
+.kimi .filter-row > .select-wrap { min-width:140px; }
+.kimi .menu-trigger { min-height:40px; display:flex; align-items:center; gap:8px; }
+.kimi .poll-calendar-days .button { padding:0; }
+@media(max-width:768px) {
+  .kimi :is(.yj-field,.select-wrap) :is(input,textarea,.yj-trigger) { font-size:16px; }
+}
+
+@media(max-width:480px) {
+  .kimi .activity-browse-tabs .yj-tabs-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; }
+  .kimi .activity-browse-tabs .tab { min-width:0; padding-inline:2px; justify-content:center; font-size:12px; }
 }

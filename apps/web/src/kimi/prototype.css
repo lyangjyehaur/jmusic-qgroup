@@ -160,12 +160,6 @@ svg { flex: 0 0 auto; }
 .switch-row { position: relative; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
 .switch-row > span { display: grid; }
 .switch-row small { color: var(--muted); }
-.switch-row input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-.switch-row > i { position: relative; width: 38px; height: 22px; flex: 0 0 auto; background: #c8cbc3; border-radius: 11px; transition: background .2s; }
-.switch-row > i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .2s; }
-.switch-row input:checked + i { background: var(--moss); }
-.switch-row input:checked + i::after { transform: translateX(16px); }
-.switch-row input:focus-visible + i { outline: 2px solid var(--moss); outline-offset: 2px; }
 .inline-alert { min-height: 42px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px; color: #5d634f; background: #efeee4; border-left: 3px solid #9a9a70; font-size: 12px; }
 .inline-alert svg { margin-top: 1px; }
 .inline-alert > span { flex: 1; }
@@ -520,10 +514,10 @@ td > small { color: var(--muted); font-size: 10px; }
 .recommend-toolbar p { color: var(--muted); font-size: 12px; }
 .recommend-toolbar .select-wrap { width: 200px; }
 .sort-rules { margin: 16px 0 20px; background: #efefe9; border: 1px solid var(--line); }
-.sort-rules summary { min-height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 7px; color: var(--muted); cursor: pointer; font-size: 11px; list-style: none; }
-.sort-rules summary svg:last-child { margin-left: auto; }
-.sort-rules[open] summary svg:last-child { transform: rotate(180deg); }
-.sort-rules > div { padding: 4px 18px 14px 32px; color: var(--muted); font-size: 11px; }
+.sort-rules .disclosure-trigger { min-height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 7px; color: var(--muted); cursor: pointer; font-size: 11px; list-style: none; }
+.sort-rules .disclosure-trigger svg:last-child { margin-left: auto; }
+.sort-rules[data-open] .disclosure-trigger svg:last-child { transform: rotate(180deg); }
+.sort-rules > .disclosure-item > .disclosure-panel > div > div { padding: 4px 18px 14px 32px; color: var(--muted); font-size: 11px; }
 .sort-rules ol { margin: 0; padding-left: 16px; }
 .sort-rules p { margin-top: 8px; }
 .people-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }

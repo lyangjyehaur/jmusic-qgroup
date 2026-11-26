@@ -1,4 +1,4 @@
-import { chooseOption, expectOption, toggleMusicTerm, openMusicContact } from './kimi-controls';
+import { chooseOption, expectOption, toggleMusicTerm, openMusicContact, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows, damageDraft } from './draft-helpers';
@@ -31,7 +31,7 @@ test('shares current unsaved choices, exact ordered text and optional identities
   await expect(page.getByText('使用目前草稿產生分享，不會自動保存。推薦同好仍依已保存成分計算。', { exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   const expected = 'J-POP、動畫歌曲、YOASOBI、ヨルシカ、Aimer、ずっと真夜中でいいのに。、米津玄師';
-  await expect(page.getByRole('textbox', { name: '詞條清單', exact: true })).toHaveValue(expected);
+  await expectControlValue(page.getByRole('textbox', { name: '詞條清單', exact: true }), expected);
   await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('已複製詞條清單。', { exact: true })).toBeVisible(); expect(await page.evaluate(() => (window as unknown as { shareCopied: string }).shareCopied)).toBe(expected);
   const drawn = await lines(page); expect(drawn).toContain('7 項 · 目前草稿'); expect(drawn).toContain('米津玄師'); expect(drawn.some(line => line.startsWith('只聽過幾首'))).toBe(true);
   expect(drawn.join('')).not.toMatch(/123456|234567|留言|性別|private-pin|token|csrf/);
@@ -70,7 +70,7 @@ test('unsupported or failed native sharing downloads the prepared image and miss
   });
   await page.goto('/me/music/share'); await ready(page); let download = page.waitForEvent('download'); await page.getByRole('button', { name: '分享圖片', exact: true }).click(); expect((await download).suggestedFilename()).toBe('我的音樂成分.png'); await expect(page.getByText('圖片分享失敗，已改為下載。', { exact: true })).toBeVisible();
   await page.evaluate(() => Object.assign(window, { unsupported: true })); download = page.waitForEvent('download'); await page.getByRole('button', { name: '分享圖片', exact: true }).click(); await download; await expect(page.getByText('此瀏覽器不支援圖片分享，已改為下載。', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取下方詞條清單手動複製。', { exact: true })).toBeVisible(); await expect(page.getByRole('textbox', { name: '詞條清單', exact: true })).toHaveValue(/YOASOBI/);
+  await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取下方詞條清單手動複製。', { exact: true })).toBeVisible(); await expectControlValue(page.getByRole('textbox', { name: '詞條清單', exact: true }), /YOASOBI/);
 });
 test('canvas and blob failures retain the full text export and offer a working image retry', async ({ page, context }) => {
   await login(context); await inspectCanvas(page); await page.addInitScript(() => {
@@ -78,7 +78,7 @@ test('canvas and blob failures retain the full text export and offer a working i
     HTMLCanvasElement.prototype.getContext = function(this: HTMLCanvasElement, ...args: unknown[]) { return (window as unknown as { canvasFail: boolean }).canvasFail ? null : get.apply(this, args as never); } as typeof get;
     HTMLCanvasElement.prototype.toBlob = function(callback, ...args) { if ((window as unknown as { blobFail: boolean }).blobFail) callback(null); else blob.call(this, callback, ...args); };
   });
-  await page.goto('/me/music/share'); await expect(page.getByRole('alert')).toContainText('瀏覽器無法產生圖片'); await expect(page.getByRole('textbox', { name: '詞條清單', exact: true })).toHaveValue(/Aimer/);
+  await page.goto('/me/music/share'); await expect(page.getByRole('alert')).toContainText('瀏覽器無法產生圖片'); await expectControlValue(page.getByRole('textbox', { name: '詞條清單', exact: true }), /Aimer/);
   await page.evaluate(() => Object.assign(window, { canvasFail: false, blobFail: true })); await page.getByRole('button', { name: '重新產生圖片', exact: true }).click(); await expect(page.getByRole('alert')).toContainText('圖片轉換失敗');
   await page.evaluate(() => Object.assign(window, { blobFail: false })); await page.getByRole('button', { name: '重新產生圖片', exact: true }).click(); await ready(page);
   await image(page).evaluate((element: HTMLImageElement) => { element.src = 'data:image/png;base64,AA'; }); await expect(page.getByRole('alert')).toContainText('圖片無法顯示'); await page.getByRole('button', { name: '重新產生圖片', exact: true }).click(); await ready(page);
@@ -120,7 +120,7 @@ test('renders all 20 choices with long grapheme names, keeps full copy text and 
   expect((await context.request.put('/api/v2/me/music', { headers, data: { profileId: own.id, musicEpoch: 0, revision: own.revision, selections } })).status()).toBe(200);
   const name = (entry: string) => entry + '👩🏽‍🎤' + '完整かな英文Label '.repeat(60);
   await page.route('**/api/v2/music/catalog', async route => { const response = await route.fetch(), body = await response.json(); for (const entry of body.entries) entry.name = name(entry.id); await route.fulfill({ response, json: body }); });
-  await page.goto('/me/music/share'); await ready(page); await expect(page.getByRole('textbox', { name: '詞條清單', exact: true })).toHaveValue(selections.map(pick => name(pick.entryId)).join('、'));
+  await page.goto('/me/music/share'); await ready(page); await expectControlValue(page.getByRole('textbox', { name: '詞條清單', exact: true }), selections.map(pick => name(pick.entryId)).join('、'));
   const drawn = await lines(page); expect(drawn).toContain('20 項 · 已保存成分'); expect(drawn).toContain('領域 · 5 項'); expect(drawn).toContain('細分 · 15 項');
   for (const pick of selections) expect(drawn.some(line => line.startsWith(pick.entryId + '👩🏽‍🎤'))).toBe(true);
   const rows = await page.evaluate(() => (window as unknown as { shareDraws: { text: string; x: number; y: number; width: number }[] }).shareDraws);

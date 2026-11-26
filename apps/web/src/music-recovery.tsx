@@ -3,7 +3,7 @@ import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { MusicClaimStatus, StartMusicClaim, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -97,10 +97,10 @@ function Recovery({ viewer }: { viewer: Viewer }) {
   return <><DraftFeedback form={{...record,message:message||record.message,readError:damaged!==null&&!record.conflict&&!record.expired?'':record.readError}} navigation={false}/>{damaged!==null&&<Surface role="alert"><Text>找回操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原文不會複製到保全版本。</Text><Button disabled={busy||record.loading||record.expired} onClick={()=>{const url=URL.createObjectURL(new Blob([damaged],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='qgroup-claim-operation-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setDownloaded(true);}}>下載舊操作紀錄</Button><Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void(async()=>{if(busy||record.loading||record.conflict||record.expired)return;setBusy(true);try{if(legacyInvalid!==null){if(sessionStorage.getItem(key)!==legacyInvalid)throw Error('原紀錄已有變更，請重新載入核對。');sessionStorage.removeItem(key);}else if(!await persist(null))return;window.location.reload();}catch(error){setMessage(error instanceof Error?errorText(error):uiText("無法清除紀錄"));}finally{if(active.current)setBusy(false);}})()}>清除已下載的舊紀錄</Button></Surface>}{blocked?null:claim.isPending ? <Notice>正在讀取找回狀態…</Notice> : claim.error ? <Failure error={claim.error} retry={() => void refresh()} /> : <Surface className="detail auth-panel">
     {status?.status === 'none' && pending?.action ? <Notice>原找回請求已不存在，請先核對我的成分。<Button disabled={busy||uncertain} onClick={()=>void(async()=>{if(!begin())return;try{if(await complete({status:'none'}))setMessage(uiText("已結束原操作核對；可重新找回。"));}finally{if(active.current)setBusy(false);}})()}>結束失效的原操作</Button></Notice> : status?.status === 'none' ? <form onSubmit={event => { event.preventDefault(); void start(); }}>
       <Text>PIN 只用於找回舊成分；關聯須完成本次 QQ 授權，不會覆蓋目前帳號已有的成分。</Text>
-      <label className="account-field">舊 QQ<input inputMode="numeric" autoComplete="off" value={legacyQQ} maxLength={12} disabled={busy || uncertain || !!readError || !!pending} onChange={event => setQQ(event.target.value)} /></label>
-      <label className="account-field">原口令<input type="password" inputMode="numeric" autoComplete="off" value={pin} maxLength={6} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setPin(event.target.value)} /></label>
+      <Field className="account-field" label={<>舊 QQ</>}><input inputMode="numeric" autoComplete="off" value={legacyQQ} maxLength={12} disabled={busy || uncertain || !!readError || !!pending} onChange={event => setQQ(event.target.value)} /></Field>
+      <Field className="account-field" label={<>原口令</>}><input type="password" inputMode="numeric" autoComplete="off" value={pin} maxLength={6} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setPin(event.target.value)} /></Field>
       <Text>4–6 位數字。口令不保存在瀏覽器；忘記口令請聯絡管理員。</Text>
-      <label className="consent"><input type="checkbox" checked={consent} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setConsent(event.target.checked)} /><span>確認以舊資料驗證取回權利，並將原成分關聯至完成 QQ 授權的帳號</span></label>
+      <Checkbox className="consent" checked={consent} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setConsent(event.target.checked)} label={<><span>確認以舊資料驗證取回權利，並將原成分關聯至完成 QQ 授權的帳號</span></>} />
       <Button type="submit" loading={busy} disabled={busy || !consent || uncertain || !!readError || !!pending?.action || !/^[0-9]{4,12}$/.test(legacyQQ.trim()) || !/^[0-9]{4,6}$/.test(pin.trim())}>驗證原口令</Button>
     </form> : status && <>
       <Heading level={2}>{status.name || '原成分'}</Heading><Text>舊 QQ：{status.legacyQQ}</Text><Text>固定成分 ID：{status.profileId}</Text>
@@ -108,11 +108,11 @@ function Recovery({ viewer }: { viewer: Viewer }) {
         <Text>有效至 {new Date(status.expiresAt).toLocaleString(displayLocale())}。</Text>
         {status.status === 'pending' ? <>
           <Text>{viewer.authenticated ? `${uiText("接著授權目前帳號「")}${viewer.nickname}${uiText("」的 QQ，不切換或合併帳號。")}` : '接著授權 QQ，確認登入帳號後再核對成分關聯。'}</Text>
-          {!viewer.privacyAccepted && <label className="consent"><input type="checkbox" checked={privacy} onChange={event => setPrivacy(event.target.checked)} /><span>我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></span></label>}
+          {!viewer.privacyAccepted && <Checkbox className="consent" checked={privacy} onChange={event => setPrivacy(event.target.checked)} label={<><span>我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></span></>} />}
           <Button loading={busy} disabled={busy || !!pending?.action || !viewer.qqEnabled || (!viewer.privacyAccepted && !privacy) || uncertain || !!readError} onClick={() => void authorize()}>前往 QQ 授權找回</Button>{!viewer.qqEnabled && <Notice>QQ 登入尚未配置，請聯絡管理員。</Notice>}
         </> : <>
           <Text>將原成分關聯至帳號「{status.targetNickname}」。原選擇、稱呼及聯絡資料會保留；報名與款項不合併。</Text>
-          <label className="consent"><input type="checkbox" checked={confirm} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setConfirm(event.target.checked)} /><span>確認這是我的原成分，關聯至目前帳號</span></label>
+          <Checkbox className="consent" checked={confirm} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setConfirm(event.target.checked)} label={<><span>確認這是我的原成分，關聯至目前帳號</span></>} />
           <Button loading={busy} disabled={busy || !confirm || uncertain || !!readError || !!pending?.action} onClick={() => void act('finish')}>確認關聯原成分</Button>
         </>}
       </>}

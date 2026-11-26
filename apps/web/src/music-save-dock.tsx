@@ -1,7 +1,7 @@
 import { ListMusic, RefreshCw, Save } from 'lucide-react';
 import { useLayoutEffect, useRef } from 'react';
 import type { MusicSelection } from './music-selection';
-import { Button } from './kimi-ui';
+import { Button, Disclosure } from './kimi-ui';
 import { ActionLink } from './action-link';
 import { DraftFeedback } from './draft-feedback';
 import { uiText } from './language';
@@ -40,12 +40,12 @@ export function MusicSaveDock({ selection: form }: { selection: MusicSelection }
       {form.storageError&&<p>{pending?'排除儲存問題後，請按「確認保存結果」。':mustRead?'請檢查瀏覽器儲存空間或網站儲存權限，再重試讀取。':'請檢查瀏覽器儲存空間或網站儲存權限，再按「重試保存」。'}</p>}
       {form.reviewed&&!form.needsRebase&&form.dirty&&<>
         <p>保存將以你目前勾選的詞條及喜歡程度為準。</p>
-        <details><summary>查看目前已保存的選擇（{form.saved?.selections.length??0}）</summary>
+        <Disclosure   title={<>查看目前已保存的選擇（{form.saved?.selections.length??0}）</>}>
           {form.saved?.selections.length?<ul>{form.saved.selections.map(choice=>{
             const entry=form.entries.find(item=>item.id===choice.entryId);
             return <li key={choice.entryId}>{entry?.name??uiText('已移除的詞條')}{entry?.kind==='sub'?' · '+levels[choice.level-1]:''}</li>;
           })}</ul>:<p>目前沒有已保存的詞條。</p>}
-        </details>
+        </Disclosure>
       </>}
     </div>
     </>}

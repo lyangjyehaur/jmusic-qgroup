@@ -1,4 +1,4 @@
-import { chooseOption } from './kimi-controls';
+import { chooseOption, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -23,10 +23,10 @@ test('quick appearance keeps color, brightness and density independent without l
   await expect(page.locator('html')).toHaveAttribute('data-preset', 'yellow');
   await expect(page.locator('html')).toHaveAttribute('data-density', 'compact');
   await page.keyboard.press('Escape');
-  await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('保留中的活動');
+  await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '保留中的活動');
   expect(writes).toEqual([]);
   page.on('dialog', dialog => void dialog.accept()); await page.reload();
-  await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('保留中的活動');
+  await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '保留中的活動');
   await expect(page.locator('html')).toHaveAttribute('data-preset', 'yellow');
   await expect(page.locator('html')).toHaveAttribute('data-density', 'compact');
 });
@@ -44,7 +44,7 @@ test('search and term dialogs restore the mounted activity, including the member
   expect(await dialog.evaluate(el=>el.getBoundingClientRect().height<=innerHeight-64)).toBe(true);
   expect(await dialog.locator('.inline-definitions dd').first().evaluate(el=>el.getBoundingClientRect().width>40)).toBe(true);
   await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click();
-  await expect(page.getByLabel('搜尋活動、詞條或成分稱呼')).toHaveValue('mjxs');
+  await expectControlValue(page.getByLabel('搜尋活動、詞條或成分稱呼'), 'mjxs');
   await page.getByRole('button', { name: '返回原頁', exact: true }).click();
   await expect(page).toHaveURL('/activities/listen?view=members#participants');
   await expect(dialog).toHaveCount(0);
@@ -77,7 +77,7 @@ test('search from a saved local authoring draft avoids duplicate controllers and
   await expect(page).toHaveURL('/activities/new');
   const restore = page.getByRole('button', { name: '恢復本機原稿', exact: true });
   if (await restore.isVisible()) await restore.click();
-  await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('搜尋前的草稿');
+  await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '搜尋前的草稿');
   expect(errors).toEqual([]);
 });
 

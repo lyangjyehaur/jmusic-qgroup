@@ -1,3 +1,4 @@
+import { expectControlValue, selectControl } from './kimi-controls';
 import { durableRows,damageDraft } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -38,7 +39,7 @@ test('existing formal rooms load with original names and unmatched people, prese
   await expect(rooms(page)).toContainText('沒有成分的成員不列入合拍分數');
   await page.getByRole('checkbox',{name:/圖片包含/}).check();
   await expect(page.getByRole('img',{name:/分房試算/})).toBeVisible();
-  await expect(page.getByRole('textbox',{name:'分房清單',exact:true})).toHaveValue(/原活動長包間名稱[\s\S]*沒有成分的同行/);
+  await expectControlValue(page.getByRole('textbox',{name:'分房清單',exact:true}), /原活動長包間名稱[\s\S]*沒有成分的同行/);
   const after=await(await context.request.get('/api/v2/activities/listen/rooms',{headers})).json();
   expect(after).toEqual(savedView);
   await page.reload();await button(page,'恢復本機原稿').click();
@@ -66,13 +67,13 @@ test('free rooms analyze, split in three modes, preserve manual moves, lookup an
   await login(context);
   await split(page);
   for (const mode of ['capacity', 'sizes', 'rooms']) {
-    await page.getByRole('combobox', { name: '分房依據', exact: true }).selectOption(mode);
+    await selectControl(page.getByRole('combobox', { name: '分房依據', exact: true }), mode);
     if (mode === 'sizes') await page.getByLabel('各房人數（以逗號分隔）', { exact: true }).fill('1,2');
     else await page.getByLabel(mode === 'rooms' ? '房數' : '每房容量', { exact: true }).fill('2');
     await button(page, '產生分房建議').click();
     await expect(rooms(page).locator('.room-lab-room')).toHaveCount(2);
   }
-  await page.getByRole('combobox', { name: '移動 詞庫bob', exact: true }).selectOption('');
+  await selectControl(page.getByRole('combobox', { name: '移動 詞庫bob', exact: true }), '');
   await expect(rooms(page)).toContainText('包間輸入有變更');
   await button(page, '重新計分').click();
   await expect(rooms(page).getByText('包間輸入有變更', { exact: false })).toHaveCount(0);
@@ -87,7 +88,7 @@ test('free rooms analyze, split in three modes, preserve manual moves, lookup an
   await expect(rooms(page)).toContainText('待人工安排 · 1 人');
   await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('10002');
   await button(page, '定位成員').click();
-  await expect(page.getByLabel('搜尋成員名稱或成分 ID', { exact: true })).toHaveValue(profile('b'));
+  await expectControlValue(page.getByLabel('搜尋成員名稱或成分 ID', { exact: true }), profile('b'));
   await expect(page.locator('.room-lab-pool').getByRole('checkbox')).toHaveCount(1);
   await page.getByRole('checkbox', { name: '包含自己', exact: true }).uncheck();
   const another = await context.newPage();
@@ -104,14 +105,15 @@ test('activity roster keeps unmatched and unselected people and adoption require
   await expect(rooms(page)).toContainText('沒有成分的同行 · 無成分');
   await page.getByRole('checkbox', { name: /小白.*候補/ }).uncheck();
   await expect(rooms(page)).toContainText('包間輸入有變更');
-  await page.getByRole('combobox', { name: '移動 小白', exact: true }).selectOption('');
+  await selectControl(page.getByRole('combobox', { name: '移動 小白', exact: true }), '');
   await expect(rooms(page)).toContainText('小白 · 未加入試算');
   await page.getByRole('checkbox', { name: /小白.*候補/ }).check();
   const selects = rooms(page).locator('.room-lab-room');
   const occupied = selects.filter({ has: page.getByRole('combobox') }).first();
   await occupied.getByLabel(/容量$/).fill('3');
-  const target = await occupied.getByRole('combobox').first().inputValue();
-  await page.getByRole('combobox', { name: '移動 沒有成分的同行', exact: true }).selectOption(target);
+  const target = await occupied.getByRole('combobox').first().locator('[data-option-value]').getAttribute('data-option-value');
+  expect(target).toBeTruthy();
+  await selectControl(page.getByRole('combobox', { name: '移動 沒有成分的同行', exact: true }), target!);
   await button(page, '重新計分').click();
   await expect(rooms(page)).toContainText('沒有成分的成員不列入合拍分數');
   await button(page, '核對並採用為正式分房').click();
@@ -120,8 +122,7 @@ test('activity roster keeps unmatched and unselected people and adoption require
   await expect(button(page, '保存預分包間')).toBeDisabled();
   await button(page, '載入建議到草稿').click();
   for (const select of await page.getByLabel('包間付款人', { exact: true }).all()) {
-    const value = await select.locator('option').nth(1).getAttribute('value');
-    await select.selectOption(value!);
+    await selectControl(select, {index:1});
   }
   await page
     .getByRole('checkbox', {
@@ -310,7 +311,7 @@ test('adoption preserves an existing draft until explicitly replaced and keeps a
   await expect(rooms(page)).toBeVisible();
   await button(page, '核對並採用為正式分房').click();
   await leave(page);
-  await expect(page.getByLabel('包間名稱', { exact: true })).toHaveValue('原稿包間');
+  await expectControlValue(page.getByLabel('包間名稱', { exact: true }), '原稿包間');
   await button(page, '恢復本機原稿').click();
   await expect(button(page, '載入建議到草稿')).toBeDisabled();
   await page
@@ -320,10 +321,9 @@ test('adoption preserves an existing draft until explicitly replaced and keeps a
     })
     .check();
   await button(page, '載入建議到草稿').click();
-  await expect(page.getByLabel('包間名稱', { exact: true }).first()).toHaveValue('原稿包間');
+  await expectControlValue(page.getByLabel('包間名稱', { exact: true }).first(), '原稿包間');
   for (const select of await page.getByLabel('包間付款人', { exact: true }).all()) {
-    const value = await select.locator('option').nth(1).getAttribute('value');
-    await select.selectOption(value!);
+    await selectControl(select, {index:1});
   }
   let intercepted = false,
     originalKey = '';

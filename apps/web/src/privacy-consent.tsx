@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { PrivacyConsentReceipt } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -90,7 +90,7 @@ function ConsentForm({ viewer }: { viewer: Member }) {
     {status.isPending ? <Notice>正在讀取同意紀錄…</Notice> : status.error ? <Failure error={status.error} retry={() => void status.refetch()} /> : <>
       <dl><dt>目前版本</dt><dd>{status.data.version}</dd><dt>同意狀態</dt><dd>{status.data.accepted ? '已同意' : '尚未同意'}</dd>{status.data.acceptedAt && <><dt>同意時間</dt><dd>{status.data.acceptedAt}</dd></>}</dl>
       {!pending && !status.data.accepted && <form onSubmit={event => { event.preventDefault(); void submit(); }}>
-        <label className="consent"><input type="checkbox" checked={checked} disabled={record.locked} onChange={event => setCheckedVersion(event.target.checked ? status.data.version : null)} />我已閱讀並同意目前版本的統一隱私政策</label>
+        <Checkbox className="consent" checked={checked} disabled={record.locked} onChange={event => setCheckedVersion(event.target.checked ? status.data.version : null)} label={<>我已閱讀並同意目前版本的統一隱私政策</>} />
         <Button type="submit" loading={record.busy} disabled={!checked || record.unavailable}>確認同意</Button>
       </form>}
     </>}

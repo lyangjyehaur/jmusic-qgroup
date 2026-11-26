@@ -4,7 +4,7 @@ import { useEffect,useRef,useState } from 'react';
 import { Link,useBlocker,useParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicErasureInput, AdminMusicErasureResult, type Viewer } from '@qgroup/contracts';
 import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
@@ -99,8 +99,8 @@ function Manager({viewer,access,path,id,reset}:{viewer:Viewer;access:Access;path
         {reset&&preview.data.historyRecords>0&&<Text>留言與趨勢相關紀錄：{preview.data.historyRecords} 筆</Text>}
         <Text>{reset?preview.data.entries+' 個詞條將刪除。全部成分的稱呼、私人資料、選擇、找回授權及已關聯找搭子將移除。':'這份成分的私人資料、選擇、找回授權及找搭子將移除；'+preview.data.entries+' 個自建詞條保留並移除原建立者資訊，其他人的選擇保留。'}</Text>
         <Text>不會關閉會員帳號，也不刪除活動、報名、帳務或 bot 工作。{reset?'找搭子與趨勢歷史同時清空，外觀設定保留。':''}刪除紀錄會在恢復備份時重播，無法直接復原。</Text>
-        <label className="account-field">輸入 {reset?'RESET':'DELETE'} 確認<input value={word} autoComplete="off" spellCheck={false} disabled={!record.ready||busy||!!pending||!!readError} onChange={event=>{setWord(event.target.value);setConsent(false);}}/></label>
-        <label className="consent"><input type="checkbox" checked={consent} disabled={!record.ready||busy||!!pending||!!readError} onChange={event=>setConsent(event.target.checked)}/><span>我已核對刪除範圍及不可復原的影響</span></label>
+        <Field className="account-field" label={<>輸入 {reset?'RESET':'DELETE'} 確認</>}><input value={word} autoComplete="off" spellCheck={false} disabled={!record.ready||busy||!!pending||!!readError} onChange={event=>{setWord(event.target.value);setConsent(false);}}/></Field>
+        <Checkbox className="consent" checked={consent} disabled={!record.ready||busy||!!pending||!!readError} onChange={event=>setConsent(event.target.checked)} label={<><span>我已核對刪除範圍及不可復原的影響</span></>} />
         {reset&&!preview.data.profiles&&!preview.data.entries&&!preview.data.shouts&&!preview.data.historyRecords&&<Notice>目前沒有可重置的成分、詞條、找搭子或歷史紀錄。</Notice>}
         <Button disabled={!record.ready||!!pending||!!readError||word!==(reset?'RESET':'DELETE')||!consent||(!preview.data.profiles&&!preview.data.entries&&!preview.data.shouts&&!preview.data.historyRecords)} loading={busy} onClick={()=>void submit()}>{reset?'重置成分與詞庫':'確認刪除成分'}</Button>
         <Button variant="secondary" disabled={busy||!!pending} onClick={()=>{setWord('');setConsent(false);void preview.refetch();}}>重新核對範圍</Button>

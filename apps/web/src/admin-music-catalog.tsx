@@ -3,7 +3,7 @@ import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Select, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicCatalog, AdminMusicEntryCommand, type Viewer } from '@qgroup/contracts';
 import { musicText } from '@qgroup/domain';
@@ -77,16 +77,16 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
       {value.command!=='create'&&!source&&<Text role="alert">來源詞條已不存在；待確認操作仍可查回原結果。</Text>}
       {['create','update'].includes(value.command)&&<>
         <Field label="詞條名稱"><input value={value.name} disabled={locked} onChange={event=>edit({name:event.target.value})}/></Field><Text size="sm">{Array.from(musicText(value.name)).length} / 24 字</Text>
-        <Field label="詞條類型"><select value={value.kind} disabled={locked} onChange={event=>edit({kind:event.target.value as 'main'|'sub'})}><option value="main">領域</option><option value="sub">細分</option></select></Field>
-        <Field label="詞條分類"><select value={value.category} disabled={locked} onChange={event=>edit({category:event.target.value})}>{[...new Set([value.category,...catalog.data?.categories??[]])].map(category=><option key={category} value={category}>{categoryLabel(category)}</option>)}</select></Field>
+        <Field label="詞條類型"><Select value={value.kind} disabled={locked} onChange={event=>edit({kind:event.target.value as 'main'|'sub'})}><option value="main">領域</option><option value="sub">細分</option></Select></Field>
+        <Field label="詞條分類"><Select value={value.category} disabled={locked} onChange={event=>edit({category:event.target.value})}>{[...new Set([value.category,...catalog.data?.categories??[]])].map(category=><option key={category} value={category}>{categoryLabel(category)}</option>)}</Select></Field>
         {source&&!!source.aliases.length&&<Text>保留別名：{source.aliases.join('、')}</Text>}
       </>}
       {value.command==='delete'&&<Text>此操作會移除詞條、所有人的相關選擇及建立紀錄，無法復原。</Text>}
-      {value.command==='merge'&&<><Field label="合併目標"><select value={value.toId} disabled={locked} onChange={event=>edit({toId:event.target.value})}><option value="">選擇目標詞條</option>{catalog.data?.entries.filter(e=>e.id!==value.id).map(e=><option key={e.id} value={e.id}>{e.name} · {e.id}</option>)}</select></Field>
+      {value.command==='merge'&&<><Field label="合併目標"><Select value={value.toId} disabled={locked} onChange={event=>edit({toId:event.target.value})}><option value="">選擇目標詞條</option>{catalog.data?.entries.filter(e=>e.id!==value.id).map(e=><option key={e.id} value={e.id}>{e.name} · {e.id}</option>)}</Select></Field>
         {target&&<Text>目標：{target.name} · {target.count} 人選用 · {target.creationCount} 份建立紀錄</Text>}
         <Text>來源詞條將移除，名稱與別名加入目標。選擇與建立紀錄轉移並去重；重複選擇保留先出現的熟悉度及順序。目標的編輯權不變。</Text></>}
       {stale&&!draft.pending&&<Text role="alert">詞庫或會員資料已更新，請重新核對影響範圍。</Text>}
-      <label className="consent"><input type="checkbox" checked={confirmed} disabled={locked||stale||!!catalog.error} onChange={event=>setConfirmed(event.target.checked)}/><span>我已核對詞條及影響範圍</span></label>
+      <Checkbox className="consent" checked={confirmed} disabled={locked||stale||!!catalog.error} onChange={event=>setConfirmed(event.target.checked)} label={<><span>我已核對詞條及影響範圍</span></>} />
       <div className="page-actions"><Button loading={busy} disabled={busy||unavailable||!draft.pending&&(!confirmed||stale||!!catalog.error||value.command==='merge'&&!target||value.command!=='create'&&!source)} onClick={()=>void send()}>{draft.pending?'確認原操作結果':'確認詞條變更'}</Button>
       <Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新版，保留輸入</Button>
       <Button variant="secondary" disabled={locked} onClick={()=>{record.change(blank());setConfirmed(false);setMessage('');}}>放棄原稿</Button></div>

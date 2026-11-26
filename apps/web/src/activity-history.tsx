@@ -3,7 +3,7 @@ import { Fragment } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Disclosure } from './kimi-ui';
 import { type ActivityHistoryEntry } from '@qgroup/contracts';
 import { scopedHttp } from './http';
 import { Failure, Notice, PageIntro, useSession } from './shared';
@@ -27,12 +27,12 @@ function People({data,label}:{data:Snapshot;label:string}){
 function Entry({entry}:{entry:ActivityHistoryEntry}){
   const before={...entry.before,...object(entry.before.event)},after={...entry.after,...object(entry.after.event)};
   const person=entry.action==='conditions_response'?object(entry.after.person_id?entry.after:entry.before):null;
-  return <details className="history-entry"><summary>第 {entry.version} 次更新 · {actions[entry.action]??'其他更新'} · {entry.actorName} · {stamp(entry.createdAt)}</summary><div className="detail">{entry.reason&&<Text className="preserve-lines">原因：{entry.reason}</Text>}
+  return <Disclosure className="history-entry"  title={<>第 {entry.version} 次更新 · {actions[entry.action]??'其他更新'} · {entry.actorName} · {stamp(entry.createdAt)}</>}><div className="detail">{entry.reason&&<Text className="preserve-lines">原因：{entry.reason}</Text>}
     {person&&<Text>報名者：{String(person.nickname??'')} · 報名編號：{String(person.person_id??'未提供')}</Text>}
     <dl>{Object.keys(labels).filter(key=>(key in before||key in after)&&JSON.stringify(before[key])!==JSON.stringify(after[key])).map(key=><Fragment key={key}><dt>{labels[key]}</dt><dd className="preserve-lines">{displayField(before[key],key)} → {displayField(after[key],key)}</dd></Fragment>)}</dl>
     <People data={entry.before} label="變更前"/><People data={entry.after} label="變更後"/>
     {entry.action.startsWith('finance_')&&<Notice>金額、流向與沖銷關係須在收付款帳本核對；此處不顯示未確認申報內容。</Notice>}{entry.action==='settlement_saved'&&<Notice>結算記錄另保存各版本金額與憑證。</Notice>}
-  </div></details>;
+  </div></Disclosure>;
 }
 export function ActivityHistoryPage(){
   const {id=''}=useParams(),session=useSession();const viewer=session.data;

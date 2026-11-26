@@ -3,7 +3,7 @@ import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyPersonalInspection,LegacyPersonalResult,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -37,7 +37,7 @@ export function LegacyPersonalRecovery({viewer,inventory,row,request,validate,re
  if(mapped?.kind==='request')return <Notice>原請求已完成，恢復紀錄已保存。<Link to={mapped.path}>查看目前個人資料</Link></Notice>;
  if(mapped)return <Notice>此原請求已有其他核對目的，請先查看原紀錄。</Notice>;
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原個人請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<><Text>原個人操作已提交，只保存核對結果。</Text></>:<PersonalReview plan={plan} requestKey={request.requestKey} request={request} scope={viewer.scope}/>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對目前資料，使用原編號重試個人操作':'保存已核對的操作結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原個人請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='retryable'?'已核對目前資料，使用原編號重試個人操作':'保存已核對的操作結果'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原個人請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
 
 

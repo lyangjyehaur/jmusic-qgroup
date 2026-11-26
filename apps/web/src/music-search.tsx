@@ -2,7 +2,7 @@ import { uiText } from './language';
 import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Surface } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Select } from './kimi-ui';
 import { createMusicSearch } from '@qgroup/domain';
 import { categoryLabel } from './music-entries';
 import { Field } from './settlement-controls';
@@ -65,14 +65,14 @@ export function MusicSearch({ filters, categories, label = uiText('搜尋音樂�
     {filters.search && <Button variant="secondary" onClick={() => { filters.update('q', ''); input.current?.focus(); }}>清除搜尋</Button>}
     </div>
     <div className="music-search-filters">
-      <Field label="詞庫類型"><select value={filters.kind} onChange={event => filters.update('kind', event.target.value)}>
+      <Field label="詞庫類型"><Select value={filters.kind} onChange={event => filters.update('kind', event.target.value)}>
         <option value="">全部類型</option><option value="main">領域</option><option value="sub">細分</option>
         {filters.kind && !['main', 'sub'].includes(filters.kind) && <option value={filters.kind}>未支援的類型</option>}
-      </select></Field>
-      <Field label="詞庫分類"><select value={filters.category} onChange={event => filters.update('category', event.target.value)}>
+      </Select></Field>
+      <Field label="詞庫分類"><Select value={filters.category} onChange={event => filters.update('category', event.target.value)}>
         <option value="">全部分類</option>{categories.map(category => <option key={category} value={category}>{categoryLabel(category)}</option>)}
         {filters.category && !categories.includes(filters.category) && <option value={filters.category}>{categoryLabel(filters.category)}（目前無詞條）</option>}
-      </select></Field>
+      </Select></Field>
     </div>
   </Surface>;
 }

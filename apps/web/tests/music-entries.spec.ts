@@ -1,4 +1,4 @@
-import { toggleMusicTerm, chooseOption, expectMusicTerm } from './kimi-controls';
+import { toggleMusicTerm, chooseOption, expectMusicTerm, selectControl, expectControlValue } from './kimi-controls';
 import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -51,13 +51,13 @@ test('creates a first term and blank profile, edits its classification and prote
     page.getByText('建立詞條會同時建立空白成分；不會自動選取詞條。', { exact: true }),
   ).toBeVisible();
   await field(page).fill('全新樂團');
-  await page.getByLabel('詞條分類', { exact: true }).selectOption('乐队');
+  await selectControl(page.getByLabel('詞條分類', { exact: true }), '乐队');
   await save(page);
   await page.getByRole('link', { name: '我的詞條', exact: true }).click();
   await expect(page.getByRole('heading', { name: '全新樂團', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '編輯 全新樂團', exact: true }).click();
   await field(page).fill('樂團新名稱');
-  await page.getByLabel('詞條分類', { exact: true }).selectOption('组合');
+  await selectControl(page.getByLabel('詞條分類', { exact: true }), '组合');
   await save(page, '保存詞條');
   await page.getByRole('link', { name: '我的成分', exact: true }).click();
   await toggleMusicTerm(page,'樂團新名稱');
@@ -151,7 +151,7 @@ for (const command of ['create', 'update', 'delete'] as const)
         .locator('header')
         .getByRole('link', { name: /^收件匣/ })
         .click();
-      await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+      await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
       await page
         .getByRole('link', {
           name: command === 'create' ? '建立詞條' : command === 'delete' ? '刪除詞條' : '編輯詞條',
@@ -193,7 +193,7 @@ test('rebases a concurrent edit without losing the original input', async ({ pag
     page.getByText('詞條已有更新；輸入保留，請核對目前版本後再保存', { exact: true }),
   ).toBeVisible();
   await page.getByRole('button', { name: '核對最新詞條，保留輸入', exact: true }).click();
-  await expect(field(page)).toHaveValue('保留的本機名稱');
+  await expectControlValue(field(page), '保留的本機名稱');
   await expect(
     page.getByRole('checkbox', { name: '已核對名稱、類型與分類，確認保存。', exact: true }),
   ).not.toBeChecked();
@@ -217,7 +217,7 @@ test('storage denial prevents writes and damaged drafts require preservation bef
   expect(writes).toBe(0);
   page.on('dialog', (dialog) => void dialog.accept());
   await page.reload();
-  await expect(field(page)).toHaveValue('保留原稿');
+  await expectControlValue(field(page), '保留原稿');
   await damageDraft(page, 'qgroup:rebuild:music:entries:', 'DAMAGED_ENTRY_DRAFT');
   await page.reload();
   await expect(field(page)).toBeDisabled();
@@ -233,7 +233,7 @@ test('preserves selection drafts while creating terms, isolates switched account
   await page.goto('/me/music');
   await toggleMusicTerm(page, 'YOASOBI');
   await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
-  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
   await page.getByRole('link', { name: '建立詞條', exact: true }).click();
   await field(page).fill('自己的詞條');
   await save(page);
@@ -241,7 +241,7 @@ test('preserves selection drafts while creating terms, isolates switched account
   await expectMusicTerm(page,'YOASOBI',true);
   await expectMusicTerm(page,'自己的詞條',false);
   await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
-  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
   await page.getByRole('link', { name: '建立詞條', exact: true }).click();
   await field(page).fill('小青尚未送出');
   await login(context, 'bob');
@@ -250,10 +250,10 @@ test('preserves selection drafts while creating terms, isolates switched account
   await expect(page.getByText('目前帳號已變更；請重新整理並確認帳號', { exact: true })).toBeVisible();
   page.on('dialog', (dialog) => void dialog.accept());
   await page.reload();
-  await expect(field(page)).toHaveValue('');
+  await expectControlValue(field(page), '');
   await login(context);
   await page.reload();
-  await expect(field(page)).toHaveValue('小青尚未送出');
+  await expectControlValue(field(page), '小青尚未送出');
   await page.goto('/me/accounts');
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible();

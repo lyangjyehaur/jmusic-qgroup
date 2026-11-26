@@ -1,4 +1,4 @@
-import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
+import { toggleMusicTerm, expectMusicTerm, expectControlValue } from './kimi-controls';
 import { createServer, type ServerResponse } from 'node:http';
 import { readFileSync } from 'node:fs';
 import { once } from 'node:events';
@@ -152,12 +152,12 @@ test('an update waits for explicit activation and does not reload any editing ta
         h.state.version = 'f'.repeat(64);
         await second.getByRole('button', { name: '檢查更新', exact: true }).click();
         await expect(second.getByRole('button', { name: '啟用已下載版本', exact: true })).toBeVisible();
-        await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('更新前保留的草稿');
+        await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '更新前保留的草稿');
         expect(await page.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/'))?.waiting)).toBe(true);
         expect(await cacheKeys(second)).toContain('qgroup-unified-shell-' + h.state.version);
         await second.getByRole('button', { name: '啟用已下載版本', exact: true }).click();
         await expect(second.getByRole('button', { name: '保存草稿後重新載入', exact: true })).toBeVisible();
-        await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('更新前保留的草稿');
+        await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '更新前保留的草稿');
         expect(await cacheKeys(second)).toContain('qgroup-unified-shell-' + build);
         await context.setOffline(true);
         expect(await page.evaluate(async () => await (await fetch('/assets/previous-chunk-abc12345.js')).text())).toBe('old chunk');
@@ -172,7 +172,7 @@ test('an update waits for explicit activation and does not reload any editing ta
         await expect.poll(() => second.evaluate(() => document.querySelector<HTMLMetaElement>('meta[name="qgroup-build"]')?.content)).toBe(h.state.version);
         expect(await cacheKeys(second)).toContain('qgroup-unified-shell-' + build);
         await page.reload();
-        await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('更新前保留的草稿');
+        await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '更新前保留的草稿');
         await expect.poll(() => cacheKeys(page)).not.toContain('qgroup-unified-shell-' + build);
         expect(await cacheKeys(page)).toContain('qgroup-unified-shell-' + h.state.version);
     }

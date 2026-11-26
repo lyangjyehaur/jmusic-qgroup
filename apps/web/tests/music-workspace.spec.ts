@@ -1,4 +1,4 @@
-import { chooseOption, expectOption, toggleMusicTerm, expectMusicTerm, openMusicCatalog } from './kimi-controls';
+import { chooseOption, expectOption, toggleMusicTerm, expectMusicTerm, openMusicCatalog, expectControlValue } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
@@ -15,7 +15,7 @@ test('shares one selection, search, levels and activity return across catalog an
   await chooseOption(page,'米津玄師喜歡程度','4');
   await openMusicCatalog(page);
   await expect(page.getByRole('heading', { name: '尚未提交的修改' })).toHaveCount(0);
-  await expect(page.getByLabel('搜尋音樂詞條', { exact: true })).toHaveValue('mijin');
+  await expectControlValue(page.getByLabel('搜尋音樂詞條', { exact: true }), 'mijin');
   await page.getByRole('link', { name: '米津玄師', exact: true }).click();
   await expectOption(page,'米津玄師喜歡程度','4');
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
@@ -57,7 +57,7 @@ test('uses pinyin, kana initials and alias search with keyboard clearing, classi
     await expect(page.locator('.quick-add-results button')).toContainText(name!);
   }
   await search.press('Escape');
-  await expect(search).toHaveValue('');
+  await expectControlValue(search, '');
   await openMusicCatalog(page);
   await chooseOption(page,'詞庫類型','main');
   await expect(page.getByRole('link',{name:'米津玄師',exact:true})).toHaveCount(0);

@@ -17,7 +17,7 @@ import { ActivityParticipation } from './activity-participation';
 import { ActivityDetailStatus } from './activity-detail-status';
 import { useActivityDetailRefresh } from './activity-detail-refresh';
 import { InterfaceIcon } from './interface-icons';
-import { Badge, PageHeader, Tabs } from './kimi-ui';
+import { Badge, PageHeader, Tabs, PopupMenu } from './kimi-ui';
 const phaseLabel: Record<string, string> = { draft: uiText("草稿"), scheduled: uiText("即將開始"), ongoing: uiText("進行中"), ended: uiText("已結束"), cancelled: uiText("已取消") };
 export { KimiActivitiesPage as Activities } from './kimi-activities';
 export function ActivityDetail({ panel, activeTab }: { panel?: ReactNode; activeTab?: string } = {}) {
@@ -37,7 +37,7 @@ export function ActivityDetail({ panel, activeTab }: { panel?: ReactNode; active
   const tab=activeTab??(location.hash==='#participants'?'members':['members','rooms','manage'].includes(search.get('view')??'')?search.get('view')!:'overview');
   const tabURL=(value:string)=>{const params=new URLSearchParams(search);params.delete('view');params.delete('task');if(value!=='overview')params.set('view',value);return base+(params.size?'?'+params:'')+(value==='members'?'#participants':'');};
   return <div className="kimi page activity-detail-page"><div className="detail-back-row"><Link className="back" to="/activities">← 所有活動</Link><span>活動 ID · {id}</span></div>
-    <PageHeader title={event.title} actions={<div className="page-actions"><ActionLink to={base+'/share'}>分享活動</ActionLink><details className="activity-more"><summary>更多活動操作</summary><div className="activity-menu"><Link to={'/activities/new?copyFrom='+encodeURIComponent(id)}>再約一次</Link><Link to={base+'/conditions'}>安排版本與確認</Link><Link to={base+'/history'}>活動歷史</Link>{viewer?.authenticated&&<><ActivityManagementLink key={viewer.scope} eventId={id} viewer={viewer}/><ActivityLifecycleLink key={'state:'+viewer.scope} eventId={id} viewer={viewer}/><Link to={base+'/delegation'}>管理分工</Link><Link to={base+'/bot-deliveries'}>群通知紀錄</Link></>}</div></details></div>}/>
+    <PageHeader title={event.title} actions={<div className="page-actions"><ActionLink to={base+'/share'}>分享活動</ActionLink><PopupMenu className="activity-more"  title={<>更多活動操作</>}><div className="activity-menu"><Link to={'/activities/new?copyFrom='+encodeURIComponent(id)}>再約一次</Link><Link to={base+'/conditions'}>安排版本與確認</Link><Link to={base+'/history'}>活動歷史</Link>{viewer?.authenticated&&<><ActivityManagementLink key={viewer.scope} eventId={id} viewer={viewer}/><ActivityLifecycleLink key={'state:'+viewer.scope} eventId={id} viewer={viewer}/><Link to={base+'/delegation'}>管理分工</Link><Link to={base+'/bot-deliveries'}>群通知紀錄</Link></>}</div></PopupMenu></div>}/>
     <div className="status-strip"><Badge tone={event.phase==='ongoing'&&!event.estimatedOver?'blue':'neutral'}>{event.archived?'已歸檔':event.estimatedOver?'已過預定時間':phaseLabel[event.phase]??event.phase}</Badge><Badge>{activityCategoryLabel(event.category)}</Badge><span><InterfaceIcon name="people" size={15}/>{event.confirmed} / {event.capacity||'不限'} 人{event.waiting>0?' · 候補 '+event.waiting+' 人':''}</span></div>
     {typeof location.state?.activityNotice==='string'&&<Notice>{location.state.activityNotice}</Notice>}
     {viewer?.authenticated&&<ActivityDetailStatus key={viewer.scope+':'+id} event={event} viewer={viewer}/>}

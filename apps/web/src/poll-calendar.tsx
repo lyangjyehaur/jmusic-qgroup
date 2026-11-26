@@ -1,6 +1,6 @@
 import { useId, useState } from 'react';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 function todayInZone(zone: string) {
   try {
     return new Intl.DateTimeFormat('en-CA', {
@@ -60,9 +60,10 @@ export function PollCalendar({
         <Button variant="ghost" disabled={month <= today.slice(0, 7)} onClick={() => setMonth(shifted(month, -1))}>
           上個月
         </Button>
-        <label>
+        <Field  label={<>
           月份
-          <input
+
+        </>}><input
             aria-label="月曆月份"
             type="month"
             min={today.slice(0, 7)}
@@ -70,8 +71,7 @@ export function PollCalendar({
             onChange={(e) => {
               if (/^\d{4}-\d{2}$/.test(e.target.value)) setMonth(e.target.value);
             }}
-          />
-        </label>
+          /></Field>
         <Button variant="ghost" disabled={month === '9999-12'} onClick={() => setMonth(shifted(month, 1))}>
           下個月
         </Button>
@@ -91,17 +91,9 @@ export function PollCalendar({
         {Array.from({ length: count }, (_, i) => {
           const day = month + '-' + String(i + 1).padStart(2, '0');
           return (
-            <button
-              type="button"
-              key={day}
-              aria-label={'選擇日期 ' + day}
-              aria-pressed={selected.has(day)}
-              aria-current={day === today ? 'date' : undefined}
-              disabled={day < today && !selected.has(day)}
-              onClick={() => toggle(day)}
-            >
+            <Button variant="ghost" type="button" key={day} aria-label={'選擇日期 ' + day} aria-pressed={selected.has(day)} aria-current={day === today ? 'date' : undefined} disabled={day < today && !selected.has(day)} onClick={() => toggle(day)}>
               {i + 1}
-            </button>
+            </Button>
           );
         })}
       </div>

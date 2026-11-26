@@ -4,7 +4,7 @@ import { useEffect, useState, type CSSProperties } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Badge, Button, EmptyState, PageHeader, Select } from './kimi-ui';
+import { Badge, Button, EmptyState, PageHeader, Select, Checkbox, Disclosure, RadioGroup, Modal } from './kimi-ui';
 import { ArrowLeft, ArrowUpRight, CalendarPlus, Clock3, Copy, MapPin, UsersRound, Vote } from 'lucide-react';
 import { activityDisplayDate } from './activity-summary';
 import { ActivityBrowseTabs } from './activity-browse-tabs';
@@ -140,11 +140,16 @@ function CreatePoll({ viewer }: { viewer: Member }) {
   }, [form.locked, form.draft.value.client_intent]);
   const v = form.draft.value,
     edit = (patch: Partial<typeof v>) => form.edit({ ...v, ...patch });
+  const [pendingMode,setPendingMode]=useState<'date'|'exact'|null>(null);
   const [lookedUp,setLookedUp]=useState<{scope:string;intent:string;id:string;epoch:number}|null>(null);
   const resolvedId=v.legacySource?.resolvedId??(lookedUp&&lookedUp.scope===viewer.scope&&lookedUp.epoch===form.epoch&&lookedUp.intent===v.client_intent?lookedUp.id:undefined);
   const alreadyCreated=!!resolvedId;
   return (
     <Surface className="detail activity-editor poll-create-form">
+      {pendingMode&&<Modal title="切換候選模式" onClose={()=>setPendingMode(null)} footer={<>
+        <Button variant="secondary" onClick={()=>setPendingMode(null)}>保留原候選</Button>
+        <Button variant="danger" disabled={form.locked} onClick={()=>{if(form.locked)return;edit({time_mode:pendingMode,options:['','']});setPendingMode(null);}}>清除候選並切換</Button>
+      </>}><p>切換模式會清除已填候選，確定切換？</p></Modal>}
       <Notice>投票公開可見，請勿填寫私人資訊。投票不占名額，定案後須另行報名。</Notice>
       {v.legacySource&&<Notice>{alreadyCreated?'原投票已建立，此後續草稿保留，不能另建投票。':'已帶入舊稿，候選順序保留。'}{v.legacySource.notes.map((note,i)=><Text key={i}>{note.field}：{note.original||'未填'}。{note.message}；請在對應欄位補齊。</Text>)}{alreadyCreated&&<Link to={'/time-polls/'+encodeURIComponent(resolvedId!)}>查看原投票</Link>}</Notice>}
       <form
@@ -167,11 +172,11 @@ function CreatePoll({ viewer }: { viewer: Member }) {
             <input maxLength={60} value={v.title} onChange={(e) => edit({ title: e.target.value })} />
           </Field>
           <Field label="活動類型">
-            <select value={v.category} onChange={(e) => edit({ category: ActivityCategory.parse(e.target.value) })}>
+            <Select value={v.category} onChange={(e) => edit({ category: ActivityCategory.parse(e.target.value) })}>
               {activityCategories.map(([value, label]) => (
                 <option key={value} value={value}>{label}</option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="預計地點">
             <input value={v.location} onChange={(e) => edit({ location: e.target.value })} />
@@ -204,16 +209,15 @@ function CreatePoll({ viewer }: { viewer: Member }) {
             <textarea value={v.description} onChange={(e) => edit({ description: e.target.value })} />
           </Field>
           <Field label="候選模式">
-            <select
-              value={v.time_mode}
-              onChange={(e) => {
-                if (v.options.some(Boolean) && !window.confirm(uiText('切換模式會清除已填候選，確定切換？'))) return;
-                edit({ time_mode: e.target.value as 'date' | 'exact', options: ['', ''] });
-              }}
-            >
+            <Select value={v.time_mode} onChange={(e) => {
+                const mode=e.target.value as 'date'|'exact';
+                if(mode===v.time_mode)return;
+                if(v.options.some(Boolean)){setPendingMode(mode);return;}
+                edit({ time_mode: mode, options: ['', ''] });
+              }}>
               <option value="date">日期（定案時補開始時間）</option>
               <option value="exact">精確時段</option>
-            </select>
+            </Select>
           </Field>
           {v.time_mode === 'exact' && (
             <Field label="預計持續小時">
@@ -258,10 +262,10 @@ function CreatePoll({ viewer }: { viewer: Member }) {
               onChange={(e) => edit({ deadline: e.target.value })}
             />
           </Field>
-          <label className="consent">
-            <input type="checkbox" checked={v.bot_enabled} onChange={(e) => edit({ bot_enabled: e.target.checked })} />
+          <Checkbox className="consent" checked={v.bot_enabled} onChange={(e) => edit({ bot_enabled: e.target.checked })} label={<>
+
             <span>同步到 QQ 群（仍依管理員群政策）</span>
-          </label>
+          </>} />
         </fieldset>
         <Button type="submit" disabled={!!form.readError||alreadyCreated} loading={form.busy}>
           {form.draft.pending ? '確認原投票建立結果' : '建立時間投票'}
@@ -325,7 +329,7 @@ function PollDetails({ poll: p, viewer, manage }: { poll: Poll; viewer: Viewer; 
       <dl className="poll-summary-facts"><div><dt><MapPin size={15}/>地點</dt><dd>{p.location}</dd></div><div><dt><Clock3 size={15}/>投票截止</dt><dd>{activityDisplayDate(p.deadline,p.timezone)}</dd></div><div><dt><UsersRound size={15}/>填答人數</dt><dd><strong>{p.respondent_count}</strong> 人填答<span> · {p.options.length} 項候選</span></dd></div></dl>
       {p.description&&<p className="poll-description preserve-lines">{p.description}</p>}
       {p.reason&&<p className="poll-decision-reason preserve-lines">原因：{p.reason}</p>}
-      <details className="poll-arrangement-details"><summary>完整投票安排</summary><dl><dt>時區</dt><dd>{p.timezone}</dd><dt>人數</dt><dd>上限 {p.capacity||'不限'} · 最低 {p.minimum_participants}</dd><dt>發起者</dt><dd>{p.owner_name}</dd>{p.duration_hours!==null&&<><dt>每場預計</dt><dd>{p.duration_hours} 小時</dd></>}{p.fee_policy&&<><dt>費用</dt><dd className="preserve-lines">{p.fee_policy}</dd></>}</dl></details>
+      <Disclosure className="poll-arrangement-details"  title={<>完整投票安排</>}><dl><dt>時區</dt><dd>{p.timezone}</dd><dt>人數</dt><dd>上限 {p.capacity||'不限'} · 最低 {p.minimum_participants}</dd><dt>發起者</dt><dd>{p.owner_name}</dd>{p.duration_hours!==null&&<><dt>每場預計</dt><dd>{p.duration_hours} 小時</dd></>}{p.fee_policy&&<><dt>費用</dt><dd className="preserve-lines">{p.fee_policy}</dd></>}</dl></Disclosure>
     </section>
     <div className="poll-guidance"><Notice>投票不占名額；定案後請核對活動安排再報名。</Notice>{p.event_id&&<ActionLink variant="primary" to={'/activities/'+encodeURIComponent(p.event_id)}>查看定案活動並報名</ActionLink>}{p.event_deleted&&<Notice>定案活動已移除，原投票結果保留。</Notice>}{!viewer.authenticated&&<Notice><Link to={'/login?returnTo='+encodeURIComponent(base(p.id))}>登入</Link>後可填答。</Notice>}</div>
     {manage ? p.is_owner&&viewer.authenticated ? <div className="poll-management-layout"><LegacyLocalGuard><PollManager key={'manage:'+viewer.scope} viewer={viewer} initial={p}/></LegacyLocalGuard><PollResults poll={p}/></div> : <Notice>只有發起者可以管理時間投票。</Notice> : viewer.authenticated ? <LegacyLocalGuard><VoteEditor key={'votes:'+viewer.scope} viewer={viewer} initial={p}/></LegacyLocalGuard> : <PollResults poll={p}/>}
@@ -430,20 +434,10 @@ function VoteEditor({ viewer, initial }: { viewer: Member; initial: Poll }) {
                 {p.leading_option_ids.includes(o.id) ? ' · 最高票' : ''}
               </legend>
               <div className="vote-option-title"><Heading level={3}>{label(o,p)}</Heading><div className="poll-option-badges">{o.expired&&<Badge>已過期</Badge>}{p.leading_option_ids.includes(o.id)&&<Badge tone="green">最高票</Badge>}{p.selected_option_id===o.id&&<Badge tone="blue">已定案</Badge>}</div></div>
-              <PollTally option={o}/><div className="poll-answers">
-                {Object.entries(choices).map(([choice, text]) => (
-                  <label key={choice}>
-                    <input
-                      type="radio"
-                      name={'choice:' + o.id}
-                      value={choice}
-                      checked={v.choices[o.id] === choice}
-                      onChange={() => form.edit({ ...v, choices: { ...v.choices, [o.id]: PollChoice.parse(choice) } })}
-                    />
-                    <span>{text}</span>
-                  </label>
-                ))}
-              </div>
+              <PollTally option={o}/><RadioGroup label={label(o,p)} className="poll-answer-group"
+                classNames={{legend:'sr-only', options:'poll-answers'}} name={'choice:' + o.id}
+                options={Object.entries(choices).map(([value,text])=>({value,label:text}))} value={v.choices[o.id]??''}
+                onValueChange={choice=>form.edit({...v,choices:{...v.choices,[o.id]:PollChoice.parse(choice)}})} />
             </fieldset>
           ))}</div>
         </fieldset>
@@ -582,10 +576,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
         <fieldset className="poll-manager-fields" disabled={form.locked}>
           <legend className="sr-only">操作</legend>
           <Field label="管理操作">
-            <select
-              value={v.action}
-              onChange={(e) => edit({ action: ManagerEditable.shape.action.parse(e.target.value) })}
-            >
+            <Select value={v.action} onChange={(e) => edit({ action: ManagerEditable.shape.action.parse(e.target.value) })}>
               {[
                 ['close', uiText('提前截止')],
                 ['extend', uiText('調整截止並開放')],
@@ -601,7 +592,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
                     {text}
                   </option>
                 ))}
-            </select>
+            </Select>
           </Field>
           {v.action === 'extend' && (
             <Field label="新的投票截止（含時區）">
@@ -611,7 +602,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           {v.action === 'finalize' && (
             <>
               <Field label="定案候選">
-                <select value={v.option_id} onChange={(e) => edit({ option_id: e.target.value })}>
+                <Select value={v.option_id} onChange={(e) => edit({ option_id: e.target.value })}>
                   <option value="">請選擇</option>
                   {p.options.map((o) => (
                     <option key={o.id} value={o.id} disabled={o.expired}>
@@ -619,7 +610,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
                       {o.expired ? ' · 已過期' : ''}
                     </option>
                   ))}
-                </select>
+                </Select>
               </Field>
               {p.time_mode === 'date' && (
                 <>
@@ -650,14 +641,10 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             </>
           )}
           {v.action === 'bot_sync' && (
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={v.bot_enabled}
-                onChange={(e) => edit({ bot_enabled: e.target.checked })}
-              />
+            <Checkbox className="consent" checked={v.bot_enabled} onChange={(e) => edit({ bot_enabled: e.target.checked })} label={<>
+
               <span>開放群同步</span>
-            </label>
+            </>} />
           )}
           {v.action === 'bot_retry' && (
             <Notice>請從<Link to={'/time-polls/'+encodeURIComponent(p.id)+'/bot-deliveries'}>群通知紀錄</Link>核對重送；已有待確認操作請先查回原結果。</Notice>
@@ -665,8 +652,8 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
           <Field label="操作原因">
             <textarea value={v.reason} maxLength={200} onChange={(e) => edit({ reason: e.target.value })} />
           </Field>
-          <label className="consent">
-            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+          <Checkbox className="consent" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} label={<>
+
             <span>
               {v.action === 'finalize'
                 ? '已核對場地、票數與安排，確認建立活動並另行接受報名。'
@@ -674,7 +661,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
                   ? '確認移除投票；原票與歷史保留，已有活動不受移除影響。'
                   : '已核對操作，確認提交。'}
             </span>
-          </label>
+          </>} />
         </fieldset>
         {stale && <Notice>安排或票數已有更新，請重新核對。</Notice>}
         <Button
@@ -704,8 +691,8 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
         核對最新票數與安排，保留輸入
       </Button>
       <DraftFeedback form={form} />
-      <details className="poll-admin-disclosure">
-        <summary>填答者 · {p.respondent_count} 人</summary>
+      <Disclosure className="poll-admin-disclosure"  title={<>填答者 · {p.respondent_count} 人</>}>
+
         {p.respondents?.map((r, i) => (
           <div key={i}>
             <Text>
@@ -722,9 +709,9 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             </ul>
           </div>
         ))}
-      </details>
-      <details className="poll-admin-disclosure">
-        <summary>群通知狀態</summary>
+      </Disclosure>
+      <Disclosure className="poll-admin-disclosure"  title={<>群通知狀態</>}>
+
         <Text>
           {!p.bot_feature_enabled
             ? '管理員未啟用 bot'
@@ -739,9 +726,9 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             {r.id} · {r.state} · {r.last_error || '無錯誤'} · 嘗試 {r.attempts} 次
           </Text>
         ))}
-      </details>
-      <details className="poll-admin-disclosure">
-        <summary>管理歷史</summary>
+      </Disclosure>
+      <Disclosure className="poll-admin-disclosure"  title={<>管理歷史</>}>
+
         {p.history?.map((h, i) => (
           <Text key={i}>
             {h.created_at} ·{' '}
@@ -759,7 +746,7 @@ function PollManager({ viewer, initial }: { viewer: Member; initial: Poll }) {
             {h.details.deadline ? ' · ' + h.details.deadline : ''}
           </Text>
         ))}
-      </details>
+      </Disclosure>
     </section>
   );
 }

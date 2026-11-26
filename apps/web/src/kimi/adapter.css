@@ -140,7 +140,7 @@
 
 @media(max-width:768px){.kimi-shell .mobile-dock { display: grid !important; grid-template-columns: repeat(4,minmax(0,1fr)); }.kimi-shell .mobile-dock .dock-item { display: flex !important; }.kimi-shell .mobile-dock .dock-item > span { display: block !important; }.kimi-shell .sidebar { display: none !important; }}
 @media(min-width:769px) and (max-width:1100px){.kimi-shell { --sidebar-width:76px; }.kimi-shell .sidebar-account > span:not(.avatar) { display:none; }.kimi-shell .main-column { margin-left:76px; }}
-.kimi .admin-all-tools { margin-block:20px; }.kimi .admin-all-tools summary { min-height:44px; align-content:center; }.kimi .notification-item { padding:18px 20px; }.kimi .notification-item p { margin-block:8px; }
+.kimi .admin-all-tools { margin-block:20px; }.kimi .admin-all-tools .disclosure-trigger { min-height:44px; align-content:center; }.kimi .notification-item { padding:18px 20px; }.kimi .notification-item p { margin-block:8px; }
 
 :root[data-theme=dark] .kimi-shell .nav-item:not(.active) { color: var(--app-muted); }
 :root[data-theme=dark] .kimi-shell .nav-item:not(.active):hover { color: var(--app-ink); background: var(--app-surface); }
@@ -177,7 +177,7 @@
 .kimi .term-row.is-selected { background: transparent; }
 .kimi .term-group-title { margin: 18px 0 10px; font-size: 13px; font-weight: 600; letter-spacing: .02em; color: var(--ink); }
 .kimi .profile-extras { margin-top: 12px; border-top: 1px solid var(--line-soft); padding-top: 10px; font-size: 11px; }
-.kimi .profile-extras > summary { color: var(--muted); cursor: pointer; }
+.kimi .profile-extras > .disclosure-item > .disclosure-heading > .disclosure-trigger { color: var(--muted); cursor: pointer; }
 .kimi .profile-extras .match-breakdown { margin-top: 12px; }
 
 .kimi .editor-return:empty { display:none; }
@@ -202,9 +202,9 @@
 .kimi .activity-form .sticky-save-bar { margin-bottom:0; border:0; border-top:1px solid var(--line); border-radius:0; box-shadow:none; }
 
 .kimi .settings-more { border-top:1px solid var(--line-soft); font-size:12px; }
-.kimi .settings-more > summary { cursor:pointer; padding:14px 0; color:var(--muted); }
-.kimi .settings-more > a { display:flex; min-height:48px; gap:12px; align-items:center; color:var(--ink); border-top:1px solid var(--line-soft); }
-.kimi .settings-more > a > svg:last-child { margin-left:auto; }
+.kimi .settings-more > .disclosure-item > .disclosure-heading > .disclosure-trigger { cursor:pointer; padding:14px 0; color:var(--muted); }
+.kimi .settings-more > .disclosure-item > .disclosure-panel > div > a { display:flex; min-height:48px; gap:12px; align-items:center; color:var(--ink); border-top:1px solid var(--line-soft); }
+.kimi .settings-more > .disclosure-item > .disclosure-panel > div > a > svg:last-child { margin-left:auto; }
 
 .kimi .me-settings-panel, .kimi .music-settings-panel { min-width:0; }
 .kimi .me-settings-panel > .detail, .kimi .music-settings-panel > .detail { padding:24px; margin-bottom:24px; border:1px solid var(--line); border-radius:10px; background:var(--paper); }
@@ -258,7 +258,7 @@
 .kimi .activity-self-registration fieldset { margin:0; padding:0; border:0; min-width:0; }
 .kimi .activity-self-registration form > .button { width:100%; }
 .kimi .self-signup-notes { margin-bottom:10px; }
-.kimi .self-signup-notes summary { padding:6px 0; color:var(--muted); font-size:12px; }
+.kimi .self-signup-notes .disclosure-trigger { padding:6px 0; color:var(--muted); font-size:12px; }
 .kimi .self-signup-notes .account-field { margin-top:10px; display:flex; flex-direction:column; gap:6px; }
 .kimi .self-signup-notes textarea { box-sizing:border-box; width:100%; }
 .kimi .self-signup-consent { margin:8px 0 0; max-width:420px; font-size:11px; line-height:1.6; color:var(--muted); }
@@ -288,7 +288,7 @@
 .kimi .profile-common > h3 { font-size:14px; margin-bottom:10px; }
 .kimi .profile-common > div { font-size:11px; }
 .kimi .profile-all-picks { margin-top:20px; font-size:12px; }
-.kimi .profile-all-picks > summary { padding:10px 0; cursor:pointer; color:var(--muted); }
+.kimi .profile-all-picks > .disclosure-item > .disclosure-heading > .disclosure-trigger { padding:10px 0; cursor:pointer; color:var(--muted); }
 .kimi .profile-all-picks li { padding:8px 0; border-bottom:1px solid var(--line-soft); }
 .kimi .profile-summary .contact-value { display:flex; flex-wrap:wrap; gap:4px; align-items:center; }
 .kimi .profile-summary .contact-value p { font-size:11px; overflow-wrap:anywhere; }
@@ -310,7 +310,7 @@
 .kimi .share-text { margin-top:24px; }
 .kimi .ledger-summary { border:0; }
 .kimi .ledger-summary .my-bill-summary { margin-bottom:16px; }
-.kimi .ledger-summary > details { margin-block:16px; font-size:12px; }
+.kimi .ledger-summary > .disclosure { margin-block:16px; font-size:12px; }
 .kimi .ledger-summary .finance-facts { display:grid; grid-template-columns:140px minmax(0,1fr); gap:6px 16px; margin-block:16px; font-size:12px; }
 .kimi .poll-choice.vote-option { border:1px solid var(--line); margin-block:16px; padding:16px; min-width:0; }
 .kimi .poll-choice.vote-option legend { font-size:14px; font-weight:600; padding-inline:4px; }
@@ -341,7 +341,7 @@
 .kimi .music-circle-singles ul { display:flex; flex-wrap:wrap; gap:6px 14px; list-style:none; padding:0; }
 .kimi .music-trend-layout { grid-template-columns:minmax(0,1fr) 248px; }
 .kimi .trend-history { margin-block:20px; font-size:12px; }
-.kimi .trend-history > summary { padding-block:12px; cursor:pointer; color:var(--muted); }
+.kimi .trend-history > .disclosure-item > .disclosure-heading > .disclosure-trigger { padding-block:12px; cursor:pointer; color:var(--muted); }
 .kimi .music-trend-recent { padding-block:20px; }
 .kimi .music-trend-recent > h2 { font-size:16px; }
 .kimi .trend-entry-list, .kimi .trend-member-list { margin:14px 0; padding:0; list-style:none; }
@@ -439,7 +439,7 @@
 .kimi .poll-description { margin: 18px 0 0; font-size: 14px; }
 .kimi .poll-decision-reason { margin: 18px 0 0; padding: 12px 16px; border-left: 3px solid var(--app-accent); background: var(--app-panel-tint); font-size: 14px; overflow-wrap: anywhere; }
 .kimi .poll-arrangement-details { margin-top: 16px; font-size: 12px; color: var(--muted); }
-.kimi .poll-arrangement-details summary { width: fit-content; cursor: pointer; }
+.kimi .poll-arrangement-details .disclosure-trigger { width: fit-content; cursor: pointer; }
 .kimi .poll-arrangement-details dl { display: grid; grid-template-columns: 80px minmax(0,1fr); gap: 8px 16px; margin: 14px 0 0; padding: 16px; background: var(--app-panel-tint); }
 .kimi .poll-arrangement-details dd { margin: 0; overflow-wrap: anywhere; color: var(--ink); }
 .kimi .poll-guidance { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin: 20px 0 24px; }
@@ -477,7 +477,7 @@
 .kimi .poll-manager-panel textarea { min-height: 96px; }
 .kimi .poll-manager-panel > .button { margin: 12px 0 20px; }
 .kimi .poll-admin-disclosure { padding: 16px 0; border-top: 1px solid var(--line-soft); font-size: 12px; }
-.kimi .poll-admin-disclosure > summary { font-size: 13px; font-weight: 600; cursor: pointer; }
+.kimi .poll-admin-disclosure > .disclosure-item > .disclosure-heading > .disclosure-trigger { font-size: 13px; font-weight: 600; cursor: pointer; }
 .kimi .poll-admin-disclosure p { overflow-wrap: anywhere; margin: 12px 0 6px; }
 .kimi .poll-admin-disclosure ul { padding-left: 20px; line-height: 1.8; }
 .kimi .poll-create-form { padding: 24px; }

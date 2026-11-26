@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { RoomPlanView, SaveRoomPlan, RoomSuggestionTransfer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
@@ -154,14 +154,10 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
           )}
           {source.error && <Failure error={source.error} retry={() => void source.refetch()} />}
           {form.dirty && (
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={replaceConfirmed}
-                onChange={(e) => setReplaceConfirmed(e.target.checked)}
-              />
+            <Checkbox className="consent" checked={replaceConfirmed} onChange={(e) => setReplaceConfirmed(e.target.checked)} label={<>
+
               <span>確認以建議替換目前草稿的人員安排</span>
-            </label>
+            </>} />
           )}
           <Button
             disabled={
@@ -235,10 +231,10 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
           <Field label="調整原因（最多 300 字）">
             <textarea rows={2} value={value.reason} onChange={(e) => edit({ reason: e.target.value })} />
           </Field>
-          <label className="consent">
-            <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+          <Checkbox className="consent" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} label={<>
+
             <span>已核對包間人員與付款人，確認保存。</span>
-          </label>
+          </>} />
         </fieldset>
         {stale && <Notice>原稿使用較舊名冊，請先核對最新版。</Notice>}
         <Button

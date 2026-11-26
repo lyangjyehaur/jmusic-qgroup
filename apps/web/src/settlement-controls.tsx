@@ -1,20 +1,15 @@
-import { cloneElement, useId, type ReactElement } from 'react';
+import type { ComponentProps } from 'react';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Select, Disclosure, Checkbox, Field as UIField } from './kimi-ui';
 import type { SettlementPayer, SettlementRosterPerson } from '@qgroup/contracts';
 import type { z } from 'zod';
 export type Payer = z.infer<typeof SettlementPayer>;
 export type RosterPerson = z.infer<typeof SettlementRosterPerson>;
 export const newSettlementId = () => crypto.randomUUID().replaceAll('-', '').slice(0, 16);
 export const money = (cents: number) => '¥' + (cents / 100).toFixed(2);
-export function Field({ label, children }: { label: string; children: ReactElement<{ id?: string }> }) {
-  const id = useId();
-  return (
-    <div className="account-field">
-      <label htmlFor={id}>{label}</label>
-      {cloneElement(children, { id })}
-    </div>
-  );
+/** Compatibility export for existing finance/poll callers; every field uses the same Yahha adapter. */
+export function Field(props: ComponentProps<typeof UIField>) {
+  return <UIField {...props} className={['account-field',props.className].filter(Boolean).join(' ')} />;
 }
 export function PayerSelect({
   label,
@@ -29,7 +24,7 @@ export function PayerSelect({
 }) {
   return (
     <Field label={label}>
-      <select value={value} onChange={(e) => change(e.target.value)}>
+      <Select value={value} onChange={(e) => change(e.target.value)}>
         <option value="">請選擇</option>
         {payers.map((p) => (
           <option key={p.id} value={p.id}>
@@ -37,7 +32,7 @@ export function PayerSelect({
           </option>
         ))}
         {value && !payers.some((p) => p.id === value) && <option value={value}>原付款人目前不可選，請核對</option>}
-      </select>
+      </Select>
     </Field>
   );
 }
@@ -89,14 +84,10 @@ export function RoomFields<T extends Room>({
               payers={payers}
               change={(payer_id) => edit(room.id, { payer_id } as Partial<T>)}
             />
-            <details>
-              <summary>包間人員 · {room.person_ids.length} 人</summary>
+            <Disclosure   title={<>包間人員 · {room.person_ids.length} 人</>}>
+
               {people.map((p) => (
-                <label key={p.id} className="consent">
-                  <input
-                    type="checkbox"
-                    checked={room.person_ids.includes(p.id)}
-                    onChange={(e) => {
+                <Checkbox key={p.id} className="consent" checked={room.person_ids.includes(p.id)} onChange={(e) => {
                       const checked = e.target.checked;
                       change(
                         rooms.map((r) => ({
@@ -111,15 +102,15 @@ export function RoomFields<T extends Room>({
                                 : r.person_ids,
                         })),
                       );
-                    }}
-                  />
+                    }} label={<>
+
                   <span>{p.label}</span>
-                </label>
+                </>} />
               ))}
               {room.person_ids.filter((id) => !people.some((p) => p.id === id)).length > 0 && (
-                <div><Text role="alert">{actual ? '原包間含未列入本版的人員，請移除或重新納入結算。' : '原包間含已不在名冊的人員，請核對後移除。'}</Text>{room.person_ids.filter(id=>!people.some(p=>p.id===id)).map(id=><label key={id} className="consent"><input type="checkbox" checked onChange={()=>edit(room.id,{person_ids:room.person_ids.filter(person=>person!==id)} as Partial<T>)}/><span>原人員 {id}（本版未列入，取消勾選可移除）</span></label>)}</div>
+                <div><Text role="alert">{actual ? '原包間含未列入本版的人員，請移除或重新納入結算。' : '原包間含已不在名冊的人員，請核對後移除。'}</Text>{room.person_ids.filter(id=>!people.some(p=>p.id===id)).map(id=><Checkbox key={id} className="consent" checked onChange={()=>edit(room.id,{person_ids:room.person_ids.filter(person=>person!==id)} as Partial<T>)} label={<><span>原人員 {id}（本版未列入，取消勾選可移除）</span></>} />)}</div>
               )}
-            </details>
+            </Disclosure>
             <Button variant="ghost" onClick={() => change(rooms.filter((r) => r.id !== room.id))}>
               移除包間 {index + 1}
             </Button>
@@ -134,14 +125,11 @@ export function RoomFields<T extends Room>({
                 />
               </Field>
               <Field label="店家款項狀態">
-                <select
-                  value={room.merchant_mode ?? 'unpaid'}
-                  onChange={(e) => edit(room.id, { merchant_mode: e.target.value } as Partial<T>)}
-                >
+                <Select value={room.merchant_mode ?? 'unpaid'} onChange={(e) => edit(room.id, { merchant_mode: e.target.value } as Partial<T>)}>
                   <option value="unpaid">尚未付款</option>
                   <option value="paid">已付款，這次登記</option>
                   <option value="recorded">已登記到帳本</option>
-                </select>
+                </Select>
               </Field>
               {room.merchant_mode === 'paid' && (
                 <Field label="實際付款金額（留空同消費金額）">
@@ -163,10 +151,10 @@ export function RoomFields<T extends Room>({
       )}
       <section aria-label="未分配人員">
         {unassigned.length ? (
-          <details open={rooms.length === 0}>
-            <summary>未分配 · {unassigned.length} 人</summary>
+          <Disclosure open={rooms.length === 0}  title={<>未分配 · {unassigned.length} 人</>}>
+
             <ul>{unassigned.map((p) => <li key={p.id}>{p.label}</li>)}</ul>
-          </details>
+          </Disclosure>
         ) : <Text>{people.length ? '全部人員已分配。' : '目前名冊沒有可分配人員。'}</Text>}
       </section>
     </>

@@ -1,3 +1,4 @@
+import { Disclosure } from './kimi-ui';
 import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { Heading, Text } from 'yahha-ui';
@@ -16,7 +17,7 @@ export function MatchStats({ stats, compact = false }: { stats: z.infer<typeof M
   return <div className={compact ? 'match-stats match-stats-compact' : 'match-stats'}>
     {compact ? <Text className="match-score"><strong><span>{stats.label}</span><span>匹配度 <b>{stats.matchPercent}%</b></span></strong></Text>
       : <Text><strong>{stats.label} · 匹配度 {stats.matchPercent}%</strong></Text>}
-    {compact ? <><dl className="match-common-stat">{common}</dl><details className="match-breakdown"><summary>匹配詳情</summary><dl>{breakdown}</dl></details></> : <dl>{breakdown}</dl>}
+    {compact ? <><dl className="match-common-stat">{common}</dl><Disclosure className="match-breakdown"  title={<>匹配詳情</>}><dl>{breakdown}</dl></Disclosure></> : <dl>{breakdown}</dl>}
     {stats.lowData && <Text>資料較少：你 {stats.mineCount} 項，對方 {stats.theirsCount} 項。</Text>}
     {stats.mineCovered && stats.theirsCovered ? <Text>雙方選擇的詞條相同。</Text> : stats.mineCovered ? <Text>對方包含你選擇的全部詞條。</Text> : stats.theirsCovered ? <Text>你包含對方選擇的全部詞條。</Text> : null}
   </div>;
@@ -36,6 +37,6 @@ export function ComparedPicks({ title, picks, shared = false, side = 'theirs', f
       </li>)}</ul>
     </section>;
   })}</>;
-  return fold && picks.length ? <details className="match-pick-group"><summary>{title} · {picks.length} 項</summary>{contents}</details>
+  return fold && picks.length ? <Disclosure className="match-pick-group"  title={<>{title} · {picks.length} 項</>}>{contents}</Disclosure>
     : <section className="match-pick-group" aria-label={title}><Heading level={3}>{title} · {picks.length} 項</Heading>{contents}</section>;
 }

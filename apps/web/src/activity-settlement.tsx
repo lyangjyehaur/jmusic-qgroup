@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Disclosure, Checkbox, Select } from './kimi-ui';
 import { z } from 'zod';
 import { SaveSettlement, SettlementBill, SettlementContext, SettlementHistory, SettlementInput, SettlementPreview, StoredSettlementSnapshot, type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
@@ -42,13 +42,13 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
         以下金額凍結於本版發布時，後續收退款請到<Link to={base(id) + '/finance'}>收付款帳本</Link>核對。
         {s.rooms?.length ? '各包間分開核對，不能互相抵款。' : ''}
       </Notice>
-      <details open>
-        <summary>逐人費用與付款歸屬</summary>
+      <Disclosure open  title={<>逐人費用與付款歸屬</>}>
+
         {s.people.map((p) => (
-          <details key={p.id}>
-            <summary>
+          <Disclosure key={p.id}  title={<>
               {p.label} · {money(p.due_cents)} · {p.share} 份
-            </summary>
+            </>}>
+
             <ul>
               {p.allocations.map((a) => (
                 <li key={a.item_id}>
@@ -62,26 +62,26 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
               {p.accepted_conditions_version ? '第 ' + p.accepted_conditions_version + ' 版' : '尚未接受'}
             </Text>
             {p.accepted_arrangement && (
-              <details>
-                <summary>本版採用的費用約定</summary>
+              <Disclosure   title={<>本版採用的費用約定</>}>
+
                 <Text>{p.accepted_arrangement.fee_policy || '未填費用約定'}</Text>
                 <Text>
                   {p.accepted_arrangement.location} · {p.accepted_arrangement.starts_at}
                 </Text>
                 {p.accepted_arrangement.description && <Text>{p.accepted_arrangement.description}</Text>}
-              </details>
+              </Disclosure>
             )}
             {p.reason && <Text>核對原因：{p.reason}</Text>}
-          </details>
+          </Disclosure>
         ))}
-      </details>
-      <details>
-        <summary>費用項目</summary>
+      </Disclosure>
+      <Disclosure   title={<>費用項目</>}>
+
         {s.items.map((i) => (
-          <details key={i.id}>
-            <summary>
+          <Disclosure key={i.id}  title={<>
               {i.name} · {kindLabels[i.kind]} · {money(i.amount_cents)} · {modeLabels[i.mode]}
-            </summary>
+            </>}>
+
             {i.reason && <Text>分攤依據：{i.reason}</Text>}
             <ul>
               {i.breakdown.map((a) => (
@@ -93,15 +93,15 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
               ))}
             </ul>
             {i.has_receipt && <Text>本項附有消費憑證，請查看本版原圖。</Text>}
-          </details>
+          </Disclosure>
         ))}
-      </details>
+      </Disclosure>
       {s.room_balances?.length ? (
         s.room_balances.map((r) => (
-          <details key={r.id}>
-            <summary>
+          <Disclosure key={r.id}  title={<>
               {r.name} · {money(r.total_cents)} · 收款人 {r.payer_label ?? r.payer_name}
-            </summary>
+            </>}>
+
             <ul>
               {r.transfers.map((t, i) => (
                 <li key={i}>
@@ -109,11 +109,11 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
                 </li>
               ))}
             </ul>
-          </details>
+          </Disclosure>
         ))
       ) : s.balances ? (
-        <details>
-          <summary>發布時待補／應退</summary>
+        <Disclosure   title={<>發布時待補／應退</>}>
+
           <ul>
             {s.balances.map((p) => (
               <li key={p.id}>
@@ -122,24 +122,24 @@ export function SettlementSnapshotView({ snapshot: s, eventId }: { snapshot: Inv
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       ) : (
-        <details>
-          <summary>付款人應付合計</summary>
+        <Disclosure   title={<>付款人應付合計</>}>
+
           <ul>{s.payers.map((p) => <li key={p.id}>{p.label} · {money(p.amount_cents)}</li>)}</ul>
           <Notice>本版未保存收付款快照，待補與退款請到收付款帳本核對。</Notice>
-        </details>
+        </Disclosure>
       )}
       {s.note && <Text className="preserve-lines">備註：{s.note}</Text>}
-      <details>
-        <summary>本版變更</summary>
+      <Disclosure   title={<>本版變更</>}>
+
         <ul>
           {s.changes.map((line, i) => (
             <li key={i}>{line}</li>
           ))}
         </ul>
         {s.reason && <Text>原因：{s.reason}</Text>}
-      </details>
+      </Disclosure>
       <Text>{s.rounding_rule}</Text>
     </>
   );
@@ -515,8 +515,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
           {ctx.people.map((p) => {
             const selected=value.people.some(v=>v.id===p.id),current = settlementPersonValue(value,p);
             return (
-              <details key={p.id} className="settlement-person">
-                <summary>
+              <Disclosure key={p.id} className="settlement-person"  title={<>
                   {p.label} ·{' '}
                   {p.status === 'confirmed'
                     ? '正式'
@@ -528,30 +527,26 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                   {p.attendance === 'absent' ? ' · 缺席' : ''}
                   {p.withdrawal_requested ? ' · 申請退出' : ''}
                   {p.confirmation_state !== 'accepted' ? ' · 約定待核對' : ''}
-                </summary>
-                <label className="consent">
-                  <input
-                    type="checkbox"
-                    checked={selected}
-                    disabled={p.status === 'confirmed'&&selected}
-                    onChange={(e) =>
+                </>}>
+
+                <Checkbox className="consent" checked={selected} disabled={p.status === 'confirmed'&&selected} onChange={(e) =>
                       edit(includeSettlementPerson(value,p,e.target.checked))
-                    }
-                  />
+                    } label={<>
+
                   <span>列入本版結算</span>
-                </label>
+                </>} />
                 <Text>
                   管理人 {p.manager_name} · 原付款人 {ctx.payers.find((v) => v.id === p.payer_id)?.label} · 接受約定{' '}
                   {p.accepted_conditions_version ?? '尚未接受'}
                 </Text>
                 {p.accepted_arrangement && (
-                  <details>
-                    <summary>已接受的費用約定</summary>
+                  <Disclosure   title={<>已接受的費用約定</>}>
+
                     <Text>{p.accepted_arrangement.fee_policy || '未填費用約定'}</Text>
                     <Text>
                       {p.accepted_arrangement.starts_at} · {p.accepted_arrangement.location}
                     </Text>
-                  </details>
+                  </Disclosure>
                 )}
                 {!selected&&<Notice>未列入本版；以下份數與付款設定只保留於原稿，勾選後才採用。</Notice>}
                 {current && (
@@ -571,13 +566,10 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                       />
                     </Field>
                     <Field label="付款歸屬分配方式">
-                      <select
-                        value={current.payment_mode}
-                        onChange={(e) => person(p.id, { payment_mode: e.target.value as 'shares' | 'fixed' })}
-                      >
+                      <Select value={current.payment_mode} onChange={(e) => person(p.id, { payment_mode: e.target.value as 'shares' | 'fixed' })}>
                         <option value="shares">依比例分配</option>
                         <option value="fixed">固定付款金額</option>
-                      </select>
+                      </Select>
                     </Field>
                     {(current.payments ?? []).map((payment, index) => (
                       <fieldset key={index}>
@@ -627,7 +619,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                     </Button>
                   </>
                 )}
-              </details>
+              </Disclosure>
             );
           })}
           {value.people.some((p) => !ctx.people.some((q) => q.id === p.id)) && (
@@ -640,8 +632,8 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
               </Button>
             </Notice>
           )}
-          <details>
-            <summary>額外付款人 · {value.custom_payers.length}</summary>
+          <Disclosure   title={<>額外付款人 · {value.custom_payers.length}</>}>
+
             {value.custom_payers.map((p, index) => (
               <div key={p.id}>
                 <Field label={uiText('額外付款人 ') + (index + 1) + ' 稱呼'}>
@@ -673,20 +665,16 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
             >
               新增額外付款人
             </Button>
-          </details>
+          </Disclosure>
           <Field label="結算方式">
-            <select
-              disabled={!ctx.is_owner}
-              value={value.rooms !== undefined ? 'rooms' : 'items'}
-              onChange={(e) =>
+            <Select disabled={!ctx.is_owner} value={value.rooms !== undefined ? 'rooms' : 'items'} onChange={(e) =>
                 edit(
                   settlementMode(value,e.target.value==='rooms',{mode:ctx.has_merchant_records?'recorded':'unpaid',method:'other',merchant:'',note:'',reason:''})
                 )
-              }
-            >
+              }>
               <option value="items">依費用項目</option>
               <option value="rooms">依實際包間</option>
-            </select>
+            </Select>
           </Field>
           {value.rooms !== undefined ? (
             <>
@@ -719,9 +707,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
               <ItemFields value={value} people={included} change={(items) => edit({ items })} image={image} />
               <Heading level={3}>店家款項</Heading>
               <Field label="店家款項狀態">
-                <select
-                  value={value.merchant_payment?.mode ?? 'unpaid'}
-                  onChange={(e) =>
+                <Select value={value.merchant_payment?.mode ?? 'unpaid'} onChange={(e) =>
                     edit({
                       merchant_payment: {
                         method: 'other',
@@ -732,13 +718,12 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
                         mode: e.target.value as 'paid' | 'unpaid' | 'recorded',
                       },
                     })
-                  }
-                >
+                  }>
                   {value.merchant_payment?.mode===''&&<option value="">請核對款項狀態</option>}
                   <option value="unpaid">尚未付款</option>
                   <option value="paid">已付款，這次登記</option>
                   <option value="recorded">已登記到帳本</option>
-                </select>
+                </Select>
               </Field>
               {value.merchant_payment?.mode === 'paid' && (
                 <>
@@ -786,34 +771,22 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
             <textarea value={value.reason} rows={2} onChange={(e) => edit({ reason: e.target.value })} />
           </Field>
           {ctx.bill?.mode === 'legacy' && (
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={value.convert_legacy}
-                onChange={(e) => edit({ convert_legacy: e.target.checked })}
-              />
+            <Checkbox className="consent" checked={value.convert_legacy} onChange={(e) => edit({ convert_legacy: e.target.checked })} label={<>
+
               <span>確認將舊人均帳單轉為逐人結算；歷史版本保留。</span>
-            </label>
+            </>} />
           )}
-          <label className="consent">
-            <input
-              type="checkbox"
-              checked={value.group_notice}
-              onChange={(e) => edit({ group_notice: e.target.checked })}
-            />
+          <Checkbox className="consent" checked={value.group_notice} onChange={(e) => edit({ group_notice: e.target.checked })} label={<>
+
             <span>
               允許群通知包含逐人金額、付款歸屬{value.rooms !== undefined ? '' : '及本版收款碼'}
               ；請確認群成員可查看這些資料。
             </span>
-          </label>
-          <label className="consent">
-            <input
-              type="checkbox"
-              checked={value.reviewed_roster}
-              onChange={(e) => edit({ reviewed_roster: e.target.checked })}
-            />
+          </>} />
+          <Checkbox className="consent" checked={value.reviewed_roster} onChange={(e) => edit({ reviewed_roster: e.target.checked })} label={<>
+
             <span>已逐人核對名單、費用約定、出席與付款歸屬。</span>
-          </label>
+          </>} />
           {stale && <Notice>原稿使用較舊版本，請保留輸入並核對最新版。</Notice>}
           <Button variant="secondary" disabled={stale || !allowed} onClick={() => void check()}>
             預覽逐人結算
@@ -825,20 +798,15 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
             <SettlementSnapshotView snapshot={preview.snapshot} />
             <PreviewAssets viewer={viewer} id={ctx.id} value={value} />
             {preview.group_preview && (
-              <details open>
-                <summary>群通知明細預覽</summary>
+              <Disclosure open  title={<>群通知明細預覽</>}>
+
                 <Text className="preserve-lines">{preview.group_preview}</Text>
-              </details>
+              </Disclosure>
             )}
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={confirmed}
-                disabled={form.locked}
-                onChange={(e) => setConfirmed(e.target.checked)}
-              />
+            <Checkbox className="consent" checked={confirmed} disabled={form.locked} onChange={(e) => setConfirmed(e.target.checked)} label={<>
+
               <span>已核對本版金額、圖片與群通知，確認發布。</span>
-            </label>
+            </>} />
           </section>
         )}
         <Button
@@ -891,13 +859,13 @@ function ItemFields({
             <input value={item.name} onChange={(e) => edit(item.id, { name: e.target.value })} />
           </Field>
           <Field label="類別">
-            <select value={item.kind} onChange={(e) => edit(item.id, { kind: e.target.value as typeof item.kind })}>
+            <Select value={item.kind} onChange={(e) => edit(item.id, { kind: e.target.value as typeof item.kind })}>
               {Object.entries(kindLabels).map(([id, label]) => (
                 <option key={id} value={id}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="費用金額">
             <input
@@ -907,29 +875,26 @@ function ItemFields({
             />
           </Field>
           <Field label="分攤範圍">
-            <select
-              value={item.scope}
-              onChange={(e) => edit(item.id, { scope: e.target.value as 'common' | 'selected' })}
-            >
+            <Select value={item.scope} onChange={(e) => edit(item.id, { scope: e.target.value as 'common' | 'selected' })}>
               <option value="common">所有本版人員</option>
               <option value="selected">指定人員</option>
-            </select>
+            </Select>
           </Field>
           <Field label="分攤方式">
-            <select value={item.mode} onChange={(e) => edit(item.id, { mode: e.target.value as typeof item.mode })}>
+            <Select value={item.mode} onChange={(e) => edit(item.id, { mode: e.target.value as typeof item.mode })}>
               {Object.entries(modeLabels).map(([id, label]) => (
                 <option key={id} value={id}>
                   {label}
                 </option>
               ))}
-            </select>
+            </Select>
           </Field>
           <Field label="分攤依據">
             <textarea rows={2} value={item.reason} onChange={(e) => edit(item.id, { reason: e.target.value })} />
           </Field>
           {(item.scope === 'selected' || ['fixed', 'weights', 'duration'].includes(item.mode)) && (
-            <details open>
-              <summary>分配數值／人員</summary>
+            <Disclosure open  title={<>分配數值／人員</>}>
+
               {people.map((p) => {
                 const a = item.allocations.find((a) => a.person_id === p.id),
                   selected = item.scope === 'common' || !!a;
@@ -942,21 +907,16 @@ function ItemFields({
                   });
                 return (
                   <div key={p.id}>
-                    <label className="consent">
-                      <input
-                        type="checkbox"
-                        checked={selected}
-                        disabled={item.scope === 'common'}
-                        onChange={(e) =>
+                    <Checkbox className="consent" checked={selected} disabled={item.scope === 'common'} onChange={(e) =>
                           edit(item.id, {
                             allocations: e.target.checked
                               ? [...item.allocations, { person_id: p.id }]
                               : item.allocations.filter((v) => v.person_id !== p.id),
                           })
-                        }
-                      />
+                        } label={<>
+
                       <span>{p.label}</span>
-                    </label>
+                    </>} />
                     {selected && item.mode === 'fixed' && (
                       <Field label={p.label + ' 固定金額'}>
                         <input
@@ -991,7 +951,7 @@ function ItemFields({
                   </div>
                 );
               })}
-            </details>
+            </Disclosure>
           )}
           <Field label="消費憑證（最多三項附圖）">
             <input
@@ -1066,10 +1026,7 @@ function MerchantDetails({ payment, change }: { payment: PaymentDetails; change:
         />
       </Field>
       <Field label="付款方式">
-        <select
-          value={payment.method}
-          onChange={(e) => change({ ...payment, method: e.target.value as PaymentDetails['method'] })}
-        >
+        <Select value={payment.method} onChange={(e) => change({ ...payment, method: e.target.value as PaymentDetails['method'] })}>
           {Object.entries({ wechat: uiText('微信'), alipay: uiText('支付寶'), qq: 'QQ', cash: uiText('現金'), other: uiText('其他') }).map(
             ([id, label]) => (
               <option key={id} value={id}>
@@ -1077,7 +1034,7 @@ function MerchantDetails({ payment, change }: { payment: PaymentDetails; change:
               </option>
             ),
           )}
-        </select>
+        </Select>
       </Field>
       <Field label="付款備註">
         <textarea value={payment.note} onChange={(e) => change({ ...payment, note: e.target.value })} />
@@ -1104,8 +1061,8 @@ function PaymentCodes({
     queryFn: () => scopedHttp(viewer.scope).requestContract('GET /api/v2/me/payment-codes', {}),
   });
   return (
-    <details>
-      <summary>本版收款碼 · {value.payment_codes.length} 張</summary>
+    <Disclosure   title={<>本版收款碼 · {value.payment_codes.length} 張</>}>
+
       {library.error && <Failure error={library.error} retry={() => void library.refetch()} />}
       <Link to="/me/payment-codes">管理我的收款碼</Link>
       {(['wechat', 'alipay', 'other'] as const).map((kind) => {
@@ -1116,14 +1073,11 @@ function PaymentCodes({
           <fieldset key={kind}>
             <legend>{paymentKindLabels[kind]}</legend>
             <Field label={paymentKindLabels[kind] + '收款碼來源'}>
-              <select
-                value={current && 'code_id' in current ? current.code_id : current ? 'selected' : ''}
-                onChange={(e) => {
+              <Select value={current && 'code_id' in current ? current.code_id : current ? 'selected' : ''} onChange={(e) => {
                   const id = e.target.value;
                   if (!id) update(null);
                   else if (id !== 'selected') update({ kind, code_id: id });
-                }}
-              >
+                }}>
                 <option value="">不附收款碼</option>
                 {current && !('code_id' in current) && (
                   <option value="selected">
@@ -1140,7 +1094,7 @@ function PaymentCodes({
                 {current && 'code_id' in current && !library.data?.codes.some((p) => p.id === current.code_id) && (
                   <option value={current.code_id}>原收款碼目前不可用，請重新選擇</option>
                 )}
-              </select>
+              </Select>
             </Field>
             <Field label={'上傳' + paymentKindLabels[kind] + '收款碼'}>
               <input
@@ -1173,7 +1127,7 @@ function PaymentCodes({
           </fieldset>
         );
       })}
-    </details>
+    </Disclosure>
   );
 }
 export function PreviewAssets({ viewer, id, value }: { viewer: Member; id: string; value: Pick<EditableInput, 'payment_codes' | 'rooms' | 'items'> }) {
@@ -1184,8 +1138,8 @@ export function PreviewAssets({ viewer, id, value }: { viewer: Member; id: strin
   return (
     <>
       {value.payment_codes.map((code) => (
-        <details key={code.kind} open>
-          <summary>{paymentKindLabels[code.kind]}收款碼</summary>
+        <Disclosure key={code.kind} open  title={<>{paymentKindLabels[code.kind]}收款碼</>}>
+
           {'image' in code ? (
             <img className="payment-asset-thumb" alt="本版收款碼預覽" src={'data:image/png;base64,' + code.image} />
           ) : (
@@ -1200,13 +1154,13 @@ export function PreviewAssets({ viewer, id, value }: { viewer: Member; id: strin
               label="本版收款碼預覽"
             />
           )}
-        </details>
+        </Disclosure>
       ))}
       {(value.rooms?.length ? [] : value.items)
         .filter((item) => item.receipt)
         .map((item) => (
-          <details key={item.id} open>
-            <summary>{item.name} · 消費憑證</summary>
+          <Disclosure key={item.id} open  title={<>{item.name} · 消費憑證</>}>
+
             {typeof item.receipt === 'string' ? (
               <img
                 className="payment-asset-thumb"
@@ -1229,7 +1183,7 @@ export function PreviewAssets({ viewer, id, value }: { viewer: Member; id: strin
                 />
               )
             )}
-          </details>
+          </Disclosure>
         ))}
     </>
   );

@@ -3,7 +3,7 @@ import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Heading, Text } from 'yahha-ui';
 import { UsersRound } from 'lucide-react';
-import { Select } from './kimi-ui';
+import { Select, Disclosure } from './kimi-ui';
 import { MusicCircles } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { MusicMemberAccess, type Member } from './member-access';
@@ -31,7 +31,7 @@ function Circles({ viewer }: { viewer: Member }) {
         {query.data.clusters.length ? <section aria-label="圈子名單"><Heading level={2}>圈子名單</Heading>
           <Text id="music-circle-tags-help" size="sm">常見詞條按圈內選用次數排列；同名詞條合計，不代表所有人共同選擇。</Text>
           <div className="circle-grid">{query.data.clusters.slice(0, 8).map((circle, index) => <CircleCard key={circle.members.map(m => m.id).join(':')} circle={circle} index={index} />)}</div>
-          {query.data.clusters.length > 8 && <details><summary>其餘圈子 · {query.data.clusters.length - 8} 個</summary>{query.data.clusters.slice(8).map((circle, index) => <CircleCard key={circle.members.map(m => m.id).join(':')} circle={circle} index={index + 8} />)}</details>}
+          {query.data.clusters.length > 8 && <Disclosure   title={<>其餘圈子 · {query.data.clusters.length - 8} 個</>}>{query.data.clusters.slice(8).map((circle, index) => <CircleCard key={circle.members.map(m => m.id).join(':')} circle={circle} index={index + 8} />)}</Disclosure>}
         </section> : <Notice>目前門檻下沒有兩人以上的圈子，可調整連結門檻。</Notice>}
         {query.data.singleMembers.length > 0 && <section aria-label="未連入圈子名單"><Heading level={2}>未連入圈子 · {query.data.singles} 人</Heading><ul className="music-circle-singles">{query.data.singleMembers.map(member => <SingleMember key={member.id} member={member} />)}</ul></section>}
       </>}

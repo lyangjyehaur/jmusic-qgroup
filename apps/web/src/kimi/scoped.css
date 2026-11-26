@@ -161,12 +161,6 @@
 :where(.kimi) .switch-row, :where(.kimi).switch-row { position: relative; min-height: 56px; display: flex; align-items: center; justify-content: space-between; gap: 16px; cursor: pointer; }
 :where(.kimi) .switch-row > span, :where(.kimi).switch-row > span { display: grid; }
 :where(.kimi) .switch-row small, :where(.kimi).switch-row small { color: var(--muted); }
-:where(.kimi) .switch-row input, :where(.kimi).switch-row input { position: absolute; width: 1px; height: 1px; opacity: 0; }
-:where(.kimi) .switch-row > i, :where(.kimi).switch-row > i { position: relative; width: 38px; height: 22px; flex: 0 0 auto; background: #c8cbc3; border-radius: 11px; transition: background .2s; }
-:where(.kimi) .switch-row > i::after, :where(.kimi).switch-row > i::after { content: ''; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: transform .2s; }
-:where(.kimi) .switch-row input:checked + i, :where(.kimi).switch-row input:checked + i { background: var(--moss); }
-:where(.kimi) .switch-row input:checked + i::after, :where(.kimi).switch-row input:checked + i::after { transform: translateX(16px); }
-:where(.kimi) .switch-row input:focus-visible + i, :where(.kimi).switch-row input:focus-visible + i { outline: 2px solid var(--moss); outline-offset: 2px; }
 :where(.kimi) .inline-alert, :where(.kimi).inline-alert { min-height: 42px; padding: 10px 12px; display: flex; align-items: flex-start; gap: 8px; color: #5d634f; background: #efeee4; border-left: 3px solid #9a9a70; font-size: 12px; }
 :where(.kimi) .inline-alert svg, :where(.kimi).inline-alert svg { margin-top: 1px; }
 :where(.kimi) .inline-alert > span, :where(.kimi).inline-alert > span { flex: 1; }
@@ -521,10 +515,10 @@
 :where(.kimi) .recommend-toolbar p, :where(.kimi).recommend-toolbar p { color: var(--muted); font-size: 12px; }
 :where(.kimi) .recommend-toolbar .select-wrap, :where(.kimi).recommend-toolbar .select-wrap { width: 200px; }
 :where(.kimi) .sort-rules, :where(.kimi).sort-rules { margin: 16px 0 20px; background: #efefe9; border: 1px solid var(--line); }
-:where(.kimi) .sort-rules summary, :where(.kimi).sort-rules summary { min-height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 7px; color: var(--muted); cursor: pointer; font-size: 11px; list-style: none; }
-:where(.kimi) .sort-rules summary svg:last-child, :where(.kimi).sort-rules summary svg:last-child { margin-left: auto; }
-:where(.kimi) .sort-rules[open] summary svg:last-child, :where(.kimi).sort-rules[open] summary svg:last-child { transform: rotate(180deg); }
-:where(.kimi) .sort-rules > div, :where(.kimi).sort-rules > div { padding: 4px 18px 14px 32px; color: var(--muted); font-size: 11px; }
+:where(.kimi) .sort-rules .disclosure-trigger, :where(.kimi).sort-rules .disclosure-trigger { min-height: 40px; padding: 0 12px; display: flex; align-items: center; gap: 7px; color: var(--muted); cursor: pointer; font-size: 11px; list-style: none; }
+:where(.kimi) .sort-rules .disclosure-trigger svg:last-child, :where(.kimi).sort-rules .disclosure-trigger svg:last-child { margin-left: auto; }
+:where(.kimi) .sort-rules[data-open] .disclosure-trigger svg:last-child, :where(.kimi).sort-rules[data-open] .disclosure-trigger svg:last-child { transform: rotate(180deg); }
+:where(.kimi) .sort-rules > .disclosure-item > .disclosure-panel > div > div, :where(.kimi).sort-rules > .disclosure-item > .disclosure-panel > div > div { padding: 4px 18px 14px 32px; color: var(--muted); font-size: 11px; }
 :where(.kimi) .sort-rules ol, :where(.kimi).sort-rules ol { margin: 0; padding-left: 16px; }
 :where(.kimi) .sort-rules p, :where(.kimi).sort-rules p { margin-top: 8px; }
 :where(.kimi) .people-grid, :where(.kimi).people-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }

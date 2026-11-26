@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 import { denyDraftWrites } from './draft-helpers';
@@ -87,7 +88,7 @@ test('an allocation failure keeps the note, explains the next step and sends no 
   page.on('request',request=>{if(request.method()==='POST'&&request.url().endsWith(`/activities/${id}/registration`))writes++;});
   await page.goto('/activities/'+id);await page.getByText('報名備註與規則',{exact:true}).click();await page.getByLabel('報名備註（活動內可見）',{exact:true}).fill('保留的備註');await page.getByRole('button',{name:'本人報名',exact:true}).click();
   await expect(page.getByText('活動安排已變更，請讀取最新安排',{exact:true})).toBeVisible();expect(writes).toBe(0);
-  await page.getByRole('button',{name:'讀取最新安排，保留備註',exact:true}).click();await expect(page.getByLabel('報名備註（活動內可見）',{exact:true})).toHaveValue('保留的備註');
+  await page.getByRole('button',{name:'讀取最新安排，保留備註',exact:true}).click();await expectControlValue(page.getByLabel('報名備註（活動內可見）',{exact:true}), '保留的備註');
   fail=false;await page.getByRole('button',{name:'本人報名',exact:true}).click();await expect(page.getByRole('link',{name:'管理本人報名',exact:true})).toBeVisible();expect(writes).toBe(1);
 });
 test('a storage failure blocks direct signup before sending an allocation or registration',async({page,context})=>{

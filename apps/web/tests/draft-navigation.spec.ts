@@ -1,7 +1,7 @@
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 import { durableRows } from './draft-helpers';
-import { toggleMusicTerm } from './kimi-controls';
+import { toggleMusicTerm, expectControlValue } from './kimi-controls';
 const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT??5082}`;
 async function login(context:BrowserContext,user='alice'){await context.addCookies([{name:'kanban_session',value:'fixture-'+user,url:origin,httpOnly:true,sameSite:'Lax'}]);}
 async function headers(context:BrowserContext){const v=await(await context.request.get('/api/v2/session')).json();return {Origin:origin,'X-Account-Scope':v.scope,'X-CSRF-Token':v.csrf,'Idempotency-Key':crypto.randomUUID()};}
@@ -14,14 +14,14 @@ test('a scrolled mobile registration opens a centered leave decision, preserves 
  const note=d.getByLabel('公開備註',{exact:true});await note.fill('只留在本機的修改');await expect.poll(async()=>JSON.parse((await durableRows(page)).find(r=>r.key.includes('registration:'))!.raw).note).toBe('只留在本機的修改');
  const height=await d.evaluate(el=>el.scrollHeight);await note.fill('第二版修改');await expect.poll(async()=>JSON.parse((await durableRows(page)).find(r=>r.key.includes('registration:'))!.raw).note).toBe('第二版修改');expect(await d.evaluate(el=>el.scrollHeight)).toBe(height);
  await d.getByRole('button',{name:'提交報名操作',exact:true}).scrollIntoViewIfNeeded();let writes=0;page.on('request',r=>{if(r.method()!=='GET'&&r.url().includes('/api/'))writes++;});
- await close.click();await expect(prompt(page)).toBeVisible();await expect(prompt(page).getByRole('button',{name:'捨棄並離開',exact:true})).toBeInViewport();await prompt(page).getByRole('button',{name:'繼續編輯',exact:true}).click();await expect(note).toHaveValue('第二版修改');
- await close.click();await prompt(page).getByRole('button',{name:'保留原稿並離開',exact:true}).click();await expect(page).toHaveURL('/activities/'+id);await page.goto(`/activities/${id}/registration`);await expect(page.getByRole('region',{name:'草稿狀態'})).toBeInViewport();await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(note).toHaveValue('第二版修改');
+ await close.click();await expect(prompt(page)).toBeVisible();await expect(prompt(page).getByRole('button',{name:'捨棄並離開',exact:true})).toBeInViewport();await prompt(page).getByRole('button',{name:'繼續編輯',exact:true}).click();await expectControlValue(note, '第二版修改');
+ await close.click();await prompt(page).getByRole('button',{name:'保留原稿並離開',exact:true}).click();await expect(page).toHaveURL('/activities/'+id);await page.goto(`/activities/${id}/registration`);await expect(page.getByRole('region',{name:'草稿狀態'})).toBeInViewport();await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expectControlValue(note, '第二版修改');
  await close.click();await prompt(page).getByRole('button',{name:'捨棄並離開',exact:true}).click();await expect(page).toHaveURL('/activities/'+id);expect((await durableRows(page)).some(r=>r.key.includes('registration:'))).toBe(false);expect(writes).toBe(0);
- await page.goto(`/activities/${id}/registration`);await expect(note).toHaveValue('');await expect(page.getByRole('button',{name:'恢復本機原稿',exact:true})).toHaveCount(0);
+ await page.goto(`/activities/${id}/registration`);await expectControlValue(note, '');await expect(page.getByRole('button',{name:'恢復本機原稿',exact:true})).toHaveCount(0);
 });
 test('reviewed poll drafts can be discarded at restore without submitting a poll',async({page,context})=>{
  await login(context);await page.goto('/time-polls/new');const title=page.getByLabel('投票名稱',{exact:true});await title.fill('不要保留的投票');await expect.poll(async()=>(await durableRows(page)).some(r=>r.raw.includes('不要保留的投票'))).toBe(true);
- const other=await context.newPage();await other.goto('/time-polls/new');await expect(other.getByRole('region',{name:'草稿狀態'})).toBeInViewport();let writes=0;other.on('request',r=>{if(r.method()!=='GET'&&r.url().includes('/api/'))writes++;});await other.getByRole('button',{name:'捨棄草稿',exact:true}).click();await expect(other.getByLabel('投票名稱',{exact:true})).toBeEnabled();await expect(other.getByLabel('投票名稱',{exact:true})).toHaveValue('');expect((await durableRows(other)).some(r=>r.key.includes('poll-create:'))).toBe(false);expect(writes).toBe(0);
+ const other=await context.newPage();await other.goto('/time-polls/new');await expect(other.getByRole('region',{name:'草稿狀態'})).toBeInViewport();let writes=0;other.on('request',r=>{if(r.method()!=='GET'&&r.url().includes('/api/'))writes++;});await other.getByRole('button',{name:'捨棄草稿',exact:true}).click();await expect(other.getByLabel('投票名稱',{exact:true})).toBeEnabled();await expectControlValue(other.getByLabel('投票名稱',{exact:true}), '');expect((await durableRows(other)).some(r=>r.key.includes('poll-create:'))).toBe(false);expect(writes).toBe(0);
 });
 test('discard refuses to overwrite a newer draft from another tab',async({page,context})=>{
  await login(context);await page.goto('/time-polls/new');await page.getByLabel('投票名稱',{exact:true}).fill('第一分頁');await expect.poll(async()=>(await durableRows(page)).some(r=>r.raw.includes('第一分頁'))).toBe(true);

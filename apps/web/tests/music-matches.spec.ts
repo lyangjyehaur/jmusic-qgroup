@@ -31,7 +31,7 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
   await expect(recommendations(page).getByText('對方的留言：留言 共同本命', { exact: true })).toHaveCount(0);
   await main(page).getByText('其餘同好 · 3 人', { exact: true }).click(); await expect(visible).toHaveCount(6);
   const sparse = page.getByRole('group', { name: '資料較少的同好', exact: true });
-  await sparse.locator('summary').first().click(); await expect(sparse.locator('.match-card:visible')).toHaveCount(4);
+  await sparse.locator(".disclosure-trigger").first().click(); await expect(sparse.locator('.match-card:visible')).toHaveCount(4);
   await expect(sparse).toContainText('資料較少：你 6 項，對方 1 項。'); await expect(sparse.locator('.match-note')).toHaveCount(0);
   await expect(sparse.locator('.match-score strong').first()).toHaveText('36%');
   await chooseOption(page,'排序','familiar'); await expect(page).toHaveURL('/people?sort=familiar');

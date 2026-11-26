@@ -1,3 +1,4 @@
+import { expectControlValue, selectControl } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
@@ -38,14 +39,14 @@ test('drafts survive explicit navigation and reload; Unicode limits, publication
   await login(context); await page.goto('/people/shouts'); await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('草稿保留');
   await page.getByRole('link', { name: '回到同好', exact: true }).click(); await expect(page.getByText('尚未提交的修改', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('link', { name: '找搭子', exact: true }).click();
-  await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
-  await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await expectControlValue(page.getByRole('textbox', { name: '找搭子內容', exact: true }), '草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
+  await expectControlValue(page.getByRole('textbox', { name: '找搭子內容', exact: true }), '草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('\u0085\u001c'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('\ufeff'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeEnabled();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('𠀀'.repeat(141));
   await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('  '+'𠀀'.repeat(140)+'\n\u0085 '); await page.getByRole('button', { name: '發布找搭子', exact: true }).click();
-  await expect(page.getByText('已發布。', { exact: true })).toBeVisible(); await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toHaveValue('');
+  await expect(page.getByText('已發布。', { exact: true })).toBeVisible(); await expectControlValue(page.getByRole('textbox', { name: '找搭子內容', exact: true }), '');
   await expect(list(page).getByRole('link', { name: '𠀀'.repeat(140), exact: true })).toBeVisible(); await expect(page.getByText('下次可發布：', { exact: false })).toBeVisible();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('冷卻期間的新草稿'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled();
 });
@@ -66,7 +67,7 @@ test('administrators recover an unknown deletion even after the detail is gone a
   await expect(page.getByText('尚未確認刪除結果。', { exact: false })).toBeVisible(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
   await page.getByRole('button', { name: '確認刪除結果', exact: true }).click(); await expect(page.getByText('已刪除找搭子內容。', { exact: true })).toBeVisible();
   expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); await expect(page.getByText('這一頁沒有找搭子內容。', { exact: true })).toBeVisible();
-  await page.getByLabel('找搭子範圍', { exact: true }).selectOption('history'); await expect(page.getByRole('heading', { name: '歷史 · 25 則', exact: true })).toBeVisible();
+  await selectControl(page.getByLabel('找搭子範圍', { exact: true }), 'history'); await expect(page.getByRole('heading', { name: '歷史 · 25 則', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '移除這則內容', exact: true }).first().click(); await page.getByRole('checkbox').check(); await page.getByRole('button', { name: '確認刪除找搭子', exact: true }).click();
   await expect(page.getByRole('heading', { name: '歷史 · 24 則', exact: true })).toBeVisible();
 });
@@ -77,7 +78,7 @@ test('damaged drafts are preserved and unavailable storage prevents publication'
   await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain('damaged shout draft');
   await denyDraftWrites(page,':shout:');let writes=0;page.on('request',request=>{if(request.method()==='POST')writes++;});await page.getByRole('textbox',{name:'找搭子內容',exact:true}).fill('不可遺失');await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();await page.getByRole('button',{name:'發布找搭子',exact:true}).click();await expect(page.getByText('無法保存原稿及操作編號，尚未發布。',{exact:true})).toBeVisible();expect(writes).toBe(0);
 });
-test('late responses do not cross account changes and cross-tab erasure removes drafts and private details', async ({ page, context }) => {
+test("late responses do not cross account changes and cross-tab erasure removes drafts and private .disclosure", async ({ page, context }) => {
   await login(context); let arrived!: () => void, release!: () => void; const captured = new Promise<void>(resolve => { arrived = resolve; }), pending = new Promise<void>(resolve => { release = resolve; }); let hold = true;
   await page.route('**/api/v2/music/shouts?*', async route => { if (!hold) return route.continue(); hold = false; const response = await route.fetch(); arrived(); await pending; await route.fulfill({ response }).catch(() => {}); });
   await page.goto('/people/shouts'); await captured; await login(context, 'auth-owner'); await refresh(page); await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible(); release(); await expect(list(page)).toHaveCount(0);

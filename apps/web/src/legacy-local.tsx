@@ -15,7 +15,7 @@ import { useEffect,useId,useRef,useState,type ReactNode } from 'react';
 import { Link,useLocation } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field, Checkbox, Disclosure } from './kimi-ui';
 import { LegacyRequestReceipt } from '@qgroup/contracts';
 import { authHttp } from './auth';
 import { MemberAccess,type Member } from './member-access';
@@ -93,9 +93,9 @@ function ImportDraft({viewer,inventory}:{viewer:Member;inventory:LegacyInventory
     }catch(error){if(active.current)setMessage(error instanceof Error?errorText(error):uiText('匯入未完成，請保留原檔並重試。'));}
     finally{locked.current=false;if(active.current)setBusy(false);}
   }
-  return <div className="legacy-conversion"><label className="account-field">舊草稿保全檔<input type="file" accept="application/json,.json" disabled={busy} aria-describedby={help} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void choose(file);}}/></label>
+  return <div className="legacy-conversion"><Field className="account-field" label={<>舊草稿保全檔</>}><input type="file" accept="application/json,.json" disabled={busy} aria-describedby={help} onChange={event=>{const file=event.target.files?.[0];event.target.value='';if(file)void choose(file);}}/></Field>
     <Text id={help}>限此帳號下載的草稿，最多 128 MiB。匯入只保全本機內容，原結果與權限仍須核對。</Text>
-    {plan&&<><Heading level={3}>{describeLegacy(plan.source,viewer.scope).label} · 待匯入</Heading><DraftContents data={plan.source.data}/><label className="checkbox"><input type="checkbox" checked={confirm} disabled={busy} onChange={event=>setConfirm(event.target.checked)}/>已核對原稿屬於目前帳號；只匯入本機，不送出</label><Button disabled={busy||!confirm} onClick={()=>void restore()}>匯入此舊草稿</Button></>}
+    {plan&&<><Heading level={3}>{describeLegacy(plan.source,viewer.scope).label} · 待匯入</Heading><DraftContents data={plan.source.data}/><Checkbox className="checkbox" checked={confirm} disabled={busy} onChange={event=>setConfirm(event.target.checked)} label={<>已核對原稿屬於目前帳號；只匯入本機，不送出</>} /><Button disabled={busy||!confirm} onClick={()=>void restore()}>匯入此舊草稿</Button></>}
     {message&&<Notice>{message}</Notice>}
   </div>;
 }
@@ -117,7 +117,7 @@ function DraftContents({data}:{data:Record<string,unknown>}){
     if(value&&typeof value==='object')return <dl>{Object.entries(value).filter(([key])=>!/token|pin|csrf|cookie|secret|oauth|authorization/i.test(key)).map(([key,item])=><div key={key}><dt>{label(key)}</dt><dd>{key==='name'&&'value' in value&&typeof item==='string'?label(item):image(item)}</dd></div>)}</dl>;
     return visibleData(value);
   };
-  return <div className="legacy-local-data">{['fields','value','dataset','slots','rooms','people','items','custom','paymentCodes','qr','revision','edit'].filter(key=>data[key]!==undefined).map(key=><details key={key}><summary>{key==='value'&&data.react===1?'表單內容':label(key)}</summary>{image(data[key])}</details>)}</div>;
+  return <div className="legacy-local-data">{['fields','value','dataset','slots','rooms','people','items','custom','paymentCodes','qr','revision','edit'].filter(key=>data[key]!==undefined).map(key=><Disclosure key={key}  title={<>{key==='value'&&data.react===1?'表單內容':label(key)}</>}>{image(data[key])}</Disclosure>)}</div>;
 }
 function Snapshot({viewer,inventory,row}:{viewer:Member;inventory:LegacyInventory;row:LegacySnapshot}){
   const description=describeLegacy(row.source,viewer.scope),intent=legacyCreateIntent(description),[busy,setBusy]=useState(false),[message,setMessage]=useState(''),[receipt,setReceipt]=useState<ReturnType<typeof LegacyRequestReceipt.parse>|null>(null),active=useRef(false),client=useQueryClient();

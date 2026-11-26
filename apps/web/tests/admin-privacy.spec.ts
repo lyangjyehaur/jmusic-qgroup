@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { randomBytes, randomUUID } from 'node:crypto';
 import type { Browser, BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -25,7 +26,7 @@ test('administrators inspect retained records and save a note without claiming t
   await expect(page.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible(); await expect(page.getByText('申請狀態：共享紀錄待審', { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 360, height: 800 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-admin-privacy-mobile.png', fullPage: true });
   expect(await page.locator('script').filter({ hasText: '共享歷史保留' }).count()).toBe(0); await page.getByRole('link', { name: '回到刪除申請', exact: true }).click(); await expect(page.getByText('處理說明：共享歷史保留，待核對。<script>', { exact: true })).toBeVisible();
-  await page.getByRole('link', { name: id, exact: true }).click(); await expect(page.getByLabel('處理說明', { exact: true })).toHaveValue('共享歷史保留，待核對。<script>'); await page.getByRole('link', { name: '回到刪除申請', exact: true }).click(); await expect(page.getByText('共 1 筆申請', { exact: true })).toBeVisible();
+  await page.getByRole('link', { name: id, exact: true }).click(); await expectControlValue(page.getByLabel('處理說明', { exact: true }), '共享歷史保留，待核對。<script>'); await page.getByRole('link', { name: '回到刪除申請', exact: true }).click(); await expect(page.getByText('共 1 筆申請', { exact: true })).toBeVisible();
 });
 test('an unknown review result survives reload with the original operation key and completes only an empty retained scope', async ({ page, context, browser }) => {
   const id = await closeMember(browser, false); await login(context); await page.goto('/admin/privacy/' + id); const keys: string[] = []; let corrupt = true;
@@ -37,7 +38,7 @@ test('an unknown review result survives reload with the original operation key a
 test('competing review notes require an explicit fresh assessment and preserve the original input', async ({ page, context, browser }) => {
   const id = await closeMember(browser, true); await login(context);const otherContext=await browser.newContext({baseURL:origin});await login(otherContext);const other=await otherContext.newPage();
   await page.goto('/admin/privacy/' + id); await other.goto('/admin/privacy/' + id); await fillReview(page, '我的待審說明'); await fillReview(other, '另一管理頁的說明'); await other.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(other.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(page.getByText('申請或共享紀錄已變更，請核對目前資料', { exact: true })).toBeVisible(); await expect(page.getByLabel('處理說明', { exact: true })).toHaveValue('我的待審說明');
+  await page.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(page.getByText('申請或共享紀錄已變更，請核對目前資料', { exact: true })).toBeVisible(); await expectControlValue(page.getByLabel('處理說明', { exact: true }), '我的待審說明');
   await page.getByRole('button', { name: '核對目前範圍，保留說明', exact: true }).click(); await expect(page.getByRole('checkbox')).not.toBeChecked(); await page.getByRole('checkbox').check(); await page.getByRole('button', { name: '保存處理說明', exact: true }).click(); await expect(page.getByText('處理說明已保存，請核對目前狀態。', { exact: true })).toBeVisible(); await otherContext.close();
 });
 test('unwritable and damaged review drafts block writes, preserve recovery data and clear on cross-tab admin logout', async ({ page, context, browser }) => {

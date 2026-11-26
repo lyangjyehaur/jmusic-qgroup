@@ -1,4 +1,4 @@
-import { toggleMusicTerm, expectMusicTerm } from './kimi-controls';
+import { toggleMusicTerm, expectMusicTerm, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -63,7 +63,7 @@ test('conflicting nickname edits preserve input and require an explicit read bef
     const other = await remote.newPage(); await other.goto('/me/profile'); await other.getByLabel('站內稱呼', { exact: true }).fill('另一裝置稱呼');
     await other.getByRole('button', { name: '保存稱呼', exact: true }).click(); await expect(other.getByText('已保存稱呼。', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '保存稱呼', exact: true }).click(); await expect(page.getByText('稱呼已被修改；請核對目前稱呼後再保存', { exact: true })).toBeVisible();
-    await expect(page.getByLabel('站內稱呼', { exact: true })).toHaveValue('保留我的輸入');
+    await expectControlValue(page.getByLabel('站內稱呼', { exact: true }), '保留我的輸入');
     await page.getByRole('button', { name: '核對目前稱呼，保留輸入', exact: true }).click(); await expect(page.getByText('目前稱呼：另一裝置稱呼', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '保存稱呼', exact: true }).click(); await expect(page.getByText('已保存稱呼。', { exact: true })).toBeVisible();
   } finally { await remote.close(); }
@@ -109,9 +109,9 @@ test('nickname drafts stay with their account across switching and are cleared o
   await loginFixture(context); await page.goto('/me/profile'); await page.getByLabel('站內稱呼', { exact: true }).fill('尚未保存的原帳號稱呼');
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await fakeQQ(page, 'profile-other'); await page.goto('/login?returnTo=%2Fme%2Faccounts'); await authorize(page, '前往 QQ 登入');
-  await page.goto('/me/profile'); await expect(page.getByLabel('站內稱呼', { exact: true })).toHaveValue('測試帳號 profile-other');
+  await page.goto('/me/profile'); await expectControlValue(page.getByLabel('站內稱呼', { exact: true }), '測試帳號 profile-other');
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '切換至 小青', exact: true }).click();
-  await page.goto('/me/profile'); await expect(page.getByLabel('站內稱呼', { exact: true })).toHaveValue('尚未保存的原帳號稱呼');
+  await page.goto('/me/profile'); await expectControlValue(page.getByLabel('站內稱呼', { exact: true }), '尚未保存的原帳號稱呼');
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click(); await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible();
   expect(await durableRows(page)).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);

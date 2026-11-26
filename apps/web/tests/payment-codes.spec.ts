@@ -1,3 +1,4 @@
+import { selectControl, expectControlValue } from './kimi-controls';
 import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import { readFileSync } from 'node:fs';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -10,13 +11,13 @@ async function image(page: Page, type = 'image/png') {
   return { name: type === 'image/jpeg' ? 'payment.jpg' : 'payment.png', mimeType: type, buffer: Buffer.from(value, 'base64') };
 }
 async function upload(page: Page, name = '本次收款碼', kind = 'wechat', type = 'image/png') {
-  await page.getByLabel('收款方式', { exact: true }).selectOption(kind); await page.getByLabel('名稱（選填）', { exact: true }).fill(name);
+  await selectControl(page.getByLabel('收款方式', { exact: true }), kind); await page.getByLabel('名稱（選填）', { exact: true }).fill(name);
   await page.getByLabel('收款碼圖片', { exact: true }).setInputFiles(await image(page, type)); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible();
 }
 async function save(page: Page) { await page.getByRole('button', { name: '保存收款碼', exact: true }).click(); await expect(page.getByText('收款碼已保存。', { exact: true })).toBeVisible(); }
 test('uploads every method, converts photos locally, restores drafts, displays and downloads exact originals at 360px', async ({ page, context }) => {
   await login(context); await page.goto('/me/payment-codes'); await upload(page, '照片收款碼', 'wechat', 'image/jpeg');
-  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue('照片收款碼');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible(); await save(page);
+  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expectControlValue(page.getByLabel('名稱（選填）', { exact: true }), '照片收款碼');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible(); await save(page);
   for (const [kind, name] of [['alipay', '支付寶原圖'], ['other', '其他原圖']]) { await upload(page, name, kind); await save(page); }
   await expect(page.getByRole('heading', { name: '已保存（3／30）', exact: true })).toBeVisible();
   const first = page.locator('.payment-library > li').filter({ has: page.getByRole('heading', { name: '微信 · 照片收款碼', exact: true }) });
@@ -37,7 +38,7 @@ test('unknown create results preserve exact input and UUID across reload, appear
   await expect(page.getByLabel('名稱（選填）', { exact: true })).toBeDisabled();
   const serialized = (await durableRows(page)).filter(row=>row.key.includes('payment-codes:')).map(row=>JSON.parse(row.raw));
   expect(serialized[0].form.image).toBe(''); expect(serialized[0].pending.input.data.image.length).toBeGreaterThan(0);
-  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); await expect(page.getByLabel('名稱（選填）',{exact:true})).toHaveValue('\ufeff斷線原圖\ufeff'); expect(keys).toHaveLength(1);
+  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.getByRole('button', { name: '確認操作結果', exact: true })).toBeVisible(); await expectControlValue(page.getByLabel('名稱（選填）',{exact:true}), '\ufeff斷線原圖\ufeff'); expect(keys).toHaveLength(1);
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留操作並離開', exact: true }).click(); await page.goto('/inbox');
   await expect(page.getByRole('link', { name: '我的收款碼', exact: true })).toBeVisible(); expect(keys).toHaveLength(1); await page.getByRole('link', { name: '我的收款碼', exact: true }).click();
   await page.getByRole('button', { name: '確認操作結果', exact: true }).click(); await expect(page.getByText('收款碼已保存。', { exact: true })).toBeVisible(); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); expect(bodies[0]).toBe(bodies[1]); await expect(page.getByRole('heading', { name: '已保存（1／30）', exact: true })).toBeVisible();
@@ -82,9 +83,9 @@ test('blocked storage prevents upload writes and damaged originals require prese
 test('account refresh removes private images, keeps each account draft separate and clears all image drafts on device logout', async ({ page, context }) => {
   await login(context); await page.goto('/me/payment-codes'); await upload(page, '原帳號草稿');
   await login(context, 'bob'); const signal = await context.newPage(); await signal.goto('/activities'); await signal.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); });
-  await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue(''); await expect(page.locator('.payment-asset img')).toHaveCount(0); await upload(page, '另一帳號草稿');
+  await expectControlValue(page.getByLabel('名稱（選填）', { exact: true }), ''); await expect(page.locator('.payment-asset img')).toHaveCount(0); await upload(page, '另一帳號草稿');
   await login(context); await signal.evaluate(() => { const channel = new BroadcastChannel('qgroup:rebuild:session'); channel.postMessage('refresh'); channel.close(); });
-  await expect(page.getByLabel('名稱（選填）', { exact: true })).toHaveValue('原帳號草稿'); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible();
+  await expectControlValue(page.getByLabel('名稱（選填）', { exact: true }), '原帳號草稿'); await expect(page.getByRole('img', { name: '待保存收款碼', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到帳號', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('button', { name: '登出此裝置', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未登入', exact: true })).toBeVisible(); expect(await page.evaluate(() => Object.keys(sessionStorage).filter(key => key.startsWith('qgroup:rebuild:payment-codes:')))).toEqual([]); await signal.close();
 });

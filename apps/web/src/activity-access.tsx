@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox, Select } from './kimi-ui';
 import { type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { scopedHttp } from './http';
@@ -55,7 +55,7 @@ function Access({viewer,id,token}:{viewer:Member;id:string;token:string}){
   if(denied)return <Notice>目前帳號或邀請權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
   return <Surface className="detail"><DraftFeedback form={{...record,message:message||record.message}} navigation={false}/>{done?<><Notice>已取得活動查看權限。</Notice><Link to={base(id)}>查看活動</Link></>:<>
     {view.isPending?<Notice>正在核對邀請…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<><h2>{view.data.title}</h2><Text>以「{viewer.nickname}」接受後可查看活動；報名仍需另行提交，不會取得管理權限。</Text></>}
-    {!pending&&view.data&&!view.error&&<label className="consent"><input type="checkbox" checked={confirmed} disabled={locked||view.isFetching} onChange={event=>setConfirmed(event.target.checked)}/>確認接受活動查看邀請</label>}
+    {!pending&&view.data&&!view.error&&<Checkbox className="consent" checked={confirmed} disabled={locked||view.isFetching} onChange={event=>setConfirmed(event.target.checked)} label={<>確認接受活動查看邀請</>} />}
     <Button loading={busy} disabled={pending?busy||unavailable:locked||!confirmed||!view.data||!!view.error||view.isFetching} onClick={()=>void accept()}>{pending?'確認原邀請操作結果':'接受查看邀請'}</Button>
     {!pending&&<Button variant="secondary" disabled={locked||view.isFetching} onClick={()=>{setConfirmed(false);void view.refetch();}}>重新核對邀請</Button>}
   </>}</Surface>;
@@ -69,5 +69,5 @@ function Share({viewer,id}:{viewer:Viewer;id:string}){
     if(event.id!==id)throw Error('活動摘要不符，請重新讀取。');
     return {...share,event,link};
   },gcTime:0});
-  return <><Link to={base(id)}>回到活動</Link>{view.isPending?<Notice>正在讀取分享連結…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<Surface className="detail">{view.data.invitation&&<Notice>持有者登入並確認後可查看活動，請只傳給預期參加者。</Notice>}<CopyActivityText rows={3} text={view.data.link} label="活動連結" button={uiText("複製活動連結")}/><div className="activity-summary-kind"><label htmlFor="activity-summary-kind">摘要內容</label><select id="activity-summary-kind" value={kind} onChange={event=>setSearch(event.target.value==='conditions'?{kind:'conditions'}:{})}><option value="activity">活動資訊</option><option value="conditions">目前安排</option></select></div><CopyActivityText key={kind} text={activitySummary(view.data.event,view.data.link,kind)} label={kind==='conditions'?'安排摘要':'活動摘要'} button={kind==='conditions'?uiText('複製安排摘要'):uiText('複製活動摘要')}/></Surface>}</>;
+  return <><Link to={base(id)}>回到活動</Link>{view.isPending?<Notice>正在讀取分享連結…</Notice>:view.error?<Failure error={view.error} retry={()=>void view.refetch()}/>:<Surface className="detail">{view.data.invitation&&<Notice>持有者登入並確認後可查看活動，請只傳給預期參加者。</Notice>}<CopyActivityText rows={3} text={view.data.link} label="活動連結" button={uiText("複製活動連結")}/><div className="activity-summary-kind"><label htmlFor="activity-summary-kind">摘要內容</label><Select id="activity-summary-kind" value={kind} onChange={event=>setSearch(event.target.value==='conditions'?{kind:'conditions'}:{})}><option value="activity">活動資訊</option><option value="conditions">目前安排</option></Select></div><CopyActivityText key={kind} text={activitySummary(view.data.event,view.data.link,kind)} label={kind==='conditions'?'安排摘要':'活動摘要'} button={kind==='conditions'?uiText('複製安排摘要'):uiText('複製活動摘要')}/></Surface>}</>;
 }

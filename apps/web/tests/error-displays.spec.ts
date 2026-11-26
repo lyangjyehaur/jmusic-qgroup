@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 import { durableRows } from './draft-helpers';
@@ -24,11 +25,11 @@ for(const language of ['zh-CN','zh-TW']){
     const viewer=await(await context.request.get('/api/v2/session')).json(),profile=await(await context.request.get('/api/v2/me/profile',{headers:{'X-Account-Scope':viewer.scope}})).json();
     const update=await context.request.put('/api/v2/me/profile',{headers:{Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,'Idempotency-Key':crypto.randomUUID()},data:{nickname:'另一份稱呼',revision:profile.revision}});expect(update.status(),await update.text()).toBe(200);
     await page.getByRole('button',{name:simplified?'保存称呼':'保存稱呼',exact:true}).click();
-    await expect(page.getByRole('status')).toContainText(simplified?'称呼已被修改；请核对目前称呼后再保存':'稱呼已被修改；請核對目前稱呼後再保存');await expect(field).toHaveValue(raw);
+    await expect(page.getByRole('status')).toContainText(simplified?'称呼已被修改；请核对目前称呼后再保存':'稱呼已被修改；請核對目前稱呼後再保存');await expectControlValue(field, raw);
     const before=(await durableRows(page)).find(row=>row.key.includes('account-profile:'))!;expect(before).toBeDefined();
     await page.route('**/api/v2/me/profile',route=>route.fulfill({status:200,json:{nickname:7}}));
     await page.getByRole('button',{name:simplified?'核对目前称呼，保留输入':'核對目前稱呼，保留輸入',exact:true}).click();
-    await expect(page.getByRole('status')).toContainText(simplified?'回应资料格式不符，请先核对结果后重试。':'回應資料格式不符，請先核對結果後重試。');await expect(field).toHaveValue(raw);
+    await expect(page.getByRole('status')).toContainText(simplified?'回应资料格式不符，请先核对结果后重试。':'回應資料格式不符，請先核對結果後重試。');await expectControlValue(field, raw);
     expect((await durableRows(page)).find(row=>row.key===before.key)?.raw).toBe(before.raw);
   });
   test(language+' an unmarked older API error keeps mixed-script user content byte-for-byte',async({page,context})=>{
@@ -47,7 +48,7 @@ for(const language of ['zh-CN','zh-TW']){
     const keys:string[]=[],bodies:string[]=[];let corrupt=true;
     await page.route('**/api/v2/me/profile',async route=>{if(route.request().method()!=='PUT')return route.continue();keys.push(route.request().headers()['idempotency-key']!);bodies.push(route.request().postData()!);const response=await route.fetch();return corrupt?route.fulfill({response,json:{nickname:7}}):route.fulfill({response});});
     await page.getByRole('button',{name:simplified?'保存称呼':'保存稱呼',exact:true}).click();const recover=page.getByRole('button',{name:simplified?'确认修改结果':'確認修改結果',exact:true});await expect(recover).toBeVisible();
-    const before=(await durableRows(page)).find(row=>row.key.includes('account-profile:'))!;expect(JSON.parse(before.raw).requestKey).toBe(keys[0]);await page.reload();await expect(field).toHaveValue(raw);expect(keys).toHaveLength(1);
+    const before=(await durableRows(page)).find(row=>row.key.includes('account-profile:'))!;expect(JSON.parse(before.raw).requestKey).toBe(keys[0]);await page.reload();await expectControlValue(field, raw);expect(keys).toHaveLength(1);
     expect((await durableRows(page)).find(row=>row.key===before.key)?.raw).toBe(before.raw);corrupt=false;await recover.click();await expect(page.getByRole('status')).toContainText(simplified?'已保存称呼。':'已保存稱呼。');expect(keys).toHaveLength(2);expect(keys[1]).toBe(keys[0]);expect(bodies[1]).toBe(bodies[0]);
   });
   test(language+' download errors use marked backend displays and retain privacy confirmation without releasing a file',async({page,context})=>{

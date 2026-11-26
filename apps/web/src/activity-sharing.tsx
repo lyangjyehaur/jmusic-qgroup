@@ -1,7 +1,7 @@
 import { uiText } from './language';
 import { useEffect, useId, useRef, useState } from 'react';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 
 export function ActivityLocation({ value }: { value: string }) {
   return <>{value}{value.trim() && <> <a className="text-link" href={'https://uri.amap.com/search?keyword=' + encodeURIComponent(value)} target="_blank" rel="noopener noreferrer">高德導航</a></>}</>;
@@ -24,5 +24,5 @@ export function CopyActivityText({ text, label, button, rows = 10 }: { text: str
       field.current?.focus(); field.current?.select(); setMessage(uiText("請選取") + label + uiText("手動複製。"));
     } finally { if (current === operation.current) setBusy(false); }
   }
-  return <div className="activity-copy-field"><div className="device-link-field"><label htmlFor={id}>{label}</label><textarea ref={field} id={id} readOnly value={text} rows={rows} onFocus={event => event.target.select()} /></div><Button loading={busy} disabled={busy} onClick={() => void copy()}>{button}</Button>{message && <Text role="status">{message}</Text>}</div>;
+  return <div className="activity-copy-field"><Field className="device-link-field" label={label}><textarea ref={field} id={id} readOnly value={text} rows={rows} onFocus={event => event.target.select()} /></Field><Button loading={busy} disabled={busy} onClick={() => void copy()}>{button}</Button>{message && <Text role="status">{message}</Text>}</div>;
 }

@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import {test,expect} from './fixtures';
 import type {BrowserContext,Page} from '@playwright/test';
 const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -9,7 +10,7 @@ async function deny(page:Page,mode='put',once=true){await page.evaluate(({mode,o
   IDBObjectStore.prototype.clear=function(){const r=clear.call(this);if(this.name==='links'&&mode==='clear'){const tx=this.transaction;r.addEventListener('success',()=>{if(once)IDBObjectStore.prototype.clear=clear;tx.abort();});}return r;};
 },{mode,once});}
 test('issuer exact link survives closing all pages and stays out of generic drafts',async({page,context})=>{
-  await login(context);const link=await issue(page),before=await linkRows(page);await page.close();const next=await context.newPage();await next.goto('/me/devices');await expect(next.getByRole('textbox',{name:'裝置連結（可手動複製）',exact:true})).toHaveValue(link);expect(await linkRows(next)).toEqual(before);await expect(next.getByRole('button',{name:'產生限時連結',exact:true})).toBeDisabled();
+  await login(context);const link=await issue(page),before=await linkRows(page);await page.close();const next=await context.newPage();await next.goto('/me/devices');await expectControlValue(next.getByRole('textbox',{name:'裝置連結（可手動複製）',exact:true}), link);expect(await linkRows(next)).toEqual(before);await expect(next.getByRole('button',{name:'產生限時連結',exact:true})).toBeDisabled();
   const raw=await next.evaluate(async()=>{if(!(await indexedDB.databases()).some(d=>d.name==='qgroup-reviewed-drafts-v1'))return '';const r=indexedDB.open('qgroup-reviewed-drafts-v1'),db=await new Promise<IDBDatabase>(resolve=>r.onsuccess=()=>resolve(r.result));try{return await new Promise<string>(resolve=>{const tx=db.transaction(['drafts','versions'],'readonly'),a=tx.objectStore('drafts').getAll(),b=tx.objectStore('versions').getAll();tx.oncomplete=()=>resolve(JSON.stringify([a.result,b.result]));});}finally{db.close();}});expect(raw).not.toContain(new URL(link).hash.slice(7));
 });
 test('recipient survives closing all pages and never accepts without fresh consent',async({page,context,browser})=>{

@@ -1,4 +1,4 @@
-import { chooseOption } from './kimi-controls';
+import { chooseOption, selectControl, expectControlValue } from './kimi-controls';
 import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -41,7 +41,7 @@ async function definition(page: Page) {
   await page.getByLabel('投票截止（含時區）', { exact: true }).fill('2099-12-19T18:00:00+08:00');
 }
 async function management(page: Page, action: string) {
-  await page.getByLabel('管理操作', { exact: true }).selectOption(action);
+  await selectControl(page.getByLabel('管理操作', { exact: true }), action);
 }
 test('creates date/exact polls with durable incomplete drafts and dynamic candidates, then follows the old bot link without a write', async ({
   page,
@@ -59,7 +59,7 @@ test('creates date/exact polls with durable incomplete drafts and dynamic candid
   page.on('dialog', (d) => void d.accept());
   await page.reload();
   await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
-  await expect(page.getByLabel('候選日期 2', { exact: true })).toHaveValue('2099-12-27');
+  await expectControlValue(page.getByLabel('候選日期 2', { exact: true }), '2099-12-27');
   await page.getByRole('button', { name: '建立時間投票', exact: true }).click();
   await expect(page.getByRole('heading', { name: '不連續日期', exact: true })).toBeVisible();
   const id = new URL(page.url()).pathname.split('/').at(-1)!;
@@ -108,7 +108,7 @@ test('requires latest vote counts before date finalization, preserves reasoned c
   await login(context);
   await page.goto('/time-polls/poll-date/manage');
   await management(page, 'finalize');
-  await page.getByLabel('定案候選', { exact: true }).selectOption('poll-date-2');
+  await selectControl(page.getByLabel('定案候選', { exact: true }), 'poll-date-2');
   await page.getByLabel('活動開始（含時區，須在候選日期內）', { exact: true }).fill('2099-12-12T18:00:00+08:00');
   await page.getByLabel('正式報名截止（含時區）', { exact: true }).fill('2099-12-11T18:00:00+08:00');
   await page.getByLabel('操作原因', { exact: true }).fill('場地只剩此時段');
@@ -129,7 +129,7 @@ test('requires latest vote counts before date finalization, preserves reasoned c
   await page.getByRole('button', { name: '提交管理操作', exact: true }).click();
   await expect(page.getByText('票數已有更新，請重新核對後定案', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '核對最新票數與安排，保留輸入', exact: true }).click();
-  await expect(page.getByLabel('操作原因', { exact: true })).toHaveValue('場地只剩此時段');
+  await expectControlValue(page.getByLabel('操作原因', { exact: true }), '場地只剩此時段');
   await expect(page.getByRole('checkbox', { name: /已核對場地、票數/ })).not.toBeChecked();
   await page.getByRole('checkbox', { name: /已核對場地、票數/ }).check();
   await page.getByRole('button', { name: '提交管理操作', exact: true }).click();
@@ -192,7 +192,7 @@ for (const kind of ['create', 'vote', 'manage'] as const)
         .locator('header')
         .getByRole('link', { name: /^收件匣/ })
         .click();
-      await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+      await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
       await page
         .getByRole('link', {
           name: kind === 'create' ? '建立時間投票' : kind === 'vote' ? '投票填答' : '投票管理',
@@ -231,11 +231,11 @@ test('blocks writes when storage is denied, preserves damaged drafts and isolate
   await page.getByLabel('投票名稱', { exact: true }).fill('只屬於小青');
   await login(context, 'bob');
   await page.reload();
-  await expect(page.getByLabel('投票名稱', { exact: true })).toHaveValue('');
+  await expectControlValue(page.getByLabel('投票名稱', { exact: true }), '');
   await login(context);
   await page.reload();
   await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
-  await expect(page.getByLabel('投票名稱', { exact: true })).toHaveValue('只屬於小青');
+  await expectControlValue(page.getByLabel('投票名稱', { exact: true }), '只屬於小青');
 });
 test('explicitly closes, extends, cancels with reason and removes while preserving the result history', async ({
   page,
@@ -271,12 +271,12 @@ test('creates exact candidates with explicit offsets and duration and confirms s
   await login(context);
   await page.goto('/time-polls/new');
   await definition(page);
-  page.once('dialog', (d) => void d.dismiss());
-  await page.getByLabel('候選模式', { exact: true }).selectOption('exact');
-  await expect(page.getByLabel('候選模式', { exact: true })).toHaveValue('date');
-  await expect(page.getByLabel('候選日期 1', { exact: true })).toHaveValue('2099-12-20');
-  page.once('dialog', (d) => void d.accept());
-  await page.getByLabel('候選模式', { exact: true }).selectOption('exact');
+  await selectControl(page.getByLabel('候選模式', { exact: true }), 'exact');
+  await page.getByRole('button',{name:'保留原候選',exact:true}).click();
+  await expectControlValue(page.getByLabel('候選模式', { exact: true }), 'date');
+  await expectControlValue(page.getByLabel('候選日期 1', { exact: true }), '2099-12-20');
+  await selectControl(page.getByLabel('候選模式', { exact: true }), 'exact');
+  await page.getByRole('button',{name:'清除候選並切換',exact:true}).click();
   await page.getByLabel('候選時間 1', { exact: true }).fill('2099-12-20T18:00:00+08:00');
   await page.getByLabel('候選時間 2', { exact: true }).fill('2099-12-23T18:00:00+08:00');
   await page.getByLabel('預計持續小時', { exact: true }).fill('4');
@@ -314,8 +314,8 @@ test('selects non-contiguous calendar dates across months, keeps keyboard state 
   await expect(page.getByText('已選 3 個日期', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '上個月', exact: true }).click();
   await page.getByRole('button', { name: '選擇日期 2099-12-03', exact: true }).click();
-  await expect(page.getByLabel('候選日期 1', { exact: true })).toHaveValue('2099-12-09');
-  await expect(page.getByLabel('候選日期 2', { exact: true })).toHaveValue('2100-01-02');
+  await expectControlValue(page.getByLabel('候選日期 1', { exact: true }), '2099-12-09');
+  await expectControlValue(page.getByLabel('候選日期 2', { exact: true }), '2100-01-02');
   await page.setViewportSize({ width: 360, height: 800 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-poll-calendar-mobile.png', fullPage: true });

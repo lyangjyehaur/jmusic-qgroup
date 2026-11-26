@@ -1,7 +1,7 @@
 import { errorText, uiText } from './language';
 import { useEffect, useRef, useState } from 'react';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox, Field } from './kimi-ui';
 import { musicShareLines } from '@qgroup/domain';
 import { Notice } from './shared';
 import { musicShareBlob } from './music-share-canvas';
@@ -159,15 +159,10 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
   }
   return (
     <section aria-label="分享分房" className="music-room-share">
-      <label className="consent">
-        <input
-          type="checkbox"
-          checked={confirmed}
-          disabled={!enabled}
-          onChange={(event) => {const on=event.target.checked;setConfirmed(on);setApproved(false);if(!on)return;void(async()=>{const allowed=!beforeShare||await beforeShare();if(active.current){setApproved(allowed);if(!allowed)setConfirmed(false);}})();}}
-        />
+      <Checkbox className="consent" checked={confirmed} disabled={!enabled} onChange={(event) => {const on=event.target.checked;setConfirmed(on);setApproved(false);if(!on)return;void(async()=>{const allowed=!beforeShare||await beforeShare();if(active.current){setApproved(allowed);if(!allowed)setConfirmed(false);}})();}} label={<>
+
         <span>圖片包含活動／包間名稱、人名及分數，已核對分享範圍。</span>
-      </label>
+      </>} />
       {confirmed && approved && enabled && (
         <>
           <canvas ref={canvas} hidden aria-hidden="true" />
@@ -189,10 +184,10 @@ export function MusicRoomShare({ value, enabled,beforeShare }: { value: RoomShar
           ) : (
             <Notice>正在產生分房圖片…</Notice>
           )}
-          <label className="account-field">
+          <Field className="account-field" label={<>
             分房清單
-            <textarea readOnly rows={5} value={text} />
-          </label>
+
+          </>}><textarea readOnly rows={5} value={text} /></Field>
           <Button
             variant="secondary"
             onClick={() => {

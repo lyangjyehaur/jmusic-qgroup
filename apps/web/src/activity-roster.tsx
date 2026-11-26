@@ -1,9 +1,9 @@
 import { uiText } from './language';
-import { useContext, useEffect, useRef, useState } from 'react';
+import { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Text } from 'yahha-ui';
-import { Badge, Button } from './kimi-ui';
+import { Badge, Button, Modal } from './kimi-ui';
 import { type Viewer } from '@qgroup/contracts';
 import { scopedHttp } from './http';
 import { loginLink } from './auth';
@@ -42,11 +42,9 @@ export function ActivityParticipants({ eventId, viewer }: {eventId:string;viewer
   </section>;
 }
 function AttendeeMusicDialog({eventId,person,viewer,close}:{eventId:string;person:{id:string;name:string};viewer:Extract<Viewer,{authenticated:true}>;close:()=>void}) {
-  const dialog=useRef<HTMLDialogElement>(null);
-  useEffect(()=>{const element=dialog.current!;element.showModal();return()=>element.close();},[]);
   const query=useQuery({queryKey:['private',viewer.scope,'attendee-music',eventId,person.id,viewer.musicEpoch],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/activities/:id/attendees/:attendeeId/music',{params:{id:eventId,attendeeId:person.id}}),refetchOnMount:'always'});
   const from='/activities/'+encodeURIComponent(eventId)+'#participants';
-  return <dialog className="attendee-music-dialog" ref={dialog} aria-labelledby="attendee-music-title" onClose={event=>{if(!event.currentTarget.open)close();}}><div className="roster-title"><Heading level={2} id="attendee-music-title">{person.name} 的成分</Heading><Button variant="secondary" onClick={()=>dialog.current?.close()}>關閉成分</Button></div>
-    {query.isPending?<Notice>正在讀取成分…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:query.data.state==='unlinked'?<Notice>這位報名者尚未關聯成分。</Notice>:query.data.state==='viewer_unlinked'?<Notice>請先<Link to={'/me/music?from='+encodeURIComponent(from)}>保存成分</Link>，再查看共同喜好。</Notice>:<><Text>成分稱呼：{query.data.name}</Text>{query.data.picks.length?<ul className="attendee-music-picks">{query.data.picks.map(pick=><li key={pick.entryId}>{pick.name}{pick.kind==='sub'?' · '+levels[pick.level]:''}{pick.shared?' · 共同喜好':''}</li>)}</ul>:<Text>尚未選擇詞條。</Text>}<Link to={'/people/'+query.data.profileId+'?from='+encodeURIComponent(from)}>查看完整成分</Link></>}
-  </dialog>;
+  return <Modal title={person.name+uiText(" 的成分")} closeLabel="關閉成分" onClose={close}>
+    {query.isPending?<Notice>正在讀取成分…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:query.data.state==='unlinked'?<Notice>這位報名者尚未關聯成分。</Notice>:query.data.state==='viewer_unlinked'?<Notice>請先<Link onClick={close} to={'/me/music?from='+encodeURIComponent(from)}>保存成分</Link>，再查看共同喜好。</Notice>:<><Text>成分稱呼：{query.data.name}</Text>{query.data.picks.length?<ul className="attendee-music-picks">{query.data.picks.map(pick=><li key={pick.entryId}>{pick.name}{pick.kind==='sub'?' · '+levels[pick.level]:''}{pick.shared?' · 共同喜好':''}</li>)}</ul>:<Text>尚未選擇詞條。</Text>}<Link onClick={close} to={'/people/'+query.data.profileId+'?from='+encodeURIComponent(from)}>查看完整成分</Link></>}
+  </Modal>;
 }

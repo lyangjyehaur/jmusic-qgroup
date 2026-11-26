@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox, Field, Select, Disclosure } from './kimi-ui';
 import { z } from 'zod';
 import { RoomLabAnalysis, RoomLabCommand, RoomLabRoomInput, RoomLabSource } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -117,13 +117,13 @@ function Editor({
   };
   const form=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:newDraft,parse:raw=>parseMusicRoomDraft(raw,fresh.eventId),dirty:d=>d.selected.length>1||!!d.rooms.length||!!d.result||d.mode!=='rooms'||d.value!=='2'||!!d.sizes||d.sameGender,pending:()=>false});
   const {value:draft,replace:setDraft,busy,setBusy,active,persist,begin}=form;
-  const [message,setMessage]=useState(''),[denied,setDenied]=useState(false),
+  const [message,setMessage]=useState(''),[denied,setDenied]=useState(false),[calculating,setCalculating]=useState(false),
     [search,setSearch]=useState(''),[page,setPage]=useState(1),[lookup,setLookup]=useState(''),[shuffle,setShuffle]=useState(()=>Math.random());
   const checking=useRef(false),generation=useRef(0),controller=useRef<AbortController|undefined>(undefined),source=draft.source;
   const stale=!!readError||source.sourceVersion!==fresh.sourceVersion,locked=form.unavailable||form.busy;
   useEffect(()=>()=>{generation.current++;controller.current?.abort();},[]);
-  useEffect(()=>{generation.current++;controller.current?.abort();setBusy(false);setMessage('');setSearch('');setLookup('');setPage(1);},[form.epoch]);
-  useEffect(()=>{if(stale&&!checking.current){generation.current++;controller.current?.abort();setBusy(false);}},[stale]);
+  useEffect(()=>{generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);setMessage('');setSearch('');setLookup('');setPage(1);},[form.epoch]);
+  useEffect(()=>{if(stale&&!checking.current){generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);}},[stale]);
   function edit(patch:Partial<Draft>){if(locked)return;generation.current++;controller.current?.abort();form.change({...draft,...patch});setMessage('');}
   function failed(error:unknown){if(error instanceof ApiError&&([401,403].includes(error.status)||error.code==='ACCOUNT_CHANGED'))setDenied(true);}
   const known = new Map(source.members.map((member) => [member.id, member])),
@@ -176,6 +176,7 @@ function Editor({
     const abort = new AbortController();
     controller.current = abort;
     setBusy(true);
+    setCalculating(true);
     setMessage('');
     try {
       if(!await persist(draft)||!active.current||generation.current!==attempt)return;
@@ -189,7 +190,7 @@ function Editor({
       if (active.current && generation.current === attempt) { failed(error);
         setMessage(error instanceof Error ? errorText(error) : uiText("試算失敗，原安排仍保留。")); }
     } finally {
-      if (active.current && generation.current === attempt) setBusy(false);
+      if (active.current && generation.current === attempt) { setBusy(false); setCalculating(false); }
     }
   }
   async function findMember() {
@@ -253,7 +254,7 @@ function Editor({
     }finally{if(active.current&&generation.current===attempt)setBusy(false);}
   }
   async function adopt(){if(!scored||!source.eventId||!fresh.canAdopt||!begin())return;try{if(!await persist(draft)||!active.current)return;navigate('/activities/'+encodeURIComponent(source.eventId)+'/rooms',{state:{roomSuggestion:{scope:viewer.scope,eventId:source.eventId,sourceVersion:source.sourceVersion,revision:source.revision,rooms:draft.rooms.map(room=>room.members)}}});}finally{if(active.current)setBusy(false);}}
-  async function leave(){generation.current++;controller.current?.abort();setBusy(false);await form.leave();}
+  async function leave(){generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);await form.leave();}
   function toggle(id: string, on: boolean) {
     if (on && selected.size >= 40) {
       setMessage(uiText("每次最多選擇 40 位成員。"));
@@ -353,44 +354,36 @@ function Editor({
         <fieldset disabled={locked}>
           <legend>參與成員 · 已選 {draft.selected.length}／40 人</legend>
           {!source.eventId && source.selfId && (
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={selected.has(source.selfId)}
-                onChange={(event) => toggle(source.selfId!, event.target.checked)}
-              />
+            <Checkbox className="consent" checked={selected.has(source.selfId)} onChange={(event) => toggle(source.selfId!, event.target.checked)} label={<>
+
               <span>包含自己</span>
-            </label>
+            </>} />
           )}
           {!source.eventId && (
             <div className="page-actions">
-              <label className="account-field">
+              <Field className="account-field" label={<>
                 固定成分 ID 或聯絡 QQ
-                <input maxLength={80} value={lookup} onChange={(event) => setLookup(event.target.value)} />
-              </label>
+
+              </>}><input maxLength={80} value={lookup} onChange={(event) => setLookup(event.target.value)} /></Field>
               <Button variant="secondary" disabled={busy || stale || !lookup.trim()} onClick={() => void findMember()}>
                 定位成員
               </Button>
             </div>
           )}
-          <label className="account-field">
+          <Field className="account-field" label={<>
             搜尋成員名稱或成分 ID
-            <input
+
+          </>}><input
               value={search}
               onChange={(event) => {
                 setSearch(event.target.value);
                 setPage(1);
               }}
-            />
-          </label>
+            /></Field>
           <div className="room-lab-pool">
             {pool.slice(0, page * 80).map((member) => (
-              <label key={member.id} className="consent">
-                <input
-                  type="checkbox"
-                  checked={selected.has(member.id)}
-                  onChange={(event) => toggle(member.id, event.target.checked)}
-                />
+              <Checkbox key={member.id} className="consent" checked={selected.has(member.id)} onChange={(event) => toggle(member.id, event.target.checked)} label={<>
+
                 <span>
                   {member.name} · {member.pickCount} 個詞條
                   {member.recommendation !== null ? ' · 合拍 ' + member.recommendation + '%' : ''}
@@ -403,7 +396,7 @@ function Editor({
                       }[member.status] ?? member.status)
                     : ''}
                 </span>
-              </label>
+              </>} />
             ))}
           </div>
           {!source.eventId && !search && pool.length > recommended.length && (
@@ -442,39 +435,35 @@ function Editor({
         </fieldset>
         <fieldset disabled={locked}>
           <legend>分房方式</legend>
-          <label className="account-field">
+          <Field className="account-field" label={<>
             分房依據
-            <select value={draft.mode} onChange={(event) => edit({ mode: event.target.value as Draft['mode'] })}>
+
+          </>}><Select value={draft.mode} onChange={(event) => edit({ mode: event.target.value as Draft['mode'] })}>
               <option value="rooms">按房數</option>
               <option value="capacity">按每房容量</option>
               <option value="sizes">自訂各房人數</option>
-            </select>
-          </label>
+            </Select></Field>
           {draft.mode === 'sizes' ? (
-            <label className="account-field">
+            <Field className="account-field" label={<>
               各房人數（以逗號分隔）
-              <input value={draft.sizes} onChange={(event) => edit({ sizes: event.target.value })} />
-            </label>
+
+            </>}><input value={draft.sizes} onChange={(event) => edit({ sizes: event.target.value })} /></Field>
           ) : (
-            <label className="account-field">
+            <Field className="account-field" label={<>
               {draft.mode === 'rooms' ? '房數' : '每房容量'}
-              <input
+
+            </>}><input
                 type="number"
                 min={1}
                 max={40}
                 value={draft.value}
                 onChange={(event) => edit({ value: event.target.value })}
-              />
-            </label>
+              /></Field>
           )}
-          <label className="consent">
-            <input
-              type="checkbox"
-              checked={draft.sameGender}
-              onChange={(event) => edit({ sameGender: event.target.checked })}
-            />
+          <Checkbox className="consent" checked={draft.sameGender} onChange={(event) => edit({ sameGender: event.target.checked })} label={<>
+
             <span>已公開男／女性別相同者優先</span>
-          </label>
+          </>} />
           <Button disabled={!canRun} loading={busy} onClick={() => void calculate('split')}>
             產生分房建議
           </Button>
@@ -493,9 +482,10 @@ function Editor({
               <Heading level={3}>
                 {draft.roomNames?.[room.id] ?? '包間 ' + (index + 1)} · {room.members.length} 人
               </Heading>
-              <label className="account-field">
+              <Field className="account-field" label={<>
                 包間 {index + 1} 容量
-                <input
+
+              </>}><input
                   type="number"
                   min={1}
                   max={40}
@@ -508,8 +498,7 @@ function Editor({
                       ),
                     })
                   }
-                />
-              </label>
+                /></Field>
               {room.members.length ? (
                 <ul className="room-lab-members">
                   {room.members.map((id) => (
@@ -595,7 +584,12 @@ function Editor({
           )}
         </section>
       )}
-      <DraftLeaveConfirmation form={{...form,leave,discardAndLeave:async()=>{generation.current++;controller.current?.abort();setBusy(false);await form.discardAndLeave();}}}/>
+      <DraftLeaveConfirmation form={{...form,
+        // A calculation only reads server data. It can be cancelled on leave;
+        // persistence and submitted writes must still finish before navigation.
+        busy:form.busy&&!calculating,
+        canDiscard:form.canDiscard||(calculating&&!form.loading&&!form.readError&&!form.hasPending),
+        leave,discardAndLeave:async()=>{generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);await form.discardAndLeave();}}}/>
     </>
   );
 }
@@ -613,22 +607,17 @@ function Move({
   change: (id: string) => void;
 }) {
   return (
-    <label>
+    <Field  label={<>
       移至
-      <select
-        aria-label={'移動 ' + name}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => change(event.target.value)}
-      >
+
+    </>}><Select aria-label={'移動 ' + name} value={value} disabled={disabled} onChange={(event) => change(event.target.value)}>
         <option value="">待人工安排</option>
         {rooms.map((room, index) => (
           <option key={room.id} value={room.id}>
             包間 {index + 1}
           </option>
         ))}
-      </select>
-    </label>
+      </Select></Field>
   );
 }
 function Analysis({ value, compact = false }: { value: z.infer<typeof RoomLabAnalysis>; compact?: boolean }) {
@@ -659,8 +648,8 @@ function Analysis({ value, compact = false }: { value: z.infer<typeof RoomLabAna
         <Text>尚無 {value.need} 人以上共同詞條。</Text>
       )}
       {!compact && (
-        <details>
-          <summary>兩兩配對 · {value.pairs.length} 組</summary>
+        <Disclosure   title={<>兩兩配對 · {value.pairs.length} 組</>}>
+
           <ul>
             {value.pairs.map((pair) => (
               <li key={pair.a + ':' + pair.b}>
@@ -668,7 +657,7 @@ function Analysis({ value, compact = false }: { value: z.infer<typeof RoomLabAna
               </li>
             ))}
           </ul>
-        </details>
+        </Disclosure>
       )}
     </div>
   );

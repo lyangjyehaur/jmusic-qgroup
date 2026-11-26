@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -102,7 +103,7 @@ test('permits deliberate restoration after logout, keeps automatic old-page impo
   await card.getByRole('checkbox', { name: '已核對原資料、結果與時區；只帶入表單，尚未送出', exact: true }).check(); await card.getByRole('button', { name: '保全並帶入新版表單', exact: true }).click(); await expect(card.getByText('此原稿已轉換。', { exact: false })).toBeVisible();
   const maps = await vault(page, 'mappings'), destinations = await durableRows(page); expect(maps).toHaveLength(1);
   await stage(page, raw); await importStaged(page); await expect(page.getByText('這份原稿已在本機，未新增副本。', { exact: true })).toBeVisible(); expect(await vault(page, 'mappings')).toEqual(maps); expect(await durableRows(page)).toEqual(destinations);
-  await card.getByRole('link', { name: '開啟目的原稿', exact: true }).click(); await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click(); await expect(page.getByLabel('活動名稱', { exact: true })).toHaveValue('匯入活動'); await expect(page.getByLabel('活動說明', { exact: true })).toHaveValue('原說明\n第二行');
+  await card.getByRole('link', { name: '開啟目的原稿', exact: true }).click(); await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click(); await expectControlValue(page.getByLabel('活動名稱', { exact: true }), '匯入活動'); await expectControlValue(page.getByLabel('活動說明', { exact: true }), '原說明\n第二行');
   let writes = 0, payload: unknown; page.on('request', r => { if (r.method() === 'POST' && r.url().endsWith('/activities/drafts')) { writes++; payload = r.postDataJSON(); } }); await page.getByRole('button', { name: '建立活動草稿', exact: true }).click(); await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/); expect(writes).toBe(1); expect(payload).toMatchObject({ clientIntent: intent });
 });
 test('leaving the import page during hashing cannot finish an archive write', async ({ page, context }) => {

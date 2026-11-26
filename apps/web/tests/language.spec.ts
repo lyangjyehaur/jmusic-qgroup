@@ -1,4 +1,4 @@
-import { toggleMusicTerm, chooseOption } from './kimi-controls';
+import { expectAvailableOption, toggleMusicTerm, chooseOption, expectControlValue, selectControl } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 import { denyDraftWrites, durableRows } from './draft-helpers';
@@ -40,8 +40,8 @@ for (const language of ['zh-CN', 'zh-TW']) test(language+' account saves retain 
   await page.goto('/me/profile');const field = page.getByLabel(simplified ? '站内称呼' : '站內稱呼', { exact: true });await field.fill(raw);
   const sent = page.waitForRequest(request => request.url().endsWith('/api/v2/me/profile') && request.method() === 'PUT');
   await page.getByRole('button', { name: simplified ? '保存称呼' : '保存稱呼', exact: true }).click();expect((await sent).postDataJSON().nickname).toBe(raw);
-  await expect(page.getByText(simplified ? '已保存称呼。' : '已保存稱呼。', { exact: true })).toBeVisible();await expect(field).toHaveValue(raw);
-  await page.reload();await expect(field).toHaveValue(raw);await expect(page.locator('.viewer')).toHaveText(raw);
+  await expect(page.getByText(simplified ? '已保存称呼。' : '已保存稱呼。', { exact: true })).toBeVisible();await expectControlValue(field, raw);
+  await page.reload();await expectControlValue(field, raw);await expect(page.locator('.viewer')).toHaveText(raw);
   if (simplified) {
     await page.setViewportSize({ width: 360, height: 800 });await expect(page.getByRole('banner')).toHaveCount(1);
     await page.evaluate(() => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve))));
@@ -52,13 +52,13 @@ test('a simplified activity form preserves the original category protocol and mi
   await languageHeader(context, 'zh-CN');await context.addCookies([{ name: 'kanban_session', value: 'fixture-alice', url: `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, httpOnly: true, sameSite: 'Lax' }]);
   await page.goto('/activities/new');const field = page.getByLabel('活动名称', { exact: true });await field.fill('后台發 · 帐号後臺');
   await chooseOption(page,'活动类型',{label:'运动'});await expect(page.getByLabel('活动类型',{exact:true})).toContainText('运动');
-  await expect(page.getByText('正在保存本机原稿…', { exact: true })).toHaveCount(0);await page.reload();await expect(field).toHaveValue('后台發 · 帐号後臺');await expect(page.getByLabel('活动类型', { exact: true })).toContainText('运动');
+  await expect(page.getByText('正在保存本机原稿…', { exact: true })).toHaveCount(0);await page.reload();await expectControlValue(field, '后台發 · 帐号後臺');await expect(page.getByLabel('活动类型', { exact: true })).toContainText('运动');
   await page.getByRole('button',{name:'恢复本机原稿',exact:true}).click();
   await page.getByLabel('地点',{exact:true}).fill('后台發');await page.getByLabel('活动日期',{exact:true}).fill('2099-12-12');await page.getByLabel('开始时间',{exact:true}).fill('14:30:25');
   await page.getByRole('button',{name:'进阶设定',exact:false}).click();await page.getByLabel('报名截止',{exact:true}).fill('2099-12-11T14:30:00');
   const sent=page.waitForRequest(request=>request.url().endsWith('/api/v2/activities/drafts')&&request.method()==='POST');
   await page.getByRole('button',{name:'建立活动草稿',exact:true}).click();expect((await sent).postDataJSON().values).toMatchObject({category:'运动',title:'后台發 · 帐号後臺',location:'后台發'});
-  await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);await expect(field).toHaveValue('后台發 · 帐号後臺');
+  await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);await expectControlValue(field, '后台發 · 帐号後臺');
 });
 test('simplified persistence failure prevents writes and keeps the original nickname draft',async({page,context})=>{
   await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);
@@ -70,15 +70,15 @@ test('simplified persistence failure prevents writes and keeps the original nick
 test('simplified history interprets only state fields and preserves user text that matches protocol words',async({page,context})=>{
   await languageHeader(context,'zh-CN');const raw='后台發 · 帐号後臺';
   await page.route('**/api/v2/activities/listen/history',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,entries:[{id:'999',version:1,actorName:raw,action:'event_updated',before:{title:'confirmed',nickname:'waiting',fee_policy:raw,status:'waiting'},after:{title:'accepted',nickname:'pending',fee_policy:raw+' next',status:'confirmed'},reason:raw,createdAt:'2026-11-18T08:00:00Z'}],nextBefore:null}});});
-  await page.goto('/activities/listen/history');await page.locator('.history-entry summary').click();
+  await page.goto('/activities/listen/history');await page.locator(".history-entry .disclosure-trigger").click();
   await expect(page.getByText('confirmed → accepted',{exact:true})).toBeVisible();await expect(page.getByText('waiting → pending',{exact:true})).toBeVisible();await expect(page.getByText(raw+' → '+raw+' next',{exact:true})).toBeVisible();
-  await expect(page.getByText('候补 → 正式／已确认',{exact:true})).toBeVisible();await expect(page.locator('.history-entry summary')).toContainText(raw);
+  await expect(page.getByText('候补 → 正式／已确认',{exact:true})).toBeVisible();await expect(page.locator(".history-entry .disclosure-trigger")).toContainText(raw);
 });
 test.describe('simplified bot delivery recovery',()=>{
   test.use({botDeliveryExamples:true});
   test('mismatched receipts localize the error and preserve the command without another queue',async({page,context})=>{
     await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);
-    await page.goto('/activities/listen/bot-deliveries?delivery=1');await expect(page.getByRole('combobox',{name:'投递状态',exact:true}).locator('option[value="failed"]')).toHaveText('失败');await expect(page.getByRole('combobox',{name:'通知类型',exact:true}).locator('option[value="settlement_updated"]')).toHaveText('结算发布');
+    await page.goto('/activities/listen/bot-deliveries?delivery=1');await expectAvailableOption(page.getByRole('combobox',{name:'投递状态',exact:true}),'failed','失败');await expectAvailableOption(page.getByRole('combobox',{name:'通知类型',exact:true}),'settlement_updated','结算发布');
     let writes=0;await page.route('**/api/v2/activities/listen/bot-deliveries/1/retry',route=>{writes++;return route.abort();});
     await page.getByRole('checkbox',{name:'我已核对目标群、发送模式与重送内容',exact:true}).check();await page.getByRole('button',{name:'建立重送工作',exact:true}).click();const recover=page.getByRole('button',{name:'查回原重送结果',exact:true});await expect(recover).toBeVisible();
     const original=(await durableRows(page)).find(row=>row.key.includes('bot-delivery:')&&row.raw!=='null')!;
@@ -92,7 +92,7 @@ test.describe('simplified bot delivery recovery',()=>{
     await expect(other.getByRole('alert').filter({hasText:'其他分页已更新原稿。这个分页的内容已保全，请先读取已保存版本。'})).toBeVisible();expect(writes).toBe(1);expect((await durableRows(other,'versions')).filter(row=>row.key.includes('bot-delivery:')).length).toBeGreaterThan(0);
   });
 });
-for(const language of ['zh-CN','zh-TW']) test(language+' localized summary chunks keep original content and copy-field layout',async({page,context})=>{
+for(const language of ['zh-CN','zh-TW']) test(language+" localized .disclosure-trigger chunks keep original content and copy-field layout",async({page,context})=>{
   await languageHeader(context,language);const simplified=language==='zh-CN',raw='后台發 · 帐号後臺';
   await page.route('**/api/v2/activities/listen',async route=>{const response=await route.fetch(),body=await response.json();await route.fulfill({response,json:{...body,title:raw,location:raw+' place',description:raw+' description',feePolicy:raw+' fee'}});});
   await page.addInitScript(()=>{Object.defineProperty(navigator,'clipboard',{configurable:true,value:{writeText:async(text:string)=>{(window as unknown as {copied:string}).copied=text;}}});});
@@ -134,8 +134,8 @@ test.describe('simplified management display fragments',()=>{
   test('catalog action labels preserve names and category wire values while keeping review unsent',async({page,context})=>{
     await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-registration-admin',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);
     let writes=0;page.on('request',request=>{if(['PUT','POST','DELETE'].includes(request.method()))writes++;});await page.goto('/admin/music-entries');await page.getByRole('button',{name:'编辑 YOASOBI',exact:true}).click();
-    await expect(page.getByRole('region',{name:'词条操作核对',exact:true}).getByRole('heading',{name:'编辑词条',exact:true})).toBeVisible();await expect(page.getByLabel('词条名称',{exact:true})).toHaveValue('YOASOBI');
-    await page.getByLabel('词条分类',{exact:true}).selectOption('领域');await expect(page.getByLabel('词条分类',{exact:true})).toHaveValue('领域');await expect(page.getByLabel('词条分类',{exact:true}).locator('option[value="领域"]')).toHaveText('领域');expect(writes).toBe(0);
+    await expect(page.getByRole('region',{name:'词条操作核对',exact:true}).getByRole('heading',{name:'编辑词条',exact:true})).toBeVisible();await expectControlValue(page.getByLabel('词条名称',{exact:true}), 'YOASOBI');
+    await selectControl(page.getByLabel('词条分类',{exact:true}), '领域');await expectControlValue(page.getByLabel('词条分类',{exact:true}), '领域');await expectAvailableOption(page.getByLabel('词条分类',{exact:true}),'领域','领域');expect(writes).toBe(0);
   });
 });
 

@@ -3,7 +3,7 @@ import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({ musicTrend: true });
-async function openChart(page:Page){const details=page.locator('.trend-history');await details.waitFor();if(!await details.evaluate(el=>(el as HTMLDetailsElement).open))await details.locator(':scope > summary').click();}
+async function openChart(page:Page){const details=page.locator('.trend-history');await details.waitFor();if(!await details.evaluate(el=>el.hasAttribute('data-open')))await details.getByRole('button',{name:'詞條選用變化',exact:true}).click();}
 const recentMembers = (page: Page) => page.getByRole('region', { name: '最近新增同好', exact: true });
 async function login(context: BrowserContext, user = 'alice') { await context.addCookies([{ name: 'kanban_session', value: 'fixture-' + user, url: origin, httpOnly: true, sameSite: 'Lax' }]); }
 async function auth(context: BrowserContext) { const viewer = await (await context.request.get('/api/v2/session')).json(); return { Origin: origin, 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() }; }

@@ -1,3 +1,4 @@
+import { expectControlValue, selectControl } from './kimi-controls';
 import { denyDraftWrites, damageDraft, durableRows } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -110,7 +111,7 @@ test('shows historical payer liability without invented paid balances and loads 
   await page.goto(base);
   await expect(page.getByRole('heading', {name:'第 1 版 · 逐人結算',exact:true})).toBeVisible();
   await page.getByText('付款人應付合計', {exact:true}).click();
-  const totals = page.locator('details').filter({has:page.locator('summary').filter({hasText:/^付款人應付合計$/})});
+  const totals = page.locator(".disclosure").filter({has:page.locator(".disclosure-trigger").filter({hasText:/^付款人應付合計$/})});
   await expect(totals).toContainText('小青 · ¥3.34');
   await expect(totals).toContainText('小白 · ¥3.33');
   await expect(totals).toContainText('本版未保存收付款快照');
@@ -119,7 +120,7 @@ test('shows historical payer liability without invented paid balances and loads 
   await page.setViewportSize({width:360,height:800});
   expect(await page.evaluate(()=>document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.getByRole('link', {name:'核對並發布逐人結算',exact:true}).click();
-  await expect(page.getByLabel('費用金額', {exact:true})).toHaveValue('10.00');
+  await expectControlValue(page.getByLabel('費用金額', {exact:true}), '10.00');
   await expect(page.getByRole('checkbox', {name:/允許群通知包含逐人金額/})).not.toBeChecked();
   await page.getByLabel('發布／修改原因（最多 300 字）', {exact:true}).fill('補核對');
   await prepare(page,'12.00');
@@ -140,7 +141,7 @@ test('plans rooms without money and publishes actual rooms with frozen separate 
   await page.goto('/activities/listen/rooms');
   await page.getByRole('button', { name: '新增包間', exact: true }).click();
   await page.getByLabel('包間名稱', { exact: true }).fill('一房');
-  await page.getByLabel('包間付款人', { exact: true }).selectOption({ label: '小青' });
+  await selectControl(page.getByLabel('包間付款人', { exact: true }), { label: '小青' });
   await page.getByText('包間人員 · 0 人', { exact: true }).click();
   for (const name of ['小青', '小白', '同行']) await page.getByRole('checkbox', { name, exact: true }).check();
   await page.getByRole('checkbox', { name: /已核對包間人員與付款人/ }).check();
@@ -149,9 +150,9 @@ test('plans rooms without money and publishes actual rooms with frozen separate 
   await page.getByRole('link', { name: '收付款帳本', exact: true }).click();
   await expect(page.getByText('尚無已確認款項，申報確認後才會列入。', { exact: true })).toBeVisible();
   await page.goto(base + '/edit');
-  await expect(page.getByLabel('結算方式', { exact: true })).toHaveValue('rooms');
+  await expectControlValue(page.getByLabel('結算方式', { exact: true }), 'rooms');
   await page.getByLabel('包間消費金額', { exact: true }).fill('10');
-  await page.getByLabel('店家款項狀態', { exact: true }).selectOption('paid');
+  await selectControl(page.getByLabel('店家款項狀態', { exact: true }), 'paid');
   await page.getByLabel('實際付款時間（含時區）', { exact: true }).fill('2026-11-16T00:00:00Z');
   await page.getByRole('checkbox', { name: /已逐人核對名單/ }).check();
   await preview(page);
@@ -194,7 +195,7 @@ test('keeps original UUID and body through uncertain save, reload and inbox reco
   await expect(page.getByRole('button', { name: '確認原結算發布結果', exact: true })).toBeVisible();
   expect(keys).toHaveLength(1);
   await page.getByRole('button', { name: '返回活動', exact: true }).click();
-  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
   await page.locator('header').getByRole('link', { name: /^收件匣/ }).click();
   await expect(page.getByRole('link', { name: '逐人結算', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '逐人結算', exact: true }).click();
@@ -211,13 +212,13 @@ test('restores incomplete payer drafts, requires preservation for damaged drafts
   await login(context);
   await page.goto(base + '/edit');
   await prepare(page);
-  await page.getByLabel('店家款項狀態', { exact: true }).selectOption('paid');
+  await selectControl(page.getByLabel('店家款項狀態', { exact: true }), 'paid');
   page.on('dialog', (d) => void d.accept());
   await page.reload();
   await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
-  await expect(page.getByLabel('實際付款金額', { exact: true })).toHaveValue('');
+  await expectControlValue(page.getByLabel('實際付款金額', { exact: true }), '');
   await expect(page.getByRole('button', { name: '保全原稿後繼續', exact: true })).toHaveCount(0);
-  await page.getByLabel('店家款項狀態', { exact: true }).selectOption('unpaid');
+  await selectControl(page.getByLabel('店家款項狀態', { exact: true }), 'unpaid');
   await preview(page);
   await denyDraftWrites(page, 'activity-draft:settlement:');
   let writes = 0;
@@ -269,7 +270,7 @@ test('edits all five allocation modes, selected scope and split payer ownership 
   await prepare(page, '10');
   await page.getByLabel('分攤依據', { exact: true }).fill('已核對分攤');
   for (const mode of ['shares', 'equal', 'weights', 'fixed', 'duration']) {
-    await page.getByLabel('分攤方式', { exact: true }).selectOption(mode);
+    await selectControl(page.getByLabel('分攤方式', { exact: true }), mode);
     if (mode === 'weights')
       for (const [name, n] of [
         ['小青', '1'],
@@ -293,14 +294,14 @@ test('edits all five allocation modes, selected scope and split payer ownership 
         await page.getByLabel(name + ' 分鐘（0–1440）', { exact: true }).fill(n);
     await preview(page);
   }
-  await page.getByLabel('分攤方式', { exact: true }).selectOption('shares');
-  await page.getByLabel('分攤範圍', { exact: true }).selectOption('selected');
+  await selectControl(page.getByLabel('分攤方式', { exact: true }), 'shares');
+  await selectControl(page.getByLabel('分攤範圍', { exact: true }), 'selected');
   await page.getByRole('checkbox', { name: '同行', exact: true }).uncheck();
   const person = page.locator('.settlement-person').first();
-  await person.locator('summary').first().click();
+  await person.locator(".disclosure-trigger").first().click();
   await person.getByLabel('核對原因', { exact: true }).fill('兩人合付');
   await person.getByRole('button', { name: '新增付款歸屬', exact: true }).click();
-  await person.getByLabel('付款人', { exact: true }).nth(1).selectOption({ label: '小白' });
+  await selectControl(person.getByLabel('付款人', { exact: true }).nth(1), { label: '小白' });
   await person.getByLabel('付款比例', { exact: true }).nth(1).fill('2');
   await preview(page);
   await expect(
@@ -329,7 +330,7 @@ test('previews and freezes a code from the private library and preserves the cod
   await page.reload();
   await prepare(page);
   await page.getByText('本版收款碼 · 0 張', { exact: true }).click();
-  await page.getByLabel('微信收款碼來源', { exact: true }).selectOption({ label: '本次微信' });
+  await selectControl(page.getByLabel('微信收款碼來源', { exact: true }), { label: '本次微信' });
   await preview(page);
   await expect(
     page
@@ -391,8 +392,8 @@ test('rebases concurrent changes without losing edits and rejects an account-swi
   await page.getByRole('button', { name: '發布逐人結算', exact: true }).click();
   await expect(page.getByText('活動或名單已有更新；輸入仍保留，請核對目前安排後再保存', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '核對最新名冊與帳本，保留輸入', exact: true }).click();
-  await expect(page.getByLabel('費用金額', { exact: true })).toHaveValue('7.25');
-  await expect(page.getByLabel('結算備註（最多 1000 字）', { exact: true })).toHaveValue('保留核對');
+  await expectControlValue(page.getByLabel('費用金額', { exact: true }), '7.25');
+  await expectControlValue(page.getByLabel('結算備註（最多 1000 字）', { exact: true }), '保留核對');
   await expect(page.getByRole('checkbox', { name: /已逐人核對名單/ })).not.toBeChecked();
   await page.getByRole('checkbox', { name: /已逐人核對名單/ }).check();
   await preview(page);
@@ -402,12 +403,12 @@ test('rebases concurrent changes without losing edits and rejects an account-swi
   await expect(page.getByText('目前帳號已變更；請重新整理並確認帳號', { exact: true })).toBeVisible();
   page.on('dialog', (d) => void d.accept());
   await page.reload();
-  await expect(page.getByLabel('費用金額', { exact: true })).toHaveValue('');
+  await expectControlValue(page.getByLabel('費用金額', { exact: true }), '');
   await login(context);
   await page.reload();
-  await expect(page.getByLabel('費用金額', { exact: true })).toHaveValue('7.25');
+  await expectControlValue(page.getByLabel('費用金額', { exact: true }), '7.25');
   await page.getByRole('button', { name: '返回活動', exact: true }).click();
-  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
   await page.getByRole('navigation').getByRole('link', { name: '我的', exact: true }).click();
   await page.getByRole('link', { name: '帳號', exact: true }).click();
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click();

@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyDetailedSettlementInspection,LegacyRequestReceipt,decodeLegacyDetailedSettlement,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -43,5 +43,5 @@ export function LegacyDetailedSettlementRecovery({viewer,inventory,row,request,v
  {[...(plan.preview.snapshot.merchant_payments??[]),...(plan.preview.snapshot.merchant_payment?[plan.preview.snapshot.merchant_payment]:[])].map((tx,i)=><Text key={i}>隨單登記店家付款：{money(tx.amount_cents!)} · {tx.parties?.find(p=>p.id===tx.payer_id)?.name||tx.payer_id} · {tx.merchant} · {tx.occurred_at} · {tx.method}</Text>)}
  {plan.preview.group_preview&&<><Notice>重試會通知群聊，公開逐人金額與本版附圖。</Notice><pre className="preserve-lines">{plan.preview.group_preview}</pre></>}
  </div>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原逐人金額、付款歸屬、附圖及通知，使用原編號重試原結算操作'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原結算操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原逐人金額、付款歸屬、附圖及通知，使用原編號重試原結算操作'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原結算操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }

@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 
@@ -49,13 +50,13 @@ test('closing a companion operation preserves the draft and returning restores i
   await expect(page.getByRole('dialog')).toBeVisible();
   await expect(page.getByRole('button', { name: '繼續編輯', exact: true })).toBeVisible();
   await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
-  await expect(page.locator('#signup-name-0')).toHaveValue('保留的同行');
+  await expectControlValue(page.locator('#signup-name-0'), '保留的同行');
   await page.getByRole('button', { name: '返回活動', exact: true }).click();
   await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.getByRole('link', { name: '同行／代報名', exact: true }).click();
   await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
-  await expect(page.locator('#signup-name-0')).toHaveValue('保留的同行');
+  await expectControlValue(page.locator('#signup-name-0'), '保留的同行');
 });
 test('a roster withdrawal targets that person and refreshes the activity after confirmation', async ({ page, context }) => {
   const id = await setup(context);
@@ -65,8 +66,8 @@ test('a roster withdrawal targets that person and refreshes the activity after c
   const info = await (await context.request.get(`/api/v2/activities/${id}/registration`, { headers: await headers(context) })).json();
   const person = info.people.find((item: { isMe: boolean }) => item.isMe);
   await page.locator('#participants').getByRole('link', { name: '退出報名', exact: true }).click();
-  await expect(page.getByLabel('報名者', { exact: true })).toHaveValue(person.id);
-  await expect(page.getByLabel('報名操作', { exact: true })).toHaveValue('withdraw');
+  await expectControlValue(page.getByLabel('報名者', { exact: true }), person.id);
+  await expectControlValue(page.getByLabel('報名操作', { exact: true }), 'withdraw');
   await page.getByLabel(/^已核對此人的報名，確認/).check();
   await page.getByRole('button', { name: '提交報名操作', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
@@ -85,7 +86,7 @@ test('a self note can continue in the companion dialog without a competing navig
   await page.getByRole('link', { name: '同行／代報名', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('dialog').getByRole('button', { name: '恢復本機原稿', exact: true }).click();
-  await expect(page.locator('#signup-note-0')).toHaveValue('本人的原備註');
+  await expectControlValue(page.locator('#signup-note-0'), '本人的原備註');
   await page.getByRole('button', { name: '新增同行', exact: true }).click();
   await page.locator('#signup-name-1').fill('新增同行');
   await submit(page);

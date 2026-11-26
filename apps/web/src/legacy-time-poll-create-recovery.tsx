@@ -3,7 +3,7 @@ import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyPollCreationInspection,LegacyPollCreationResult,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -39,7 +39,7 @@ export function LegacyPollCreationRecovery({viewer,inventory,row,request,validat
  if(mapped?.kind==='request')return <Notice>原請求已完成，恢復紀錄已保存。<Link to={mapped.path}>查看時間投票</Link></Notice>;
  if(mapped)return <Notice>此原請求已有其他核對目的，請先查看原紀錄。</Notice>;
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原建立投票請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原建立請求已提交，只保存核對結果。</Text>:plan.state==='existing'?<Text>同一草稿已有投票；此紀錄不證明原請求已提交。核對後可保存既有投票位置。</Text>:<PollReview plan={plan} requestKey={request.requestKey}/>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對公開安排與群通知，使用原編號建立時間投票':'保存已核對的建立結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原建立投票請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='retryable'?'已核對公開安排與群通知，使用原編號建立時間投票':'保存已核對的建立結果'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原建立投票請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
 const localTime=(value:string,zone:string)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone,dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
 function PollReview({plan,requestKey}:{plan:Extract<z.infer<typeof LegacyPollCreationInspection>,{state:'retryable'}>;requestKey:string}) {

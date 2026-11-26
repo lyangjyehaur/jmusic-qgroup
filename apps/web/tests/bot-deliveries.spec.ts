@@ -1,4 +1,4 @@
-import { openAdminTool, openActivityTool } from './kimi-controls';
+import { openAdminTool, openActivityTool, selectControl } from './kimi-controls';
 import { test,expect } from './fixtures';
 import type { BrowserContext,Page } from '@playwright/test';
 import { denyDraftWrites } from './draft-helpers';
@@ -13,7 +13,7 @@ test('administrator reviews metadata and blocked uncertainty on mobile; site adm
   await login(context,'registration-admin');await page.setViewportSize({width:360,height:800});await page.goto('/admin');await openAdminTool(page,'bot 投遞紀錄');
   await expect(page.getByText('DO NOT EXPOSE PAYLOAD')).toHaveCount(0);await page.getByRole('button',{name:'核對通知 #3',exact:true}).click();await expect(page.getByRole('region',{name:'通知核對 #3',exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'建立重送工作',exact:true})).toHaveCount(0);
   await page.getByRole('link',{name:'前往授權核對入口',exact:true}).click();await expect(page.getByText('目前帳號或通知核對權限已變更。')).toBeVisible();await expect(page.getByText('合成未確認通知內容',{exact:true})).toHaveCount(0);
-  await page.goto('/admin/bot/deliveries');await page.getByRole('combobox',{name:'投遞狀態',exact:true}).selectOption('failed');await expect(page.getByRole('button',{name:'核對通知 #3',exact:true})).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'test-results/unified-bot-deliveries-mobile.png',fullPage:true});
+  await page.goto('/admin/bot/deliveries');await selectControl(page.getByRole('combobox',{name:'投遞狀態',exact:true}), 'failed');await expect(page.getByRole('button',{name:'核對通知 #3',exact:true})).toHaveCount(0);expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'test-results/unified-bot-deliveries-mobile.png',fullPage:true});
 });
 test('lost retry response survives reload and is recovered without creating a second intent',async({page,context})=>{
   await login(context);let lose=true;const writes:{key:string|undefined;body:string|null}[]=[];
@@ -55,7 +55,7 @@ test('an invalid bookmarked filter uses the recovery controls without issuing an
   page.on('request',request=>{if(request.url().includes('/api/v2/activities/listen/bot-deliveries'))queries.push(request.url());});
   await page.goto('/activities/listen/bot-deliveries?status=simulated&before=9223372036854775808');
   await expect(page.getByText('篩選條件無效，請重新選擇通知條件。',{exact:true})).toBeVisible();expect(queries).toEqual([]);
-  await page.getByRole('combobox',{name:'投遞狀態',exact:true}).selectOption('failed');
+  await selectControl(page.getByRole('combobox',{name:'投遞狀態',exact:true}), 'failed');
   await expect(page.getByRole('button',{name:'核對通知 #1',exact:true})).toBeVisible();
   expect(queries).toHaveLength(1);expect(new URL(queries[0]!).searchParams.toString()).toBe('status=failed');
   await expect(page.getByText('篩選條件無效，請重新選擇通知條件。',{exact:true})).toHaveCount(0);

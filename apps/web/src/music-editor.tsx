@@ -1,7 +1,7 @@
 import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Select, Disclosure } from './kimi-ui';
 import { categoryLabel } from './music-entries';
 import type { MusicSelection } from './music-selection';
 import { MusicSearch, useMusicSearch } from './music-search';
@@ -16,11 +16,10 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
       const entry = form.entries.find(entry => entry.id === selected.entryId);
       const name = entry?.name ?? uiText('已移除的詞條');
       return <li key={selected.entryId}><label><span>{name}</span>{entry?.kind === 'sub' &&
-        <select aria-label={name + '喜歡程度'} value={selected.level} disabled={form.locked}
-          onChange={event => form.level(selected.entryId, Number(event.target.value))}>
+        <Select aria-label={name + '喜歡程度'} value={selected.level} disabled={form.locked} onChange={event => form.level(selected.entryId, Number(event.target.value))}>
           {[[4, uiText('本命')], [3, uiText('常聽')], [2, uiText('聽過一些')], [1, uiText('只聽過幾首')]].map(([value, label]) =>
             <option key={value} value={value}>{label}</option>)}
-        </select>}</label><Button variant="ghost" size="sm" aria-label={'移除' + name}
+        </Select>}</label><Button variant="ghost" size="sm" aria-label={'移除' + name}
           disabled={form.locked} onClick={() => form.remove(selected.entryId)}>移除</Button></li>;
     })}</ul> : <Text tone="muted">請選擇詞條。</Text>}
     {form.dirty && <div className="editor-actions"><span className="mobile-summary" role="status">
@@ -52,13 +51,13 @@ export function ProfileEditor({ selection: form }: { selection: MusicSelection }
         const groups = [...new Set(entries.map(entry => entry.category))];
         return <Surface className="selection-group" key={kind}><Heading level={2}>
           {kind === 'main' ? '領域' : '細分'} <small>{kind === 'main' ? `${form.mainCount} / 5` : `${form.subCount} / 15`}</small>
-          </Heading>{groups.map(category => <details key={category} open className="music-category">
-            <summary>{categoryLabel(category)} · {entries.filter(entry => entry.category === category).length} 項</summary>
+          </Heading>{groups.map(category => <Disclosure key={category} open className="music-category"  title={<>{categoryLabel(category)} · {entries.filter(entry => entry.category === category).length} 項</>}>
+
             <div className="choice-list">{entries.filter(entry => entry.category === category).map(entry =>
               <Button key={entry.id} variant={form.selected.has(entry.id) ? 'primary' : 'secondary'}
                 aria-pressed={form.selected.has(entry.id)} disabled={form.locked}
                 onClick={() => form.toggle(entry)}>{entry.name}</Button>)}</div>
-          </details>)}{!entries.length && <Text tone="muted">{filters.search || filters.kind || filters.category ? '沒有符合的詞條。' : '詞庫尚無詞條。'}</Text>}
+          </Disclosure>)}{!entries.length && <Text tone="muted">{filters.search || filters.kind || filters.category ? '沒有符合的詞條。' : '詞庫尚無詞條。'}</Text>}
         </Surface>;
       })}
     </section><SelectionPanel selection={form} /></div></div>;

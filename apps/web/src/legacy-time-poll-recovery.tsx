@@ -2,7 +2,7 @@ import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyTimePollInspection,LegacyRequestReceipt,legacyTimePollId,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -36,7 +36,7 @@ export function LegacyTimePollRecovery({viewer,inventory,row,request,validate,re
  if(mapped?.kind==='request')return <Notice>原請求已完成，恢復紀錄已保存。<Link to={mapped.path}>查看時間投票</Link></Notice>;
  if(mapped)return <Notice>此原請求已有其他核對目的，請先查看原紀錄。</Notice>;
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原時間投票請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原操作已提交，只保存已核對結果；不重新投票、建立活動或通知。</Text>:<PollReview plan={plan} requestKey={request.requestKey}/>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原選擇、操作、安排及通知，使用原編號重試原時間投票操作'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原時間投票操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原選擇、操作、安排及通知，使用原編號重試原時間投票操作'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原時間投票操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
 const choices={yes:uiText('可以'),maybe:uiText('勉強可以'),no:uiText('不行')};
 const localTime=(value:string,zone:string)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone,dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));

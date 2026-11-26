@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button, Field } from './kimi-ui';
+import { Button, Field, Disclosure, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicProfile, ResetMusicPin, type Viewer } from '@qgroup/contracts';
 import { adminHttp, adminReadHttp, type Access } from './admin';
@@ -83,15 +83,15 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
     finally{if(active.current)setBusy(false);}
   }
   if(!profile&&!pending&&!record.loading&&!record.readError&&damaged===null&&!record.versions.length&&!message)return null;
-  return <Surface className="detail auth-panel"><details className="admin-disclosure" open={expanded} onToggle={event => setExpanded(event.currentTarget.open)}><summary>{profile ? '重設找回口令' : '口令操作結果'}</summary>
+  return <Surface className="detail auth-panel"><Disclosure className="admin-disclosure" open={expanded} onOpenChange={setExpanded}  title={<>{profile ? '重設找回口令' : '口令操作結果'}</>}>
     {profile && <>
     <Text>4–6 位數字，只供舊成分找回，仍須本次 QQ 授權。重設不解除帳號關聯，已關聯成分不能靠口令取回。</Text>
     <Text>重設後，這份成分尚未完成的找回授權將失效。口令不保存在瀏覽器。</Text>
     {disabled && !pending && <Text>請先完成或清除關聯草稿，再重設口令。</Text>}
     <form onSubmit={event => { event.preventDefault(); void save(); }}>
-      <label className="account-field">新找回口令<input type="password" inputMode="numeric" autoComplete="off" maxLength={6} value={pin} disabled={disabled || locked} onChange={event => { setPin(event.target.value); setConfirm(false); }} /></label>
+      <Field className="account-field" label={<>新找回口令</>}><input type="password" inputMode="numeric" autoComplete="off" maxLength={6} value={pin} disabled={disabled || locked} onChange={event => { setPin(event.target.value); setConfirm(false); }} /></Field>
       <Field label="重設原因"><textarea id={'music-pin-reason-' + id} rows={2} maxLength={500} value={reason} disabled={disabled || locked} onChange={event => { setReason(event.target.value); setConfirm(false); }} /></Field>
-      <label className="consent"><input type="checkbox" checked={confirm} disabled={disabled || locked} onChange={event => setConfirm(event.target.checked)} /><span>確認已核對成分及申請人，重設找回口令</span></label>
+      <Checkbox className="consent" checked={confirm} disabled={disabled || locked} onChange={event => setConfirm(event.target.checked)} label={<><span>確認已核對成分及申請人，重設找回口令</span></>} />
       <Button type="submit" loading={busy} disabled={disabled || locked || !confirm || !reason.trim() || !/^[0-9]{4,6}$/.test(pin.trim())}>重設口令</Button>
     </form>
     </>}
@@ -111,5 +111,5 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
       {!history.data.pages[0]?.history.length && <Notice>目前沒有口令重設紀錄。</Notice>}{history.hasNextPage && <Button variant="secondary" loading={history.isFetchingNextPage} onClick={() => void history.fetchNextPage()}>載入更多口令紀錄</Button>}
     </>}
     </>}
-  </details></Surface>;
+  </Disclosure></Surface>;
 }

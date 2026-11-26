@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox, Select, Disclosure, RadioGroup } from './kimi-ui';
 import { z } from 'zod';
 import { BotPolicy, BotPolicyCommand, BotPolicyView, type BotKind, type Viewer } from '@qgroup/contracts';
 import { BOT_DEFAULT_TEMPLATE, BOT_TEMPLATE_LIMITS, validateBotPolicy } from '@qgroup/domain';
@@ -307,63 +307,44 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
       {draft && value && (
         <Surface className="detail auth-panel" role="region" aria-label="bot 設定核對">
           <fieldset disabled={locked || draft.command === 'revert'}>
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={value.enabled}
-                onChange={(e) => edit({ enabled: e.target.checked })}
-              />
+            <Checkbox className="consent" checked={value.enabled} onChange={(e) => edit({ enabled: e.target.checked })} label={<>
+
               <span>啟用主動通知</span>
-            </label>
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={value.replies_enabled}
-                onChange={(e) => edit({ replies_enabled: e.target.checked })}
-              />
+            </>} />
+            <Checkbox className="consent" checked={value.replies_enabled} onChange={(e) => edit({ replies_enabled: e.target.checked })} label={<>
+
               <span>啟用群內指令回覆</span>
-            </label>
+            </>} />
             <Field label="發送模式">
-              <select
-                value={value.dry_run === null ? 'inherit' : value.dry_run ? 'simulate' : 'live'}
-                onChange={(e) =>
+              <Select value={value.dry_run === null ? 'inherit' : value.dry_run ? 'simulate' : 'live'} onChange={(e) =>
                   edit({
                     dry_run: e.target.value === 'inherit' ? null : e.target.value === 'simulate',
                   })
-                }
-              >
+                }>
                 <option value="inherit">沿用部署設定</option>
                 <option value="simulate">模擬</option>
                 <option value="live">實際發送</option>
-              </select>
+              </Select>
             </Field>
             <Text>模擬紀錄不算已送出；切換為實際發送不重播舊模擬紀錄。</Text>
             <Heading level={2}>通知類型</Heading>
             {Object.entries(botKindLabels).map(([key, label]) => (
-              <label className="consent" key={key}>
-                <input
-                  type="checkbox"
-                  checked={value.broadcast_kinds.includes(key as BotKind)}
-                  onChange={(e) =>
+              <Checkbox className="consent" key={key} checked={value.broadcast_kinds.includes(key as BotKind)} onChange={(e) =>
                     edit({
                       broadcast_kinds: e.target.checked
                         ? [...value.broadcast_kinds, key as BotKind]
                         : value.broadcast_kinds.filter((k) => k !== key),
                     })
-                  }
-                />
+                  } label={<>
+
                 <span>{label}</span>
-              </label>
+              </>} />
             ))}
             <Heading level={2}>提醒與發送時間</Heading>
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={value.schedule_enabled}
-                onChange={(e) => edit({ schedule_enabled: e.target.checked })}
-              />
+            <Checkbox className="consent" checked={value.schedule_enabled} onChange={(e) => edit({ schedule_enabled: e.target.checked })} label={<>
+
               <span>啟用排程提醒</span>
-            </label>
+            </>} />
             <Field label="報名截止前幾小時提醒">
               <input
                 type="number"
@@ -391,14 +372,10 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
                 onChange={(e) => edit({ min_interval_seconds: e.target.value })}
               />
             </Field>
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={value.quiet_enabled}
-                onChange={(e) => edit({ quiet_enabled: e.target.checked })}
-              />
+            <Checkbox className="consent" checked={value.quiet_enabled} onChange={(e) => edit({ quiet_enabled: e.target.checked })} label={<>
+
               <span>啟用勿擾時段</span>
-            </label>
+            </>} />
             <Field label="勿擾開始">
               <input
                 type="time"
@@ -417,11 +394,7 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
               <input value={value.timezone} onChange={(e) => edit({ timezone: e.target.value })} />
             </Field>
             <Heading level={2}>群政策</Heading>
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={groups === null}
-                onChange={(e) =>
+            <Checkbox className="consent" checked={groups === null} onChange={(e) =>
                   edit({
                     groups: e.target.checked
                       ? null
@@ -434,10 +407,10 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
                             broadcast,
                           })) ?? []),
                   })
-                }
-              />
+                } label={<>
+
               <span>沿用部署目標群</span>
-            </label>
+            </>} />
             <Text>
               群標識使用 group_openid，不是 QQ
               群號。關閉沿用後，空清單會停用所有群回覆與主動通知。主動通知只能選一群；換群會作廢舊待送通知。
@@ -464,24 +437,17 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
                     }
                   />
                 </Field>
-                <label className="consent">
-                  <input
-                    type="checkbox"
-                    checked={group.replies}
-                    onChange={(e) =>
+                <Checkbox className="consent" checked={group.replies} onChange={(e) =>
                       edit({
                         groups: groups.map((g, i) => (i === index ? { ...g, replies: e.target.checked } : g)),
                       })
-                    }
-                  />
+                    } label={<>
+
                   <span>允許此群回覆</span>
-                </label>
-                <label className="consent">
-                  <input
-                    type="radio"
-                    name="broadcast-target"
-                    checked={group.broadcast}
-                    onChange={() =>
+                </>} />
+                <RadioGroup className="broadcast-target" label="主動通知目標" classNames={{legend:'sr-only'}}
+                    options={[{value:String(index),label:uiText('主動通知此群')}]} value={group.broadcast?String(index):''}
+                    name="broadcast-target" onValueChange={() =>
                       edit({
                         groups: groups.map((g, i) => ({
                           ...g,
@@ -490,8 +456,6 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
                       })
                     }
                   />
-                  <span>主動通知此群</span>
-                </label>
                 <Button
                   variant="secondary"
                   onClick={() => edit({ groups: groups.filter((_, i) => i !== index) })}
@@ -528,24 +492,21 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
             )}
             <Heading level={2}>消息模板</Heading>
             <Field label="模板類型">
-              <select
-                value={kind}
-                onChange={(e) => {
+              <Select value={kind} onChange={(e) => {
                   setKind(e.target.value as BotKind);
                   setPreview(null);
-                }}
-              >
+                }}>
                 {Object.entries(botKindLabels).map(([key, label]) => (
                   <option key={key} value={key}>
                     {label}
                   </option>
                 ))}
-              </select>
+              </Select>
             </Field>
-            <label className="consent">
-              <input type="checkbox" checked={rich} onChange={(e) => setRich(e.target.checked)} />
+            <Checkbox className="consent" checked={rich} onChange={(e) => setRich(e.target.checked)} label={<>
+
               <span>Markdown 模板</span>
-            </label>
+            </>} />
             <Field label="自訂模板">
               <textarea
                 rows={6}
@@ -559,15 +520,15 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
               />
             </Field>
             <Text>留空使用系統模板；自訂須保留 {'{url}'}，最多 2000 字。Markdown 仍需部署啟用。</Text>
-            <details>
-              <summary>可用變數</summary>
+            <Disclosure   title={<>可用變數</>}>
+
               <Text>
                 {Object.keys(BOT_TEMPLATE_LIMITS)
                   .map((key) => '{' + key + '}')
                   .join(' ')}
                 。普通文字預設：{BOT_DEFAULT_TEMPLATE}
               </Text>
-            </details>
+            </Disclosure>
             <Button variant="secondary" onClick={() => void showPreview()}>
               預覽模板
             </Button>
@@ -583,8 +544,8 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
           )}
           {stale && !draft.pending && <Text role="alert">設定已有更新，請核對最新版後重新確認。</Text>}
           {dirty && !draft.pending && catalog.data && (
-            <details>
-              <summary>核對目前保存的設定</summary>
+            <Disclosure   title={<>核對目前保存的設定</>}>
+
               <dl>
                 {(Object.keys(policyLabels) as (keyof BotPolicy)[]).map((key) => (
                   <div key={key}>
@@ -593,21 +554,16 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
                   </div>
                 ))}
               </dl>
-            </details>
+            </Disclosure>
           )}
 
           {draft.command === 'revert' && (
             <Text role="alert">將恢復上一版設定並追加新版本；不回放已投遞或模擬紀錄。</Text>
           )}
-          <label className="consent">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              disabled={locked || stale || !!catalog.error}
-              onChange={(e) => setConfirmed(e.target.checked)}
-            />
+          <Checkbox className="consent" checked={confirmed} disabled={locked || stale || !!catalog.error} onChange={(e) => setConfirmed(e.target.checked)} label={<>
+
             <span>我已核對發送模式、群政策與設定變更</span>
-          </label>
+          </>} />
           <div className="page-actions">
             <Button
               loading={busy}

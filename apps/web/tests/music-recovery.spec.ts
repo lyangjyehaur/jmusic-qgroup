@@ -1,4 +1,4 @@
-import { expectOption, toggleMusicTerm, expectMusicTerm, openMusicContact } from './kimi-controls';
+import { expectOption, toggleMusicTerm, expectMusicTerm, openMusicContact, expectControlValue } from './kimi-controls';
 import { denyDraftWrites,durableRows } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -26,7 +26,7 @@ test('a guest recovers original music through one login and explicit linking wit
   await openMusicContact(page);await expect(page.getByText('10001 · 舊成分查詢號碼，未經騰訊驗證',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'保存聯絡 QQ',exact:true})).toHaveCount(0);
 });
 test('an existing account binds QQ, keeps its name and reopens the original selections after an untouched blank editor',async({page,context})=>{
-  await login(context);await page.goto('/me/music');await expectMusicTerm(page, 'Aimer', false);await page.locator('.music-profile-tools > summary').click();await page.getByRole('link',{name:'找回舊成分',exact:true}).click();await pin(page);await oauth(page,true);await complete(page);
+  await login(context);await page.goto('/me/music');await expectMusicTerm(page, 'Aimer', false);await page.locator(".music-profile-tools .disclosure-trigger").click();await page.getByRole('link',{name:'找回舊成分',exact:true}).click();await pin(page);await oauth(page,true);await complete(page);
   await page.getByRole('link',{name:'編輯原成分',exact:true}).click();await expect(page.locator('.viewer')).toHaveText('小白');await expectMusicTerm(page, 'Aimer', true);await expect(page.getByRole('button',{name:'保存我的成分',exact:true})).toBeDisabled();
 });
 test('an unreadable PIN response is checked from the server and never resends or stores the PIN automatically',async({page})=>{
@@ -58,6 +58,6 @@ test('storage failure blocks sending PINs, and damaged operation records are pre
 });
 test('an already populated account cannot replace its selections with a PIN claim',async({page,context})=>{
   await login(context);await page.goto('/me/music');await toggleMusicTerm(page, 'YOASOBI');await page.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
-  await page.goto('/me/music/recover');await pin(page);await expect(page.getByText('目前帳號已有成分，請聯絡管理員核對；原資料不會覆蓋',{exact:true})).toBeVisible();await expect(page.getByLabel('原口令',{exact:true})).toHaveValue('');
+  await page.goto('/me/music/recover');await pin(page);await expect(page.getByText('目前帳號已有成分，請聯絡管理員核對；原資料不會覆蓋',{exact:true})).toBeVisible();await expectControlValue(page.getByLabel('原口令',{exact:true}), '');
   await page.getByRole('link',{name:'回到我的成分',exact:true}).click();await expectMusicTerm(page, 'YOASOBI', true);
 });

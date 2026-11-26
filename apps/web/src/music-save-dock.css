@@ -13,8 +13,8 @@
 .music-save-feedback { grid-column: 1 / -1; display: grid; gap: 8px; font-size: 12px; }
 .music-save-feedback:empty { display: none; }
 .music-save-feedback p, .music-save-feedback .notice { margin: 0; }
-.music-save-feedback details { color: var(--app-muted); }
-.music-save-feedback summary { cursor: pointer; }
+.music-save-feedback .disclosure { color: var(--app-muted); }
+.music-save-feedback .disclosure-trigger { cursor: pointer; }
 .music-save-feedback ul { margin: 8px 0 0; padding-left: 20px; }
 .music-save-dock > .button { flex-shrink: 0; }
 .music-save-summary { flex: 1; }

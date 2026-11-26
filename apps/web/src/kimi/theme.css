@@ -72,8 +72,6 @@
 .kimi :is(.confirmation-row, th, .trial-room > header, .sort-rules, .selection-limits span, .tab .tab-count) { background: var(--app-bg); }
 .kimi :is(.quick-add-results, .music-filters .select-wrap select) { background: var(--paper-strong); }
 .kimi .limit-bar { background: var(--line); }
-.kimi .switch-row > i { background: var(--line); }
-.kimi .switch-row input:checked + i { background: var(--moss); }
 .kimi .sticky-save-bar { background: color-mix(in srgb, var(--bg) 96%, transparent); }
 .kimi :is(.activity-row:hover, .sparse-list a) { background: var(--paper); }
 .kimi :is(.bubble-legend i, .term-bubble) { color: var(--moss); background: var(--moss-soft); border-color: var(--app-contour); }

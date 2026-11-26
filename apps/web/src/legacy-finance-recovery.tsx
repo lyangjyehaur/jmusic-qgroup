@@ -3,7 +3,7 @@ import { FinanceDetails,financeMoney as money } from './finance-details';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyFinanceInspection,LegacyRequestReceipt,decodeLegacyFinance,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -38,5 +38,5 @@ export function LegacyFinanceRecovery({viewer,inventory,row,request,validate,ref
  if(mapped)return <Notice>此原請求已有其他核對目的，請先查看原紀錄。</Notice>;
  const actions={record:uiText("登記款項"),report:uiText("申報款項"),accept:uiText("確認申報"),reject:uiText("退回申報"),withdraw:uiText("撤回申報"),reverse:uiText("沖正款項"),close:uiText("確認結清"),reopen:uiText("重新核對帳務")};
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原款項請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原操作已提交，只保存已核對結果；不重新執行款項。</Text>:<div aria-label="原款項重試核對"><Text>{plan.title} · {actions[decoded.operation.command]}</Text><Text>原名冊版本 {decoded.revision}；原操作編號 {request.requestKey}。重試沿用原內容及預覽。</Text>{plan.preview.command.transaction&&<FinanceDetails payload={plan.preview.command.transaction} entryPath={path}/>}<Text>操作後：店家淨支出 {money(plan.preview.projection.cost_cents)} · 訂金 {money(plan.preview.projection.deposit_cents)} · 代收資金 {money(plan.preview.projection.held_cents)}</Text>{plan.preview.command.entry_id&&<Text>原款項編號：{plan.preview.command.entry_id}</Text>}{plan.preview.command.report_id&&<Text>申報編號：{plan.preview.command.report_id}</Text>}{plan.preview.command.bill_version!==undefined&&<Text>結清版本：{plan.preview.command.bill_version} · 帳本檢查點：{plan.preview.command.last_seq}</Text>}{plan.preview.command.reason&&<Text>原因：{plan.preview.command.reason}</Text>}</div>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原金額、流向及依據，使用原編號重試原款項操作'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原款項操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原金額、流向及依據，使用原編號重試原款項操作'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原款項操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }

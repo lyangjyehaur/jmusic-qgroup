@@ -1,3 +1,4 @@
+import { Button } from './kimi-ui';
 import { useEffect, useState } from 'react';
 
 export function PageTools() {
@@ -48,8 +49,8 @@ export function PageTools() {
     };
   }, []);
   if (!visible) return null;
-  return <button className="back-to-top" aria-label="回到頂部" onClick={() => {
+  return <Button variant="ghost" className="back-to-top" aria-label="回到頂部" onClick={() => {
     document.getElementById('main')?.focus({ preventScroll: true });
     window.scrollTo({ top: 0, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
-  }}><span aria-hidden="true">↑</span></button>;
+  }}><span aria-hidden="true">↑</span></Button>;
 }

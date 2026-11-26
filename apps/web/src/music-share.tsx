@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Surface, Text } from 'yahha-ui';
-import { Button, Field, Select } from './kimi-ui';
+import { Button, Field, Select, Checkbox } from './kimi-ui';
 import { Download } from 'lucide-react';
 
 import { musicSharePicks, musicSelectionText } from '@qgroup/domain';
@@ -39,10 +39,10 @@ function ShareEditor({ selection }: { selection: MusicSelection }) {
   return <>
     {selection.dirty && <Notice>使用目前草稿產生分享，不會自動保存。推薦同好仍依已保存成分計算。</Notice>}
     {picks.length !== selection.draft.selections.length && <Notice>{selection.draft.selections.length - picks.length} 個已移除詞條不會包含在分享中；原草稿仍保留。</Notice>}
-    <div className="share-layout"><Surface className="form-section music-share-options"><div className="section-heading"><span>分享</span><div><h2>分享圖片</h2></div></div><label className="consent"><input type="checkbox" checked={contact} disabled={!current?.contactQQ} onChange={event => setContact(event.target.checked)} /><span>包含我的聯絡 QQ</span></label>
-      <label className="consent"><input type="checkbox" checked={topMatch} onChange={event => setTopMatch(event.target.checked)} /><span>包含推薦同好</span></label>
+    <div className="share-layout"><Surface className="form-section music-share-options"><div className="section-heading"><span>分享</span><div><h2>分享圖片</h2></div></div><Checkbox className="consent" checked={contact} disabled={!current?.contactQQ} onChange={event => setContact(event.target.checked)} label={<><span>包含我的聯絡 QQ</span></>} />
+      <Checkbox className="consent" checked={topMatch} onChange={event => setTopMatch(event.target.checked)} label={<><span>包含推薦同好</span></>} />
       {topMatch && <><Field label="分享推薦排序"><Select aria-label="分享推薦排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}><option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option></Select></Field>
-        <label className="consent"><input type="checkbox" checked={topContact} disabled={!current?.topMatch?.contactQQ} onChange={event => setTopContact(event.target.checked)} /><span>包含同好的聯絡 QQ</span></label></>}
+        <Checkbox className="consent" checked={topContact} disabled={!current?.topMatch?.contactQQ} onChange={event => setTopContact(event.target.checked)} label={<><span>包含同好的聯絡 QQ</span></>} /></>}
       <Field label="圖片配色"><Select aria-label="圖片配色" value={dark ? 'dark' : 'light'} onChange={event => setDark(event.target.value === 'dark')}><option value="light">淺色</option><option value="dark">深色</option></Select></Field>
       <Text>圖片包含成分稱呼、固定 ID、詞條與選用人數；勾選後也會包含推薦同好或聯絡 QQ。不包含私人留言與性別。</Text>
     </Surface>

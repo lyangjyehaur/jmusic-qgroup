@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button, Field } from './kimi-ui';
+import { Button, Field, Select, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { ActivityLifecycle, ActivityLifecycleAction, ChangeActivityLifecycle } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -95,10 +95,10 @@ function Editor({viewer,initial}:{viewer:Member;initial:State}){
     {!data.actions.length&&<Notice>目前帳號沒有活動狀態管理權限。</Notice>}
     {stale&&!draft.pending&&<Notice>活動或名單已有更新，請先核對最新狀態。</Notice>}
     {(data.actions.length>0||draft.pending)&&<form noValidate onSubmit={event=>{event.preventDefault();void submit();}}><fieldset disabled={locked||data.removed}><legend className="sr-only">變更活動狀態</legend>
-      <Field label="操作"><select id="lifecycle-action" value={draft.action} onChange={event=>edit({action:event.target.value as DraftValue['action']})}><option value="">請選擇</option>{data.actions.map(item=><option key={item.action} value={item.action}>{labels[item.action]}</option>)}{draft.action&&!choice&&<option value={draft.action}>{labels[draft.action]}（目前不可操作）</option>}</select></Field>
+      <Field label="操作"><Select id="lifecycle-action" value={draft.action} onChange={event=>edit({action:event.target.value as DraftValue['action']})}><option value="">請選擇</option>{data.actions.map(item=><option key={item.action} value={item.action}>{labels[item.action]}</option>)}{draft.action&&!choice&&<option value={draft.action}>{labels[draft.action]}（目前不可操作）</option>}</Select></Field>
       {draft.action&&<Text>{hints[draft.action]}</Text>}{choice?.blockedReason&&<Notice>{choice.blockedReason}</Notice>}
       <Field label={<>原因{choice?.requiresReason?'（必填）':'（選填）'}</>}><textarea id="lifecycle-reason" rows={3} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></Field>
-      <label className="consent"><input type="checkbox" disabled={!available||stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>已核對目前狀態，確認{draft.action?labels[draft.action]:'此操作'}</span></label>
+      <Checkbox className="consent" disabled={!available||stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)} label={<><span>已核對目前狀態，確認{draft.action?labels[draft.action]:'此操作'}</span></>} />
     </fieldset><Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!available||stale))}>{draft.pending?'確認狀態操作結果':'提交狀態變更'}</Button></form>}
     {!draft.pending&&!data.removed&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新狀態，保留輸入</Button>}
     <DraftFeedback form={{...record,message:message||record.message}}/>

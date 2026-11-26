@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { fillAdvancedActivity, setActivityStart } from './activity-authoring-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
@@ -27,20 +28,20 @@ test('an unknown access result survives reload and replays the same operation on
 test('bot party and tentative links preset forms and never replace an existing signup draft or submit',async({page,context})=>{
   await login(context,'bob');page.on('dialog',dialog=>void dialog.accept());let writes=0;page.on('request',r=>{if(['POST','PUT','DELETE'].includes(r.method())&&r.url().includes('/activities/'))writes++;});
   await page.goto('/?event=listen&action=party');await expect(page).toHaveURL('/activities/listen/signup?preset=party');await expect(page.getByLabel('稱呼',{exact:true})).toBeVisible();await page.getByLabel('稱呼',{exact:true}).fill('保留的同行');
-  await page.goto('/?event=listen&action=tentative');await expect(page).toHaveURL('/activities/listen/signup?preset=tentative');await expect(page.getByLabel('稱呼',{exact:true})).toHaveValue('保留的同行');
-  await page.goto('/?event=karaoke&action=tentative');await expect(page.locator('#signup-intent')).toHaveValue('tentative');expect(writes).toBe(0);
+  await page.goto('/?event=listen&action=tentative');await expect(page).toHaveURL('/activities/listen/signup?preset=tentative');await expectControlValue(page.getByLabel('稱呼',{exact:true}), '保留的同行');
+  await page.goto('/?event=karaoke&action=tentative');await expectControlValue(page.locator('#signup-intent'), 'tentative');expect(writes).toBe(0);
 });
 test('bot report and onsite links open the intended controls without recording money or attendance',async({page,context})=>{
   await login(context);page.on('dialog',dialog=>void dialog.accept());let writes=0;page.on('request',r=>{if(['POST','PUT','DELETE'].includes(r.method())&&r.url().includes('/activities/'))writes++;});
-  await page.goto('/?event=listen&action=report');await expect(page).toHaveURL('/activities/listen/finance?preset=report#finance-operation');await expect(page.locator('#finance-command')).toHaveValue('report');await expect(page.locator('.finance-operation-panel')).toHaveAttribute('open','');
+  await page.goto('/?event=listen&action=report');await expect(page).toHaveURL('/activities/listen/finance?preset=report#finance-operation');await expectControlValue(page.locator('#finance-command'), 'report');await expect(page.locator('.finance-operation-panel')).toHaveAttribute('open','');
   await page.goto('/?event=listen&action=onsite');await expect(page).toHaveURL('/activities/listen/attendance?preset=onsite');await expect(page.getByText('現場參加者 1',{exact:true})).toBeVisible();expect(writes).toBe(0);
 });
 test('copy starts an independent draft, clears dates and defaults group notification on, and creates no roster',async({page,context})=>{
   await login(context);page.on('dialog',dialog=>void dialog.accept());let writes=0;page.on('request',r=>{if(['POST','PUT','DELETE'].includes(r.method())&&r.url().includes('/activities/'))writes++;});
-  await page.goto('/activities/new');await page.getByLabel('活動名稱',{exact:true}).fill('原本的新活動草稿');await page.goto('/?event=listen&action=copy');await expect(page).toHaveURL('/activities/new?copyFrom=listen');await expect(page.getByLabel('活動名稱',{exact:true})).toHaveValue('週末一起聽日系音樂');
-  await expect(page.getByLabel('開始時間',{exact:true})).toHaveValue('');await expect(page.getByLabel('報名截止',{exact:true})).toHaveValue('');await expect(page.getByLabel('發布後同步到 QQ 群',{exact:true})).toBeChecked();expect(writes).toBe(0);
-  await page.getByLabel('活動名稱',{exact:true}).fill('獨立的再約草稿');await setActivityStart(page,'2099-12-25T18:00:00');await fillAdvancedActivity(page,'報名截止','2099-12-24T18:00:00');await page.route('**/api/v2/activities/listen/copy-source',route=>route.abort());await page.reload();await expect(page.getByLabel('活動名稱',{exact:true})).toHaveValue('獨立的再約草稿');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await page.getByRole('button',{name:'建立活動草稿',exact:true}).click();await expect(page).toHaveURL(/\/activities\/[^/]+\/edit$/);const id=new URL(page.url()).pathname.split('/')[2]!;expect(id).not.toBe('listen');
-  expect((await(await context.request.get('/api/v2/activities/'+id+'/draft',{headers:await headers(context)})).json()).values.botEnabled).toBe(true);await page.goto('/activities/new');await expect(page.getByLabel('活動名稱',{exact:true})).toHaveValue('原本的新活動草稿');
+  await page.goto('/activities/new');await page.getByLabel('活動名稱',{exact:true}).fill('原本的新活動草稿');await page.goto('/?event=listen&action=copy');await expect(page).toHaveURL('/activities/new?copyFrom=listen');await expectControlValue(page.getByLabel('活動名稱',{exact:true}), '週末一起聽日系音樂');
+  await expectControlValue(page.getByLabel('開始時間',{exact:true}), '');await expectControlValue(page.getByLabel('報名截止',{exact:true}), '');await expect(page.getByLabel('發布後同步到 QQ 群',{exact:true})).toBeChecked();expect(writes).toBe(0);
+  await page.getByLabel('活動名稱',{exact:true}).fill('獨立的再約草稿');await setActivityStart(page,'2099-12-25T18:00:00');await fillAdvancedActivity(page,'報名截止','2099-12-24T18:00:00');await page.route('**/api/v2/activities/listen/copy-source',route=>route.abort());await page.reload();await expectControlValue(page.getByLabel('活動名稱',{exact:true}), '獨立的再約草稿');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await page.getByRole('button',{name:'建立活動草稿',exact:true}).click();await expect(page).toHaveURL(/\/activities\/[^/]+\/edit$/);const id=new URL(page.url()).pathname.split('/')[2]!;expect(id).not.toBe('listen');
+  expect((await(await context.request.get('/api/v2/activities/'+id+'/draft',{headers:await headers(context)})).json()).values.botEnabled).toBe(true);await page.goto('/activities/new');await expectControlValue(page.getByLabel('活動名稱',{exact:true}), '原本的新活動草稿');
 });
 test('old music hashes and HTML aliases enter native pages; replace redirects preserve back navigation',async({page})=>{
   await page.goto('/contact');await expect(page.getByRole('heading',{name:'聯絡與投訴',exact:true})).toBeVisible();await page.goto('/music/index.html#rest');await expect(page).toHaveURL('/music?library=all');await expect(page.getByRole('region',{name:'音樂詞庫',exact:true})).toBeVisible();await page.goBack();await expect(page).toHaveURL('/contact');
@@ -66,6 +67,6 @@ test('damaged access receipts are preserved and unavailable storage prevents a g
 });
 
 test('anonymous visitors can copy ordinary public links without obtaining invitation credentials',async({page})=>{
-  await page.goto('/activities/listen/share');await expect(page.getByLabel('活動連結',{exact:true})).toHaveValue(origin+'/activities/listen');await expect(page.getByRole('button',{name:'複製活動連結',exact:true})).toBeEnabled();await expect(page.getByRole('link',{name:'登入',exact:true})).toHaveCount(0);
+  await page.goto('/activities/listen/share');await expectControlValue(page.getByLabel('活動連結',{exact:true}), origin+'/activities/listen');await expect(page.getByRole('button',{name:'複製活動連結',exact:true})).toBeEnabled();await expect(page.getByRole('link',{name:'登入',exact:true})).toHaveCount(0);
   await page.goto('/activities/invite/share');await expect(page.getByLabel('活動連結',{exact:true})).toHaveCount(0);await expect(page.getByText('找不到活動或尚未公開',{exact:true})).toBeVisible();
 });

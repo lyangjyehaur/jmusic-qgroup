@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox, Field } from './kimi-ui';
 import { type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
 import { createWebHttpClient } from './http';
@@ -84,9 +84,9 @@ function DeviceManager({ viewer }: { viewer: Extract<Viewer, { authenticated: tr
     {record.value&&!issued&&<Notice>產生結果尚未確認，請先撤銷未使用連結，再重新產生。</Notice>}
     {record.expired&&<Notice>本機連結已到期，請重新產生。</Notice>}
     <Surface className="detail auth-panel"><Heading level={2}>連接自己的另一台裝置</Heading><Text>「{viewer.nickname}」的連結有效 10 分鐘、僅用一次。持有者可管理此帳號與帳務，只能傳給自己的裝置；產生新連結會撤銷舊連結。</Text>
-      <label className="consent"><input type="checkbox" checked={authorize} disabled={busy} onChange={event => setAuthorize(event.target.checked)} />只授權自己的另一台裝置</label>
+      <Checkbox className="consent" checked={authorize} disabled={busy} onChange={event => setAuthorize(event.target.checked)} label={<>只授權自己的另一台裝置</>} />
       <Button disabled={!record.ready||!!record.error||!!record.value||!authorize || busy} onClick={() => void issue()}>產生限時連結</Button>
-      {issued && <><label className="device-link-field">裝置連結（可手動複製）<textarea readOnly rows={3} value={link} onFocus={event => event.target.select()} /></label><Text>有效至 {displayTime(new Date(issued.expiresAt).toISOString())}</Text><Button variant="secondary" disabled={busy} onClick={() => void copy()}>複製裝置連結</Button></>}
+      {issued && <><Field className="device-link-field" label={<>裝置連結（可手動複製）</>}><textarea readOnly rows={3} value={link} onFocus={event => event.target.select()} /></Field><Text>有效至 {displayTime(new Date(issued.expiresAt).toISOString())}</Text><Button variant="secondary" disabled={busy} onClick={() => void copy()}>複製裝置連結</Button></>}
       <Button variant="secondary" disabled={!record.ready||!!record.error||busy} onClick={() => void revoke()}>撤銷未使用連結</Button>
     </Surface>
     <Surface className="detail auth-panel"><Heading level={2}>「{viewer.nickname}」已授權的裝置</Heading><Text>只撤銷此帳號；該裝置上的其他帳號保留。目前裝置請到帳號頁登出。</Text>
@@ -172,7 +172,7 @@ function AcceptContent({viewer,record}:{viewer:Viewer;record:ReturnType<typeof u
     <Heading level={2}>授權帳號：{view.data.nickname}</Heading><Text>有效至 {displayTime(view.data.expiresAt)}</Text>
     {view.data.status==='accepted'?<><Notice>已授權此裝置。原有帳號保持登入，請到帳號頁明確切換。</Notice><Link to="/me/accounts">前往帳號切換</Link></>:view.data.alreadyAuthorized?<><Notice>此裝置已授權這個帳號，無需再次接受。</Notice><Link to="/me/accounts">前往帳號切換</Link></>:!viewer.authenticated?<><Text>請先登入此裝置原有帳號，登入後會返回這裡。接受連結不會合併資料或自動切換。</Text><Link to={loginLink('/me/devices/accept')}>登入後確認授權</Link></>:<>
     <Text>目前登入「{viewer.nickname}」。原有帳號、活動與款項分開保留，接受後不會自動切換；持有授權可管理帳號與帳務。</Text>
-    <label className="consent"><input type="checkbox" checked={accepted} disabled={busy||uncertain||!!message} onChange={event=>setAccepted(event.target.checked)}/>這是我的帳號，確認授權目前裝置</label>
+    <Checkbox className="consent" checked={accepted} disabled={busy||uncertain||!!message} onChange={event=>setAccepted(event.target.checked)} label={<>這是我的帳號，確認授權目前裝置</>} />
     <Button disabled={!accepted||busy||uncertain||!!message} onClick={()=>void accept()}>確認接受授權</Button></>}
     {message&&<Text role="alert">{message}</Text>}
     {(uncertain||message)&&<Button variant="secondary" disabled={busy||view.isFetching} onClick={()=>{void view.refetch().then(result=>{if(result.isSuccess&&active.current){setMessage('');setUncertain(false);setAccepted(false);}});}}>核對授權結果</Button>}

@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { readFileSync } from 'node:fs';
 // Read the actual fixed alias declaration without importing worker/domain code
@@ -20,7 +21,7 @@ test('legacy settlement chapters remain readable at phone width and guide task l
   await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);await page.setViewportSize({width:360,height:800});let writes=0;page.on('request',request=>{if(['POST','PUT','PATCH','DELETE'].includes(request.method()))writes++;});
   await page.goto('/guide.html#section-6');await expect(page).toHaveURL('/guide#section-6');await expect(page.locator('#section-6')).toHaveAttribute('open','');await expect(page.locator('#section-6')).toContainText('不同包間的債務不以一個淨額互相抵銷');
   await page.getByRole('link',{name:'QQ bot',exact:true}).click();await expect(page.locator('#section-11')).toHaveAttribute('open','');await page.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);expect((await page.locator('#section-11 tbody td').first().boundingBox())!.width).toBeGreaterThan(60);await page.screenshot({path:'test-results/unified-guide-mobile.png'});
-  await page.getByRole('link',{name:'發起與時間投票',exact:true}).click();await page.getByRole('link',{name:'新增活動草稿',exact:true}).click();await expect(page).toHaveURL('/activities/new');await expect(page.getByLabel('活動名稱',{exact:true})).toHaveValue('');expect(writes).toBe(0);
+  await page.getByRole('link',{name:'發起與時間投票',exact:true}).click();await page.getByRole('link',{name:'新增活動草稿',exact:true}).click();await expect(page).toHaveURL('/activities/new');await expectControlValue(page.getByLabel('活動名稱',{exact:true}), '');expect(writes).toBe(0);
 });
 test('unknown legacy fragments and query credentials are discarded before opening the public handbook',async({page})=>{
   await page.goto('/guide.html?event=PRIVATE&token=SECRET#unknown');await expect(page).toHaveURL('/guide');await expect(page.getByRole('heading',{name:'使用說明',exact:true})).toBeVisible();expect(await page.locator('.guide').textContent()).not.toMatch(/PRIVATE|SECRET/);

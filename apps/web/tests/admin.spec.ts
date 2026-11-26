@@ -1,4 +1,4 @@
-import { chooseOption } from './kimi-controls';
+import { chooseOption, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
@@ -43,7 +43,7 @@ test('conflicting admin metadata preserves input until an explicit rebase', asyn
   await login(context); const otherContext=await browser.newContext({baseURL:origin});await login(otherContext);const other=await otherContext.newPage();await other.goto('/admin/users/bob');await page.goto('/admin/users/bob');
   await page.getByLabel('內部備註', { exact: true }).fill('保留我的核對說明'); await metadata(other, '另一個管理頁的說明'); await expect(other.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '保存備註', exact: true }).click(); await expect(page.getByText('備註或人工 QQ 已被修改，請核對目前版本', { exact: true })).toBeVisible();
-  await expect(page.getByLabel('內部備註', { exact: true })).toHaveValue('保留我的核對說明'); await page.getByRole('button', { name: '核對目前資料，保留輸入', exact: true }).click();
+  await expectControlValue(page.getByLabel('內部備註', { exact: true }), '保留我的核對說明'); await page.getByRole('button', { name: '核對目前資料，保留輸入', exact: true }).click();
   await page.getByRole('button', { name: '保存備註', exact: true }).click(); await expect(page.getByText('備註已保存，請核對目前資料。', { exact: true })).toBeVisible(); await otherContext.close();
 });
 test('storage failures block writes and damaged private admin drafts can be preserved', async ({ page, context }) => {
@@ -59,7 +59,7 @@ test('a lost rescue login response is checked without saving or resending the cr
   await login(context, 'bob'); let logins = 0;
   await page.route('**/api/v2/admin/login', async route => { logins++; const response = await route.fetch(); await route.fulfill({ response, body: '{' }); });
   await page.goto('/admin'); await page.getByLabel('管理救援憑證', { exact: true }).fill(rescueKey); await page.getByRole('button', { name: '使用救援憑證登入', exact: true }).click();
-  await expect(page.getByText('尚未確認登入結果，請先重新確認管理狀態。', { exact: true })).toBeVisible(); await expect(page.getByLabel('管理救援憑證', { exact: true })).toHaveValue('');
+  await expect(page.getByText('尚未確認登入結果，請先重新確認管理狀態。', { exact: true })).toBeVisible(); await expectControlValue(page.getByLabel('管理救援憑證', { exact: true }), '');
   expect(await page.evaluate(key => JSON.stringify({ ...sessionStorage, ...localStorage }).includes(key), rescueKey)).toBe(false);
   await page.getByRole('button', { name: '重新確認管理狀態', exact: true }).click(); await expect(page.getByText('管理授權：救援憑證（1 小時）', { exact: true })).toBeVisible(); expect(logins).toBe(1);
   await page.getByRole('link', { name: '註冊設定', exact: true }).click(); await expect(page.getByText('名稱註冊：已關閉', { exact: true })).toBeVisible();

@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text, Heading } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyRoomsInspection,LegacyRequestReceipt,decodeLegacyRooms,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -41,5 +41,5 @@ export function LegacyRoomsRecovery({viewer,inventory,row,request,validate,refre
   return <>{rooms.length?rooms.map(room=><div key={room.id}><Text>{room.name} · {room.id}</Text><Text>付款人：{room.payer_label} · {room.payer_id}</Text>{room.person_ids.length?<ul>{room.person_ids.map(id=><li key={id}>{people.get(id)?.label||id} · {id}</li>)}</ul>:<Text>尚未分配人員</Text>}</div>):<Text>沒有包間安排</Text>}{plan.current.people.some(p=>!assigned.has(p.id))&&<><Text>未分配人員</Text><ul>{plan.current.people.filter(p=>!assigned.has(p.id)).map(p=><li key={p.id}>{p.label} · {p.id}</li>)}</ul></>}</>;
  }
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原包間請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原操作已提交，只保存已核對結果；不重新分配包間。</Text>:<div aria-label="原包間重試核對"><Text>{plan.current.title}</Text><Text>原名冊版本 {decoded.input.revision}；原操作編號 {request.requestKey}。</Text><Heading level={4}>目前包間安排</Heading>{arrangements(plan.current.rooms)}<Heading level={4}>原請求保存後的安排</Heading>{arrangements(plan.rooms)}{decoded.input.reason&&<Text>原因：{decoded.input.reason}</Text>}{!plan.changed&&<Text>安排與目前相同，僅保存原請求回執。</Text>}</div>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原包間、人員及付款人，使用原編號重試原包間操作'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原包間操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='committed'?'保存原請求已完成的核對結果':'已核對原包間、人員及付款人，使用原編號重試原包間操作'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='committed'?'保存已核對結果':'重試原包間操作'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }

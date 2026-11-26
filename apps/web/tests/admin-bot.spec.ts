@@ -1,4 +1,4 @@
-import { openAdminTool } from './kimi-controls';
+import { openAdminTool, selectControl, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { denyDraftWrites, durableRows } from './draft-helpers';
@@ -41,7 +41,7 @@ test('administrator edits shared policy, previews templates, retains disabled gr
   await page.goto('/admin');
   await openAdminTool(page,'bot 設定');
   await page.getByLabel('啟用主動通知', { exact: true }).check();
-  await page.getByLabel('發送模式', { exact: true }).selectOption('simulate');
+  await selectControl(page.getByLabel('發送模式', { exact: true }), 'simulate');
   await page.getByLabel('沿用部署目標群', { exact: true }).uncheck();
   await page.getByRole('button', { name: '新增群政策', exact: true }).click();
   await page.getByLabel('群標識 1', { exact: true }).fill('synthetic-group');
@@ -111,7 +111,7 @@ test('lost save response survives reload and replays the same UUID exactly once'
   await expect(page.getByRole('button', { name: '確認原操作結果', exact: true })).toBeVisible();
   page.on('dialog', (dialog) => void dialog.accept());
   await page.reload();
-  await expect(page.getByLabel('主動發送最小間隔（秒）', { exact: true })).toHaveValue('45');
+  await expectControlValue(page.getByLabel('主動發送最小間隔（秒）', { exact: true }), '45');
   await expect(page.getByLabel('主動發送最小間隔（秒）', { exact: true })).toBeDisabled();
   await page.getByRole('button', { name: '確認原操作結果', exact: true }).click();
   await expect(page.getByText('bot 設定已保存。', { exact: true })).toBeVisible();
@@ -136,7 +136,7 @@ test('concurrent edits preserve input and require explicit review of the latest 
     await confirm(other);
     await expect(other.getByText('bot 設定已保存。', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '核對最新版，保留輸入', exact: true }).click();
-    await expect(page.getByLabel('主動發送最小間隔（秒）', { exact: true })).toHaveValue('31');
+    await expectControlValue(page.getByLabel('主動發送最小間隔（秒）', { exact: true }), '31');
     await expect(page.getByRole('button', { name: '確認 bot 設定', exact: true })).toBeDisabled();
     await page.getByText('核對目前保存的設定', { exact: true }).click();
     await expect(page.locator('dl').filter({ hasText: '發送間隔' })).toContainText('32');
@@ -157,7 +157,7 @@ test('storage failure blocks submission and broken drafts are preserved before r
   await expect(page.getByRole('alert')).toContainText('無法保存原稿及操作編號');
   await expect(page.getByRole('button', { name: '確認 bot 設定', exact: true })).toBeDisabled();
   await page.getByRole('link', { name: '管理後臺', exact: true }).click();
-  await expect(page.getByText('仍有 bot 設定原稿或待確認操作。', { exact: true })).toBeVisible();
+  await expect(page.getByRole('dialog',{name:'尚未提交的修改',exact:true})).toBeVisible();
   await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
   page.on('dialog', (dialog) => void dialog.accept());
   await page.reload();

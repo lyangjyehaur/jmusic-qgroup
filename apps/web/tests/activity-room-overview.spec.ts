@@ -1,3 +1,4 @@
+import { selectControl } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 test.use({ settlementExamples: true });
@@ -67,7 +68,7 @@ test('keeps the unassigned roster visible through moving people, removing a room
   await page.getByRole('button', {name:'新增包間',exact:true}).click();
   const first = page.locator('.settlement-room').first();
   await first.getByLabel('包間名稱', {exact:true}).fill('第一房');
-  await first.getByLabel('包間付款人', {exact:true}).selectOption({label:'小青'});
+  await selectControl(first.getByLabel('包間付款人', {exact:true}), {label:'小青'});
   await first.getByText('包間人員 · 0 人', {exact:true}).click();
   for (const name of ['小青','同行']) await first.getByRole('checkbox', {name,exact:true}).check();
   await expect(unassigned.getByText('未分配 · 1 人', {exact:true})).toBeVisible();
@@ -76,7 +77,7 @@ test('keeps the unassigned roster visible through moving people, removing a room
   await page.getByRole('button', {name:'新增包間',exact:true}).click();
   const second = page.locator('.settlement-room').nth(1);
   await second.getByLabel('包間名稱', {exact:true}).fill('第二房');
-  await second.getByLabel('包間付款人', {exact:true}).selectOption({label:'小青'});
+  await selectControl(second.getByLabel('包間付款人', {exact:true}), {label:'小青'});
   await second.getByText('包間人員 · 0 人', {exact:true}).click();
   await second.getByRole('checkbox', {name:'同行',exact:true}).check();
   await expect(first.getByRole('checkbox', {name:'同行',exact:true})).not.toBeChecked();

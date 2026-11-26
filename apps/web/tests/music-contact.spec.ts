@@ -1,4 +1,4 @@
-import { toggleMusicTerm, expectMusicTerm, openMusicContact } from './kimi-controls';
+import { toggleMusicTerm, expectMusicTerm, openMusicContact, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { durableRows, denyDraftWrites, damageDraft } from './draft-helpers';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -26,7 +26,7 @@ test('a member edits, finds, copies and clears a contact while keeping the same 
   await expectMusicTerm(page,'Aimer',true); await expect(page.getByRole('button', { name: '保存我的成分', exact: true }).and(page.locator(':enabled'))).toHaveCount(0);
   await page.getByRole('navigation',{name:'手機主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true }).or(page.getByRole('navigation',{name:'主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true })).click();await page.getByRole('tab',{name:'查詢／比較',exact:true}).click();
   await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
-  await expect(page).toHaveURL('/people/' + profile.id); await expect(page.getByRole('heading', { name: '小青', exact: true })).toBeVisible(); await page.locator('.profile-all-picks > summary').click();await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
+  await expect(page).toHaveURL('/people/' + profile.id); await expect(page.getByRole('heading', { name: '小青', exact: true })).toBeVisible(); await page.locator(".profile-all-picks .disclosure-trigger").click();await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
   await page.goto('/me/music/contact'); await save(page, ''); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible(); await expect(page.getByText('尚未填寫聯絡 QQ。', { exact: true })).toBeVisible();
   await page.goto('/people?tab=search'); await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
   await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
@@ -41,28 +41,28 @@ test('a malformed success response retains the exact contact operation through r
   await page.goto('/me/music/contact'); await save(page, '123456'); await expect(page.getByText('尚未確認保存結果。操作編號已保留，請按「確認聯絡 QQ 結果」安全重試。', { exact: true })).toBeVisible(); await expect(input(page)).toBeDisabled();
   const remote = await context.request.put('/api/v2/me/music/contact', { headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: { profileId: profile.id, musicEpoch: 0, revision: 1, contactQQ: '998877' } }); expect(remote.status()).toBe(200);
   page.on('dialog', dialog => void dialog.accept()); await page.reload(); await page.getByRole('button', { name: '確認聯絡 QQ 結果', exact: true }).click();
-  await expect(page.getByText('原操作已保存，聯絡 QQ 已再次變更；請核對目前資料。', { exact: true })).toBeVisible(); await expect(input(page)).toHaveValue('998877'); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); expect(bodies[0]).toEqual(bodies[1]);
+  await expect(page.getByText('原操作已保存，聯絡 QQ 已再次變更；請核對目前資料。', { exact: true })).toBeVisible(); await expectControlValue(input(page), '998877'); expect(keys).toHaveLength(2); expect(keys[0]).toBe(keys[1]); expect(bodies[0]).toEqual(bodies[1]);
 });
 test('conflicting contact edits retain input and require an explicit read before overwriting', async ({ page, context, browser }) => {
   await seed(context); const remote = await browser.newContext({ baseURL: origin }); await login(remote);
   try {
     await page.goto('/me/music/contact'); await input(page).fill('654321');
     const other = await remote.newPage(); await other.goto('/me/music/contact'); await save(other, '123456'); await expect(other.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
-    await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(page.getByText('聯絡 QQ 已變更；請核對目前資料後再保存', { exact: true })).toBeVisible(); await expect(input(page)).toHaveValue('654321');
-    await page.getByRole('button', { name: '核對目前聯絡 QQ，保留輸入', exact: true }).click(); await expect(page.getByText('123456 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible(); await expect(input(page)).toHaveValue('654321');
+    await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(page.getByText('聯絡 QQ 已變更；請核對目前資料後再保存', { exact: true })).toBeVisible(); await expectControlValue(input(page), '654321');
+    await page.getByRole('button', { name: '核對目前聯絡 QQ，保留輸入', exact: true }).click(); await expect(page.getByText('123456 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible(); await expectControlValue(input(page), '654321');
     await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   } finally { await remote.close(); }
 });
 test('a switched account rejects the old contact draft and keeps both account inputs separate', async ({ page, context }) => {
   await seed(context, 'bob'); await seed(context, 'alice'); await page.goto('/me/music/contact'); await input(page).fill('123456');
   await login(context, 'bob'); await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(page.getByText('目前帳號已變更；請重新整理並確認帳號', { exact: true })).toBeVisible();
-  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.locator('.viewer')).toHaveText('小白'); await expect(input(page)).toHaveValue('');
-  await login(context); await page.reload(); await expect(input(page)).toHaveValue('123456');
+  page.on('dialog', dialog => void dialog.accept()); await page.reload(); await expect(page.locator('.viewer')).toHaveText('小白'); await expectControlValue(input(page), '');
+  await login(context); await page.reload(); await expectControlValue(input(page), '123456');
 });
 test('blocked storage prevents sending and damaged or invalid contact drafts remain recoverable', async ({ page, context }) => {
   await seed(context); let writes = 0; page.on('request', request => { if (request.method() === 'PUT') writes++; });
   await page.goto('/me/music/contact');await denyDraftWrites(page,'music:contact:'); await save(page, '123456'); await expect(page.getByText('無法保存原稿及操作編號，尚未送出。', { exact: true })).toBeVisible(); expect(writes).toBe(0);
-  const clean=await context.newPage();await clean.goto('/me/music/contact');await input(clean).fill('123456');await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'music:contact:','damaged synthetic contact');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await expect(input(clean)).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic contact');await expect(input(clean)).toBeEnabled(); await input(clean).fill('not-a-number'); await clean.reload(); await expect(input(clean)).toHaveValue('not-a-number'); await expect(clean.getByText('無法讀取聯絡 QQ 草稿', { exact: false })).toHaveCount(0); await clean.close();
+  const clean=await context.newPage();await clean.goto('/me/music/contact');await input(clean).fill('123456');await expect(clean.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(clean,'music:contact:','damaged synthetic contact');clean.on('dialog',dialog=>void dialog.accept());await clean.reload();await expect(input(clean)).toBeDisabled();await clean.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(clean,'versions')).map(row=>row.raw)).toContain('damaged synthetic contact');await expect(input(clean)).toBeEnabled(); await input(clean).fill('not-a-number'); await clean.reload(); await expectControlValue(input(clean), 'not-a-number'); await expect(clean.getByText('無法讀取聯絡 QQ 草稿', { exact: false })).toHaveCount(0); await clean.close();
 });
 test('member cards offer manual copy recovery and visitors cannot read or query contacts', async ({ page, context }) => {
   const { profile, headers } = await seed(context);
@@ -88,7 +88,7 @@ test('music erasure clears another tab contact draft and a rebuilt profile begin
   await expect(input(page)).toHaveCount(0); await expect(page.getByText('請先保存成分，再設定聯絡 QQ', { exact: true })).toBeVisible();
   expect((await durableRows(page)).filter(row=>row.key.includes('qgroup:rebuild:music:'))).toEqual([]);expect(await durableRows(page,'versions')).toEqual([]);
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click(); await toggleMusicTerm(page,'Aimer'); await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
-  await openMusicContact(page); await expect(input(page)).toHaveValue(''); await privacy.close();
+  await openMusicContact(page); await expectControlValue(input(page), ''); await privacy.close();
 });
 test('a signed-in account without music gets an actionable entry and cannot query member contacts', async ({ page, context }) => {
   await login(context); await page.goto('/people'); await expect(page.getByRole('button', { name: '查詢成分', exact: true })).toHaveCount(0);

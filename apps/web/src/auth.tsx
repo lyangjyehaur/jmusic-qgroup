@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Surface, Text } from 'yahha-ui';
-import { Avatar, Badge, Button } from './kimi-ui';
+import { Avatar, Badge, Button, Checkbox } from './kimi-ui';
 import { Check, Laptop } from 'lucide-react';
 import { ActionLink } from './action-link';
 
@@ -50,7 +50,7 @@ export function Login() {
   return <><PageIntro title={mode === 'bind' ? '綁定 QQ' : '登入'} />{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : <Surface className="detail auth-panel">
     {session.data.qqEnabled ? <>
       <Text>{mode === 'bind' ? `${uiText("綁定目前帳號「")}${session.data.authenticated ? session.data.nickname : ''}${uiText("」，不搬移報名或款項。")}` : 'QQ 授權後仍需確認帳號；首次登入會在確認後建立帳號。'}</Text>
-      {(mode === 'login' || !session.data.privacyAccepted) && <label className="consent"><input type="checkbox" checked={accepted} disabled={busy} onChange={event => setAcceptedFor(event.target.checked ? consentTarget : null)} />我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></label>}
+      {(mode === 'login' || !session.data.privacyAccepted) && <Checkbox className="consent" checked={accepted} disabled={busy} onChange={event => setAcceptedFor(event.target.checked ? consentTarget : null)} label={<>我已閱讀並同意<Link to="/privacy" target="_blank" rel="noreferrer">隱私政策</Link></>} />}
       <Button loading={busy} disabled={((mode === 'login' || !session.data.privacyAccepted) && !accepted) || (mode === 'bind' && !session.data.authenticated)} onClick={() => void start()}>{mode === 'bind' ? '前往 QQ 授權綁定' : '前往 QQ 登入'}</Button>
       {mode === 'bind' && !session.data.authenticated && <Notice>請先登入後再綁定 QQ。</Notice>}
     </> : <Notice>QQ 登入尚未配置。</Notice>}
@@ -138,7 +138,7 @@ export function Accounts() {
       {viewer.qq.needsReauth&&<p className="settings-help">尚未取得 UnionID，可重新授權原 QQ；這不代表已綁定 bot 個人功能。</p>}
       <div className="binding-row"><div><strong>收款碼</strong></div><ActionLink size="sm" to="/me/payment-codes">我的收款碼</ActionLink></div>
       <div className="settings-navigation"><Link to="/me/privacy">隱私與資料刪除</Link><Link to="/me/privacy/consent">{viewer.privacyAccepted?'查看政策同意紀錄':'確認統一隱私政策'}</Link></div>
-    </section><section className="form-section"><div className="section-heading"><span>切換</span><div><h2>此裝置已授權的帳號</h2></div></div><p className="settings-help">切換帳號會保留各自資料。</p>{accounts.isPending?<Notice>正在讀取授權…</Notice>:accounts.error?<Failure error={accounts.error} retry={()=>void accounts.refetch()}/>:<div className="account-switch-list">{accounts.data.accounts.map(account=><button type="button" key={account.scope} className={account.current?'active':''} disabled={busy||account.current} aria-label={account.current?account.nickname+'（目前帳號）':'切換至 '+account.nickname} onClick={()=>void switchTo(account.scope)}><Avatar user={{name:account.nickname,avatar:account.nickname.slice(0,1),color:'var(--moss)'}}/><span><strong>{account.nickname}</strong><small>{account.current?'目前帳號':'已授權'}</small></span>{account.current?<Check size={17}/>:<span>切換</span>}</button>)}</div>}</section>
+    </section><section className="form-section"><div className="section-heading"><span>切換</span><div><h2>此裝置已授權的帳號</h2></div></div><p className="settings-help">切換帳號會保留各自資料。</p>{accounts.isPending?<Notice>正在讀取授權…</Notice>:accounts.error?<Failure error={accounts.error} retry={()=>void accounts.refetch()}/>:<div className="account-switch-list">{accounts.data.accounts.map(account=><Button variant="ghost" type="button" key={account.scope} className={account.current?'active':''} disabled={busy||account.current} aria-label={account.current?account.nickname+'（目前帳號）':'切換至 '+account.nickname} onClick={()=>void switchTo(account.scope)}><Avatar user={{name:account.nickname,avatar:account.nickname.slice(0,1),color:'var(--moss)'}}/><span><strong>{account.nickname}</strong><small>{account.current?'目前帳號':'已授權'}</small></span>{account.current?<Check size={17}/>:<span>切換</span>}</Button>)}</div>}</section>
     <AccountDevices viewer={viewer}/><section className="form-section span-full"><p className="settings-help">登出會撤銷此裝置的所有帳號授權並清除本機原稿；其他裝置不受影響。</p><Button variant="secondary" disabled={busy||cleanup} onClick={()=>void logout()}>登出此裝置</Button></section></div>
   </>}
     {cleanup && <Button loading={busy} onClick={() => {

@@ -5,7 +5,7 @@ import { DraftFeedback } from './draft-feedback';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field } from './kimi-ui';
 import { z } from 'zod';
 import { MusicContact, SaveMusicContact } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -71,7 +71,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
     <Surface className="detail auth-panel"><Heading level={2}>目前聯絡 QQ</Heading><ContactValue key={saved.contactQQ} number={saved.contactQQ} source={saved.contactQQ ? saved.source : ''} />
       <Text>固定成分 ID：<Link to={'/people/' + saved.profileId}>{saved.profileId}</Link></Text>
       {saved.source === 'legacy' ? <Text>舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員。</Text> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
-        <label className="account-field">聯絡 QQ<input inputMode="numeric" autoComplete="off" value={draft.contactQQ} maxLength={24} disabled={locked} onChange={event => { record.change({ ...draft, contactQQ: event.target.value }); setMessage(''); }} aria-describedby="music-contact-help" /></label>
+        <Field className="account-field" label={<>聯絡 QQ</>}><input inputMode="numeric" autoComplete="off" value={draft.contactQQ} maxLength={24} disabled={locked} onChange={event => { record.change({ ...draft, contactQQ: event.target.value }); setMessage(''); }} aria-describedby="music-contact-help" /></Field>
         <Text id="music-contact-help">4–12 位數字，可清空。成分會員可查詢與複製；號碼不代表 QQ 認證，也不改變成分所有權。</Text>
         <Button type="submit" loading={busy} disabled={!dirty || unavailable}>{draft.requestKey ? '確認聯絡 QQ 結果' : '保存聯絡 QQ'}</Button>
       </form>}

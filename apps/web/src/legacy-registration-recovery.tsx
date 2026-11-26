@@ -3,7 +3,7 @@ import { errorText, uiText, displayLocale } from './language';
 import { useEffect,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { LegacyRegistrationInspection,LegacyRegistrationResult,type LegacyRequestCheck } from '@qgroup/contracts';
 import type { z } from 'zod';
 import { authHttp } from './auth';
@@ -38,7 +38,7 @@ export function LegacyRegistrationRecovery({viewer,inventory,row,request,validat
  if(mapped?.kind==='request')return <Notice>原請求已完成，恢復紀錄已保存。<Link to={mapped.path}>查看名冊</Link></Notice>;
  if(mapped)return <Notice>此原請求已有其他核對目的，請先查看原紀錄。</Notice>;
  return <div className="legacy-conversion"><Button variant="secondary" disabled={busy} onClick={()=>void check()}>檢查原名冊請求的恢復</Button>{plan&&<Notice>{plan.state==='committed'?<Text>原名冊操作已提交，只保存核對結果。</Text>:<RegistrationReview plan={plan} requestKey={request.requestKey}/>}
- <label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>{plan.state==='retryable'?'已核對名冊、安排與通知，使用原編號重試名冊操作':'保存已核對的操作結果'}</label><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原名冊請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
+ <Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>{plan.state==='retryable'?'已核對名冊、安排與通知，使用原編號重試名冊操作':'保存已核對的操作結果'}</>} /><Button disabled={busy||!confirm} onClick={()=>void finish()}>{plan.state==='retryable'?'重試原名冊請求':'保存已核對結果'}</Button></Notice>}{message&&<Notice>{message}</Notice>}</div>;
 }
 const localTime=(value:string,zone:string|null)=>new Intl.DateTimeFormat(displayLocale(),{timeZone:zone??'UTC',dateStyle:'medium',timeStyle:'short',hourCycle:'h23'}).format(new Date(value));
 const statuses:Record<string,string>={confirmed:uiText('正式報名'),waiting:uiText('候補'),tentative:uiText('待確認'),invited:uiText('受邀'),withdrawn:uiText('已退出'),accepted:uiText('已接受'),pending:uiText('待回覆'),declined:uiText('暫不同意')};

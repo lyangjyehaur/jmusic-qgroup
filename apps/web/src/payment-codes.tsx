@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button, Field } from './kimi-ui';
+import { Button, Field, Select } from './kimi-ui';
 import { z } from 'zod';
 import { ArchivePaymentCode, CreatePaymentCode, PaymentCode, PaymentCodeId, PaymentCodeLibrary, PaymentCodeName, PaymentCodeSource, PaymentKind, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -86,9 +86,9 @@ function Library({ viewer }: { viewer: Viewer }) {
     {library.isPending ? <Notice>正在讀取收款碼…</Notice> : library.error ? <Failure error={library.error} retry={() => void library.refetch()} /> : <Surface className="detail"><Heading level={2}>已保存（{library.data.codes.length}／30）</Heading>{library.data.codes.length ? <ul className="payment-library">{library.data.codes.map(code => <li key={code.id}><Heading level={3}>{paymentKindLabels[code.kind]}{code.name ? ' · ' + code.name : ''}</Heading><PaymentAssetImage url={code.url} scope={viewer.scope} label={paymentKindLabels[code.kind] + '收款碼' + (code.name ? ' ' + code.name : '')} /><Button variant="secondary" disabled={blocked} onClick={() => setRemove(code)}>移除 {code.name || paymentKindLabels[code.kind] + '收款碼'}</Button></li>)}</ul> : <Text>尚未保存收款碼，可在下方新增。</Text>}</Surface>}
     {remove && <Surface role="alert"><Heading level={2}>移除 {remove.name || paymentKindLabels[remove.kind] + '收款碼'}？</Heading><Text>已發布帳單及歷史圖片會保留。</Text><Button disabled={blocked} onClick={() => void send({ command: 'archive', id: remove.id, data: { confirm: true } })}>確認移除</Button><Button variant="secondary" onClick={() => setRemove(undefined)}>取消移除</Button></Surface>}
     <Surface className="detail"><Heading level={2}>新增收款碼</Heading><form onSubmit={event => { event.preventDefault(); void send({ command: 'create', data: { kind: draft.form.kind, name: draft.form.name, confirm: true, ...(draft.form.source ? { source: draft.form.source } : { image: draft.form.image }) } }); }}>
-      <fieldset disabled={blocked}><Field label="收款方式"><select id="payment-kind" value={draft.form.kind} onChange={event => change({ ...draft.form, kind: PaymentKind.parse(event.target.value) })}>{Object.entries(paymentKindLabels).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}</select></Field>
-      <label className="account-field">名稱（選填）<input value={draft.form.name} maxLength={80} onChange={event => change({ ...draft.form, name: event.target.value })} /></label>
-      <label className="account-field">收款碼圖片<input type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file); }} /></label>
+      <fieldset disabled={blocked}><Field label="收款方式"><Select id="payment-kind" value={draft.form.kind} onChange={event => change({ ...draft.form, kind: PaymentKind.parse(event.target.value) })}>{Object.entries(paymentKindLabels).map(([kind, label]) => <option key={kind} value={kind}>{label}</option>)}</Select></Field>
+      <Field className="account-field" label={<>名稱（選填）</>}><input value={draft.form.name} maxLength={80} onChange={event => change({ ...draft.form, name: event.target.value })} /></Field>
+      <Field className="account-field" label={<>收款碼圖片</>}><input type="file" accept="image/png,image/jpeg,image/webp" onChange={event => { const file = event.target.files?.[0]; event.target.value = ''; if (file) void upload(file); }} /></Field>
       <Text>PNG、JPEG 或 WebP，原始檔最多 15 MB；在瀏覽器轉為最長邊 1600 像素、最多 2 MB 的 PNG。圖片只供本人與使用該碼的活動結算讀取。</Text>
       {draft.form.image && <div className="payment-asset"><img className="payment-asset-thumb" src={'data:image/png;base64,' + draft.form.image} alt="待保存收款碼" /><Button variant="secondary" onClick={() => change({ ...draft.form, image: '' })}>清除待保存圖片</Button></div>}
       {draft.form.source && <><Text>待保存原圖：結算第 {draft.form.source.version} 版 · {paymentKindLabels[draft.form.source.kind]}</Text><Button variant="secondary" onClick={() => change({ ...draft.form, source: undefined })}>清除原圖選擇</Button></>}

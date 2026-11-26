@@ -285,7 +285,6 @@ export const analyticsManifest = {
     "attendance-person",
     "attendance-reason",
     "attendance-state",
-    "attendee-music-title",
     "broadcast-target",
     "claim-decision",
     "claim-reason",

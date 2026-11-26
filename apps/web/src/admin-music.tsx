@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button, Field } from './kimi-ui';
+import { Button, Field, Select, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicLinkPreview, AdminMusicProfile, AdminMusicSearch, SaveMusicLink, type Viewer } from '@qgroup/contracts';
 import { AdminGate, adminHttp, adminReadHttp, type Access } from './admin';
@@ -33,8 +33,8 @@ function Directory({ viewer, access }: { viewer: Viewer; access: Access }) {
   } });
   useAdminFailure(query.error,viewer);
   return <><Surface className="detail"><form className="directory-search" onSubmit={event => { event.preventDefault(); setSearch({ search: input, status: filter, offset: 0 }); }}>
-    <label className="account-field">搜尋成分<input type="search" value={input} maxLength={100} onChange={event => setInput(event.target.value)} /></label>
-    <label className="account-field">成分關聯狀態<select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">全部</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</select></label><Button type="submit">搜尋</Button>
+    <Field className="account-field" label={<>搜尋成分</>}><input type="search" value={input} maxLength={100} onChange={event => setInput(event.target.value)} /></Field>
+    <Field className="account-field" label={<>成分關聯狀態</>}><Select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">全部</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field><Button type="submit">搜尋</Button>
   </form></Surface>{query.isPending ? <Notice>正在讀取成分…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
     <Text role="status">共 {query.data.total} 份成分</Text>{query.data.profiles.map(profile => <Surface className="detail auth-panel" key={profile.id}><Heading level={2}><Link to={'/admin/music/' + profile.id}>{profile.name}</Link></Heading><Text>成分 ID：{profile.id}</Text>{profile.legacyKey && <Text>舊成分查詢標識：{profile.legacyKey}</Text>}<Text>{profile.owner ? statusLabels[profile.status] + ' · ' + ownerLabel(profile.owner) : statusLabels[profile.status]}</Text><Text>原口令：{profile.hasPin ? '已設定' : '未設定'}</Text></Surface>)}
     {!query.data.total && <Notice>沒有符合條件的成分。</Notice>}<div className="page-actions"><Button variant="secondary" disabled={search.offset <= 0} onClick={() => setSearch({ ...search, offset: Math.max(0, search.offset - 20) })}>上一頁</Button><Button variant="secondary" disabled={search.offset + 20 >= query.data.total} onClick={() => setSearch({ ...search, offset: search.offset + 20 })}>下一頁</Button></div>
@@ -100,10 +100,10 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
       <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? `${uiText(" · 程度 ")}${selection.level}` : ''}</li>)}</ul>
       <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice><Text>成分 ID：{id}</Text></>}
       {current && <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>}
-      {(current || ownershipDirty) && <><label className="account-field">目標帳號 ID<input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></label>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
+      {(current || ownershipDirty) && <><Field className="account-field" label={<>目標帳號 ID</>}><input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></Field>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
       <Field label="核對原因"><textarea id="music-link-reason" rows={3} value={draft.reason} maxLength={500} disabled={!current || locked || pinDirty} onChange={event => edit({ reason: event.target.value })} /></Field>
       </>}{current && <Button variant="secondary" loading={busy} disabled={pinDirty || locked} onClick={() => void loadPreview()}>預覽關聯變更</Button>}
-      {current && preview && <><Text>原帳號：{ownerLabel(preview.profile.owner)}</Text><Text>目標帳號：{ownerLabel(preview.target)}</Text><Text>原選擇、稱呼與聯絡資料保留。舊帳號的保存重試與找回授權將失效。</Text><label className="consent"><input type="checkbox" checked={confirmed} disabled={!current || locked || pinDirty} onChange={event => setConfirmed(event.target.checked)} /><span>確認已核對成分與目標帳號，執行此關聯變更</span></label><Button loading={busy} disabled={pinDirty || unavailable || busy || !confirmed || !draft.reason.trim()} onClick={() => void save()}>保存關聯變更</Button></>}
+      {current && preview && <><Text>原帳號：{ownerLabel(preview.profile.owner)}</Text><Text>目標帳號：{ownerLabel(preview.target)}</Text><Text>原選擇、稱呼與聯絡資料保留。舊帳號的保存重試與找回授權將失效。</Text><Checkbox className="consent" checked={confirmed} disabled={!current || locked || pinDirty} onChange={event => setConfirmed(event.target.checked)} label={<><span>確認已核對成分與目標帳號，執行此關聯變更</span></>} /><Button loading={busy} disabled={pinDirty || unavailable || busy || !confirmed || !draft.reason.trim()} onClick={() => void save()}>保存關聯變更</Button></>}
       {draft.pending && <Button loading={busy} disabled={pinDirty || unavailable || busy} onClick={() => void save()}>確認關聯結果</Button>}
       {ownershipDirty&&<Button variant="secondary" disabled={locked||pinDirty} onClick={()=>{record.change(fallback());setPreview(null);setConfirmed(false);}}>放棄關聯原稿</Button>}
     </Surface>{(!current || /^[0-9]{4,12}$/.test(current.legacyKey)) && <AdminMusicPin id={id} profile={current} viewer={viewer} access={access} disabled={ownershipDirty || busy || unavailable} onDirty={setPinDirty} onBusy={setPinBusy} onPending={setPinPending} onCurrent={profile => { setCurrent(profile); setPreview(null); setConfirmed(false); }} />}{current && <History id={id} viewer={viewer} access={access} />}

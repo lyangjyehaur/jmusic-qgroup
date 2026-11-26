@@ -1,4 +1,4 @@
-import { toggleMusicTerm } from './kimi-controls';
+import { toggleMusicTerm, expectControlValue } from './kimi-controls';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -26,13 +26,13 @@ test('restores incomplete drafts from a closed tab only after review and isolate
   await login(context); await page.goto('/time-polls/new');
   await title(page).fill('關頁前的原稿'); await saved(page); await page.close();
   const fresh = await context.newPage(); await fresh.goto(origin + '/time-polls/new');
-  await expect(title(fresh)).toHaveValue('關頁前的原稿'); await expect(title(fresh)).toBeDisabled();
+  await expectControlValue(title(fresh), '關頁前的原稿'); await expect(title(fresh)).toBeDisabled();
   await fresh.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
   await expect(title(fresh)).toBeEnabled();
-  await login(context, 'bob'); await fresh.reload(); await expect(title(fresh)).toHaveValue('');
+  await login(context, 'bob'); await fresh.reload(); await expectControlValue(title(fresh), '');
   await title(fresh).fill('另一個帳號'); await saved(fresh);
   await login(context); fresh.on('dialog', d => void d.accept()); await fresh.reload();
-  await expect(title(fresh)).toHaveValue('關頁前的原稿');
+  await expectControlValue(title(fresh), '關頁前的原稿');
   expect((await durableRows(fresh)).filter(row => row.key.includes('poll-create:'))).toHaveLength(2);
 });
 test('keeps receipt image bytes and base revisions across a real browser profile restart without reusing a preview', async ({ playwright }, info) => {
@@ -57,7 +57,7 @@ test('keeps receipt image bytes and base revisions across a real browser profile
     await context.close(); context = await launch(); await login(context); page = await context.newPage();
     let writes = 0; page.on('request', r => { if (r.method() === 'POST') writes++; });
     await page.goto('/activities/listen/settlement/edit');
-    await expect(page.getByLabel('費用金額', { exact: true })).toHaveValue('7.25');
+    await expectControlValue(page.getByLabel('費用金額', { exact: true }), '7.25');
     await expect(page.getByRole('img', { name: '新消費憑證 · 消費', exact: true })).toHaveAttribute('src', src!);
     expect((await durableRows(page))[0]!.raw).toBe(before);
     await expect(page.getByRole('region', { name: '逐人結算預覽', exact: true })).toHaveCount(0);
@@ -75,10 +75,10 @@ test('retains both cross-tab versions and blocks stale mutation before it reache
   await expect(title(other)).toBeDisabled(); expect(writes).toBe(0);
   expect((await durableRows(other, 'versions')).map(row => JSON.parse(row.raw).value.title)).toContain('第二個分頁的內容');
   await other.getByRole('button', { name: '讀取已保存版本', exact: true }).click();
-  await expect(title(other)).toHaveValue('第一個分頁');
+  await expectControlValue(title(other), '第一個分頁');
   await other.getByText('草稿版本（1）', { exact: true }).click();
   await other.getByRole('button', { name: '載入此原稿（保留目前版本）', exact: true }).click();
-  await expect(title(other)).toHaveValue('第二個分頁的內容'); await expect(title(other)).toBeEnabled();
+  await expectControlValue(title(other), '第二個分頁的內容'); await expect(title(other)).toBeEnabled();
   expect((await durableRows(other, 'versions')).map(row => JSON.parse(row.raw).value.title)).toContain('第一個分頁');
   await page.getByRole('button', { name: '建立時間投票', exact: true }).click();
   await expect(page.getByText(/其他分頁已更新原稿/)).toBeVisible();
@@ -172,7 +172,7 @@ test('keeps the editor open when retaining the draft on navigation cannot commit
   await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();
   await page.locator('header').getByRole('link',{name:/^收件匣/}).click();
   await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();
-  await saved(page);await expect(page).toHaveURL('/time-polls/new');await expect(title(page)).toHaveValue('尚未保存的新內容');
+  await saved(page);await expect(page).toHaveURL('/time-polls/new');await expectControlValue(title(page), '尚未保存的新內容');
   expect(JSON.parse((await durableRows(page))[0]!.raw).value.title).toBe('已保存原稿');
 });
 for(const kind of ['logout','admin-logout','music-erasure'] as const)test('retries local cleanup after '+kind+' without repeating the committed server action',async({page,context})=>{

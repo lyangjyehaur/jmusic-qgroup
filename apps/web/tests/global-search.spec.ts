@@ -1,4 +1,4 @@
-import { expectOption } from './kimi-controls';
+import { expectOption, expectControlValue } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 
@@ -16,7 +16,7 @@ test('opens one search from the shared header and restores the original query af
   await page.getByRole('link', { name: '週末一起聽日系音樂', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: '週末一起聽日系音樂' })).toBeVisible();
   await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click();
-  await expect(page.getByLabel(field)).toHaveValue('日系'); await expect(page.getByRole('link', { name: '週末一起聽日系音樂', exact: true })).toBeVisible();
+  await expectControlValue(page.getByLabel(field), '日系'); await expect(page.getByRole('link', { name: '週末一起聽日系音樂', exact: true })).toBeVisible();
 });
 
 test('keeps pinyin and kana searches available to visitors while explaining the member qualification beside people results', async ({ page }) => {
@@ -26,7 +26,7 @@ test('keeps pinyin and kana searches available to visitors while explaining the 
   await expect(page.getByRole('link', { name: 'ヨルシカ', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'ヨルシカ', exact: true }).click();
   await expect(page.getByRole('heading', { name: '詞條資料', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expect(page.getByLabel(field)).toHaveValue('ｙｒｓｋ');
+  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expectControlValue(page.getByLabel(field), 'ｙｒｓｋ');
 });
 
 test('does not carry private activity results across a device account change', async ({ page, context }) => {
@@ -46,7 +46,7 @@ test('lets a member without music search activities and terms without inventing 
   await expect(page.getByText('沒有符合條件的成分稱呼。', { exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: '建立或找回成分', exact: true }).click();
   await expect(page.getByRole('heading', { level: 1, name: '我的成分' })).toBeVisible();
-  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expect(page.getByLabel(field)).toHaveValue('mjxs');
+  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expectControlValue(page.getByLabel(field), 'mjxs');
 });
 
 test('returns from a visible person and comparison to the same submitted name search', async ({ page, context }) => {
@@ -55,7 +55,7 @@ test('returns from a visible person and comparison to the same submitted name se
   await expect(page.getByRole('dialog').getByRole('heading', { name: '找搭子乙', exact: true })).toBeVisible();
   await page.getByRole('link', { name: '比較成分', exact: true }).click();
   await expect(page.getByRole('heading', { name: '成分比較', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expect(page.getByLabel(field)).toHaveValue('找搭子乙');
+  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expectControlValue(page.getByLabel(field), '找搭子乙');
   await expect(page.getByRole('link', { name: '找搭子乙', exact: true })).toBeVisible();
 });
 
@@ -68,7 +68,7 @@ test('keeps the shared unsaved music selection while visiting search, a term and
   await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
   await expectOption(page,'米津玄師喜歡程度','3');
-  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expect(page.getByLabel(field)).toHaveValue('mjxs');
+  await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expectControlValue(page.getByLabel(field), 'mjxs');
 });
 
 test('shows a source failure and retries the same search without substituting empty results', async ({ page, context }) => {
@@ -80,7 +80,7 @@ test('shows a source failure and retries the same search without substituting em
   await page.goto('/search?q=mjxs'); await expect(page.getByRole('alert')).toContainText('合成來源暫停');
   await expect(page.getByText('沒有符合條件的詞條。', { exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '重新讀取', exact: true }).click(); await expect(page.getByRole('link', { name: '米津玄師', exact: true })).toBeVisible();
-  await expect(page.getByLabel(field)).toHaveValue('mjxs');
+  await expectControlValue(page.getByLabel(field), 'mjxs');
 });
 
 test('does not display a delayed earlier query over the current search or overwrite the typed input', async ({ page, context }) => {
@@ -94,8 +94,8 @@ test('does not display a delayed earlier query over the current search or overwr
   await page.getByLabel(field).fill('yrsk'); await page.getByRole('button', { name: '搜尋', exact: true }).click();
   await expect(page.getByRole('link', { name: 'ヨルシカ', exact: true })).toBeVisible();
   await page.getByLabel(field).fill('尚未提交的查詢'); release();
-  await expect(page.getByRole('link', { name: '米津玄師', exact: true })).toHaveCount(0); await expect(page.getByLabel(field)).toHaveValue('尚未提交的查詢');
-  await page.goBack(); await expect(page.getByLabel(field)).toHaveValue('mjxs'); await expect(page.getByRole('link', { name: '米津玄師', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: '米津玄師', exact: true })).toHaveCount(0); await expectControlValue(page.getByLabel(field), '尚未提交的查詢');
+  await page.goBack(); await expectControlValue(page.getByLabel(field), 'mjxs'); await expect(page.getByRole('link', { name: '米津玄師', exact: true })).toBeVisible();
 });
 
 for (const width of [360, 390, 614, 768, 1280]) test(width + 'px: keeps the shared header, search control and long result names visible without horizontal overflow', async ({ page, context }, info) => {

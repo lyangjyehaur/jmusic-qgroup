@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { fillAdvancedActivity, setActivityStart } from './activity-authoring-controls';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
@@ -32,7 +33,7 @@ test('retains the original pending without sending after account replacement dur
     await login(context,'bob');await page.evaluate(()=>{const channel=new BroadcastChannel('qgroup:rebuild:session');channel.postMessage('refresh');channel.close();});
     await expect(page.locator('header .viewer')).toHaveText('小白');
   }finally{await page.evaluate(()=>{(window as unknown as {releaseDraftCommit:boolean}).releaseDraftCommit=true;});}
-  await expect(title(page)).toBeEnabled();await expect(title(page)).toHaveValue('');expect(sends).toBe(0);
+  await expect(title(page)).toBeEnabled();await expectControlValue(title(page), '');expect(sends).toBe(0);
   const rows=await durableRows(page);expect(rows).toHaveLength(1);expect(JSON.parse(rows[0]!.raw).pending.input.values.title).toBe('保存途中切換帳號');
   await login(context);await page.evaluate(()=>{const channel=new BroadcastChannel('qgroup:rebuild:session');channel.postMessage('refresh');channel.close();});
   await expect(page.getByRole('button',{name:'確認草稿操作結果',exact:true})).toBeVisible();expect(sends).toBe(0);
@@ -52,7 +53,7 @@ test('keeps a created operation recoverable when its atomic local move aborts, t
   expect(keys).toHaveLength(1);await fresh.getByRole('button',{name:'確認草稿操作結果',exact:true}).click();
   await expect(fresh).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);expect(keys).toHaveLength(2);expect(keys[1]).toBe(keys[0]);expect(bodies[1]).toBe(bodies[0]);
   expect((await durableRows(fresh)).some(row=>row.key.endsWith(':new'))).toBe(false);
-  await fresh.goto(origin+'/activities/new');await expect(title(fresh)).toHaveValue('');
+  await fresh.goto(origin+'/activities/new');await expectControlValue(title(fresh), '');
 });
 test('retains target edits made in another tab while creation is waiting for its response',async({page,context})=>{
   await login(context);await page.goto('/activities/new');await fill(page,'伺服器已建立');
@@ -61,7 +62,7 @@ test('retains target edits made in another tab while creation is waiting for its
   await page.getByRole('button',{name:'建立活動草稿',exact:true}).click();const id=await created,other=await context.newPage();
   try{
     await other.goto(origin+'/activities/'+id+'/edit');await title(other).fill('另一頁的尚未保存編輯');await saved(other);
-    release();await expect(page).toHaveURL('/activities/'+id+'/edit');await expect(title(page)).toHaveValue('另一頁的尚未保存編輯');await expect(title(page)).toBeDisabled();
+    release();await expect(page).toHaveURL('/activities/'+id+'/edit');await expectControlValue(title(page), '另一頁的尚未保存編輯');await expect(title(page)).toBeDisabled();
     await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await page.getByRole('button',{name:'保存活動草稿',exact:true}).click();await expect(page.getByText('活動草稿已保存。',{exact:true})).toBeVisible();
   }finally{release();await other.close();}
 });
@@ -72,7 +73,7 @@ test('recovers a copy creation from the new-tab inbox without re-reading its ori
   await page.getByRole('button',{name:'建立活動草稿',exact:true}).click();await expect(page.getByText('尚未確認活動草稿操作結果。原操作已保留，請按「確認草稿操作結果」安全重試。',{exact:true})).toBeVisible();
   await page.close();let sourceReads=0;await context.route('**/api/v2/activities/listen/copy-source',route=>{sourceReads++;return route.abort();});
   const fresh=await context.newPage();await fresh.goto(origin+'/inbox');await expect(fresh.getByRole('link',{name:'活動草稿',exact:true})).toHaveAttribute('href','/activities/new?copyFrom=listen');await fresh.getByRole('link',{name:'活動草稿',exact:true}).click();
-  await expect(title(fresh)).toHaveValue('再約的原操作');expect(sourceReads).toBe(0);expect(keys).toHaveLength(1);
+  await expectControlValue(title(fresh), '再約的原操作');expect(sourceReads).toBe(0);expect(keys).toHaveLength(1);
   await fresh.getByRole('button',{name:'確認草稿操作結果',exact:true}).click();await expect(fresh).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);expect(keys[1]).toBe(keys[0]);expect(bodies[1]).toBe(bodies[0]);
 });
 test('preserves a receipt code after closing the tab, isolates accounts and blocks a stale editor after logout without tab signaling',async({page,context})=>{
@@ -88,9 +89,9 @@ test('restores incomplete ledger commands with their operation IDs and revisions
   await login(context);await page.goto('/activities/listen/finance');await page.getByText('款項操作',{exact:true}).click();
   await page.getByLabel('金額（人民幣）',{exact:true}).fill('7.25');await page.getByLabel('備註（最多 1000 字）',{exact:true}).fill('保留帳本原輸入');await saved(page);
   const before=(await durableRows(page)).find(row=>row.key.includes('finance:'))!;await page.close();const fresh=await context.newPage();await fresh.goto(origin+'/activities/listen/finance');
-  await expect(fresh.getByLabel('金額（人民幣）',{exact:true})).toHaveValue('7.25');await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();expect((await durableRows(fresh)).find(row=>row.key===before.key)!.raw).toBe(before.raw);
+  await expectControlValue(fresh.getByLabel('金額（人民幣）',{exact:true}), '7.25');await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();expect((await durableRows(fresh)).find(row=>row.key===before.key)!.raw).toBe(before.raw);
   const other=await context.newPage();await other.goto(origin+'/activities/listen/finance');
-  await expect(other.getByLabel('金額（人民幣）',{exact:true})).toHaveValue('7.25');
+  await expectControlValue(other.getByLabel('金額（人民幣）',{exact:true}), '7.25');
   await expect(other.getByLabel('金額（人民幣）',{exact:true})).toBeDisabled();
   await expect(other.locator('.finance-operation-panel')).toHaveAttribute('open','');
   await other.getByText('款項操作',{exact:true}).click();

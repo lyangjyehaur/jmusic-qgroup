@@ -170,7 +170,7 @@ for(const width of [1440,390])test(`catalog conflicts offer recovery in place an
   await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
   await dock.getByRole('button',{name:'讀取最新版本',exact:true}).click();
   await expect(dock).toContainText('已讀取最新版本，你的勾選已保留。');expect(requests).toHaveLength(1);
-  await dock.locator('summary').click();await expect(dock).toContainText('Aimer · 只聽過幾首');
+  await dock.locator(".disclosure-trigger").click();await expect(dock).toContainText('Aimer · 只聽過幾首');
   await expect(page.getByRole('button',{name:'取消選取YOASOBI',exact:true})).toBeEnabled();
   await expectStableLayout(page);
   await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();

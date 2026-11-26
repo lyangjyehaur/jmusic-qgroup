@@ -1,3 +1,4 @@
+import { selectControl, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows } from './draft-helpers';
@@ -46,7 +47,7 @@ async function prepare(page:Page,kind:Kind,state:Awaited<ReturnType<typeof setup
   if(kind==='invite-issue'){await page.locator('#invite-name-0').fill('原稿受邀人');await page.locator('#invite-reason').fill('核對原邀請');await page.getByLabel('已核對受邀者與原因，確認建立邀請',{exact:true}).check();}
   if(kind==='invite-accept')await page.getByLabel(/^已核對本人身分與第/).check();
   if(kind==='claim-issue'||kind==='claim-decide'){
-    if(kind==='claim-decide'){await page.locator('#claim-target').selectOption('claim:'+state.item);await page.getByLabel('已核對申請人就是這位參加者',{exact:true}).check();}
+    if(kind==='claim-decide'){await selectControl(page.locator('#claim-target'), 'claim:'+state.item);await page.getByLabel('已核對申請人就是這位參加者',{exact:true}).check();}
     await page.locator('#claim-reason').fill('原稿認領原因');
     // Editing reason deliberately resets identity confirmation.
     if(kind==='claim-decide')await page.getByLabel('已核對申請人就是這位參加者',{exact:true}).check();
@@ -54,7 +55,7 @@ async function prepare(page:Page,kind:Kind,state:Awaited<ReturnType<typeof setup
   }
   if(kind==='claim-request')for(const label of ['我就是這位被代報的參加者','保留原付款責任、隊位與同意紀錄，不移轉或合併款項','確認以目前帳號提交本人認領申請'])await page.getByLabel(label,{exact:true}).check();
   if(kind==='manager-invite'||kind==='manager-revoke'){
-    if(kind==='manager-revoke'){await page.locator('#delegation-action').selectOption('revoke');await page.locator('#delegation-target').selectOption('invitations:'+state.item);}
+    if(kind==='manager-revoke'){await selectControl(page.locator('#delegation-action'), 'revoke');await selectControl(page.locator('#delegation-target'), 'invitations:'+state.item);}
     else{await page.getByLabel('受邀者稱呼',{exact:true}).fill('原稿協辦');await page.getByLabel('現場出席',{exact:true}).check();}
     await page.locator('#delegation-reason').fill('原稿管理原因');await page.getByLabel('已核對對象、職責與原因，確認管理操作',{exact:true}).check();
   }
@@ -76,7 +77,7 @@ for(const kind of ['invite-issue','claim-issue','manager-invite'] as const)test(
   const fresh=await context.newPage();await fresh.goto(origin+state.path+(kind==='claim-issue'?'ignored':''));const field=fresh.locator(kind==='invite-issue'?'#invite-reason':kind==='claim-issue'?'#claim-reason':'#delegation-reason');await expect(field).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(field).toBeEnabled();expect(await durableRows(fresh)).toEqual(before);
   await expect(fresh.getByRole('button',{name:flow.submit,exact:true})).toBeDisabled();const confirmations=fresh.locator('.activity-editor input[type="checkbox"]');
   for(let i=0;i<await confirmations.count();i++){const input=confirmations.nth(i);if(await input.evaluate(el=>(el as HTMLInputElement).parentElement?.textContent?.includes('現場出席')))continue;await expect(input).not.toBeChecked();}
-  if(kind==='claim-issue')await expect(fresh.locator('#claim-target')).toHaveValue('person:'+state.person);
+  if(kind==='claim-issue')await expectControlValue(fresh.locator('#claim-target'), 'person:'+state.person);
 });
 test('manager acceptance preserves its pending operation if the local completion transaction aborts',async({page,context})=>{
   const state=await setup(context,'manager-accept');await prepare(page,'manager-accept',state);
@@ -88,13 +89,13 @@ test('claim clean placeholder accepts a fresh person link without restoring old 
   const state=await setup(context,'claim-issue');await page.goto(origin+'/activities/'+state.id+'/claims');await expect(page.locator('#claim-target')).toBeEnabled();
   // Rebase stores an actual empty placeholder with the current revision.
   await page.getByRole('button',{name:'核對最新資料，保留輸入',exact:true}).click();await expect(page.getByText('已取得最新名單與認領狀態；原輸入保留，請重新核對。',{exact:true})).toBeVisible();
-  await page.goto(origin+state.path);await expect(page.locator('#claim-target')).toHaveValue('person:'+state.person);await expect(page.locator('#claim-target')).toBeEnabled();await expect(page.getByRole('button',{name:'恢復本機原稿',exact:true})).toHaveCount(0);
+  await page.goto(origin+state.path);await expectControlValue(page.locator('#claim-target'), 'person:'+state.person);await expect(page.locator('#claim-target')).toBeEnabled();await expect(page.getByRole('button',{name:'恢復本機原稿',exact:true})).toHaveCount(0);
 });
 test('conflicting claim drafts preserve both target versions and reset identity after archived version load',async({page,context})=>{
   const state=await setup(context,'claim-decide');await prepare(page,'claim-decide',state);const other=await context.newPage();await other.goto(origin+state.path);await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await page.locator('#claim-reason').fill('第一頁核對');await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await other.locator('#claim-reason').fill('第二頁核對');await expect(other.getByText(/其他分頁已更新原稿/)).toBeVisible();
-  expect((await durableRows(other,'versions')).some(row=>JSON.parse(row.raw).reason==='第二頁核對')).toBe(true);await other.getByRole('button',{name:'讀取已保存版本',exact:true}).click();await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(other.locator('#claim-reason')).toHaveValue('第一頁核對');
-  await other.getByLabel('已核對申請人就是這位參加者',{exact:true}).check();await other.getByLabel(/^已核對對象、原因與付款責任/).check();await other.getByText('草稿版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expect(other.locator('#claim-reason')).toHaveValue('第二頁核對');await expect(other.getByLabel('已核對申請人就是這位參加者',{exact:true})).not.toBeChecked();await expect(other.getByRole('button',{name:'提交認領處理',exact:true})).toBeDisabled();
+  expect((await durableRows(other,'versions')).some(row=>JSON.parse(row.raw).reason==='第二頁核對')).toBe(true);await other.getByRole('button',{name:'讀取已保存版本',exact:true}).click();await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expectControlValue(other.locator('#claim-reason'), '第一頁核對');
+  await other.getByLabel('已核對申請人就是這位參加者',{exact:true}).check();await other.getByLabel(/^已核對對象、原因與付款責任/).check();await other.getByText('草稿版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expectControlValue(other.locator('#claim-reason'), '第二頁核對');await expect(other.getByLabel('已核對申請人就是這位參加者',{exact:true})).not.toBeChecked();await expect(other.getByRole('button',{name:'提交認領處理',exact:true})).toBeDisabled();
   await other.bringToFront();await other.setViewportSize({width:360,height:800});expect(await other.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await other.screenshot({path:'test-results/unified-claim-draft-recovery-mobile.png',fullPage:true});
 });
 test('a rejected recipient operation stays pending if durable rejection cleanup aborts',async({page,context})=>{

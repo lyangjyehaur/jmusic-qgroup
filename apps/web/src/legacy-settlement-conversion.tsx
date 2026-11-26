@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect,useId,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field, Checkbox } from './kimi-ui';
 import { Notice } from './shared';
 import type { Member } from './member-access';
 import { decodeSettlement } from './legacy-settlement';
@@ -18,10 +18,10 @@ export function LegacySettlementConversion({viewer,inventory,row,validate,refres
  const mapped=inventory.mappings.find(m=>m.id===row.id);
  if(mapped)return <Notice>{mapped.sourceId===row.id?'此原稿已轉換。':'此版本已保全，採用同一原稿的目前版本。'}<Link to={mapped.path}>開啟目的原稿</Link>{message&&<Text>{message}</Text>}</Notice>;
  if(!decoded)return <Notice>此稿不能轉換：{error}</Notice>;
- return <div className="legacy-conversion"><div className="account-field"><label>原裝置 IANA 時區<input value={zone} placeholder="Asia/Taipei" disabled={busy} aria-describedby={help} onChange={e=>{setZone(e.target.value);setPlan(null);setConfirm(false);}}/></label><Text id={help}>原付款時間使用當時裝置時區。未填時區則保留原值，到表單核對補齊；不使用目前裝置設定。</Text></div>
- {decoded.durationHours===null&&decoded.value.items.some(i=>i.mode==='duration')&&<div className="account-field"><label>原活動時長（小時）<input inputMode="decimal" value={duration} disabled={busy} onChange={e=>{setDuration(e.target.value);setPlan(null);setConfirm(false);}}/></label><Text>只用於原來未填的參與分鐘。原時長未保存；未填則逐人補齊，不套用目前活動時長。</Text></div>}
+ return <div className="legacy-conversion"><div className="account-field"><Field  label={<>原裝置 IANA 時區</>}><input value={zone} placeholder="Asia/Taipei" disabled={busy} aria-describedby={help} onChange={e=>{setZone(e.target.value);setPlan(null);setConfirm(false);}}/></Field><Text id={help}>原付款時間使用當時裝置時區。未填時區則保留原值，到表單核對補齊；不使用目前裝置設定。</Text></div>
+ {decoded.durationHours===null&&decoded.value.items.some(i=>i.mode==='duration')&&<div className="account-field"><Field  label={<>原活動時長（小時）</>}><input inputMode="decimal" value={duration} disabled={busy} onChange={e=>{setDuration(e.target.value);setPlan(null);setConfirm(false);}}/></Field><Text>只用於原來未填的參與分鐘。原時長未保存；未填則逐人補齊，不套用目前活動時長。</Text></div>}
  <Button variant="secondary" disabled={busy} onClick={()=>void prepare()}>檢查此舊稿的轉換</Button>
- {plan&&<Notice><SettlementConversionPreview plan={plan}/>{plan.rows.length>1&&<Text>另有 {plan.rows.length-1} 筆同一發布帳號的原稿版本一併保全；原請求仍須核對。</Text>}{plan.pending?<Text>目的表單有待確認操作，不能覆寫；請先確認原結果。</Text>:<>{plan.previous!==null&&plan.previous!==plan.raw&&<label className="consent"><input type="checkbox" disabled={busy} checked={preserve} onChange={e=>setPreserve(e.target.checked)}/>保全目的表單的現有原稿，再採用此舊稿</label>}<label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>已核對原分攤、付款設定與時間；只帶入表單，尚未發布</label><Button disabled={busy||!confirm||plan.previous!==null&&plan.previous!==plan.raw&&!preserve} onClick={()=>void adopt()}>保全並帶入新版表單</Button></>}</Notice>}{message&&<Notice>{message}</Notice>}
+ {plan&&<Notice><SettlementConversionPreview plan={plan}/>{plan.rows.length>1&&<Text>另有 {plan.rows.length-1} 筆同一發布帳號的原稿版本一併保全；原請求仍須核對。</Text>}{plan.pending?<Text>目的表單有待確認操作，不能覆寫；請先確認原結果。</Text>:<>{plan.previous!==null&&plan.previous!==plan.raw&&<Checkbox className="consent" disabled={busy} checked={preserve} onChange={e=>setPreserve(e.target.checked)} label={<>保全目的表單的現有原稿，再採用此舊稿</>} />}<Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>已核對原分攤、付款設定與時間；只帶入表單，尚未發布</>} /><Button disabled={busy||!confirm||plan.previous!==null&&plan.previous!==plan.raw&&!preserve} onClick={()=>void adopt()}>保全並帶入新版表單</Button></>}</Notice>}{message&&<Notice>{message}</Notice>}
  </div>;
 }
 function SettlementConversionPreview({plan}:{plan:SettlementPlan}){

@@ -3,7 +3,7 @@ import { useEffect,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { AppearanceCommand, type Viewer } from '@qgroup/contracts';
 import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
@@ -76,7 +76,7 @@ function Manager({viewer,access}:{viewer:Viewer;access:Access}){
       </fieldset>
       {!['upload','config'].includes(value.command)&&<Text>{item?.name??'原壁紙已不存在'}{value.command==='delete'?'；圖片及公開連結會移除，無法復原。':''}</Text>}
       {stale&&!draft.pending&&<Text role="alert">設定已有更新，請核對最新版後重新確認。</Text>}
-      <label className="consent"><input type="checkbox" checked={confirmed} disabled={locked||stale||!!catalog.error} onChange={event=>setConfirmed(event.target.checked)}/><span>我已核對壁紙及設定變更</span></label>
+      <Checkbox className="consent" checked={confirmed} disabled={locked||stale||!!catalog.error} onChange={event=>setConfirmed(event.target.checked)} label={<><span>我已核對壁紙及設定變更</span></>} />
       <div className="page-actions"><Button loading={busy} disabled={busy||unavailable||!draft.pending&&(!confirmed||stale||!!catalog.error||value.command==='upload'&&!value.data)} onClick={()=>void send()}>{draft.pending?'確認原操作結果':'確認壁紙變更'}</Button><Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新版，保留輸入</Button><Button variant="secondary" disabled={locked} onClick={()=>{record.change(blank());setConfirmed(false);setMessage('');}}>放棄原稿</Button></div>
     </Surface>}
     {catalog.isPending||!catalog.isFetchedAfterMount?<Notice>正在讀取壁紙…</Notice>:catalog.error?<Failure error={catalog.error} retry={()=>void catalog.refetch()}/>:<Surface className="detail appearance-form"><Text>輪播間隔：{catalog.data.rotateSeconds} 秒 · {catalog.data.items.filter(x=>x.enabled&&!x.missing).length} 張啟用</Text><div className="page-actions"><Button disabled={locked||dirty} onClick={()=>begin('upload')}>上傳壁紙</Button><Button variant="secondary" disabled={locked||dirty} onClick={()=>begin('config')}>設定輪播間隔</Button></div>

@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { fillAdvancedActivity, setActivityStart } from './activity-authoring-controls';
 import { createHash } from 'node:crypto';
 import type { BrowserContext, Page } from '@playwright/test';
@@ -29,10 +30,10 @@ for(const kind of ['activity','poll'] as const) {
     const restored=await browser.newContext({baseURL:origin,serviceWorkers:'block'});
     try {
       await login(restored);await restored.addInitScript(({key,raw})=>sessionStorage.setItem(key,raw),{key:key(kind),raw});
-      const old=await restored.newPage();await old.goto(kind==='activity'?'/activities/new':'/time-polls/new');await old.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(old.getByLabel(name(kind),{exact:true})).toHaveValue('原建立內容');
+      const old=await restored.newPage();await old.goto(kind==='activity'?'/activities/new':'/time-polls/new');await old.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expectControlValue(old.getByLabel(name(kind),{exact:true}), '原建立內容');
       await old.getByLabel(name(kind),{exact:true}).fill('本機後續編輯');let secondBody:Record<string,unknown>|undefined,writes=0;
       await old.route(url,async route=>{writes++;secondBody=route.request().postDataJSON();await route.continue();});
-      await old.getByRole('button',{name:button(kind),exact:true}).click();await expect(old.getByText(/這份原稿已建立/)).toBeVisible();await expect(old.getByLabel(name(kind),{exact:true})).toHaveValue('本機後續編輯');expect(secondBody?.[kind==='activity'?'clientIntent':'client_intent']).toBe(firstBody?.[kind==='activity'?'clientIntent':'client_intent']);
+      await old.getByRole('button',{name:button(kind),exact:true}).click();await expect(old.getByText(/這份原稿已建立/)).toBeVisible();await expectControlValue(old.getByLabel(name(kind),{exact:true}), '本機後續編輯');expect(secondBody?.[kind==='activity'?'clientIntent':'client_intent']).toBe(firstBody?.[kind==='activity'?'clientIntent':'client_intent']);
       await old.getByRole('button',{name:'核對原'+(kind==='activity'?'活動':'投票')+'建立識別',exact:true}).click();const link=old.getByRole('link',{name:'開啟原'+(kind==='activity'?'活動':'投票')+'，保留本機原稿',exact:true});await expect(link).toHaveAttribute('href',kind==='activity'?'/activities/'+remoteId+'/edit':'/time-polls/'+remoteId);
       const retained=JSON.parse((await durableRows(old)).find(row=>row.key===key(kind))!.raw!);expect(kind==='activity'?retained.form.title:retained.value.title).toBe('本機後續編輯');expect(retained.pending).toBeUndefined();expect(writes).toBe(1);
       const current=await restored.request.get('/api/v2/'+(kind==='activity'?'me/activity-drafts':'time-polls'),{headers:{'X-Account-Scope':scope}});const body=await current.json();expect((kind==='activity'?body.drafts:body.polls).filter((v:{title:string})=>v.title==='原建立內容')).toHaveLength(1);
@@ -41,7 +42,7 @@ for(const kind of ['activity','poll'] as const) {
 }
 test('read-only intent lookups retain incomplete input and ignore a response arriving after logout',async({page,context})=>{
   await login(context);await page.goto('/activities/new');await page.getByLabel('活動名稱',{exact:true}).fill('未完成原稿');
-  await page.getByRole('button',{name:'核對原活動建立識別',exact:true}).click();await expect(page.getByText(/不能據此認定未建立/)).toBeVisible();await expect(page.getByLabel('活動名稱',{exact:true})).toHaveValue('未完成原稿');
+  await page.getByRole('button',{name:'核對原活動建立識別',exact:true}).click();await expect(page.getByText(/不能據此認定未建立/)).toBeVisible();await expectControlValue(page.getByLabel('活動名稱',{exact:true}), '未完成原稿');
   let release!:()=>void,seen!:()=>void;const gate=new Promise<void>(resolve=>{release=resolve;}),arrived=new Promise<void>(resolve=>{seen=resolve;});
   await page.route('**/api/v2/me/create-intents/view',async route=>{seen();await gate;await route.fulfill({json:{state:'existing',kind:'activity',id:'listen',revision:0,route:'arrangements',canEdit:true}});});
   await page.getByRole('button',{name:'核對原活動建立識別',exact:true}).click();await arrived;

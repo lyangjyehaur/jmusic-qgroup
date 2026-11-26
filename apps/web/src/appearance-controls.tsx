@@ -1,5 +1,5 @@
 import { Text } from 'yahha-ui';
-import { Button, Select } from './kimi-ui';
+import { Button, Select, Switch } from './kimi-ui';
 import { useAppearance, presetLabels } from './appearance-preferences';
 
 export function AppearanceControls({ quick = false }: { quick?: boolean }) {
@@ -14,7 +14,7 @@ export function AppearanceControls({ quick = false }: { quick?: boolean }) {
     <Select label={prefix+'資訊密度'} aria-label={quick ? '快速資訊密度' : '資訊密度'} value={prefs.value.density} onChange={event => prefs.change({ density: event.target.value as typeof prefs.value.density })}>
       <option value="comfortable">舒適</option><option value="compact">緊湊</option>
     </Select>
-    <label className="switch-row appearance-wallpaper"><span><strong>{quick ? '快速顯示壁紙' : '顯示壁紙'}</strong></span><input type="checkbox" aria-label={quick ? '快速顯示壁紙' : '顯示壁紙'} checked={prefs.value.wallpapers} onChange={event => prefs.change({ wallpapers: event.target.checked })} /><i/></label>
+    <Switch className="switch-row appearance-wallpaper" aria-label={quick ? '快速顯示壁紙' : '顯示壁紙'} checked={prefs.value.wallpapers} onChange={event => prefs.change({ wallpapers: event.target.checked })} label={<><span><strong>{quick ? '快速顯示壁紙' : '顯示壁紙'}</strong></span></>} />
     {prefs.error && <div role="alert"><Text>{prefs.error}</Text><Button onClick={prefs.retry}>重試保存偏好</Button><Button variant="secondary" onClick={prefs.repair}>保全原偏好後保存</Button></div>}
   </div>;
 }

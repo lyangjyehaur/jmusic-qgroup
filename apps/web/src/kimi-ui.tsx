@@ -1,6 +1,7 @@
 import {
   Children, isValidElement,
   type ButtonHTMLAttributes, type CSSProperties, type ReactElement, type ReactNode,
+  type ComponentProps,
 } from 'react';
 import { AlertCircle, Check } from 'lucide-react';
 import {
@@ -12,6 +13,11 @@ import {
   Heading as YHeading,
   IconButton as YIconButton,
   Input as YInput,
+  Checkbox as YCheckbox,
+  Switch as YSwitch,
+  RadioGroup as YRadioGroup,
+  Accordion as YAccordion,
+  Popover as YPopover,
   Select as YSelect,
   Tabs as YTabs,
   Text as YText,
@@ -22,7 +28,8 @@ import {
   type SelectOption,
   type ButtonProps as YahhaButtonProps,
 } from 'yahha-ui';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { uiText, displayLocale } from './language';
 type User = { name: string; avatar: string; color: string; avatarUrl?:string };
 
@@ -108,6 +115,7 @@ type OwnSelectProps = {
   name?: string;
   title?: string;
   'aria-label'?: string;
+  'aria-describedby'?: string;
   form?: string;
   autoComplete?: string;
   required?: boolean;
@@ -120,7 +128,7 @@ type OwnSelectProps = {
  */
 export function Select({
   children, value, defaultValue, onChange, label, hint, error, className,
-  required, disabled, name, id, title, form, autoComplete, 'aria-label': ariaLabel,
+  required, disabled, name, id, title, form, autoComplete, 'aria-label': ariaLabel, 'aria-describedby': describedBy,
 }: OwnSelectProps) {
   const options: SelectOption[] = Children.toArray(children)
     .filter(isValidElement)
@@ -129,20 +137,26 @@ export function Select({
       const text = p.children;
       const fallbackValue = typeof text === 'string' || typeof text === 'number' ? String(text) : '';
       return {
-        value: p.value !== undefined ? String(p.value) === '' ? '__kimi_all__' : String(p.value) : fallbackValue,
-        label: text ?? (p.value !== undefined ? String(p.value) : ''),
+        value: p.value !== undefined ? String(p.value) : fallbackValue,
+        label: <span data-option-value={p.value !== undefined ? String(p.value) : fallbackValue}>{text ?? fallbackValue}</span>,
         disabled: p.disabled,
-        textValue: typeof text === 'string' ? text : undefined,
+        textValue: nodeText(text),
       };
     });
   const hiddenLabel = !label;
   return <YSelect
     label={label ?? ariaLabel ?? '選項'}
     options={options}
-    value={value === undefined || value === null ? undefined : String(value) === '' ? '__kimi_all__' : String(value)}
-    defaultValue={defaultValue === undefined || defaultValue === null ? undefined : String(defaultValue)}
-    onValueChange={(next) => onChange?.({ target: { value: next === '__kimi_all__' ? '' : next ?? '' } })}
-    placeholder="請選擇"
+    value={value === undefined ? undefined : value === null ? null : String(value)}
+    defaultValue={defaultValue == null ? options.find(option => !option.disabled)?.value : String(defaultValue)}
+    // Option reconciliation/autofill can report the controlled value again. Like a
+    // native select, notify the form only when its value actually changes.
+    onValueChange={(next) => {
+      if (next !== null && (value === undefined || next !== String(value ?? ''))) {
+        onChange?.({ target: { value: next } });
+      }
+    }}
+    placeholder={options.find(option => option.value === '')?.label ?? '請選擇'}
     hint={hint}
     error={error}
     required={required}
@@ -151,6 +165,8 @@ export function Select({
     id={id}
     title={title}
     aria-label={ariaLabel}
+    {...(ariaLabel ? { 'aria-labelledby': '' } : {})}
+    aria-describedby={describedBy}
     form={form}
     autoComplete={autoComplete}
     className={cn('select-wrap', className, hiddenLabel && 'select-no-label')}
@@ -159,8 +175,54 @@ export function Select({
       trigger: 'yj-trigger',
       value: 'yj-value',
       option: 'yj-option',
+      popup: 'yj-select-popup',
     }}
   />;
+}
+
+function nodeText(node: ReactNode): string {
+  return Children.toArray(node).map(child => isValidElement<{children?: ReactNode}>(child)
+    ? nodeText(child.props.children) : typeof child === 'string' || typeof child === 'number' ? String(child) : '').join('');
+}
+
+export function Checkbox({ className, ...props }: ComponentProps<typeof YCheckbox>) {
+  return <YCheckbox {...props} className={cn('yj-checkbox', className)} />;
+}
+
+export function Switch({ className, ...props }: ComponentProps<typeof YSwitch>) {
+  return <YSwitch {...props} className={cn('yj-switch', className)} />;
+}
+
+export function RadioGroup<T extends string>({ className, ...props }: ComponentProps<typeof YRadioGroup<T>>) {
+  return <YRadioGroup {...props} className={cn('yj-radio-group', className)} />;
+}
+
+/** Keep closed forms mounted, and allow an externally changed open flag to reveal them. */
+export function Disclosure({ title, children, open, onOpenChange, className, ...props }: {
+  title: ReactNode; children?: ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void;
+} & Omit<ComponentProps<'div'>, 'title' | 'onToggle' | 'defaultValue'>) {
+  const [expanded, setExpanded] = useState(!!open);
+  const previousOpen = useRef(open);
+  useEffect(() => {
+    if (previousOpen.current !== open) { previousOpen.current = open; setExpanded(!!open); }
+  }, [open]);
+  const isOpen = onOpenChange ? !!open : expanded;
+  return <YAccordion {...props} keepMounted value={isOpen ? ['content'] : []}
+    onValueChange={next => { const value = next.includes('content'); setExpanded(value); onOpenChange?.(value); }}
+    className={cn('disclosure', className)} data-open={isOpen || undefined}
+    classNames={{ trigger: 'disclosure-trigger', panel: 'disclosure-panel', heading: 'disclosure-heading', item: 'disclosure-item' }}
+    items={[{ value: 'content', title, content: children }]} />;
+}
+
+/** Anchored menus dismiss on Escape, outside click and navigation. */
+export function PopupMenu({ title, label, children, className }: { title: ReactNode; label?: string; children: ReactNode; className?: string }) {
+  const location = useLocation();
+  const [open, setOpen] = useState(false);
+  useEffect(() => setOpen(false), [location.key]);
+  return <div className={cn('popup-menu', className)}><YPopover open={open} onOpenChange={setOpen}
+    title={<span className="sr-only">{label ?? nodeText(title)}</span>} closeLabel="關閉選單" align="end"
+    trigger={<Button variant="ghost" className="menu-trigger" aria-label={label}>{title}</Button>}
+    className="kimi menu-popover">{children}</YPopover></div>;
 }
 
 /** 欄位容器：單一原生 input / textarea / Select 直接交給對應的 Yahha 欄位元件。 */
@@ -175,15 +237,7 @@ export function Field({ label, hint, error, required, children, className }: {
   if (child && child.type === 'textarea') {
     return <YTextarea {...shared} {...child.props} className={cn('yj-field', className)} />;
   }
-  // Native selects keep their form/event contract and receive the same field layout.
-  if (child && child.type === 'select') {
-    return <div className={cn('field yj-field native-select-field', className)}>
-      <label className="yj-label" htmlFor={child.props.id}>{label}{required && <span className="required">必填</span>}</label>
-      {child}
-      {(error || hint) && <span className={cn('field-hint', error && 'field-error')}>{error || hint}</span>}
-    </div>;
-  }
-  if (child && child.type === Select) {
+  if (child && (child.type === 'select' || child.type === Select)) {
     return <Select
       {...(child.props as OwnSelectProps)}
       {...shared}
@@ -229,8 +283,8 @@ export function PageHeader({ title, description, actions, back }: {
 }
 
 /** 受控對話框；手機全螢幕、返回原活動與安全區由 styles.css 處理。 */
-export function Modal({ title, description, children, onClose, footer, wide = false }: {
-  title: string; description?: string; children: ReactNode; onClose: () => void; footer?: ReactNode; wide?: boolean;
+export function Modal({ title, description, children, onClose, footer, wide = false, closeLabel = uiText('關閉對話框') }: {
+  title: string; description?: string; children: ReactNode; onClose: () => void; footer?: ReactNode; wide?: boolean; closeLabel?: string;
 }) {
   return <YDialog
     open
@@ -238,7 +292,7 @@ export function Modal({ title, description, children, onClose, footer, wide = fa
     title={title}
     description={description}
     footer={footer}
-    closeLabel="關閉對話框"
+    closeLabel={closeLabel}
     className={cn('kimi', 'yj-dialog', wide && 'yj-dialog-wide')}
     disablePointerDismissal
   >{children}</YDialog>;

@@ -2,7 +2,7 @@ import { errorText, uiText } from './language';
 import { useEffect,useId,useRef,useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Field, Checkbox } from './kimi-ui';
 import { Notice } from './shared';
 import type { Member } from './member-access';
 import { decodeMoney } from './legacy-money';
@@ -19,9 +19,9 @@ export function LegacyMoneyConversion({viewer,inventory,row,validate,refresh}:{v
  const mapped=inventory.mappings.find(m=>m.id===row.id);
  if(mapped)return <Notice>{mapped.sourceId===row.id?'此原稿已轉換。':'此版本已保全，採用同一原稿的目前版本。'}<Link to={mapped.path}>開啟目的原稿</Link>{message&&<Text>{message}</Text>}</Notice>;
  if(!decoded)return <Notice>此稿不能轉換：{error}</Notice>;
- return <div className="legacy-conversion">{decoded.kind==='finance'&&['record','report'].includes(decoded.command)&&<div className="account-field"><label>原款項 IANA 時區<input value={zone} placeholder="Asia/Taipei" disabled={busy} aria-describedby={help} onChange={e=>{setZone(e.target.value);setPlan(null);setConfirm(false);}}/></label><Text id={help}>原款項稿未保存活動時區；請填寫當時使用的時區。未填或歧義時間保留原值，到表單核對補齊。</Text></div>}
+ return <div className="legacy-conversion">{decoded.kind==='finance'&&['record','report'].includes(decoded.command)&&<div className="account-field"><Field  label={<>原款項 IANA 時區</>}><input value={zone} placeholder="Asia/Taipei" disabled={busy} aria-describedby={help} onChange={e=>{setZone(e.target.value);setPlan(null);setConfirm(false);}}/></Field><Text id={help}>原款項稿未保存活動時區；請填寫當時使用的時區。未填或歧義時間保留原值，到表單核對補齊。</Text></div>}
  <Button variant="secondary" disabled={busy} onClick={()=>void prepare()}>檢查此舊稿的轉換</Button>
- {plan&&<Notice><MoneyPreview plan={plan}/>{plan.rows.length>1&&<Text>另有 {plan.rows.length-1} 筆同一原稿版本一併保全。不同款項編號或原請求仍需核對。</Text>}{plan.pending?<Text>目的表單有待確認操作，不能覆寫；請先確認原結果。</Text>:<>{plan.previous!==null&&plan.previous!==plan.raw&&<label className="consent"><input type="checkbox" disabled={busy} checked={preserve} onChange={e=>setPreserve(e.target.checked)}/>保全目的表單的現有原稿，再採用此舊稿</label>}<label className="consent"><input type="checkbox" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)}/>已核對原資料、款項結果與時間；只帶入表單，尚未送出</label><Button disabled={busy||!confirm||plan.previous!==null&&plan.previous!==plan.raw&&!preserve} onClick={()=>void adopt()}>保全並帶入新版表單</Button></>}</Notice>}{message&&<Notice>{message}</Notice>}
+ {plan&&<Notice><MoneyPreview plan={plan}/>{plan.rows.length>1&&<Text>另有 {plan.rows.length-1} 筆同一原稿版本一併保全。不同款項編號或原請求仍需核對。</Text>}{plan.pending?<Text>目的表單有待確認操作，不能覆寫；請先確認原結果。</Text>:<>{plan.previous!==null&&plan.previous!==plan.raw&&<Checkbox className="consent" disabled={busy} checked={preserve} onChange={e=>setPreserve(e.target.checked)} label={<>保全目的表單的現有原稿，再採用此舊稿</>} />}<Checkbox className="consent" disabled={busy} checked={confirm} onChange={e=>setConfirm(e.target.checked)} label={<>已核對原資料、款項結果與時間；只帶入表單，尚未送出</>} /><Button disabled={busy||!confirm||plan.previous!==null&&plan.previous!==plan.raw&&!preserve} onClick={()=>void adopt()}>保全並帶入新版表單</Button></>}</Notice>}{message&&<Notice>{message}</Notice>}
  </div>;
 }
 function MoneyPreview({plan}:{plan:MoneyPlan}){

@@ -1,6 +1,6 @@
 import type { BrowserContext,Page } from '@playwright/test';
 import { test,expect } from './fixtures';
-import { chooseOption } from './kimi-controls';
+import { chooseOption, expectControlValue } from './kimi-controls';
 import { advancedActivity,setActivityStart,fillAdvancedActivity } from './activity-authoring-controls';
 const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT??5082}`;
 async function login(context:BrowserContext){await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:origin,httpOnly:true,sameSite:'Lax'}]);}
@@ -9,12 +9,12 @@ async function scope(context:BrowserContext){const s=await(await context.request
 test('uses legacy defaults and publishes in one request with end-time cutoff and the owner registered',async({page,context})=>{
   await login(context);await page.goto('/activities/new');
   await expect(page.getByLabel('發布後同步到 QQ 群',{exact:true})).toBeChecked();
-  await expect(page.getByLabel('開始時間',{exact:true})).toHaveValue('18:00');
+  await expectControlValue(page.getByLabel('開始時間',{exact:true}), '18:00');
   await expect(page.getByLabel('報名截止',{exact:true})).not.toBeVisible();
   await fill(page);await chooseOption(page,'活動類型',{label:'聚餐'});await expect(page.getByLabel('持續時間',{exact:true})).toContainText('2 小時');
-  await advancedActivity(page);await expect(page.getByLabel('報名截止',{exact:true})).toHaveValue('2099-12-31T20:00');
+  await advancedActivity(page);await expectControlValue(page.getByLabel('報名截止',{exact:true}), '2099-12-31T20:00');
   await chooseOption(page,'持續時間',{label:'5 小時'});await chooseOption(page,'活動類型','运动');await expect(page.getByLabel('持續時間',{exact:true})).toContainText('5 小時');
-  await expect(page.getByLabel('報名截止',{exact:true})).toHaveValue('2099-12-31T23:00');
+  await expectControlValue(page.getByLabel('報名截止',{exact:true}), '2099-12-31T23:00');
   let writes=0;page.on('request',r=>{if(r.method()==='POST'&&r.url().endsWith('/activities/drafts'))writes++;});
   await page.getByRole('button',{name:'發布活動',exact:true}).click();await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}$/);expect(writes).toBe(1);
   const id=new URL(page.url()).pathname.split('/')[2],headers=await scope(context),activity=await(await context.request.get('/api/v2/activities/'+id,{headers})).json();
@@ -36,9 +36,9 @@ test('requires early-night selection, previews the next calendar day and confirm
 });
 test('keeps a manual cutoff across schedule edits and can restore its end-time link',async({page,context})=>{
   await login(context);await page.goto('/activities/new');await fill(page);await fillAdvancedActivity(page,'報名截止','2099-12-30T18:00');
-  await setActivityStart(page,'2099-12-31T19:00');await chooseOption(page,'持續時間',{label:'4 小時'});await expect(page.getByLabel('報名截止',{exact:true})).toHaveValue('2099-12-30T18:00');
-  await page.getByRole('button',{name:'截止跟隨活動結束',exact:true}).click();await expect(page.getByLabel('報名截止',{exact:true})).toHaveValue('2099-12-31T23:00');
-  await chooseOption(page,'持續時間',{label:'2 小時'});await expect(page.getByLabel('報名截止',{exact:true})).toHaveValue('2099-12-31T21:00');
+  await setActivityStart(page,'2099-12-31T19:00');await chooseOption(page,'持續時間',{label:'4 小時'});await expectControlValue(page.getByLabel('報名截止',{exact:true}), '2099-12-30T18:00');
+  await page.getByRole('button',{name:'截止跟隨活動結束',exact:true}).click();await expectControlValue(page.getByLabel('報名截止',{exact:true}), '2099-12-31T23:00');
+  await chooseOption(page,'持續時間',{label:'2 小時'});await expectControlValue(page.getByLabel('報名截止',{exact:true}), '2099-12-31T21:00');
   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>scrollTo(0,0));await page.screenshot({path:'test-results/activity-create-desktop.png',fullPage:true});
 });
 test('recovers an unreadable direct publication across reload with the same payload and key',async({page,context})=>{

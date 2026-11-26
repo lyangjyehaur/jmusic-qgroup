@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button } from './kimi-ui';
+import { Button, Select, Checkbox } from './kimi-ui';
 import { MusicCatalog, MyMusicEntries, MusicEntryCommand } from '@qgroup/contracts';
 import { musicEntryKey } from '@qgroup/domain';
 import { z } from 'zod';
@@ -268,14 +268,14 @@ function EntryEditor({
                 <input value={value.name} onChange={(e) => edit({ name: e.target.value })} />
               </Field>
               <Field label="詞條類型">
-                <select value={value.kind} onChange={(e) => edit({ kind: e.target.value as 'main' | 'sub' })}>
+                <Select value={value.kind} onChange={(e) => edit({ kind: e.target.value as 'main' | 'sub' })}>
                   <option value="main">領域</option>
                   <option value="sub">細分</option>
-                </select>
+                </Select>
               </Field>
               {value.kind === 'sub' && (
                 <Field label="詞條分類">
-                  <select value={value.category} onChange={(e) => edit({ category: e.target.value })}>
+                  <Select value={value.category} onChange={(e) => edit({ category: e.target.value })}>
                     {form.data.categories.map((category) => (
                       <option key={category} value={category}>
                         {categoryLabel(category)}
@@ -284,7 +284,7 @@ function EntryEditor({
                     {!form.data.categories.includes(value.category) && (
                       <option value={value.category}>{categoryLabel(value.category)}</option>
                     )}
-                  </select>
+                  </Select>
                 </Field>
               )}
               {command === 'update' && (
@@ -298,15 +298,10 @@ function EntryEditor({
               )}
             </>
           )}
-          <label className="consent">
-            <input
-              type="checkbox"
-              checked={confirmed}
-              onChange={(e) => setConfirmed(e.target.checked)}
-              disabled={blocked}
-            />
+          <Checkbox className="consent" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} disabled={blocked} label={<>
+
             <span>{command === 'delete' ? '確認刪除此詞條。' : '已核對名稱、類型與分類，確認保存。'}</span>
-          </label>
+          </>} />
         </fieldset>
         {stale && <Notice>原稿與目前詞條或成分不符，請核對最新版本。</Notice>}
         <Button

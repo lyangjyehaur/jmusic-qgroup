@@ -15,7 +15,7 @@ import { PageTools } from './page-tools';
 import { ChevronDown, Command, Search } from 'lucide-react';
 import { KimiMePage } from './kimi-me';
 import { KimiMusicFrame, KimiPeopleFrame } from './kimi-page-frames';
-import { Avatar } from './kimi-ui';
+import { Avatar, PopupMenu } from './kimi-ui';
 import { AppearanceControls } from './appearance-controls';
 import { BrandMark, InterfaceIcon } from './interface-icons';
 import { discoveryDialogKind, RetainedPage } from './discovery-dialog';
@@ -57,11 +57,9 @@ export function Layout() {
     previousScope.current = scope;
   }, [scope, queryClient]);
   useEffect(() => { if (!overlay && !document.querySelector('[role="dialog"],dialog[open]')) heading.current?.focus(); }, [location.pathname, overlay]);
-  useEffect(() => { shell.current?.querySelectorAll<HTMLDetailsElement>('.shell-menu').forEach(menu => { menu.open = false; }); }, [location.pathname]);
   useEffect(() => {
     const shortcut = (event: KeyboardEvent) => {
       if (event.defaultPrevented || event.isComposing) return;
-      if (event.key === 'Escape') shell.current?.querySelectorAll<HTMLDetailsElement>('.shell-menu').forEach(menu => { menu.open = false; });
       const target = event.target as HTMLElement;
       if (target.closest('[role="dialog"]')) return;
       const commandSearch = (event.metaKey || event.ctrlKey) && !event.altKey && event.key.toLowerCase() === 'k';
@@ -83,9 +81,9 @@ export function Layout() {
       <Link to="/activities" className="mobile-brand" aria-label="群聚首頁"><BrandMark/><span>群聚</span></Link>
       <Link className="global-search global-search-link" to={searchURL} state={searchState} aria-label="全站搜尋"><Search size={16} aria-hidden="true"/><span>搜尋活動、詞條或同好</span><kbd><Command size={11}/> K</kbd></Link>
       <div className="topbar-actions">
-        <details className="shell-menu appearance-menu"><summary aria-label="外觀設定" title="外觀設定"><InterfaceIcon name="palette"/><span>外觀</span></summary><div className="shell-popover"><AppearanceControls quick/></div></details>
+        <PopupMenu className="shell-menu appearance-menu" label="外觀設定" title={<><InterfaceIcon name="palette"/><span>外觀</span></>}><div className="shell-popover"><AppearanceControls quick/></div></PopupMenu>
         <InboxLink key={session.data?.scope??'guest'} viewer={session.data?.authenticated?session.data:undefined}/>
-        <details className="shell-menu account-menu"><summary aria-label="帳號選單"><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span className="viewer">{nickname}</span><ChevronDown size={14}/></summary><div className="shell-popover"><strong>{nickname}</strong><Link to="/me">帳號與設定</Link><Link to="/me/music">編輯我的成分</Link></div></details>
+        <PopupMenu className="shell-menu account-menu" label="帳號選單" title={<><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span className="viewer">{nickname}</span><ChevronDown size={14}/></>}><div className="shell-popover"><strong>{nickname}</strong><Link to="/me">帳號與設定</Link><Link to="/me/music">編輯我的成分</Link></div></PopupMenu>
       </div>
     </header>
     <main id="main" ref={heading} tabIndex={-1} className="main"><PWAUpdateNotice/>{typeof location.state?.accountMessage === 'string' && <Notice>{location.state.accountMessage}</Notice>}{session.data?.authenticated && ['/', '/activities', '/me'].includes(location.pathname) && !location.search && !location.hash && <QQReauthReminder key={session.data.scope} viewer={session.data} returnTo={location.pathname} />}{searchBack && !overlay && <Link className="back" to={searchBack}>← 回到搜尋</Link>}{!discoveryPage && !overlay ? <RetainedPage location={location}>{outlet}</RetainedPage> : overlay && background.current && <RetainedPage location={background.current.location} inactive>{background.current.content}</RetainedPage>}{discoveryPage && outlet}</main>

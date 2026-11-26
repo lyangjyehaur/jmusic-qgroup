@@ -1,4 +1,4 @@
-import { chooseOption } from './kimi-controls';
+import { chooseOption, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext } from '@playwright/test';
 const origin=`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -10,7 +10,7 @@ test('uses the supplied prototype activity toolbar with complete server filterin
  await expect(page.getByLabel('活動摘要')).toContainText('近期活動');await expect(page.getByLabel('活動摘要')).toContainText('我的待辦');
  await page.getByLabel('搜尋活動或地點',{exact:true}).fill('河岸');await page.getByLabel('搜尋活動或地點',{exact:true}).press('Enter');
  await expect(page.getByRole('link',{name:'週末一起聽日系音樂',exact:true})).toBeVisible();await expect(page.getByRole('link',{name:'冬日的第一場合唱',exact:true})).toHaveCount(0);
- await expect(page).toHaveURL(/q=/);await page.reload();await expect(page.getByLabel('搜尋活動或地點',{exact:true})).toHaveValue('河岸');
+ await expect(page).toHaveURL(/q=/);await page.reload();await expectControlValue(page.getByLabel('搜尋活動或地點',{exact:true}), '河岸');
  await page.getByRole('tab',{name:'我的活動',exact:true}).click();await expect(page).toHaveURL(/\/me\/activities/);
  await page.getByLabel('搜尋活動或地點',{exact:true}).fill('');await page.getByRole('tab',{name:'往期與歸檔',exact:true}).click();
  await expect(page).toHaveURL(/period=history/);await expect(page.getByRole('link',{name:'上次的相聚',exact:true})).toBeVisible();
@@ -30,7 +30,7 @@ test('prototype catalog rows select real terms, keep dialog controls and restore
  await page.getByRole('button',{name:'選取Aimer',exact:true}).click();await page.getByRole('link',{name:'Aimer',exact:true}).click();
  const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();await chooseOption(page,'Aimer喜歡程度','1');
  await dialog.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(dialog.getByText('已保存。',{exact:true})).toBeVisible();
- await dialog.getByRole('button',{name:'返回詞庫',exact:true}).click();await expect(dialog).toHaveCount(0);await expect(page.getByLabel('搜尋音樂詞條',{exact:true})).toHaveValue('Aimer');
+ await dialog.getByRole('button',{name:'返回詞庫',exact:true}).click();await expect(dialog).toHaveCount(0);await expectControlValue(page.getByLabel('搜尋音樂詞條',{exact:true}), 'Aimer');
  await page.getByRole('tab',{name:'完整詞庫',exact:true}).click();await expect(page).toHaveURL(/library=all/);await page.getByRole('tab',{name:'氣泡視圖',exact:true}).click();await expect(page.locator('.bubble-canvas')).toBeVisible();await expect(page.locator('.term-bubble')).toHaveCount(1);await expect(page.locator('.term-bubble')).toContainText('Aimer');
 });
 

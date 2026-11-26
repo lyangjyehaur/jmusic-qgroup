@@ -1,4 +1,4 @@
-import { chooseOption, expectOption } from './kimi-controls';
+import { chooseOption, expectOption, expectControlValue } from './kimi-controls';
 import { test,expect } from './fixtures';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import type { BrowserContext,Page } from '@playwright/test';
@@ -23,16 +23,16 @@ test('theme changes preserve both unfinished music choices and activity input wi
   await login(context,'alice');const writes:string[]=[];
   context.on('request',request=>{if(['POST','PUT','PATCH','DELETE'].includes(request.method())&&new URL(request.url()).pathname.startsWith('/api/v2/'))writes.push(request.url());});
   await page.goto('/me/music');await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill('mijin');await page.getByRole('button',{name:/米津玄師/,exact:false}).click();await chooseOption(page,'米津玄師喜歡程度','4');
-  const activity=await context.newPage();await activity.goto('/activities/new');await activity.getByLabel('活動名稱',{exact:true}).fill('仍未送出的活動');await activity.getByLabel('活動說明',{exact:true}).fill('保留原輸入與音樂選擇');
+  const activity=await context.newPage();await activity.goto('/activities/new');await activity.getByLabel('活動名稱',{exact:true}).fill('仍未送出的活動');await activity.getByLabel('注意事項',{exact:true}).fill('保留原輸入與音樂選擇');
   const preferences=await context.newPage();await preferences.goto('/me/appearance');
   for(const theme of ['dark','light']){
     await chooseOption(preferences,'主題',theme);
     await expect(page.locator('html')).toHaveAttribute('data-theme',theme);await expect(activity.locator('html')).toHaveAttribute('data-theme',theme);
-    await expectOption(page,'米津玄師喜歡程度','4');await expect(activity.getByLabel('活動名稱',{exact:true})).toHaveValue('仍未送出的活動');await expect(activity.getByLabel('活動說明',{exact:true})).toHaveValue('保留原輸入與音樂選擇');
+    await expectOption(page,'米津玄師喜歡程度','4');await expectControlValue(activity.getByLabel('活動名稱',{exact:true}), '仍未送出的活動');await expectControlValue(activity.getByLabel('注意事項',{exact:true}), '保留原輸入與音樂選擇');
   }
   const musicBefore=(await durableRows(page)).filter(row=>row.key.includes('music:v1:'));const activityBefore=(await durableRows(activity)).filter(row=>row.key.includes('activity-draft:'));expect(musicBefore).toHaveLength(1);expect(activityBefore).toHaveLength(1);
-  page.on('dialog',dialog=>void dialog.accept());activity.on('dialog',dialog=>void dialog.accept());await page.reload();await activity.reload();
-  await expectOption(page,'米津玄師喜歡程度','4');await expect(activity.getByLabel('活動名稱',{exact:true})).toHaveValue('仍未送出的活動');await expect(activity.getByLabel('活動說明',{exact:true})).toHaveValue('保留原輸入與音樂選擇');
+  page.on('dialog',dialog=>void dialog.accept());activity.on('dialog',dialog=>void dialog.accept());await page.reload();await activity.reload();await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await activity.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await expectOption(page,'米津玄師喜歡程度','4');await expectControlValue(activity.getByLabel('活動名稱',{exact:true}), '仍未送出的活動');await expectControlValue(activity.getByLabel('注意事項',{exact:true}), '保留原輸入與音樂選擇');
   expect((await durableRows(page)).filter(row=>row.key.includes('music:v1:'))).toEqual(musicBefore);expect((await durableRows(activity)).filter(row=>row.key.includes('activity-draft:'))).toEqual(activityBefore);expect(writes).toEqual([]);await preferences.close();await activity.close();
 });
 test('profile-free administrator manages original images, order, enabled status, interval and confirmed deletion on mobile',async({page,context})=>{
@@ -52,7 +52,7 @@ test('lost upload response survives reload with one image copy and replays the s
 test('concurrent settings keep the original input and require a fresh review before resubmitting',async({page,context,browser})=>{
   await login(context);await page.goto('/admin/appearance');await page.getByRole('button',{name:'設定輪播間隔',exact:true}).click();await page.getByLabel('輪播間隔（秒）',{exact:true}).fill('11');
   const independent=await browser.newContext({baseURL:origin});await login(independent);const other=await independent.newPage();await other.goto('/admin/appearance');await other.getByRole('button',{name:'設定輪播間隔',exact:true}).click();await other.getByLabel('輪播間隔（秒）',{exact:true}).fill('12');await confirm(other);await expect(other.getByText('壁紙設定已保存。',{exact:true})).toBeVisible();
-  await page.getByRole('button',{name:'核對最新版，保留輸入',exact:true}).click();await expect(page.getByLabel('輪播間隔（秒）',{exact:true})).toHaveValue('11');await expect(page.getByRole('button',{name:'確認壁紙變更',exact:true})).toBeDisabled();await confirm(page);await expect(page.getByText('輪播間隔：11 秒 · 0 張啟用',{exact:true})).toBeVisible();await independent.close();
+  await page.getByRole('button',{name:'核對最新版，保留輸入',exact:true}).click();await expectControlValue(page.getByLabel('輪播間隔（秒）',{exact:true}), '11');await expect(page.getByRole('button',{name:'確認壁紙變更',exact:true})).toBeDisabled();await confirm(page);await expect(page.getByText('輪播間隔：11 秒 · 0 張啟用',{exact:true})).toBeVisible();await independent.close();
 });
 test('storage failure blocks writes, corrupt drafts are preserved, and unfinished work protects navigation',async({page,context})=>{
   await login(context);await page.goto('/admin/appearance');await page.getByRole('button',{name:'設定輪播間隔',exact:true}).click();await page.getByLabel('輪播間隔（秒）',{exact:true}).fill('31');await denyDraftWrites(page,'admin-appearance:');let writes=0;page.on('request',request=>{if(request.url().endsWith('/admin/appearance')&&request.method()==='POST')writes++;});

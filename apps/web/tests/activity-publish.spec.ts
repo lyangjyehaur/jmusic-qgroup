@@ -1,3 +1,4 @@
+import { expectControlValue } from './kimi-controls';
 import { fillAdvancedActivity, setActivityStart } from './activity-authoring-controls';
 import { durableRows } from './draft-helpers';
 import { test, expect } from './fixtures';
@@ -42,7 +43,7 @@ for(const kind of ['create','save'] as const)test('a completed '+kind+' raced by
     await page.goto('/activities/new');await page.getByLabel('活動名稱',{exact:true}).fill('跨裝置發布');await page.getByLabel('地點',{exact:true}).fill('原始地點');await setActivityStart(page,'2099-12-12T18:00:00');await fillAdvancedActivity(page,'報名截止','2099-12-11T18:00:00');
   }else await page.getByLabel('地點',{exact:true}).fill('原始地點');
   await page.getByRole('button',{name:kind==='create'?'建立活動草稿':'保存活動草稿',exact:true}).click();
-  await expect(page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true})).toBeVisible();await expect(page.getByLabel('地點',{exact:true})).toHaveValue('原始地點');await expect(page.getByLabel('地點',{exact:true})).toBeDisabled();
+  await expect(page.getByRole('link',{name:'開啟活動，原稿仍保留',exact:true})).toBeVisible();await expectControlValue(page.getByLabel('地點',{exact:true}), '原始地點');await expect(page.getByLabel('地點',{exact:true})).toBeDisabled();
   const local=await durableRows(page);expect(JSON.stringify(local)).toContain('原始地點');
   page.on('dialog',dialog=>void dialog.accept());await page.reload();
   if(kind==='create')await page.unroute('**/api/v2/activities/drafts');

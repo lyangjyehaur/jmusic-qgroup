@@ -28,7 +28,7 @@ test('same-named arrangement responses retain their original attendee targets in
   }
   await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/activities/' + draft.id + '/history');
   const entries = page.locator('.history-entry').filter({ hasText: '確認新安排' }); await expect(entries).toHaveCount(2);
-  for (const entry of await entries.all()) await entry.locator('summary').click();
+  for (const entry of await entries.all()) await entry.locator(".disclosure-trigger").click();
   for (const person of people) await expect(page.getByText('報名者：同名 · 報名編號：' + person.id, { exact: true })).toBeVisible();
   await expect(page.getByText('原因：需要另行協調', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -47,7 +47,7 @@ test.describe('settlement audit metadata', () => {
     await page.getByRole('button', { name: '發布逐人結算', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
     const history = await (await context.request.get('/api/v2/activities/listen/history', { headers: await headers(context) })).json();
     const saved = history.entries.find((entry: { action: string }) => entry.action === 'settlement_saved'); expect(saved.after.mode).toBe('detailed'); expect(saved.after.changed_fields.length).toBeGreaterThan(0);
-    await page.goto('/activities/listen/history'); const entry = page.locator('.history-entry').filter({ hasText: '保存結算' }).first(); await entry.locator('summary').click();
+    await page.goto('/activities/listen/history'); const entry = page.locator('.history-entry').filter({ hasText: '保存結算' }).first(); await entry.locator(".disclosure-trigger").click();
     await expect(entry.locator('dt').filter({ hasText: /^結算方式$/ })).toBeVisible(); await expect(entry.getByText('未設定 → 逐人結算', { exact: true })).toBeVisible();
     await expect(entry.getByText('未設定 → ' + saved.after.changed_fields.join('、'), { exact: true })).toBeVisible();
   });
@@ -61,6 +61,6 @@ test('draft participation changes alongside event snapshots remain visible in hi
   expect(created.status()).toBe(200); const draft = await created.json(), base = '/api/v2/activities/' + draft.id;
   const current = await (await context.request.get(base + '/draft', { headers: await headers(context) })).json();
   expect((await context.request.put(base + '/draft', { headers: await headers(context), data: { revision: current.revision, values: { ...current.values, joinOwner: true }, reason: '核對本人參加' } })).status()).toBe(200);
-  await page.goto('/activities/' + draft.id + '/history'); const entry = page.locator('.history-entry').filter({ hasText: '修改活動' }).first(); await entry.locator('summary').click();
+  await page.goto('/activities/' + draft.id + '/history'); const entry = page.locator('.history-entry').filter({ hasText: '修改活動' }).first(); await entry.locator(".disclosure-trigger").click();
   await expect(entry.getByText('草稿本人參加', { exact: true })).toBeVisible(); await expect(entry.getByText('否 → 是', { exact: true })).toBeVisible();
 });

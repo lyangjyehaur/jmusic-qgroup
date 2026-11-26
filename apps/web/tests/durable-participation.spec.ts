@@ -1,3 +1,4 @@
+import { selectControl, expectControlValue } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 import { durableRows } from './draft-helpers';
@@ -28,12 +29,12 @@ const flows:{family:Family;path:string;field:string;submit:string;retry:string;l
 ];
 async function prepare(page:Page,family:Family,id:string,person:string){
   const flow=flows.find(row=>row.family===family)!;await page.goto(origin+'/activities/'+id+'/'+flow.path);
-  if(family==='lifecycle')await page.locator('#lifecycle-action').selectOption('cancel');
-  if(family==='consent'){await page.locator('#condition-person').selectOption(person);await page.locator('#condition-decision').selectOption('declined');}
-  if(family==='attendance'){await page.locator('#attendance-person').selectOption(person);await page.locator('#attendance-state').selectOption('present');}
-  if(family==='onsite'){await page.locator('#attendance-mode').selectOption('onsite');await page.locator('#attendance-reason').fill('現場核對並保留原隊序');}
-  if(family==='manage')await page.locator('#registration-person').selectOption(person);
-  if(family==='signup')await page.locator('.registration-person summary').click();
+  if(family==='lifecycle')await selectControl(page.locator('#lifecycle-action'), 'cancel');
+  if(family==='consent'){await selectControl(page.locator('#condition-person'), person);await selectControl(page.locator('#condition-decision'), 'declined');}
+  if(family==='attendance'){await selectControl(page.locator('#attendance-person'), person);await selectControl(page.locator('#attendance-state'), 'present');}
+  if(family==='onsite'){await selectControl(page.locator('#attendance-mode'), 'onsite');await page.locator('#attendance-reason').fill('現場核對並保留原隊序');}
+  if(family==='manage')await selectControl(page.locator('#registration-person'), person);
+  if(family==='signup')await page.locator(".registration-person .disclosure-trigger").click();
   await page.locator(flow.field).fill('原稿內容');
   if(family==='signup')await page.getByRole('button',{name:'預覽逐人分配',exact:true}).click();
   if(family==='onsite')await page.getByLabel(/^已與現場參加者核對並接受第/).check();
@@ -45,7 +46,7 @@ for(const flow of flows){
     const {id,person}=await setup(context,flow.family);await prepare(page,flow.family,id,person);
     const [before]=await durableRows(page);expect(before).toBeDefined();expect(JSON.parse(before!.raw).pending).toBeUndefined();await page.close();
     const fresh=await context.newPage();await fresh.goto(origin+'/activities/'+id+'/'+flow.path+(flow.family==='onsite'?'?preset=onsite':''));
-    await expect(fresh.locator(flow.field)).toHaveValue('原稿內容');await expect(fresh.locator(flow.field)).toBeVisible();await expect(fresh.locator(flow.field)).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(fresh.locator(flow.field)).toBeEnabled();
+    await expectControlValue(fresh.locator(flow.field), '原稿內容');await expect(fresh.locator(flow.field)).toBeVisible();await expect(fresh.locator(flow.field)).toBeDisabled();await fresh.getByRole('button',{name:'恢復本機原稿',exact:true}).click();await expect(fresh.locator(flow.field)).toBeEnabled();
     expect((await durableRows(fresh))[0]!.raw).toBe(before!.raw);
     const checks=fresh.locator('.activity-editor input[type="checkbox"]');for(let i=0;i<await checks.count();i++)await expect(checks.nth(i)).not.toBeChecked();
     if(flow.family==='signup'){
@@ -63,7 +64,7 @@ for(const flow of flows){
     await context.route('**/api/v2/activities/'+id+suffix,async route=>{if(route.request().method()!=='POST')return route.continue();keys.push(route.request().headers()['idempotency-key']!);bodies.push(route.request().postData()!);const response=await route.fetch();await route.fulfill(keys.length===1?{response,body:'{'}:{response});});
     await page.getByRole('button',{name:flow.submit,exact:true}).click();await expect(page.getByRole('button',{name:flow.retry,exact:true})).toBeVisible();
     const before=await(await context.request.get(origin+'/api/v2/activities/'+id+'/registration',{headers:await headers(context)})).json();await page.close();
-    const fresh=await context.newPage();await fresh.goto(origin+'/inbox');await fresh.getByRole('link',{name:flow.label,exact:true}).click();await expect(fresh.locator(flow.field)).toHaveValue('原稿內容');expect(keys).toHaveLength(1);
+    const fresh=await context.newPage();await fresh.goto(origin+'/inbox');await fresh.getByRole('link',{name:flow.label,exact:true}).click();await expectControlValue(fresh.locator(flow.field), '原稿內容');expect(keys).toHaveLength(1);
     await fresh.getByRole('button',{name:flow.retry,exact:true}).click();await expect(fresh.getByText(flow.done,{exact:true})).toBeVisible();expect(keys).toHaveLength(2);expect(keys[1]).toBe(keys[0]);expect(bodies[1]).toBe(bodies[0]);
     const after=await(await context.request.get(origin+'/api/v2/activities/'+id+'/registration',{headers:await headers(context)})).json();expect(after.revision).toBe(before.revision);expect(after.people.length).toBe(before.people.length);
     // A clean stored placeholder can take a new deep-link preset without pretending to restore old input.
@@ -71,7 +72,7 @@ for(const flow of flows){
       const tail=flow.family==='consent'?'conditions?person='+person:flow.family==='manage'?'registration?person='+person:flow.family==='signup'?'signup?preset=tentative':'attendance?preset=onsite';
       await fresh.goto(origin+'/activities/'+id+'/'+tail);await expect(fresh.getByText('正在讀取本機原稿…',{exact:true})).toHaveCount(0);
       const control=flow.family==='consent'?'#condition-person':flow.family==='manage'?'#registration-person':flow.family==='signup'?'#signup-intent':'#attendance-mode';
-      await expect(fresh.locator(control)).toHaveValue(flow.family==='consent'||flow.family==='manage'?person:flow.family==='signup'?'tentative':'onsite');await expect(fresh.locator(control)).toBeEnabled();await expect(fresh.getByRole('button',{name:'恢復本機原稿',exact:true})).toHaveCount(0);expect(keys).toHaveLength(2);
+      await expectControlValue(fresh.locator(control), flow.family==='consent'||flow.family==='manage'?person:flow.family==='signup'?'tentative':'onsite');await expect(fresh.locator(control)).toBeEnabled();await expect(fresh.getByRole('button',{name:'恢復本機原稿',exact:true})).toHaveCount(0);expect(keys).toHaveLength(2);
     }
   });
 }
@@ -81,9 +82,9 @@ test('preserves both onsite tab versions and requires fresh safety confirmations
   await page.locator('#onsite-name-0').fill('第一頁現場人員');await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
   await other.locator('#onsite-name-0').fill('第二頁現場人員');await expect(other.getByText(/其他分頁已更新原稿/)).toBeVisible();
   expect((await durableRows(other,'versions')).some(row=>JSON.parse(row.raw).people[0].name==='第二頁現場人員')).toBe(true);
-  await other.getByRole('button',{name:'讀取已保存版本',exact:true}).click();await expect(other.locator('#onsite-name-0')).toHaveValue('第一頁現場人員');await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await other.getByRole('button',{name:'讀取已保存版本',exact:true}).click();await expectControlValue(other.locator('#onsite-name-0'), '第一頁現場人員');await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await other.getByLabel(/^已與現場參加者核對並接受第/).check();await other.getByLabel(/^已核對對象、狀態與原因/).check();
-  await other.getByText('草稿版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expect(other.locator('#onsite-name-0')).toHaveValue('第二頁現場人員');
+  await other.getByText('草稿版本（1）',{exact:true}).click();await other.getByRole('button',{name:'載入此原稿（保留目前版本）',exact:true}).click();await expectControlValue(other.locator('#onsite-name-0'), '第二頁現場人員');
   await expect(other.getByLabel(/^已與現場參加者核對並接受第/)).not.toBeChecked();await expect(other.getByLabel(/^已核對對象、狀態與原因/)).not.toBeChecked();await expect(other.getByRole('button',{name:'保存現場補錄',exact:true})).toBeDisabled();
   await other.bringToFront();await other.setViewportSize({width:360,height:800});expect(await other.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await other.screenshot({path:'test-results/unified-onsite-draft-recovery-mobile.png',fullPage:true});
 });

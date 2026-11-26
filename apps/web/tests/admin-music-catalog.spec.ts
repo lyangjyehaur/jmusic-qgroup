@@ -1,4 +1,4 @@
-import { openAdminTool, toggleMusicTerm } from './kimi-controls';
+import { openAdminTool, toggleMusicTerm, selectControl, expectControlValue } from './kimi-controls';
 import { test,expect } from './fixtures';
 import { damageDraft,denyDraftWrites,durableRows } from './draft-helpers';
 import type { BrowserContext,Page } from '@playwright/test';
@@ -9,7 +9,7 @@ async function refresh(page:Page){await page.evaluate(()=>{const channel=new Bro
 const listing=(page:Page)=>page.getByRole('region',{name:'管理詞庫清單',exact:true});
 const review=(page:Page)=>page.getByRole('region',{name:'詞條操作核對',exact:true});
 async function confirm(page:Page){await page.getByRole('checkbox',{name:'我已核對詞條及影響範圍',exact:true}).check();await page.getByRole('button',{name:'確認詞條變更',exact:true}).click();}
-async function merge(page:Page){await listing(page).getByRole('button',{name:'合併 YOASOBI',exact:true}).click();await page.getByLabel('合併目標',{exact:true}).selectOption('sub-1');await confirm(page);}
+async function merge(page:Page){await listing(page).getByRole('button',{name:'合併 YOASOBI',exact:true}).click();await selectControl(page.getByLabel('合併目標',{exact:true}), 'sub-1');await confirm(page);}
 test('only administrators can read the catalog; profile-free administrators and rescue login share the native manager',async({page,context})=>{
   let reads=0;page.on('request',request=>{if(request.url().includes('/api/v2/admin/music-entries'))reads++;});
   await page.goto('/admin/music-entries');await expect(page.getByLabel('管理救援憑證',{exact:true})).toBeVisible();await expect(listing(page)).toHaveCount(0);
@@ -24,9 +24,9 @@ test('only administrators can read the catalog; profile-free administrators and 
 });
 test('creation, normalized search and editing retain category, type and metadata without a member quota',async({page,context})=>{
   await login(context);await page.goto('/admin/music-entries');await page.getByRole('button',{name:'建立詞條',exact:true}).click();
-  await page.getByLabel('詞條名稱',{exact:true}).fill('  管理自建音樂  ');await page.getByLabel('詞條類型',{exact:true}).selectOption('main');await page.getByLabel('詞條分類',{exact:true}).selectOption('领域');await confirm(page);
+  await page.getByLabel('詞條名稱',{exact:true}).fill('  管理自建音樂  ');await selectControl(page.getByLabel('詞條類型',{exact:true}), 'main');await selectControl(page.getByLabel('詞條分類',{exact:true}), '领域');await confirm(page);
   await expect(page.getByText('已建立詞條。',{exact:true})).toBeVisible();await page.getByLabel('搜尋管理詞條',{exact:true}).fill('管理自建');await expect(listing(page).getByRole('heading',{name:'詞條 · 1',exact:true})).toBeVisible();
-  await listing(page).getByRole('button',{name:'編輯 管理自建音樂',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('管理更正音樂');await page.getByLabel('詞條類型',{exact:true}).selectOption('sub');await page.getByLabel('詞條分類',{exact:true}).selectOption('歌手');await confirm(page);
+  await listing(page).getByRole('button',{name:'編輯 管理自建音樂',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('管理更正音樂');await selectControl(page.getByLabel('詞條類型',{exact:true}), 'sub');await selectControl(page.getByLabel('詞條分類',{exact:true}), '歌手');await confirm(page);
   await expect(page.getByText('已保存詞條。',{exact:true})).toBeVisible();await page.getByLabel('搜尋管理詞條',{exact:true}).fill('管理更正');await expect(listing(page).getByRole('heading',{name:'管理更正音樂',exact:true})).toBeVisible();
   const catalog=await (await context.request.get('/api/v2/music/catalog')).json();expect(catalog.entries.find((e:any)=>e.name==='管理更正音樂')).toMatchObject({kind:'sub',category:'歌手',creatorName:'管理員',count:0});
 });
@@ -34,12 +34,12 @@ test('merge reviews both targets on mobile, refreshes shared music data and refu
   await login(context);const editor=await context.newPage();await editor.goto('/me/music');
   for(const name of ['J-POP','YOASOBI','ヨルシカ'])await toggleMusicTerm(editor,name);
   await editor.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(editor.getByText('已保存。',{exact:true})).toBeVisible();await editor.getByRole('button',{name:'移除J-POP',exact:true}).click();
-  await page.setViewportSize({width:360,height:800});await page.goto('/admin/music-entries');await listing(page).getByRole('button',{name:'合併 YOASOBI',exact:true}).click();await page.getByLabel('合併目標',{exact:true}).selectOption('sub-1');
+  await page.setViewportSize({width:360,height:800});await page.goto('/admin/music-entries');await listing(page).getByRole('button',{name:'合併 YOASOBI',exact:true}).click();await selectControl(page.getByLabel('合併目標',{exact:true}), 'sub-1');
   await expect(review(page)).toContainText('來源：YOASOBI');await expect(review(page)).toContainText('目標：ヨルシカ');expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
   await page.screenshot({path:'test-results/unified-admin-catalog-merge-mobile.png',fullPage:true});await confirm(page);
   await expect(page.getByText('已合併詞條，更新 4 份成分。',{exact:true})).toBeVisible();await expect(listing(page).getByRole('heading',{name:'YOASOBI',exact:true})).toHaveCount(0);
   await expect(editor.locator('.selection-groups').getByText('已移除的詞條',{exact:true})).toBeVisible();await expect(editor.getByRole('button',{name:'移除J-POP',exact:true})).toHaveCount(0);
-  await editor.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(editor.getByText('成分已有更新；你的選擇仍保留，請核對最新版本',{exact:true})).toBeVisible();
+  await expect(editor.getByRole('button',{name:'保存我的成分',exact:true})).toBeDisabled();await expect(editor.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
   await editor.getByRole('button',{name:'核對最新版本，保留我的選擇',exact:true}).click();await editor.getByRole('button',{name:'移除已移除的詞條',exact:true}).click();await editor.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(editor.getByText('已保存。',{exact:true})).toBeVisible();
   const session=await (await context.request.get('/api/v2/session')).json(),profile=await (await context.request.get('/api/v2/me/music',{headers:{'X-Account-Scope':session.scope}})).json();expect(profile.selections).toEqual([{entryId:'sub-1',level:3}]);await editor.close();
 });
@@ -58,12 +58,12 @@ test('deleting a selected entry requires confirmation and removes every current 
 test('competing edits preserve input and require an explicit fresh review instead of silently replacing a revision',async({page,context,browser})=>{
   await login(context);await page.goto('/admin/music-entries');await listing(page).getByRole('button',{name:'編輯 YOASOBI',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('保留我的更正');
   const independent=await browser.newContext({baseURL:origin});await login(independent);const other=await independent.newPage();await other.goto('/admin/music-entries');await listing(other).getByRole('button',{name:'編輯 YOASOBI',exact:true}).click();await other.getByLabel('詞條名稱',{exact:true}).fill('另一管理者更正');await confirm(other);await expect(other.getByText('已保存詞條。',{exact:true})).toBeVisible();
-  await refresh(page);await expect(page.getByText('詞庫或會員資料已更新，請重新核對影響範圍。',{exact:true})).toBeVisible();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('保留我的更正');await expect(page.getByRole('button',{name:'確認詞條變更',exact:true})).toBeDisabled();
-  await page.getByRole('button',{name:'核對最新版，保留輸入',exact:true}).click();await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('保留我的更正');await confirm(page);await expect(page.getByText('已保存詞條。',{exact:true})).toBeVisible();await independent.close();
+  await refresh(page);await expect(page.getByText('詞庫或會員資料已更新，請重新核對影響範圍。',{exact:true})).toBeVisible();await expectControlValue(page.getByLabel('詞條名稱',{exact:true}), '保留我的更正');await expect(page.getByRole('button',{name:'確認詞條變更',exact:true})).toBeDisabled();
+  await page.getByRole('button',{name:'核對最新版，保留輸入',exact:true}).click();await expectControlValue(page.getByLabel('詞條名稱',{exact:true}), '保留我的更正');await confirm(page);await expect(page.getByText('已保存詞條。',{exact:true})).toBeVisible();await independent.close();
 });
 test('damaged drafts are preserved, navigation protects work and storage failure prevents all catalog mutations',async({page,context})=>{
   await login(context);await page.goto('/admin/music-entries');await page.getByRole('button',{name:'建立詞條',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('原管理稿');
-  await page.getByRole('link',{name:'管理後臺',exact:true}).click();await expect(page.getByText('尚未提交的修改',{exact:false})).toBeVisible();await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();await openAdminTool(page,'音樂詞庫管理');await expect(page.getByLabel('詞條名稱',{exact:true})).toHaveValue('原管理稿');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
+  await page.getByRole('link',{name:'管理後臺',exact:true}).click();await expect(page.getByText('尚未提交的修改',{exact:false})).toBeVisible();await page.getByRole('button',{name:'保留原稿並離開',exact:true}).click();await openAdminTool(page,'音樂詞庫管理');await expectControlValue(page.getByLabel('詞條名稱',{exact:true}), '原管理稿');await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await damageDraft(page,'admin-catalog:','damaged admin catalog draft');page.on('dialog',dialog=>void dialog.accept());await page.reload();await expect(page.getByText('無法讀取原稿，請先保全原稿再繼續。',{exact:false})).toBeVisible();
   await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();expect((await durableRows(page,'versions')).map(row=>row.raw)).toContain('damaged admin catalog draft');
   await page.getByRole('button',{name:'建立詞條',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('儲存失敗');await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);await denyDraftWrites(page,'admin-catalog:');let writes=0;page.on('request',request=>{if(request.method()==='POST')writes++;});await confirm(page);await expect(page.getByText('無法保存原稿及操作編號，尚未送出。',{exact:true})).toBeVisible();expect(writes).toBe(0);

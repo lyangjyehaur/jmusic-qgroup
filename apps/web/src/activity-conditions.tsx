@@ -6,7 +6,7 @@ import { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button, Field } from './kimi-ui';
+import { Button, Field, Disclosure, Select, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { ActivityConditions, RespondActivityConditions, type ConditionVersion, type Viewer } from '@qgroup/contracts';
 import { ApiError } from './api';
@@ -46,7 +46,7 @@ function ConditionsContent({viewer,id}:{viewer:Viewer;id:string}){
   const data=query.data;
   const preferred=search.get('person')??'';
   return <><Version value={data.current} heading={uiText("目前安排")}/>{viewer.authenticated&&<ConsentEditor key={viewer.scope+':'+id} viewer={viewer} initial={data} preferred={preferred} update={fresh=>{client.setQueryData<Conditions>(['private',viewer.scope,'activity-conditions',id,page],prior=>prior?{...prior,...(page===fresh.page?fresh:{}),current:fresh.current,revision:fresh.revision,people:fresh.people,canRespond:fresh.canRespond}:prior);}}/>}
-    <section aria-label="安排歷史"><Heading level={2}>安排歷史</Heading>{data.history.map(value=><details key={value.version}><summary>第 {value.version} 版 · {value.summary}</summary><Version value={value} heading={uiText("保存的安排")}/></details>)}{!data.history.length&&<Notice>尚未發布安排版本。</Notice>}<div className="pagination">{page>1&&<Button variant="secondary" onClick={()=>setSearch({page:String(page-1)})}>上一頁</Button>}{data.hasMore&&<Button variant="secondary" onClick={()=>setSearch({page:String(page+1)})}>下一頁</Button>}</div></section></>;
+    <section aria-label="安排歷史"><Heading level={2}>安排歷史</Heading>{data.history.map(value=><Disclosure key={value.version}  title={<>第 {value.version} 版 · {value.summary}</>}><Version value={value} heading={uiText("保存的安排")}/></Disclosure>)}{!data.history.length&&<Notice>尚未發布安排版本。</Notice>}<div className="pagination">{page>1&&<Button variant="secondary" onClick={()=>setSearch({page:String(page-1)})}>上一頁</Button>}{data.hasMore&&<Button variant="secondary" onClick={()=>setSearch({page:String(page+1)})}>下一頁</Button>}</div></section></>;
 }
 function ConsentEditor({viewer,initial,preferred,update}:{viewer:Member;initial:Conditions;preferred:string;update:(data:Conditions)=>void}){
   const client=useQueryClient(),storageKey='qgroup:rebuild:activity-draft:consent:v1:'+viewer.scope+':'+initial.id;
@@ -89,11 +89,11 @@ function ConsentEditor({viewer,initial,preferred,update}:{viewer:Member;initial:
     {!data.canRespond&&<Notice>活動已結束、取消或歸檔，不能回覆新安排。</Notice>}
     {stale&&!draft.pending&&<Notice>原稿對應的安排或名單已有更新，請先核對最新安排。</Notice>}
     <form noValidate onSubmit={event=>{event.preventDefault();void submit();}}><fieldset disabled={locked||!data.canRespond}><legend className="sr-only">逐人確認安排</legend>
-      <Field label="報名者"><select id="condition-person" value={draft.personId} onChange={event=>edit({personId:event.target.value})}><option value="">請選擇</option>{data.people.map((person,index)=><option key={person.id} value={person.id}>{index+1}. {person.name}</option>)}{draft.personId&&!data.people.some(person=>person.id===draft.personId)&&<option value={draft.personId}>原報名目前不可操作</option>}</select></Field>
-      <Field label="決定"><select id="condition-decision" value={draft.decision} onChange={event=>edit({decision:event.target.value as DraftValue['decision']})}><option value="accepted">接受新安排</option><option value="declined">暫不同意新安排</option></select></Field>
+      <Field label="報名者"><Select id="condition-person" value={draft.personId} onChange={event=>edit({personId:event.target.value})}><option value="">請選擇</option>{data.people.map((person,index)=><option key={person.id} value={person.id}>{index+1}. {person.name}</option>)}{draft.personId&&!data.people.some(person=>person.id===draft.personId)&&<option value={draft.personId}>原報名目前不可操作</option>}</Select></Field>
+      <Field label="決定"><Select id="condition-decision" value={draft.decision} onChange={event=>edit({decision:event.target.value as DraftValue['decision']})}><option value="accepted">接受新安排</option><option value="declined">暫不同意新安排</option></Select></Field>
       <Field label="原因（暫不同意時必填）"><textarea id="condition-reason" rows={3} maxLength={400} value={draft.reason} onChange={event=>edit({reason:event.target.value})}/></Field>
       <Text>暫不同意會保留原報名與原接受版本，通知發起者協調；不自動退出或增加費用責任。</Text>
-      <label className="consent"><input type="checkbox" disabled={stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)}/><span>已核對第 {draft.conditionsVersion} 版安排，確認提交此人的決定</span></label>
+      <Checkbox className="consent" disabled={stale} checked={confirm} onChange={event=>setConfirm(event.target.checked)} label={<><span>已核對第 {draft.conditionsVersion} 版安排，確認提交此人的決定</span></>} />
     </fieldset><Button type="submit" loading={busy} disabled={!!readError||(!draft.pending&&(!confirm||!data.canRespond||!draft.personId))}>{draft.pending?'確認安排回覆結果':'提交安排確認'}</Button></form>
     {!draft.pending&&<Button variant="secondary" disabled={locked} onClick={()=>void rebase()}>核對最新安排，保留輸入</Button>}
     <DraftFeedback form={{...record,message:message||record.message}}/>
