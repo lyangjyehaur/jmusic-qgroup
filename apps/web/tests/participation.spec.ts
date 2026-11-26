@@ -16,9 +16,9 @@ test('opens from activities, filters expected totals, and drills down to the ori
   const records = dialog.getByRole('region', { name: '小青的參加紀錄', exact: true });
   await expect(records.getByRole('heading')).toBeInViewport();
   await expect(records.locator('li')).toHaveCount(3);
-  await expect(records.getByRole('link', { name: '河濱散步', exact: true })).toHaveAttribute('href', '/activities/stats-walk');
+  await expect(records.getByRole('link', { name: '河濱散步', exact: true })).toHaveAttribute('href', '/activities/stats-walk?' + new URLSearchParams({ from: new URL(page.url()).pathname + new URL(page.url()).search }));
   await expect(page.getByText('已取消的聚餐', { exact: true })).toHaveCount(0);
-  await dialog.getByRole('button', { name: '返回統計', exact: true }).click();
+  await dialog.getByRole('button', { name: '關閉參加紀錄', exact: true }).click();
   await expect(dialog).toHaveCount(0);
   await page.getByRole('combobox', { name: '活動類型', exact: true }).click();
   await page.getByRole('option', { name: '聚餐', exact: true }).click();
