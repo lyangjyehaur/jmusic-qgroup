@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import type { DB } from '@qgroup/database';
 import {musicProfileActiveSQL} from '@qgroup/database';
 import type { ActivityView, MusicEntry, MusicProfile, SaveProfileInput } from '@qgroup/contracts';
+import { activityListStatus } from '@qgroup/contracts';
 import { activityState, DomainError, validateSelections } from '@qgroup/domain';
 import { requireActivityAccess } from './activity-access';
 
@@ -30,17 +31,10 @@ function serializeEvent(row: EventRow, now: Date): ActivityView {
     feePolicy:row.fee_policy,withdrawalDeadline:row.withdrawal_deadline,conditionsVersion:row.conditions_version,changeSummary:row.change_summary,visibility:row.visibility };
 }
 type ListFilters = { q?: string; status?: string };
-function listStatus(event: ActivityView) {
-  if (event.archived) return 'archived';
-  if (event.estimatedOver) return 'ended';
-  if (['draft','ongoing','ended','cancelled'].includes(event.phase)) return event.phase;
-  if (!event.registrationOpen) return 'paused';
-  return event.capacity > 0 && event.confirmed >= event.capacity ? 'full' : 'open';
-}
 function matchesListFilters(event: ActivityView, filters: ListFilters) {
   const q = (filters.q ?? '').trim().toLocaleLowerCase();
   return (!q || (event.title + ' ' + event.location + ' ' + event.category).toLocaleLowerCase().includes(q)) &&
-    (!filters.status || filters.status === 'all' || listStatus(event) === filters.status);
+    (!filters.status || filters.status === 'all' || (filters.status === 'archived' ? event.archived : activityListStatus(event) === filters.status));
 }
 function ownRegistration(db: DB, eventId: string, userId: string | null) {
   if (!userId) return null;

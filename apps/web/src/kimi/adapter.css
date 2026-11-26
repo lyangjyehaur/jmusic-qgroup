@@ -382,7 +382,9 @@
 
 /* Keep activity browsing and time polls together at intermediate widths. */
 .kimi .activity-browse-tabs { min-width: 0; max-width: 100%; }
-.kimi .activity-browse-tabs .yj-tabs-list { flex-wrap: nowrap; }
+.kimi .activity-browse-tabs .yj-tabs-list { display: flex; flex-wrap: nowrap; max-width: 100%; overflow-x: auto; scrollbar-width: none; overscroll-behavior-x: contain; }
+.kimi .activity-browse-tabs .yj-tabs-list::-webkit-scrollbar { display: none; }
+.kimi .activity-browse-tabs .tab { flex: 0 0 auto; white-space: nowrap; }
 .kimi .list-toolbar { flex-wrap: wrap; }
 .kimi .list-toolbar > .activity-browse-tabs { flex: 1 1 420px; }
 .kimi .list-toolbar > .filter-row { flex: 1 1 300px; }

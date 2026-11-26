@@ -106,8 +106,3 @@
 @media(max-width:768px) {
   .kimi :is(.yj-field,.select-wrap) :is(input,textarea,.yj-trigger) { font-size:16px; }
 }
-
-@media(max-width:480px) {
-  .kimi .activity-browse-tabs .yj-tabs-list { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:0; }
-  .kimi .activity-browse-tabs .tab { min-width:0; padding-inline:2px; justify-content:center; font-size:12px; }
-}

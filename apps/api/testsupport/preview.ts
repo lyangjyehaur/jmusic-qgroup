@@ -20,6 +20,7 @@ import { timePollFixture } from './time-poll-fixture';
 import { paymentFixture } from './payment-fixture';
 import { botDeliveryFixture } from './bot-delivery-fixture';
 import { legacyHistoryFixture } from './legacy-history-fixture';
+import { participationFixture } from './participation-fixture';
 
 // Synthetic preview only. This adapter and its redirect route never enter the runtime bundle.
 const paymentRoot = (process.env.REBUILD_TEST_FILE_STORAGE === '1'||process.env.REBUILD_TEST_BACKUPS === '1'||process.env.REBUILD_TEST_PAYMENT === '1'||process.env.REBUILD_TEST_SETTLEMENT === '1') ? mkdtempSync(resolve(tmpdir(), 'qgroup-preview-payment-')) : null;
@@ -32,6 +33,7 @@ if (process.env.REBUILD_TEST_BACKUPS === '1') {
   db.prepare("INSERT INTO music_profile_contacts VALUES(?,'11111','self_reported',0,'synthetic')").run(id);
 }
 if (process.env.REBUILD_TEST_PAYMENT === '1') paymentFixture(db);
+if (process.env.REBUILD_TEST_PARTICIPATION === '1') participationFixture(db);
 if (process.env.REBUILD_TEST_SETTLEMENT === '1') settlementFixture(db);
 if (process.env.REBUILD_TEST_POLLS === '1') timePollFixture(db);
 if (process.env.REBUILD_TEST_BOT_DELIVERIES === '1') botDeliveryFixture(db);
@@ -69,6 +71,10 @@ app.get('/__test/qq', async (request, reply) => {
   const { state, code = 'browser-default' } = request.query as Record<string, string>;
   if (!state || !/^[A-Za-z0-9_-]{43}$/.test(state) || !/^[A-Za-z0-9_-]{1,80}$/.test(code)) return reply.code(400).send({ error: 'invalid synthetic authorization' });
   return reply.header('Cache-Control', 'no-store').redirect('/auth/qq/callback?' + new URLSearchParams({ state, code }), 303);
+});
+if (process.env.REBUILD_TEST_PARTICIPATION === '1') app.get('/__test/participation/my', async (_request, reply) => {
+  reply.setCookie('kanban_session', 'fixture-alice', { path: '/', httpOnly: true, sameSite: 'lax' });
+  return reply.header('Cache-Control', 'no-store').redirect('/me/participation', 303);
 });
 await app.listen({ host: '127.0.0.1', port });
 process.send?.('ready');

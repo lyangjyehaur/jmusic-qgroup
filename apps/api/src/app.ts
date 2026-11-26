@@ -82,6 +82,7 @@ import { registerPaymentAssets } from './payment-codes';
 import { registerInbox } from './inbox';
 import { registerActivityHistory } from './activity-history';
 import { registerActivityAttendance } from './activity-attendance';
+import { registerParticipation } from './participation';
 import { registerActivityDelegation } from './activity-delegation';
 import type { ActivityBotDefaults } from './activity-bot';
 import { createMusicClaims, registerMusicClaims } from './music-claim';
@@ -90,7 +91,7 @@ import { redactRequestURL } from './request-log';
 import { registerPublicAPI } from './public-api';
 import {registerFrontendRelease} from './frontend-release';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; frontendRoot?: string; logger?: boolean; qq?: QQProvider; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; frontendRoot?: string; logger?: boolean; qq?: QQProvider; qqProfileClientId?: string; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
 export function createApp(options: AppOptions) {
   const { db } = options;
   assertDatabaseUsable(db);
@@ -209,6 +210,7 @@ export function createApp(options: AppOptions) {
     registerCreateIntents(app, db, security);
     registerActivityHistory(app, db, security);
     registerActivityAttendance(app, db, security, now, {enabled:options.botEnabledDefault,...options.activityBot});
+    registerParticipation(app, db, security, now, options.qq?.clientId ?? options.qqProfileClientId);
     app.get('/api/v2/me/activities', async request => {
       const user=security.scopedMember(request),query=MyActivitiesQuery.parse(request.query);
       return db.transaction(()=>listMyActivities(db,user.id,query.page,now(),query))();

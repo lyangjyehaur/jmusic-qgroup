@@ -17,6 +17,7 @@ import './kimi/adapter.css';
 import './kimi/theme.css';
 import './music-save-dock.css';
 import './forms.css';
+import './participation.css';
 import './kimi/shell.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 const AdminBotPage = lazyPage(() => import('./admin-bot').then(module => ({ default: module.AdminBotPage })));
@@ -50,6 +51,7 @@ const MusicEntryEditorPage = lazyPage(() => import('./music-entries').then(modul
 const ActivityRoomsPage = lazyPage(() => import('./activity-rooms').then(module => ({ default: module.ActivityRoomsPage })));
 const ActivityHistoryPage = lazyPage(() => import('./activity-history').then(module => ({ default: module.ActivityHistoryPage })));
 const ActivityAttendancePage = lazyPage(() => import('./activity-attendance').then(module => ({ default: module.ActivityAttendancePage })));
+const ParticipationPage = lazyPage(() => import('./participation').then(module => ({ default: module.ParticipationPage })));
 const ActivityDelegationPage = lazyPage(() => import('./activity-delegation').then(module => ({ default: module.ActivityDelegationPage })));
 const AcceptActivityDelegationPage = lazyPage(() => import('./activity-delegation').then(module => ({ default: module.AcceptActivityDelegationPage })));
 const TimePollPage = lazyPage(() => import('./time-polls').then(module => ({ default: module.TimePollPage })));
@@ -134,6 +136,7 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'contact', element: <ContactPage/> }, { path: 'guide', element: <GuidePage/> }, { path: 'me/activities', element: <Activities mine/> },
   { path: 'activities/:id/access/:token', element: <ActivityAccessPage/> },
   { path: 'activities/new', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'activities/:id/edit', element: <LegacyLocalGuard><ActivityDraftPage /></LegacyLocalGuard> }, { path: 'me/activities/drafts', element: <ActivityDraftsPage /> },
+  { path: 'activities/participation', element: <ParticipationPage /> }, { path: 'me/participation', element: <ParticipationPage mine /> },
 
   { path: 'activities/:id/delegation/:token', element: <AcceptActivityDelegationPage /> },
   { path: 'activities/:id/claims/:token', element: <RequestAttendeeClaimPage /> },

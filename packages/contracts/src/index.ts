@@ -125,6 +125,15 @@ export const Activity = z.object({
   feePolicy:z.string(),withdrawalDeadline:z.string().nullable(),conditionsVersion:z.number().int(),changeSummary:z.string(),visibility:z.string(),
 });
 export type ActivityView = z.infer<typeof Activity>;
+/** Browse classification; leaves actual lifecycle and registration state unchanged. */
+export function activityListStatus(event: Pick<ActivityView, 'phase' | 'estimatedOver' | 'archived' | 'minimumParticipants' | 'confirmed' | 'registrationOpen' | 'capacity'>) {
+  if (['scheduled','ongoing','ended'].includes(event.phase) && (event.phase === 'ended' || event.estimatedOver) && event.confirmed < event.minimumParticipants) return 'unformed';
+  if (event.archived) return 'archived';
+  if (event.estimatedOver) return 'ended';
+  if (['draft','ongoing','ended','cancelled'].includes(event.phase)) return event.phase;
+  if (!event.registrationOpen) return 'paused';
+  return event.capacity > 0 && event.confirmed >= event.capacity ? 'full' : 'open';
+}
 export const ListedActivity = Activity.extend({ myRegistration: z.enum(['confirmed','waiting','tentative']).nullable().optional() });
 export const ActivityList = z.object({ events: z.array(ListedActivity), page: z.number().int(), hasMore: z.boolean(), total: z.number().int().nonnegative().optional(), summary: z.object({ upcoming: z.number().int().nonnegative(), mine: z.number().int().nonnegative().nullable() }).optional() });
 export const ApiFailure = z.object({ code: z.string(), message: z.string(), messageDisplay: z.object({hans:z.string(),hant:z.string()}).strict().optional() });
@@ -146,6 +155,7 @@ export const MusicPinResult = z.object({ status: z.enum(['not_found','completed'
 export const AdminMusicPinHistory = z.object({ history: z.array(z.object({ id: z.number().int(), revision: z.number().int(), actor: z.string(), reason: z.string(), createdAt: z.string() })), nextCursor: z.number().int().nullable() });
 
 export * from './activity-attendance';
+export * from './participation';
 
 export * from './activity-history';
 export * from './analytics-policy';

@@ -16,7 +16,7 @@ export const PositiveCursorQuery = /* @__PURE__ */ (() => z.object({before:z.coe
 export const SignedCursorQuery = /* @__PURE__ */ (() => z.object({before:z.coerce.number().int().min(-Number.MAX_SAFE_INTEGER).max(Number.MAX_SAFE_INTEGER).default(Number.MAX_SAFE_INTEGER)}).strict())();
 export const OffsetQuery = /* @__PURE__ */ (() => z.object({offset:z.coerce.number().int().min(0).max(1000000).default(0)}).strict())();
 export const AdminUsersQuery = /* @__PURE__ */ (() => z.object({search:z.string().trim().refine(value=>Array.from(value).length<=100).default(''),offset:z.coerce.number().int().min(0).max(1000000).default(0),unionid:z.enum(['all','bound','missing','unbound']).default('all')}).strict())();
-export const ActivityListStatus = /* @__PURE__ */ (() => z.enum(['all','draft','open','full','paused','ongoing','ended','cancelled','archived']))();
+export const ActivityListStatus = /* @__PURE__ */ (() => z.enum(['all','draft','open','full','paused','ongoing','ended','unformed','cancelled','archived']))();
 export const ActivitiesQuery = /* @__PURE__ */ (() => PageQuery.extend({period:z.enum(['upcoming','history']).default('upcoming'),q:z.string().trim().max(100).default(''),status:ActivityListStatus.default('all')}).strict())();
 export const MyActivitiesQuery = /* @__PURE__ */ (() => PageQuery.extend({q:z.string().trim().max(100).default(''),status:ActivityListStatus.default('all')}).strict())();
 export const BotDeliveriesQuery = /* @__PURE__ */ (() => z.object({before:BotDeliveryId.optional(),status:z.enum(['pending','sending','sent','failed','skipped']).optional(),kind:z.string().min(1).max(80).optional()}).strict())();

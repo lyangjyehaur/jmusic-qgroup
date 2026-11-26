@@ -27,6 +27,39 @@ test('distinguishes capacity, registration pause and actual lifecycle without ch
  expect(db.prepare("SELECT status FROM attendees WHERE id='full-self'").get()).toEqual({status:'confirmed'});
 });
 
+test.each(['scheduled','ongoing','ended'])('classifies under-minimum historical %s activities separately without changing actual lifecycle',async lifecycle=>{
+ const {app,db,headers}=await setup();
+ db.prepare("UPDATE events SET lifecycle=?,starts_at='2026-11-16T12:00:00+08:00',duration_hours=3,minimum_participants=2,formation_state='confirmed' WHERE id='listen'").run(lifecycle);
+ db.exec("INSERT INTO attendees(id,event_id,manager_id,user_id,name,payer_kind,status,created_at,updated_at) VALUES('under-self','listen','alice','alice','本人','self','confirmed','before','before')");
+ const tables=['events','attendees','settlements','finance_entries','event_audit','bot_outbox'];
+ const snapshot=()=>Object.fromEntries(tables.map(table=>[table,db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all()])),before=snapshot();
+ const failed=(await app.inject('/api/v2/activities?period=history&status=unformed')).json();
+ expect(failed.events.map((e:{id:string})=>e.id)).toEqual(['listen']);expect(failed.total).toBe(1);
+ expect(failed.events[0]).toMatchObject({lifecycle,minimumParticipants:2,confirmed:1});
+ expect((await app.inject('/api/v2/activities?period=history&status=ended')).json().events.map((e:{id:string})=>e.id)).not.toContain('listen');
+ expect((await app.inject({url:'/api/v2/me/activities?status=unformed',headers})).json().events.map((e:{id:string})=>e.id)).toEqual(['listen']);
+ expect(snapshot()).toEqual(before);
+ db.exec("UPDATE events SET archived_at='before' WHERE id='listen'");
+ for(const status of ['unformed','archived'])expect((await app.inject('/api/v2/activities?period=history&status='+status)).json().events.map((e:{id:string})=>e.id)).toContain('listen');
+ db.exec("UPDATE events SET archived_at=NULL,lifecycle='cancelled' WHERE id='listen'");
+ expect((await app.inject('/api/v2/activities?period=history&status=unformed')).json().events).toEqual([]);
+ expect((await app.inject('/api/v2/activities?period=history&status=cancelled')).json().events.map((e:{id:string})=>e.id)).toContain('listen');
+});
+
+test('does not classify active or zero-minimum activities as unformed and uses only the confirmed roster at the end boundary',async()=>{
+ let time=new Date('2026-11-17T07:59:59.999Z');const {app,db}=await setup(()=>time);
+ db.exec("UPDATE events SET starts_at='2026-11-17T13:00:00+08:00',duration_hours=3,minimum_participants=2 WHERE id='listen'");
+ for(const [id,status] of [['self','confirmed'],['guest','waiting'],['pending','tentative'],['left','withdrawn']])db.prepare("INSERT INTO attendees(id,event_id,manager_id,name,payer_kind,status,created_at,updated_at) VALUES(?,'listen','alice','','manager',?,'before','before')").run(id,status);
+ expect((await app.inject('/api/v2/activities?status=unformed')).json().events).toEqual([]);
+ time=new Date('2026-11-17T08:00:00Z');
+ expect((await app.inject('/api/v2/activities?period=history&status=unformed')).json().events.map((e:{id:string})=>e.id)).toEqual(['listen']);
+ db.exec("UPDATE attendees SET status='confirmed' WHERE id='guest'");
+ expect((await app.inject('/api/v2/activities?period=history&status=unformed')).json().events).toEqual([]);
+ expect((await app.inject('/api/v2/activities?period=history&status=ended')).json().events.map((e:{id:string})=>e.id)).toContain('listen');
+ db.exec("UPDATE events SET minimum_participants=0 WHERE id='listen'; UPDATE attendees SET status='waiting' WHERE id='guest'");
+ expect((await app.inject('/api/v2/activities?period=history&status=unformed')).json().events).toEqual([]);
+});
+
 test.each(['scheduled','ongoing'])('moves an unsettled %s activity to history exactly at its planned end without mutating business records',async lifecycle=>{
  let time=new Date('2026-11-17T07:59:59.999Z');const {app,db,headers}=await setup(()=>time);
  db.prepare("UPDATE events SET lifecycle=?,starts_at='2026-11-17T13:00:00+08:00',duration_hours=3 WHERE id='listen'").run(lifecycle);

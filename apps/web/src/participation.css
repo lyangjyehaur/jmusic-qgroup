@@ -1,0 +1,40 @@
+.kimi.participation-page .activity-browse-tabs { margin-bottom: 20px; }
+.participation-controls { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px 24px; margin-bottom: 12px; }
+.participation-controls > .tabs { min-width: 160px; }
+.participation-filters { display: flex; flex-wrap: wrap; gap: 12px; }
+.participation-filters > .yj-field { width: 180px; }
+.participation-rule { color: var(--app-muted); font-size: 13px; margin: 12px 0 20px; }
+.participation-table { width: 100%; table-layout: fixed; }
+.participation-table .participation-number { width: 44px; text-align: center; font-variant-numeric: tabular-nums; }
+.participation-table .participation-count { width: 80px; text-align: right; font-variant-numeric: tabular-nums; }
+.participation-table .participation-date-column { width: 112px; }
+.participation-table .participation-action { width: 80px; }
+.participation-table td:last-child { text-align: right; }
+.participation-person { display: flex; align-items: center; gap: 10px; }
+.participation-person > div { min-width: 0; }
+.participation-person .qq-avatar { width: 32px; height: 32px; margin: 0; }
+.participation-name { display: block; overflow-wrap: anywhere; }
+.participation-mobile-date { display: none; }
+.participation-record-list { list-style: none; padding: 0; margin: 0; }
+.participation-record-list > li { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 16px 0; border-bottom: 1px solid var(--app-line); }
+.participation-record-list > li > div:first-child { min-width: 0; display: grid; gap: 4px; }
+.participation-event-title { font-weight: 500; overflow-wrap: anywhere; }
+.participation-event-date { color: var(--app-muted); font-size: 13px; }
+.participation-record-status { display: flex; flex-wrap: wrap; gap: 5px; justify-content: flex-end; }
+.participation-me-summary { margin-top: 20px; }
+@media (max-width: 640px) {
+  .participation-controls { align-items: stretch; flex-direction: column; }
+  .participation-filters { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .participation-filters > .yj-field { width: auto; min-width: 0; }
+  .participation-record-list > li { align-items: flex-start; flex-direction: column; gap: 8px; }
+  .participation-record-status { justify-content: flex-start; }
+  .participation-table { font-size: 13px; }
+  .participation-table :is(th, td) { padding-inline: 6px; }
+  .participation-table .participation-number { width: 30px; }
+  .participation-table .participation-count { width: 54px; }
+  .participation-table .participation-action { width: 60px; }
+  .participation-table .participation-date-column { display: none; }
+  .participation-person { gap: 8px; }
+  .participation-person .qq-avatar { width: 28px; height: 28px; }
+  .participation-mobile-date { display: block; color: var(--app-muted); font-size: 12px; }
+}

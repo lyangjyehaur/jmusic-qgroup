@@ -5,7 +5,7 @@ import { Surface } from 'yahha-ui';
 import { PageIntro } from './shared';
 import { uiText } from './language';
 const topics=[
-  ['section-1',uiText('帳號與入口')],['section-2',uiText('發起與時間投票')],['section-3',uiText('報名狀態')],['section-4',uiText('同行、退出與認領')],['section-5',uiText('活動管理')],['section-6',uiText('包間與結算')],['section-7',uiText('實際收付款')],['section-8',uiText('帳號與裝置')],['section-9',uiText('草稿與操作恢復')],['section-10',uiText('連結與分享')],['section-11',uiText('QQ bot')],['music',uiText('成分與詞庫')],['people',uiText('同好與找搭子')],['rooms',uiText('成分分房試算')],['privacy',uiText('隱私與刪除')],['admin',uiText('管理後臺')],
+  ['section-1',uiText('帳號與入口')],['section-2',uiText('發起與時間投票')],['section-3',uiText('報名狀態')],['participation',uiText('參與統計')],['section-4',uiText('同行、退出與認領')],['section-5',uiText('活動管理')],['section-6',uiText('包間與結算')],['section-7',uiText('實際收付款')],['section-8',uiText('帳號與裝置')],['section-9',uiText('草稿與操作恢復')],['section-10',uiText('連結與分享')],['section-11',uiText('QQ bot')],['music',uiText('成分與詞庫')],['people',uiText('同好與找搭子')],['rooms',uiText('成分分房試算')],['privacy',uiText('隱私與刪除')],['admin',uiText('管理後臺')],
 ];
 export function GuidePage(){
   const {hash}=useLocation();
@@ -29,6 +29,12 @@ export function GuidePage(){
         <tr><td>正式／已確認</td><td>占名額；一般預設計入共同分攤。</td></tr><tr><td>候補</td><td>不占正式名額；按隊列等待遞補。</td></tr><tr><td>待確認參加</td><td>不占名額，也不保留候補優先序；確認參加時重新排隊。</td></tr><tr><td>待接受邀請</td><td>不預留名額；受邀者接受後才分配。</td></tr><tr><td>已退出</td><td>不占名額；依原約定仍有費用時，結算人须列明依據。</td></tr>
       </tbody></table></div>
       <p>退出申請尚未批准時保留原報名狀態。待確認、候補或不接受新版安排均不等於自動退出。已開始、已截止或暫停報名時，按頁面限制聯絡活動管理者處理。</p>
+    </div></Disclosure>
+    <Disclosure id="participation" open={hash === "#participation" || undefined} className="guide-section" title={<>參與統計</>}><div>
+      <p>從「活動 → 參與統計」查看公開活動的參加次數與參加者紀錄；「我的 → 參與統計」查看本人紀錄。可依年份、月份與活動類型篩選，點活動名稱回到原活動。</p>
+      <p>已結束或已過預定結束時間，且正式報名達最低成團人數的活動，每人每場計一次；未達成團人數、取消、草稿、未來活動、候補、待確認及已退出報名不計。往期活動將未達最低人數的活動標為「未成團」，可按狀態篩選。最低人數為 0 表示不設門檻。歸檔與結算狀態不影響計數。日期篩選依台北時間的活動開始日期。</p>
+      <p>次數依正式報名計算，未核對出席或標記缺席不改變這個統計。同行／代報未認領時列入總人次，認領後歸入本人；代報管理人不代替同行累計。私人活動只列入本人有權限查看的個人紀錄。</p>
+      <p><Link to="/activities/participation">整體參與統計</Link> · <Link to="/me/participation">我的參加紀錄</Link></p>
     </div></Disclosure>
     <Disclosure id="section-4" open={hash === "#section-4" || undefined} className="guide-section"  title={<>同行、退出與認領</>}><div>
       <p>同行逐人占位。可以本人與朋友一起報名，也可只代報別人；每人都有獨立稱呼、備註與付款歸屬。「分開排隊」允許部分正式、部分候補；「整組排隊」須有足夠名額才一起遞補。改成分開排隊不會重新建立人員。</p>

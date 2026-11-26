@@ -5,10 +5,11 @@ import { fileURLToPath } from 'node:url';
 
 // A fresh process per test prevents one scenario consuming another's real IP quotas
 // or leaving mutable synthetic accounts/settings behind. Runtime limits stay enabled.
-export const test = base.extend<{ preview: void; orphanMusicReset:'none'|'shouts'|'trend'|'empty'; legacyHistoryExamples:boolean; backupExamples: boolean; botDeliveryExamples:boolean; adminCatalog: boolean; musicShouts: boolean; musicCircles: boolean; musicMatches: boolean; musicRooms: boolean; musicTrend: boolean; musicHistory: boolean; rosterExamples: boolean; inboxExamples: boolean; financeExamples: boolean; paymentExamples: boolean; settlementExamples: boolean; pollExamples: boolean }>({
+export const test = base.extend<{ preview: void; participationExamples: boolean; orphanMusicReset:'none'|'shouts'|'trend'|'empty'; legacyHistoryExamples:boolean; backupExamples: boolean; botDeliveryExamples:boolean; adminCatalog: boolean; musicShouts: boolean; musicCircles: boolean; musicMatches: boolean; musicRooms: boolean; musicTrend: boolean; musicHistory: boolean; rosterExamples: boolean; inboxExamples: boolean; financeExamples: boolean; paymentExamples: boolean; settlementExamples: boolean; pollExamples: boolean }>({
   // Business specs intercept requests to inject lost responses and mock OAuth.
   // A SW fetch bypasses Playwright's page routing; lifecycle specs opt in below.
   serviceWorkers: 'block',
+  participationExamples: [false, { option: true }],
   orphanMusicReset: ['none', { option: true }],
   botDeliveryExamples: [false, { option: true }],
   legacyHistoryExamples: [false, { option: true }],
@@ -26,10 +27,10 @@ export const test = base.extend<{ preview: void; orphanMusicReset:'none'|'shouts
   inboxExamples: [false, { option: true }],
   musicHistory: [false, { option: true }],
   rosterExamples: [false, { option: true }],
-  preview: [async ({ orphanMusicReset, botDeliveryExamples, legacyHistoryExamples, backupExamples, adminCatalog, musicShouts, musicCircles, musicTrend, musicMatches, musicRooms, musicHistory, rosterExamples, inboxExamples, financeExamples, paymentExamples, settlementExamples, pollExamples }, use) => {
+  preview: [async ({ participationExamples, orphanMusicReset, botDeliveryExamples, legacyHistoryExamples, backupExamples, adminCatalog, musicShouts, musicCircles, musicTrend, musicMatches, musicRooms, musicHistory, rosterExamples, inboxExamples, financeExamples, paymentExamples, settlementExamples, pollExamples }, use) => {
     const preview = spawn(process.execPath, ['--import', 'tsx', 'apps/api/testsupport/preview.ts'], {
       cwd: fileURLToPath(new URL('../../../', import.meta.url)), stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-      env: { ...process.env, REBUILD_TEST_ORPHAN_MUSIC_RESET:orphanMusicReset, REBUILD_TEST_LEGACY_HISTORY:legacyHistoryExamples?'1':'0', REBUILD_TEST_BOT_DELIVERIES:botDeliveryExamples?'1':'0', REBUILD_TEST_BACKUPS: backupExamples ? '1' : '0', REBUILD_TEST_ADMIN_CATALOG: adminCatalog ? '1' : '0', REBUILD_TEST_MUSIC_SHOUTS: musicShouts ? '1' : '0', REBUILD_TEST_MUSIC_CIRCLES: musicCircles ? '1' : '0', REBUILD_TEST_MUSIC_TREND: musicTrend ? '1' : '0', REBUILD_TEST_MUSIC_ROOMS: musicRooms ? '1' : '0', REBUILD_TEST_MUSIC_MATCHES: musicMatches ? '1' : '0', REBUILD_TEST_POLLS: pollExamples ? '1' : '0', REBUILD_TEST_SETTLEMENT: settlementExamples ? '1' : '0', REBUILD_TEST_PAYMENT: paymentExamples ? '1' : '0', REBUILD_TEST_FINANCE: financeExamples ? '1' : '0', REBUILD_TEST_MUSIC_HISTORY: musicHistory ? '1' : '0', REBUILD_TEST_ROSTER: rosterExamples ? '1' : '0', REBUILD_TEST_INBOX: inboxExamples ? '1' : '0' },
+      env: { ...process.env, REBUILD_TEST_PARTICIPATION: participationExamples?'1':'0', REBUILD_TEST_ORPHAN_MUSIC_RESET:orphanMusicReset, REBUILD_TEST_LEGACY_HISTORY:legacyHistoryExamples?'1':'0', REBUILD_TEST_BOT_DELIVERIES:botDeliveryExamples?'1':'0', REBUILD_TEST_BACKUPS: backupExamples ? '1' : '0', REBUILD_TEST_ADMIN_CATALOG: adminCatalog ? '1' : '0', REBUILD_TEST_MUSIC_SHOUTS: musicShouts ? '1' : '0', REBUILD_TEST_MUSIC_CIRCLES: musicCircles ? '1' : '0', REBUILD_TEST_MUSIC_TREND: musicTrend ? '1' : '0', REBUILD_TEST_MUSIC_ROOMS: musicRooms ? '1' : '0', REBUILD_TEST_MUSIC_MATCHES: musicMatches ? '1' : '0', REBUILD_TEST_POLLS: pollExamples ? '1' : '0', REBUILD_TEST_SETTLEMENT: settlementExamples ? '1' : '0', REBUILD_TEST_PAYMENT: paymentExamples ? '1' : '0', REBUILD_TEST_FINANCE: financeExamples ? '1' : '0', REBUILD_TEST_MUSIC_HISTORY: musicHistory ? '1' : '0', REBUILD_TEST_ROSTER: rosterExamples ? '1' : '0', REBUILD_TEST_INBOX: inboxExamples ? '1' : '0' },
     });
     let output = '';
     preview.stdout?.on('data', chunk => { output = (output + String(chunk)).slice(-4000); });

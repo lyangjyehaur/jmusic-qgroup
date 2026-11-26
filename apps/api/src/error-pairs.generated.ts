@@ -880,6 +880,10 @@ export const apiErrorPairs:Readonly<Record<string,readonly [string,string]>> = {
     "活动已发布；草稿输入仍保留，请回到活动核对",
     "活動已發布；草稿輸入仍保留，請回到活動核對"
   ],
+  "[\"NOT_FOUND\",\"找不到公開的參加紀錄\"]": [
+    "找不到公开的参加纪录",
+    "找不到公開的參加紀錄"
+  ],
   "[\"NOT_FOUND\",\"找不到原活動\"]": [
     "找不到原活动",
     "找不到原活動"
