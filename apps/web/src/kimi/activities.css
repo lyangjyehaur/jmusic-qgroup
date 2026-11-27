@@ -26,7 +26,15 @@
 .kimi .activity-title-line > .badge { flex:0 0 auto; margin-top:1px; }
 .kimi .activity-meta { display:flex; flex-wrap:wrap; gap:4px 14px; }
 .kimi .activity-meta > span { min-width:0; overflow-wrap:anywhere; align-items:start; }
-.kimi .activity-meta svg { margin-top:2px; }
+.kimi .activity-meta .activity-card-time { flex-basis:100%; }
+.kimi .activity-card-time-copy { min-width:0; display:flex; flex-wrap:wrap; gap:0 6px; }
+.kimi .activity-card-time-copy > span { white-space:nowrap; }
+.kimi .activity-card-time-copy > .activity-card-time-unknown { white-space:normal; }
+.kimi .activity-card-time-copy > .activity-card-time-schedule { display:inline-flex; flex-wrap:wrap; gap:0 6px; white-space:normal; }
+.kimi .activity-card-time-schedule > span:last-child { white-space:nowrap; }
+.kimi .activity-card-time-range { display:inline-flex; flex-wrap:wrap; }
+.kimi .activity-card-time-range > span { white-space:nowrap; }
+.kimi .activity-meta svg { margin-top:2px; flex-shrink:0; }
 .kimi .my-registration { flex-wrap:wrap; }
 .kimi .activity-progress { display:grid; grid-template-columns:minmax(0,1fr) 112px; gap:14px; align-items:center; min-width:0; }
 .kimi .activity-progress .activity-status { justify-self:end; }

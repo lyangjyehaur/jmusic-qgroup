@@ -21,11 +21,12 @@ export function activityDisplayDate(value: string, zone: string | null) {
   const date = formatter(zone, false)!.format(new Date(value));
   return date + (offset && offset !== 'GMT+8' ? `（${offset}）` : '');
 }
-/** Detail ranges show the end immediately, shortening it only within the same local day. */
-export function activityDisplayTimeRange(event: Pick<ActivityView, 'startsAt' | 'durationHours' | 'timezone'>) {
+/** Full ranges retain both dates; compact cards label the next local calendar day explicitly. */
+export function activityDisplayTimeParts(event: Pick<ActivityView, 'startsAt' | 'durationHours' | 'timezone'>, style: 'full' | 'compact' = 'full') {
   const format = formatter(event.timezone), hours = event.durationHours;
+  const duration = hours === null ? uiText('時長未定') : `${hours}${uiText(' 小時')}`;
   if (!format || !instant(event.startsAt) || hours === null || !Number.isFinite(hours) || hours <= 0) {
-    return activityDisplayDate(event.startsAt, event.timezone) + (hours === null ? uiText(' · 時長未定') : ` · ${hours}${uiText(' 小時')}`);
+    return { date: activityDisplayDate(event.startsAt, event.timezone), startClock: null, endText: null, duration, crossDay: false };
   }
   const start = new Date(event.startsAt), end = new Date(+start + hours * 3600000);
   const parts = (date: Date) => format.formatToParts(date);
@@ -34,8 +35,17 @@ export function activityDisplayTimeRange(event: Pick<ActivityView, 'startsAt' | 
   const offset = (date: Date) => part(date, 'timeZoneName');
   const clock = new Intl.DateTimeFormat(displayLocale(), { timeZone: event.timezone!, hour: '2-digit', minute: '2-digit', hourCycle: 'h23' });
   const crossDay = day(start) !== day(end), offsetChanged = offset(start) !== offset(end);
-  const endText = crossDay ? activityDisplayDate(end.toISOString(), event.timezone) : clock.format(end) + (offsetChanged && offset(end) !== 'GMT+8' ? `（${offset(end)}）` : '');
-  return activityDisplayDate(event.startsAt, event.timezone) + '–' + endText + (crossDay ? uiText('（跨日）') : '') + ` · ${hours}${uiText(' 小時')}`;
+  const calendarDay = (date: Date) => Date.UTC(Number(part(date, 'year')), Number(part(date, 'month')) - 1, Number(part(date, 'day')));
+  const nextDay = style === 'compact' && calendarDay(end) - calendarDay(start) === 86400000;
+  const endClock = clock.format(end) + (offsetChanged && offset(end) !== 'GMT+8' ? `（${offset(end)}）` : '');
+  const endText = nextDay ? uiText('次日 ') + endClock : crossDay ? activityDisplayDate(end.toISOString(), event.timezone) : endClock;
+  const date = new Intl.DateTimeFormat(displayLocale(), { year: 'numeric', month: '2-digit', day: '2-digit', weekday: 'short', timeZone: event.timezone! }).format(start);
+  const startClock = clock.format(start) + (offset(start) !== 'GMT+8' ? `（${offset(start)}）` : '');
+  return { date, startClock, endText, duration, crossDay };
+}
+export function activityDisplayTimeRange(event: Pick<ActivityView, 'startsAt' | 'durationHours' | 'timezone'>, style: 'full' | 'compact' = 'full') {
+  const time = activityDisplayTimeParts(event, style);
+  return time.date + (time.startClock ? ' ' + time.startClock + '–' + time.endText : '') + (time.crossDay && style === 'full' ? uiText('（跨日）') : '') + ' · ' + time.duration;
 }
 export function activityTimeRange(event: Pick<ActivityView, 'startsAt' | 'durationHours' | 'timezone'>) {
   const start = activityDate(event.startsAt, event.timezone), hours = event.durationHours;

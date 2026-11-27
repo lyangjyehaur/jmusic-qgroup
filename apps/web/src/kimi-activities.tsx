@@ -10,7 +10,7 @@ import { Badge, EmptyState, PageHeader, SearchInput, Select, Button } from './ki
 import { Failure, Notice, useSession } from './shared';
 import { scopedHttp } from './http';
 import { ActivityBrowseTabs } from './activity-browse-tabs';
-import { activityDisplayDate } from './activity-summary';
+import { activityDisplayTimeParts } from './activity-summary';
 import { ActivityNumbers } from './activity-numbers';
 import { OverviewStats } from './overview-stats';
 import { uiText, displayLocale } from './language';
@@ -24,9 +24,10 @@ export function KimiActivityRow({ event, rooms = false }: { event: z.infer<typeo
   try { if(event.timezone){const d=new Date(event.startsAt);day=new Intl.DateTimeFormat(displayLocale(),{day:'numeric',timeZone:event.timezone}).formatToParts(d).find(p=>p.type==='day')?.value??'—';month=new Intl.DateTimeFormat(displayLocale(),{month:'short',timeZone:event.timezone}).format(d);} } catch { /* Preserve original time below. */ }
   const status=listedActivityStatus(event), label=status==='ended'&&event.estimatedOver?uiText('已過預定時間'):statuses.find(([value])=>value===status)?.[1]??event.phase;
   const mine=event.myRegistration;
+  const time=activityDisplayTimeParts(event,'compact');
   return <article className="activity-row"><div className="activity-date" aria-hidden="true"><strong>{day}</strong><span>{month}</span></div>
     <div className="activity-main"><div className="activity-title-line"><h2><Link className="activity-card-link" to={to}>{event.title}</Link></h2><Badge>{activityCategoryLabel(event.category)}</Badge></div>
-      <div className="activity-meta"><span><Clock3 size={14}/>{activityDisplayDate(event.startsAt,event.timezone)}</span><span><MapPin size={14}/>{event.location}</span></div>
+      <div className="activity-meta"><span className="activity-card-time"><Clock3 size={14}/><span className="activity-card-time-copy"><span className={!time.startClock?'activity-card-time-unknown':undefined}>{time.date}</span>{' '}<span className="activity-card-time-schedule">{time.startClock&&<span className="activity-card-time-range"><span>{time.startClock}–</span><span>{time.endText}</span></span>}{' '}<span>· {time.duration}</span></span></span></span><span><MapPin size={14}/>{event.location}</span></div>
       {mine&&<div className="my-registration">我的報名 <Badge tone={mine==='confirmed'?'green':'amber'} dot>{mine==='confirmed'?'正式':mine==='waiting'?'候補':'待確認'}</Badge>{mine==='tentative'&&<Link to={'/activities/'+event.id+'/conditions'}>前往確認</Link>}</div>}
     </div><div className="activity-progress"><ActivityNumbers confirmed={event.confirmed} minimumParticipants={event.minimumParticipants} capacity={event.capacity} waiting={event.waiting} finished={['ended','unformed','cancelled','archived'].includes(status)}/>
     <div className="activity-status"><Badge tone={status==='open'?'green':status==='ongoing'?'blue':status==='cancelled'?'red':status==='unformed'?'amber':'neutral'} dot>{label}</Badge>{status==='unformed'&&event.archived&&<small>已歸檔</small>}{event.visibility!=='public'&&<small>僅邀請可見</small>}</div></div>
