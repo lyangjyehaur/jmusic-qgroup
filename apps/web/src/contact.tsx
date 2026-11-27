@@ -2,12 +2,9 @@ import { ArrowUpRight, Mail } from 'lucide-react';
 import { Heading, Surface } from 'yahha-ui';
 import { ActionLink } from './action-link';
 import { InformationPage } from './information-page';
-import { uiText } from './language';
-
-const topics = [['email', uiText('聯絡信箱')], ['report', uiText('問題與投訴')], ['reply', uiText('處理與回覆')]] as const;
 
 export function ContactPage() {
-  return <InformationPage title="聯絡營運者" topics={topics}>
+  return <InformationPage title="聯絡營運者">
     <Surface className="information-document">
       <section id="email" className="information-section">
         <Heading level={2}>聯絡信箱</Heading>

@@ -2,13 +2,9 @@ import { Disclosure } from './kimi-ui';
 import { Link, useLocation } from 'react-router-dom';
 import { Surface } from 'yahha-ui';
 import { InformationPage } from './information-page';
-import { uiText } from './language';
-const topics=[
-  ['section-1',uiText('帳號與入口')],['section-2',uiText('發起與時間投票')],['section-3',uiText('報名狀態')],['participation',uiText('參與統計')],['section-4',uiText('同行、退出與認領')],['section-5',uiText('活動管理')],['section-6',uiText('包間與結算')],['section-7',uiText('實際收付款')],['section-8',uiText('帳號與裝置')],['section-9',uiText('草稿與操作恢復')],['section-10',uiText('連結與分享')],['section-11',uiText('QQ bot')],['music',uiText('成分與詞庫')],['people',uiText('同好與找搭子')],['rooms',uiText('成分分房試算')],['privacy',uiText('隱私與刪除')],['admin',uiText('管理後臺')],
-] as const;
 export function GuidePage(){
   const {hash}=useLocation();
-  return <InformationPage title="使用說明" topics={topics}><Surface className="information-document guide">
+  return <InformationPage title="使用說明"><Surface className="information-document guide">
     <Disclosure id="section-1" open={hash === "#section-1" || undefined} className="guide-section" headingLevel={2}  title={<>帳號與入口</>}><div>
       <p>「活動」處理安排、報名、出席與費用；「音樂」編輯成分與詞庫；「同好」查看推薦、圈子與找搭子；「我的」管理帳號、收件匣及個人設定。共用同一個帳號。</p>
       <p>公開活動與詞庫可以直接瀏覽。保存成分、報名或管理個人資料前須登入。使用 QQ 登入時，先閱讀資料用途，在 QQ 官方頁授權，再回本站確認登入、綁定或切換。QQ 同稱呼與站內同稱呼均不代表同一帳號。</p>

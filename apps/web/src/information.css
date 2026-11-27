@@ -1,13 +1,5 @@
-.kimi.information-page { max-width:1100px; }
+.kimi.information-page { max-width:880px; }
 .kimi.information-page > .page-header { margin-bottom:24px; }
-.kimi .information-layout { display:grid; grid-template-columns:188px minmax(0,1fr); gap:28px; align-items:start; }
-.kimi .information-contents { position:sticky; top:calc(var(--topbar-height) + 20px); min-width:0; }
-.kimi .information-contents-links { display:grid; max-height:calc(100dvh - var(--topbar-height) - 48px); overflow-y:auto; padding-right:8px; }
-.kimi .information-contents-links a { display:flex; align-items:center; min-height:44px; padding:8px 12px; border-left:2px solid transparent; border-radius:0 8px 8px 0; color:var(--muted); font-size:13px; line-height:1.5; text-decoration:none; }
-.kimi .information-contents-links a:hover { color:var(--ink); background:var(--moss-soft); }
-.kimi .information-contents-links a[aria-current] { border-left-color:var(--moss); color:var(--moss); background:var(--moss-soft); font-weight:600; }
-.kimi .information-contents-select { display:none; }
-.kimi .information-body { min-width:0; }
 .kimi .information-document { max-width:none; padding:28px; border:1px solid var(--line-soft); border-radius:var(--yahha-radius-panel); background:var(--paper); box-shadow:none; color:var(--ink); font-size:14px; line-height:1.9; overflow-wrap:anywhere; }
 .kimi .information-document p { margin:0 0 16px; }
 .kimi .information-document :is(p,ul,ol):last-child { margin-bottom:0; }
@@ -35,15 +27,8 @@
 .kimi .guide code { padding:0; background:transparent; font-size:12px; line-height:1.8; overflow-wrap:anywhere; }
 .kimi .contact-email { display:inline-flex; align-items:center; flex-wrap:wrap; gap:8px; max-width:100%; font-size:clamp(16px,2vw,20px); font-weight:600; }
 .kimi .contact-actions { margin-top:20px; }
-@media(max-width:1000px) {
-  .kimi .information-layout { grid-template-columns:minmax(0,1fr); gap:20px; }
-  .kimi .information-contents { position:static; }
-  .kimi .information-contents-links { display:none; }
-  .kimi .information-contents-select { display:block; max-width:360px; }
-}
 @media(max-width:768px) {
   .kimi.information-page > .page-header { margin-bottom:20px; }
-  .kimi .information-contents-select { max-width:none; }
   .kimi .information-document { padding:20px 18px; }
   .kimi .information-document.guide { padding:4px 18px; }
   .kimi .information-section + .information-section { margin-top:24px; padding-top:24px; }

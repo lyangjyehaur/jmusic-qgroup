@@ -1,9 +1,7 @@
 import { PRIVACY_VERSION } from '@qgroup/contracts';
 import { InformationPage } from './information-page';
-import { uiText } from './language';
-const topics = [['data',uiText('處理哪些資料')],['visibility',uiText('用途及可見範圍')],['services',uiText('QQ 及第三方服務')],['security',uiText('保存與安全')],['rights',uiText('查閱、修改、退出及刪除')],['changes',uiText('未成年人及政策變更')]] as const;
 export function Privacy() {
-  return <InformationPage title="隱私政策" topics={topics}><article className="information-document policy">
+  return <InformationPage title="隱私政策"><article className="information-document policy">
 <p className="information-notice">版本：{PRIVACY_VERSION}。本版本适用于尚未上线的统一系统；正式生效日期将在切换前公告，现有正式服务政策不因测试确认而变更。</p>
 <p>{"本文说明统一网站与 bot 如何处理账号、活动、费用及成分资料。隐私问题、个人信息权利申请及内容投诉统一联系："}<a href="mailto:203008876@qq.com">{"203008876@qq.com"}</a>{"（群聚看板及成分站运营者）。"}</p>
 <section id="data" className="information-section">
