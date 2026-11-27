@@ -14,7 +14,8 @@ import { authHttp } from './auth';
 import { Failure, Notice, PageIntro, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
-import { SettlementEditorValue as Editable,settlementCalculation as calculation,settlementPersonValue,updateSettlementPerson,includeSettlementPerson,settlementMode,type SettlementEditorInput as EditableInput } from './settlement-editor-record';
+import { normalizedRoomMembers, sameDraftValue } from './draft-equality';
+import { SettlementEditorValue as Editable,settlementCalculation as calculation,settlementPersonValue,settlementPersonSeed,updateSettlementPerson,includeSettlementPerson,settlementMode,type SettlementEditorInput as EditableInput } from './settlement-editor-record';
 import { requireLegacyAvailable } from './legacy-local-availability';
 import { Field, money, newSettlementId, PayerSelect, RoomFields, type Payer } from './settlement-controls';
 import { PaymentAssetImage, preparePaymentImage } from './payment-image';
@@ -391,6 +392,11 @@ function ContextLoader({ id, viewer }: { id: string; viewer: Member }) {
   );
 }
 function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
+  const comparable=(value:EditableInput)=>({...value,
+    people:[...value.people].sort((a,b)=>a.id.localeCompare(b.id)),
+    retained_people:[...(value.retained_people??[])].filter(person=>{const source=initial.people.find(row=>row.id===person.id);return !source||!sameDraftValue(person,settlementPersonSeed(source));}).sort((a,b)=>a.id.localeCompare(b.id)),
+    rooms:normalizedRoomMembers(value.rooms),retained_rooms:normalizedRoomMembers(value.retained_rooms),
+  });
   const endpoint = base(initial.id) + '/settlement',
     client = useQueryClient(),
     form = useReviewedDraft({
@@ -399,6 +405,7 @@ function Editor({ initial, viewer }: { initial: Context; viewer: Member }) {
       initial,
       blank,
       valueSchema: Editable,
+      sameValue: (value,baseline) => sameDraftValue(comparable(value),comparable(baseline)),
       saveSchema: SaveSettlement,
       send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/activities/:id/settlement', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }),
       beforeSubmit:()=>requireLegacyAvailable(viewer.scope,endpoint+'/edit'),

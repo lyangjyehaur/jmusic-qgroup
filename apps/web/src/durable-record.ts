@@ -22,6 +22,9 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
   const unavailable = loading || needsRestore || !!readError;
   unavailableRef.current = unavailable;
   const dirty = options.dirty(value) || options.pending(value), locked = unavailable || busy || options.pending(value);
+  // Some baselines arrive asynchronously. A no-op record must not remain locked
+  // behind a restore prompt after its actual values have been verified as clean.
+  useEffect(() => { if (needsRestore && !dirty && !readError) setNeedsRestore(false); }, [needsRestore, dirty, readError]);
   const encode = (next: T) => optionsRef.current.serialize?.(next) ?? JSON.stringify(next);
   function replace(next: T) { current.current = next; rawSetValue(next); }
   function setBusy(next: boolean) { busyRef.current = next; rawSetBusy(next); }
@@ -126,13 +129,13 @@ export function useDurableValue<T>(options: RecordOptions<T>) {
 /** A page owns one router blocker, including any nested memory-only operation. */
 export function useDurableRecord<T>(options: RecordOptions<T> & { blocking?: boolean | BlockerFunction; extraDirty?: boolean }) {
   const form = useDurableValue(options), dirty = form.dirty || !!options.extraDirty;
-  const blocker = useBlocker(transition => (dirty || form.saving || form.busy) && (typeof options.blocking === 'function' ? options.blocking(transition) : options.blocking !== false));
+  const blocker = useBlocker(transition => (dirty || form.busy || !!form.readError || !!form.storageError) && (typeof options.blocking === 'function' ? options.blocking(transition) : options.blocking !== false));
   async function leave() { const proceed = blocker.proceed; if (await form.canLeave()) proceed?.(); }
   async function discardAndLeave() { const proceed = blocker.proceed; if (await form.discard()) proceed?.(); }
   useEffect(() => {
-    if ((!dirty && !form.saving && !form.busy) || options.blocking === false) return;
+    if ((!dirty && !form.busy && !form.readError && !form.storageError) || options.blocking === false) return;
     const leave = (event: BeforeUnloadEvent) => { event.preventDefault(); event.returnValue = ''; };
     window.addEventListener('beforeunload', leave); return () => window.removeEventListener('beforeunload', leave);
-  }, [dirty, form.saving, form.busy, options.blocking]);
+  }, [dirty, form.busy, form.readError, form.storageError, options.blocking]);
   return { ...form, blocker, leave, discardAndLeave };
 }

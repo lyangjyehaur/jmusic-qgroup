@@ -44,8 +44,8 @@ function UserEditor({ viewer, access, initial }: { viewer: Viewer; access: Acces
   const storageKey = 'qgroup:rebuild:admin-user:v1:' + viewer.scope + ':' + access.scope + ':' + initial.id;
   const [user,setUser]=useState(initial),[confirmed,setConfirmed]=useState(false),[message,setMessage]=useState('');
   const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,
-    seed:()=>({note:user.note,manualQQ:user.manualQQ,revision:user.metadataRevision}),parse:raw=>Draft.parse(JSON.parse(raw)),
-    dirty:value=>value.note!==user.note||value.manualQQ!==user.manualQQ||value.revision!==user.metadataRevision,pending:value=>!!value.pending});
+    seed:()=>({note:user.note,manualQQ:user.manualQQ,revision:user.metadataRevision}),parse:raw=>{const value=Draft.parse(JSON.parse(raw));return !value.pending&&value.note===user.note&&value.manualQQ===user.manualQQ?{...value,revision:user.metadataRevision}:value;},
+    dirty:value=>value.note!==user.note||value.manualQQ!==user.manualQQ,pending:value=>!!value.pending});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
   const history = useInfiniteQuery({ queryKey: ['private', viewer.scope, 'admin-role-history', access.scope, initial.id], initialPageParam: null as number | null,

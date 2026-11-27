@@ -14,6 +14,7 @@ import { Failure, Notice, PageIntro } from './shared';
 import { Field } from './settlement-controls';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { sameDraftValue } from './draft-equality';
 const policyLabels: Record<keyof BotPolicy, string> = {
   enabled: uiText("主動通知"),
   replies_enabled: uiText("群內回覆"),
@@ -163,10 +164,17 @@ function Manager({ viewer, access }: { viewer: Viewer; access: Access }) {
   const record = useDurableRecord<Draft | null>({
     key: storageKey, scope: viewer.scope,
     seed: () => catalog.data ? blank(catalog.data) : null,
-    parse: raw => Draft.nullable().parse(JSON.parse(raw)),
-    dirty: draft => !!draft?.dirty, pending: draft => !!draft?.pending,
+    parse: raw => {const draft=Draft.nullable().parse(JSON.parse(raw));return draft&&!draft.dirty&&!draft.pending?(catalog.data?blank(catalog.data):null):draft;},
+    dirty: isDirty, serialize: draft => JSON.stringify(draft && {...draft,dirty:isDirty(draft)}), pending: draft => !!draft?.pending,
     blocking: ({ nextLocation, currentLocation }) => nextLocation.pathname !== currentLocation.pathname,
   });
+  function isDirty(draft: Draft | null) {
+    if (!draft) return false;
+    if (draft.command === 'revert') return true;
+    if (!catalog.data) return draft.dirty;
+    const normalize = (value: Value) => ({...value,broadcast_kinds:[...value.broadcast_kinds].sort()});
+    return !sameDraftValue(normalize(draft.value), normalize(valueOf(catalog.data.config)));
+  }
   const { value: draft, replace: setDraft, busy, setBusy, active, unavailable, locked, begin, persist,
     readError, storageError } = record;
   const dirty = record.dirty, stale = !!draft && !!catalog.data && catalog.data.revision !== draft.revision;

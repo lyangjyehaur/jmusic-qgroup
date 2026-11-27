@@ -3,6 +3,7 @@ import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { sameDraftValue } from './draft-equality';
 import { Link } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Surface, Text } from 'yahha-ui';
@@ -34,9 +35,10 @@ function Loader({ viewer }: { viewer: Member }) {
 function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
   const client = useQueryClient(); const storageKey = 'qgroup:rebuild:music:fields:v1:' + viewer.scope + ':' + viewer.musicEpoch + ':' + initial.profileId;
   const [saved, setSaved] = useState(initial), [message, setMessage] = useState(''), [comparison, setComparison] = useState(false);
+  const isDirty=(value:DraftValue)=>!sameDraftValue({...valueOf(value),revision:0},{...valueOf(draftFor(saved,viewer.musicEpoch)),revision:0});
   const record = useDurableRecord({key:storageKey,scope:viewer.scope,seed:()=>draftFor(saved,viewer.musicEpoch),parse:raw=>{
-    const value=Draft.parse(JSON.parse(raw));if(value.profileId!==initial.profileId||value.musicEpoch!==viewer.musicEpoch||value.pending&&(value.pending.input.profileId!==value.profileId||value.pending.input.musicEpoch!==value.musicEpoch))throw Error('profile target');return value;
-  },dirty:value=>JSON.stringify(valueOf(value))!==JSON.stringify(valueOf(draftFor(saved,viewer.musicEpoch))),pending:value=>!!value.pending});
+    const value=Draft.parse(JSON.parse(raw));if(value.profileId!==initial.profileId||value.musicEpoch!==viewer.musicEpoch||value.pending&&(value.pending.input.profileId!==value.profileId||value.pending.input.musicEpoch!==value.musicEpoch))throw Error('profile target');return !value.pending&&!isDirty(value)?draftFor(saved,viewer.musicEpoch):value;
+  },dirty:isDirty,pending:value=>!!value.pending});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,persist,begin,unavailable}=record;
   useEffect(()=>setComparison(false),[record.epoch]);
   function edit(patch: Partial<DraftValue>) { record.change({ ...draft, ...patch }); setMessage(''); }

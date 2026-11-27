@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { RoomLabSource,RoomLabResult,RoomLabRoomInput } from '@qgroup/contracts';
 export const MusicRoomDraft=z.object({
- source:RoomLabSource,selected:z.array(z.string()).max(40),
+ source:RoomLabSource,selected:z.array(z.string()).max(40),baselineSelected:z.array(z.string()).max(40).optional(),
  // Capacity may be temporarily invalid while editing; command validation remains strict.
  rooms:z.array(RoomLabRoomInput.extend({capacity:z.number()})).max(40),
  roomNames:z.record(z.string().uuid(),z.string()).optional(),

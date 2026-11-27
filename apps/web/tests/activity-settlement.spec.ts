@@ -407,8 +407,10 @@ test('rebases concurrent changes without losing edits and rejects an account-swi
   await login(context);
   await page.reload();
   await expectControlValue(page.getByLabel('費用金額', { exact: true }), '7.25');
+  await page.getByRole('button', { name: '恢復本機原稿', exact: true }).click();
+  await expect(page.getByRole('button', { name: '確認原操作結果', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '返回活動', exact: true }).click();
-  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await page.getByRole('navigation').getByRole('link', { name: '我的', exact: true }).click();
   await page.getByRole('link', { name: '帳號', exact: true }).click();
   await page.getByRole('button', { name: '登出此裝置', exact: true }).click();

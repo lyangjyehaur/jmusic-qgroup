@@ -16,6 +16,7 @@ import { musicRoomDraftKey,parseMusicRoomDraft,MusicRoomDraft as Draft } from '.
 import { MusicMemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicRoomShare } from './music-room-share';
+import { sameDraftValue } from './draft-equality';
 type Source = z.infer<typeof RoomLabSource>;
 const empty = (source: Source, includeMe = true): Draft => ({
   source,
@@ -113,9 +114,10 @@ function Editor({
     } catch {
       /* A nonessential preference never blocks creating a draft. */
     }
-    return empty(fresh, includeMe);
+    const draft=empty(fresh, includeMe);return {...draft,baselineSelected:draft.selected};
   };
-  const form=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:newDraft,parse:raw=>parseMusicRoomDraft(raw,fresh.eventId),dirty:d=>d.selected.length>1||!!d.rooms.length||!!d.result||d.mode!=='rooms'||d.value!=='2'||!!d.sizes||d.sameGender,pending:()=>false});
+  const initialSelected=useRef(newDraft().selected);
+  const form=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:newDraft,parse:raw=>parseMusicRoomDraft(raw,fresh.eventId),dirty:d=>!sameDraftValue([...d.selected].sort(),[...(d.baselineSelected??initialSelected.current)].sort())||!!d.rooms.length||!!d.result||Object.values(d.roomNames??{}).some(Boolean)||d.mode!=='rooms'||d.value!=='2'||!!d.sizes||d.sameGender,pending:()=>false});
   const {value:draft,replace:setDraft,busy,setBusy,active,persist,begin}=form;
   const [message,setMessage]=useState(''),[denied,setDenied]=useState(false),[calculating,setCalculating]=useState(false),
     [search,setSearch]=useState(''),[locatedMember,setLocatedMember]=useState(''),[page,setPage]=useState(1),[lookup,setLookup]=useState(''),[shuffle,setShuffle]=useState(()=>Math.random());

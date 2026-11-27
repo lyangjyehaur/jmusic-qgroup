@@ -28,11 +28,20 @@ export function AdminAppearancePage(){return <><PageIntro title="壁紙管理"/>
 function Manager({viewer,access}:{viewer:Viewer;access:Access}){
   const client=useQueryClient(),storageKey='qgroup:rebuild:admin-appearance:v1:'+viewer.scope+':'+access.scope;
   const [confirmed,setConfirmed]=useState(false),[message,setMessage]=useState('');
-  const record=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:blank,parse:raw=>Draft.parse(JSON.parse(raw)),
-    serialize,dirty:value=>value.dirty,pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
+  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-appearance',access.scope],queryFn:({signal})=>adminReadHttp(viewer).requestContract('GET /api/v2/admin/appearance',{signal}),refetchOnMount:'always',refetchOnWindowFocus:'always'});
+  function isDirty(draft:Draft){
+    const value=draft.value;
+    if(value.command==='none')return false;
+    if(value.command==='upload')return !!value.name||!!value.data;
+    if(!catalog.data)return draft.dirty;
+    if(value.command==='config')return value.rotateSeconds!==String(catalog.data.rotateSeconds);
+    if(value.command==='toggle')return value.enabled!==catalog.data.items.find(item=>item.id===value.id)?.enabled;
+    return true;
+  }
+  const record=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:blank,parse:raw=>{const draft=Draft.parse(JSON.parse(raw));return !draft.dirty&&!draft.pending?blank():draft;},
+    serialize:value=>serialize({...value,dirty:isDirty(value)}),dirty:isDirty,pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin:start,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
-  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-appearance',access.scope],queryFn:({signal})=>adminReadHttp(viewer).requestContract('GET /api/v2/admin/appearance',{signal}),refetchOnMount:'always',refetchOnWindowFocus:'always'});
   const stale=!!catalog.data&&catalog.data.revision!==draft.value.revision;
   useEffect(()=>{if(catalog.error instanceof ApiError&&[401,403].includes(catalog.error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[catalog.error,client,viewer.scope]);
   function edit(patch:Partial<Value>){if(locked)return;record.change({...draft,value:{...draft.value,...patch},dirty:true});setConfirmed(false);setMessage('');}

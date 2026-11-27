@@ -95,7 +95,7 @@ export const settlementCalculation = (value: EditableInput) => {
         : undefined,
 });
 };
-export const SettlementEditorRecord=z.object({value:SettlementEditorValue,dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:SaveSettlement}).strict().optional()}).strict();
+export const SettlementEditorRecord=z.object({value:SettlementEditorValue,baseline:SettlementEditorValue.optional(),dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:SaveSettlement}).strict().optional()}).strict();
 
 type Person=SettlementEditorInput['people'][number];
 export const settlementPersonSeed=(person:{id:string;payer_id:string}):Person=>({id:person.id,share:'1',reason:'',payment_mode:'shares',payments:[{payer_id:person.payer_id,share:'1'}]});

@@ -7,6 +7,7 @@ import { Button, Select, Checkbox } from './kimi-ui';
 import { z } from 'zod';
 import { AdminMusicCatalog, AdminMusicEntryCommand, MusicEntryNames, type Viewer } from '@qgroup/contracts';
 import { musicText, emptyMusicNames } from '@qgroup/domain';
+import { sameDraftValue } from './draft-equality';
 import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
 import { ApiError } from './api';
 import { Failure,Notice,PageIntro } from './shared';
@@ -33,11 +34,20 @@ export function AdminMusicCatalogPage(){return <><PageIntro title="音樂詞庫�
 function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
   const client=useQueryClient(),storageKey='qgroup:rebuild:admin-catalog:v1:'+viewer.scope+':'+access.scope;
   const [confirmed,setConfirmed]=useState(false),[message,setMessage]=useState('');
-  const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:blank,parse:raw=>Draft.parse(JSON.parse(raw)),
-    dirty:value=>value.dirty,pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
+  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-catalog',access.scope],queryFn:({signal})=>adminReadHttp(viewer).requestContract('GET /api/v2/admin/music-entries',{signal}),refetchOnMount:'always'});
+  function isDirty(draft:z.infer<typeof Draft>){
+    const value=draft.value;
+    if(value.command==='none')return false;
+    if(value.command==='delete'||value.command==='merge')return true;
+    const source=catalog.data?.entries.find(entry=>entry.id===value.id);
+    if(value.command==='update'&&!source)return draft.dirty;
+    return !sameDraftValue({name:value.name,kind:value.kind,category:value.category,names:value.names??emptyMusicNames()},
+      {name:source?.name??'',kind:source?.kind??'sub',category:source?.category??'歌手',names:source?.names??{...emptyMusicNames(),aliases:source?.aliases??[]}});
+  }
+  const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:blank,parse:raw=>{const draft=Draft.parse(JSON.parse(raw));return !draft.dirty&&!draft.pending?blank():draft;},
+    dirty:isDirty,serialize:value=>JSON.stringify({...value,dirty:isDirty(value)}),pending:value=>!!value.pending,blocking:({currentLocation,nextLocation})=>currentLocation.pathname!==nextLocation.pathname});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,unavailable,begin:start,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
-  const catalog=useQuery({queryKey:['private',viewer.scope,'admin-catalog',access.scope],queryFn:({signal})=>adminReadHttp(viewer).requestContract('GET /api/v2/admin/music-entries',{signal}),refetchOnMount:'always'});
   const filters=useMusicSearch(catalog.data?.entries??[]);
   const pageParam=filters.params.get('page')??'1',page=/^[1-9]\d{0,5}$/.test(pageParam)?Number(pageParam):1;
   const visible=filters.filtered.slice((page-1)*20,page*20),searchFilters={...filters,update:(key:string,value:string)=>{filters.update('page','');filters.update(key,value);}};

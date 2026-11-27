@@ -37,8 +37,8 @@ function ReviewForm({ initial, viewer, access }: { initial: Request; viewer: Vie
   const storageKey = 'qgroup:rebuild:admin-privacy:v1:' + viewer.scope + ':' + access.scope + ':' + initial.id;
   const [request,setRequest]=useState(initial),[confirmed,setConfirmed]=useState(false),[message,setMessage]=useState('');
   const record=useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,
-    seed:()=>({note:request.note,revision:request.revision}),parse:raw=>Draft.parse(JSON.parse(raw)),
-    dirty:value=>value.note!==request.note||value.revision!==request.revision,pending:value=>!!value.pending});
+    seed:()=>({note:request.note,revision:request.revision}),parse:raw=>{const value=Draft.parse(JSON.parse(raw));return !value.pending&&value.note===request.note?{...value,revision:request.revision}:value;},
+    dirty:value=>value.note!==request.note,pending:value=>!!value.pending});
   const {value:draft,replace:setDraft,busy,setBusy,active,locked,unavailable,begin,persist}=record;
   useEffect(()=>setConfirmed(false),[record.epoch]);
   async function save(){

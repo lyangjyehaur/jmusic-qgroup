@@ -31,7 +31,7 @@ function NicknameEditor({ viewer, initial }: { viewer: Viewer; initial: Value })
   const storageKey = 'qgroup:rebuild:account-profile:v1:' + viewer.scope;
   const [saved, setSaved] = useState(initial), [message, setMessage] = useState('');
   const record = useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:()=>saved,
-    parse:raw=>Draft.parse(JSON.parse(raw)),dirty:value=>value.nickname!==saved.nickname||value.revision!==saved.revision,pending:value=>!!value.requestKey});
+    parse:raw=>{const value=Draft.parse(JSON.parse(raw));return !value.requestKey&&value.nickname===saved.nickname?{...value,revision:saved.revision}:value;},dirty:value=>value.nickname!==saved.nickname,pending:value=>!!value.requestKey});
   const {value:draft,replace:setDraft,busy:sending,setBusy:setSending,active,dirty,locked,persist,begin,unavailable}=record;
   async function save() {
     if (sending || unavailable) return;

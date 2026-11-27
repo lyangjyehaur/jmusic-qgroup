@@ -17,6 +17,7 @@ import { DiscoveryLayer } from './discovery-dialog';
 import { MusicSaveDock, musicSaveDockVisible } from './music-save-dock';
 import { FeedbackLayer } from './feedback-layer';
 import { MusicLevelPicker } from './music-level-picker';
+import { sameMusicSelections } from './draft-equality';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
 const isWorkspace = (pathname: string) => pathname === '/search' || pathname === '/music' || pathname === '/music/trends' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname) || pathname === '/people' || /^\/people\/m_[a-f0-9]{24,40}(?:\/compare)?$/.test(pathname);
 const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
@@ -35,12 +36,12 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   const record=useDurableRecord<DraftValue>({key:storageKey,scope:viewer.scope,seed:()=>fallback(saved),parse:raw=>{
     const value=Draft.parse(JSON.parse(raw)),baseline=fallback(initial);
     if(value.musicEpoch!==viewer.musicEpoch)throw Error('music epoch');
-    const sameSavedChoices=!value.requestKey&&value.profileId===baseline.profileId&&JSON.stringify(value.selections)===JSON.stringify(baseline.selections);
+    const sameSavedChoices=!value.requestKey&&value.profileId===baseline.profileId&&sameMusicSelections(value.selections,baseline.selections);
     const untouchedBlank=!value.requestKey&&value.profileId===null&&value.revision===0&&!value.selections.length;
     if(sameSavedChoices||untouchedBlank)return baseline;
     // First-time drafts keep their null target until explicit rebase; replaced profiles stay blocked.
     if(value.profileId!==null&&value.profileId!==baseline.profileId)throw Error('profile target');return value;
-  },dirty:value=>value.profileId!==(saved?.id??null)||value.musicEpoch!==viewer.musicEpoch||value.revision!==(saved?.revision??0)||JSON.stringify(value.selections)!==JSON.stringify(saved?.selections??[]),pending:value=>!!value.requestKey,
+  },dirty:value=>value.profileId!==(saved?.id??null)||value.musicEpoch!==viewer.musicEpoch||!sameMusicSelections(value.selections,saved?.selections??[]),pending:value=>!!value.requestKey,
   blocking:({nextLocation})=>!isWorkspace(nextLocation.pathname)});
   const {value:draft,replace:setDraft,busy:sending,setBusy:setSending,active:mounted,dirty,locked,unavailable,begin,persist}=record;
   const [params]=useSearchParams(),from=params.get('from');

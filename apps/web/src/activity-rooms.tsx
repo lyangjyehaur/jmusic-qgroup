@@ -11,6 +11,7 @@ import { authHttp } from './auth';
 import { MemberAccess, type Member } from './member-access';
 import { Failure, Notice, PageIntro } from './shared';
 import { useReviewedDraft } from './reviewed-draft';
+import { normalizedRoomMembers, sameDraftValue } from './draft-equality';
 import { RoomEditorValue as Editable,roomPlanInput } from './room-editor-record';
 import { requireLegacyAvailable } from './legacy-local-availability';
 import { DraftFeedback } from './activity-settlement';
@@ -83,6 +84,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: z.infer<typeof R
         reason: '',
       }),
       valueSchema: Editable,
+      sameValue: (value,baseline) => sameDraftValue({...value,rooms:normalizedRoomMembers(value.rooms)}, {...baseline,rooms:normalizedRoomMembers(baseline.rooms)}),
       saveSchema: SaveRoomPlan,
       send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/activities/:id/rooms', { params: { id: initial.id }, body: input, requestId, requestScope: viewer.scope }),
       beforeSubmit:()=>requireLegacyAvailable(viewer.scope,endpoint),

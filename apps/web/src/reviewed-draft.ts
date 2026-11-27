@@ -5,6 +5,7 @@ import { z } from 'zod';
 import type { Member } from './member-access';
 import { ApiError } from './api';
 import { DraftConflict, DraftExpired, discardDraft, draftVersions, openDraft, saveDraft, type DraftHandle, type DraftVersion } from './draft-store';
+import { sameDraftValue } from './draft-equality';
 /** Persist the exact account-scoped payload before sending; uncertain delivery requires an explicit retry. */
 export function useReviewedDraft<T, S, F>(options: {
   key: string; viewer: Member; initial: F;
@@ -15,12 +16,13 @@ export function useReviewedDraft<T, S, F>(options: {
   after?: (fresh: F, result?: unknown) => void; afterRefresh?: (fresh: F) => void;
   beforeSubmit?: () => Promise<void>;
   preserveBeforeSubmit?: boolean;
+  sameValue?: (value: T, baseline: T) => boolean;
 }) {
   const { key, viewer } = options,
     active = useRef(true), handle = useRef<DraftHandle | null>(null), queue = useRef(Promise.resolve()),
     halted = useRef(false), revoked = useRef(false), submitting = useRef(false),
     schema = z.object({
-      value: options.valueSchema, dirty: z.boolean(),
+      value: options.valueSchema, baseline: options.valueSchema.optional(), dirty: z.boolean(),
       pending: z.object({ key: z.string().uuid(), input: options.saveSchema }).strict().optional(),
     }).strict().refine(v => !v.pending || options.matches(v.value, v.pending.input));
   type Draft = z.infer<typeof schema>;
@@ -38,8 +40,11 @@ export function useReviewedDraft<T, S, F>(options: {
     [storageError, setStorageError] = useState(''), [message, setMessage] = useState(''),
     [busy, setBusy] = useState(false), [saving, setSaving] = useState(0), [epoch, setEpoch] = useState(0),
     [conflict, setConflict] = useState(false), [expired, setExpired] = useState(false), [versions, setVersions] = useState<DraftVersion[]>([]);
+  const baseline = useRef(draft.value), currentData = useRef(data);
+  currentData.current = data;
+  const sameValue = options.sameValue ?? sameDraftValue;
   const dirty = draft.dirty || !!draft.pending,
-    blocker = useBlocker(dirty || saving > 0),
+    blocker = useBlocker(dirty || busy || !!readError || !!storageError),
     locked = loading || needsRestore || busy || !!readError || !!draft.pending;
   async function loadVersions() {
     const rows = await draftVersions(key, viewer.scope);
@@ -48,8 +53,11 @@ export function useReviewedDraft<T, S, F>(options: {
   function applyRaw(raw: string | null) {
     setConflict(false);
     try {
-      const saved = raw === null ? { value: options.blank(options.initial), dirty: false } : parse(raw);
-      setDraft(saved); setNeedsRestore(saved.dirty && !saved.pending); setReadError(''); setConflict(false);
+      const saved: Draft = raw === null ? { value: baseline.current, dirty: false } : parse(raw);
+      baseline.current = saved.baseline ?? (!saved.dirty && !saved.pending ? saved.value : options.blank(currentData.current));
+      let next = { ...saved, baseline: baseline.current, dirty: !sameValue(saved.value, baseline.current) };
+      if(raw!==null&&!next.dirty&&!next.pending){baseline.current=options.blank(currentData.current);next={value:baseline.current,baseline:baseline.current,dirty:false};}
+      setDraft(next); setNeedsRestore(next.dirty && !next.pending); setReadError(''); setConflict(false);
       setEpoch(n => n + 1);
     } catch { setReadError(uiText("無法讀取原稿，請先保全原稿再繼續。")); }
   }
@@ -93,15 +101,16 @@ export function useReviewedDraft<T, S, F>(options: {
     return work;
   }
   useEffect(() => {
-    if (!dirty && !saving) return;
+    if (!dirty && !busy && !readError && !storageError) return;
     const leave = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ''; };
     window.addEventListener('beforeunload', leave);
     return () => window.removeEventListener('beforeunload', leave);
-  }, [dirty, saving]);
+  }, [dirty, busy, readError, storageError]);
   function edit(value: T, userEdit = true) {
     if (locked || halted.current || submitting.current) return;
-    const next = { ...draft, value, dirty: draft.dirty || userEdit };
-    setDraft(next); if (next.dirty) void persist(next); setEpoch(n => n + 1); setMessage('');
+    if (!userEdit && !draft.dirty) baseline.current = value;
+    const next = { ...draft, value, baseline: baseline.current, dirty: !sameValue(value, baseline.current) };
+    setDraft(next); if (next.dirty || draft.dirty) void persist(next); setEpoch(n => n + 1); setMessage('');
   }
   async function refresh(rebase: (old: T, fresh: F) => T) {
     if (locked || halted.current) return;
@@ -109,8 +118,10 @@ export function useReviewedDraft<T, S, F>(options: {
     try {
       const fresh = await options.latest();
       if (!active.current) return;
-      const next = { ...draft, value: rebase(draft.value, fresh) };
+      const freshBaseline = options.blank(fresh), value = rebase(draft.value, fresh);
+      const next = { ...draft, value, baseline: freshBaseline, dirty: !sameValue(value, freshBaseline) };
       if (!await persist(next)) return;
+      baseline.current = freshBaseline;
       setData(fresh); setDraft(next); setEpoch(n => n + 1);
       setMessage(uiText("已讀取最新版，原輸入保留；請重新預覽核對。")); options.afterRefresh?.(fresh);
     } catch (e) { if (active.current) setMessage(e instanceof Error ? errorText(e) : uiText("讀取失敗")); }
@@ -138,7 +149,7 @@ export function useReviewedDraft<T, S, F>(options: {
       if (!active.current) return false;
       const cleared = { value: options.blank(fresh), dirty: false };
       if (!await persist(cleared, false, uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。"))) throw Error('storage');
-      setDraft(cleared); setData(fresh); setEpoch(n => n + 1); setMessage(uiText("已保存。"));
+      baseline.current = cleared.value; setDraft(cleared); setData(fresh); setEpoch(n => n + 1); setMessage(uiText("已保存。"));
       options.after?.(fresh, result); return true;
     } catch (e) {
       if (!active.current) return false;
@@ -163,6 +174,7 @@ export function useReviewedDraft<T, S, F>(options: {
         if (!handle.current) handle.current = (await openDraft(key, viewer.scope)).handle;
         const blank: Draft = { value: options.blank(data), dirty: false };
         if (!await persist(blank, true)) return;
+        baseline.current = blank.value;
         applyRaw(JSON.stringify(blank));
       }
       await loadVersions();
@@ -173,10 +185,11 @@ export function useReviewedDraft<T, S, F>(options: {
     if (busy || loading || readError) return;
     const version = versions.find(row => row.id === id); if (!version) return;
     let next: Draft;
-    try { next = parse(version.raw); } catch { setMessage(uiText("這份原稿格式無法讀取，請下載保全檔。")); return; }
+    try { next = parse(version.raw); next = { ...next, baseline: next.baseline ?? baseline.current, dirty: !sameValue(next.value, next.baseline ?? baseline.current) }; } catch { setMessage(uiText("這份原稿格式無法讀取，請下載保全檔。")); return; }
     setBusy(true);
     try {
       if (!await persist(next, true)) return;
+      baseline.current = next.baseline!;
       setDraft(next); setNeedsRestore(false); setEpoch(n => n + 1); setMessage(uiText("已載入保全版本；請核對原操作與最新資料。"));
       await loadVersions();
     } finally { if (active.current) setBusy(false); }
@@ -196,7 +209,8 @@ export function useReviewedDraft<T, S, F>(options: {
       if (halted.current || revoked.current || !handle.current) return false;
       handle.current = await discardDraft(handle.current);
       if (!active.current) return false;
-      setDraft({ value: options.blank(data), dirty: false }); setNeedsRestore(false); setStorageError(''); setMessage(''); setEpoch(n => n + 1);
+      const value = options.blank(data); baseline.current = value;
+      setDraft({ value, dirty: false }); setNeedsRestore(false); setStorageError(''); setMessage(''); setEpoch(n => n + 1);
       return true;
     } catch (error) {
       if (active.current) {

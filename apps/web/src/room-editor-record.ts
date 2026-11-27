@@ -13,5 +13,5 @@ export const RoomEditorValue = z
       .optional(),
   })
   .strict();
-export const RoomEditorRecord=z.object({value:RoomEditorValue,dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:SaveRoomPlan}).strict().optional()}).strict();
+export const RoomEditorRecord=z.object({value:RoomEditorValue,baseline:RoomEditorValue.optional(),dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:SaveRoomPlan}).strict().optional()}).strict();
 export function roomPlanInput(value:z.infer<typeof RoomEditorValue>){const {legacySource,...input}=value;void legacySource;return input;}

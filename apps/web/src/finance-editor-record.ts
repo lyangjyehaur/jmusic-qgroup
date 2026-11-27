@@ -5,7 +5,7 @@ export const EditableFinanceCommand=z.discriminatedUnion('command',[
  FinanceCommand.options[0].extend({transaction:FinanceTransaction.extend({amount:z.string(),occurred_at:z.string(),note:z.string(),reason:z.string(),merchant:z.string().optional(),custom_parties:z.array(z.object({id:z.string().regex(/^custom:[a-f0-9]{16}$/),name:z.string()}).strict()).max(500)})}).strict(),
  FinanceCommand.options[1].extend({reason:z.string()}).strict(),FinanceCommand.options[2].extend({reason:z.string()}).strict(),FinanceCommand.options[3].strict(),FinanceCommand.options[4].extend({reason:z.string()}).strict()
 ]);
-export const FinanceEditorDraft=z.object({revision:z.number().int().nonnegative(),operation:EditableFinanceCommand,dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:FinanceSaveInput}).strict().optional(),legacySource:LegacyDraftSource.optional()}).strict();
+export const FinanceEditorDraft=z.object({revision:z.number().int().nonnegative(),operation:EditableFinanceCommand,baseline:EditableFinanceCommand.optional(),dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:FinanceSaveInput}).strict().optional(),legacySource:LegacyDraftSource.optional()}).strict();
 
 /** Keep dormant form options locally; only operative identities belong in a strict command. */
 export function financeOperationInput(operation:z.infer<typeof EditableFinanceCommand>){

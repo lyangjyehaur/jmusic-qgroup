@@ -29,8 +29,8 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
   const fallback = { profileId: initial.profileId, musicEpoch: viewer.musicEpoch, revision: initial.revision, contactQQ: initial.contactQQ };
   const [saved, setSaved] = useState(initial), [message, setMessage] = useState('');
   const record = useDurableRecord<z.infer<typeof Draft>>({key:storageKey,scope:viewer.scope,seed:()=>({...fallback,revision:saved.revision,contactQQ:saved.contactQQ}),parse:raw=>{
-    const value=Draft.parse(JSON.parse(raw));if(value.profileId!==initial.profileId||value.musicEpoch!==viewer.musicEpoch)throw Error('profile target');return value;
-  },dirty:value=>value.contactQQ!==saved.contactQQ||value.revision!==saved.revision,pending:value=>!!value.requestKey});
+    const value=Draft.parse(JSON.parse(raw));if(value.profileId!==initial.profileId||value.musicEpoch!==viewer.musicEpoch)throw Error('profile target');return !value.requestKey&&value.contactQQ===saved.contactQQ?{...value,revision:saved.revision}:value;
+  },dirty:value=>value.contactQQ!==saved.contactQQ,pending:value=>!!value.requestKey});
   const {value:draft,replace:setDraft,busy,setBusy,active,dirty,locked,persist,begin,unavailable}=record;
   async function save() {
     if (busy || unavailable || saved.source === 'legacy') return;

@@ -16,6 +16,7 @@ import { authHttp } from './auth';
 import { Failure, Notice, useSession } from './shared';
 import { MemberAccess, type Member } from './member-access';
 import { useReviewedDraft } from './reviewed-draft';
+import { sameDraftValue } from './draft-equality';
 import { LegacyLocalGuard } from './legacy-local';
 import { requireLegacyAvailable } from './legacy-local-availability';
 import { DraftFeedback } from './activity-settlement';
@@ -110,6 +111,7 @@ function CreatePoll({ viewer }: { viewer: Member }) {
     viewer,
     initial: { id: null as string | null },
     blank: emptyDefinition,
+    sameValue: ({client_intent: _a, ...value}, {client_intent: _b, ...baseline}) => sameDraftValue(value, baseline),
     valueSchema: EditableDefinition,
     saveSchema: CreateTimePoll,
     send: (input, requestId) => authHttp(viewer).requestContract('POST /api/v2/time-polls', { body: input, requestId, requestScope: viewer.scope }),
