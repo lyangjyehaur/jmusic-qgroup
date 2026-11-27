@@ -1,49 +1,47 @@
 import { Disclosure } from './kimi-ui';
-import { useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Surface } from 'yahha-ui';
-import { PageIntro } from './shared';
+import { InformationPage } from './information-page';
 import { uiText } from './language';
 const topics=[
   ['section-1',uiText('帳號與入口')],['section-2',uiText('發起與時間投票')],['section-3',uiText('報名狀態')],['participation',uiText('參與統計')],['section-4',uiText('同行、退出與認領')],['section-5',uiText('活動管理')],['section-6',uiText('包間與結算')],['section-7',uiText('實際收付款')],['section-8',uiText('帳號與裝置')],['section-9',uiText('草稿與操作恢復')],['section-10',uiText('連結與分享')],['section-11',uiText('QQ bot')],['music',uiText('成分與詞庫')],['people',uiText('同好與找搭子')],['rooms',uiText('成分分房試算')],['privacy',uiText('隱私與刪除')],['admin',uiText('管理後臺')],
-];
+] as const;
 export function GuidePage(){
   const {hash}=useLocation();
-  useEffect(()=>{const id=hash.slice(1);if(!topics.some(([key])=>key===id))return;const topic=document.getElementById(id);if(topic){topic.scrollIntoView({block:'start'});}},[hash]);
-  return <><PageIntro title="使用說明"/><nav className="page-actions" aria-label="說明章節">{topics.map(([id,label])=><Link key={id} to={'#'+id}>{label}</Link>)}</nav><Surface className="detail guide">
-    <Disclosure id="section-1" open={hash === "#section-1" || undefined} className="guide-section"  title={<>帳號與入口</>}><div>
+  return <InformationPage title="使用說明" topics={topics}><Surface className="information-document guide">
+    <Disclosure id="section-1" open={hash === "#section-1" || undefined} className="guide-section" headingLevel={2}  title={<>帳號與入口</>}><div>
       <p>「活動」處理安排、報名、出席與費用；「音樂」編輯成分與詞庫；「同好」查看推薦、圈子與找搭子；「我的」管理帳號、收件匣及個人設定。共用同一個帳號。</p>
       <p>公開活動與詞庫可以直接瀏覽。保存成分、報名或管理個人資料前須登入。使用 QQ 登入時，先閱讀資料用途，在 QQ 官方頁授權，再回本站確認登入、綁定或切換。QQ 同稱呼與站內同稱呼均不代表同一帳號。</p>
       <p>只有管理員開放時才能只填稱呼註冊；這類帳號須綁定 QQ 或使用裝置授權才能在別的瀏覽器找回。若原來有成分，先完成「找回成分」，避免另建資料。</p>
       <p><Link to="/login">登入</Link> · <Link to="/me">我的</Link> · <Link to="/me/music/recover">找回成分</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-2" open={hash === "#section-2" || undefined} className="guide-section"  title={<>發起與時間投票</>}><div>
+    <Disclosure id="section-2" open={hash === "#section-2" || undefined} className="guide-section" headingLevel={2}  title={<>發起與時間投票</>}><div>
       <ol><li>從活動頁選「新增活動」，填名稱、類型、地點、活動日期、開始時間與持續時間；注意事項可選填。報名截止預設跟隨活動結束。</li><li>核對時間與凌晨／跨日提示後，可直接發布；群推送預設勾選。容量、成團人數、退出期限、時區、費用規則及可見性在進階設定內。</li><li>需要稍後發布時另存草稿，只有本人及獲授權的管理者可編輯。發布會按表單設定加入本人報名；不參加可在進階設定取消本人報名。</li></ol>
       <p>時間預設按東八區輸入，改時區後按所選時區核對。人數 0 表示不限。「再約一次」帶入原安排，須重填日期並核對後才發布；不複製報名、帳款、收款碼或結算。</p>
       <p>時間未定時，先建立時間投票並發布候選日期。參與者選可參加／待確認／不可參加並保存；發起者在管理頁核對結果、關閉或恢復投票。投票不等於活動報名；確定時間後，在管理頁核對候選、場地與票數，選「定案並建立活動」；未選最高票或未達人數時須填原因。投票者不會自動報名，發起者會加入正式活動。</p>
       <p><Link to="/activities/new">新增活動</Link> · <Link to="/me/activities/drafts">活動草稿</Link> · <Link to="/time-polls">時間投票</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-3" open={hash === "#section-3" || undefined} className="guide-section"  title={<>報名狀態</>}><div>
+    <Disclosure id="section-3" open={hash === "#section-3" || undefined} className="guide-section" headingLevel={2}  title={<>報名狀態</>}><div>
       <p>核對活動安排與費用後，按「本人報名」直接提交，名額不足時加入候補；備註在「報名備註與規則」內選填。同行／代報名先預覽正式／候補分配，再確認提交。以名冊和自己的管理頁確認結果。「結束並結算」確認結束後，會按權限開啟結算表單，核對後才發布帳單。</p>
       <div className="guide-table"><table><thead><tr><th>狀態</th><th>名額與費用</th></tr></thead><tbody>
         <tr><td>正式／已確認</td><td>占名額；一般預設計入共同分攤。</td></tr><tr><td>候補</td><td>不占正式名額；按隊列等待遞補。</td></tr><tr><td>待確認參加</td><td>不占名額，也不保留候補優先序；確認參加時重新排隊。</td></tr><tr><td>待接受邀請</td><td>不預留名額；受邀者接受後才分配。</td></tr><tr><td>已退出</td><td>不占名額；依原約定仍有費用時，結算人须列明依據。</td></tr>
       </tbody></table></div>
       <p>退出申請尚未批准時保留原報名狀態。待確認、候補或不接受新版安排均不等於自動退出。已開始、已截止或暫停報名時，按頁面限制聯絡活動管理者處理。</p>
     </div></Disclosure>
-    <Disclosure id="participation" open={hash === "#participation" || undefined} className="guide-section" title={<>參與統計</>}><div>
+    <Disclosure id="participation" open={hash === "#participation" || undefined} className="guide-section" headingLevel={2} title={<>參與統計</>}><div>
       <p>從「活動 → 參與統計」查看公開活動的參加次數與參加者紀錄；「我的 → 參與統計」查看本人紀錄。可依年份、月份與活動類型篩選，點活動名稱回到原活動。</p>
       <p>已結束或已過預定結束時間，且正式報名達最低成團人數的活動，每人每場計一次；未達成團人數、取消、草稿、未來活動、候補、待確認及已退出報名不計。往期活動將未達最低人數的活動標為「未成團」，可按狀態篩選。最低人數為 0 表示不設門檻。歸檔與結算狀態不影響計數。日期篩選依台北時間的活動開始日期。</p>
       <p>次數依正式報名計算，未核對出席或標記缺席不改變這個統計。同行／代報未認領時列入總人次，認領後歸入本人；代報管理人不代替同行累計。私人活動只列入本人有權限查看的個人紀錄。</p>
       <p><Link to="/activities/participation">整體參與統計</Link> · <Link to="/me/participation">我的參加紀錄</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-4" open={hash === "#section-4" || undefined} className="guide-section"  title={<>同行、退出與認領</>}><div>
+    <Disclosure id="section-4" open={hash === "#section-4" || undefined} className="guide-section" headingLevel={2}  title={<>同行、退出與認領</>}><div>
       <p>同行逐人占位。可以本人與朋友一起報名，也可只代報別人；每人都有獨立稱呼、備註與付款歸屬。「分開排隊」允許部分正式、部分候補；「整組排隊」須有足夠名額才一起遞補。改成分開排隊不會重新建立人員。</p>
       <p>统一付款會把朋友費用歸给管理付款人，個別付款則保留每人的付款責任。這只決定結算歸屬，尚未轉帳，也不授予對方帳號權限。</p>
       <p>從「管理報名」選本人或可管理的朋友。正式報名在退出期限前可撤銷；逾期須填理由申請，批准前不釋放名額。候補與待確認可依頁面條件撤銷。只退出一人不會替全部同行退出。</p>
       <p>已截止但同意補人時，具報名權限的管理者發出指定补報名邀請，受邀者登入、核對並接受。被代報的人想自己管理，使用本人認領連結申請，再由管理者核對批准；不要另報一次。認領接管原報名，保留排隊及帳務紀錄。</p>
       <p>活動改期、換店或改費用後，從安排版本頁逐人確認、暫不同意或提出退出申請。核對新版前保留已接受的舊版本紀錄。</p>
     </div></Disclosure>
-    <Disclosure id="section-5" open={hash === "#section-5" || undefined} className="guide-section"  title={<>活動管理</>}><div>
+    <Disclosure id="section-5" open={hash === "#section-5" || undefined} className="guide-section" headingLevel={2}  title={<>活動管理</>}><div>
       <p>活動內分別提供編輯安排、管理報名、安排回覆、出席、包間、結算、帳本、群通知與歷史入口；只顯示目前權限可用的操作。活動發起者與協辦權限不同，不能只憑網址取得權限。</p>
       <p>人數、成團狀態、報名開關與實際開始／結束分開管理。增加名額或恢復報名可能遞補候補，先核對預覽。預計結束時間已到不等於實際結束，須確認結束或延長；也可從我的活動、原連結與待辦找回。</p>
       <p>修改時間、地點或費用須填必要原因，並提醒參與者重新核對安排。舊版接受紀錄保留；修改不會替參與者接受新版，也不會抹去舊結算。</p>
@@ -51,7 +49,7 @@ export function GuidePage(){
       <p>出席頁記錄在場、缺席、遲到、已離場及實際時間；出席修正不自動改名額或免除費用。現場新增人員須核對費用、超額與排隊條件。</p>
       <p>結束與取消保留名冊及帳務；取消須说明原因，訂金損失或退款仍可結算。歸檔只是從預設列表收起，原連結和歷史保留。刪除只適用於頁面確認可安全移除的活動，不用於消除他人的共同紀錄。</p>
     </div></Disclosure>
-    <Disclosure id="section-6" open={hash === "#section-6" || undefined} className="guide-section"  title={<>包間與結算</>}><div>
+    <Disclosure id="section-6" open={hash === "#section-6" || undefined} className="guide-section" headingLevel={2}  title={<>包間與結算</>}><div>
       <p>活動的預分包間可設定包間、容量、逐人安排與付款人，保存後保留版本。預分不產生費用；正式結算須核對實際房間與人員。</p>
       <p>一般 AA 先核對列入結算的人員與共同份數，再填費用。候補、待確認、退出、缺席或未接受新版安排的人若仍分攤，須列明依據；半 A、免共同費用、個別消費與遲到早退的減免由結算人明確設定，不自動推算。</p>
       <p>費用項目可按份數、指定人員、分鐘、比例或固定金額分配，並附原因及消費憑證。退款與減免按項目類型扣減；實際收到退款仍須另記帳。需要多人合付時，核對付款人與份額；額外付款人只提供付款選項，不新增占位或出席。</p>
@@ -59,18 +57,18 @@ export function GuidePage(){
       <p>發布後改金額、分配、備註或圖片須填更正原因並新增版本；舊版保持可查。收款碼庫只有本人可管理，選入結算時會保存當版圖片，後來更新私人碼不會替換舊帳單。</p>
       <p><Link to="/me/payment-codes">我的收款碼</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-7" open={hash === "#section-7" || undefined} className="guide-section"  title={<>實際收付款</>}><div>
+    <Disclosure id="section-7" open={hash === "#section-7" || undefined} className="guide-section" headingLevel={2}  title={<>實際收付款</>}><div>
       <p>結算決定應付，收付款帳本記錄已實際發生的款項。本人申報須由獲授權的管理者核實後才計入；申報、已讀通知或上傳付款截圖均不等於已確認到帳。</p>
       <ul><li>預收款記為收款，最後與結算對帳，不重複列成消費。</li><li>个人先付店家時，選個人墊付與實際付款人；償還墊付另記實際款項。</li><li>訂金／押金先記支付，再以原記錄核對退回、抵消費或轉損失。</li><li>退參加者、店家退差價或償還墊付，核對資金來源、收款人與原款項。</li><li>款項記錯時，沖銷原記錄並填原因，再追加正確記錄。有後續關聯時先依提示處理。</li><li>更正款項歸屬只改責任關係；實際移交代收資金須另用移交操作。</li></ul>
       <p>每筆核對種類、金額、实际轉款人、責任付款人、時間、方式及原因，再預覽確認。先查未確認申報、未付款、退款及墊付待收回，逐項處理後才確認結清；需要更正時重新開啟帳務核對。</p>
     </div></Disclosure>
-    <Disclosure id="section-8" open={hash === "#section-8" || undefined} className="guide-section"  title={<>帳號與裝置</>}><div>
+    <Disclosure id="section-8" open={hash === "#section-8" || undefined} className="guide-section" headingLevel={2}  title={<>帳號與裝置</>}><div>
       <p>在帳號頁查看 QQ 登入、綁定及已授權的帳號，修改站內稱呼或明確切換。裝置授權有效 10 分鐘且僅用一次，持有連結者可取得整個帳號與帳務存取權；只能交自己的裝置，不能當活動邀請發到群內。</p>
       <p>另一裝置核對授權帳號後接受；接受不會自動切換原有帳號，須到帳號頁明確選擇。產生新連結會撤銷舊未用連結。可撤銷其他裝置對此帳號的授權，不影響該裝置的其他帳號。</p>
       <p>登出此裝置會撤銷目前瀏覽器的帳號及管理授權；其他裝置另行撤銷。共用裝置使用後，同時清理網站資料和已下載副本。</p>
       <p><Link to="/me/accounts">帳號</Link> · <Link to="/me/devices">裝置与帳號紀錄</Link> · <Link to="/me/profile">站內稱呼</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-9" open={hash === "#section-9" || undefined} className="guide-section"  title={<>草稿與操作恢復</>}><div>
+    <Disclosure id="section-9" open={hash === "#section-9" || undefined} className="guide-section" headingLevel={2}  title={<>草稿與操作恢復</>}><div>
       <p>未提交的輸入會暫存在本機。離開時可繼續編輯、保留草稿或捨棄修改；捨棄不影響已提交的資料。重新開啟時可恢復或捨棄草稿。不同帳號的草稿分開保存。</p>
       <p>送出後斷線或回應無法讀取時，保留原操作編號，使用頁面的「確認結果／查回原結果」。收件匣的未完成操作只查最小回執，再回原頁核對；不要另建同一活動、同一報名或同一款項。未找到結果時，按原頁提示使用原編號重試。</p>
       <p>伺服器版本已變更時，先核對最新版、保留輸入，再重新預覽與確認。其他分頁修改本機原稿時，兩份都會保全，須明確讀取已保存版本。讀取與恢復不會自動送出。</p>
@@ -79,14 +77,14 @@ export function GuidePage(){
       <p>應用程式更新會等待編輯保全與待確認操作；離線頁只提供連線恢復提示，不提供離線帳號、名冊或帳務。</p>
       <p><Link to="/inbox">收件匣</Link> · <Link to="/me/local-history">舊站紀錄</Link> · <Link to="/me/app">應用程式</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-10" open={hash === "#section-10" || undefined} className="guide-section"  title={<>連結與分享</>}><div>
+    <Disclosure id="section-10" open={hash === "#section-10" || undefined} className="guide-section" headingLevel={2}  title={<>連結與分享</>}><div>
       <p>普通活動連結用於查看公開安排；邀請可見連結授予活動查看權，接受後仍須另行報名。補報、認領、協辦與轉交連結只交指定人。打開連結只選頁面，不能代替核對、授權或提交。</p>
       <p>活動分享頁可以複製連結、活動資訊或目前安排摘要。只複製頁面允許公開的內容。自動複製失敗時，使用文字框手動複製並核對完整網址。</p>
       <p>成分分享使用目前選擇，包含未保存的原稿，不會自動保存；推薦同好仍依已保存成分計算。選擇是否包含本人或同好的聯絡 QQ，再核對圖片；私人留言與性別不放入分享圖片。下載、複製或分享前確認內容；已交給他人的副本不會隨站內修改或刪除自動消失。</p>
       <p>收款碼及憑證可重試讀取、查看或保存原圖；手機長按和下載行為依瀏覽器而異。先核對收款人、金額與當版帳單。</p>
       <p><Link to="/me/music/share">分享成分</Link></p>
     </div></Disclosure>
-    <Disclosure id="section-11" open={hash === "#section-11" || undefined} className="guide-section"  title={<>QQ bot</>}><div>
+    <Disclosure id="section-11" open={hash === "#section-11" || undefined} className="guide-section" headingLevel={2}  title={<>QQ bot</>}><div>
       <p>在獲授權的群 @ bot，使用 <code translate="no">/帮助</code> 查看指令。簡繁及既有英文別名都可使用。多場活動先選清單，或加當次清單序號、8 位短碼；短碼有衝突時用完整編號。清單序號會隨活動增減改變。</p>
       <div className="guide-table"><table><thead><tr><th>操作</th><th>指令</th></tr></thead><tbody>
         <tr><td>安排與名額</td><td><code translate="no">/活动 /活動 /名额 /名額 /地点 /地點 /规则 /規則</code></td></tr>
@@ -103,7 +101,7 @@ export function GuidePage(){
       <p>通知涵蓋發布、成團、安排變更、報名與退出／遞補、截止與預計結束提醒、暫停／恢復報名、開始／結束／取消、結算、帳務結清／重新核對及管理交接。開啟通知不補發既有歷史；同次多人報名或退出與遞補會合併通知。</p>
       <p>從活動或投票的群通知紀錄核對目標、模式、內容及投遞狀態。模擬表示未實送，已送出不代表已讀；投遞中或未確認的工作須先查回結果。重送建立新待送工作並保留舊紀錄，不重做業務操作。切換實送不會自動重播模擬紀錄。</p>
     </div></Disclosure>
-    <Disclosure id="music" open={hash === "#music" || undefined} className="guide-section"  title={<>成分與詞庫</>}><div>
+    <Disclosure id="music" open={hash === "#music" || undefined} className="guide-section" headingLevel={2}  title={<>成分與詞庫</>}><div>
       <p>從音樂詞庫搜尋名稱、拼音或別名，按領域、細分與分類篩選，查看榜單與詞條。領域最多 5 項、細分最多 15 項；細分可選本命、常聽、聽過一些或只聽過幾首。保存前的選擇是本機原稿，推薦以已保存版本為準；分享可使用原稿並標明未保存。</p>
       <p>自己的成分可設定稱呼、性別公開範圍、私人留言及聯絡 QQ。QQ 為選填的查詢資訊，不改變登入綁定。私人留言不作公開分享；性別與聯絡資訊按相應權限和分享勾選顯示。</p>
       <p>建立词條前先搜尋，避免重複。填類型、分類、名稱與別名；只能修改或刪除本人可管理的詞條。已被其他人選取或有其他依賴時，按頁面限制交管理員核對，不能靠刪詞清除他人選擇。</p>
@@ -111,25 +109,25 @@ export function GuidePage(){
       <p>音樂趨勢顯示按時段採樣的總數、熱門與近期新增詞條；空白或舊資料須看採樣時間，不能當成即時人數。詞條的「誰選了」和會員內容依登入、已保存成分及隱私條件開放。</p>
       <p><Link to="/music">音樂詞庫</Link> · <Link to="/me/music">我的成分</Link> · <Link to="/me/music/details">成分資料</Link> · <Link to="/me/music/contact">聯絡 QQ</Link> · <Link to="/me/music/entries">我的詞條</Link> · <Link to="/music/trends">音樂趨勢</Link></p>
     </div></Disclosure>
-    <Disclosure id="people" open={hash === "#people" || undefined} className="guide-section"  title={<>同好與找搭子</>}><div>
+    <Disclosure id="people" open={hash === "#people" || undefined} className="guide-section" headingLevel={2}  title={<>同好與找搭子</>}><div>
       <p>保存成分後查看推薦同好，可選偏重少見共同詞條或常聽重合。成分比較分開顯示共同與各自選擇、喜歡程度、覆蓋和資料不足提示；分數用於了解選擇重合，不代表對方同意聯絡或參加。</p>
       <p>同好圈子按目前相似門檻分群，也列出尚未成群的人；調整門檻會改變分組，不修改任何人的成分。</p>
       <p>找搭子填實際需求並核對公開範圍後發布。依頁面顯示的冷卻及有效期限處理；發布結果不明時用原編號查回。到期內容可在歷史頁查看；內容投訴交聯絡頁，勿把聯絡 QQ 當已驗證身分。</p>
       <p><Link to="/people">同好</Link> · <Link to="/people/circles">同好圈子</Link> · <Link to="/people/shouts">找搭子</Link> · <Link to="/people/shouts/history">找搭子歷史</Link></p>
     </div></Disclosure>
-    <Disclosure id="rooms" open={hash === "#rooms" || undefined} className="guide-section"  title={<>成分分房試算</>}><div>
+    <Disclosure id="rooms" open={hash === "#rooms" || undefined} className="guide-section" headingLevel={2}  title={<>成分分房試算</>}><div>
       <p>可以從活動名冊分析成分，也可在分房試算頁選會員。設定每房容量、房數或自訂容量，核對所選人員，再產生建議；可手動調整人員並重新檢查容量、未分配者與共同偏好。</p>
       <p>試算不報名、不修改名冊、不記費用。活動發起者須重新核對目前活動、人員與來源版本，才可明確採用為正式分房；來源已變更時先讀取新資料，不沿用舊分數作自動採用。</p>
       <p>分享圖片前核對姓名、偏好與內容範圍。沒有成分的人仍保留在名冊，資料不足不代表不能參加或可以刪人。</p>
       <p><Link to="/tools/room-lab">分房試算</Link></p>
     </div></Disclosure>
-    <Disclosure id="privacy" open={hash === "#privacy" || undefined} className="guide-section"  title={<>隱私與刪除</>}><div>
+    <Disclosure id="privacy" open={hash === "#privacy" || undefined} className="guide-section" headingLevel={2}  title={<>隱私與刪除</>}><div>
       <p>公開活動與成分內容、受權限控制的聯絡資料、私人留言、帳款申報和憑證有不同可見範圍。填寫、代報、發布與分享前核對頁面提示；詳細用途以隱私政策與相關同意畫面為準。</p>
       <p>「只刪除成分」保留站內帳號與活動，按提示移除成分、關聯及本機成分原稿。「註銷帳號」會撤銷各裝置授權；仍管理活動時先轉交或處理必要責任。共同報名、帳務和歷史須另行核對，不靠註銷抹去他人的紀錄。</p>
       <p>保存資料刪除申請編號，需進一步查閱、更正、刪除或投訴時，聯絡 203008876@qq.com 並提供必要位置與範圍；勿傳 QQ 密碼、授權碼或無關敏感資料。已下載、已分享及第三方副本需由持有者另行處理。</p>
-      <p><Link to="/privacy">隱私政策</Link> · <Link to="/me/privacy">隱私與資料刪除</Link> · <Link to="/contact">聯絡與投訴</Link> · <a href="https://beian.miit.gov.cn/" target="_blank" rel="noreferrer">渝ICP备16002872号-1</a></p>
+      <p><Link to="/privacy">隱私政策</Link> · <Link to="/me/privacy">隱私與資料刪除</Link> · <Link to="/contact">聯絡與投訴</Link></p>
     </div></Disclosure>
-    <Disclosure id="admin" open={hash === "#admin" || undefined} className="guide-section"  title={<>管理後臺</>}><div>
+    <Disclosure id="admin" open={hash === "#admin" || undefined} className="guide-section" headingLevel={2}  title={<>管理後臺</>}><div>
       <p>管理後臺须先核對管理授權；網站管理員不因此取得活動管理權。帳號內部 QQ 備註與實際 QQ 授權、成分登入關聯分開，不能用備註替代登入驗證。</p>
       <p>成分關聯先選正確站內帳號、核對成分及 QQ，再預覽確認。解除關聯保留成分，刪成分與註銷帳號是不同操作；舊口令重設、全站成分重設及資料刪除須核對範圍与不可恢復提示。</p>
       <p>詞庫可新增、修改、合併同名及檢查選取依賴；另可管理找搭子、壁紙與資料刪除審查。修改版本已過期時先讀取最新版保留輸入，再重新確認，不能覆蓋別人的新紀錄。</p>
@@ -137,5 +135,5 @@ export function GuidePage(){
       <p>模板按事件編輯，必須保留 <code translate="no">{'{url}'}</code>，自訂文字按原文處理。預覽只使用示例，不發送到群。切換群、關閉通知或改提醒会处理待送與未來提醒，不補發歷史；恢復前版會追加新版本。勿擾與間隔控制主動通知，群指令另依回覆政策。</p>
       <p>診斷查看最近忽略或未回覆原因、政策版本與時間，不以舊原因推定目前設定。未知投遞须人工核對，不能直接重播。備份及匯出含私人資料，妥善保管；完整恢復使用成套備份與独立刪除紀錄，在隔離環境驗證後才按維護流程處理。</p>
     </div></Disclosure>
-  </Surface></>;
+  </Surface></InformationPage>;
 }

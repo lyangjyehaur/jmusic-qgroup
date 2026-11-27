@@ -198,8 +198,9 @@ export function RadioGroup<T extends string>({ className, ...props }: ComponentP
 }
 
 /** Keep closed forms mounted, and allow an externally changed open flag to reveal them. */
-export function Disclosure({ title, children, open, onOpenChange, className, ...props }: {
+export function Disclosure({ title, children, open, onOpenChange, className, headingLevel = 3, ...props }: {
   title: ReactNode; children?: ReactNode; open?: boolean; onOpenChange?: (open: boolean) => void;
+  headingLevel?: ComponentProps<typeof YAccordion>['headingLevel'];
 } & Omit<ComponentProps<'div'>, 'title' | 'onToggle' | 'defaultValue'>) {
   const [expanded, setExpanded] = useState(!!open);
   const previousOpen = useRef(open);
@@ -207,7 +208,7 @@ export function Disclosure({ title, children, open, onOpenChange, className, ...
     if (previousOpen.current !== open) { previousOpen.current = open; setExpanded(!!open); }
   }, [open]);
   const isOpen = onOpenChange ? !!open : expanded;
-  return <YAccordion {...props} keepMounted value={isOpen ? ['content'] : []}
+  return <YAccordion {...props} headingLevel={headingLevel} keepMounted value={isOpen ? ['content'] : []}
     onValueChange={next => { const value = next.includes('content'); setExpanded(value); onOpenChange?.(value); }}
     className={cn('disclosure', className)} data-open={isOpen || undefined}
     classNames={{ trigger: 'disclosure-trigger', panel: 'disclosure-panel', heading: 'disclosure-heading', item: 'disclosure-item' }}
