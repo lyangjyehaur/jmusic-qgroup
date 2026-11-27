@@ -38,11 +38,14 @@
 }
 .kimi-shell .site-footer {
   max-width:1180px; margin:0 auto; padding:0 32px 24px;
-  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
-  gap:8px 24px; font-size:12px; color:var(--muted);
+  display:flex; flex-direction:column; align-items:center; text-align:center;
+  gap:4px; font-size:12px; color:var(--muted);
 }
-.kimi-shell .site-footer :is(nav,.site-footer-credits) { display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; }
-.kimi-shell .site-footer-credits > span { display:inline-flex; align-items:center; min-height:44px; gap:4px; }
+.kimi-shell .site-footer nav { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:4px 16px; }
+.kimi-shell .site-footer-credits { display:grid; gap:4px; }
+.kimi-shell .site-footer-credits p { margin:0; line-height:1.8; }
+.kimi-shell .site-footer-ideas { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; }
+.kimi-shell .site-footer-ideas > span:not(.site-footer-idea-separator) { white-space:nowrap; }
 .kimi-shell .site-footer a { display:inline-flex; align-items:center; min-height:44px; color:inherit; }
 .kimi-shell .site-footer a:hover { color:var(--moss); }
 /* Fade only page content. Shell geometry and mounted form state stay intact. */
@@ -76,8 +79,8 @@
     padding:0 max(16px, var(--safe-area-right)) calc(var(--mobile-dock-height) + 20px) max(16px, var(--safe-area-left));
     flex-direction:column; justify-content:center; text-align:center; gap:0;
   }
-  .kimi-shell .site-footer :is(nav,.site-footer-credits) { justify-content:center; }
-  .kimi-shell .site-footer .site-footer-credits { flex-direction:column; gap:0; }
+  .kimi-shell .site-footer-ideas { column-gap:12px; }
+  .kimi-shell .site-footer-idea-separator { display:none; }
   html.music-workspace-active .kimi-shell .site-footer { padding-bottom:20px; }
   :root[data-browser="android-qq"] .kimi.yj-dialog { padding-top:0 !important; }
   :root[data-browser="android-qq"] .kimi .modal-header { padding-top:16px; }
