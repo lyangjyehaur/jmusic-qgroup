@@ -262,7 +262,7 @@ export function Tabs({ items, value, onChange, label = uiText('切換內容') }:
     label={label}
     value={value}
     onValueChange={(next) => { if (next) onChange(next); }}
-    appearance="ink"
+    appearance="default"
     items={items.map((item) => ({
       value: item.value,
       label: <>{item.label}{item.count !== undefined && <span className="tab-count">{item.count}</span>}</>,
