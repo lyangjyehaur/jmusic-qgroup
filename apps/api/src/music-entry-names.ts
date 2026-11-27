@@ -3,9 +3,9 @@ import { MusicEntryNames } from '@qgroup/contracts';
 import { DomainError, emptyMusicNames, musicChineseKey, musicEntryKey, musicNameAliases, musicNameValues, musicText, type MusicNames } from '@qgroup/domain';
 import { withApiError } from './error-display';
 import { Converter } from 'opencc-js';
-const toHans=Converter({from:'tw',to:'cn'}),toHant=Converter({from:'cn',to:'tw'});
+let toHans: ReturnType<typeof Converter> | undefined, toHant: ReturnType<typeof Converter> | undefined;
 /** Display fallbacks belong to the response, never to the editable names. */
-export const musicEntryTranslations=(names:MusicNames)=>({zhHant:names.zhHant||toHant(names.zhHans),zhHans:names.zhHans||toHans(names.zhHant)});
+export const musicEntryTranslations=(names:MusicNames)=>({zhHant:names.zhHant||(names.zhHans ? (toHant ??= Converter({from:'cn',to:'tw'}))(names.zhHans) : ''),zhHans:names.zhHans||(names.zhHant ? (toHans ??= Converter({from:'tw',to:'cn'}))(names.zhHant) : '')});
 
 /** Extension documents retain the v15 storage contract and full SQLite backups. */
 export function musicEntryNames(db:DB) {

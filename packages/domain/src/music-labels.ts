@@ -3,8 +3,8 @@ import { musicEntryKey, musicText } from './music-text';
 
 export type MusicNames = { zhHant: string; zhHans: string; english: string; reading: string; romaji: string; aliases: readonly string[] };
 export const emptyMusicNames = (): MusicNames => ({ zhHant:'', zhHans:'', english:'', reading:'', romaji:'', aliases:[] });
-const toHans = Converter({ from:'tw', to:'cn' });
-export const musicChineseKey = (text:string) => musicEntryKey(toHans(text));
+let toHans: ReturnType<typeof Converter> | undefined;
+export const musicChineseKey = (text:string) => musicEntryKey(text ? (toHans ??= Converter({ from:'tw', to:'cn' }))(text) : '');
 export function musicTranslation(entry:{name:string;names?:MusicNames;translations?:{zhHant:string;zhHans:string}}, script:'zh-Hans'|'zh-Hant') {
   if (!entry.names) return '';
   const names=entry.names, text=script==='zh-Hans'?names.zhHans || entry.translations?.zhHans || '':names.zhHant || entry.translations?.zhHant || '';
