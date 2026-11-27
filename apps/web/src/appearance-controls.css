@@ -1,0 +1,27 @@
+.kimi .appearance-controls { display:grid; gap:18px; }
+.kimi .appearance-choice { min-width:0; display:grid; gap:8px; }
+.kimi .appearance-choice-label { font-size:12px; color:var(--muted); }
+.kimi .appearance-choice > fieldset { display:block; width:100%; min-width:0; }
+.kimi :is(.appearance-preset-options,.appearance-mode-options,.appearance-density-options) { display:grid; gap:6px; padding:0; border:0; border-radius:0; background:transparent; box-shadow:none; }
+.kimi .appearance-preset-options { grid-template-columns:repeat(4,minmax(0,1fr)); }
+.kimi .appearance-mode-options { grid-template-columns:repeat(3,minmax(0,1fr)); }
+.kimi .appearance-density-options { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.kimi .appearance-option { min-height:56px; padding:8px 4px; color:var(--muted); font-size:12px; font-weight:500; border:1px solid var(--line); }
+.kimi .appearance-option[data-checked] { color:var(--moss); border-color:var(--app-contour); background:var(--moss-soft); box-shadow:none; }
+.kimi .appearance-option[data-checked]:hover { background:var(--moss-soft); }
+.kimi .appearance-color-choice, .kimi .appearance-icon-choice { display:flex; align-items:center; justify-content:center; gap:6px; }
+.kimi .appearance-color-choice { flex-direction:column; }
+.kimi .appearance-modes .appearance-icon-choice { flex-direction:column; gap:4px; }
+.kimi .appearance-presets .appearance-option { border-color:transparent; }
+.kimi .appearance-presets .appearance-option[data-checked] { border-color:var(--app-contour); }
+.kimi .appearance-swatch { display:inline-flex; align-items:center; justify-content:center; width:30px; height:30px; flex:none; border-radius:50%; border:1px solid rgb(0 0 0 / 12%); }
+.kimi .appearance-swatch[data-color=gunju] { color:#263f30; background:#cfe1cd; }
+.kimi .appearance-swatch[data-color=pink] { color:#71384f; background:#ffc3d9; }
+.kimi .appearance-swatch[data-color=blue] { color:#2e4b60; background:#d7eaf5; }
+.kimi .appearance-swatch[data-color=yellow] { color:#614b1e; background:#f8e5a7; }
+.kimi .appearance-wallpaper-setting { min-width:0; }
+.kimi .appearance-wallpaper-setting .appearance-wallpaper { min-height:44px; }
+.kimi .appearance-wallpaper-setting .appearance-wallpaper > label { min-height:44px; }
+.kimi .appearance-wallpaper-setting .appearance-wallpaper > label > span:first-child { flex:0 0 auto; order:1; }
+.kimi .appearance-wallpaper-setting .appearance-wallpaper > label > span:last-child { flex:1; order:0; }
+.kimi .appearance-help { margin:4px 0 0; color:var(--muted); font-size:11px; }

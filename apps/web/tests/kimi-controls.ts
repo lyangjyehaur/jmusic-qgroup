@@ -9,7 +9,8 @@ export async function chooseOption(page:Page,label:string|RegExp,value:string|{l
 }
 export async function expectOption(page:Page,label:string|RegExp,value:string){
  const {expect}=await import('@playwright/test');const control=page.getByLabel(label,{exact:true});
- if(await control.evaluate(el=>el.tagName==='SELECT'))await expect(control).toHaveValue(value);
+ if(await control.evaluate(el=>el.tagName==='FIELDSET'))await expect(control.locator('input[type=radio][value='+JSON.stringify(value)+']')).toBeChecked();
+ else if(await control.evaluate(el=>el.tagName==='SELECT'))await expect(control).toHaveValue(value);
  else await expect(control).toContainText(labels[value]??value);
 }
 
@@ -64,9 +65,14 @@ export async function openMusicCatalog(page:Page){
  await page.getByRole('link',{name:'音樂詞庫',exact:true}).and(page.locator('.back-link')).click();
 }
 
-/** Select through the visible Yahha popup, preserving the API value assertion. */
+/** Use Yahha select or segmented options, preserving their stored values. */
 export async function selectControl(control: import('@playwright/test').Locator, value: string | {label?:string;value?:string;index?:number}) {
  if(await control.evaluate(el=>el.tagName==='SELECT'))return control.selectOption(value);
+ if(await control.evaluate(el=>el.tagName==='FIELDSET')){
+  if(typeof value==='object'&&value.label!==undefined)return control.getByRole('radio',{name:value.label,exact:true}).check();
+  if(typeof value==='object'&&value.index!==undefined)return control.getByRole('radio').nth(value.index).check();
+  return control.locator('input[type=radio][value='+JSON.stringify(typeof value==='string'?value:value.value)+']').check();
+ }
  await control.click();
  const page=control.page(),list=page.getByRole('listbox');
  if(typeof value==='object'&&value.label!==undefined)await list.getByRole('option',{name:value.label,exact:true}).click();

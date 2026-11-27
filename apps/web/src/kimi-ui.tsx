@@ -215,12 +215,12 @@ export function Disclosure({ title, children, open, onOpenChange, className, ...
 }
 
 /** Anchored menus dismiss on Escape, outside click and navigation. */
-export function PopupMenu({ title, label, children, className }: { title: ReactNode; label?: string; children: ReactNode; className?: string }) {
+export function PopupMenu({ title, label, heading, children, className }: { title: ReactNode; label?: string; heading?: ReactNode; children: ReactNode; className?: string }) {
   const location = useLocation();
   const [open, setOpen] = useState(false);
   useEffect(() => setOpen(false), [location.key]);
   return <div className={cn('popup-menu', className)}><YPopover open={open} onOpenChange={setOpen}
-    title={<span className="sr-only">{label ?? nodeText(title)}</span>} closeLabel="關閉選單" align="end"
+    title={heading ?? label ?? nodeText(title)} closeLabel="關閉選單" align="end"
     trigger={<Button variant="ghost" className="menu-trigger" aria-label={label}>{title}</Button>}
     className="kimi menu-popover">{children}</YPopover></div>;
 }

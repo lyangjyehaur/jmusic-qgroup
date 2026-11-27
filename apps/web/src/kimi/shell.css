@@ -18,6 +18,15 @@
 .kimi .yj-tabs-list > .tab { padding-block: 10px; }
 .kimi .recommend-rank { flex-shrink: 0; white-space: nowrap; }
 .kimi-shell .global-search-link kbd { display: flex; align-items: center; gap: 2px; }
+.kimi-shell .topbar .menu-trigger { color:var(--muted); }
+.kimi-shell .topbar .menu-trigger:hover,
+.kimi-shell .topbar .menu-trigger[aria-expanded=true] { color:var(--moss); }
+/* Menus keep a visible heading, without a rule beneath an empty title. */
+.kimi.menu-popover { padding:16px; }
+.kimi.menu-popover > h2 { min-height:32px; display:flex; align-items:center; padding:0 40px 0 0; border:0; font-size:14px; line-height:1.5; }
+.kimi.menu-popover > button { top:12px; right:8px; color:var(--muted); }
+.kimi.menu-popover > div { margin-top:12px; }
+.kimi.menu-popover .shell-popover { width:100%; }
 /* Yahha buttons are positioned relative; declare floating geometry outside the
    retained CSS layer so the shared button class cannot undo fixed positioning. */
 .kimi-shell .back-to-top {
