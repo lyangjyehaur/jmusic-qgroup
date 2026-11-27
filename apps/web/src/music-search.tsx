@@ -31,14 +31,15 @@ export function useMusicSearch<T extends { id: string; name: string; aliases?: r
   if (latest.current.rendered !== params) latest.current = { rendered: params, pending: params };
   const search = params.get('q') ?? '', category = params.get('category') ?? '', kind = params.get('kind') ?? '';
   const match = useMemo(() => createMusicSearchRank(entries), [entries]);
-  const filtered = entries.filter(entry => (!kind || entry.kind === kind) && (!category || entry.category === category) && Number.isFinite(match(entry.id, search))).sort((a,b)=>match(a.id,search)-match(b.id,search));
-  const update = (key: string, value: string) => {
+  const filtered = useMemo(()=>entries.filter(entry => (!kind || entry.kind === kind) && (!category || entry.category === category) && Number.isFinite(match(entry.id, search))).sort((a,b)=>match(a.id,search)-match(b.id,search)),[entries,kind,category,search,match]);
+  const updateMany = (patch: Readonly<Record<string,string>>) => {
     const next = new URLSearchParams(latest.current.pending);
-    if (value) next.set(key, value); else next.delete(key);
+    for (const [key,value] of Object.entries(patch)) { if (value) next.set(key, value); else next.delete(key); }
     latest.current.pending = next;
     setParams(next, { replace: true });
   };
-  return { search, category, kind, filtered, params, update };
+  const update = (key: string, value: string) => updateMany({[key]:value});
+  return { search, category, kind, filtered, params, update, updateMany };
 }
 export function MusicSearch({ filters, categories, label = uiText('搜尋音樂詞條') }: {
   filters: ReturnType<typeof useMusicSearch>; categories: readonly string[]; label?: string;

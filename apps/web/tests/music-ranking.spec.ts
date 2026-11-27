@@ -28,6 +28,8 @@ test('keeps independent source ranking caps, Chinese ordering and full-library a
   await sub.getByRole('button', { name: '展開細分前 20 名', exact: true }).click();
   await expect(sub.getByRole('listitem')).toHaveCount(20);
   await sub.getByRole('button', { name: '查看完整細分詞庫', exact: true }).click();
+  await expect(page.getByRole('tab',{name:'完整詞庫',exact:true})).toHaveAttribute('aria-selected','true');
+  await expect(page).toHaveURL(/explorer=all/);
   await expect(sub.getByRole('listitem')).toHaveCount(41);
   await page.reload(); await expect(main.getByRole('listitem')).toHaveCount(31); await expect(sub.getByRole('listitem')).toHaveCount(41);
   await page.getByRole('tab', { name: '熱門排行', exact: true }).click();
@@ -57,6 +59,24 @@ test('keeps both bubble views independent, includes terms beyond rank caps and o
   await sub.getByRole('button', { name: '細分清單', exact: true }).click();
   await expect(main.locator('svg a')).toHaveCount(31); await expect(sub.getByRole('listitem')).toHaveCount(10);
   await page.getByRole('tab', { name: '完整詞庫', exact: true }).click(); await expect(sub.getByRole('listitem')).toHaveCount(41);
+});
+test('bubble tab and direct links show independent source charts; full-library action switches out of domains',async({page})=>{
+  await largeCatalog(page);await page.goto('/music?explorer=bubbles');
+  const main=page.getByRole('region',{name:'領域排行',exact:true}),sub=page.getByRole('region',{name:'細分排行',exact:true});
+  await expect(main.getByRole('group',{name:'領域氣泡圖',exact:true})).toBeVisible();await expect(sub.getByRole('group',{name:'細分氣泡圖',exact:true})).toBeVisible();
+  await expect(main.locator('svg a')).toHaveCount(31);await expect(sub.locator('svg a')).toHaveCount(41);
+  await main.getByRole('button',{name:'領域清單',exact:true}).click();await expect(main.getByRole('listitem')).toHaveCount(10);await expect(sub.locator('svg a')).toHaveCount(41);
+  await page.reload();await expect(main.getByRole('listitem')).toHaveCount(10);await expect(sub.locator('svg a')).toHaveCount(41);
+  await page.getByRole('tab',{name:'領域／細分',exact:true}).click();await sub.getByRole('button',{name:'查看完整細分詞庫',exact:true}).click();
+  await expect(page.getByRole('tab',{name:'完整詞庫',exact:true})).toHaveAttribute('aria-selected','true');await expect(sub.getByRole('listitem')).toHaveCount(41);
+});
+test('create term lives in the page header and mobile charts stack while wide charts sit side by side',async({page})=>{
+  await page.setViewportSize({width:430,height:932});await page.goto('/music?explorer=bubbles');
+  const header=page.locator('main .page-header');await expect(header.getByRole('link',{name:'建立詞條',exact:true})).toHaveCount(1);await expect(page.locator('.music-search-area').getByRole('link',{name:'建立詞條',exact:true})).toHaveCount(0);
+  const main=page.getByRole('group',{name:'領域氣泡圖',exact:true}),sub=page.getByRole('group',{name:'細分氣泡圖',exact:true});
+  const m=await main.boundingBox(),s=await sub.boundingBox();expect(s!.y).toBeGreaterThan(m!.y+m!.height);
+  expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await page.setViewportSize({width:1440,height:1000});const a=await main.boundingBox(),b=await sub.boundingBox();expect(Math.abs(a!.y-b!.y)).toBeLessThan(4);expect(b!.x).toBeGreaterThan(a!.x);
 });
 test('opens bubbles by keyboard and preserves draft levels, selection markers and view settings through detail and save', async ({ page, context }) => {
   await login(context); await page.goto('/music?mainView=bubbles&subView=bubbles');
@@ -104,9 +124,9 @@ test('keeps long bubble labels, counts and every link readable at 360px without 
   await expect(sub.getByRole('link', { name: 'ずっと真夜中でいいのに。，0 人', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/music-ranking-mobile.png', fullPage: true });
-  const before = await sub.locator('svg').getAttribute('height');
+  const before = await sub.locator('svg').getAttribute('viewBox');
   await page.setViewportSize({ width: 1280, height: 900 });
-  await expect(sub.locator('svg')).not.toHaveAttribute('height', before!);
+  await expect(sub.locator('svg')).not.toHaveAttribute('viewBox', before!);
   await sub.getByRole('link', { name: 'ずっと真夜中でいいのに。，0 人', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'ずっと真夜中でいいのに。', exact: true })).toBeVisible();
 });

@@ -536,3 +536,22 @@
   .kimi .activity-form .sticky-save-bar > p { flex: 0 0 100%; margin: 0; font-size: 12px; white-space: nowrap; }
   .kimi .activity-form .sticky-save-bar > button { flex: 1; }
 }
+
+/* Source discovery boards: independent scatter charts, stacked below 1040px. */
+.kimi .domain-browser.music-rank-grid { grid-template-columns: minmax(0,1fr); gap: 28px; }
+.kimi .music-rank-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; }
+.kimi .music-rank-header h3 { font-size:16px; }
+.kimi .music-rank-header .music-view-switch { width:auto; max-width:100%; }
+.kimi .music-rank-group + .music-rank-group { padding-top:24px; border-top:1px solid var(--line-soft); }
+.kimi .music-bubbles svg { overflow:hidden; }
+.kimi .music-bubbles .bubble-circle { fill:color-mix(in srgb,color-mix(in srgb,var(--bubble-pigment) 75%,var(--app-accent)) 45%,var(--app-surface)); stroke:var(--app-surface); stroke-width:2; }
+.kimi .music-bubbles .bubble-gloss { fill:color-mix(in srgb,#fff 22%,transparent); stroke:none; pointer-events:none; }
+.kimi .music-bubbles a.is-selected .bubble-circle { stroke:var(--app-accent); stroke-width:4; }
+.kimi .music-bubbles a:hover .bubble-circle, .kimi .music-bubbles a:focus-visible .bubble-circle { stroke:var(--app-ink); stroke-width:3; }
+.kimi .music-bubbles text { fill:var(--app-ink); }
+.kimi .music-bubbles .bubble-count { opacity:.7; }
+.kimi [id^="music-library-"] { scroll-margin-top:calc(var(--header-height,64px) + 16px); }
+@media(min-width:1040px){
+ .kimi .domain-browser.music-rank-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .kimi .music-rank-group + .music-rank-group { padding-top:0; border-top:0; }
+}
