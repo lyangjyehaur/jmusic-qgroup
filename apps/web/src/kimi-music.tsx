@@ -10,7 +10,7 @@ import { Failure, Notice } from './shared';
 import { useMusicSearch, useMusicSearchShortcut } from './music-search';
 import { MusicWorkspaceFeedback, useMusicWorkspace } from './music-selection';
 import { MusicEntryDetails, musicEntryPath } from './music-entry';
-import { MusicRanking } from './music-ranking';
+import { MusicLibraryGroup } from './music-ranking';
 import { KimiSelectionSummary } from './kimi-music-editor';
 import { Badge, Button, Modal, PageHeader, SearchInput, Select } from './kimi-ui';
 import { ActionLink } from './action-link';
@@ -28,7 +28,12 @@ export function KimiMusicPage() {
   const selected=query.data?.entries.find(e=>e.id===params.get('entry'));
   const editorParams=new URLSearchParams(params);editorParams.delete('entry');
   const editorPath='/me/music'+(editorParams.size?'?'+editorParams:'');
-  const view=params.get('explorer')??(params.get('library')==='all'?'all':params.get('subView')==='bubbles'||params.get('mainView')==='bubbles'?'domains':'popular');
+  const requestedView=params.get('explorer');
+  const legacyBubbles=requestedView==='bubbles';
+  const view=requestedView==='all'||requestedView==='domains'||legacyBubbles||(!requestedView&&(params.get('library')==='all'||params.has('mainView')||params.has('subView')))?'all':'popular';
+  useEffect(()=>{
+    if(view==='all'&&(requestedView!=='all'||params.get('library')!=='all'))filters.updateMany({explorer:'all',library:'all',...(legacyBubbles?{mainView:params.get('mainView')??'bubbles',subView:params.get('subView')??'bubbles'}:{})});
+  },[params,view]);
   const [search,setSearch]=useState(filters.search);useEffect(()=>setSearch(filters.search),[filters.search]);
   useMusicSearchShortcut('.music-search-area input');
   const entries=useMemo(()=>filters.search?filters.filtered:rankMusic(filters.filtered),[filters.filtered]);
@@ -37,7 +42,7 @@ export function KimiMusicPage() {
   const title=complete?uiText('音樂詞庫'):uiText('熱門排行');
   const [scrollToKind,setScrollToKind]=useState<'main'|'sub'|null>(null);
   useEffect(()=>{if(view==='all'&&scrollToKind){document.getElementById('music-library-'+scrollToKind)?.scrollIntoView({block:'start'});setScrollToKind(null);}},[view,scrollToKind]);
-  function chooseView(value:string){filters.updateMany({explorer:value,library:value==='all'?'all':'',mainView:value==='bubbles'?'bubbles':'',subView:value==='bubbles'?'bubbles':''});}
+  function chooseView(value:string){filters.updateMany({explorer:value,library:value==='all'?'all':''});}
   function completeLibrary(kind:'main'|'sub'){setScrollToKind(kind);chooseView('all');}
   return <div className="kimi page music-page"><PageHeader title="音樂" actions={<><ActionLink to="/me/music/entries/new" startIcon={<Plus size={14}/>}>建立詞條</ActionLink><ActionLink variant="primary" to={editorPath} startIcon={<ListMusic size={17}/>}>我的成分{selection&&<Badge tone="green">{selection.selected.size}</Badge>}</ActionLink></>}/>
     {query.data&&<OverviewStats label="音樂統計" items={[
@@ -50,13 +55,11 @@ export function KimiMusicPage() {
       <MusicBrowseTabs value={view} onChange={chooseView}/>
       {query.isPending?<Notice>正在讀取詞條…</Notice>:query.error&&!query.data?<Failure error={query.error} retry={()=>void query.refetch()}/>:query.data&&<>
         {query.error&&!selected&&<Failure error={query.error} retry={()=>void query.refetch()}/>}
-        {view==='bubbles'||view==='domains'?<div className="domain-browser music-rank-grid">{(['main','sub'] as const).map(kind=>{
-          const group=groups[kind];
-          return group.length?<MusicRanking key={kind} entries={group} kind={kind} complete={complete} params={params} update={update} showComplete={()=>completeLibrary(kind)} bubblesByDefault={view==='bubbles'} selected={selection?.selected??null}/>:null;
-        })}{!entries.length&&<Notice>沒有符合目前搜尋與篩選的詞條。</Notice>}</div>:<section className="term-list" aria-label={title}>{(['main','sub'] as const).map(kind=>{
+        {<section className={'term-list'+(view==='all'?' domain-browser music-rank-grid':'')} aria-label={title}>{(['main','sub'] as const).map(kind=>{
           const group=groups[kind],expanded=params.get(kind+'Expanded')==='1',limit=musicRankLimit(kind,expanded,complete);
           if(!group.length)return null;
-          return <section key={kind} id={'music-library-'+kind} aria-label={kind==='main'?'領域排行':'細分排行'}><h3 className="term-group-title">{kind==='main'?'領域':'細分'} · {group.length} 項</h3><ol role="list">{group.slice(0,limit).map((entry,index)=><li className={'term-row'+(selection?.selected.has(entry.id)?' is-selected':'')} key={entry.id}><span className="term-rank">{view==='popular'?String(index+1).padStart(2,'0'):entry.kind==='main'?<Grid3x3 size={16}/>:<BookOpen size={16}/>}</span><div className="term-name"><Link to={'/music?'+new URLSearchParams({...Object.fromEntries(params),entry:entry.id})}>{entry.name}</Link><MusicTranslation entry={entry}/></div><div className="term-category"><Badge tone={entry.kind==='main'?'green':'neutral'}>{entry.kind==='main'?'領域':'細分'}</Badge><span>{categoryLabel(entry.category)}</span></div><div className="term-users"><UsersRound size={14}/><strong>{entry.count}</strong><span className="sr-only">人</span></div>{selection?<Button variant={selection.selected.has(entry.id)?'secondary':'ghost'} size="sm" aria-label={(selection.selected.has(entry.id)?entry.kind==='sub'?'調整喜歡程度：':'取消選取':'選取')+entry.name} aria-pressed={selection.selected.has(entry.id)} disabled={selection.locked} onClick={()=>selection.toggle(entry)}>{selection.selected.has(entry.id)?<Check size={15}/>:<Plus size={15}/>} {selection.selected.has(entry.id)?entry.kind==='sub'?musicLevelLabel(selection.selected.get(entry.id)!):'已選':'選取'}</Button>:<ActionLink to={editorPath}>選取</ActionLink>}<Link className="row-arrow" to={musicEntryPath(entry.id,params.toString())} aria-label={'查看 '+entry.name}><ArrowUpRight size={17}/></Link></li>)}</ol>{!complete&&group.length>10&&<div className="main-only-links"><Button variant="secondary" onClick={()=>update(kind+'Expanded',expanded?'':'1')}>{expanded?'收合'+(kind==='main'?'領域':'細分')+'排行':kind==='main'?'展開全部領域':'展開細分前 20 名'}</Button>{kind==='sub'&&group.length>20&&<Button variant="secondary" onClick={()=>completeLibrary('sub')}>查看完整細分詞庫</Button>}</div>}</section>;
+          const listing=<><ol role="list">{group.slice(0,limit).map((entry,index)=><li className={'term-row'+(selection?.selected.has(entry.id)?' is-selected':'')} key={entry.id}><span className="term-rank">{view==='popular'?String(index+1).padStart(2,'0'):entry.kind==='main'?<Grid3x3 size={16}/>:<BookOpen size={16}/>}</span><div className="term-name"><Link to={'/music?'+new URLSearchParams({...Object.fromEntries(params),entry:entry.id})}>{entry.name}</Link><MusicTranslation entry={entry}/></div><div className="term-category"><Badge tone={entry.kind==='main'?'green':'neutral'}>{entry.kind==='main'?'領域':'細分'}</Badge><span>{categoryLabel(entry.category)}</span></div><div className="term-users"><UsersRound size={14}/><strong>{entry.count}</strong><span className="sr-only">人</span></div>{selection?<Button variant={selection.selected.has(entry.id)?'secondary':'ghost'} size="sm" aria-label={(selection.selected.has(entry.id)?entry.kind==='sub'?'調整喜歡程度：':'取消選取':'選取')+entry.name} aria-pressed={selection.selected.has(entry.id)} disabled={selection.locked} onClick={()=>selection.toggle(entry)}>{selection.selected.has(entry.id)?<Check size={15}/>:<Plus size={15}/>} {selection.selected.has(entry.id)?entry.kind==='sub'?musicLevelLabel(selection.selected.get(entry.id)!):'已選':'選取'}</Button>:<ActionLink to={editorPath}>選取</ActionLink>}<Link className="row-arrow" to={musicEntryPath(entry.id,params.toString())} aria-label={'查看 '+entry.name}><ArrowUpRight size={17}/></Link></li>)}</ol>{!complete&&group.length>10&&<div className="main-only-links"><Button variant="secondary" onClick={()=>update(kind+'Expanded',expanded?'':'1')}>{expanded?'收合'+(kind==='main'?'領域':'細分')+'排行':kind==='main'?'展開全部領域':'展開細分前 20 名'}</Button>{kind==='sub'&&group.length>20&&<Button variant="secondary" onClick={()=>completeLibrary('sub')}>查看完整細分詞庫</Button>}</div>}</>;
+          return view==='all'?<MusicLibraryGroup key={kind} entries={group} kind={kind} params={params} update={update} selected={selection?.selected??null}>{listing}</MusicLibraryGroup>:<section key={kind} id={'music-library-'+kind} aria-label={kind==='main'?'領域排行':'細分排行'}><h3 className="term-group-title">{kind==='main'?'領域':'細分'} · {group.length} 項</h3>{listing}</section>;
         })}{!entries.length&&<Notice>沒有符合目前搜尋與篩選的詞條。</Notice>}</section>}
         {params.get('entry')&&!selected&&<Notice>這個詞條不存在或已刪除。</Notice>}
       </>}

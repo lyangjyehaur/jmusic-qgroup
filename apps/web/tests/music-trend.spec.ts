@@ -19,6 +19,17 @@ test('visitors see aggregate trends, complete legends and recent terms while mem
   await openChart(page);await page.getByText('快照資料表', { exact: true }).click(); await expect(page.getByRole('table')).toBeVisible(); await expect(page.getByRole('table').getByRole('row')).toHaveCount(5);
   expect(writes).toBe(0); expect(privateReads).toBe(0);
 });
+test('merged library keeps independent chart choices and search when visiting trends and returning',async({page})=>{
+  await page.goto('/music?explorer=all&library=all&mainView=bubbles&q=J-POP');
+  await expect(page.getByRole('group',{name:'領域氣泡圖',exact:true})).toBeVisible();
+  await page.getByRole('tab',{name:'音樂趨勢',exact:true}).click();
+  await expect(page.locator('.music-browse-tabs').getByRole('tab')).toHaveText(['熱門排行','完整詞庫','音樂趨勢']);
+  await expect(page.getByRole('tab',{name:'音樂趨勢',exact:true})).toHaveAttribute('aria-selected','true');
+  await page.getByRole('tab',{name:'完整詞庫',exact:true}).click();
+  await expect(page.getByLabel('搜尋音樂詞條',{exact:true})).toHaveValue('J-POP');
+  await expect(page.getByRole('group',{name:'領域氣泡圖',exact:true})).toBeVisible();
+  await expect(page.getByRole('tab',{name:'完整詞庫',exact:true})).toHaveAttribute('aria-selected','true');
+});
 test('trend terms share the original unsaved selection, preserve search and return without an extra draft or automatic save', async ({ page, context }) => {
   await login(context); let writes = 0; page.on('request', request => { if (request.url().includes('/api/') && !['GET','HEAD'].includes(request.method())) writes++; });
   await page.goto('/me/music?q=Yoa'); await page.getByRole('button', { name: '移除Aimer', exact: true }).click();

@@ -53,22 +53,25 @@ test('keeps both bubble views independent, includes terms beyond rank caps and o
   await largeCatalog(page); await page.goto('/music?explorer=domains');
   const main = page.getByRole('region', { name: '領域排行', exact: true }), sub = page.getByRole('region', { name: '細分排行', exact: true });
   await sub.getByRole('button', { name: '細分氣泡', exact: true }).click();
-  await expect(sub.locator('svg a')).toHaveCount(41); await expect(main.getByRole('listitem')).toHaveCount(10);
+  await expect(sub.locator('svg a')).toHaveCount(41); await expect(main.getByRole('listitem')).toHaveCount(31);
   await main.getByRole('button', { name: '領域氣泡', exact: true }).click();
   await expect(main.locator('svg a')).toHaveCount(31); await page.reload(); await expect(sub.locator('svg a')).toHaveCount(41);
   await sub.getByRole('button', { name: '細分清單', exact: true }).click();
-  await expect(main.locator('svg a')).toHaveCount(31); await expect(sub.getByRole('listitem')).toHaveCount(10);
+  await expect(main.locator('svg a')).toHaveCount(31); await expect(sub.getByRole('listitem')).toHaveCount(41);
   await page.getByRole('tab', { name: '完整詞庫', exact: true }).click(); await expect(sub.getByRole('listitem')).toHaveCount(41);
 });
-test('bubble tab and direct links show independent source charts; full-library action switches out of domains',async({page})=>{
+test('legacy bubble links open the merged complete library and retain independent views through tab switches',async({page})=>{
   await largeCatalog(page);await page.goto('/music?explorer=bubbles');
   const main=page.getByRole('region',{name:'領域排行',exact:true}),sub=page.getByRole('region',{name:'細分排行',exact:true});
   await expect(main.getByRole('group',{name:'領域氣泡圖',exact:true})).toBeVisible();await expect(sub.getByRole('group',{name:'細分氣泡圖',exact:true})).toBeVisible();
   await expect(main.locator('svg a')).toHaveCount(31);await expect(sub.locator('svg a')).toHaveCount(41);
-  await main.getByRole('button',{name:'領域清單',exact:true}).click();await expect(main.getByRole('listitem')).toHaveCount(10);await expect(sub.locator('svg a')).toHaveCount(41);
-  await page.reload();await expect(main.getByRole('listitem')).toHaveCount(10);await expect(sub.locator('svg a')).toHaveCount(41);
-  await page.getByRole('tab',{name:'領域／細分',exact:true}).click();await sub.getByRole('button',{name:'查看完整細分詞庫',exact:true}).click();
-  await expect(page.getByRole('tab',{name:'完整詞庫',exact:true})).toHaveAttribute('aria-selected','true');await expect(sub.getByRole('listitem')).toHaveCount(41);
+  await main.getByRole('button',{name:'領域清單',exact:true}).click();await expect(main.getByRole('listitem')).toHaveCount(31);await expect(sub.locator('svg a')).toHaveCount(41);
+  await page.reload();await expect(main.getByRole('listitem')).toHaveCount(31);await expect(sub.locator('svg a')).toHaveCount(41);
+  await expect(page.locator('.music-browse-tabs').getByRole('tab')).toHaveText(['熱門排行','完整詞庫','音樂趨勢']);
+  await expect(page).toHaveURL(/explorer=all/);
+  await page.getByRole('tab',{name:'熱門排行',exact:true}).click();await expect(sub.getByRole('listitem')).toHaveCount(10);
+  await page.getByRole('tab',{name:'完整詞庫',exact:true}).click();
+  await expect(main.getByRole('listitem')).toHaveCount(31);await expect(sub.locator('svg a')).toHaveCount(41);
 });
 test('create term lives in the page header and mobile charts stack while wide charts sit side by side',async({page})=>{
   await page.setViewportSize({width:430,height:932});await page.goto('/music?explorer=bubbles');
@@ -83,7 +86,8 @@ test('opens bubbles by keyboard and preserves draft levels, selection markers an
   const sub = page.getByRole('region', { name: '細分排行', exact: true });
   const bubble = sub.getByRole('link', { name: 'YOASOBI，0 人', exact: true });
   await bubble.focus(); await expect(bubble).toBeFocused(); await page.keyboard.press('Enter');
-  await expect(page).toHaveURL('/music/entries/sub-0?mainView=bubbles&subView=bubbles');
+  await expect(page).toHaveURL(/\/music\/entries\/sub-0\?.*mainView=bubbles/);
+  expect(new URL(page.url()).searchParams.get('explorer')).toBe('all');
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate(node => node.contains(document.activeElement))).toBe(true);
   await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
@@ -97,7 +101,7 @@ test('opens bubbles by keyboard and preserves draft levels, selection markers an
   await expect(sub.getByRole('link', { name: 'YOASOBI，1 人，已選', exact: true })).toBeVisible();
   await sub.getByRole('button', { name: '細分清單', exact: true }).click();
   await expect(sub.locator('li.is-selected')).toContainText('YOASOBI');
-  await expect(sub.locator('li.is-selected')).toContainText('已選');
+  await expect(sub.getByRole('button',{name:'調整喜歡程度：YOASOBI',exact:true})).toHaveAttribute('aria-pressed','true');
   await expect(page.getByRole('heading', { name: '尚未提交的修改' })).toHaveCount(0);
 });
 test('shows current aggregates and refreshes another tab after erasing a profile without discarding its catalog view', async ({ page, context }) => {

@@ -14,14 +14,10 @@ export function MusicBrowseTabs({ value, onChange }: { value: string; onChange?:
     if (onChange) { onChange(nextValue); return; }
     next.set('explorer', nextValue);
     if (nextValue === 'all') next.set('library', 'all'); else next.delete('library');
-    for (const key of ['mainView', 'subView']) {
-      if (nextValue === 'bubbles') next.set(key, 'bubbles'); else next.delete(key);
-    }
     navigate('/music?' + next);
   }
   return <div className="explorer-tabs music-browse-tabs"><Tabs label="詞庫範圍" value={value} onChange={change} items={[
     { value: 'popular', label: uiText('熱門排行') }, { value: 'all', label: uiText('完整詞庫') },
-    { value: 'domains', label: uiText('領域／細分') }, { value: 'bubbles', label: uiText('氣泡視圖') },
     { value: 'trends', label: uiText('音樂趨勢') },
   ]}/></div>;
 }
