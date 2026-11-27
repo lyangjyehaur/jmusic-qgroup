@@ -54,13 +54,13 @@ for (const width of [1440, 390]) test(`theme colors reach page regions and porta
       Object.assign(sample, {
         searchPanel: await color(page.locator('.music-search-area'), 'backgroundColor'),
         bubble: await color(bubble.locator('.bubble-circle'), 'fill'),
-        link: await color(page.locator('.main-only-links a').first()),
+        link: await color(page.getByRole('contentinfo').getByRole('link', {name:'使用說明',exact:true})),
       });
       await bubble.click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await expect(dialog.locator('.music-entry-detail')).toBeVisible();
-      Object.assign(sample, { dialogButton: await color(dialog.locator('.action-link[data-variant=primary]'), 'backgroundColor') });
+      Object.assign(sample, { dialogButton: await color(dialog.locator('.music-entry-detail .page-actions button').first(), 'backgroundColor') });
       // Portals share the same paper and dark-mode text as the page cards.
       expect(await color(dialog, 'backgroundColor')).toBe(await page.locator('html').evaluate(el => {
         const probe = document.createElement('span');
