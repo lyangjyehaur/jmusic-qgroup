@@ -1,4 +1,4 @@
-import { ChevronRight, CircleHelp, GitCompareArrows } from 'lucide-react';
+import { CircleHelp, GitCompareArrows } from 'lucide-react';
 import { Avatar, Badge, Select, Disclosure } from './kimi-ui';
 import { ActionLink } from './action-link';
 import { musicEntryPath } from './music-entry';
@@ -21,7 +21,7 @@ export function MusicRecommendations({ viewer }: { viewer: Member }) {
   const { sort, change } = useMusicMatchSort();
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-matches', viewer.musicEpoch, sort],
     queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/matches', { signal, query: { sort } }), refetchOnMount: 'always', refetchInterval: 10000 });
-  return <section aria-label="同好推薦" className="music-recommendations"><div className="recommend-toolbar"><div><Heading level={2}>與你聽得相近的人</Heading>{query.data&&<p>依已保存成分計算，共 {query.data.matches.length} 位有共同喜好</p>}</div>
+  return <section aria-label="同好推薦" className="music-recommendations"><div className="recommend-toolbar"><div><Heading level={2}>推薦名單</Heading>{query.data&&<p>依已保存成分計算，共 {query.data.matches.length} 位有共同喜好</p>}</div>
     <Select aria-label="排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}>
       <option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option>
     </Select></div>
@@ -35,27 +35,29 @@ export function MusicRecommendations({ viewer }: { viewer: Member }) {
         {query.data.matches.length > 3 && <Disclosure className="more-matches"  title={<>其餘同好 · {query.data.matches.length - 3} 人</>}>
           <ol start={4} className="people-grid" role="list">{query.data.matches.slice(3).map(row => <li key={row.member.id}><MatchCard row={row} /></li>)}</ol></Disclosure>}
       </section>}
-      {query.data.sparseMatches.length > 0 && <section className="sparse-section"><div className="section-title-row"><div><Heading level={2}>資料較少的同好</Heading><p>選擇不超過 3 項，匹配結果僅供參考</p></div><Badge>{query.data.sparseMatches.length} 位</Badge></div><div className="sparse-list">{query.data.sparseMatches.slice(0,6).map(row=><Link key={row.member.id} to={'/people/'+row.member.id+'?from=%2Fpeople'}><Avatar user={{name:row.member.name,avatar:row.member.name.slice(0,1),color:'var(--moss)'}}/><span><strong>{row.member.name}</strong><small>共同 {row.stats.sharedCount} 項</small></span><ChevronRight size={16}/></Link>)}</div><Disclosure className="more-matches" aria-label="資料較少的同好"  title={<>資料較少的同好 · {query.data.sparseMatches.length} 人</>}>
-        <ol className="people-grid" role="list">{query.data.sparseMatches.map(row => <li key={row.member.id}><MatchCard row={row} /></li>)}</ol></Disclosure></section>}
+      {query.data.sparseMatches.length > 0 && <section className="sparse-section"><div className="section-title-row"><div><Heading level={2}>資料較少的同好</Heading><p>選擇不超過 3 項，匹配結果僅供參考</p></div><Badge>{query.data.sparseMatches.length} 位</Badge></div>
+        <ol className="people-grid sparse-people-grid" role="list">{query.data.sparseMatches.slice(0,6).map(row=><li key={row.member.id}><MatchCard row={row} compact/></li>)}</ol>
+        {query.data.sparseMatches.length>6&&<Disclosure className="more-matches" title={<>其餘資料較少的同好 · {query.data.sparseMatches.length-6} 人</>}><ol start={7} className="people-grid sparse-people-grid" role="list">{query.data.sparseMatches.slice(6).map(row=><li key={row.member.id}><MatchCard row={row} compact/></li>)}</ol></Disclosure>}
+      </section>}
     </>}
   </section>;
 }
-function MatchCard({ row, rank }: { row: z.infer<typeof MusicMatches>['matches'][number]; rank?: number }) {
+function MatchCard({ row, rank, compact=false }: { row: z.infer<typeof MusicMatches>['matches'][number]; rank?: number; compact?:boolean }) {
   const [params] = useSearchParams(), from='/people'+(params.size?'?'+params:''), member=row.member;
   const level=(value:number)=>({1:uiText('只聽過幾首'),2:uiText('聽過一些'),3:uiText('常聽'),4:uiText('本命')}[value]);
-  return <article className="person-card match-card"><header><div className="person-identity">{rank&&<span className="recommend-rank">{String(rank).padStart(2,'0')}</span>}<Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--app-accent)'}} size="lg"/><div><Link to={'/people/'+member.id+'?'+new URLSearchParams({from})}>{member.name}</Link><span>{member.id}</span></div></div><div className="match-score"><strong>{row.stats.matchPercent}<small>%</small></strong><span>匹配度</span></div></header>
+  return <article className={'person-card match-card'+(compact?' match-card-compact':'')}><header><div className="person-identity">{rank&&<span className="recommend-rank">{String(rank).padStart(2,'0')}</span>}<Link className="person-name-link" aria-label={member.name} to={'/people/'+member.id+'?'+new URLSearchParams({from})}><span aria-hidden="true"><Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--app-accent)'}} size="sm"/></span><span className="person-heading"><strong>{member.name}</strong><small>{row.stats.theirsCount} 項成分</small></span></Link></div><div className="match-score"><strong>{row.stats.matchPercent}<small>%</small></strong><span>匹配度</span></div></header>
     <div className="common-summary"><span>共同喜好 <strong>{row.stats.sharedCount}</strong></span><Badge>嚴格重合 {row.stats.score}%</Badge>{row.stats.bothTop>0&&<Badge tone="green">共同本命 {row.stats.bothTop}</Badge>}</div>
-    <div className="common-terms">{row.shared.slice(0,4).map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from}).toString())}>{pick.name}</Link><MusicTermButton entryId={pick.id}/>{pick.kind==='sub'&&<span><em className={pick.myLevel===4?'favorite':''}>我・{level(pick.myLevel)}</em><i/><em className={pick.theirLevel===4?'favorite':''}>對方・{level(pick.theirLevel)}</em></span>}</div>)}</div>
+    {!compact&&<div className="common-terms">{row.shared.slice(0,4).map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from}).toString())}>{pick.name}</Link><MusicTermButton entryId={pick.id}/>{pick.kind==='sub'&&<span><em className={pick.myLevel===4?'favorite':''}>我・{level(pick.myLevel)}</em><i/><em className={pick.theirLevel===4?'favorite':''}>對方・{level(pick.theirLevel)}</em></span>}</div>)}</div>}
 
-    <footer><div><ActionLink to={'/people/'+member.id+'?'+new URLSearchParams({from})} size="sm">成分卡</ActionLink><ActionLink variant="ghost" size="sm" to={'/people/'+member.id+'/compare?'+new URLSearchParams({from})} startIcon={<GitCompareArrows size={14}/>}>比較成分</ActionLink></div><ChevronRight size={17}/></footer>
-    <Disclosure className="profile-extras"  title={<>更多成分資料</>}>    <Disclosure className="match-breakdown"  title={<>匹配詳情</>}><MatchStats stats={row.stats}/><ComparedPicks title="共同喜歡" picks={row.shared} shared allowSelection/></Disclosure><ComparedPicks title="對方獨有" picks={row.onlyTheirs} fold allowSelection/>
+    <footer><div><ActionLink to={'/people/'+member.id+'?'+new URLSearchParams({from})} size="sm">成分卡</ActionLink><ActionLink variant="ghost" size="sm" to={'/people/'+member.id+'/compare?'+new URLSearchParams({from})} startIcon={<GitCompareArrows size={14}/>}>比較成分</ActionLink></div></footer>
+    <Disclosure className="profile-extras" title={<>更多成分資料</>}><MatchStats stats={row.stats}/><ComparedPicks title="共同喜歡" picks={row.shared} shared allowSelection/><ComparedPicks title="對方獨有" picks={row.onlyTheirs} fold allowSelection/>
     {member.note&&<Text className="match-note">對方的留言：{member.note}</Text>}{member.gender&&<Text>性別：{member.gender}</Text>}<ContactValue number={member.contactQQ} source={member.contactSource}/>
     <Disclosure className="copy-profile"  title={<>複製資料</>}><CopyMusicValue value={member.name} label="名稱"/><CopyMusicValue value={member.id} label="成分 ID"/></Disclosure></Disclosure>
   </article>;
 }
 export function MusicComparisonPage() {
   const { id = '' } = useParams(), [params] = useSearchParams(), back = peopleReturn(params.get('from')) ?? musicTrendReturn(params.get('from')) ?? musicCircleReturn(params.get('from')) ?? musicShoutReturn(params.get('from')) ?? '/people';
-  return <><PageIntro title="成分比較" /><div className="page-actions"><Link to={back}>{back.startsWith('/music/trends') ? '回到音樂趨勢' : back.startsWith('/people/shouts') ? '回到找搭子' : back.startsWith('/people/circles') ? '回到同好圈子' : '回到同好推薦'}</Link><Link to={'/people/' + encodeURIComponent(id) + '?' + new URLSearchParams({ from: back })}>查看同好成分</Link></div>
+  return <><PageIntro title="成分比較" /><div className="page-actions"><Link to={back}>{back.startsWith('/music/trends') ? '回到音樂趨勢' : back.startsWith('/people/shouts') ? '回到找搭子' : back.startsWith('/people/circles') ? '回到同好圈子' : new URL(back,'https://local.invalid').searchParams.get('tab')==='search'?'回到查詢／比較':'回到同好推薦'}</Link><Link to={'/people/' + encodeURIComponent(id) + '?' + new URLSearchParams({ from: back })}>查看同好成分</Link></div>
     <MusicMemberAccess>{viewer => <Comparison key={viewer.scope + ':' + viewer.musicEpoch + ':' + id} viewer={viewer} id={id} />}</MusicMemberAccess></>;
 }
 function Comparison({ viewer, id }: { viewer: Member; id: string }) {

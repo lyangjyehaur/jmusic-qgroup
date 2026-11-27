@@ -11,15 +11,30 @@ const detail = (page: Page) => page.getByRole('region', { name: '找搭子內容
 test('guests and accounts without saved music use the shared gate without reading private shouts', async ({ page, context }) => {
   let reads = 0, writes = 0;
   page.on('request', request => { if (request.url().includes('/api/v2/music/shouts')) reads++; if (request.url().includes('/api/') && request.method() === 'POST') writes++; });
-  await page.goto('/people'); await page.getByRole('link', { name: '找搭子', exact: true }).click();
+  await page.goto('/people'); await page.getByRole('tab', { name: '找搭子', exact: true }).click();
   await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible();
   await login(context, 'auth-owner'); await refresh(page); await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible();
   expect(reads).toBe(0); expect(writes).toBe(0);
 });
+test('a legacy timestamp outside the supported date range leaves the shout usable', async ({ page, context }) => {
+  await login(context);
+  await page.route('**/api/v2/music/shouts?*', async route => {
+    const response = await route.fetch(), body = await response.json(); body.items[0].createdAt = Number.MAX_SAFE_INTEGER;
+    await route.fulfill({ response, json: body });
+  });
+  await page.goto('/people/shouts');
+  await expect(list(page).locator('time').first()).toHaveText('時間未記錄');
+  await list(page).getByRole('link', { name: '週末一起聽音樂', exact: true }).click();
+  await expect(detail(page)).toContainText('週末一起聽音樂');
+});
 test('details, author profiles, clipboard fallbacks and all history pages preserve the return path on mobile', async ({ page, context }) => {
   await login(context); await page.setViewportSize({ width: 360, height: 800 });
   await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async () => { throw new Error('synthetic denied clipboard'); } } }));
-  await page.goto('/people/shouts'); await list(page).getByRole('link', { name: '週末一起聽音樂', exact: true }).focus(); await page.keyboard.press('Enter');
+  await page.goto('/people/shouts'); await expect(page.getByRole('textbox', { name: '找搭子內容', exact: true })).toBeVisible();
+  const feed = await page.locator('.partner-feed').boundingBox(), compose = await page.locator('.partner-compose').boundingBox();
+  expect(compose!.y).toBeGreaterThanOrEqual(feed!.y + feed!.height + 20);
+  await page.getByRole('button', { name: '前往發布找搭子', exact: true }).click(); await expect(page.locator('#shout-compose')).toBeFocused();
+  await list(page).getByRole('link', { name: '週末一起聽音樂', exact: true }).focus(); await page.keyboard.press('Enter');
   await expect(detail(page)).toContainText('234567 · 自填號碼，未經騰訊驗證');
   await page.getByRole('button', { name: '複製找搭子內容', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取找搭子內容手動複製。', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取號碼手動複製。', { exact: true })).toBeVisible();
@@ -37,8 +52,8 @@ test('details, author profiles, clipboard fallbacks and all history pages preser
 });
 test('drafts survive explicit navigation and reload; Unicode limits, publication and cooldown stay consistent', async ({ page, context }) => {
   await login(context); await page.goto('/people/shouts'); await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('草稿保留');
-  await page.getByRole('link', { name: '回到同好', exact: true }).click(); await expect(page.getByText('尚未提交的修改', { exact: false })).toBeVisible();
-  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('link', { name: '找搭子', exact: true }).click();
+  await page.getByRole('tab', { name: '同好推薦', exact: true }).click(); await expect(page.getByText('尚未提交的修改', { exact: false })).toBeVisible();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click(); await page.getByRole('tab', { name: '找搭子', exact: true }).click();
   await expectControlValue(page.getByRole('textbox', { name: '找搭子內容', exact: true }), '草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click(); page.on('dialog', dialog => void dialog.accept()); await page.reload();
   await expectControlValue(page.getByRole('textbox', { name: '找搭子內容', exact: true }), '草稿保留'); await page.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await page.getByRole('textbox', { name: '找搭子內容', exact: true }).fill('\u0085\u001c'); await expect(page.getByRole('button', { name: '發布找搭子', exact: true })).toBeDisabled();

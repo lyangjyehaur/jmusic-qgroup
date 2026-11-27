@@ -12,7 +12,7 @@ const stats = (page: Page) => page.getByRole('definition');
 test('guests and accounts without saved music receive the shared gate without fetching circles or writing', async ({ page, context }) => {
   let privateReads = 0, writes = 0;
   page.on('request', request => { if (request.url().includes('/music/circles')) privateReads++; if (request.url().includes('/api/') && !['GET','HEAD'].includes(request.method())) writes++; });
-  await page.goto('/people'); await page.getByRole('link', { name: '同好圈子', exact: true }).click();
+  await page.goto('/people'); await page.getByRole('tab', { name: '同好圈子', exact: true }).click();
   await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible(); await expect(circles(page)).toHaveCount(0);
   await login(context, 'auth-owner'); await refresh(page); await expect(page.getByRole('link', { name: '保存成分', exact: true })).toBeVisible();
   expect(privateReads).toBe(0); expect(writes).toBe(0);

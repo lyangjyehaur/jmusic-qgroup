@@ -1,0 +1,168 @@
+/* Shared discovery geometry. Keep controls and readable labels at both densities. */
+.kimi.people-page > .page-header { margin-bottom:24px; }
+.kimi.people-page > .tabs { margin-bottom:24px; }
+.kimi .people-settings-panel { min-width:0; }
+.kimi .people-tools { display:flex; justify-content:flex-end; margin-top:24px; padding-top:12px; border-top:1px solid var(--line-soft); }
+.kimi .recommend-toolbar, .kimi .circle-toolbar { display:flex; flex-direction:row; align-items:center; gap:16px; margin:0 0 12px; }
+.kimi :is(.recommend-toolbar,.circle-toolbar) h2 { margin:0; font-size:18px; }
+.kimi .recommend-toolbar p { margin:6px 0 0; font-size:12px; line-height:1.6; }
+.kimi :is(.recommend-toolbar,.circle-toolbar) > .select-wrap { width:220px; max-width:100%; margin:0 0 0 auto; flex:none; }
+.kimi :is(.sort-rules,.circle-rules) { margin:0 0 20px; background:transparent; border:0; }
+.kimi :is(.sort-rules,.circle-rules) .disclosure-trigger { min-height:44px; padding:8px 0; gap:8px; font-size:12px; color:var(--muted); }
+.kimi :is(.sort-rules,.circle-rules) .disclosure-trigger > svg:last-child { margin-left:8px; }
+.kimi :is(.sort-rules,.circle-rules) .disclosure-panel p { margin:0 0 10px; color:var(--muted); font-size:12px; line-height:1.8; }
+.kimi .people-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; padding:0; margin:0; list-style:none; align-items:start; }
+.kimi .people-grid > li { min-width:0; }
+.kimi .people-grid .person-card:first-child { grid-column:auto; }
+.kimi .person-card.match-card { min-width:0; padding:20px; border:1px solid var(--line); border-radius:12px; background:var(--paper); }
+.kimi .match-card > header { align-items:center; gap:12px; }
+.kimi .person-identity { gap:8px; flex:1; }
+.kimi .person-name-link { min-width:0; display:flex; align-items:center; gap:10px; min-height:44px; }
+.kimi .person-name-link > span:first-child { flex:none; }
+.kimi .person-identity .person-heading { display:grid; min-width:0; gap:4px; font-size:14px; line-height:1.4; }
+.kimi .person-heading strong { color:var(--ink); font-size:15px; overflow-wrap:anywhere; }
+.kimi .person-heading small { font-size:12px; font-weight:400; color:var(--muted); }
+.kimi .recommend-rank { font-variant-numeric:tabular-nums; font-size:11px; }
+.kimi .match-card .match-score strong { font-size:26px; color:var(--moss); font-variant-numeric:tabular-nums; }
+.kimi .match-card .match-score > span { font-size:11px; }
+.kimi .match-card .common-summary { margin:14px 0 8px; gap:6px 10px; min-height:28px; font-size:12px; }
+.kimi .match-card .common-summary > span { margin-right:0; }
+.kimi .match-card .common-summary .badge { font-size:11px; }
+.kimi .common-terms { min-height:0; }
+.kimi .common-terms > div { display:grid; grid-template-columns:minmax(0,1fr) 44px; gap:0 10px; align-items:center; padding:5px 0; min-height:54px; }
+.kimi .common-terms > div > a { display:flex; align-items:center; min-height:44px; font-size:14px; line-height:1.5; }
+.kimi .common-terms > div > .music-term-choice { grid-column:2; grid-row:1 / 3; width:44px; height:44px; min-height:44px; padding:0; justify-self:end; }
+.kimi .common-terms > div > span { grid-column:1; margin:0 0 4px; flex-wrap:wrap; gap:4px 8px; }
+.kimi .common-terms em { font-size:11px; }
+.kimi .match-card > footer { margin-top:14px; }
+.kimi .match-card > footer > div { flex-wrap:wrap; gap:8px; }
+.kimi .profile-extras { margin-top:12px; padding-top:0; font-size:13px; }
+.kimi .profile-extras > .disclosure-item > .disclosure-heading > .disclosure-trigger { min-height:44px; padding:8px 0; font-size:12px; }
+.kimi .profile-extras .contact-value { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin:16px 0; }
+.kimi .profile-extras .contact-value p { margin:0; flex:1; min-width:140px; font-size:12px; overflow-wrap:anywhere; }
+.kimi .copy-profile .disclosure-panel > div > div { display:flex; flex-wrap:wrap; gap:8px; }
+.kimi .more-matches { margin-top:16px; }
+.kimi .more-matches > .disclosure-item > .disclosure-heading > .disclosure-trigger { min-height:44px; padding:10px 14px; border:1px solid var(--line); border-radius:8px; background:var(--paper); font-size:13px; }
+.kimi .more-matches .people-grid { margin-top:16px; }
+.kimi .sparse-section { margin-top:28px; padding-top:24px; }
+.kimi .sparse-section .section-title-row { margin-bottom:16px; }
+.kimi .sparse-section h2 { font-size:17px; }
+.kimi .sparse-section p { font-size:12px; line-height:1.6; margin-top:6px; }
+.kimi .match-card-compact .common-summary { margin-bottom:0; }
+.kimi .people-search-panel { margin:0; max-width:720px; }
+.kimi .people-lookup { padding:24px; border-radius:12px; }
+.kimi .people-lookup form { display:block; }
+.kimi .people-lookup .yj-field { width:100%; min-width:0; }
+.kimi .people-lookup .people-lookup-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:16px; }
+.kimi .people-lookup-error { margin-top:12px; font-size:13px; color:var(--yahha-danger,var(--rust)); }
+.kimi .people-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:0; margin:0 0 24px; padding:14px 16px; background:var(--moss-soft); border-left:3px solid var(--moss); }
+.kimi .people-summary > div { min-width:0; display:flex; align-items:baseline; gap:8px; padding-inline:16px; border-left:1px solid var(--line); }
+.kimi .people-summary > div:first-child { border:0; padding-left:0; }
+.kimi .people-summary dt { order:1; font-size:12px; color:var(--muted); }
+.kimi .people-summary dd { margin:0; font-size:20px; font-weight:600; font-variant-numeric:tabular-nums; }
+.kimi #music-circle-tags-help { font-size:12px; line-height:1.7; color:var(--muted); }
+.kimi .circle-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; margin-top:16px; align-items:start; }
+.kimi .circle-grid .music-circle { padding:20px; border-radius:12px; }
+.kimi .circle-card-heading { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+.kimi .circle-card-heading > svg { flex:none; color:var(--moss); }
+.kimi .circle-card-heading h3 { margin:0; font-size:16px; }
+.kimi .music-circle-members { gap:6px; }
+.kimi .music-circle-members > li { min-width:0; max-width:100%; }
+.kimi .music-circle-members a { display:flex; align-items:center; gap:6px; min-height:44px; padding:4px 8px 4px 4px; background:var(--bg); border-radius:8px; font-size:12px; }
+.kimi .music-circle-members a > span:first-child { flex:none; }
+.kimi .music-circle-members a > span:last-child { overflow-wrap:anywhere; }
+.kimi .circle-more-members { margin-top:10px; }
+.kimi .circle-more-members .disclosure-trigger { min-height:44px; font-size:12px; }
+.kimi .music-circle-tags > li { font-size:12px; border-radius:6px; padding:2px 8px; }
+.kimi .music-circle-tags a { display:inline-flex; align-items:center; min-height:40px; overflow-wrap:anywhere; }
+.kimi .music-circle-tags ul { padding-left:16px; }
+.kimi .music-circle-singles { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 24px; }
+.kimi .music-circle-singles > li { min-width:0; padding:16px 0; font-size:14px; }
+.kimi .music-circle-singles > li > a { min-height:44px; display:inline-flex; align-items:center; font-weight:600; }
+.kimi .music-circle-singles p { font-size:12px; color:var(--muted); margin:2px 0 8px; }
+.kimi .music-circle-singles li a { overflow-wrap:anywhere; }
+.kimi .music-circle-singles ul a { display:inline-flex; align-items:center; min-height:40px; font-size:12px; }
+.kimi .people-circles > section[aria-label="未連入圈子名單"] { margin-top:28px; }
+.kimi .partner-navigation { display:flex; justify-content:flex-end; margin-bottom:16px; }
+.kimi .partner-layout { display:grid; grid-template-columns:minmax(0,1fr) 300px; align-items:start; gap:24px; margin:0; }
+.kimi .partner-layout > section.partner-feed { grid-column:1; grid-row:1; min-width:0; }
+.kimi .partner-layout > .partner-compose { grid-column:2; grid-row:1; min-width:0; }
+.kimi .partner-feed-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:16px; }
+.kimi .partner-feed-heading h2 { font-size:18px; margin:0; }
+.kimi .partner-compose-jump { display:none; }
+.kimi .partner-compose .shout-compose { margin:0; padding:20px; scroll-margin-top:90px; border-radius:12px; }
+.kimi .shout-compose h2 { font-size:17px; margin:0 0 12px; }
+.kimi .shout-compose > p { margin:0 0 16px; font-size:12px; line-height:1.8; }
+.kimi .shout-compose form > p { font-size:12px; line-height:1.6; margin:8px 0 12px; }
+.kimi .shout-list { display:grid; gap:12px; }
+.kimi .shout-list .partner-post { margin:0; padding:20px; background:var(--paper); border:1px solid var(--line); border-radius:12px; }
+.kimi .partner-author { display:flex; align-items:center; gap:10px; margin-bottom:14px; }
+.kimi .partner-author > div { display:grid; gap:4px; min-width:0; }
+.kimi .partner-author strong { font-size:13px; overflow-wrap:anywhere; }
+.kimi .partner-author time { color:var(--muted); font-size:12px; }
+.kimi .shout-list .partner-post h3 { font-size:15px; line-height:1.7; margin:0 0 12px; }
+.kimi .shout-list .partner-post h3 a { overflow-wrap:anywhere; white-space:pre-wrap; }
+.kimi .partner-post .partner-expiry { font-size:12px; color:var(--muted); margin:0; }
+.kimi .partner-pagination { display:flex; align-items:center; justify-content:space-between; gap:10px; font-size:12px; margin-top:20px; }
+.kimi .person-profile { grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr); gap:24px; align-items:start; }
+.kimi .profile-avatar-line { flex-wrap:wrap; align-items:start; }
+.kimi .profile-avatar-line > .avatar { width:48px; height:48px; flex:none; font-size:18px; }
+.kimi .profile-avatar-line .copy-value { font-size:12px; line-height:1.6; overflow-wrap:anywhere; }
+.kimi .profile-avatar-line > strong small { font-size:11px; }
+.kimi .profile-summary .inline-definitions { margin:20px 0 0; display:grid; grid-template-columns:minmax(0,1fr); gap:0; }
+.kimi .profile-summary .inline-definitions > div { grid-template-columns:76px minmax(0,1fr); align-items:start; gap:12px; padding-block:12px; }
+.kimi .inline-definitions dt { font-size:12px; margin-bottom:4px; color:var(--muted); }
+.kimi .inline-definitions dd { margin:0; font-size:14px; }
+.kimi .profile-summary .contact-value p { flex:1 1 140px; min-width:0; margin:0; font-size:12px; }
+.kimi .profile-common > .profile-all-picks { display:block; grid-template-columns:none; padding:0; border:0; }
+.kimi .profile-summary .contact-value .button { width:44px; height:44px; min-height:44px; }
+.kimi .profile-summary blockquote { color:var(--ink); font-size:13px; line-height:1.7; }
+.kimi .profile-all-picks { margin-top:20px; }
+.kimi .profile-all-picks ul { margin:0; padding:0; list-style:none; }
+.kimi .profile-all-picks li { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:4px 10px; min-height:54px; padding:8px 0; font-size:13px; }
+.kimi .profile-all-picks li > span:first-child { grid-column:1; overflow-wrap:anywhere; }
+.kimi .profile-all-picks li > .profile-pick-meta { grid-column:1; display:flex; gap:10px; color:var(--muted); font-size:12px; }
+.kimi .profile-all-picks li > .music-copy { grid-column:2; grid-row:1 / 3; }
+.kimi .match-pick-group { min-width:0; margin:20px 0 0; }
+.kimi .match-pick-group h3 { font-size:15px; margin:0 0 12px; }
+.kimi .match-pick-group h4 { font-size:12px; color:var(--muted); margin:16px 0 6px; }
+.kimi .match-picks { display:grid; grid-template-columns:minmax(0,1fr); gap:0; padding:0; margin:0; list-style:none; }
+.kimi .match-picks > li { width:auto; min-width:0; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px 10px; align-items:center; padding:8px 0; border:0; border-bottom:1px solid var(--line-soft); border-radius:0; background:transparent; }
+.kimi .match-picks > li > a { grid-column:1; min-height:40px; display:flex; align-items:center; font-size:14px; overflow-wrap:anywhere; }
+.kimi .match-picks > li > span { grid-column:1; font-size:12px; color:var(--muted); overflow-wrap:anywhere; }
+.kimi .match-picks .music-term-choice { grid-column:2; grid-row:1 / 4; width:44px; min-height:44px; padding:0; }
+.kimi .match-stats { margin:16px 0; }
+.kimi .match-stats > p { font-size:13px; line-height:1.7; margin:8px 0; }
+.kimi .match-stats dl { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 16px; margin:12px 0; }
+.kimi .match-stats dl > div { min-width:0; display:grid; gap:4px; padding:8px 0; border-bottom:1px solid var(--line-soft); }
+.kimi .match-stats dt { font-size:12px; color:var(--muted); }
+.kimi .match-stats dd { margin:0; font-size:14px; overflow-wrap:anywhere; font-variant-numeric:tabular-nums; }
+.kimi .music-comparison { min-width:0; padding:24px; background:var(--paper); border:1px solid var(--line); border-radius:12px; }
+.kimi .music-comparison > h2 { font-size:18px; line-height:1.6; overflow-wrap:anywhere; }
+.kimi .music-comparison > .match-stats dl { grid-template-columns:repeat(3,minmax(0,1fr)); }
+@media (min-width:1400px) {
+ .kimi .people-grid { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:1100px) {
+ .kimi .people-grid, .kimi .circle-grid { grid-template-columns:minmax(0,1fr); }
+ .kimi .sparse-people-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+ .kimi .partner-layout { grid-template-columns:minmax(0,1fr); gap:24px; }
+ .kimi .partner-layout > .partner-compose { grid-column:1; grid-row:2; }
+ .kimi .partner-compose-jump { display:inline-flex; }
+}
+@media (max-width:768px) {
+ .kimi.people-page > .page-header { margin-bottom:20px; }
+ .kimi.people-page > .tabs { margin-bottom:20px; }
+ .kimi :is(.recommend-toolbar,.circle-toolbar) { flex-wrap:wrap; gap:12px; }
+ .kimi :is(.recommend-toolbar,.circle-toolbar) > .select-wrap { width:100%; }
+ .kimi :is(.sort-rules,.circle-rules) { margin-bottom:16px; }
+ .kimi .sparse-people-grid, .kimi .music-circle-singles { grid-template-columns:minmax(0,1fr); }
+ .kimi .people-lookup, .kimi .person-card.match-card, .kimi .circle-grid .music-circle, .kimi .shout-list .partner-post { padding:16px; }
+ .kimi .people-lookup input { font-size:16px; }
+ .kimi .people-summary { padding:12px; }
+ .kimi .people-summary > div { flex-direction:column; align-items:start; gap:4px; padding-inline:10px; }
+ .kimi .people-summary dd { font-size:18px; }
+ .kimi .person-profile { grid-template-columns:minmax(0,1fr); }
+ .kimi .music-comparison { padding:16px; }
+ .kimi .music-comparison > .match-stats dl { grid-template-columns:repeat(2,minmax(0,1fr)); }
+}

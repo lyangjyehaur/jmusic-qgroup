@@ -1,9 +1,11 @@
 import { errorText, uiText, displayLocale } from './language';
-import { useEffect,useRef,useState } from 'react';
+import { useContext,useEffect,useRef,useState } from 'react';
 import { Link,useLocation,useParams,useSearchParams } from 'react-router-dom';
 import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
-import { Button, Field } from './kimi-ui';
+import { Avatar, Button, Field } from './kimi-ui';
+import { ActionLink } from './action-link';
+import { History } from 'lucide-react';
 import { z } from 'zod';
 import { MusicShout, PublishMusicShout } from '@qgroup/contracts';
 import { musicText } from '@qgroup/domain';
@@ -11,7 +13,7 @@ import { ApiError } from './api';
 import { authHttp } from './auth';
 import { scopedHttp } from './http';
 import { MusicMemberAccess,type Member } from './member-access';
-import { Failure,Notice,PageIntro } from './shared';
+import { EmbeddedPageContext,Failure,Notice,PageIntro } from './shared';
 import { announceAccountChange } from './account-session';
 import { ContactValue } from './music-contact-value';
 import { CopyMusicValue } from './music-copy';
@@ -20,9 +22,12 @@ import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 import { parseMusicShoutDraft,type MusicShoutDraft as Draft } from './music-shout-record';
 export type Shout=z.infer<typeof MusicShout>;
-export function shoutDate(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?uiText('時間未記錄'):date.toLocaleString(displayLocale(),{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});}
+export function shoutDate(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?uiText('時間未記錄'):date.toLocaleString(displayLocale(),{year:'numeric',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit',hour12:false});}
+function shoutTimestamp(value:number){const date=new Date(value*1000);return Number.isNaN(date.getTime())?undefined:date.toISOString();}
 export function MusicShoutsPage({history=false}:{history?:boolean}){
-  return <><PageIntro title={history?'找搭子歷史':'找搭子'}/><div className="page-actions"><Link to="/people">回到同好</Link><Link to={history?'/people/shouts':'/people/shouts/history'}>{history?'目前找搭子':'找搭子歷史'}</Link></div>
+  const embedded=useContext(EmbeddedPageContext);
+  return <>{!embedded&&<><PageIntro title={history?'找搭子歷史':'找搭子'}/><Link className="back" to="/people">回到同好</Link></>}
+    <div className="partner-navigation"><ActionLink variant="ghost" to={history?'/people/shouts':'/people/shouts/history'} startIcon={<History size={16}/>}>{history?'目前找搭子':'找搭子歷史'}</ActionLink></div>
     <MusicMemberAccess purpose={uiText("使用找搭子")}>{viewer=><Shouts key={viewer.scope+':'+viewer.musicEpoch} viewer={viewer} history={history}/>}</MusicMemberAccess></>;
 }
 function Shouts({viewer,history}:{viewer:Member;history:boolean}){
@@ -32,15 +37,19 @@ function Shouts({viewer,history}:{viewer:Member;history:boolean}){
   const profile=useQuery({queryKey:['private',viewer.scope,'music',viewer.musicEpoch],queryFn:()=>scopedHttp(viewer.scope).requestContract('GET /api/v2/me/music',{})});
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
   return <>{query.isPending||!query.isFetchedAfterMount?<Notice>正在讀取找搭子…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>
-    <div className={history?'partner-history':'partner-layout'}>{!history&&profile.data&&<Compose key={profile.data.id} viewer={viewer} profileId={profile.data.id} nextAllowedAt={query.data.nextAllowedAt} serverTime={query.data.now} onDenied={()=>setDenied(true)}/>}
-    <section aria-label={history?'歷史找搭子名單':'目前找搭子名單'}><Heading level={2}>{history?'歷史':'目前'} · {query.data.total} 則</Heading>
+    <div className={history?'partner-history':'partner-layout'}>
+    <section className="partner-feed" aria-label={history?'歷史找搭子名單':'目前找搭子名單'}><div className="partner-feed-heading"><Heading level={2}>{history?'歷史':'目前'} · {query.data.total} 則</Heading>{!history&&profile.data&&<Button className="partner-compose-jump" aria-label="前往發布找搭子" variant="secondary" onClick={()=>{const panel=document.getElementById('shout-compose');panel?.scrollIntoView({behavior:'smooth',block:'start'});panel?.focus({preventScroll:true});}}>發布找搭子</Button>}</div>
       {history&&<Text size="sm">過期或由新發布取代的內容；最多保留最近 500 則。</Text>}
       {!query.data.items.length?<Notice>{offset?'這一頁已沒有內容，請返回上一頁。':history?'尚無歷史找搭子內容。':'目前沒有有效的找搭子內容。'}</Notice>:<ul className="shout-list">{query.data.items.map(item=><li key={item.id}><Surface className="shout-card partner-post">
+        <header className="partner-author"><span aria-hidden="true"><Avatar user={{name:item.name,avatar:item.name.slice(0,1),color:'var(--app-accent)'}} size="sm"/></span><div><strong>{item.mine?'我 · ':''}{item.name}</strong><time dateTime={shoutTimestamp(item.createdAt)}>{shoutDate(item.createdAt)}</time></div></header>
         <Heading level={3}><Link to={'/people/shouts/'+encodeURIComponent(item.id)+'?'+new URLSearchParams({from:location.pathname+location.search})}>{item.text}</Link></Heading>
-        <Text>{item.mine?'我 · ':''}{item.name} · {shoutDate(item.createdAt)}</Text><Text size="sm">{item.archivedAt===null?'有效至 '+shoutDate(item.expiresAt):'已歸檔 · '+shoutDate(item.archivedAt)}</Text>
+        <Text size="sm" className="partner-expiry">{item.archivedAt===null?'有效至 '+shoutDate(item.expiresAt):'已歸檔 · '+shoutDate(item.archivedAt)}</Text>
       </Surface></li>)}</ul>}
-      <div className="page-actions"><Button variant="secondary" disabled={offset<=0} onClick={()=>setParams({offset:String(Math.max(0,offset-10))})}>上一頁</Button><Button variant="secondary" disabled={offset+10>=query.data.total} onClick={()=>setParams({offset:String(offset+10)})}>下一頁</Button></div>
-    </section></div>
+      {(query.data.total>10||offset>0)&&<div className="page-actions partner-pagination"><Button variant="secondary" disabled={offset<=0} onClick={()=>setParams({offset:String(Math.max(0,offset-10))})}>上一頁</Button><span>第 {Math.floor(offset/10)+1} 頁</span><Button variant="secondary" disabled={offset+10>=query.data.total} onClick={()=>setParams({offset:String(offset+10)})}>下一頁</Button></div>}
+    </section>
+    {!history&&profile.data&&<aside className="partner-compose"><Compose key={profile.data.id} viewer={viewer} profileId={profile.data.id} nextAllowedAt={query.data.nextAllowedAt} serverTime={query.data.now} onDenied={()=>setDenied(true)}/></aside>}
+    {!history&&profile.error&&<Failure error={profile.error} retry={()=>void profile.refetch()}/>}
+    </div>
   </>}</>;
 }
 function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Member;profileId:string;nextAllowedAt:number;serverTime:number;onDenied:()=>void}){
@@ -77,7 +86,7 @@ function Compose({viewer,profileId,nextAllowedAt,serverTime,onDenied}:{viewer:Me
   }
   if(denied)return <Notice>目前帳號或成分權限已變更。<Button onClick={()=>window.location.reload()}>重新確認權限</Button></Notice>;
   return <><DraftFeedback form={{...record,message:message||record.message}}/>
-    <Surface className="shout-compose form-section"><Heading level={2}>發布找搭子</Heading><Text id="shout-publish-help" size="sm">內容、成分稱呼與聯絡 QQ 會提供給成分會員。每 24 小時一則，30 天後歸檔；新發布會取代本人上一則。</Text>
+    <Surface id="shout-compose" tabIndex={-1} className="shout-compose form-section"><Heading level={2}>發布找搭子</Heading><Text id="shout-publish-help" size="sm">內容、成分稱呼與聯絡 QQ 會提供給成分會員。每 24 小時一則，30 天後歸檔；新發布會取代本人上一則。</Text>
       <form onSubmit={event=>{event.preventDefault();void publish();}}><Field label="找搭子內容"><textarea id="shout-content" rows={4} value={draft.text} maxLength={4096} disabled={locked} aria-describedby="shout-publish-help shout-count" onChange={event=>{record.change({...draft,text:event.target.value});setMessage('');}}/></Field>
         <Text id="shout-count" size="sm">{count} / 140 字</Text>{cooling&&<Text role="status">下次可發布：{shoutDate(nextAllowedAt)}</Text>}
         <Button type="submit" loading={busy} disabled={draft.pending?busy||unavailable:locked||cooling||!normalized||count>140}>{draft.pending?'確認發布結果':'發布找搭子'}</Button>

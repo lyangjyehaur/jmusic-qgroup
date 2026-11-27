@@ -360,6 +360,7 @@ export const analyticsManifest = {
     "section-8",
     "section-9",
     "self-signup-note",
+    "shout-compose",
     "shout-content",
     "shout-count",
     "shout-period",

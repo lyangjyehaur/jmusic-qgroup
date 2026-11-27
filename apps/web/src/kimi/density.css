@@ -17,6 +17,10 @@ html[data-density=compact] .kimi .detail-layout { gap:24px; }
 html[data-density=compact] .kimi .inbox-section { margin-bottom:16px; }
 html[data-density=compact] .kimi .settings-navigation > a { min-height:44px; }
 html[data-density=compact] .kimi :is(th,td) { padding-block:8px; }
+html[data-density=compact] .kimi :is(.people-grid,.circle-grid) { gap:12px; }
+html[data-density=compact] .kimi .common-terms > div { min-height:48px; padding-block:2px; }
+html[data-density=compact] .kimi :is(.people-lookup,.music-circle,.shout-compose,.shout-list .partner-post) { padding:14px; }
+html[data-density=compact] .kimi .people-summary { padding-block:10px; margin-bottom:16px; }
 @media(max-width:768px) {
  html[data-density=compact] .kimi .activity-row { min-height:0; padding-block:12px; }
  html[data-density=compact] .kimi .detail-layout { gap:16px; }
