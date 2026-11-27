@@ -17,7 +17,7 @@ test('catalog selection prompts for four levels, keeps the legacy default on clo
 });
 
 test('quick-add prompts for sub terms and preserves direct domain selection',async({page,context})=>{
- await login(context);await page.goto('/me/music');await toggleMusicTerm(page,'J-POP');await expect(page.locator('.music-level-dialog')).toHaveCount(0);await expect(page.getByLabel('J-POP喜歡程度')).toHaveCount(0);
+ await login(context);await page.goto('/me/music');await toggleMusicTerm(page,'J-POP');await expect(page.locator('.music-level-dialog')).toHaveCount(0);await expect(page.getByLabel('J-POP喜歡程度')).toContainText('常聽');
  await page.locator('.quick-add input').fill('Aimer');await page.locator('.quick-add-results').getByRole('button').filter({hasText:'Aimer'}).click();await chooseMusicLevel(page,'聽過一些');
  await expectMusicTerm(page,'Aimer');await expect(page.getByLabel('Aimer喜歡程度')).toContainText('聽過一些');expect((await durableRows(page)).filter(row=>row.key.includes('music:v1:'))).toHaveLength(1);
 });

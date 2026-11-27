@@ -51,7 +51,7 @@
 .kimi .profile-banner > .action-link { margin-left: auto; }.kimi .settings-links > a::after { display: none; }
 .kimi .selection-summary dl { display: block; }.kimi .selection-summary .save-message { margin-block: 12px; }
 .kimi .selection-row select { width: 100%; min-height: 34px; padding: 5px 8px; background: var(--paper-strong); color: var(--ink); border: 1px solid var(--line); border-radius: 7px; }
-.kimi .selection-row-domain { grid-template-columns: minmax(0,1fr) 30px; }.kimi .selection-term { flex-wrap: wrap; }
+.kimi .selection-term { flex-wrap: wrap; }
 .kimi .remove-selection { min-width: 30px; min-height: 44px; }.kimi .selection-summary .page-actions { margin-top: 16px; flex-wrap: wrap; }
 .kimi .selection-summary .page-actions a { font-size: 12px; color: var(--moss); }
 .kimi .music-stats { border: 0; margin-block: 0 28px; }.kimi .music-stats > div { padding: 0; border: 0; }
@@ -91,7 +91,6 @@
  .kimi .event-facts, .kimi .detail-aside { grid-template-columns: minmax(0,1fr); }.kimi .term-row { grid-template-columns: 26px minmax(0,1fr) 62px 18px; }
  .kimi .term-row .button { grid-column: 3; grid-row: 2; }.kimi .term-row .row-arrow { grid-column: 4; grid-row: 1 / span 2; }
  .kimi .term-users { grid-column: 3; grid-row: 1; }.kimi .term-category { grid-column: 2; grid-row: 2; }.kimi .term-rank { grid-row: 1 / span 2; }
- .kimi .selection-row-domain { grid-template-columns: minmax(0,1fr) 30px; }
  .kimi .participant-row { grid-template-columns: 32px minmax(0,1fr) auto; }.kimi .participant-row .participant-actions { grid-column: 1 / -1; }
 
  .kimi .mobile-selection-save { bottom: calc(var(--mobile-dock-height) + var(--visual-viewport-inset,0px)); background: var(--paper); z-index: 22; }
@@ -114,9 +113,9 @@
 .kimi .me-activity-list .activity-row { grid-template-columns: 42px minmax(0,1fr) 50px; }.kimi .me-activity-list .activity-capacity, .kimi .me-activity-list .activity-status { display: none; }.kimi .me-activity-list .activity-meta { display: grid; }
 .kimi .me-activity-list > article { padding-inline: 0; }.kimi .me-main { min-width: 0; }.kimi .me-activity-list .activity-date strong { font-size: 23px; }
 .kimi .settings-links a { color: var(--ink); }.kimi .person-profile .profile-common ul { list-style: none; padding: 0; }.kimi .person-profile .profile-common li { padding: 12px 0; border-bottom: 1px solid var(--line-soft); }
-.kimi .selection-inline-choices { margin-top: 20px; }.kimi .selection-inline-choices .selection-row { grid-template-columns: minmax(0,1fr) 130px 30px; }.kimi .selection-inline-choices .selection-row-domain { grid-template-columns: minmax(0,1fr) 30px; }
+.kimi .selection-inline-choices { margin-top: 20px; }.kimi .selection-inline-choices .selection-row { grid-template-columns: minmax(0,1fr) 130px 30px; }
 .kimi .term-selection .selection-summary { position: static; }.kimi .catalog-draft-summary { max-width: 360px; margin-top: 24px; }
-@media(max-width:768px){.kimi-shell .main > .retained-page > .kimi { padding: 22px 16px calc(var(--mobile-dock-height) + 28px); }.kimi .next-step-panel { display: block; }.kimi .selection-inline-choices .selection-row { grid-template-columns: minmax(0,1fr) 100px 30px; }.kimi .selection-inline-choices .selection-row-domain { grid-template-columns: minmax(0,1fr) 30px; }.kimi .music-filters { flex-wrap: wrap; }.kimi .music-filters .select-wrap { flex: 1; min-width: 130px; }.kimi .me-activity-list .activity-row { grid-template-columns: 36px minmax(0,1fr) 30px; }}
+@media(max-width:768px){.kimi-shell .main > .retained-page > .kimi { padding: 22px 16px calc(var(--mobile-dock-height) + 28px); }.kimi .next-step-panel { display: block; }.kimi .selection-inline-choices .selection-row { grid-template-columns: minmax(0,1fr) 100px 30px; }.kimi .music-filters { flex-wrap: wrap; }.kimi .music-filters .select-wrap { flex: 1; min-width: 130px; }.kimi .me-activity-list .activity-row { grid-template-columns: 36px minmax(0,1fr) 30px; }}
 
 .kimi .next-step-actions { width: 100%; }.kimi .selection-summary .editor-actions { position: static; padding: 0; border: 0; background: none; box-shadow: none; }.kimi .selection-summary .editor-actions .button, .kimi .selection-summary .saved-actions .button { width: 100%; }
 /* Reset only legacy layout classes that collide with the imported prototype. */

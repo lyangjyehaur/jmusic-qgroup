@@ -4770,11 +4770,12 @@
     },
     {
       "capability_id": "M04",
-      "name": "細分四級熟悉度與領域簡化",
+      "name": "領域與細分四級熟悉度",
       "new_entry": "成分編輯",
-      "required_behavior": "本命／常聽／聽過一些／只聽幾首；領域無程度 UI；舊資料不無聲改值",
+      "required_behavior": "本命／常聽／聽過一些／只聽幾首；領域與細分均可調整；舊資料不無聲改值",
       "legacy_evidence_group": "音樂、成分選取",
       "implementation": [
+        "apps/web/src/kimi-music-editor.tsx",
         "apps/api/src/repositories.ts",
         "apps/web/src/music-editor.tsx",
         "packages/domain/src/music-search.ts",
@@ -4783,11 +4784,13 @@
         "apps/web/src/music.tsx"
       ],
       "behavior_evidence": [
+        "apps/web/tests/domain-familiarity.spec.ts",
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "data_evidence": [
+        "docs/unified-rebuild/domain-familiarity-restoration.md",
         "apps/api/src/app.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/224-music-parent-acceptance.md"
@@ -4798,6 +4801,7 @@
         "docs/unified-rebuild/224-music-parent-acceptance.md"
       ],
       "ux_evidence": [
+        "apps/web/tests/domain-familiarity.spec.ts",
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",

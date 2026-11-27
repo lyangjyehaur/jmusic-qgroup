@@ -18,7 +18,7 @@ test('uses the supplied prototype activity toolbar with complete server filterin
 
 test('keeps domains independent, edits prototype familiarity groups, and saves through the existing durable API',async({page,context})=>{
  await login(context);await page.goto('/me/music');await add(page,'J-POP');await add(page,'Aimer');
- await expect(page.getByLabel('J-POP喜歡程度')).toHaveCount(0);await chooseOption(page,'Aimer喜歡程度','4');
+ await expect(page.getByLabel('J-POP喜歡程度')).toContainText('常聽');await chooseOption(page,'Aimer喜歡程度','4');
  await expect(page.locator('.familiarity-group').filter({has:page.getByRole('heading',{name:'本命',exact:true})})).toContainText('Aimer');
  await page.locator('.selection-summary').getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
  const viewer=await(await context.request.get('/api/v2/session')).json(),saved=await(await context.request.get('/api/v2/me/music',{headers:{'X-Account-Scope':viewer.scope}})).json();expect(saved.selections).toEqual([{entryId:'main-0',level:3},{entryId:'sub-2',level:4}]);
@@ -31,7 +31,7 @@ test('prototype catalog rows select real terms, keep dialog controls and restore
  const dialog=page.getByRole('dialog');await expect(dialog).toBeVisible();await chooseOption(page,'Aimer喜歡程度','1');
  await dialog.getByRole('button',{name:'保存我的成分',exact:true}).click();await expect(dialog.getByText('已保存。',{exact:true})).toBeVisible();
  await dialog.getByRole('button',{name:'返回詞庫',exact:true}).click();await expect(dialog).toHaveCount(0);await expectControlValue(page.getByLabel('搜尋音樂詞條',{exact:true}), 'Aimer');
- await page.getByRole('tab',{name:'完整詞庫',exact:true}).click();await expect(page).toHaveURL(/library=all/);await page.getByRole('tab',{name:'氣泡視圖',exact:true}).click();await expect(page.locator('.bubble-canvas')).toBeVisible();await expect(page.locator('.term-bubble')).toHaveCount(1);await expect(page.locator('.term-bubble')).toContainText('Aimer');
+ await page.getByRole('tab',{name:'完整詞庫',exact:true}).click();await expect(page).toHaveURL(/library=all/);await page.getByRole('button',{name:'細分氣泡',exact:true}).click();const bubbles=page.getByRole('group',{name:'細分氣泡圖',exact:true});await expect(bubbles).toBeVisible();await expect(bubbles.getByRole('link')).toHaveCount(1);await expect(bubbles.getByRole('link')).toHaveAccessibleName(/^Aimer，/);
 });
 
 for(const width of [360,390,768,1440])test('prototype pages preserve responsive geometry at '+width+'px',async({page,context},info)=>{

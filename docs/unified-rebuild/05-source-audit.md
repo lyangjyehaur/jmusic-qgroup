@@ -142,7 +142,7 @@ python3 docs/unified-rebuild/build_source_audit.py --commit 8da877857f163853c449
 | --- | --- | --- |
 | 「只有發起者可結算」過時 | permissions.SCOPES 含 settlement，management.accept 支援唯一指定結算人，settlements.context 驗 settlement | E13、S08、F02 保留指定結算人；不能依舊 P3／P4 文件降級 |
 | 匹配公式註解不是現況 | match_stats docstring 寫 30/70 與冷門加權，但實際 parts 為 .55/.45、程度加權 | 以實際輸出鎖 fixtures；另保留冷門統計與排序，改公式另案 |
-| 領域沒有熟悉度操作但舊資料仍有 level | 選取 UI 區分 kind；norm_selection／match_stats 仍處理 level | UI 保持無領域程度，遷移不直接刪 level；規格化時需驗證不改分數 |
+| 舊版領域也有四級熟悉度，先前審核漏判 | `736e964` 的 renderSelection 對領域與細分均建立四檔按鈕；只有點詞條彈窗區分 kind，norm_selection／match_stats 均處理 level | 恢復領域程度操作與展示；保留既有 level、預設值及匹配公式 |
 | 私人留言方向／排序存在差異 | note_allowed 依「viewer 的預設推薦首位」判 other；matches 則只保留當次排序主榜首位 note | 明確列為授權問題，P0 補測固定 viewer／owner／sort 規則；不得直接套 UI「只給最像我的人」擴公開 |
 | 圈子渲染不可達 | renderClusters 找 clustersCard，現有 index 無該節點；API 仍可用 | M22 保留後端，新 UI 提供明確入口，分開記新增體驗 |
 | 兩種分房沒有寫回關係 | music qgroup_split／qgroup_rooms 只算結果，主站 rooms.save_plan 另寫正式快照 | 增加採用預覽／提交，新舊語意都保留，不自動記錢 |
