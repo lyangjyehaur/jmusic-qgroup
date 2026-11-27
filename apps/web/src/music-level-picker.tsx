@@ -17,7 +17,7 @@ export function musicLevelLabel(value: number) {
 
 /** One picker serves quick-add, catalog rows and nested term details. */
 export function MusicLevelPicker({ selection: form }: { selection: MusicSelection }) {
-  const entry = form.entries.find(entry => entry.id === form.levelEntryId && entry.kind === 'sub');
+  const entry = form.entries.find(entry => entry.id === form.levelEntryId);
   if (!entry || !form.selected.has(entry.id)) return null;
   return <Dialog open title={'「' + entry.name + '」的喜歡程度'}
     description="關閉會保留目前選擇；保存成分後才會同步。"

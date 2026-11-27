@@ -20,8 +20,8 @@ export async function toggleMusicTerm(page:Page,name:string){
  if(await selected.count()){await selected.click();return;}
  await page.locator('.quick-add input').fill(name);
  const add=page.locator('.quick-add-results').getByRole('button').filter({hasText:name});
- const sub=/細分|细分/.test(await add.innerText());await add.click();
- if(sub)await chooseMusicLevel(page);
+ await add.click();
+ await chooseMusicLevel(page);
 }
 export async function chooseMusicLevel(page:Page,label='常聽'){
  const localized=await page.locator('html').getAttribute('lang')==='zh-Hans'?({'本命':'本命','常聽':'常听','聽過一些':'听过一些','只聽過幾首':'只听过几首'}[label]??label):label;
@@ -33,9 +33,7 @@ export async function closeMusicLevel(page:Page){
  await page.locator('.music-level-dialog').waitFor({state:'hidden'});
 }
 export async function removeMusicTermFromDetail(page:Page){
- const domain=page.getByRole('button',{name:'取消選取',exact:true});
- const sub=page.getByRole('button',{name:'調整喜歡程度',exact:true});
- await domain.or(sub).click();
+ await page.getByRole('button',{name:'調整喜歡程度',exact:true}).click();
  if(await page.locator('.music-level-dialog').count()){
   await page.locator('.music-level-dialog').getByRole('button',{name:'從已選中移除',exact:true}).click();
   await page.locator('.music-level-dialog').waitFor({state:'hidden'});

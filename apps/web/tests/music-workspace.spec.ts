@@ -62,9 +62,9 @@ test('uses pinyin, kana initials and alias search with keyboard clearing, classi
   await chooseOption(page,'詞庫類型','main');
   await expect(page.getByRole('link',{name:'米津玄師',exact:true})).toHaveCount(0);
   await expect(page.getByRole('combobox',{name:'細分類別',exact:true})).toHaveCount(0);
-  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();
+  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();await closeMusicLevel(page);
   await page.getByRole('link',{name:/^我的成分/}).click();
-  await expect(page.getByLabel('J-POP喜歡程度')).toHaveCount(0);
+  await expect(page.getByLabel('J-POP喜歡程度')).toContainText('常聽');
   await page.getByRole('button',{name:'收合領域',exact:true}).click();
   await expect(page.getByRole('button',{name:'移除J-POP',exact:true})).toBeHidden();
   await page.getByRole('button',{name:'展開領域',exact:true}).click();
@@ -137,7 +137,9 @@ test('keeps mobile selection, long labels and save controls usable and hides the
 test('enforces separate 5/15 limits across both pages and allows removal without changing other levels', async ({ page, context }) => {
   await login(context); await page.goto('/me/music');
   for (const name of ['J-POP', '動畫歌曲', '搖滾', '電子', '獨立音樂']) await toggleMusicTerm(page,name);
-  await toggleMusicTerm(page,'古典');
+  await page.locator('.quick-add input').fill('古典');
+  await page.locator('.quick-add-results').getByRole('button').filter({hasText:'古典'}).click();
+  await expect(page.locator('.music-level-dialog')).toHaveCount(0);
   await expect(page.getByText('領域最多 5 項、細分最多 15 項，合計最多 20 項。', { exact: true })).toBeVisible();
   await expectMusicTerm(page,'古典',false);
   const catalog=await(await context.request.get('/api/v2/music/catalog')).json();

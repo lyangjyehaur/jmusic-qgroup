@@ -62,14 +62,11 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   function edit(next:DraftValue){record.change(next);setMessage('');}
   function toggle(entry:CatalogEntry){
     if(locked)return;
-    if(selected.has(entry.id)){
-      if(entry.kind==='sub')setLevelEntryId(entry.id);
-      else edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entry.id)});
-    }
+    if(selected.has(entry.id))setLevelEntryId(entry.id);
     else if((entry.kind==='main'&&mainCount>=5)||(entry.kind==='sub'&&subCount>=15)||selected.size>=20)setMessage(uiText("領域最多 5 項、細分最多 15 項，合計最多 20 項。"));
     else {
       edit({...draft,selections:[...draft.selections,{entryId:entry.id,level:3}]});
-      if(entry.kind==='sub')setLevelEntryId(entry.id);
+      setLevelEntryId(entry.id);
     }
   }
   async function save(){
