@@ -39,10 +39,6 @@
   background: var(--app-surface);
   border-left-color: var(--app-contour);
 }
-/* The search dialog has no tinted panel behind the borderless field wrapper. */
-:root[data-theme] .kimi.yj-dialog .global-search-form .yj-search-wrap {
-  border: 1px solid var(--app-control-line);
-}
 @media (max-width: 768px) {
   .kimi .yj-tabs-list { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
   .kimi .activity-row { padding-block: 14px; gap: 8px; }

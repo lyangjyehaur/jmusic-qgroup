@@ -118,7 +118,6 @@
 .kimi .term-selection .selection-summary { position: static; }.kimi .catalog-draft-summary { max-width: 360px; margin-top: 24px; }
 @media(max-width:768px){.kimi-shell .main > .retained-page > .kimi { padding: 22px 16px calc(var(--mobile-dock-height) + 28px); }.kimi .next-step-panel { display: block; }.kimi .selection-inline-choices .selection-row { grid-template-columns: minmax(0,1fr) 100px 30px; }.kimi .selection-inline-choices .selection-row-domain { grid-template-columns: minmax(0,1fr) 30px; }.kimi .music-filters { flex-wrap: wrap; }.kimi .music-filters .select-wrap { flex: 1; min-width: 130px; }.kimi .me-activity-list .activity-row { grid-template-columns: 36px minmax(0,1fr) 30px; }}
 
-.kimi .page-actions.search-filters > a:not(.action-link) { display: inline-flex; align-items: center; justify-content: center; min-width: 44px; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 6px; }
 .kimi .next-step-actions { width: 100%; }.kimi .selection-summary .editor-actions { position: static; padding: 0; border: 0; background: none; box-shadow: none; }.kimi .selection-summary .editor-actions .button, .kimi .selection-summary .saved-actions .button { width: 100%; }
 /* Reset only legacy layout classes that collide with the imported prototype. */
 .kimi.music-page, .kimi.people-page { display: block; }
@@ -182,11 +181,9 @@
 .kimi .editor-return:empty { display:none; }
 .kimi .music-profile-tools { margin-block:24px; font-size:12px; }
 
-.kimi .global-search-form { display:flex; align-items:center; gap:12px; margin-bottom:20px; }
-.kimi .global-search-form > .search-input { flex:1; min-width:0; }
-.kimi .search-groups > section { padding:16px 0; }
-.kimi .search-groups > section > h2 { font-size:14px; color:var(--muted); margin-bottom:8px; }
-.kimi .search-groups ul { list-style:none; padding:0; margin:0; }
+/* SearchInput supplies a Yahha clear button; do not show a second native one. */
+.kimi .yj-search-input::-webkit-search-cancel-button,
+.kimi .yj-search-input::-webkit-search-decoration { -webkit-appearance:none; appearance:none; }
 .kimi .music-entry-members > li { display:grid; grid-template-columns:30px minmax(0,1fr) auto; align-items:center; gap:6px 10px; padding:12px 0; }
 .kimi .music-entry-members > li > .avatar { grid-row:1 / 3; }
 .kimi .music-entry-members > li > p { grid-column:2; font-size:10px; }

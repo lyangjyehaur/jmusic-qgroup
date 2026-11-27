@@ -1,0 +1,46 @@
+/* Keep route links and Yahha controls; scope layout to the search dialog. */
+.kimi .global-search-content { min-width:0; }
+.kimi .global-search-form { display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:8px; max-width:none; margin:0 0 16px; }
+.kimi .global-search-form > .search-input { min-width:0; }
+.kimi .global-search-form .yj-search-wrap,
+.kimi .global-search-form .yj-search-input { min-height:44px; }
+.kimi .global-search-form .yj-search-input { font-size:14px; }
+.kimi .global-search-form .search-input .icon-button { width:44px; height:44px; min-height:44px; }
+.kimi .global-search-form > .button { min-height:44px; min-width:64px; padding-inline:16px; }
+.kimi .search-filters { display:grid; grid-template-columns:repeat(4,auto); justify-content:start; gap:4px; margin:0 0 20px; padding:0 0 12px; border-bottom:1px solid var(--line); }
+.kimi .search-filters > .action-link { min-width:44px; min-height:44px; padding:8px 14px; border:1px solid transparent; border-radius:var(--yahha-radius-option); color:var(--muted); font-size:13px; white-space:nowrap; box-shadow:none; }
+.kimi .search-filters > .action-link:hover { color:var(--moss); background:var(--moss-soft); text-decoration:none; }
+.kimi .search-filters > .action-link[aria-current=page] { color:var(--moss); background:var(--moss-soft); border-color:var(--app-contour); font-weight:600; }
+.kimi .global-search-content .search-groups { grid-template-columns:minmax(0,1fr); gap:24px; margin:0; }
+.kimi .search-groups > section { min-width:0; padding:0; }
+.kimi .search-group-header { display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:4px 12px; min-height:44px; border-bottom:1px solid var(--line); }
+.kimi .search-group-header > h2 { display:flex; align-items:baseline; gap:8px; margin:0; font-size:14px; color:var(--ink); }
+.kimi .search-result-count { color:var(--muted); font-size:12px; font-weight:400; font-variant-numeric:tabular-nums; }
+.kimi .search-more { display:inline-flex; align-items:center; justify-content:end; gap:4px; min-height:44px; color:var(--moss); font-size:12px; text-decoration:none; }
+.kimi .search-more:hover { color:var(--moss-dark); text-decoration:none; }
+.kimi .search-groups ul { list-style:none; padding:0; margin:0; }
+.kimi .search-groups li { padding:0; border:0; }
+.kimi .search-groups .global-result { display:flex; align-items:center; gap:12px; min-height:72px; padding:12px 4px; border:0; border-bottom:1px solid var(--line-soft); color:var(--ink); text-decoration:none; border-radius:0; }
+.kimi .search-groups .global-result:hover,
+.kimi .search-groups .global-result:focus-visible { background:var(--moss-soft); text-decoration:none; }
+.kimi .search-result-icon { display:inline-flex; align-items:center; justify-content:center; flex:none; width:36px; height:36px; border-radius:var(--yahha-radius-option); color:var(--moss); background:var(--moss-soft); }
+.kimi .search-groups .global-result > .search-result-copy { display:grid; flex:1; min-width:0; gap:3px; }
+.kimi .search-result-copy > strong { font-size:14px; line-height:1.5; white-space:normal; overflow:visible; overflow-wrap:anywhere; }
+.kimi .search-result-copy .music-translation { margin:0; font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.kimi .search-result-meta { display:flex; align-items:baseline; flex-wrap:wrap; gap:2px 12px; color:var(--muted); font-size:12px; line-height:1.5; overflow-wrap:anywhere; }
+.kimi .global-result > .search-result-kind { flex:none; }
+.kimi .search-result-kind > .badge { font-size:10px; color:var(--muted); background:transparent; border-color:var(--line); }
+.kimi .search-result-arrow { flex:none; color:var(--muted); }
+.kimi .search-empty { margin:0; padding:14px 4px; color:var(--muted); font-size:13px; }
+.kimi .search-access { display:flex; align-items:center; flex-wrap:wrap; gap:4px 12px; padding-block:4px; }
+.kimi .search-access .search-empty { padding-block:8px; }
+.kimi .search-access > .action-link { min-height:44px; color:var(--moss); }
+.kimi .search-pagination { display:flex; align-items:center; justify-content:end; flex-wrap:wrap; gap:8px; margin-top:20px; }
+.kimi .search-pagination .action-link { min-height:44px; }
+@media(max-width:639px) {
+ .kimi .global-search-form .yj-search-input { font-size:16px; }
+ .kimi .search-filters { grid-template-columns:repeat(4,minmax(0,1fr)); justify-content:stretch; }
+ .kimi .search-filters > .action-link { padding-inline:6px; font-size:12px; }
+ .kimi .search-groups .global-result { gap:10px; }
+ .kimi .search-result-icon { width:32px; height:32px; }
+}
