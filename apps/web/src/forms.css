@@ -1,4 +1,14 @@
 /* Shared form and dialog geometry; field shapes use Yahha field tokens. */
+.kimi .music-translation { display:block; color:var(--muted); font-size:12px; font-weight:400; overflow-wrap:anywhere; }
+.music-name-fields { border:0; padding:0; margin:20px 0; min-width:0; }
+.music-name-fields legend { font-weight:600; margin-bottom:12px; }
+.music-name-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+.music-alias-heading,.music-alias-row { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.music-alias-heading { margin:16px 0 8px; }
+.music-alias-list { display:grid; gap:12px; }
+.music-alias-row > :first-child { flex:1; min-width:0; }
+.music-alias-row > .button { flex:none; align-self:end; }
+@media(max-width:600px) { .music-name-grid { grid-template-columns:minmax(0,1fr); } }
 .kimi .music-level-options { display:grid; gap:8px; }
 .kimi .music-level-options .button { display:flex; justify-content:space-between; width:100%; min-height:64px; padding:12px 16px; text-align:start; }
 .kimi .music-level-options .button > span { display:grid; gap:4px; }

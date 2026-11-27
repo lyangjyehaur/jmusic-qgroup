@@ -151,7 +151,7 @@ for (const command of ['create', 'update', 'delete'] as const)
         .locator('header')
         .getByRole('link', { name: /^收件匣/ })
         .click();
-      await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
+      await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
       await page
         .getByRole('link', {
           name: command === 'create' ? '建立詞條' : command === 'delete' ? '刪除詞條' : '編輯詞條',
@@ -233,7 +233,7 @@ test('preserves selection drafts while creating terms, isolates switched account
   await page.goto('/me/music');
   await toggleMusicTerm(page, 'YOASOBI');
   await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
-  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await page.getByRole('link', { name: '建立詞條', exact: true }).click();
   await field(page).fill('自己的詞條');
   await save(page);
@@ -241,7 +241,7 @@ test('preserves selection drafts while creating terms, isolates switched account
   await expectMusicTerm(page,'YOASOBI',true);
   await expectMusicTerm(page,'自己的詞條',false);
   await page.getByRole('tab', { name: '我的詞條', exact: true }).click();
-  await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
+  await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await page.getByRole('link', { name: '建立詞條', exact: true }).click();
   await field(page).fill('小青尚未送出');
   await login(context, 'bob');

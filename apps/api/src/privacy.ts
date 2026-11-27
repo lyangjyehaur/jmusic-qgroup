@@ -128,7 +128,7 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
         db.prepare('DELETE FROM music_shout_authors').run();
       }
       if(entry.command==='reset_music')for(const id of entry.entries){
-        db.prepare("DELETE FROM music_documents WHERE kind='entry_source' AND json_extract(payload_json,'$.entryId')=?").run(id);
+        db.prepare("DELETE FROM music_documents WHERE kind IN ('entry_source','entry_names') AND json_extract(payload_json,'$.entryId')=?").run(id);
         db.prepare('DELETE FROM music_selections WHERE entry_id=?').run(id);
         db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
         db.prepare('DELETE FROM music_entries WHERE id=?').run(id);

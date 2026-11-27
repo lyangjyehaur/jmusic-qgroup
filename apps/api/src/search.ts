@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { musicProfileActiveSQL, type DB } from '@qgroup/database';
 import { SearchQuery, SearchResults } from '@qgroup/contracts';
-import { createMusicSearch, DomainError, musicEntryKey } from '@qgroup/domain';
+import { createMusicSearch, createMusicSearchRank, DomainError, musicEntryKey } from '@qgroup/domain';
 import { requireActivityAccess } from './activity-access';
 import { getActivity, getProfile } from './repositories';
 import { musicCatalog } from './music-catalog';
@@ -24,8 +24,8 @@ export function registerSearch(app: FastifyInstance, db: DB, security: Security,
       return [row.title, row.location, row.category].some(value => musicEntryKey(value).includes(key));
     });
     const activityPage = page(activities, number('activities'));
-    const entries = musicCatalog(db, now()).entries, match = createMusicSearch(entries);
-    const music = entries.filter(entry => match(entry.id, query.q)).map(({ id, name, kind, category }) => ({ id, name, kind, category }));
+    const entries = musicCatalog(db, now()).entries, rank = createMusicSearchRank(entries);
+    const music = entries.filter(entry => Number.isFinite(rank(entry.id, query.q))).sort((a,b)=>rank(a.id,query.q)-rank(b.id,query.q)).map(({ id, name, kind, category, names, translations }) => ({ id, name, kind, category, ...(names?{names,translations}:{}) }));
     const access = device.kind !== 'member' ? 'login_required' : !getProfile(db, device.id) ? 'music_required' : 'ready';
     // Check the viewer's music qualification before reading any member names.
     const profiles = access === 'ready' ? db.prepare(`SELECT p.id,${musicNameSQL} name FROM music_profiles p ${musicNameJoins}

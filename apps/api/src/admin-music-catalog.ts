@@ -4,11 +4,12 @@ import { randomUUID } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import { musicCreatedIds,type DB } from '@qgroup/database';
 import { EmptyHttpQuery, AdminMusicCatalog,AdminMusicEntryCommand,AdminMusicEntryResult } from '@qgroup/contracts';
-import { DomainError,musicEntryKey,musicText,mergeMusicAliases,mergeMusicSelections,replaceMusicId } from '@qgroup/domain';
+import { DomainError,musicEntryKey,musicText,mergeMusicAliases,mergeMusicSelections,replaceMusicId,musicNameAliases,emptyMusicNames } from '@qgroup/domain';
 import { z } from 'zod';
 import type { AdminSecurity } from './admin-security';
 import { musicCatalog,entryCategories } from './music-catalog';
 import { hash } from './security';
+import { normalizeMusicEntryNames, saveMusicEntryNames, removeMusicEntryNames } from './music-entry-names';
 
 const profiles=(db:DB)=>db.prepare(`SELECT id,revision FROM music_profiles WHERE ${musicProfileActiveSQL('music_profiles')} ORDER BY id`).all() as {id:string;revision:number}[];
 export function adminMusicCatalog(db:DB,now:Date){
@@ -19,6 +20,7 @@ export function adminMusicCatalog(db:DB,now:Date){
   const revision=hash(JSON.stringify([
     db.prepare('SELECT e.*,d.category,d.aliases_json,d.created_by,d.created_at_json,d.updated_at_json FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id ORDER BY e.id').all(),
     db.prepare('SELECT * FROM music_selections ORDER BY profile_id,position').all(),members,created,
+    db.prepare("SELECT payload_json FROM music_documents WHERE kind='entry_names' ORDER BY position").all(),
   ]));
   return AdminMusicCatalog.parse({entries,revision,categories:[...new Set(['领域',...entryCategories,...entries.map(e=>e.category)])]});
 }
@@ -70,24 +72,28 @@ export function registerAdminMusicCatalog(app:FastifyInstance,db:DB,admin:AdminS
     const id=before?.id??'e_'+randomUUID().replaceAll('-','');let targetId='',affectedProfiles=0;
     if(input.command==='create'||input.command==='update'){
       const name=checkName(input.name,current.entries,before?.id);
+      const names=normalizeMusicEntryNames(input.names,before,name,current.entries,before?.id),aliases=musicNameAliases(name,names);
       const category=before&&input.category===before.category?before.category:current.categories.includes(input.category.trim())?input.category.trim():'其他';
       if(input.command==='create'){
         db.prepare('INSERT INTO music_entries VALUES(?,?,?)').run(id,name,input.kind);
-        db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'admin',?,'null')").run(id,category,'[]',seconds);
+        db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'admin',?,'null')").run(id,category,JSON.stringify(aliases),seconds);
       }else{
         db.prepare('UPDATE music_entries SET name=?,kind=? WHERE id=?').run(name,input.kind,id);
-        db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'',?,?) ON CONFLICT(entry_id) DO UPDATE SET category=excluded.category,updated_at_json=excluded.updated_at_json").run(id,category,JSON.stringify(before!.aliases),JSON.stringify(before!.createdAt??0),seconds);
+        db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'',?,?) ON CONFLICT(entry_id) DO UPDATE SET category=excluded.category,aliases_json=excluded.aliases_json,updated_at_json=excluded.updated_at_json").run(id,category,JSON.stringify(aliases),JSON.stringify(before!.createdAt??0),seconds);
       }
+      if(input.names||before?.names)saveMusicEntryNames(db,id,names);
     }else{
       const target=input.command==='merge'?current.entries.find(e=>e.id===input.toId):undefined;
       if(input.command==='merge'){
         if(input.id===input.toId)throw withApiError(new DomainError('MERGE_SELF','不能合併到同一詞條'));
         if(!target)throw withApiError(new DomainError('ENTRY_NOT_FOUND','目標詞條不存在或已刪除',404));
         targetId=target.id;
-        const aliases=JSON.stringify(mergeMusicAliases(target,before!));
+        const mergedAliases=mergeMusicAliases(target,before!),aliases=JSON.stringify(mergedAliases);
+        if(target.names||before!.names){const targetNames=target.names??emptyMusicNames();saveMusicEntryNames(db,target.id,{...targetNames,aliases:mergedAliases.filter(alias=>![targetNames.zhHant,targetNames.zhHans,targetNames.english,targetNames.reading,targetNames.romaji].some(label=>musicEntryKey(label)===musicEntryKey(alias)))});}
         db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'',?,'null') ON CONFLICT(entry_id) DO UPDATE SET aliases_json=excluded.aliases_json").run(target.id,target.category,aliases,JSON.stringify(target.createdAt??0));
       }
       affectedProfiles=replaceReferences(db,id,target?.id,stamp);
+      removeMusicEntryNames(db,id);
       db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
       db.prepare('DELETE FROM music_entries WHERE id=?').run(id);
       db.prepare("UPDATE migration_map SET status=?,target_id=? WHERE source='music' AND entity_type='entry' AND target_id=?").run(target?'merged':'deleted',targetId||id,id);

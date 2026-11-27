@@ -1,3 +1,4 @@
+import { MusicTranslation } from './music-name-display';
 import { uiText } from './language';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -15,7 +16,7 @@ export function MusicRanking({ entries, kind, complete, params, update, selected
   entries: Entry[]; kind: 'main' | 'sub'; complete: boolean; params: URLSearchParams;
   update: (key: string, value: string) => void; selected: ReadonlyMap<string, number> | null;
 }) {
-  const name = kind === 'main' ? uiText('領域') : uiText('細分'), sorted = rankMusic(entries);
+  const name = kind === 'main' ? uiText('領域') : uiText('細分'), sorted = params.get('q')?entries:rankMusic(entries);
   const expanded = params.get(kind + 'Expanded') === '1', bubbles = params.get(kind + 'View') === 'bubbles';
   const limit = musicRankLimit(kind, expanded, complete);
   return <section aria-label={name + '排行'} className="music-rank-group">
@@ -30,7 +31,7 @@ export function MusicRanking({ entries, kind, complete, params, update, selected
         {sorted.slice(0, limit).map((entry, index) => <li key={entry.id} className={selected?.has(entry.id) ? 'is-selected' : undefined}>
           <span className="music-rank-position" aria-hidden="true">{String(index + 1).padStart(2, '0')}</span>
           <div className="music-rank-copy">
-          <Link to={'/music?' + new URLSearchParams({ ...Object.fromEntries(params), entry: entry.id })}>{entry.name}</Link>
+          <Link to={'/music?' + new URLSearchParams({ ...Object.fromEntries(params), entry: entry.id })}>{entry.name}</Link><MusicTranslation entry={entry}/>
           <Text>{categoryLabel(entry.category)}{selected?.has(entry.id) ? ' · 已選' : ''}</Text>
           </div><Text className="music-rank-count">{entry.count} 人</Text>{selected&&<MusicTermButton entryId={entry.id}/>}
         </li>)}

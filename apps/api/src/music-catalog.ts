@@ -10,6 +10,8 @@ import { z } from 'zod';
 import { hash, type Security } from './security';
 import { getProfile } from './repositories';
 import { musicStats } from './music-stats';
+import { musicEntryNames, musicEntryTranslations, removeMusicEntryNames } from './music-entry-names';
+import type { MusicNames } from '@qgroup/domain';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 export const entryCategories = [
   '歌手',
@@ -32,16 +34,19 @@ type Row = {
   created_at_json: string;
   updated_at_json: string;
   count: number;
+  names?: MusicNames;
 };
-const rows = (db: DB) =>
-  db
+const rows = (db: DB) => {
+  const names=musicEntryNames(db);
+  return (db
     .prepare(
       `SELECT e.*,COALESCE(d.category,CASE WHEN e.kind='main' THEN '领域' ELSE '其他' END) AS category,COALESCE(d.aliases_json,'[]') AS aliases_json,COALESCE(d.created_by,'') AS created_by,COALESCE(d.created_at_json,'0') AS created_at_json,COALESCE(d.updated_at_json,'null') AS updated_at_json,
  COALESCE(c.n,0) AS count
  FROM music_entries e LEFT JOIN music_entry_details d ON d.entry_id=e.id
  LEFT JOIN (SELECT s.entry_id,count(*) AS n FROM music_selections s JOIN music_profiles p ON p.id=s.profile_id WHERE ${musicProfileActiveSQL('p')} GROUP BY s.entry_id) c ON c.entry_id=e.id ORDER BY ${musicSourceOrderSQL('entry','e')}`,
     )
-    .all() as Row[];
+    .all() as Row[]).map(row=>({...row,...names.has(row.id)?{names:names.get(row.id)}:{}}));
+};
 const revision = (row: Row) =>
   hash(
     JSON.stringify([
@@ -53,6 +58,7 @@ const revision = (row: Row) =>
       row.created_by,
       row.created_at_json,
       row.updated_at_json,
+      ...(row.names ? [row.names] : []),
     ]),
   );
 function labels(db: DB) {
@@ -72,6 +78,7 @@ const serialize = (row: Row, names: Map<string, string>) => ({
   name: row.name,
   kind: row.kind,
   category: row.category || '其他',
+  ...(row.names ? {names:row.names,translations:musicEntryTranslations(row.names)} : {}),
   aliases: z
     .array(z.string())
     .parse(JSON.parse(row.aliases_json))
@@ -223,6 +230,7 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
           if (input.command === 'delete') {
             if (before!.count)
               throw withApiError(new DomainError('ENTRY_SELECTED', '已有人選用此詞條，不能刪除；選擇與熟悉度會保留', 409));
+            removeMusicEntryNames(db,id);
             db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
             db.prepare('DELETE FROM music_entries WHERE id=?').run(id);
             for (const row of db

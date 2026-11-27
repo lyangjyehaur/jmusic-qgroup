@@ -21,10 +21,11 @@ export function assertNativeResetEntryBoundary(before:DB,current:DB,profileIds:s
   }
   const extract=before.prepare('SELECT json_extract(?,?) AS value').safeIntegers(true),value=(payload:unknown,path:string)=>(extract.get(payload,path) as {value:unknown}).value;
   const redacted=before.prepare("SELECT json_set(?,'$.entry.createdBy','') AS value");
-  const documentSlot=(row:ForwardRow)=>JSON.stringify([row.kind,String(row.position)]),documents=new Map([...forwardRows(before,'music_documents')].filter(r=>r.kind==='entry_source'&&ids.has(value(r.payload_json,'$.entryId') as string)).map(r=>[documentSlot(r),r]));
-  for(const row of forwardRows(current,'music_documents'))if(row.kind==='entry_source'&&ids.has(value(row.payload_json,'$.entryId') as string)){
+  const documentSlot=(row:ForwardRow)=>JSON.stringify([row.kind,String(row.position)]),documents=new Map([...forwardRows(before,'music_documents')].filter(r=>['entry_source','entry_names'].includes(String(r.kind))&&ids.has(value(r.payload_json,'$.entryId') as string)).map(r=>[documentSlot(r),r]));
+  for(const row of forwardRows(current,'music_documents'))if(['entry_source','entry_names'].includes(String(row.kind))&&ids.has(value(row.payload_json,'$.entryId') as string)){
     const original=documents.get(documentSlot(row))??reject();
     if(forwardEqual(row,original))continue;
+    if(row.kind==='entry_names')reject();
     const creator=value(original.payload_json,'$.entry.createdBy');
     if(!creators.has(creator as string)||!forwardEqual(row,{...original,payload_json:(redacted.get(original.payload_json) as {value:string}).value}))reject();
   }

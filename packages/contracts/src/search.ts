@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { MusicEntryNames, MusicEntryTranslations } from './music-catalog';
 
 export const SearchQuery = z.object({
   q: z.string().trim().min(1).max(100),
@@ -15,7 +16,7 @@ export const SearchResults = z.object({
     id: z.string(), title: z.string(), category: z.string(), location: z.string(), startsAt: z.string(), timezone: z.string().nullable(),
     phase: z.enum(['draft', 'scheduled', 'ongoing', 'ended', 'cancelled']), archived: z.boolean(),
   }).strict()),
-  music: group(z.object({ id: z.string(), name: z.string(), kind: z.enum(['main', 'sub']), category: z.string() }).strict()),
+  music: group(z.object({ id: z.string(), name: z.string(), kind: z.enum(['main', 'sub']), category: z.string(), names:MusicEntryNames.optional(),translations:MusicEntryTranslations.optional() }).strict()),
   people: group(z.object({ id: z.string(), name: z.string() }).strict()).extend({
     access: z.enum(['ready', 'login_required', 'music_required']),
   }).strict(),

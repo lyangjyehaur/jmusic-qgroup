@@ -1,3 +1,4 @@
+import { MusicTranslation } from './music-name-display';
 import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
@@ -51,7 +52,7 @@ function SearchContent() {
             {query.group === 'all' && result.data.activities.hasMore && <Link state={location.state} to={searchPath(query.q, 'activities')}>查看所有活動結果</Link>}
           </section>}
           {(query.group === 'all' || query.group === 'music') && <section aria-label="音樂搜尋結果"><Heading level={2}>音樂詞條（{result.data.music.total}）</Heading>
-            {result.data.music.items.length ? <ul>{result.data.music.items.map(item => <li key={item.id}><Link className="global-result" aria-label={item.name} to={target('/music/entries/' + encodeURIComponent(item.id))}><Badge>詞條</Badge><span><strong>{item.name}</strong><small>{item.kind === 'main' ? '領域' : '細分'} · {categoryLabel(item.category)}</small></span><ArrowUpRight size={16}/></Link></li>)}</ul> : <Notice>沒有符合條件的詞條。</Notice>}
+            {result.data.music.items.length ? <ul>{result.data.music.items.map(item => <li key={item.id}><Link className="global-result" aria-label={item.name} to={target('/music/entries/' + encodeURIComponent(item.id))}><Badge>詞條</Badge><span><strong>{item.name}</strong><MusicTranslation entry={item}/><small>{item.kind === 'main' ? '領域' : '細分'} · {categoryLabel(item.category)}</small></span><ArrowUpRight size={16}/></Link></li>)}</ul> : <Notice>沒有符合條件的詞條。</Notice>}
             {query.group === 'all' && result.data.music.hasMore && <Link state={location.state} to={searchPath(query.q, 'music')}>查看所有詞條結果</Link>}
           </section>}
           {(query.group === 'all' || query.group === 'people') && <section aria-label="同好搜尋結果"><Heading level={2}>{result.data.people.access === 'ready' ? '同好（' + result.data.people.total + '）' : '同好'}</Heading>

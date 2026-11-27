@@ -1,3 +1,4 @@
+import { MusicNameDetails, MusicTranslation } from './music-name-display';
 import { uiText } from './language';
 import { Link, useLocation, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -40,7 +41,7 @@ export function MusicEntryDetails({ entry }: {
   const detailPath = musicEntryPath(entry.id, location.search);
   return <section className="music-entry-detail" role="region" aria-label="詞條資料">
     {!inDialog&&<Heading level={2}>{entry.name}</Heading>}
-    <dl className="inline-definitions">{entry.aliases.length>0&&<div><dt>別名</dt><dd>{entry.aliases.join('、')}</dd></div>}<div><dt>選用人數</dt><dd>{entry.count} 人</dd></div>{entry.creatorName&&<div><dt>建立者</dt><dd>{entry.creatorName}</dd></div>}</dl>
+    <MusicTranslation entry={entry}/><dl className="inline-definitions"><MusicNameDetails entry={entry}/><div><dt>選用人數</dt><dd>{entry.count} 人</dd></div>{entry.creatorName&&<div><dt>建立者</dt><dd>{entry.creatorName}</dd></div>}</dl>
     <div className="page-actions">
       {selection ? <Button aria-pressed={selection.selected.has(entry.id)} disabled={selection.locked}
         onClick={() => selection.toggle(entry)}>{selection.selected.has(entry.id) ? entry.kind==='sub'?'調整喜歡程度':'取消選取' : '選取此詞條'}</Button>

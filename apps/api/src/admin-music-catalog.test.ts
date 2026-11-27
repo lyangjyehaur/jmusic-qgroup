@@ -24,6 +24,43 @@ async function setup(db=openDatabase(':memory:')){
   return{db,app,headers,admin,viewer,list,send,command,picks};
 }
 describe('administrator native music catalog',()=>{
+  it('maintains structured labels without changing selections, identity, ownership or profile revision; survives backup and old-client edits',async()=>{
+    const s=await setup(),before=s.picks('alice'),names={zhHant:'夜遊樂團',zhHans:'夜游乐队',english:'Night Music',reading:'よあそび',romaji:'YOASOBI',aliases:['  夜遊  ','NightBand']};
+    const body=await s.command('update',{id:'sub-0',name:'YOASOBI',kind:'sub',category:'歌手',names}),key=randomUUID();
+    expect((await s.send(body,key)).statusCode).toBe(200);expect((await s.send(body,key)).statusCode).toBe(200);
+    const entry=(await s.list()).entries.find(e=>e.id==='sub-0')!;expect(entry.names).toEqual({...names,aliases:['夜遊','NightBand']});expect(entry.aliases).toContain('夜游乐队');expect(s.picks('alice')).toEqual(before);
+    expect(s.db.prepare("SELECT revision FROM music_profiles WHERE id=?").get(catalogProfiles.alice)).toEqual({revision:0});
+    const {default:Database}=await import('better-sqlite3');const restored=new Database(s.db.serialize());expect(restored.prepare("SELECT payload_json FROM music_documents WHERE kind='entry_names'").get()).toBeDefined();restored.close();
+    for(const q of ['夜遊樂團','夜游乐团','夜游乐队','Night Music','yoasobi']){const response=await s.app.inject({url:'/api/v2/search?q='+encodeURIComponent(q),headers:s.headers});expect(response.statusCode,response.body).toBe(200);expect(response.json().music.items[0].id,q).toBe('sub-0');}
+    expect((await s.send(await s.command('update',{id:'sub-0',name:'YOASOBI',kind:'sub',category:'组合'}))).statusCode).toBe(200);expect((await s.list()).entries.find(e=>e.id==='sub-0')!.names).toEqual(entry.names);
+    expect(s.db.prepare("SELECT count(*) n FROM music_documents WHERE kind='entry_names'").get()).toEqual({n:1});
+  });
+  it('rejects label collisions and invalid input atomically, including cross-script Chinese; names-only changes invalidate stale review',async()=>{
+    const s=await setup(),base={zhHant:'',zhHans:'',english:'',reading:'',romaji:'',aliases:[] as string[]};
+    const stale=await s.command('update',{id:'sub-0',name:'YOASOBI',kind:'sub',category:'歌手',names:{...base,english:'Old Review'}});
+    for(const names of [{...base,aliases:['ヨルシカ']},{...base,english:'bad\x00label'},{...base,romaji:'a'.repeat(97)}]){
+      const tables=['music_entries','music_entry_details','music_selections','music_documents','music_catalog_actions'],before=tables.map(t=>s.db.prepare('SELECT * FROM '+t).all());
+      expect((await s.send(await s.command('update',{id:'sub-0',name:'YOASOBI',kind:'sub',category:'歌手',names}))).statusCode).toBeGreaterThanOrEqual(400);expect(tables.map(t=>s.db.prepare('SELECT * FROM '+t).all())).toEqual(before);
+    }
+    expect((await s.send(await s.command('update',{id:'sub-0',name:'YOASOBI',kind:'sub',category:'歌手',names:{...base,zhHant:'夜遊樂團'}}))).statusCode).toBe(200);
+    expect((await s.send(stale)).statusCode).toBe(409);
+    expect((await s.send(await s.command('create',{name:'夜游乐团',kind:'sub',category:'歌手'}))).statusCode).toBe(409);
+  });
+  it('refuses an over-limit merge without dropping any alias or changing selections',async()=>{
+    const s=await setup(),base={zhHant:'',zhHans:'',english:'',reading:'',romaji:''};
+    for(const [id,name,prefix] of [['sub-0','YOASOBI','source'],['sub-1','ヨルシカ','target']] as const)expect((await s.send(await s.command('update',{id,name,kind:'sub',category:'歌手',names:{...base,aliases:Array.from({length:32},(_,i)=>prefix+i)}}))).statusCode).toBe(200);
+    const before=s.db.prepare("SELECT payload_json FROM music_documents WHERE kind='entry_names' ORDER BY position").all(),picks=s.picks('alice');
+    const response=await s.send(await s.command('merge',{id:'sub-0',toId:'sub-1'}));expect(response.statusCode).toBe(400);expect(response.json().code).toBe('ENTRY_ALIAS_LIMIT');expect(s.picks('alice')).toEqual(picks);expect((await s.list()).entries).toHaveLength(22);expect(s.db.prepare("SELECT payload_json FROM music_documents WHERE kind='entry_names' ORDER BY position").all()).toEqual(before);
+  });
+  it('merged labels remain searchable with target translations preserved and removal leaves no name document',async()=>{
+    const s=await setup(),base={zhHant:'',zhHans:'',english:'',reading:'',romaji:'',aliases:[]};
+    for(const [id,name,english] of [['sub-0','YOASOBI','Night Music'],['sub-1','ヨルシカ','Yorushika']])expect((await s.send(await s.command('update',{id,name,kind:'sub',category:'歌手',names:{...base,english}}))).statusCode).toBe(200);
+    expect((await s.send(await s.command('merge',{id:'sub-0',toId:'sub-1'}))).statusCode).toBe(200);
+    const entry=(await s.list()).entries.find(e=>e.id==='sub-1')!;expect(entry.names?.english).toBe('Yorushika');expect(entry.names?.aliases).toContain('Night Music');
+    expect((await s.app.inject({url:'/api/v2/search?q=Night%20Music',headers:s.headers})).json().music.items[0].id).toBe('sub-1');
+    expect((await s.send(await s.command('delete',{id:'sub-1'}))).statusCode).toBe(200);expect(s.db.prepare("SELECT * FROM music_documents WHERE kind='entry_names'").all()).toEqual([]);
+  });
+
   it('lists complete public metadata and affected creation counts without requiring the administrator to have a profile',async()=>{
     const s=await setup(),list=await s.list();expect(list.entries).toHaveLength(22);expect(list.entries.find(e=>e.id==='sub-0')).toMatchObject({count:3,creationCount:3,creatorName:'詞庫alice'});
     expect(JSON.stringify(list)).not.toMatch(/不可匯出|private|10002|user_id|pin_hash|created_by/);
@@ -33,7 +70,7 @@ describe('administrator native music catalog',()=>{
   it('creates without a member quota, edits type/category without losing ownership or aliases, and rejects all normalized name/alias collisions',async()=>{
     const s=await setup(),before=(await s.list()).entries.find(e=>e.id==='sub-0')!;
     expect((await s.send(await s.command('update',{id:'sub-0',name:'新歌手',kind:'main',category:'领域'}))).statusCode).toBe(200);
-    expect(s.db.prepare("SELECT category,aliases_json,created_by,created_at_json FROM music_entry_details WHERE entry_id='sub-0'").get()).toEqual({category:'领域',aliases_json:JSON.stringify(before.aliases),created_by:catalogProfiles.alice,created_at_json:'123'});
+    expect(s.db.prepare("SELECT category,aliases_json,created_by,created_at_json FROM music_entry_details WHERE entry_id='sub-0'").get()).toEqual({category:'领域',aliases_json:JSON.stringify([...before.aliases,before.name]),created_by:catalogProfiles.alice,created_at_json:'123'});
     expect(s.picks('alice')[0]).toEqual({entry_id:'sub-0',level:1,position:0});
     for(const name of ['ｙＯＲＵ','新\u200b歌手','𠀀'.repeat(25),'\u001c\u0085','bad\x00name'])expect((await s.send(await s.command('create',{name,kind:'sub',category:'歌手'}))).statusCode).toBeGreaterThanOrEqual(400);
     for(let i=0;i<3;i++){const response=await s.send(await s.command('create',{name:'管理建立 '+i,kind:'main',category:'领域'}));expect(response.statusCode,response.body).toBe(200);expect(AdminMusicEntryResult.parse(response.json()).command).toBe('create');}

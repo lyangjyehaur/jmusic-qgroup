@@ -3,6 +3,7 @@ export * from './bot-templates';
 export * from './bot-clock';
 export * from './music-text';
 export * from './music-search';
+export * from './music-labels';
 export { domainErrorDisplay, setDomainErrorDisplay, withDomainError } from './error-display';
 import { withDomainError } from './error-display';
 export class DomainError extends Error {

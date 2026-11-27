@@ -1,10 +1,18 @@
 import { z } from 'zod';
+/** Optional structured labels supplement, never replace, the original term name. */
+export const MusicEntryNames = z.object({
+  zhHant: z.string().max(384), zhHans: z.string().max(384), english: z.string().max(384),
+  reading: z.string().max(384), romaji: z.string().max(384), aliases: z.array(z.string().max(384)).max(32),
+}).strict();
+export const MusicEntryTranslations = z.object({zhHant:z.string(),zhHans:z.string()}).strict();
 export const MusicCatalogEntry = z.object({
   id: z.string(),
   name: z.string(),
   kind: z.enum(['main', 'sub']),
   category: z.string(),
   aliases: z.array(z.string()),
+  names: MusicEntryNames.optional(),
+  translations: MusicEntryTranslations.optional(),
   count: z.number().int().nonnegative(),
   creatorName: z.string(),
   createdAt: z.number().nullable(),

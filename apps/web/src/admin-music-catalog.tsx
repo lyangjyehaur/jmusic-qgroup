@@ -5,8 +5,8 @@ import { useQuery,useQueryClient } from '@tanstack/react-query';
 import { Heading, Surface, Text } from 'yahha-ui';
 import { Button, Select, Checkbox } from './kimi-ui';
 import { z } from 'zod';
-import { AdminMusicCatalog, AdminMusicEntryCommand, type Viewer } from '@qgroup/contracts';
-import { musicText } from '@qgroup/domain';
+import { AdminMusicCatalog, AdminMusicEntryCommand, MusicEntryNames, type Viewer } from '@qgroup/contracts';
+import { musicText, emptyMusicNames } from '@qgroup/domain';
 import { AdminGate,adminHttp,adminReadHttp,type Access } from './admin';
 import { ApiError } from './api';
 import { Failure,Notice,PageIntro } from './shared';
@@ -16,12 +16,13 @@ import { categoryLabel } from './music-entries';
 import { announceAccountChange } from './account-session';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
+import { MusicNameFields } from './music-name-fields';
 
-const Value=z.object({command:z.enum(['none','create','update','delete','merge']),id:z.string(),toId:z.string(),revision:z.string(),name:z.string(),kind:z.enum(['main','sub']),category:z.string()}).strict();
+const Value=z.object({command:z.enum(['none','create','update','delete','merge']),id:z.string(),toId:z.string(),revision:z.string(),name:z.string(),kind:z.enum(['main','sub']),category:z.string(),names:MusicEntryNames.optional()}).strict();
 type Value=z.infer<typeof Value>;
 function input(value:Value){
   const common={command:value.command,revision:value.revision,confirm:true};
-  return AdminMusicEntryCommand.parse(value.command==='create'?{...common,name:value.name,kind:value.kind,category:value.category}:value.command==='update'?{...common,id:value.id,name:value.name,kind:value.kind,category:value.category}:value.command==='merge'?{...common,id:value.id,toId:value.toId}:{...common,id:value.id});
+  return AdminMusicEntryCommand.parse(value.command==='create'?{...common,name:value.name,kind:value.kind,category:value.category,names:value.names}:value.command==='update'?{...common,id:value.id,name:value.name,kind:value.kind,category:value.category,names:value.names}:value.command==='merge'?{...common,id:value.id,toId:value.toId}:{...common,id:value.id});
 }
 const Draft=z.object({value:Value,dirty:z.boolean(),pending:z.object({key:z.string().uuid(),input:AdminMusicEntryCommand}).strict().optional()}).strict().refine(draft=>{
   if(!draft.pending)return true;try{return JSON.stringify(input(draft.value))===JSON.stringify(draft.pending.input);}catch{return false;}
@@ -44,7 +45,7 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
   function edit(patch:Partial<Value>){if(locked)return;record.change({...draft,value:{...draft.value,...patch},dirty:true});setConfirmed(false);setMessage('');}
   function begin(command:Value['command'],entry?:Catalog['entries'][number]){
     if(locked||dirty||!catalog.data||catalog.error)return;
-    record.change({value:{command,id:entry?.id??'',toId:'',revision:catalog.data!.revision,name:entry?.name??'',kind:entry?.kind??'sub',category:entry?.category??'歌手'},dirty:command!=='none'});setConfirmed(false);setMessage('');
+    record.change({value:{command,id:entry?.id??'',toId:'',revision:catalog.data!.revision,name:entry?.name??'',kind:entry?.kind??'sub',category:entry?.category??'歌手',names:entry?.names??{...emptyMusicNames(),aliases:entry?.aliases??[]}},dirty:command!=='none'});setConfirmed(false);setMessage('');
   }
   async function rebase(){
     if(locked||!start())return;
@@ -79,7 +80,7 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
         <Field label="詞條名稱"><input value={value.name} disabled={locked} onChange={event=>edit({name:event.target.value})}/></Field><Text size="sm">{Array.from(musicText(value.name)).length} / 24 字</Text>
         <Field label="詞條類型"><Select value={value.kind} disabled={locked} onChange={event=>edit({kind:event.target.value as 'main'|'sub'})}><option value="main">領域</option><option value="sub">細分</option></Select></Field>
         <Field label="詞條分類"><Select value={value.category} disabled={locked} onChange={event=>edit({category:event.target.value})}>{[...new Set([value.category,...catalog.data?.categories??[]])].map(category=><option key={category} value={category}>{categoryLabel(category)}</option>)}</Select></Field>
-        {source&&!!source.aliases.length&&<Text>保留別名：{source.aliases.join('、')}</Text>}
+        <MusicNameFields names={value.names??{...emptyMusicNames(),aliases:source?.aliases??[]}} disabled={locked} change={names=>edit({names:{...names,aliases:[...names.aliases]}})}/>
       </>}
       {value.command==='delete'&&<Text>此操作會移除詞條、所有人的相關選擇及建立紀錄，無法復原。</Text>}
       {value.command==='merge'&&<><Field label="合併目標"><Select value={value.toId} disabled={locked} onChange={event=>edit({toId:event.target.value})}><option value="">選擇目標詞條</option>{catalog.data?.entries.filter(e=>e.id!==value.id).map(e=><option key={e.id} value={e.id}>{e.name} · {e.id}</option>)}</Select></Field>

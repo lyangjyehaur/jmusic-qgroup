@@ -1,5 +1,7 @@
 import dictionary from './music-search-data.json';
 import { musicEntryKey } from './music-text';
+import { musicChineseKey, musicNameValues, type MusicNames } from './music-labels';
+import { musicKanaKey, musicKanaRomaji, musicLatinKey } from './music-kana';
 
 const full = /* @__PURE__ */ dictionary.full.split(' ');
 const kanaRows: readonly (readonly [number, number, string])[] = [
@@ -26,14 +28,26 @@ export function musicSearchKeys(text: string) {
   }).join('');
   return { name, initials, pinyin };
 }
-export function createMusicSearch(entries: readonly { id: string; name: string; aliases?: readonly string[] }[]) {
-  const index = new Map(entries.map(entry => [entry.id, [entry.name, ...(entry.aliases ?? [])].map(musicSearchKeys)]));
-  return (id: string, query: string) => {
-    const key = musicEntryKey(query);
-    return !key || !!index.get(id)?.some(value =>
-      value.name.includes(key) || value.initials.startsWith(key) || value.pinyin.includes(key),
-    );
+export type MusicSearchEntry = { id:string; name:string; aliases?:readonly string[]; names?:MusicNames };
+export function createMusicSearchRank(entries:readonly MusicSearchEntry[]) {
+  const index=new Map(entries.map(entry=>[entry.id,[entry.name,...(entry.aliases??[]),...(entry.names?musicNameValues(entry.names):[])].map((text,position)=>({
+    ...musicSearchKeys(text), position, chinese:musicChineseKey(text), kana:musicEntryKey(musicKanaKey(text)),
+    latin: /[\u3040-\u30ff]/.test(text)?musicLatinKey(musicKanaRomaji(text)):/^[\p{Script=Latin}\p{Number}\p{Punctuation}\p{Separator}]+$/u.test(text)?musicLatinKey(text):'',
+  }))]));
+  return (id:string,query:string)=>{
+    const key=musicEntryKey(query);if(!key)return 0;
+    const chinese=musicChineseKey(query),kana=musicEntryKey(musicKanaKey(query)),latin=/^[\p{Script=Latin}\p{Number}\p{Punctuation}\p{Separator}]+$/u.test(query)?musicLatinKey(query):'';
+    let best=Infinity;
+    for(const value of index.get(id)??[]) {
+      if(value.name===key||value.chinese===chinese||value.kana===kana)best=Math.min(best,value.position===0?0:1);
+      else if(value.name.startsWith(key)||value.chinese.startsWith(chinese)||value.kana.startsWith(kana))best=Math.min(best,2);
+      else if(value.name.includes(key)||value.chinese.includes(chinese)||value.kana.includes(kana))best=Math.min(best,3);
+      else if(value.initials.startsWith(key)||value.pinyin.includes(key)||(latin&&value.latin.includes(latin)))best=Math.min(best,4);
+    }
+    return best;
   };
 }
-export const matchesMusicSearch = (entry: { id: string; name: string; aliases?: readonly string[] }, query: string) =>
-  createMusicSearch([entry])(entry.id, query);
+export function createMusicSearch(entries:readonly MusicSearchEntry[]) {
+  const rank=createMusicSearchRank(entries);return (id:string,query:string)=>Number.isFinite(rank(id,query));
+}
+export const matchesMusicSearch=(entry:MusicSearchEntry,query:string)=>createMusicSearch([entry])(entry.id,query);

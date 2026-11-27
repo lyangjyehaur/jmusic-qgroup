@@ -3,7 +3,7 @@ import { useEffect, useMemo, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Surface } from 'yahha-ui';
 import { Button, Select } from './kimi-ui';
-import { createMusicSearch } from '@qgroup/domain';
+import { createMusicSearchRank, type MusicNames } from '@qgroup/domain';
 import { categoryLabel } from './music-entries';
 import { Field } from './settlement-controls';
 
@@ -22,7 +22,7 @@ export function useMusicSearchShortcut(selector: string) {
     return () => document.removeEventListener('keydown', focus);
   }, [selector]);
 }
-export function useMusicSearch<T extends { id: string; name: string; aliases?: readonly string[]; kind: string; category: string }>(entries: readonly T[]) {
+export function useMusicSearch<T extends { id: string; name: string; aliases?: readonly string[]; names?:MusicNames; kind: string; category: string }>(entries: readonly T[]) {
   const [params, setParams] = useSearchParams();
   // React Router's functional search setter is not a queued React state update.
   // Retain event-time edits until navigation commits so a rapid search cannot
@@ -30,8 +30,8 @@ export function useMusicSearch<T extends { id: string; name: string; aliases?: r
   const latest = useRef({ rendered: params, pending: params });
   if (latest.current.rendered !== params) latest.current = { rendered: params, pending: params };
   const search = params.get('q') ?? '', category = params.get('category') ?? '', kind = params.get('kind') ?? '';
-  const match = useMemo(() => createMusicSearch(entries), [entries]);
-  const filtered = entries.filter(entry => (!kind || entry.kind === kind) && (!category || entry.category === category) && match(entry.id, search));
+  const match = useMemo(() => createMusicSearchRank(entries), [entries]);
+  const filtered = entries.filter(entry => (!kind || entry.kind === kind) && (!category || entry.category === category) && Number.isFinite(match(entry.id, search))).sort((a,b)=>match(a.id,search)-match(b.id,search));
   const update = (key: string, value: string) => {
     const next = new URLSearchParams(latest.current.pending);
     if (value) next.set(key, value); else next.delete(key);
@@ -58,7 +58,7 @@ export function MusicSearch({ filters, categories, label = uiText('搜尋音樂�
   return <Surface role="region" aria-label="音樂詞庫搜尋" className="music-search">
     <div className="music-search-input">
     <Field label={label}><input ref={input} type="search" value={filters.search}
-      placeholder="名稱、別名、拼音或首字母" onChange={event => filters.update('q', event.target.value)}
+      placeholder="原名、譯名、別名、讀音或羅馬字" onChange={event => filters.update('q', event.target.value)}
       onKeyDown={event => { if (event.key === 'Escape' && !event.nativeEvent.isComposing && filters.search) {
         event.preventDefault(); filters.update('q', '');
       } }} /></Field>
