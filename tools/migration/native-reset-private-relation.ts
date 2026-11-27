@@ -47,6 +47,7 @@ export function nativeResetPrivateRelation(before:DB,intent:Reset){
     if(table==='music_entry_creations'&&(profiles.has(String(r.profile_id))||entries.has(String(r.entry_id))))return null;
     if(table==='music_entries'&&entries.has(String(r.id))||table==='music_entry_details'&&entries.has(String(r.entry_id)))return null;
     if(table==='music_documents'){
+      if(['entry_names','entry_lock'].includes(String(r.kind))&&entries.has(jsonValue(r.payload_json,'$.entryId').value as string))return null;
       if(r.kind==='profile_source'&&(profiles.has(jsonValue(r.payload_json,'$.profileId').value as string)||keys.has(jsonValue(r.payload_json,'$.legacyKey').value as string)))return null;
       if(r.kind==='profile_retirement'&&profiles.has(jsonValue(r.payload_json,'$.profileId').value as string))return null;
       if(r.kind==='entry_source'){

@@ -11,6 +11,7 @@ import { hash } from './security';
 import { erasureJournal, erasureRequestId, type ErasureJournal, type ErasureIntent, type StoredIntent } from './erasure-journal';
 import { prunePrivateImages } from './privacy-assets';
 import { clearMusicClaims } from './music-claim-state';
+import { retainMusicSelectionLocks } from './music-entry-locks';
 import { invalidateMusicOwnership } from './music-ownership';
 
 type Result = z.infer<typeof ErasureResult>;
@@ -45,6 +46,7 @@ function activeWork(db: DB, userId: string) {
 export function replayMusicErasure(db: DB, profileId: string, userId: string | null, createdAt: string) {
   const current = db.prepare('SELECT user_id FROM music_profiles WHERE id=?').get(profileId) as {user_id:string|null}|undefined;
   const owners = [...new Set([userId,current?.user_id].filter((id):id is string=>!!id&&!!db.prepare('SELECT 1 FROM users WHERE id=?').get(id)))];
+  retainMusicSelectionLocks(db,profileId);
   invalidateMusicOwnership(db,profileId,owners);
   // Keep an ID-only tombstone, including when replay precedes an older profile snapshot.
   db.prepare(`INSERT INTO music_profiles(id,user_id,revision,updated_at,erased_at) VALUES(?,NULL,0,?,?)
@@ -128,7 +130,7 @@ export function createPrivacy(db: DB, journal: ErasureJournal = erasureJournal(d
         db.prepare('DELETE FROM music_shout_authors').run();
       }
       if(entry.command==='reset_music')for(const id of entry.entries){
-        db.prepare("DELETE FROM music_documents WHERE kind IN ('entry_source','entry_names') AND json_extract(payload_json,'$.entryId')=?").run(id);
+        db.prepare("DELETE FROM music_documents WHERE kind IN ('entry_source','entry_names','entry_lock') AND json_extract(payload_json,'$.entryId')=?").run(id);
         db.prepare('DELETE FROM music_selections WHERE entry_id=?').run(id);
         db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
         db.prepare('DELETE FROM music_entries WHERE id=?').run(id);

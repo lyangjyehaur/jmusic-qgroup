@@ -11,6 +11,7 @@ import { hash, type Security } from './security';
 import { getProfile } from './repositories';
 import { musicStats } from './music-stats';
 import { musicEntryNames, musicEntryTranslations, removeMusicEntryNames } from './music-entry-names';
+import { backfillMusicEntryLocks, lockedMusicEntries, removeMusicEntryLock } from './music-entry-locks';
 import type { MusicNames } from '@qgroup/domain';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 export const entryCategories = [
@@ -126,7 +127,7 @@ function ownership(db: DB, userId: string) {
 export function myMusicEntries(db: DB, userId: string) {
   const { profile, legacy, epoch } = ownership(db, userId),
     all = rows(db),
-    names = labels(db);
+    names = labels(db), locks = lockedMusicEntries(db);
   const owned = profile
     ? all.filter((e) => e.created_by === profile.id || (!!legacy && e.created_by === legacy.legacy_key))
     : [];
@@ -136,7 +137,7 @@ export function myMusicEntries(db: DB, userId: string) {
   return MyMusicEntries.parse({
     profileId: profile?.id ?? null,
     musicEpoch: epoch,
-    entries: owned.map((e) => ({ ...serialize(e, names), revision: revision(e) })),
+    entries: owned.map((e) => ({ ...serialize(e, names), revision: revision(e), creatorLocked: locks.has(e.id) })),
     createdCounts: {
       main: counted.filter((e) => e.kind === 'main').length,
       sub: counted.filter((e) => e.kind === 'sub').length,
@@ -164,6 +165,7 @@ function blankProfile(db: DB, user: { id: string; nickname: string }, stamp: str
   return id;
 }
 export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
+  db.transaction(() => backfillMusicEntryLocks(db)).immediate();
   app.get('/api/v2/music/catalog', async () => db.transaction(() => musicCatalog(db, now()))());
   app.get('/api/v2/music/entries/:id/members', async request => db.transaction(() => {
     const viewer = security.scopedMember(request);
@@ -220,6 +222,8 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
               (before.created_by !== profile.id && (!legacy || before.created_by !== legacy.legacy_key))
             )
               throw withApiError(new DomainError('ENTRY_FORBIDDEN', '只能管理自己建立的詞條', 403));
+            if (lockedMusicEntries(db).has(before.id))
+              throw withApiError(new DomainError('ENTRY_CREATOR_LOCKED', '已被其他人選用，建立者不能修改或刪除；請聯絡管理員維護', 409));
             if (input.revision !== revision(before))
               throw withApiError(new DomainError('ENTRY_CHANGED', '詞條已有更新；輸入保留，請核對目前版本後再保存', 409));
           }
@@ -231,6 +235,7 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
             if (before!.count)
               throw withApiError(new DomainError('ENTRY_SELECTED', '已有人選用此詞條，不能刪除；選擇與熟悉度會保留', 409));
             removeMusicEntryNames(db,id);
+            removeMusicEntryLock(db,id);
             db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
             db.prepare('DELETE FROM music_entries WHERE id=?').run(id);
             for (const row of db

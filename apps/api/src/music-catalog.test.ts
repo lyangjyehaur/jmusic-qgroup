@@ -71,6 +71,52 @@ async function setup() {
   return { db, app, alice, bob, mine, send, create, edit };
 }
 describe('native music catalog and member-created entries', () => {
+  async function select(s: Awaited<ReturnType<typeof setup>>, headers: Record<string,string>, selections: {entryId:string;level:number}[]) {
+    const profile=(await s.app.inject({url:'/api/v2/me/music',headers})).json();
+    return s.app.inject({method:'PUT',url:'/api/v2/me/music',headers:{...headers,'idempotency-key':randomUUID()},payload:{profileId:profile?.id??null,revision:profile?.revision??0,musicEpoch:0,selections}});
+  }
+  it('self selection stays editable; another selection locks stale writes, withdrawals, restart and deletion permanently', async () => {
+    const s=await setup(),id=(await s.create('自己建立')).json().id;
+    expect((await select(s,s.alice,[{entryId:id,level:4}])).statusCode).toBe(200);
+    expect((await s.mine()).entries[0].creatorLocked).toBe(false);
+    expect((await s.edit(id,{name:'自己改名',kind:'main',category:'领域'})).statusCode).toBe(200);
+    expect((await s.edit(id,{},'delete')).json().code).toBe('ENTRY_SELECTED');
+    const m=await s.mine(),e=m.entries[0],key=randomUUID(),stale={command:'update',profileId:m.profileId,musicEpoch:0,id,revision:e.revision,name:'篡改',kind:'sub',category:'歌手',confirm:true};
+    expect((await select(s,s.bob,[{entryId:id,level:4}])).statusCode).toBe(200);
+    expect((await s.send(stale,s.alice,key)).json().code).toBe('ENTRY_CREATOR_LOCKED');
+    expect((await select(s,s.bob,[{entryId:'main-0',level:4}])).statusCode).toBe(200);
+    expect((await select(s,s.alice,[{entryId:'main-0',level:4}])).statusCode).toBe(200);
+    expect((await s.mine()).entries[0]).toMatchObject({count:0,creatorLocked:true,name:'自己改名',kind:'main'});
+    expect((await s.edit(id,{},'delete')).json().code).toBe('ENTRY_CREATOR_LOCKED');
+    const {default:Database}=await import('better-sqlite3'),copy=new Database(s.db.serialize()),again=createApp({db:copy,origin,now:()=>new Date(stamp)});
+    await again.ready();cleanup.push(async()=>{await again.close();copy.close();});
+    expect((await again.inject({url:'/api/v2/me/music/entries',headers:s.alice})).json().entries[0].creatorLocked).toBe(true);
+    expect(JSON.parse((copy.prepare("SELECT payload_json FROM music_documents WHERE kind='entry_lock'").get() as {payload_json:string}).payload_json)).toEqual({entryId:id});
+  });
+  it('committed operation replay remains available after another person locks the term',async()=>{
+    const s=await setup(),id=(await s.create()).json().id,m=await s.mine(),e=m.entries[0],key=randomUUID(),input={command:'update',profileId:m.profileId,musicEpoch:0,id,revision:e.revision,name:'保存的新名',kind:e.kind,category:e.category,confirm:true};
+    const response=await s.send(input,s.alice,key);expect(response.statusCode).toBe(200);
+    expect((await select(s,s.bob,[{entryId:id,level:3}])).statusCode).toBe(200);
+    const replay=await s.send(input,s.alice,key);expect(replay.statusCode).toBe(200);expect(replay.json()).toEqual(response.json());
+    expect((await s.send(input,s.alice)).json().code).toBe('ENTRY_CREATOR_LOCKED');
+  });
+  it('failed selection saves roll back the lock together with profile and idempotency receipts',async()=>{
+    const s=await setup(),id=(await s.create()).json().id;
+    s.db.exec("CREATE TRIGGER fail_pick_receipt BEFORE INSERT ON request_results BEGIN SELECT RAISE(ABORT,'synthetic'); END");
+    expect((await select(s,s.bob,[{entryId:id,level:3}])).statusCode).toBe(500);
+    expect((await s.mine()).entries[0]).toMatchObject({count:0,creatorLocked:false});
+    expect(s.db.prepare("SELECT * FROM music_documents WHERE kind='entry_lock'").all()).toEqual([]);
+    s.db.exec('DROP TRIGGER fail_pick_receipt');
+    expect((await s.edit(id,{name:'仍可改名'})).statusCode).toBe(200);
+  });
+  it('erasing the selecting person retains an anonymous lock on the surviving term',async()=>{
+    const s=await setup(),id=(await s.create()).json().id;
+    const response=await select(s,s.bob,[{entryId:id,level:3}]),profile=response.json();expect(response.statusCode).toBe(200);
+    const erase=await s.app.inject({method:'POST',url:'/api/v2/me/privacy/erase',headers:s.bob,payload:{requestId:randomUUID(),secret:'ab'.repeat(32),target:'music',confirm:true,profileId:profile.id,profileRevision:profile.revision}});
+    expect(erase.statusCode,erase.body).toBe(200);expect((await s.mine()).entries[0]).toMatchObject({count:0,creatorLocked:true});
+    expect((await s.edit(id,{name:'不能改名'})).json().code).toBe('ENTRY_CREATOR_LOCKED');
+  });
+
   it('matches the original update and delete semantics for categories, type changes, aliases, quotas and selected protection', async () => {
     const s = await setup(),
       created = await s.create('原詞條'),

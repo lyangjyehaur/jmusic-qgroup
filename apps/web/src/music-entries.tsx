@@ -62,8 +62,10 @@ function MineLoader({ viewer }: { viewer: Member }) {
                 {entry.aliases.length > 0 && <Text>別名：{entry.aliases.join('、')}</Text>}
               </div>
               <div className="page-actions">
-                <Link to={path(entry.id) + '/edit'}>編輯 {entry.name}</Link>
-                <Link to={path(entry.id) + '/delete'}>刪除 {entry.name}</Link>
+                {entry.creatorLocked ? <Text>已被其他人選用，請聯絡管理員維護。</Text> : <>
+                  <Link to={path(entry.id) + '/edit'}>編輯 {entry.name}</Link>
+                  <Link to={path(entry.id) + '/delete'}>刪除 {entry.name}</Link>
+                </>}
               </div>
             </li>
           ))}
@@ -200,6 +202,10 @@ function EntryEditor({
           return false;
         }
       },
+      afterRefresh: (fresh) => {
+        setConfirmed(false);
+        client.setQueryData(['private', viewer.scope, 'music-entries', viewer.musicEpoch], fresh);
+      },
       after: (fresh) => {
         setConfirmed(false);
         client.setQueryData(['private', viewer.scope, 'music-entries', viewer.musicEpoch], fresh);
@@ -225,7 +231,8 @@ function EntryEditor({
         [e.name, ...e.aliases].some((name) => musicEntryKey(name) === musicEntryKey(value.name)),
     );
   const editable = command === 'create' || !!entry,
-    blocked = command === 'delete' && !!entry?.count;
+    creatorLocked = command !== 'create' && !!entry?.creatorLocked,
+    blocked = creatorLocked || (command === 'delete' && !!entry?.count);
   const edit = (patch: Partial<Value>) => {
     form.edit({ ...value, ...patch });
     setConfirmed(false);
@@ -240,6 +247,7 @@ function EntryEditor({
       {command === 'create' && !form.data.profileId && (
         <Notice>建立詞條會同時建立空白成分；不會自動選取詞條。</Notice>
       )}
+      {creatorLocked && <Notice>已被其他人選用，建立者不能修改或刪除；請聯絡管理員維護。</Notice>}
       <form
         noValidate
         onSubmit={(e) => {
@@ -254,11 +262,13 @@ function EntryEditor({
           }
         }}
       >
-        <fieldset disabled={form.locked || !editable}>
+        <fieldset disabled={form.locked || !editable || creatorLocked}>
           <legend>{command === 'delete' ? '刪除確認' : '詞條資料'}</legend>
           {command === 'delete' ? (
             <Notice>
-              {blocked
+              {creatorLocked
+                ? '取消選取後仍保留鎖定。'
+                : blocked
                 ? '已有 ' + entry!.count + ' 人選用，不能刪除。'
                 : '刪除後不能還原；如果已有人選用，系統會阻止刪除。'}
             </Notice>
@@ -287,8 +297,8 @@ function EntryEditor({
                   </Select>
                 </Field>
               )}
-              {command === 'update' && (
-                <Notice>改名或改類型會影響所有選用者的顯示；既有選擇與熟悉度保留。</Notice>
+              {command === 'update' && !creatorLocked && (
+                <Notice>其他人選用後，建立者將不能修改或刪除；管理員仍可維護。</Notice>
               )}
               {duplicate && (
                 <Notice>

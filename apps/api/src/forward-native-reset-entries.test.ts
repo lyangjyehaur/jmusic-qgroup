@@ -24,6 +24,7 @@ function setup(){
   source.exec("INSERT INTO music_entries VALUES('reset-entry','恢復的原詞條','main'),('after-reset','重置後詞條','sub'); INSERT INTO music_entry_details VALUES('reset-entry','原類別','[]','','1001','1002'),('after-reset','新類別','[]','','2001','2002'); INSERT INTO music_selections VALUES('unrelated','reset-entry',4,0),('unrelated','after-reset',2,1); INSERT INTO music_entry_creations VALUES('unrelated','reset-entry',0),('unrelated','after-reset',1)");
   for(const [position,id] of ['reset-entry','after-reset'].entries()){
     source.prepare("INSERT INTO music_documents VALUES('entry_source',?,?)").run(position,JSON.stringify({entryId:id,entry:{text:'原 JSON 與額外欄位',opaque:[null,false,{a:1}]}}));
+    source.prepare("INSERT INTO music_documents VALUES('entry_lock',?,?)").run(position,JSON.stringify({entryId:id}));
     source.prepare("INSERT INTO migration_map VALUES('music','entry',?,?,'original-sha','original-content','imported')").run('legacy-'+id,id);
   }
   source.prepare("INSERT INTO migration_map VALUES('other','entry','reset-entry','reset-entry','other-sha','other-content','retained')").run();
@@ -33,7 +34,7 @@ function setup(){
   return {source,candidate,journal,intent,repair:()=>candidate.transaction(()=>repairAppliedNativeResetEntries(candidate,journal)).immediate(),verify:()=>reconcileAppliedNativeResetEntries(source,candidate,journal)};
 }
 it('repairs all restored children of original reset IDs and verifies every retained SQLite row, storage class, receipt and action',()=>{
-  const s=setup(),before=s.source.serialize();s.repair();expect(s.verify()).toMatchObject({entryScopes:2,nativeResetRequests:1,removedRows:5,changedRows:1,allRowsVerified:true,globalResetGenerationsVerified:false,releaseEligible:false});
+  const s=setup(),before=s.source.serialize();s.repair();expect(s.verify()).toMatchObject({entryScopes:2,nativeResetRequests:1,removedRows:6,changedRows:1,allRowsVerified:true,globalResetGenerationsVerified:false,releaseEligible:false});
   expect(s.candidate.prepare("SELECT 1 FROM music_entries WHERE id='reset-entry'").get()).toBeUndefined();
   for(const table of ['music_entries','music_entry_details','music_selections','music_entry_creations'])expect(s.candidate.prepare('SELECT count(*) n FROM '+table).get()).toEqual({n:1});
   for(const table of ['users','music_profiles','music_shouts','music_shout_authors','music_catalog_actions','privacy_receipts','erasure_applied','sqlite_sequence'])expect(forwardEqual([...forwardRows(s.source,table)],[...forwardRows(s.candidate,table)]),table).toBe(true);
@@ -100,7 +101,7 @@ with closing(sqlite3.connect((root/'source.sqlite3').as_uri()+'?mode=ro',uri=Tru
   cols=[r[1] for r in source.execute('PRAGMA table_xinfo("'+table+'")')];query='SELECT rowid,*,'+','.join('typeof("'+c+'")' for c in cols)+' FROM "'+table+'" ORDER BY rowid';wanted=[]
   for row in source.execute(query):
    value=dict(zip(['_rowid']+cols,row[:len(cols)+1]));drop=(table=='music_entries' and value['id'] in scope) or (table in ('music_entry_details','music_selections','music_entry_creations') and value['entry_id'] in scope)
-   if table=='music_documents' and value['kind']=='entry_source':drop=json.loads(value['payload_json']).get('entryId') in scope
+   if table=='music_documents' and value['kind'] in ('entry_source','entry_names','entry_lock'):drop=json.loads(value['payload_json']).get('entryId') in scope
    if drop:removed+=1;continue
    next=list(row)
    if table=='migration_map' and value['source']=='music' and value['entity_type']=='entry' and value['target_id'] in scope:next[1+cols.index('status')]='deleted'
@@ -108,7 +109,7 @@ with closing(sqlite3.connect((root/'source.sqlite3').as_uri()+'?mode=ro',uri=Tru
    else:changed+=1
    wanted.append(tuple(next))
   assert wanted==candidate.execute(query).fetchall(),table
- assert removed==5 and changed==1 and retained>0
+ assert removed==6 and changed==1 and retained>0
  print(json.dumps(dict(allTables=len(tables),removedRows=removed,changedRows=changed,retainedRows=retained,allRowsAndStorageVerified=True)))`,root],{encoding:'utf8',timeout:10000});
-  expect(JSON.parse(result)).toMatchObject({removedRows:5,changedRows:1,allRowsAndStorageVerified:true});expect(JSON.parse(result).allTables).toBeGreaterThan(80);
+  expect(JSON.parse(result)).toMatchObject({removedRows:6,changedRows:1,allRowsAndStorageVerified:true});expect(JSON.parse(result).allTables).toBeGreaterThan(80);
 });

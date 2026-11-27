@@ -24,7 +24,7 @@
     "apps/api/src/activity-roster.ts": "493375bed2487523ce383a65bd3e7250fd4840c9a836932b780e883f8062c212",
     "apps/api/src/admin-backups.ts": "f633fe865b5c0f51f375f7421ffaea308a7552307351bb2d65b2793fb70d8830",
     "apps/api/src/admin-bot.ts": "5a6207bd769086439c3b59052557eb310c2491ed953fbeae043065649cb2021d",
-    "apps/api/src/admin-music-catalog.ts": "2a055f56fcb9f3e13d191fe75ff94f4265142f138ffa93933398091aa026c926",
+    "apps/api/src/admin-music-catalog.ts": "6482989a9ca7e8b0ea65fa72c47281c78e7f8a53a15245da31f5b0126011f3c3",
     "apps/api/src/admin-music-erasure.ts": "bf4e4c71cfff42199d79306c70f0c808762c721d913e7001179796cb0346fd36",
     "apps/api/src/admin-music-pins.ts": "31dec3887f6cbe39c3bf1f8afce991ab43e5617cb4a3ee6e7e063d0481beef23",
     "apps/api/src/admin-music.ts": "8536da09c06a3a85714737f40e1996f2333bb63dcc19f60ee45f1a5944d1e9b0",
@@ -54,7 +54,7 @@
     "apps/api/src/legacy-settlement-token.ts": "42b4bc80c469dd5c3cf1a3653ab9b261eeaead8ee9f88dfc4629edb86a8f53a6",
     "apps/api/src/legacy-time-poll-create.ts": "224747ffa752801bf434eb5aa060f15fcaf51632f774c9728ad85f9a0775f75d",
     "apps/api/src/legacy-time-poll.ts": "e867a2b2d1f18da5f333abf7d31224a518cfb2c9c7d9489eed165c648d8e29f4",
-    "apps/api/src/music-catalog.ts": "1bd5bcffec31f024adf840fdda99e59f4bc58959710ffb62b2fe07a4127bd637",
+    "apps/api/src/music-catalog.ts": "327594532fb08c88e5ad185c8641fa639070c689db5c7435843d2bb7460e9077",
     "apps/api/src/music-circle-jobs.ts": "8af7a3e56c921a14fb7c255596b0a5eee3f03037ebaf3ae74365c824208cc9af",
     "apps/api/src/music-circle-task.ts": "d33f7a6d57e7439167db2f0fc1e5229a31d8051424159570c64003cfa828016b",
     "apps/api/src/music-circles.ts": "50392fee026bada65e6e2541c08a35d2d8d70bb817f065299f67457644a53e51",
@@ -76,10 +76,10 @@
     "apps/api/src/payment-codes.ts": "c9991b09208e86084cac36292afe2629ef2aa666241b7e513e5d3623b6699f20",
     "apps/api/src/payment-media.ts": "e6a5661767834fab3cb6ae91fe9038896ea76ebcaed3cb52660c57391c3a62f9",
     "apps/api/src/privacy-consent.ts": "f296772294485e7eeefe2dc95b37f304c41aa3d2c0913469b3448316961c2e85",
-    "apps/api/src/privacy.ts": "abde5b6fb35f8c502b09ebc0b38b58363ee80106877b1aaafcdaa807170d0437",
+    "apps/api/src/privacy.ts": "e855012631b89277cefa0141c0ced024fe13f32b5f53ae028eeca5fcbd00ebe1",
     "apps/api/src/qq-provider.ts": "150c75798935fae2563e5e163b406b6c789bf251ec8707e3959773c13cf65e0e",
     "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
-    "apps/api/src/repositories.ts": "f4ed2ee54ec3044434f00852b03cc3f8378bcc4732cf972ca7817f36a6483e5e",
+    "apps/api/src/repositories.ts": "ad46265e3e5ba94013b5274e2665f7db9a322b96fd7f693e64e2c0a1075cb67c",
     "apps/api/src/room-plan-command.ts": "70f540303955a965f9be4227064012954a77768372d42d19bdeb7eb66e281210",
     "apps/api/src/search.ts": "f69833ffc7ee15bb8380e399acd790e0e760ecff75d835133b5b2d0fb9cb2b29",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
@@ -125,7 +125,9 @@
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-rooms.ts": "29959a2db2d288851b629f1d46bfcedc45ed4128461f5cb95a4dfdd684c4ed8b",
     "packages/domain/src/music-search.ts": "3ac492c34d87da202f3b7529c56b86a58ecd6ddff5cfdb1c5d53000ae56be46a",
-    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
+    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc",
+    "apps/api/src/music-entry-locks.ts": "e966b1fc28e3891a53617669c32424d86ccb35a81791d6995ba2146ebb967854",
+    "packages/contracts/src/music-catalog.ts": "66ecaa20755a11fbb04feaa8cdcb9db464cd559d7e7f37461b83b17c39ed1fc5"
   },
   "operations": [
     {
@@ -1133,7 +1135,8 @@
         "apps/api/src/admin-security.ts",
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
-        "packages/domain/src/music-kana.ts"
+        "packages/domain/src/music-kana.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -1641,7 +1644,9 @@
         "packages/contracts/src/legacy-values.ts",
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
-        "packages/domain/src/music-kana.ts"
+        "packages/domain/src/music-kana.ts",
+        "apps/api/src/music-entry-locks.ts",
+        "packages/contracts/src/music-catalog.ts"
       ],
       "additionalHeaders": []
     },
@@ -1789,7 +1794,8 @@
       "conditions": [],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -1872,7 +1878,8 @@
         "packages/contracts/src/legacy-values.ts",
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
-        "packages/domain/src/music-kana.ts"
+        "packages/domain/src/music-kana.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -1947,7 +1954,8 @@
         "packages/contracts/src/legacy-values.ts",
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
-        "packages/domain/src/music-kana.ts"
+        "packages/domain/src/music-kana.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -2910,7 +2918,8 @@
         "apps/api/src/admin-security.ts",
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
-        "packages/domain/src/music-kana.ts"
+        "packages/domain/src/music-kana.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -2932,7 +2941,8 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -3809,7 +3819,8 @@
       "file": "apps/api/src/music-catalog.ts",
       "mode": "member-write",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "After ownership validation, persistent selection by a different native or legacy profile blocks creator updates and deletion. Matching committed receipts remain replayable; administrators retain separate maintenance authority."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -3823,7 +3834,9 @@
         "packages/contracts/src/legacy-values.ts",
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
-        "packages/domain/src/music-kana.ts"
+        "packages/domain/src/music-kana.ts",
+        "apps/api/src/music-entry-locks.ts",
+        "packages/contracts/src/music-catalog.ts"
       ],
       "additionalHeaders": []
     },
@@ -3909,7 +3922,8 @@
       ],
       "dependencies": [
         "apps/api/src/app.ts",
-        "apps/api/src/security.ts"
+        "apps/api/src/security.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -4021,7 +4035,8 @@
         "No browser session, account scope, Origin or CSRF requirement; the proof is only in the JSON body."
       ],
       "dependencies": [
-        "apps/api/src/app.ts"
+        "apps/api/src/app.ts",
+        "apps/api/src/music-entry-locks.ts"
       ],
       "additionalHeaders": []
     },
@@ -4165,7 +4180,8 @@
       "file": "apps/api/src/app.ts",
       "mode": "member-write",
       "conditions": [
-        "Revalidate the active member inside the write transaction before receipt replay or business writes."
+        "Revalidate the active member inside the write transaction before receipt replay or business writes.",
+        "Successful selections retain anonymous creator locks in the same transaction; self selections do not lock. Failed writes leave neither selections nor lock evidence."
       ],
       "dependencies": [
         "apps/api/src/security.ts",
@@ -4174,7 +4190,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-entry-locks.ts",
+        "apps/api/src/repositories.ts"
       ],
       "additionalHeaders": []
     },

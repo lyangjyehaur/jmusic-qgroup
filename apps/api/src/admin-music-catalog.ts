@@ -9,6 +9,7 @@ import { z } from 'zod';
 import type { AdminSecurity } from './admin-security';
 import { musicCatalog,entryCategories } from './music-catalog';
 import { hash } from './security';
+import { lockMusicEntry, lockedMusicEntries, removeMusicEntryLock, retainMusicSelectionLocks } from './music-entry-locks';
 import { normalizeMusicEntryNames, saveMusicEntryNames, removeMusicEntryNames } from './music-entry-names';
 
 const profiles=(db:DB)=>db.prepare(`SELECT id,revision FROM music_profiles WHERE ${musicProfileActiveSQL('music_profiles')} ORDER BY id`).all() as {id:string;revision:number}[];
@@ -39,9 +40,11 @@ function replaceReferences(db:DB,source:string,target:string|undefined,stamp:str
     const created=musicCreatedIds(db,p.id),selected=old.some(item=>item.entryId===source),owns=created.includes(source);
     if(!selected&&!owns)continue;
     if(selected){
+      retainMusicSelectionLocks(db,p.id);
       const next=mergeMusicSelections(old,source,target);
       db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(p.id);
       next.forEach((item,index)=>db.prepare('INSERT INTO music_selections VALUES(?,?,?,?)').run(p.id,item.entryId,item.level,index));
+      retainMusicSelectionLocks(db,p.id);
     }
     if(owns){
       const next=replaceMusicId(created,source,target);
@@ -92,7 +95,9 @@ export function registerAdminMusicCatalog(app:FastifyInstance,db:DB,admin:AdminS
         if(target.names||before!.names){const targetNames=target.names??emptyMusicNames();saveMusicEntryNames(db,target.id,{...targetNames,aliases:mergedAliases.filter(alias=>![targetNames.zhHant,targetNames.zhHans,targetNames.english,targetNames.reading,targetNames.romaji].some(label=>musicEntryKey(label)===musicEntryKey(alias)))});}
         db.prepare("INSERT INTO music_entry_details VALUES(?,?,?,'',?,'null') ON CONFLICT(entry_id) DO UPDATE SET aliases_json=excluded.aliases_json").run(target.id,target.category,aliases,JSON.stringify(target.createdAt??0));
       }
+      if(target && lockedMusicEntries(db).has(id)) lockMusicEntry(db,target.id);
       affectedProfiles=replaceReferences(db,id,target?.id,stamp);
+      removeMusicEntryLock(db,id);
       removeMusicEntryNames(db,id);
       db.prepare('DELETE FROM music_entry_details WHERE entry_id=?').run(id);
       db.prepare('DELETE FROM music_entries WHERE id=?').run(id);

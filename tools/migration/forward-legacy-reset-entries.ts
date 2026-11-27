@@ -38,7 +38,7 @@ export function repairAppliedLegacyResetEntries(checkpoint:DB,db:DB,records:Reco
   if(!db.inTransaction||db.pragma('foreign_keys',{simple:true})!==1)throw Error('Legacy reset entry repair requires a held foreign-key transaction');
   const ids=scope(checkpoint,db,records,vault);
   for(const id of ids){
-    db.prepare("DELETE FROM music_documents WHERE kind IN ('entry_source','entry_names') AND json_extract(payload_json,'$.entryId')=?").run(id);
+    db.prepare("DELETE FROM music_documents WHERE kind IN ('entry_source','entry_names','entry_lock') AND json_extract(payload_json,'$.entryId')=?").run(id);
     for(const table of ['music_selections','music_entry_creations','music_entry_details'])db.prepare(`DELETE FROM ${table} WHERE entry_id=?`).run(id);
     db.prepare('DELETE FROM music_entries WHERE id=?').run(id);
     db.prepare("UPDATE migration_map SET status='deleted' WHERE source='music' AND entity_type='entry' AND target_id=? AND status<>'deleted'").run(id);
@@ -71,7 +71,7 @@ export function reconcileAppliedLegacyResetEntries(checkpoint:DB,source:DB,candi
     try{
       for(const row of forwardRows(source,table)){
         let removed=table==='music_entries'&&entries.has(String(row.id))||['music_entry_details','music_selections','music_entry_creations'].includes(table)&&entries.has(String(row.entry_id));
-        if(table==='music_documents'&&['entry_source','entry_names'].includes(String(row.kind))){
+        if(table==='music_documents'&&['entry_source','entry_names','entry_lock'].includes(String(row.kind))){
           const value=JSON.parse(String(row.payload_json)) as {entryId?:unknown};
           if(typeof value.entryId==='string'&&entries.has(value.entryId))removed=true;
         }

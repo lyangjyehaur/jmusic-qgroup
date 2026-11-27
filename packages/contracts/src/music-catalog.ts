@@ -40,7 +40,7 @@ export const MusicEntryMembers = z.object({
 export const MyMusicEntries = z.object({
   profileId: z.string().nullable(),
   musicEpoch: z.number().int().nonnegative(),
-  entries: z.array(MusicCatalogEntry.extend({ revision: z.string() })),
+  entries: z.array(MusicCatalogEntry.extend({ revision: z.string(), creatorLocked: z.boolean().optional() })),
   createdCounts: z.object({ main: z.number().int().nonnegative(), sub: z.number().int().nonnegative() }),
   limits: z.object({ main: z.literal(2), sub: z.literal(8) }),
   categories: z.array(z.string()),

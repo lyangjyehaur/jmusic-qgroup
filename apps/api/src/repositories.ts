@@ -7,6 +7,7 @@ import {musicProfileActiveSQL} from '@qgroup/database';
 import type { ActivityView, MusicEntry, MusicProfile, SaveProfileInput } from '@qgroup/contracts';
 import { activityListStatus } from '@qgroup/contracts';
 import { activityState, DomainError, validateSelections } from '@qgroup/domain';
+import { retainMusicSelectionLocks } from './music-entry-locks';
 import { requireActivityAccess } from './activity-access';
 
 interface EventRow {
@@ -95,9 +96,11 @@ export function saveProfile(db: DB, userId: string, input: SaveProfileInput, now
     const account = db.prepare('SELECT nickname FROM users WHERE id=?').get(userId) as { nickname: string };
     db.prepare("INSERT INTO music_profile_fields VALUES(?,?,'',0,'',0,0,?)").run(id, account.nickname, updatedAt);
   }
+  retainMusicSelectionLocks(db,id);
   db.prepare('DELETE FROM music_selections WHERE profile_id=?').run(id);
   const insert = db.prepare('INSERT INTO music_selections VALUES(?,?,?,?)');
   input.selections.forEach((s, position) => insert.run(id, s.entryId, s.level, position));
+  retainMusicSelectionLocks(db,id);
   const after = { id, revision, selections: input.selections, updatedAt };
   db.prepare('INSERT INTO music_profile_audit(profile_id,revision,actor_id,before_json,after_json,created_at) VALUES(?,?,?,?,?,?)')
     .run(id, revision, userId, JSON.stringify(before), JSON.stringify(after), updatedAt);

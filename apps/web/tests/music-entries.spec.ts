@@ -72,6 +72,29 @@ test('creates a first term and blank profile, edits its classification and prote
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-music-entry-mobile.png', fullPage: true });
 });
+test('other selection locks an already-open form and stays visible after withdrawal without losing its draft', async ({page,context,browser})=>{
+  await login(context);const id=await seed(context,'共享詞條');
+  await page.goto(endpoint+'/'+id+'/edit');await field(page).fill('未送出的名稱');
+  const other=await browser.newContext({baseURL:origin});
+  try {
+    await login(other,'bob');const profile=await(await other.request.get('/api/v2/me/music',{headers:await access(other)})).json();
+    const put=async(selections:object[],revision:number,profileId:string|null)=>other.request.put('/api/v2/me/music',{headers:{...await access(other),'Idempotency-Key':crypto.randomUUID()},data:{profileId,revision,musicEpoch:0,selections}});
+    const selected=await put([{entryId:id,level:3}],profile?.revision??0,profile?.id??null);expect(selected.status()).toBe(200);
+    await page.getByRole('checkbox',{name:'已核對名稱、類型與分類，確認保存。',exact:true}).check();await page.getByRole('button',{name:'保存詞條',exact:true}).click();
+    await expect(page.getByText('已被其他人選用，建立者不能修改或刪除；請聯絡管理員維護',{exact:true})).toBeVisible();
+    const saved=await selected.json();expect((await put([{entryId:'main-0',level:4}],saved.revision,saved.id)).status()).toBe(200);
+    await page.getByRole('button',{name:'核對最新詞條，保留輸入',exact:true}).click();
+    await expect(page.getByText('已被其他人選用，建立者不能修改或刪除；請聯絡管理員維護。',{exact:true})).toBeVisible();
+    await expect(field(page)).toHaveValue('未送出的名稱');await expect(field(page)).toBeDisabled();await expect(page.getByRole('button',{name:'保存詞條',exact:true})).toBeDisabled();
+    await page.getByRole('link',{name:'我的詞條',exact:true}).click();
+    await page.getByRole('button',{name:'捨棄並離開',exact:true}).click();
+    await expect(page.getByText('細分 · 樂隊 · 0 人選用',{exact:true})).toBeVisible();
+    await expect(page.getByText('已被其他人選用，請聯絡管理員維護。',{exact:true})).toBeVisible();
+    await expect(page.getByRole('link',{name:'編輯 共享詞條',exact:true})).toHaveCount(0);
+    await page.goto(endpoint+'/'+id+'/delete');await expect(page.getByRole('button',{name:'刪除詞條',exact:true})).toBeDisabled();
+    await expect(page.getByText('取消選取後仍保留鎖定。',{exact:true})).toBeVisible();
+  } finally {await other.close();}
+});
 test('uses public classifications, alias/name normalization, independent type filters and the search keyboard shortcut', async ({
   page,
   context,
@@ -151,7 +174,7 @@ for (const command of ['create', 'update', 'delete'] as const)
         .locator('header')
         .getByRole('link', { name: /^收件匣/ })
         .click();
-      await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
+      await page.getByRole('button', { name: '保留操作並離開', exact: true }).click();
       await page
         .getByRole('link', {
           name: command === 'create' ? '建立詞條' : command === 'delete' ? '刪除詞條' : '編輯詞條',

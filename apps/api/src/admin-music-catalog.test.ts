@@ -9,6 +9,7 @@ import { AdminMusicCatalog,AdminMusicEntryResult } from '@qgroup/contracts';
 import { fixture } from '../testsupport/fixture';
 import { adminCatalogFixture,catalogProfiles } from '../testsupport/admin-catalog-fixture';
 import { createApp } from './app';
+import { lockedMusicEntries, lockMusicEntry } from './music-entry-locks';
 import { sharedRecords } from './privacy';
 const origin='https://rebuild.example',stamp='2026-11-17T08:00:00.000Z',cleanup:(()=>Promise<void>)[]=[];
 afterEach(async()=>{for(const close of cleanup.splice(0).reverse())await close();});
@@ -24,6 +25,26 @@ async function setup(db=openDatabase(':memory:')){
   return{db,app,headers,admin,viewer,list,send,command,picks};
 }
 describe('administrator native music catalog',()=>{
+  it('administrators maintain locked terms; merge preserves historical protection and deletion removes its document',async()=>{
+    const s=await setup();expect(lockedMusicEntries(s.db).has('sub-0')).toBe(true);
+    expect((await s.send(await s.command('update',{id:'sub-0',name:'管理維護',kind:'sub',category:'歌手'}))).statusCode).toBe(200);
+    s.db.prepare("INSERT INTO music_entry_details VALUES('sub-2','歌手','[]',?,0,'null')").run(catalogProfiles.alice);
+    lockMusicEntry(s.db,'sub-0');
+    expect((await s.send(await s.command('merge',{id:'sub-0',toId:'sub-2'}))).statusCode).toBe(200);
+    expect(lockedMusicEntries(s.db).has('sub-2')).toBe(true);
+    expect(s.db.prepare("SELECT 1 FROM music_documents WHERE kind='entry_lock' AND json_extract(payload_json,'$.entryId')='sub-0'").get()).toBeUndefined();
+    expect((await s.send(await s.command('delete',{id:'sub-2'}))).statusCode).toBe(200);
+    expect(s.db.prepare("SELECT 1 FROM music_documents WHERE kind='entry_lock' AND json_extract(payload_json,'$.entryId')='sub-2'").get()).toBeUndefined();
+  });
+
+  it.each(['alice','bob'] as const)('merge selections respect the target creator when selected by %s',async member=>{
+    const s=await setup(),source=(await s.send(await s.command('create',{name:'合併來源',kind:'sub',category:'歌手'}))).json().id;
+    s.db.prepare("INSERT INTO music_entry_details VALUES('sub-2','歌手','[]',?,0,'null')").run(catalogProfiles.alice);
+    s.db.prepare('INSERT INTO music_selections VALUES(?,?,3,3)').run(catalogProfiles[member],source);
+    expect((await s.send(await s.command('merge',{id:source,toId:'sub-2'}))).statusCode).toBe(200);
+    s.db.prepare("DELETE FROM music_selections WHERE entry_id='sub-2'").run();
+    expect(lockedMusicEntries(s.db).has('sub-2')).toBe(member==='bob');
+  });
   it('maintains structured labels without changing selections, identity, ownership or profile revision; survives backup and old-client edits',async()=>{
     const s=await setup(),before=s.picks('alice'),names={zhHant:'夜遊樂團',zhHans:'夜游乐队',english:'Night Music',reading:'よあそび',romaji:'YOASOBI',aliases:['  夜遊  ','NightBand']};
     const body=await s.command('update',{id:'sub-0',name:'YOASOBI',kind:'sub',category:'歌手',names}),key=randomUUID();
