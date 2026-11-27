@@ -1,4 +1,4 @@
-import { chooseOption, expectOption } from './kimi-controls';
+import { chooseOption, expectOption, closeMusicLevel } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -19,7 +19,7 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
   await expect(visible.first().getByRole('link', { name: '共同最多', exact: true })).toBeVisible();
   await expect(visible.first()).toContainText('共同詞條4（領域 2／細分 2）');
   await visible.first().getByText('更多成分資料',{exact:true}).click(); const breakdown = visible.first().locator('.match-breakdown');
-  await expect(breakdown).toHaveJSProperty('open', false);
+  await expect(breakdown.getByRole('button',{name:'匹配詳情',exact:true})).toHaveAttribute('aria-expanded','false');
   await expect(breakdown.getByText('嚴格重合', { exact: true })).not.toBeVisible();
   await breakdown.getByText('匹配詳情', { exact: true }).click();
   await expect(breakdown.getByText('嚴格重合', { exact: true })).toBeVisible();
@@ -30,7 +30,7 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
   await expect(visible.first()).toContainText('對方的留言：留言 共同最多');
   await expect(recommendations(page).getByText('對方的留言：留言 共同本命', { exact: true })).toHaveCount(0);
   await main(page).getByText('其餘同好 · 3 人', { exact: true }).click(); await expect(visible).toHaveCount(6);
-  const sparse = page.getByRole('group', { name: '資料較少的同好', exact: true });
+  const sparse = page.locator('.sparse-section > .more-matches');
   await sparse.locator(".disclosure-trigger").first().click(); await expect(sparse.locator('.match-card:visible')).toHaveCount(4);
   await expect(sparse).toContainText('資料較少：你 6 項，對方 1 項。'); await expect(sparse.locator('.match-note')).toHaveCount(0);
   await expect(sparse.locator('.match-score strong').first()).toHaveText('36%');
@@ -67,7 +67,7 @@ test('comparison terms use the shared selection workspace and return with saved 
   await login(context); const back = '/people/' + id(2) + '/compare?from=%2Fpeople%3Fsort%3Dfamiliar'; await page.goto(back);
   await comparison(page).getByText('只有對方選擇 · 1 項', { exact: true }).click(); await comparison(page).getByRole('link', { name: '米津玄師', exact: true }).click();
   await expect(page.getByRole('heading', { name: '米津玄師', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await chooseOption(page,'米津玄師喜歡程度','4');
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page); await chooseOption(page,'米津玄師喜歡程度','4');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到同好成分', exact: true }).click(); await expect(page).toHaveURL(back);
   await expect(comparison(page).getByRole('region', { name: '共同喜歡', exact: true })).toContainText('米津玄師');
@@ -78,7 +78,7 @@ test('comparison terms use the shared selection workspace and return with saved 
 test('returning from a comparison term keeps the draft in the shared workspace', async ({ page, context }) => {
   await login(context); await page.goto('/people?sort=familiar'); const card = main(page).locator('.match-card').first();
   await card.getByText('更多成分資料',{exact:true}).click(); await card.getByText('對方獨有 · 2 項', { exact: true }).click(); await card.getByRole('link', { name: '宇多田光', exact: true }).click();
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click(); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page); await page.getByRole('link', { name: '回到同好成分', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   await expect(page).toHaveURL('/people?sort=familiar'); await page.goto('/me/music'); await expect(page.getByLabel('宇多田光喜歡程度')).toBeVisible();
 });

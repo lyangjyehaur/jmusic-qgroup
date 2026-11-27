@@ -1,3 +1,4 @@
+import { closeMusicLevel } from './kimi-controls';
 import { test, expect } from './fixtures';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 
@@ -53,7 +54,7 @@ for (const size of [{ width: 430, height: 932, top: 47, bottom: 34, sides: 0 }, 
 test('overscroll and browser chrome changes never lift the dock or save reminder', async ({ page, context }) => {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-alice', url: origin }]);
   await page.setViewportSize({ width: 430, height: 932 }); await page.goto('/music?library=all');
-  await page.getByRole('button', { name: '選取Aimer', exact: true }).click();
+  await page.getByRole('button', { name: '選取Aimer', exact: true }).click();await closeMusicLevel(page);
   const dock = page.locator('.mobile-dock'), save = page.locator('.music-save-dock:not([hidden])');
   const nav = (await dock.boundingBox())!, actions = (await save.boundingBox())!;
   for (const change of [{ height: 932, offsetTop: -80 }, { height: 852, offsetTop: 0 }, { height: 700, offsetTop: 0 }]) {

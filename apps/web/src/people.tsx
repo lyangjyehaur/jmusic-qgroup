@@ -1,5 +1,5 @@
 import { errorText, uiText } from './language';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { Text, TextField } from 'yahha-ui';
@@ -18,6 +18,9 @@ import { Music2 } from 'lucide-react';
 import { ActionLink } from './action-link';
 import { Avatar, PageHeader, Tabs } from './kimi-ui';
 import { useDiscoveryDetails } from './discovery-details';
+import { FeedbackLayer } from './feedback-layer';
+import { useMusicWorkspace } from './music-selection';
+import { categoryLabel } from './music-entries';
 export function People() {
   const [params,setParams]=useSearchParams(),navigate=useNavigate(),tab=params.get('tab')??'recommend';
   return <div className="kimi page people-page"><PageHeader title="同好" actions={<ActionLink to="/me/music" startIcon={<Music2 size={16}/>}>編輯我的成分</ActionLink>}/><Tabs label="同好功能" value={tab} onChange={value=>{if(value==='circles')navigate('/people/circles');else if(value==='partners')navigate('/people/shouts');else{const next=new URLSearchParams(params);if(value==='recommend')next.delete('tab');else next.set('tab',value);setParams(next);}}} items={[{value:'recommend',label:uiText('同好推薦')},{value:'search',label:uiText('查詢／比較')},{value:'circles',label:uiText('同好圈子')},{value:'partners',label:uiText('找搭子')}]}/><MusicMemberAccess>{viewer=>tab==='search'?<section className="people-search-panel"><Lookup key={viewer.scope} viewer={viewer}/></section>:<MusicRecommendations key={viewer.scope+':'+viewer.musicEpoch} viewer={viewer}/>}</MusicMemberAccess><div className="main-only-links"><Link to="/tools/room-lab">自由分房</Link><Link to="/people/circles">同好圈子</Link><Link to="/people/shouts">找搭子</Link><Link to="/people?tab=search">查詢／比較</Link></div></div>;
@@ -47,6 +50,10 @@ export function PersonMusic() {
 }
 function Person({ viewer, id }: { viewer: Member; id: string }) {
   const location = useLocation();
+  const [copyMessage,setCopyMessage]=useState('');
+  const workspace=useMusicWorkspace();
+  const catalog=new Map(workspace.state==='ready'?workspace.selection.entries.map(entry=>[entry.id,entry]):[]);
+  useEffect(()=>{if(!copyMessage)return;const timer=setTimeout(()=>setCopyMessage(''),4000);return()=>clearTimeout(timer);},[copyMessage]);
   const profile = useQuery({ queryKey: ['private', viewer.scope, 'member-music', viewer.musicEpoch, id],
     queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/profiles/:id', { signal, params: { id } }), refetchOnMount: 'always' });
   const fresh=profile.isFetchedAfterMount&&!profile.error?profile.data:undefined;
@@ -58,5 +65,5 @@ function Person({ viewer, id }: { viewer: Member; id: string }) {
   return <section className="person-profile"><section className="profile-summary"><div className="profile-avatar-line"><Avatar user={{name:profile.data.name,avatar:profile.data.name.slice(0,1),color:"var(--moss)"}} size="xl"/><div><strong className="profile-person-name">{profile.data.name}</strong><span className="copy-value">{profile.data.id}<CopyMusicValue value={profile.data.id} label="成分 ID" compact/></span></div>{comparison.data&&<strong>{comparison.data.stats.matchPercent}%<small>匹配度</small></strong>}</div>
     {profile.data.note&&<blockquote className="match-note">留言：{profile.data.note}</blockquote>}
     <dl className="inline-definitions"><div><dt>稱呼</dt><dd className="copy-value">{profile.data.name}<CopyMusicValue key={profile.data.name} value={profile.data.name} label="名稱" compact/></dd></div>{profile.data.gender&&<div><dt>性別</dt><dd>{({female:uiText('女'),male:uiText('男')} as Record<string,string>)[profile.data.gender]??profile.data.gender}</dd></div>}<div><dt>聯絡 QQ</dt><dd><ContactValue key={profile.data.contactQQ} number={profile.data.contactQQ} source={profile.data.contactSource} compact/></dd></div></dl></section>
-    <section className="profile-common">{comparison.isPending?<Notice>正在讀取共同喜好…</Notice>:comparison.error?<Failure error={comparison.error} retry={()=>void comparison.refetch()}/>:<><h3>共同喜好・{comparison.data.shared.length}</h3>{comparison.data.shared.map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from:location.pathname+location.search}).toString())}>{pick.name}</Link>{pick.kind==='sub'&&<><span>{level(pick.myLevel)}</span><span>{level(pick.theirLevel)}</span></>}</div>)}</>}<Disclosure className="profile-all-picks"  title={<>音樂成分・{profile.data.selections.length} 項</>}>{profile.data.selections.length?<ul>{profile.data.selections.map(selection=><li key={selection.entryId}><Link to={musicEntryPath(selection.entryId,new URLSearchParams({from:location.pathname+location.search}).toString())}>{selection.name}</Link>{selection.kind==='sub'?' · '+level(selection.level):''}</li>)}</ul>:<Text>尚未選擇詞條。</Text>}</Disclosure></section></section>;
+    <section className="profile-common">{comparison.isPending?<Notice>正在讀取共同喜好…</Notice>:comparison.error?<Failure error={comparison.error} retry={()=>void comparison.refetch()}/>:<><h3>共同喜好・{comparison.data.shared.length}</h3>{comparison.data.shared.map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from:location.pathname+location.search}).toString())}>{pick.name}</Link>{pick.kind==='sub'&&<><span>{level(pick.myLevel)}</span><span>{level(pick.theirLevel)}</span></>}</div>)}</>}<Disclosure className="profile-all-picks"  title={<>音樂成分・{profile.data.selections.length} 項</>}>{profile.data.selections.length?<ul>{profile.data.selections.map(selection=><li key={selection.entryId}><span><Link to={musicEntryPath(selection.entryId,new URLSearchParams({from:location.pathname+location.search}).toString())}>{selection.name}</Link>{selection.kind==='sub'?' · '+level(selection.level):''}</span>{catalog.has(selection.entryId)&&<span className="profile-pick-meta"><span>{categoryLabel(catalog.get(selection.entryId)!.category)}</span><span>{catalog.get(selection.entryId)!.count} 人</span></span>}<CopyMusicValue value={selection.name} label="詞條" compact onMessage={setCopyMessage}/></li>)}</ul>:<Text>尚未選擇詞條。</Text>}</Disclosure></section>{copyMessage&&<FeedbackLayer><p className="music-save-result" role="status">{copyMessage}</p></FeedbackLayer>}</section>;
 }

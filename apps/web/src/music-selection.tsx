@@ -16,6 +16,7 @@ import type { Member } from './member-access';
 import { DiscoveryLayer } from './discovery-dialog';
 import { MusicSaveDock, musicSaveDockVisible } from './music-save-dock';
 import { FeedbackLayer } from './feedback-layer';
+import { MusicLevelPicker } from './music-level-picker';
 type CatalogEntry = z.infer<typeof MusicCatalog>['entries'][number];
 const isWorkspace = (pathname: string) => pathname === '/search' || pathname === '/music' || pathname === '/music/trends' || pathname === '/me/music' || pathname === '/me/music/share' || /^\/music\/entries\/[^/]+$/.test(pathname) || pathname === '/people' || /^\/people\/m_[a-f0-9]{24,40}(?:\/compare)?$/.test(pathname);
 const Draft = z.object({ profileId: z.string().nullable().default(null), musicEpoch: z.number().int().min(0).default(0), revision: z.number().int().min(0), selections: z.array(Selection).max(20), requestKey: z.string().uuid().optional() }).strict();
@@ -26,6 +27,9 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   const [saved,setSaved]=useState(initial),[message,setMessage]=useState('');
   const [conflict,setConflict]=useState(false),[reviewed,setReviewed]=useState(false);
   const [operation,setOperation]=useState<'save'|'read'|null>(null);
+  const [levelEntryId,setLevelEntryId]=useState<string|null>(null);
+  const location=useLocation();
+  useEffect(()=>setLevelEntryId(null),[location.key]);
   useEffect(()=>{if(message!==uiText('已保存。'))return;const timer=setTimeout(()=>setMessage(''),4000);return()=>clearTimeout(timer);},[message]);
   const fallback=(profile:MusicProfile):DraftValue=>({profileId:profile?.id??null,musicEpoch:viewer.musicEpoch,revision:profile?.revision??0,selections:profile?.selections??[]});
   const record=useDurableRecord<DraftValue>({key:storageKey,scope:viewer.scope,seed:()=>fallback(saved),parse:raw=>{
@@ -57,9 +61,15 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
   function edit(next:DraftValue){record.change(next);setMessage('');}
   function toggle(entry:CatalogEntry){
     if(locked)return;
-    if(selected.has(entry.id))edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entry.id)});
+    if(selected.has(entry.id)){
+      if(entry.kind==='sub')setLevelEntryId(entry.id);
+      else edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entry.id)});
+    }
     else if((entry.kind==='main'&&mainCount>=5)||(entry.kind==='sub'&&subCount>=15)||selected.size>=20)setMessage(uiText("領域最多 5 項、細分最多 15 項，合計最多 20 項。"));
-    else edit({...draft,selections:[...draft.selections,{entryId:entry.id,level:3}]});
+    else {
+      edit({...draft,selections:[...draft.selections,{entryId:entry.id,level:3}]});
+      if(entry.kind==='sub')setLevelEntryId(entry.id);
+    }
   }
   async function save(){
     if(unavailable||sending||needsRebase)return;
@@ -74,7 +84,7 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
       if(!mounted.current)return;const next=fallback(latest);if(!await persist(next,false,uiText("操作已送出，但無法保存確認狀態；請保留原操作並核對結果。")))throw Error('storage');
       setSaved(latest);setDraft(next);setConflict(false);setReviewed(false);queryClient.setQueryData(['private',viewer.scope,'music',draft.musicEpoch],latest);
       for(const key of ['music-catalog','music-trend'])void queryClient.invalidateQueries({queryKey:[key]});
-      for(const key of ['music-trend-members','music-entries','music-entry-members','member-music','music-matches','music-circles','music-comparison','music-share'])void queryClient.invalidateQueries({queryKey:['private',viewer.scope,key]});
+      for(const key of ['music-trend-members','music-entries','music-entry-members','member-music','profile-card-comparison','music-matches','music-circles','music-comparison','music-share'])void queryClient.invalidateQueries({queryKey:['private',viewer.scope,key]});
       announceAccountChange();setMessage(latest.revision===result.revision?uiText("已保存。"):uiText("原操作已保存，成分已再次變更；請核對目前選擇。"));
     }catch(error){
       if(!mounted.current)return;
@@ -93,9 +103,9 @@ function useMusicSelection({ viewer, initial, entries }: { viewer: Member; initi
     }catch(error){if(mounted.current)setMessage(error instanceof Error?errorText(error):uiText("讀取失敗，請重試讀取最新版本。"));}finally{if(mounted.current){setSending(false);setOperation(null);}}
   }
   function level(entryId:string,value:number){if(!locked)edit({...draft,selections:draft.selections.map(s=>s.entryId===entryId?{...s,level:value}:s)});}
-  function remove(entryId:string){if(!locked)edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entryId)});}
+  function remove(entryId:string){if(!locked){edit({...draft,selections:draft.selections.filter(s=>s.entryId!==entryId)});if(levelEntryId===entryId)setLevelEntryId(null);}}
   return {viewer,initial,entries,draft,saved,dirty,selected,mainCount,subCount,returnTo,record,
-    storageError:record.storageError,readError:record.readError,message,sending,operation,needsRebase,reviewed,blocker:record.blocker,save,rebase,toggle,level,remove,locked,unavailable,reset:()=>{if(!locked){setConflict(false);setReviewed(false);edit(fallback(saved));}}};
+    storageError:record.storageError,readError:record.readError,message,sending,operation,needsRebase,reviewed,blocker:record.blocker,save,rebase,toggle,level,remove,locked,unavailable,levelEntryId,closeLevelPicker:()=>setLevelEntryId(null),reset:()=>{if(!locked){setLevelEntryId(null);setConflict(false);setReviewed(false);edit(fallback(saved));}}};
 }
 export type MusicSelection = ReturnType<typeof useMusicSelection>;
 type Workspace = { state: 'ready'; selection: MusicSelection } | { state: 'pending' | 'guest' } | { state: 'error'; error: Error; retry: () => void };
@@ -127,7 +137,7 @@ function ReadyWorkspace(props: { viewer: Member; initial: MusicProfile; entries:
   const inline = location.pathname === '/music' && props.entries.some(entry => entry.id === new URLSearchParams(location.search).get('entry'));
   const saveDock = <MusicSaveDock selection={selection}/>;
   return <Context.Provider value={{ state: 'ready', selection }}>
-    <DiscoveryLayer feedback={!inline && <MusicWorkspaceFeedback />} selectionActions={!inline && saveDock}/>
+    <DiscoveryLayer feedback={!inline && <MusicWorkspaceFeedback />} selectionActions={!inline && saveDock} auxiliaryDialog={!inline && <MusicLevelPicker selection={selection}/>}/>
   </Context.Provider>;
 }
 export function MusicWorkspaceFeedback() {

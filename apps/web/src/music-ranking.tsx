@@ -8,6 +8,7 @@ import type { MusicCatalogEntry } from '@qgroup/contracts';
 import { rankMusic, musicRankLimit, musicBubbleLayout, musicBubbleLabel } from '@qgroup/domain';
 import { categoryLabel } from './music-entries';
 import { musicEntryPath } from './music-entry';
+import { MusicTermButton } from './music-term-button';
 
 type Entry = z.infer<typeof MusicCatalogEntry>;
 export function MusicRanking({ entries, kind, complete, params, update, selected }: {
@@ -31,7 +32,7 @@ export function MusicRanking({ entries, kind, complete, params, update, selected
           <div className="music-rank-copy">
           <Link to={'/music?' + new URLSearchParams({ ...Object.fromEntries(params), entry: entry.id })}>{entry.name}</Link>
           <Text>{categoryLabel(entry.category)}{selected?.has(entry.id) ? ' · 已選' : ''}</Text>
-          </div><Text className="music-rank-count">{entry.count} 人</Text>
+          </div><Text className="music-rank-count">{entry.count} 人</Text>{selected&&<MusicTermButton entryId={entry.id}/>}
         </li>)}
       </ol>
       {!complete && sorted.length > 10 && <div className="page-actions">

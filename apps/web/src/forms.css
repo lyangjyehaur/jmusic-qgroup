@@ -1,4 +1,13 @@
 /* Shared form and dialog geometry; field shapes use Yahha field tokens. */
+.kimi .music-level-options { display:grid; gap:8px; }
+.kimi .music-level-options .button { display:flex; justify-content:space-between; width:100%; min-height:64px; padding:12px 16px; text-align:start; }
+.kimi .music-level-options .button > span { display:grid; gap:4px; }
+.kimi .music-level-options strong { font-size:15px; }
+.kimi .music-level-options small { color:var(--muted); font-size:13px; font-weight:400; }
+.kimi .music-term-choice { flex:none; padding:6px; min-width:32px; min-height:32px; }
+.kimi .common-terms > div { flex-wrap:wrap; }
+.kimi .profile-pick-meta { display:flex; flex-wrap:wrap; gap:4px 8px; margin-inline-start:auto; color:var(--muted); font-size:12px; }
+.kimi .profile-all-picks li { display:flex; flex-wrap:wrap; align-items:center; gap:4px 8px; }
 .kimi :is(.account-field,.yj-field,.field) { min-width:0; }
 .kimi :is(.account-field > label,label.account-field,.yj-field > label,.yj-label,.field-label) { font-size:13px; font-weight:500; line-height:1.5; color:var(--muted); }
 .kimi .activity-editor form > fieldset:not(.registration-person), .kimi .editor-fields { border:0; padding:0; margin:0; min-width:0; }
@@ -20,12 +29,12 @@
 .kimi .registration-arrangement .detail > h2 { display:none; }
 .kimi .registration-arrangement dl { margin:0 0 12px; gap:8px 12px; font-size:13px; }
 .kimi.yj-dialog { display:flex; flex-direction:column; padding:0; overflow:hidden; }
-.kimi:is(.yj-dialog,.draft-confirm-dialog) > [class*="dialogTitle"] {
+.kimi:is(.yj-dialog,.draft-confirm-dialog,.music-level-dialog) > [class*="dialogTitle"] {
   flex:none; display:flex; align-items:center; min-height:64px; margin:0; padding:16px 64px 16px 20px;
   font-size:20px; line-height:28px; border-bottom:1px solid var(--line-soft);
 }
-.kimi:is(.yj-dialog,.draft-confirm-dialog) > [class*="dialogClose"] { top:10px; inset-inline-end:10px; width:44px; height:44px; min-height:44px; }
-.kimi:is(.yj-dialog,.draft-confirm-dialog) > [class*="dialogBody"] { margin:0; min-width:0; min-height:0; padding:20px; font-size:14px; line-height:1.6; overflow-y:auto; overscroll-behavior:contain; }
+.kimi:is(.yj-dialog,.draft-confirm-dialog,.music-level-dialog) > [class*="dialogClose"] { top:10px; inset-inline-end:10px; width:44px; height:44px; min-height:44px; }
+.kimi:is(.yj-dialog,.draft-confirm-dialog,.music-level-dialog) > [class*="dialogBody"] { margin:0; min-width:0; min-height:0; padding:20px; font-size:14px; line-height:1.6; overflow-y:auto; overscroll-behavior:contain; }
 .kimi.yj-dialog > [class*="dialogBody"] { flex:1; }
 .kimi.yj-dialog > [class*="dialogDescription"] { margin:0; padding:12px 20px 0; font-size:13px; }
 .kimi.yj-dialog > [class*="dialogFooter"] { flex:none; margin:0; padding:12px 20px; }
@@ -33,14 +42,16 @@
 .kimi.activity-action-dialog .activity-editor > h2 { font-size:16px; line-height:1.5; margin:0 0 16px; }
 .kimi.activity-action-dialog .activity-editor h2:not(:first-child) { margin-top:20px; }
 .kimi.activity-action-dialog .activity-editor form > .button { margin-top:4px; }
-.kimi.draft-confirm-dialog { width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:0; display:flex; flex-direction:column; overflow:hidden; z-index:120; background:var(--paper); box-shadow:var(--yahha-shadow-dialog); }
-[data-yahha-theme]:has(> .draft-confirm-dialog) > [class*="dialogBackdrop"] { z-index:119; }
+.kimi:is(.draft-confirm-dialog,.music-level-dialog) { width:min(440px,calc(100vw - 32px)); max-height:calc(100dvh - 32px); padding:0; display:flex; flex-direction:column; overflow:hidden; z-index:120; background:var(--paper); box-shadow:var(--yahha-shadow-dialog); }
+[data-yahha-theme]:has(> :is(.draft-confirm-dialog,.music-level-dialog)) > [class*="dialogBackdrop"] { z-index:119; }
 /* Base UI omits a nested backdrop; dim the underlying editor without another focusable layer. */
-[data-yahha-theme]:has(> .draft-confirm-dialog[data-nested])::before { content:""; position:fixed; inset:0; z-index:119; background:var(--yahha-overlay); }
-.kimi.draft-confirm-dialog > [class*="dialogBody"] { flex:1; }
-.kimi.draft-confirm-dialog > [class*="dialogBody"] p { margin:0; }
-.kimi.draft-confirm-dialog > [class*="dialogBody"] [role=alert] { margin-top:12px; color:var(--red); }
-.kimi.draft-confirm-dialog > [class*="dialogFooter"] { margin:0; padding:16px 20px; border-top:1px solid var(--line-soft); }
+[data-yahha-theme]:has(> :is(.draft-confirm-dialog,.music-level-dialog)[data-nested])::before { content:""; position:fixed; inset:0; z-index:119; background:var(--yahha-overlay); }
+.kimi:is(.draft-confirm-dialog,.music-level-dialog) > [class*="dialogBody"] { flex:1; }
+.kimi:is(.draft-confirm-dialog,.music-level-dialog) > [class*="dialogBody"] p { margin:0; }
+.kimi:is(.draft-confirm-dialog,.music-level-dialog) > [class*="dialogBody"] [role=alert] { margin-top:12px; color:var(--red); }
+.kimi:is(.draft-confirm-dialog,.music-level-dialog) > [class*="dialogFooter"] { margin:0; padding:16px 20px; border-top:1px solid var(--line-soft); }
+.kimi.music-level-dialog { width:min(420px,calc(100vw - 32px)); border-radius:var(--yahha-radius-dialog,16px); }
+.kimi.music-level-dialog > [class*="dialogDescription"] { margin:0; padding:12px 20px 0; font-size:13px; }
 .kimi .draft-leave-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
 .draft-feedback-float.kimi { position:fixed; z-index:105; top:calc(var(--topbar-height,64px) + 12px); right:20px; width:min(440px,calc(100vw - 32px)); display:grid; gap:6px; max-height:40dvh; overflow:auto; pointer-events:none; }
 .kimi.yj-dialog > .draft-feedback-float { position:absolute; top:calc(68px + env(safe-area-inset-top,0px)); right:16px; }

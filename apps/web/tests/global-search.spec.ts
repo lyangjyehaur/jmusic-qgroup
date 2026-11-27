@@ -1,4 +1,4 @@
-import { expectOption, expectControlValue } from './kimi-controls';
+import { expectOption, expectControlValue, closeMusicLevel } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 
@@ -61,11 +61,11 @@ test('returns from a visible person and comparison to the same submitted name se
 
 test('keeps the shared unsaved music selection while visiting search, a term and the profile editor', async ({ page, context }) => {
   await login(context); await page.goto('/search?q=mjxs'); await page.getByRole('link', { name: '米津玄師', exact: true }).click();
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
-  await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
+  await expect(page.getByRole('button', { name: '調整喜歡程度', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click();
   await page.getByRole('link', { name: '米津玄師', exact: true }).click();
-  await expect(page.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.getByRole('button', { name: '調整喜歡程度', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
   await expectOption(page,'米津玄師喜歡程度','3');
   await page.getByRole('link', { name: '← 回到搜尋', exact: true }).click(); await expectControlValue(page.getByLabel(field), 'mjxs');

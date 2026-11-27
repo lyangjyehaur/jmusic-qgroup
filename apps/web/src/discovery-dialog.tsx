@@ -30,7 +30,7 @@ export function RetainedPage({ location, children, inactive = false }: { locatio
 }
 
 /** Share one selection controller between the retained page and its route dialogs. */
-export function DiscoveryLayer({ feedback, selectionActions }: { feedback?: ReactNode; selectionActions?: ReactNode } = {}) {
+export function DiscoveryLayer({ feedback, selectionActions, auxiliaryDialog }: { feedback?: ReactNode; selectionActions?: ReactNode; auxiliaryDialog?: ReactNode } = {}) {
   const location = useLocation(), outlet = useOutlet(), navigate = useNavigate();
   const [details,setDetails]=useState<DiscoveryDetails|null>(null);
   const detailsKey=location.key+':'+location.pathname;
@@ -56,6 +56,8 @@ export function DiscoveryLayer({ feedback, selectionActions }: { feedback?: Reac
     {!open && selectionActions}
     <Dialog open={open} title={details?.path===detailsKey?details.title:title??'詳細資料'} description={details?.path===detailsKey?details.description:undefined} closeLabel="返回原頁" className="discovery-dialog kimi yj-dialog yj-dialog-wide" disablePointerDismissal onOpenChange={next => { if (!next) close(); }} footer={open&&(selectionActions||location.pathname!=='/search')?<>{selectionActions}{location.pathname!=='/search'&&<><Button variant="secondary" onClick={close}>{location.pathname.startsWith('/people/')?'返回':'返回詞庫'}</Button>{location.pathname.startsWith('/people/')?<ActionLink variant="primary" to={location.pathname+'/compare'+(back?'?'+new URLSearchParams({from:back}):'')} startIcon={<GitCompareArrows size={16}/>}>比較成分</ActionLink>:<ActionLink variant="primary" to={editorPath} startIcon={<ListMusic size={16}/>}>編輯我的成分</ActionLink>}</>}</>:undefined}>
       <DiscoveryDetailsContext.Provider value={{path:detailsKey,set:setDetails}}><DialogPageContext.Provider value={true}>{open && <>{feedback}{searchBack && <Link className="back" to={searchBack}>← 回到搜尋</Link>}{outlet}</>}</DialogPageContext.Provider></DiscoveryDetailsContext.Provider>
+      {open && auxiliaryDialog}
     </Dialog>
+    {!open && auxiliaryDialog}
   </>;
 }

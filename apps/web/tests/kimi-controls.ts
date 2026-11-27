@@ -1,6 +1,9 @@
 import type { Page } from '@playwright/test';
 const labels:Record<string,string>={main:'領域',sub:'細分','领域':'領域','乐队':'樂隊','组合':'組合','社团':'社團','企划':'企劃','1':'只聽過幾首','2':'聽過一些','3':'常聽','4':'本命',public:'公開',invitation:'邀請可見','运动':'運動','约K':'約 K','游戏':'遊戲','出游':'出遊',system:'跟隨系統',light:'淺色',dark:'深色',comfortable:'舒適',compact:'緊湊',gunju:'苔綠',pink:'粉色',blue:'淺藍',yellow:'淺黃',bound:'已取得 UnionID',missing:'QQ 已綁定、缺少 UnionID',unbound:'未綁定 QQ',custom:'自訂',female:'女',male:'男',rare:'共同項／冷門優先',familiar:'我的熟悉度優先'};
 export async function chooseOption(page:Page,label:string|RegExp,value:string|{label:string}){
+ if(typeof label==='string'&&label.endsWith('喜歡程度')&&await page.locator('.music-level-dialog').count()){
+  await chooseMusicLevel(page,typeof value==='string'?labels[value]??value:value.label);return;
+ }
  const control=page.getByLabel(label,{exact:true});
  return selectControl(control,value);
 }
@@ -15,7 +18,27 @@ export async function toggleMusicTerm(page:Page,name:string){
  const selected=page.getByRole('button',{name:'移除'+name,exact:true});
  if(await selected.count()){await selected.click();return;}
  await page.locator('.quick-add input').fill(name);
- await page.locator('.quick-add-results').getByRole('button').filter({hasText:name}).click();
+ const add=page.locator('.quick-add-results').getByRole('button').filter({hasText:name});
+ const sub=/細分|细分/.test(await add.innerText());await add.click();
+ if(sub)await chooseMusicLevel(page);
+}
+export async function chooseMusicLevel(page:Page,label='常聽'){
+ const localized=await page.locator('html').getAttribute('lang')==='zh-Hans'?({'本命':'本命','常聽':'常听','聽過一些':'听过一些','只聽過幾首':'只听过几首'}[label]??label):label;
+ await page.locator('.music-level-dialog').getByRole('button',{name:localized,exact:true}).click();
+ await page.locator('.music-level-dialog').waitFor({state:'hidden'});
+}
+export async function closeMusicLevel(page:Page){
+ await page.locator('.music-level-dialog').getByRole('button',{name:'關閉喜歡程度',exact:true}).click();
+ await page.locator('.music-level-dialog').waitFor({state:'hidden'});
+}
+export async function removeMusicTermFromDetail(page:Page){
+ const domain=page.getByRole('button',{name:'取消選取',exact:true});
+ const sub=page.getByRole('button',{name:'調整喜歡程度',exact:true});
+ await domain.or(sub).click();
+ if(await page.locator('.music-level-dialog').count()){
+  await page.locator('.music-level-dialog').getByRole('button',{name:'從已選中移除',exact:true}).click();
+  await page.locator('.music-level-dialog').waitFor({state:'hidden'});
+ }
 }
 export async function expectMusicTerm(page:Page,name:string,selected=true){
  await page.locator('.selection-workspace').waitFor();

@@ -5,6 +5,7 @@ import { Heading, Text } from 'yahha-ui';
 import type { z } from 'zod';
 import type { MusicMatchStats, MusicComparePick, MusicSharedPick } from '@qgroup/contracts';
 import { musicEntryPath } from './music-entry';
+import { MusicTermButton } from './music-term-button';
 const levelName = (level: number) => ({ 1: uiText("只聽過幾首"), 2: uiText("聽過一些"), 3: uiText("常聽"), 4: uiText("本命") }[level] ?? '');
 export function MatchStats({ stats, compact = false }: { stats: z.infer<typeof MusicMatchStats>; compact?: boolean }) {
   const common = <div><dt>共同詞條</dt><dd>{stats.sharedCount}（領域 {stats.sharedDomain}／細分 {stats.sharedSub}）</dd></div>;
@@ -22,8 +23,8 @@ export function MatchStats({ stats, compact = false }: { stats: z.infer<typeof M
     {stats.mineCovered && stats.theirsCovered ? <Text>雙方選擇的詞條相同。</Text> : stats.mineCovered ? <Text>對方包含你選擇的全部詞條。</Text> : stats.theirsCovered ? <Text>你包含對方選擇的全部詞條。</Text> : null}
   </div>;
 }
-export function ComparedPicks({ title, picks, shared = false, side = 'theirs', fold = false }: {
-  title: string; picks: (z.infer<typeof MusicComparePick> | z.infer<typeof MusicSharedPick>)[]; shared?: boolean; side?: 'mine' | 'theirs'; fold?: boolean;
+export function ComparedPicks({ title, picks, shared = false, side = 'theirs', fold = false, allowSelection = false }: {
+  title: string; picks: (z.infer<typeof MusicComparePick> | z.infer<typeof MusicSharedPick>)[]; shared?: boolean; side?: 'mine' | 'theirs'; fold?: boolean; allowSelection?: boolean;
 }) {
   const location = useLocation();
   const contents = <>{!picks.length ? <Text>沒有詞條。</Text> : (['main', 'sub'] as const).map(kind => {
@@ -34,6 +35,7 @@ export function ComparedPicks({ title, picks, shared = false, side = 'theirs', f
         <Link to={musicEntryPath(pick.id, new URLSearchParams({ from: location.pathname + location.search }).toString())}>{pick.name}</Link>
         {kind === 'sub' && <span>{shared && 'myLevel' in pick ? '你：' + levelName(pick.myLevel) + '／對方：' + levelName(pick.theirLevel) : (side === 'mine' ? '你：' : '對方：') + levelName(pick.level)}</span>}
         <span>{pick.count} 人選用</span>
+        {allowSelection&&<MusicTermButton entryId={pick.id}/>}
       </li>)}</ul>
     </section>;
   })}</>;

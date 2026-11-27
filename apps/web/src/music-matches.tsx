@@ -16,6 +16,7 @@ import { Failure, Notice, PageIntro } from './shared';
 import { ContactValue } from './music-contact-value';
 import { CopyMusicValue } from './music-copy';
 import { ComparedPicks, MatchStats } from './music-match-view';
+import { MusicTermButton } from './music-term-button';
 export function MusicRecommendations({ viewer }: { viewer: Member }) {
   const { sort, change } = useMusicMatchSort();
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-matches', viewer.musicEpoch, sort],
@@ -44,10 +45,10 @@ function MatchCard({ row, rank }: { row: z.infer<typeof MusicMatches>['matches']
   const level=(value:number)=>({1:uiText('只聽過幾首'),2:uiText('聽過一些'),3:uiText('常聽'),4:uiText('本命')}[value]);
   return <article className="person-card match-card"><header><div className="person-identity">{rank&&<span className="recommend-rank">{String(rank).padStart(2,'0')}</span>}<Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--app-accent)'}} size="lg"/><div><Link to={'/people/'+member.id+'?'+new URLSearchParams({from})}>{member.name}</Link><span>{member.id}</span></div></div><div className="match-score"><strong>{row.stats.matchPercent}<small>%</small></strong><span>匹配度</span></div></header>
     <div className="common-summary"><span>共同喜好 <strong>{row.stats.sharedCount}</strong></span><Badge>嚴格重合 {row.stats.score}%</Badge>{row.stats.bothTop>0&&<Badge tone="green">共同本命 {row.stats.bothTop}</Badge>}</div>
-    <div className="common-terms">{row.shared.slice(0,4).map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from}).toString())}>{pick.name}</Link>{pick.kind==='sub'&&<span><em className={pick.myLevel===4?'favorite':''}>我・{level(pick.myLevel)}</em><i/><em className={pick.theirLevel===4?'favorite':''}>對方・{level(pick.theirLevel)}</em></span>}</div>)}</div>
+    <div className="common-terms">{row.shared.slice(0,4).map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from}).toString())}>{pick.name}</Link><MusicTermButton entryId={pick.id}/>{pick.kind==='sub'&&<span><em className={pick.myLevel===4?'favorite':''}>我・{level(pick.myLevel)}</em><i/><em className={pick.theirLevel===4?'favorite':''}>對方・{level(pick.theirLevel)}</em></span>}</div>)}</div>
 
     <footer><div><ActionLink to={'/people/'+member.id+'?'+new URLSearchParams({from})} size="sm">成分卡</ActionLink><ActionLink variant="ghost" size="sm" to={'/people/'+member.id+'/compare?'+new URLSearchParams({from})} startIcon={<GitCompareArrows size={14}/>}>比較成分</ActionLink></div><ChevronRight size={17}/></footer>
-    <Disclosure className="profile-extras"  title={<>更多成分資料</>}>    <Disclosure className="match-breakdown"  title={<>匹配詳情</>}><MatchStats stats={row.stats}/><ComparedPicks title="共同喜歡" picks={row.shared} shared/></Disclosure><ComparedPicks title="對方獨有" picks={row.onlyTheirs} fold/>
+    <Disclosure className="profile-extras"  title={<>更多成分資料</>}>    <Disclosure className="match-breakdown"  title={<>匹配詳情</>}><MatchStats stats={row.stats}/><ComparedPicks title="共同喜歡" picks={row.shared} shared allowSelection/></Disclosure><ComparedPicks title="對方獨有" picks={row.onlyTheirs} fold allowSelection/>
     {member.note&&<Text className="match-note">對方的留言：{member.note}</Text>}{member.gender&&<Text>性別：{member.gender}</Text>}<ContactValue number={member.contactQQ} source={member.contactSource}/>
     <Disclosure className="copy-profile"  title={<>複製資料</>}><CopyMusicValue value={member.name} label="名稱"/><CopyMusicValue value={member.id} label="成分 ID"/></Disclosure></Disclosure>
   </article>;

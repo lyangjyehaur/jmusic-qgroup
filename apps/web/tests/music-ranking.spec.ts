@@ -1,4 +1,4 @@
-import { chooseOption, expectOption } from './kimi-controls';
+import { chooseOption, expectOption, closeMusicLevel } from './kimi-controls';
 import type { BrowserContext, Page } from '@playwright/test';
 import { test, expect } from './fixtures';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -66,7 +66,7 @@ test('opens bubbles by keyboard and preserves draft levels, selection markers an
   await expect(page).toHaveURL('/music/entries/sub-0?mainView=bubbles&subView=bubbles');
   await expect(page.getByRole('dialog')).toBeVisible();
   expect(await page.getByRole('dialog').evaluate(node => node.contains(document.activeElement))).toBe(true);
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
   await chooseOption(page,'YOASOBI喜歡程度','4');
   await page.getByRole('link', { name: '回到音樂詞庫', exact: true }).click();
   await expect(sub.getByRole('link', { name: 'YOASOBI，0 人，已選', exact: true })).toBeVisible();
@@ -84,7 +84,7 @@ test('shows current aggregates and refreshes another tab after erasing a profile
   await login(context); await page.goto('/music?entry=sub-0&subView=bubbles');
   const stat = (name: string) => page.locator('[aria-label="音樂統計"]').locator('div').filter({ has: page.getByText(name, { exact: true }) }).locator('dd');
   await expect(stat('成分')).toHaveText('3');
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(stat('成分')).toHaveText('4'); await expect(stat('24 小時新增成分')).toHaveText('1');
   const privacy = await context.newPage(); await privacy.goto('/me/privacy');
@@ -118,7 +118,7 @@ test('preserves the active editor and draft when a background catalog refresh fa
     ? route.fulfill({ status: 503, contentType: 'application/json', json: { code: 'TEMPORARY', message: '合成詞庫暫時不可用' } })
     : route.continue());
   await page.goto('/music?entry=sub-0');
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
   await chooseOption(page,'YOASOBI喜歡程度','4');
   fail = true; await page.clock.fastForward(10001);
   await expect(page.getByRole('alert')).toContainText('合成詞庫暫時不可用');

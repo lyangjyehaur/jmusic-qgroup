@@ -1,4 +1,4 @@
-import { chooseOption } from './kimi-controls';
+import { removeMusicTermFromDetail, chooseOption } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -45,13 +45,13 @@ test('thresholds persist through member and comparison navigation, keyboard link
 test('term editing uses the shared draft, confirms leaving, saves explicitly and updates circles', async ({ page, context }) => {
   await login(context); await page.goto('/people/circles?minLink=40');
   await circles(page).getByRole('link', { name: '圈子詞 chain-b', exact: true }).click();
-  await page.getByRole('button', { name: '取消選取', exact: true }).click(); await page.getByRole('link', { name: '回到同好圈子', exact: true }).click();
+  await removeMusicTermFromDetail(page); await page.getByRole('link', { name: '回到同好圈子', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toBeVisible(); await page.getByRole('button', { name: '繼續編輯', exact: true }).click();
   await expect(page.getByRole('button', { name: '選取此詞條', exact: true })).toBeVisible(); await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible(); await page.getByRole('link', { name: '回到同好圈子', exact: true }).click();
   await expect(page).toHaveURL('/people/circles?minLink=40'); await expect(circles(page).locator('.music-circle').filter({ has: page.getByRole('link', { name: '橋接', exact: true }) }).getByRole('heading', { name: /2 人$/ })).toBeVisible();
   await expect(singles(page).getByRole('link', { name: '鏈首', exact: true })).toBeVisible(); await expect(stats(page).filter({ hasText: '3 人' })).toHaveCount(1);
-  await singles(page).getByRole('link', { name: '圈子詞 chain-a', exact: true }).click(); await page.getByRole('button', { name: '取消選取', exact: true }).click();
+  await singles(page).getByRole('link', { name: '圈子詞 chain-a', exact: true }).click(); await removeMusicTermFromDetail(page);
   await page.getByRole('link', { name: '回到同好圈子', exact: true }).click(); await page.getByRole('button', { name: '保留原稿並離開', exact: true }).click();
   await page.goto('/me/music?from=%2Fpeople%2Fcircles%3FminLink%3D40'); await expect(page.getByRole('button', { name: '移除圈子詞 chain-a', exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: '回到同好圈子', exact: true })).toHaveAttribute('href', '/people/circles?minLink=40');

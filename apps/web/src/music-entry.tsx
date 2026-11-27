@@ -43,7 +43,7 @@ export function MusicEntryDetails({ entry }: {
     <dl className="inline-definitions">{entry.aliases.length>0&&<div><dt>別名</dt><dd>{entry.aliases.join('、')}</dd></div>}<div><dt>選用人數</dt><dd>{entry.count} 人</dd></div>{entry.creatorName&&<div><dt>建立者</dt><dd>{entry.creatorName}</dd></div>}</dl>
     <div className="page-actions">
       {selection ? <Button aria-pressed={selection.selected.has(entry.id)} disabled={selection.locked}
-        onClick={() => selection.toggle(entry)}>{selection.selected.has(entry.id) ? '取消選取' : '選取此詞條'}</Button>
+        onClick={() => selection.toggle(entry)}>{selection.selected.has(entry.id) ? entry.kind==='sub'?'調整喜歡程度':'取消選取' : '選取此詞條'}</Button>
         : <Link to={'/me/music' + location.search}>編輯我的選擇</Link>}
     </div>
     {workspace.state !== 'error' && <section aria-label="誰選了">

@@ -1,4 +1,4 @@
-import { chooseOption, expectOption, expectControlValue } from './kimi-controls';
+import { chooseOption, expectOption, expectControlValue, closeMusicLevel } from './kimi-controls';
 import type { BrowserContext } from '@playwright/test';
 import { test, expect } from './fixtures';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -26,7 +26,7 @@ test('keeps selector identities behind login and saved-profile gates on inline a
   expect(reads).toBe(0);
   await members.getByRole('link', { name: '保存成分', exact: true }).click();
   await page.getByLabel('尋找喜歡的音樂', { exact: true }).fill('YOASOBI');
-  await page.locator('.quick-add-results').getByRole('button').filter({hasText:'YOASOBI'}).click();
+  await page.locator('.quick-add-results').getByRole('button').filter({hasText:'YOASOBI'}).click();await closeMusicLevel(page);
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click();
@@ -38,7 +38,7 @@ test('shares the draft and filters with the direct page but adds selectors only 
   const detail = page.getByRole('region', { name: '詞條資料', exact: true });
   const members = page.getByRole('region', { name: '誰選了', exact: true });
   await expect(members.getByRole('listitem')).toHaveCount(3);
-  await detail.getByRole('button', { name: '選取此詞條', exact: true }).click();
+  await detail.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
   await chooseOption(page,'Aimer喜歡程度','4');
   await expect(members.getByRole('link', { name: '小青', exact: true })).toHaveCount(0);
   await expect(detail.getByRole('link', { name: '開啟詞條頁面', exact: true })).toHaveCount(0);
@@ -55,14 +55,14 @@ test('shares the draft and filters with the direct page but adds selectors only 
   await expect(page.getByText(/private note|private gender/)).toHaveCount(0);
   await page.getByRole('link', { name: '回到詞條資料', exact: true }).click();
   await expect(page).toHaveURL('/music/entries/sub-2?q=ai');
-  await expect(detail.getByRole('button', { name: '取消選取', exact: true })).toHaveAttribute('aria-pressed', 'true');
+  await expect(detail.getByRole('button', { name: '調整喜歡程度', exact: true })).toHaveAttribute('aria-pressed', 'true');
   await page.getByRole('link', { name: '回到音樂詞庫', exact: true }).click();
   await expectControlValue(page.getByLabel('搜尋音樂詞條', { exact: true }), 'ai');
   await page.goBack(); await expect(page).toHaveURL('/music/entries/sub-2?q=ai');
 });
 test('preserves unfinished selections when visiting a selector and restores the term and filters on return', async ({ page, context }) => {
   await seed(context); await page.goto('/music?entry=sub-2&q=ai&kind=sub');
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
   await chooseOption(page,'Aimer喜歡程度','1');
   await page.getByRole('link', { name: '舊成分 10001', exact: true }).click();
   await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
@@ -178,7 +178,7 @@ test('removes selector access on music erasure in another tab, isolates an accou
   await expect(members.getByRole('listitem')).toHaveCount(3);
   await login(context); await page.reload();
   await expect(members).toContainText('請先保存成分，再查看選取者。');
-  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();
+  await page.getByRole('button', { name: '選取此詞條', exact: true }).click();await closeMusicLevel(page);
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(members.getByRole('link', { name: '小青', exact: true })).toBeVisible();
   await privacy.close();
