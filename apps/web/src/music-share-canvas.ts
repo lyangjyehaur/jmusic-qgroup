@@ -29,9 +29,9 @@ export function drawMusicShare(canvas: HTMLCanvasElement, input: ShareCard) {
       const pair=picks.slice(i,i+2),names=pair.map(pick=>{ctx.font=font(21,true);return musicShareLines(pick.name,tileWidth-24,3,value=>ctx.measureText(value).width);});
       const tileHeight=Math.max(...names.map(lines=>lines.length))*30+50;
       pair.forEach((pick,index)=>{
-        const x=padding+index*(tileWidth+12);tiles.push({x,y,width:tileWidth,height:tileHeight,top:kind==='sub'&&pick.level===4});
+        const x=padding+index*(tileWidth+12);tiles.push({x,y,width:tileWidth,height:tileHeight,top:pick.level===4});
         names[index]!.forEach((line,row)=>rows.push({text:line,x:x+12,y:y+12+row*30,size:21,bold:true,muted:false}));
-        const detail=(kind==='sub'?({1:uiText('只聽過幾首'),2:uiText('聽過一些'),3:uiText('常聽'),4:uiText('本命')}[pick.level]??'')+' · ':'')+pick.count+uiText(' 人選用');
+        const detail=({1:uiText('只聽過幾首'),2:uiText('聽過一些'),3:uiText('常聽'),4:uiText('本命')}[pick.level]??'')+' · '+pick.count+uiText(' 人選用');
         rows.push({text:detail,x:x+12,y:y+tileHeight-28,size:16,bold:false,muted:true});
       });
       y+=tileHeight+12;

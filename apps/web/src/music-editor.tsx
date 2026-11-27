@@ -15,11 +15,11 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
     {form.draft.selections.length ? <ul className="selected-list">{form.draft.selections.map(selected => {
       const entry = form.entries.find(entry => entry.id === selected.entryId);
       const name = entry?.name ?? uiText('已移除的詞條');
-      return <li key={selected.entryId}><label><span>{name}</span>{entry?.kind === 'sub' &&
+      return <li key={selected.entryId}><label><span>{name}</span>
         <Select aria-label={name + '喜歡程度'} value={selected.level} disabled={form.locked} onChange={event => form.level(selected.entryId, Number(event.target.value))}>
           {[[4, uiText('本命')], [3, uiText('常聽')], [2, uiText('聽過一些')], [1, uiText('只聽過幾首')]].map(([value, label]) =>
             <option key={value} value={value}>{label}</option>)}
-        </Select>}</label><Button variant="ghost" size="sm" aria-label={'移除' + name}
+        </Select></label><Button variant="ghost" size="sm" aria-label={'移除' + name}
           disabled={form.locked} onClick={() => form.remove(selected.entryId)}>移除</Button></li>;
     })}</ul> : <Text tone="muted">請選擇詞條。</Text>}
     {form.dirty && <div className="editor-actions"><span className="mobile-summary" role="status">

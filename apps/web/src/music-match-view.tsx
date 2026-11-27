@@ -33,7 +33,7 @@ export function ComparedPicks({ title, picks, shared = false, side = 'theirs', f
       <Heading level={4}>{kind === 'main' ? '領域' : '細分'}</Heading>
       <ul className="match-picks">{group.map(pick => <li key={pick.id}>
         <Link to={musicEntryPath(pick.id, new URLSearchParams({ from: location.pathname + location.search }).toString())}>{pick.name}</Link>
-        {kind === 'sub' && <span>{shared && 'myLevel' in pick ? '你：' + levelName(pick.myLevel) + '／對方：' + levelName(pick.theirLevel) : (side === 'mine' ? '你：' : '對方：') + levelName(pick.level)}</span>}
+        <span>{shared && 'myLevel' in pick ? '你：' + levelName(pick.myLevel) + '／對方：' + levelName(pick.theirLevel) : (side === 'mine' ? '你：' : '對方：') + levelName(pick.level)}</span>
         <span>{pick.count} 人選用</span>
         {allowSelection&&<MusicTermButton entryId={pick.id}/>}
       </li>)}</ul>

@@ -97,7 +97,7 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
   function edit(patch: Partial<z.infer<typeof Draft>>) { if(!current||locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }
   return <><DraftFeedback form={{...record,message:message||record.message,busy:busy||pinBusy,hasPending:record.hasPending||pinPending,leaveHint:pinDirty?uiText('未送出的口令不會保存；已送出的操作編號會保留。'):undefined}}/>
     <Surface className="detail auth-panel">{current ? <><Heading level={2}>{current.name}</Heading>{current.contactQQ&&<Text>QQ：{current.contactQQ}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
-      <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? `${uiText(" · 程度 ")}${selection.level}` : ''}</li>)}</ul>
+      <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{`${uiText(" · 程度 ")}${selection.level}`}</li>)}</ul>
       <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice></>}
       {current && <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>}
       {(current || ownershipDirty) && <><Field className="account-field" label={<>目標帳號 ID</>}><input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></Field>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
