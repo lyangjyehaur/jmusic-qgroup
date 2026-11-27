@@ -118,11 +118,11 @@ function Editor({
   const form=useDurableRecord<Draft>({key:storageKey,scope:viewer.scope,seed:newDraft,parse:raw=>parseMusicRoomDraft(raw,fresh.eventId),dirty:d=>d.selected.length>1||!!d.rooms.length||!!d.result||d.mode!=='rooms'||d.value!=='2'||!!d.sizes||d.sameGender,pending:()=>false});
   const {value:draft,replace:setDraft,busy,setBusy,active,persist,begin}=form;
   const [message,setMessage]=useState(''),[denied,setDenied]=useState(false),[calculating,setCalculating]=useState(false),
-    [search,setSearch]=useState(''),[page,setPage]=useState(1),[lookup,setLookup]=useState(''),[shuffle,setShuffle]=useState(()=>Math.random());
+    [search,setSearch]=useState(''),[locatedMember,setLocatedMember]=useState(''),[page,setPage]=useState(1),[lookup,setLookup]=useState(''),[shuffle,setShuffle]=useState(()=>Math.random());
   const checking=useRef(false),generation=useRef(0),controller=useRef<AbortController|undefined>(undefined),source=draft.source;
   const stale=!!readError||source.sourceVersion!==fresh.sourceVersion,locked=form.unavailable||form.busy;
   useEffect(()=>()=>{generation.current++;controller.current?.abort();},[]);
-  useEffect(()=>{generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);setMessage('');setSearch('');setLookup('');setPage(1);},[form.epoch]);
+  useEffect(()=>{generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);setMessage('');setSearch('');setLocatedMember('');setLookup('');setPage(1);},[form.epoch]);
   useEffect(()=>{if(stale&&!checking.current){generation.current++;controller.current?.abort();setBusy(false);setCalculating(false);}},[stale]);
   function edit(patch:Partial<Draft>){if(locked)return;generation.current++;controller.current?.abort();form.change({...draft,...patch});setMessage('');}
   function failed(error:unknown){if(error instanceof ApiError&&([401,403].includes(error.status)||error.code==='ACCOUNT_CHANGED'))setDenied(true);}
@@ -210,7 +210,7 @@ function Editor({
         setMessage(uiText("這份成分不在目前分房來源，請先核對最新來源。"));
         return;
       }
-      setSearch(member.id);
+      setSearch(member.name);setLocatedMember(member.id);
       setPage(1);
     } catch (error) {
       if (active.current && generation.current === attempt) { failed(error);
@@ -292,7 +292,7 @@ function Editor({
     .filter(
       (member) =>
         member.profileId &&
-        (!search || member.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()) || member.id.includes(search)),
+        (locatedMember ? member.id === locatedMember : (!search || member.name.toLocaleLowerCase().includes(search.toLocaleLowerCase()))),
     )
     .sort((a, b) => (b.recommendation ?? -1) - (a.recommendation ?? -1) || a.name.localeCompare(b.name));
   const randomOrder = (id: string) => {
@@ -311,7 +311,7 @@ function Editor({
             .filter((member) => !recommendedIds.has(member.id))
             .sort((a, b) => randomOrder(a.id) - randomOrder(b.id)),
         ];
-  const name = (id: string) => known.get(id)?.name ?? uiText('來源已移除（') + id + '）',
+  const name = (id: string) => known.get(id)?.name ?? uiText('來源已移除'),
     assigned = new Set(draft.rooms.flatMap((room) => room.members)),
     unassigned = source.members.filter(
       (member) => (selected.has(member.id) || !!source.eventId) && !assigned.has(member.id),
@@ -362,7 +362,7 @@ function Editor({
           {!source.eventId && (
             <div className="page-actions">
               <Field className="account-field" label={<>
-                固定成分 ID 或聯絡 QQ
+                QQ
 
               </>}><input maxLength={80} value={lookup} onChange={(event) => setLookup(event.target.value)} /></Field>
               <Button variant="secondary" disabled={busy || stale || !lookup.trim()} onClick={() => void findMember()}>
@@ -371,12 +371,12 @@ function Editor({
             </div>
           )}
           <Field className="account-field" label={<>
-            搜尋成員名稱或成分 ID
+            搜尋成員名稱
 
           </>}><input
               value={search}
               onChange={(event) => {
-                setSearch(event.target.value);
+                setSearch(event.target.value);setLocatedMember('');
                 setPage(1);
               }}
             /></Field>

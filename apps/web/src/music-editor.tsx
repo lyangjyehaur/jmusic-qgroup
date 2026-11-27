@@ -42,7 +42,7 @@ export function ProfileEditor({ selection: form }: { selection: MusicSelection }
   return <div className="profile-editor"><PageIntro title="我的成分" /><nav className="tabs profile-tabs" aria-label="我的成分功能"><Link to="/me/music" aria-current="page">成分編輯</Link>
     <Link to="/me/music/entries">我的詞條</Link>{form.saved ? <>
       <Link to="/me/music/details">成分資料</Link><Link to="/me/music/contact">聯絡 QQ</Link>
-      <Link to={'/people/' + form.saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回舊成分</Link>}
+      <Link to={'/people/' + form.saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回成分</Link>}
     </nav>{form.returnTo && <Link className="back" to={form.returnTo}>{form.returnTo.startsWith('/people/shouts') ? '回到找搭子' : form.returnTo.startsWith('/people/circles') ? '回到同好圈子' : form.returnTo.startsWith('/people') ? '回到同好成分' : form.returnTo.startsWith('/music/trends') ? '回到音樂趨勢' : '← 回到剛才的活動'}</Link>}
     <div className="content-columns music-editor"><section>
       <MusicSearch filters={filters} categories={categories} label="尋找喜歡的音樂" />

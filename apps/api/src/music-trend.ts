@@ -1,3 +1,4 @@
+import { musicAvatars, withMusicAvatar } from './music-identity';
 import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
@@ -73,7 +74,7 @@ export function startMusicTrendSampler(db: DB, now: () => Date, onError: (error:
   tick(); schedule();
   return () => { stopped = true; clearTimeout(timer); };
 }
-export function registerMusicTrend(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
+export function registerMusicTrend(app: FastifyInstance, db: DB, security: Security, now: () => Date, clientId?: string) {
   app.get('/api/v2/music/trend', async request => db.transaction(() => {
     EmptyHttpQuery.parse(request.query);
     return readMusicTrend(db, now());
@@ -81,6 +82,7 @@ export function registerMusicTrend(app: FastifyInstance, db: DB, security: Secur
   app.get('/api/v2/music/trend/members', async request => db.transaction(() => {
     const viewer = security.scopedMember(request); EmptyHttpQuery.parse(request.query);
     if (!getProfile(db, viewer.id)) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看新增同好', 403));
-    return MusicTrendMembers.parse({ members: profiles(db).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8) });
+    const avatars = musicAvatars(db, clientId);
+    return MusicTrendMembers.parse({ members: profiles(db).sort((a, b) => (b.createdAt ?? 0) - (a.createdAt ?? 0)).slice(0, 8).map(member => withMusicAvatar(member, avatars)) });
   })());
 }

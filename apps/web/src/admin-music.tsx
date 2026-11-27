@@ -19,7 +19,7 @@ function useAdminFailure(error: unknown, viewer: Viewer) {
   const client=useQueryClient();useEffect(()=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[error,client,viewer.scope]);
 }
 const statusLabels = { oauth: uiText("QQ 授權關聯"), prelinked: uiText("預先關聯"), unlinked: uiText("未關聯"), account: uiText("帳號成分") };
-const ownerLabel = (owner: Profile['owner']) => owner ? `${owner.nickname}（${owner.id}）` : uiText('未關聯');
+const ownerLabel = (owner: Profile['owner']) => owner ? owner.nickname : uiText('未關聯');
 export function AdminMusicDirectory() {
   return <><PageIntro title="成分關聯" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <Directory key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
 }
@@ -36,7 +36,7 @@ function Directory({ viewer, access }: { viewer: Viewer; access: Access }) {
     <Field className="account-field" label={<>搜尋成分</>}><input type="search" value={input} maxLength={100} onChange={event => setInput(event.target.value)} /></Field>
     <Field className="account-field" label={<>成分關聯狀態</>}><Select value={filter} onChange={event => setFilter(event.target.value)}><option value="all">全部</option>{Object.entries(statusLabels).map(([value, label]) => <option key={value} value={value}>{label}</option>)}</Select></Field><Button type="submit">搜尋</Button>
   </form></Surface>{query.isPending ? <Notice>正在讀取成分…</Notice> : query.error ? <Failure error={query.error} retry={() => void query.refetch()} /> : <>
-    <Text role="status">共 {query.data.total} 份成分</Text>{query.data.profiles.map(profile => <Surface className="detail auth-panel" key={profile.id}><Heading level={2}><Link to={'/admin/music/' + profile.id}>{profile.name}</Link></Heading><Text>成分 ID：{profile.id}</Text>{profile.legacyKey && <Text>舊成分查詢標識：{profile.legacyKey}</Text>}<Text>{profile.owner ? statusLabels[profile.status] + ' · ' + ownerLabel(profile.owner) : statusLabels[profile.status]}</Text><Text>原口令：{profile.hasPin ? '已設定' : '未設定'}</Text></Surface>)}
+    <Text role="status">共 {query.data.total} 份成分</Text>{query.data.profiles.map(profile => <Surface className="detail auth-panel" key={profile.id}><Heading level={2}><Link to={'/admin/music/' + profile.id}>{profile.name}</Link></Heading>{profile.contactQQ&&<Text>QQ：{profile.contactQQ}</Text>}<Text>{profile.owner ? statusLabels[profile.status] + ' · ' + ownerLabel(profile.owner) : statusLabels[profile.status]}</Text><Text>原口令：{profile.hasPin ? '已設定' : '未設定'}</Text></Surface>)}
     {!query.data.total && <Notice>沒有符合條件的成分。</Notice>}<div className="page-actions"><Button variant="secondary" disabled={search.offset <= 0} onClick={() => setSearch({ ...search, offset: Math.max(0, search.offset - 20) })}>上一頁</Button><Button variant="secondary" disabled={search.offset + 20 >= query.data.total} onClick={() => setSearch({ ...search, offset: search.offset + 20 })}>下一頁</Button></div>
   </>}</>;
 }
@@ -96,9 +96,9 @@ function Editor({ id, initial, viewer, access }: { id: string; initial: Profile 
   }
   function edit(patch: Partial<z.infer<typeof Draft>>) { if(!current||locked||pinDirty)return;record.change({ ...draft, ...patch });setPreview(null);setConfirmed(false); }
   return <><DraftFeedback form={{...record,message:message||record.message,busy:busy||pinBusy,hasPending:record.hasPending||pinPending,leaveHint:pinDirty?uiText('未送出的口令不會保存；已送出的操作編號會保留。'):undefined}}/>
-    <Surface className="detail auth-panel">{current ? <><Heading level={2}>{current.name}</Heading><Text>成分 ID：{current.id}</Text>{current.legacyKey && <Text>舊成分查詢標識：{current.legacyKey}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
+    <Surface className="detail auth-panel">{current ? <><Heading level={2}>{current.name}</Heading>{current.contactQQ&&<Text>QQ：{current.contactQQ}</Text>}<Text>目前關聯：{ownerLabel(current.owner)}</Text>{current.owner && <Text>關聯狀態：{statusLabels[current.status]}</Text>}<Text>原口令：{current.hasPin ? '已設定' : '未設定'}</Text>
       <ul>{current.selections.map(selection => <li key={selection.entryId}>{selection.name}{selection.kind === 'sub' ? `${uiText(" · 程度 ")}${selection.level}` : ''}</li>)}</ul>
-      <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice><Text>成分 ID：{id}</Text></>}
+      <Link to={path+'/erase'}>刪除此成分</Link></> : <><Notice>成分不存在或已刪除。可核對原操作結果或保留本機原稿。</Notice></>}
       {current && <Link to="/admin/users" target="_blank" rel="noreferrer">查找目標帳號 ID</Link>}
       {(current || ownershipDirty) && <><Field className="account-field" label={<>目標帳號 ID</>}><input value={draft.target} maxLength={128} disabled={!current || locked || pinDirty} onChange={event => edit({ target: event.target.value })} /></Field>{current && <Text>留空表示解除關聯。只修改這份成分的管理權，不合併帳號、報名或款項；已有成分的目標帳號不能覆蓋。</Text>}
       <Field label="核對原因"><textarea id="music-link-reason" rows={3} value={draft.reason} maxLength={500} disabled={!current || locked || pinDirty} onChange={event => edit({ reason: event.target.value })} /></Field>

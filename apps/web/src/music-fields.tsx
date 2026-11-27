@@ -1,3 +1,4 @@
+import { MusicQQPrompt } from './music-qq-prompt';
 import { errorText, uiText } from './language';
 import { useEffect, useState } from 'react';
 import { useDurableRecord } from './durable-record';
@@ -77,7 +78,7 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Fields }) {
   }
   return <>
     {comparison && <Surface aria-label="目前已保存的成分資料"><h2>目前已保存的成分資料</h2><dl><dt>成分稱呼</dt><dd>{saved.name}</dd><dt>性別</dt><dd>{saved.gender === 'female' ? '女' : saved.gender === 'male' ? '男' : saved.gender || '不填'} · {saved.genderPublic ? '公開' : '不公開'}</dd><dt>私人留言</dt><dd>{saved.note || '未填寫'}</dd></dl></Surface>}
-    <div className="settings-grid music-profile-settings"><section className="form-section"><div className="section-heading"><span>ID</span><div><h2>固定成分資料</h2></div></div><dl className="inline-definitions"><div><dt>成分 ID</dt><dd>{saved.profileId}</dd></div><div><dt>成分稱呼</dt><dd>{saved.name}</dd></div></dl><div className="settings-navigation"><Link to="/me/music/contact">聯絡 QQ</Link></div></section><Surface className="form-section"><div className="section-heading"><span>資料</span><div><h2>資料與可見性</h2></div></div><form onSubmit={event => { event.preventDefault(); void save(); }}>
+    <div className="settings-grid music-profile-settings"><section className="form-section"><div className="section-heading"><div><h2>我的 QQ</h2></div></div><MusicQQPrompt viewer={viewer} showNumber/><div className="settings-navigation"><Link to="/me/music/contact">聯絡 QQ</Link></div></section><Surface className="form-section"><div className="section-heading"><span>資料</span><div><h2>資料與可見性</h2></div></div><form onSubmit={event => { event.preventDefault(); void save(); }}>
       <Field label="成分稱呼"><input value={draft.name} maxLength={Math.max(32, initial.name.length)} disabled={locked} onChange={event => edit({ name: event.target.value })} aria-describedby="music-name-help" /></Field><Text id="music-name-help">1–16 字。可與帳號稱呼不同；修改不影響活動名冊或帳務。</Text>
       <Field label="性別"><Select id="music-gender" value={draft.genderChoice} disabled={locked} onChange={event => { const choice = GenderChoice.parse(event.target.value); edit({ genderChoice: choice, genderPublic: choice ? draft.genderPublic : false }); }}><option value="">不填</option><option value="female">女</option><option value="male">男</option><option value="custom">自訂</option></Select></Field>
       {draft.genderChoice === 'custom' && <Field label="自訂性別"><input value={draft.genderCustom} maxLength={Math.max(24, initial.gender.length)} disabled={locked} onChange={event => edit({ genderCustom: event.target.value })} /></Field>}

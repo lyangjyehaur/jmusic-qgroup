@@ -73,7 +73,7 @@ test('preserves unfinished selections when visiting a selector and restores the 
   await expect(page.getByRole('button', { name: '保存我的成分', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: '誰選了', exact: true }).getByRole('listitem')).toHaveCount(3);
 });
-test('copies names, legacy contacts and stable IDs, with explicit recovery when the clipboard is denied on mobile', async ({ page, context }) => {
+test('copies names and QQ without exposing internal IDs, with explicit recovery when the clipboard is denied on mobile', async ({ page, context }) => {
   const { profile, headers } = await seed(context, 'alice', 'sub-2');
   const longName = '很長的成分稱呼🟢'.repeat(2);
   const fields = await context.request.put('/api/v2/me/music/fields', { headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: {
@@ -86,18 +86,18 @@ test('copies names, legacy contacts and stable IDs, with explicit recovery when 
   const legacy = members.getByRole('listitem').filter({ has: page.getByRole('link', { name: '舊成分 10001', exact: true }) });
   await legacy.getByRole('button', { name: '複製名稱', exact: true }).click();
   expect(await page.evaluate(() => (window as unknown as { copiedMusic: string }).copiedMusic)).toBe('舊成分 10001');
-  await legacy.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click();
+  await legacy.getByRole('button', { name: '複製 QQ', exact: true }).click();
   expect(await page.evaluate(() => (window as unknown as { copiedMusic: string }).copiedMusic)).toBe('10001');
   const native = members.getByRole('listitem').filter({ has: page.getByRole('link', { name: longName, exact: true }) });
-  await native.getByRole('button', { name: '複製成分 ID', exact: true }).click();
-  expect(await page.evaluate(() => (window as unknown as { copiedMusic: string }).copiedMusic)).toBe(profile.id);
+  await expect(native.getByRole('button', { name: '複製成分 ID', exact: true })).toHaveCount(0);
+  await expect(native).not.toContainText(profile.id);
   await page.evaluate(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async () => { throw Error('synthetic denied'); } } }));
   await native.getByRole('button', { name: '複製名稱', exact: true }).click();
   await expect(native.getByText('無法自動複製，請選取名稱手動複製。', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-music-entry-mobile.png', fullPage: true });
   await native.getByRole('link', { name: longName, exact: true }).click();
-  await expect(page.getByRole('button', { name: '複製成分 ID', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '複製成分 ID', exact: true })).toHaveCount(0);
 });
 test('shows member-list failures with retry, empty results and missing terms without stale selectors or unsafe return links', async ({ page, context }) => {
   const { profile } = await seed(context);
@@ -127,7 +127,7 @@ test('refreshes selector names and cleared self-reported contacts when returning
   const { profile, headers } = await seed(context, 'alice', 'sub-2');
   expect((await context.request.put('/api/v2/me/music/contact', { headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: { profileId: profile.id, musicEpoch: 0, revision: 0, contactQQ: '234567' } })).status()).toBe(200);
   await page.goto('/music?entry=sub-2');
-  await expect(page.getByText('234567 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible();
+  await expect(page.getByText('QQ 234567', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '編輯我的成分', exact: true }).click();
   await page.getByRole('tab', { name: '成分資料', exact: true }).click();
   await page.getByLabel('成分稱呼', { exact: true }).fill('目前成分名稱');
@@ -142,8 +142,9 @@ test('refreshes selector names and cleared self-reported contacts when returning
   await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click();
   await page.getByRole('link', { name: 'Aimer', exact: true }).click();
   const member = page.getByRole('region', { name: '誰選了', exact: true }).getByRole('listitem').filter({ has: page.getByRole('link', { name: '目前成分名稱', exact: true }) });
-  await expect(member.getByText('固定成分 ID：' + profile.id, { exact: true })).toBeVisible();
-  await expect(page.getByText('234567 · 自填號碼，未經騰訊驗證', { exact: true })).toHaveCount(0);
+  await expect(member).not.toContainText(profile.id);
+  await expect(member.getByRole('button', { name: '複製 QQ', exact: true })).toHaveCount(0);
+  await expect(page.getByText('QQ 234567', { exact: true })).toHaveCount(0);
 });
 test('discards a delayed selector response after another tab logs out and does not restore private rows', async ({ page, context }) => {
   await seed(context);
@@ -239,7 +240,7 @@ test('does not flash a deleted selector or member card from cache on browser bac
   await expect(page.getByRole('heading', { name: '小白', exact: true })).toHaveCount(0);
   await expect(page.getByRole('status')).toHaveText('正在讀取成分…');
   releaseProfile();
-  await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
+  await expect(page.getByRole('alert')).toHaveText('找不到這份成分，請核對 QQ');
 });
 test('initializes the selection controller before mounting search so a delayed profile cannot erase the first input', async ({ page, context }) => {
   await login(context);

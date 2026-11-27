@@ -25,14 +25,14 @@
     "apps/api/src/admin-backups.ts": "f633fe865b5c0f51f375f7421ffaea308a7552307351bb2d65b2793fb70d8830",
     "apps/api/src/admin-bot.ts": "5a6207bd769086439c3b59052557eb310c2491ed953fbeae043065649cb2021d",
     "apps/api/src/admin-music-catalog.ts": "6482989a9ca7e8b0ea65fa72c47281c78e7f8a53a15245da31f5b0126011f3c3",
-    "apps/api/src/admin-music-erasure.ts": "bf4e4c71cfff42199d79306c70f0c808762c721d913e7001179796cb0346fd36",
+    "apps/api/src/admin-music-erasure.ts": "f07dda57f9beae672cf18b1d6cbf75c715f6fd73ddc50929e9628e9c7a1579ae",
     "apps/api/src/admin-music-pins.ts": "31dec3887f6cbe39c3bf1f8afce991ab43e5617cb4a3ee6e7e063d0481beef23",
-    "apps/api/src/admin-music.ts": "8536da09c06a3a85714737f40e1996f2333bb63dcc19f60ee45f1a5944d1e9b0",
+    "apps/api/src/admin-music.ts": "6a6ec437ce4bb56fa2ce41a827cd732b15bc12c375c509604fdf059f56f26d82",
     "apps/api/src/admin-operations.ts": "dbf3517c6a403b460a3dfaa5eda01a13c123312f5f87fd222fff55ec3edd1eb2",
     "apps/api/src/admin-privacy.ts": "5ccdd7ca05be7861161737a9f4b31b18161763756b7222c07079f7e7273155b0",
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
-    "apps/api/src/app.ts": "93eae8fbda8bbee99e8a351399bc6034edf377b7f9db9b43f1e786b8ec85c197",
+    "apps/api/src/app.ts": "56f8eee5dbb4da31bb150f3e6de06151eb1607fd1b0035fdcb419a3dfced8ef3",
     "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
@@ -54,24 +54,26 @@
     "apps/api/src/legacy-settlement-token.ts": "42b4bc80c469dd5c3cf1a3653ab9b261eeaead8ee9f88dfc4629edb86a8f53a6",
     "apps/api/src/legacy-time-poll-create.ts": "224747ffa752801bf434eb5aa060f15fcaf51632f774c9728ad85f9a0775f75d",
     "apps/api/src/legacy-time-poll.ts": "e867a2b2d1f18da5f333abf7d31224a518cfb2c9c7d9489eed165c648d8e29f4",
-    "apps/api/src/music-catalog.ts": "327594532fb08c88e5ad185c8641fa639070c689db5c7435843d2bb7460e9077",
+    "apps/api/src/music-catalog.ts": "471e95b6ddce7ccf431076fd8a3373859ee548a09c14d91766a9f4293f6ffc75",
     "apps/api/src/music-circle-jobs.ts": "8af7a3e56c921a14fb7c255596b0a5eee3f03037ebaf3ae74365c824208cc9af",
     "apps/api/src/music-circle-task.ts": "d33f7a6d57e7439167db2f0fc1e5229a31d8051424159570c64003cfa828016b",
-    "apps/api/src/music-circles.ts": "50392fee026bada65e6e2541c08a35d2d8d70bb817f065299f67457644a53e51",
+    "apps/api/src/music-circles.ts": "697135a514bc1868538f9b73d57a9c61db67c6f3e347bf8a55bd2a5a511fc051",
     "apps/api/src/music-claim.ts": "ac89e7905919dd170019d755f3afd27a6a25cc778746f40ea0e0d5382ac37979",
     "apps/api/src/music-compute-budget.ts": "bad2ab05eaff74baaad4b5ebcd929d98e9229dbec6eccbac6f3d797ceead2223",
-    "apps/api/src/music-contact.ts": "b37d2e7c594f201b5c06cf951288060a29994013e7b86fd131e268e17266dbf7",
+    "apps/api/src/music-contact.ts": "1ecda22b8cc94e78edabf3ce4106895ae3068fdc11931700e859538dce73df5b",
+    "apps/api/src/music-entry-locks.ts": "e966b1fc28e3891a53617669c32424d86ccb35a81791d6995ba2146ebb967854",
     "apps/api/src/music-entry-names.ts": "41e628513a0a703a57ef6bc7cabe87428f6e3e74c2818c7d017192bc77354caf",
     "apps/api/src/music-export.ts": "258a07403d013f957f13a9e82a164b47c7e08b7fae77b17524c0a4475762afd0",
-    "apps/api/src/music-fields.ts": "c783c34c9fc26680e327b00a7a7f0f23374fd551a2c2379775ee51c64b699479",
+    "apps/api/src/music-fields.ts": "eedf76ec1b8dab19aa3f8b39e33c853f7e2a6f6bd5b4a2dd22ab6c014b35b759",
+    "apps/api/src/music-identity.ts": "bee3ee3711bcaf140f5a075d2c8df652cf13f40ad406debcb2ffbd579827d93e",
     "apps/api/src/music-match-data.ts": "7583a5b31acf409b066456f5accee301d7017512ddc40f754290dc6c89106b0f",
-    "apps/api/src/music-matches.ts": "77f9a3f758a7057168d2487d72a5b36188c25ac7da8e200a301a22c0259d3bdb",
+    "apps/api/src/music-matches.ts": "7baf65339a603ae47dfc4eaabd6beff00b48c49de82bbe68fa21067374fe3b67",
     "apps/api/src/music-room-jobs.ts": "3451a509a67a04f9c4f225170238a6427edb3e216ee1c8e139f787c0f6a39fe9",
     "apps/api/src/music-room-source.ts": "af8c23deaacdfb831c033dc1da6dc1aee327ce673f62d5e69f3f6138e162175c",
     "apps/api/src/music-room-task.ts": "1ea9522dae7432e415f027672f50e4b13dd1899ecef54cbff3969ae197bb6bb2",
     "apps/api/src/music-rooms.ts": "993a5ecd2cac2320dbd68ce5af4a7af956eee80176f8f1e3c6e3e18de9c5d674",
-    "apps/api/src/music-shouts.ts": "1a130dc73041ae6e6464165b5f0fe7a3a6ca2abc1557a4b75aaa76b002d947da",
-    "apps/api/src/music-trend.ts": "32f3192462f28ae2cd9c79a7ed5415f8e30f72b0d3266e06087400d529dbbea8",
+    "apps/api/src/music-shouts.ts": "f0b20e7ed45a0b3d3291ee053cd48e41f56418983ece8e261fd8f4d16c7a6aa9",
+    "apps/api/src/music-trend.ts": "1d425dd68d80b488761470f8423c9a852be40aecc3eac4943da07c97c4b77a2d",
     "apps/api/src/participation.ts": "b0c47a77ad7bb211f8d0ab702c25c545fc54bb6e644a50448cb8b6505a6ddcd9",
     "apps/api/src/payment-codes.ts": "c9991b09208e86084cac36292afe2629ef2aa666241b7e513e5d3623b6699f20",
     "apps/api/src/payment-media.ts": "e6a5661767834fab3cb6ae91fe9038896ea76ebcaed3cb52660c57391c3a62f9",
@@ -79,7 +81,7 @@
     "apps/api/src/privacy.ts": "e855012631b89277cefa0141c0ced024fe13f32b5f53ae028eeca5fcbd00ebe1",
     "apps/api/src/qq-provider.ts": "150c75798935fae2563e5e163b406b6c789bf251ec8707e3959773c13cf65e0e",
     "apps/api/src/registration-settings.ts": "9859567ac170a0bff569bd3fb9d015efc30ed4f1b877d2ef3ed6cf3e3ec94e1f",
-    "apps/api/src/repositories.ts": "ad46265e3e5ba94013b5274e2665f7db9a322b96fd7f693e64e2c0a1075cb67c",
+    "apps/api/src/repositories.ts": "a526c39aa7a43860eca6ae1efb41df991ed48132e30059ca7a18940de5e401eb",
     "apps/api/src/room-plan-command.ts": "70f540303955a965f9be4227064012954a77768372d42d19bdeb7eb66e281210",
     "apps/api/src/search.ts": "f69833ffc7ee15bb8380e399acd790e0e760ecff75d835133b5b2d0fb9cb2b29",
     "apps/api/src/security.ts": "c932d7b550e85a0cd10e6a43f7f15b30d37786ca9fb5a4e618688cd25dd3e088",
@@ -99,7 +101,7 @@
     "packages/contracts/src/finance.ts": "2b72e44683f1ccf42797ce6d28f70a90a355165f5a95fcdaa20d44e76495e60d",
     "packages/contracts/src/http-paths.ts": "45a817502a4bde0eeed9e81fca611371fb2f6e1863f1c8c375230ec88aa5bc4b",
     "packages/contracts/src/http-queries.ts": "cde2cdc6db2bf64b803516d7541161cf9124891d6601c9a6672ed551619558e3",
-    "packages/contracts/src/index.ts": "8fb6e2cb7ec643d4f52ba6fcc5d8d31e6743301163da8cb15f8935d7e707218e",
+    "packages/contracts/src/index.ts": "7832bab8b5e884d6a39836100adf3f72d9775a91e61cd99548dac5dca60085e4",
     "packages/contracts/src/legacy-activity-create.ts": "ec3709a24140be8c33a2f119c9d653c5ce0b6a9c16ee5e78b73db3f965993dc7",
     "packages/contracts/src/legacy-activity-patch.ts": "c9431c02e9ddc9d95510b9808c4e8e11deabcd67ea4a598714d088fd7d697f25",
     "packages/contracts/src/legacy-detailed-settlement.ts": "b2f20b1f9b1eae0b2d44d90b2e6b668381d134db68be8546cc467d4b33576d21",
@@ -111,6 +113,7 @@
     "packages/contracts/src/legacy-time-poll-create.ts": "d3ce46be7332207b467c27fe1e09670099678f8c80a2075ef81cce03f245dc30",
     "packages/contracts/src/legacy-time-poll.ts": "4f3520d14921930dace557f62a390f9cbf8e419bbe38e365632ca1a5050f3662",
     "packages/contracts/src/legacy-values.ts": "6af476f4ae1ddf8609fb35a27c11cd7e2bcce49634670e4fed6a2125a9805514",
+    "packages/contracts/src/music-catalog.ts": "3ae3aef351709ad1672306042f2f4b76066433fe48eb102e11b9ae8798345061",
     "packages/contracts/src/music-rooms.ts": "e3586904cb9da91b42c0393727444d8ca984dcd5acb4ebaad72d96f5870f0d5e",
     "packages/contracts/src/participation.ts": "c6978529be27de42f407251a291ffe711dacca9bae78906c51cd5d7dcbbd0831",
     "packages/contracts/src/payment-assets.ts": "32e34ab6e4d451ea9434aabb7501ceb7ccd87e3cb70cd64259cc1bb694ecd2f5",
@@ -125,9 +128,7 @@
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-rooms.ts": "29959a2db2d288851b629f1d46bfcedc45ed4128461f5cb95a4dfdd684c4ed8b",
     "packages/domain/src/music-search.ts": "3ac492c34d87da202f3b7529c56b86a58ecd6ddff5cfdb1c5d53000ae56be46a",
-    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc",
-    "apps/api/src/music-entry-locks.ts": "e966b1fc28e3891a53617669c32424d86ccb35a81791d6995ba2146ebb967854",
-    "packages/contracts/src/music-catalog.ts": "66ecaa20755a11fbb04feaa8cdcb9db464cd559d7e7f37461b83b17c39ed1fc5"
+    "packages/domain/src/music-text.ts": "222efa7b8ea8b42ca0ab260d35b64210b7febd2cae7b626f097939567390c0dc"
   },
   "operations": [
     {
@@ -1337,7 +1338,9 @@
       "id": "GET /api/v2/admin/shouts",
       "file": "apps/api/src/music-shouts.ts",
       "mode": "administrator-read",
-      "conditions": [],
+      "conditions": [
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
+      ],
       "dependencies": [
         "apps/api/src/admin-security.ts",
         "apps/api/src/app.ts",
@@ -1347,7 +1350,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -1355,7 +1360,9 @@
       "id": "GET /api/v2/admin/shouts/:id",
       "file": "apps/api/src/music-shouts.ts",
       "mode": "administrator-read",
-      "conditions": [],
+      "conditions": [
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
+      ],
       "dependencies": [
         "apps/api/src/admin-security.ts",
         "apps/api/src/app.ts",
@@ -1365,7 +1372,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -1892,7 +1901,8 @@
         "Current scoped membership and saved-music qualification are checked before computation and again before returning any result.",
         "Only active profile names, selections and term projections enter the worker; credentials, DB handles, contact QQ, gender and notes are excluded.",
         "Changes to ownership, membership, names, selections or terms invalidate the completed result; worker output does not confer access.",
-        "Circles and rooms share two worker slots per API instance; saturation rejects before the full music projection, after scope and active-profile checks. A disconnected client cancels its worker."
+        "Circles and rooms share two worker slots per API instance; saturation rejects before the full music projection, after scope and active-profile checks. A disconnected client cancels its worker.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -1905,7 +1915,9 @@
         "packages/domain/src/music-circles.ts",
         "packages/domain/src/music-matching.ts",
         "apps/api/src/music-compute-budget.ts",
-        "packages/database/src/music-source-order.ts"
+        "packages/database/src/music-source-order.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -1940,7 +1952,8 @@
       "file": "apps/api/src/music-catalog.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -1955,7 +1968,9 @@
         "apps/api/src/music-entry-names.ts",
         "packages/domain/src/music-labels.ts",
         "packages/domain/src/music-kana.ts",
-        "apps/api/src/music-entry-locks.ts"
+        "apps/api/src/music-entry-locks.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -1964,7 +1979,8 @@
       "file": "apps/api/src/music-matches.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -1974,7 +1990,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -1983,7 +2001,8 @@
       "file": "apps/api/src/music-contact.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -1993,7 +2012,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -2002,7 +2023,8 @@
       "file": "apps/api/src/music-matches.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -2012,7 +2034,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -2043,7 +2067,8 @@
       "file": "apps/api/src/music-shouts.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -2053,7 +2078,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -2062,7 +2089,8 @@
       "file": "apps/api/src/music-shouts.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -2072,7 +2100,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -2081,7 +2111,8 @@
       "file": "apps/api/src/music-shouts.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -2091,7 +2122,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -2112,12 +2145,15 @@
       "file": "apps/api/src/music-trend.ts",
       "mode": "scoped-member",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
         "apps/api/src/security.ts",
-        "packages/database/src/music-source-order.ts"
+        "packages/database/src/music-source-order.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -3967,7 +4003,8 @@
       "file": "apps/api/src/music-matches.ts",
       "mode": "member-write",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -3977,7 +4014,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },
@@ -3986,7 +4025,8 @@
       "file": "apps/api/src/music-contact.ts",
       "mode": "member-write",
       "conditions": [
-        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership."
+        "Current music profile ownership and operation-specific access remain server checks; display names and contact QQ do not grant ownership.",
+        "Optional avatars use active linked identities in the configured QQ application, validated by safeAvatar, after existing authorization. Self-reported QQ never determines an avatar; public aggregates and circle worker input exclude avatars."
       ],
       "dependencies": [
         "apps/api/src/app.ts",
@@ -3996,7 +4036,9 @@
         "packages/contracts/src/http-paths.ts",
         "packages/contracts/src/index.ts",
         "packages/contracts/src/payment-assets.ts",
-        "packages/contracts/src/legacy-values.ts"
+        "packages/contracts/src/legacy-values.ts",
+        "apps/api/src/music-identity.ts",
+        "apps/api/src/qq-provider.ts"
       ],
       "additionalHeaders": []
     },

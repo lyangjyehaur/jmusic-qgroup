@@ -69,10 +69,10 @@ function Editor({ viewer, initial }: { viewer: Member; initial: Value }) {
   }
   return <>
     <Surface className="detail auth-panel"><Heading level={2}>目前聯絡 QQ</Heading><ContactValue key={saved.contactQQ} number={saved.contactQQ} source={saved.contactQQ ? saved.source : ''} />
-      <Text>固定成分 ID：<Link to={'/people/' + saved.profileId}>{saved.profileId}</Link></Text>
-      {saved.source === 'legacy' ? <Text>舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員。</Text> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
+      <Link to={'/people/' + saved.profileId}>查看我的成分卡</Link>
+      {saved.source === 'legacy' ? <Text>此 QQ 僅由管理員更正。</Text> : <form onSubmit={event => { event.preventDefault(); void save(); }}>
         <Field className="account-field" label={<>聯絡 QQ</>}><input inputMode="numeric" autoComplete="off" value={draft.contactQQ} maxLength={24} disabled={locked} onChange={event => { record.change({ ...draft, contactQQ: event.target.value }); setMessage(''); }} aria-describedby="music-contact-help" /></Field>
-        <Text id="music-contact-help">4–12 位數字，可清空。成分會員可查詢與複製；號碼不代表 QQ 認證，也不改變成分所有權。</Text>
+        <Text id="music-contact-help">4–12 位數字，選填，可清空。填寫後同好可用 QQ 查詢和比較你的成分。</Text>
         <Button type="submit" loading={busy} disabled={!dirty || unavailable}>{draft.requestKey ? '確認聯絡 QQ 結果' : '保存聯絡 QQ'}</Button>
       </form>}
       {dirty && !draft.requestKey && saved.source !== 'legacy' && <Button variant="secondary" disabled={locked} onClick={() => void rebase()}>核對目前聯絡 QQ，保留輸入</Button>}

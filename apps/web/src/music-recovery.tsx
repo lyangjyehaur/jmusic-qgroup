@@ -16,7 +16,7 @@ import { useDurableValue } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
 export function MusicRecovery() {
   const session = useSession();
-  return <><PageIntro title="找回舊成分" /><Link className="back" to="/me/music">回到我的成分</Link>{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : <Recovery key={session.data.scope} viewer={session.data} />}</>;
+  return <><PageIntro title="找回成分" /><Link className="back" to="/me/music">回到我的成分</Link>{session.isPending ? <Notice>正在確認帳號…</Notice> : session.error ? <Failure error={session.error} retry={() => void session.refetch()} /> : <Recovery key={session.data.scope} viewer={session.data} />}</>;
 }
 function Recovery({ viewer }: { viewer: Viewer }) {
   const client = useQueryClient(); const key = 'qgroup:rebuild:music:claim:v1:' + viewer.scope;
@@ -96,14 +96,14 @@ function Recovery({ viewer }: { viewer: Viewer }) {
   if(denied)return <Notice>目前帳號已變更。<Button onClick={()=>window.location.reload()}>重新確認帳號</Button></Notice>;
   return <><DraftFeedback form={{...record,message:message||record.message,readError:damaged!==null&&!record.conflict&&!record.expired?'':record.readError}} navigation={false}/>{damaged!==null&&<Surface role="alert"><Text>找回操作紀錄格式無法辨識。請先下載保全檔，再清除紀錄；原文不會複製到保全版本。</Text><Button disabled={busy||record.loading||record.expired} onClick={()=>{const url=URL.createObjectURL(new Blob([damaged],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='qgroup-claim-operation-recovery.json';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);setDownloaded(true);}}>下載舊操作紀錄</Button><Button disabled={!downloaded||busy||record.loading||record.conflict||record.expired} onClick={()=>void(async()=>{if(busy||record.loading||record.conflict||record.expired)return;setBusy(true);try{if(legacyInvalid!==null){if(sessionStorage.getItem(key)!==legacyInvalid)throw Error('原紀錄已有變更，請重新載入核對。');sessionStorage.removeItem(key);}else if(!await persist(null))return;window.location.reload();}catch(error){setMessage(error instanceof Error?errorText(error):uiText("無法清除紀錄"));}finally{if(active.current)setBusy(false);}})()}>清除已下載的舊紀錄</Button></Surface>}{blocked?null:claim.isPending ? <Notice>正在讀取找回狀態…</Notice> : claim.error ? <Failure error={claim.error} retry={() => void refresh()} /> : <Surface className="detail auth-panel">
     {status?.status === 'none' && pending?.action ? <Notice>原找回請求已不存在，請先核對我的成分。<Button disabled={busy||uncertain} onClick={()=>void(async()=>{if(!begin())return;try{if(await complete({status:'none'}))setMessage(uiText("已結束原操作核對；可重新找回。"));}finally{if(active.current)setBusy(false);}})()}>結束失效的原操作</Button></Notice> : status?.status === 'none' ? <form onSubmit={event => { event.preventDefault(); void start(); }}>
-      <Text>PIN 只用於找回舊成分；關聯須完成本次 QQ 授權，不會覆蓋目前帳號已有的成分。</Text>
+      <Text>PIN 只用於找回成分；關聯須完成本次 QQ 授權，不會覆蓋目前帳號已有的成分。</Text>
       <Field className="account-field" label={<>舊 QQ</>}><input inputMode="numeric" autoComplete="off" value={legacyQQ} maxLength={12} disabled={busy || uncertain || !!readError || !!pending} onChange={event => setQQ(event.target.value)} /></Field>
       <Field className="account-field" label={<>原口令</>}><input type="password" inputMode="numeric" autoComplete="off" value={pin} maxLength={6} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setPin(event.target.value)} /></Field>
       <Text>4–6 位數字。口令不保存在瀏覽器；忘記口令請聯絡管理員。</Text>
       <Checkbox className="consent" checked={consent} disabled={busy || uncertain || !!readError || !!pending?.action} onChange={event => setConsent(event.target.checked)} label={<><span>確認以舊資料驗證取回權利，並將原成分關聯至完成 QQ 授權的帳號</span></>} />
       <Button type="submit" loading={busy} disabled={busy || !consent || uncertain || !!readError || !!pending?.action || !/^[0-9]{4,12}$/.test(legacyQQ.trim()) || !/^[0-9]{4,6}$/.test(pin.trim())}>驗證原口令</Button>
     </form> : status && <>
-      <Heading level={2}>{status.name || '原成分'}</Heading><Text>舊 QQ：{status.legacyQQ}</Text><Text>固定成分 ID：{status.profileId}</Text>
+      <Heading level={2}>{status.name || '原成分'}</Heading><Text>QQ：{status.legacyQQ}</Text>
       {status.status === 'completed' ? <><Notice>已關聯原成分。</Notice><Link to="/me/music">編輯原成分</Link></> : status.status === 'unavailable' ? <Notice>找回已過期、成分已變更或已有關聯。取消後可重新找回；如有衝突請聯絡管理員。</Notice> : <>
         <Text>有效至 {new Date(status.expiresAt).toLocaleString(displayLocale())}。</Text>
         {status.status === 'pending' ? <>

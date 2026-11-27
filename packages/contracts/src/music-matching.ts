@@ -7,7 +7,7 @@ export const MusicMatchStats = z.object({
 });
 export const MusicComparePick = z.object({ id: z.string(), name: z.string(), kind: z.enum(['main', 'sub']), count, level: z.number().int().min(1).max(4) });
 export const MusicSharedPick = MusicComparePick.extend({ level: z.number().int().min(0).max(4), myLevel: z.number().int().min(1).max(4), theirLevel: z.number().int().min(1).max(4) });
-export const MusicMatchIdentity = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy', 'self_reported', '']), gender: z.string(), note: z.string() });
+export const MusicMatchIdentity = z.object({ id: z.string(), name: z.string(), avatarUrl: z.string().optional(), contactQQ: z.string(), contactSource: z.enum(['legacy', 'self_reported', '']), gender: z.string(), note: z.string() });
 export const MusicComparison = z.object({ me: MusicMatchIdentity, other: MusicMatchIdentity, stats: MusicMatchStats,
   shared: z.array(MusicSharedPick), mine: z.array(MusicComparePick), theirs: z.array(MusicComparePick), onlyMine: z.array(MusicComparePick), onlyTheirs: z.array(MusicComparePick) });
 export const MusicMatches = z.object({ me: MusicMatchIdentity, mine: z.array(MusicComparePick), sort: z.enum(['rare', 'familiar']),

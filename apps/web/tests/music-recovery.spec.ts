@@ -12,21 +12,21 @@ async function oauth(page:Page,member=false){
   await expect(page.getByRole('button',{name:'前往 QQ 授權找回',exact:true})).toBeVisible();
   const consent=page.getByRole('checkbox',{name:/我已閱讀並同意/});if(await consent.count()) await consent.check();
   await page.getByRole('button',{name:'前往 QQ 授權找回',exact:true}).click();await page.getByRole('button',{name:member?'確認綁定':'確認登入',exact:true}).click();
-  await expect(page.getByRole('heading',{name:'找回舊成分',exact:true})).toBeVisible();
+  await expect(page.getByRole('heading',{name:'找回成分',exact:true})).toBeVisible();
 }
 async function complete(page:Page){await page.getByRole('checkbox',{name:'確認這是我的原成分，關聯至目前帳號',exact:true}).check();await page.getByRole('button',{name:'確認關聯原成分',exact:true}).click();await expect(page.getByRole('link',{name:'編輯原成分',exact:true})).toBeVisible();}
 test('a guest recovers original music through one login and explicit linking without persisting the PIN',async({page,context})=>{
-  await page.goto('/me/music');await page.getByRole('link',{name:'找回舊成分',exact:true}).click();await pin(page);
+  await page.goto('/me/music');await page.getByRole('link',{name:'找回成分',exact:true}).click();await pin(page);
   await expect(page.getByRole('heading',{name:'舊成分 10001',exact:true})).toBeVisible();
   const stored=await page.evaluate(()=>JSON.stringify({session:{...sessionStorage},local:{...localStorage}}));expect(stored).not.toMatch(/123456|jpm-pin|pin_proof|pinHash/);
   await page.reload();await oauth(page);await expect(page.getByRole('button',{name:'確認關聯原成分',exact:true})).toBeDisabled();
   await page.setViewportSize({width:360,height:800});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'test-results/unified-recovery-mobile.png',fullPage:true});
   await complete(page);await page.getByRole('link',{name:'編輯原成分',exact:true}).click();await expectMusicTerm(page, 'Aimer', true);await expectOption(page,'Aimer喜歡程度','4');
   const viewer=await(await context.request.get('/api/v2/session')).json();expect(viewer.authenticated).toBe(true);expect(viewer.musicEpoch).toBe(1);
-  await openMusicContact(page);await expect(page.getByText('10001 · 舊成分查詢號碼，未經騰訊驗證',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'保存聯絡 QQ',exact:true})).toHaveCount(0);
+  await openMusicContact(page);await expect(page.getByText('10001',{exact:true})).toBeVisible();await expect(page.getByRole('button',{name:'保存聯絡 QQ',exact:true})).toHaveCount(0);
 });
 test('an existing account binds QQ, keeps its name and reopens the original selections after an untouched blank editor',async({page,context})=>{
-  await login(context);await page.goto('/me/music');await expectMusicTerm(page, 'Aimer', false);await page.locator(".music-profile-tools .disclosure-trigger").click();await page.getByRole('link',{name:'找回舊成分',exact:true}).click();await pin(page);await oauth(page,true);await complete(page);
+  await login(context);await page.goto('/me/music');await expectMusicTerm(page, 'Aimer', false);await page.locator(".music-profile-tools .disclosure-trigger").click();await page.getByRole('link',{name:'找回成分',exact:true}).click();await pin(page);await oauth(page,true);await complete(page);
   await page.getByRole('link',{name:'編輯原成分',exact:true}).click();await expect(page.locator('.viewer')).toHaveText('小白');await expectMusicTerm(page, 'Aimer', true);await expect(page.getByRole('button',{name:'保存我的成分',exact:true})).toBeDisabled();
 });
 test('an unreadable PIN response is checked from the server and never resends or stores the PIN automatically',async({page})=>{

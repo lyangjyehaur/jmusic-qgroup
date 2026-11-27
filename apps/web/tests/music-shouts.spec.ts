@@ -35,9 +35,9 @@ test('details, author profiles, clipboard fallbacks and all history pages preser
   expect(compose!.y).toBeGreaterThanOrEqual(feed!.y + feed!.height + 20);
   await page.getByRole('button', { name: '前往發布找搭子', exact: true }).click(); await expect(page.locator('#shout-compose')).toBeFocused();
   await list(page).getByRole('link', { name: '週末一起聽音樂', exact: true }).focus(); await page.keyboard.press('Enter');
-  await expect(detail(page)).toContainText('234567 · 自填號碼，未經騰訊驗證');
+  await expect(detail(page)).toContainText('234567');
   await page.getByRole('button', { name: '複製找搭子內容', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取找搭子內容手動複製。', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取號碼手動複製。', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '複製 QQ', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取號碼手動複製。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '查看發布者成分', exact: true }).click(); await page.getByRole('link', { name: '比較成分', exact: true }).click();
   await page.getByRole('link', { name: '查看同好成分', exact: true }).click();await expect(page.getByRole('dialog')).toBeVisible(); await page.getByRole('dialog').getByRole('link', { name: '回到找搭子', exact: true }).click();
   await expect(detail(page)).toContainText('週末一起聽音樂'); await page.getByRole('link', { name: '回到找搭子', exact: true }).click();

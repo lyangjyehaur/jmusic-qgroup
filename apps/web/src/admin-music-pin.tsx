@@ -85,7 +85,7 @@ export function AdminMusicPin({ id, profile, viewer, access, disabled, onDirty, 
   if(!profile&&!pending&&!record.loading&&!record.readError&&damaged===null&&!record.versions.length&&!message)return null;
   return <Surface className="detail auth-panel"><Disclosure className="admin-disclosure" open={expanded} onOpenChange={setExpanded}  title={<>{profile ? '重設找回口令' : '口令操作結果'}</>}>
     {profile && <>
-    <Text>4–6 位數字，只供舊成分找回，仍須本次 QQ 授權。重設不解除帳號關聯，已關聯成分不能靠口令取回。</Text>
+    <Text>4–6 位數字，只供成分找回，仍須本次 QQ 授權。重設不解除帳號關聯，已關聯成分不能靠口令取回。</Text>
     <Text>重設後，這份成分尚未完成的找回授權將失效。口令不保存在瀏覽器。</Text>
     {disabled && !pending && <Text>請先完成或清除關聯草稿，再重設口令。</Text>}
     <form onSubmit={event => { event.preventDefault(); void save(); }}>

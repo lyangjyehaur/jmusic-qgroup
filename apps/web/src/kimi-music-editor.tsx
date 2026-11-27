@@ -1,3 +1,4 @@
+import { MusicQQPrompt } from './music-qq-prompt';
 import { MusicTranslation } from './music-name-display';
 // Adapted from kimi/src/pages/MyMusicPage.tsx. The durable controller remains authoritative.
 import { useId, useMemo, useState } from 'react';
@@ -45,10 +46,10 @@ export function KimiProfileEditor({ selection: form }: { selection: MusicSelecti
   return <div className="kimi page my-music-page"><PageHeader title="我的成分" description="最多 5 個領域、15 個細分，合計 20 個" actions={<ActionLink to={'/music'+location.search} startIcon={<Search size={16}/>}>探索詞條</ActionLink>} back={<Link to={'/music'+location.search} className="back-link" aria-label="音樂詞庫"><ArrowLeft size={18}/><span>音樂詞庫</span></Link>}/>
     <Tabs label="我的成分功能" value="edit" onChange={value=>navigate(value==='profile'?'/me/music/details':value==='terms'?'/me/music/entries':value==='share'?'/me/music/share':'/me/music')} items={[{value:'edit',label:uiText('成分編輯')},{value:'profile',label:uiText('成分資料')},{value:'terms',label:uiText('我的詞條')},{value:'share',label:uiText('分享圖片')}]}/>
     <div className="main-only-links editor-return">{form.returnTo&&<Link to={form.returnTo}>{form.returnTo.startsWith('/activities')?'← 回到剛才的活動':form.returnTo.startsWith('/music/trends')?'回到音樂趨勢':form.returnTo.startsWith('/people/circles')?'回到同好圈子':form.returnTo.startsWith('/people/shouts')?'回到找搭子':'回到同好成分'}</Link>}</div>
-    <div className="selection-layout"><section className="selection-workspace"><div className="selection-toolbar"><div><h2>已選詞條</h2><p>只有細分設定喜歡程度</p></div><div className="selection-limits"><span className={form.mainCount>=5?'at-limit':''}>領域 <strong>{form.mainCount}</strong>/5</span><span className={form.subCount>=15?'at-limit':''}>細分 <strong>{form.subCount}</strong>/15</span></div></div>
+    {form.saved&&<MusicQQPrompt viewer={form.viewer}/>}<div className="selection-layout"><section className="selection-workspace"><div className="selection-toolbar"><div><h2>已選詞條</h2><p>只有細分設定喜歡程度</p></div><div className="selection-limits"><span className={form.mainCount>=5?'at-limit':''}>領域 <strong>{form.mainCount}</strong>/5</span><span className={form.subCount>=15?'at-limit':''}>細分 <strong>{form.subCount}</strong>/15</span></div></div>
       <div className="quick-add"><SearchInput value={query} onChange={setQuery} label="尋找喜歡的音樂" placeholder="直接搜尋並加入詞條"/>{results.length>0&&<div className="quick-add-results">{results.map(entry=><Button variant="ghost" key={entry.id} disabled={form.locked} onClick={()=>{form.toggle(entry);setQuery('');}}><Plus size={14}/><span>{entry.name}<MusicTranslation entry={entry}/></span><Badge>{entry.kind==='main'?'領域':'細分'}</Badge><small>{categoryLabel(entry.category)}</small></Button>)}</div>}{query.trim()&&!results.length&&<p className="field-hint">沒有尚未選取的符合詞條。</p>}</div>
       <KimiSelectedRows form={form}/></section><KimiSelectionSummary selection={form}/></div>
-    <Disclosure className="music-profile-tools"  title={<>成分操作</>}><div className="main-only-links">{form.saved?<><Link to="/me/music/contact">聯絡 QQ</Link><Link to={'/people/'+form.saved.id}>查看我的成分卡</Link></>:<Link to="/me/music/recover">找回舊成分</Link>}</div></Disclosure>
+    <Disclosure className="music-profile-tools"  title={<>成分操作</>}><div className="main-only-links">{form.saved?<><Link to="/me/music/contact">聯絡 QQ</Link><Link to={'/people/'+form.saved.id}>查看我的成分卡</Link></>:<Link to="/me/music/recover">找回成分</Link>}</div></Disclosure>
   </div>;
 }
 

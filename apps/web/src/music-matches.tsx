@@ -1,3 +1,4 @@
+import { MusicQQPrompt } from './music-qq-prompt';
 import { CircleHelp, GitCompareArrows } from 'lucide-react';
 import { Avatar, Badge, Select, Disclosure } from './kimi-ui';
 import { ActionLink } from './action-link';
@@ -21,7 +22,7 @@ export function MusicRecommendations({ viewer }: { viewer: Member }) {
   const { sort, change } = useMusicMatchSort();
   const query = useQuery({ queryKey: ['private', viewer.scope, 'music-matches', viewer.musicEpoch, sort],
     queryFn: ({ signal }) => scopedHttp(viewer.scope).requestContract('GET /api/v2/music/matches', { signal, query: { sort } }), refetchOnMount: 'always', refetchInterval: 10000 });
-  return <section aria-label="同好推薦" className="music-recommendations"><div className="recommend-toolbar"><div><Heading level={2}>推薦名單</Heading>{query.data&&<p>依已保存成分計算，共 {query.data.matches.length} 位有共同喜好</p>}</div>
+  return <section aria-label="同好推薦" className="music-recommendations"><MusicQQPrompt viewer={viewer}/><div className="recommend-toolbar"><div><Heading level={2}>推薦名單</Heading>{query.data&&<p>依已保存成分計算，共 {query.data.matches.length} 位有共同喜好</p>}</div>
     <Select aria-label="排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}>
       <option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option>
     </Select></div>
@@ -45,14 +46,14 @@ export function MusicRecommendations({ viewer }: { viewer: Member }) {
 function MatchCard({ row, rank, compact=false }: { row: z.infer<typeof MusicMatches>['matches'][number]; rank?: number; compact?:boolean }) {
   const [params] = useSearchParams(), from='/people'+(params.size?'?'+params:''), member=row.member;
   const level=(value:number)=>({1:uiText('只聽過幾首'),2:uiText('聽過一些'),3:uiText('常聽'),4:uiText('本命')}[value]);
-  return <article className={'person-card match-card'+(compact?' match-card-compact':'')}><header><div className="person-identity">{rank&&<span className="recommend-rank">{String(rank).padStart(2,'0')}</span>}<Link className="person-name-link" aria-label={member.name} to={'/people/'+member.id+'?'+new URLSearchParams({from})}><span aria-hidden="true"><Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--app-accent)'}} size="sm"/></span><span className="person-heading"><strong>{member.name}</strong><small>{row.stats.theirsCount} 項成分</small></span></Link></div><div className="match-score"><strong>{row.stats.matchPercent}<small>%</small></strong><span>匹配度</span></div></header>
+  return <article className={'person-card match-card'+(compact?' match-card-compact':'')}><header><div className="person-identity">{rank&&<span className="recommend-rank">{String(rank).padStart(2,'0')}</span>}<Link className="person-name-link" aria-label={member.name} to={'/people/'+member.id+'?'+new URLSearchParams({from})}><span aria-hidden="true"><Avatar user={{name:member.name,avatar:member.name.slice(0,1),avatarUrl:member.avatarUrl,color:'var(--app-accent)'}} size="sm"/></span><span className="person-heading"><strong>{member.name}</strong><small>{member.contactQQ?'QQ '+member.contactQQ:row.stats.theirsCount+' 項成分'}</small></span></Link></div><div className="match-score"><strong>{row.stats.matchPercent}<small>%</small></strong><span>匹配度</span></div></header>
     <div className="common-summary"><span>共同喜好 <strong>{row.stats.sharedCount}</strong></span><Badge>嚴格重合 {row.stats.score}%</Badge>{row.stats.bothTop>0&&<Badge tone="green">共同本命 {row.stats.bothTop}</Badge>}</div>
     {!compact&&<div className="common-terms">{row.shared.slice(0,4).map(pick=><div key={pick.id}><Link to={musicEntryPath(pick.id,new URLSearchParams({from}).toString())}>{pick.name}</Link><MusicTermButton entryId={pick.id}/>{pick.kind==='sub'&&<span><em className={pick.myLevel===4?'favorite':''}>我・{level(pick.myLevel)}</em><i/><em className={pick.theirLevel===4?'favorite':''}>對方・{level(pick.theirLevel)}</em></span>}</div>)}</div>}
 
     <footer><div><ActionLink to={'/people/'+member.id+'?'+new URLSearchParams({from})} size="sm">成分卡</ActionLink><ActionLink variant="ghost" size="sm" to={'/people/'+member.id+'/compare?'+new URLSearchParams({from})} startIcon={<GitCompareArrows size={14}/>}>比較成分</ActionLink></div></footer>
     <Disclosure className="profile-extras" title={<>更多成分資料</>}><MatchStats stats={row.stats}/><ComparedPicks title="共同喜歡" picks={row.shared} shared allowSelection/><ComparedPicks title="對方獨有" picks={row.onlyTheirs} fold allowSelection/>
     {member.note&&<Text className="match-note">對方的留言：{member.note}</Text>}{member.gender&&<Text>性別：{member.gender}</Text>}<ContactValue number={member.contactQQ} source={member.contactSource}/>
-    <Disclosure className="copy-profile"  title={<>複製資料</>}><CopyMusicValue value={member.name} label="名稱"/><CopyMusicValue value={member.id} label="成分 ID"/></Disclosure></Disclosure>
+    <Disclosure className="copy-profile"  title={<>複製資料</>}><CopyMusicValue value={member.name} label="名稱"/></Disclosure></Disclosure>
   </article>;
 }
 export function MusicComparisonPage() {

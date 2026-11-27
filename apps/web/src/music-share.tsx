@@ -44,7 +44,7 @@ function ShareEditor({ selection }: { selection: MusicSelection }) {
       {topMatch && <><Field label="分享推薦排序"><Select aria-label="分享推薦排序" value={sort} onChange={event => change(event.target.value === 'familiar' ? 'familiar' : 'rare')}><option value="rare">共同項／冷門優先</option><option value="familiar">我的熟悉度優先</option></Select></Field>
         <Checkbox className="consent" checked={topContact} disabled={!current?.topMatch?.contactQQ} onChange={event => setTopContact(event.target.checked)} label={<><span>包含同好的聯絡 QQ</span></>} /></>}
       <Field label="圖片配色"><Select aria-label="圖片配色" value={dark ? 'dark' : 'light'} onChange={event => setDark(event.target.value === 'dark')}><option value="light">淺色</option><option value="dark">深色</option></Select></Field>
-      <Text>圖片包含成分稱呼、固定 ID、詞條與選用人數；勾選後也會包含推薦同好或聯絡 QQ。不包含私人留言與性別。</Text>
+      <Text>圖片包含成分稱呼、詞條與選用人數；勾選後也會包含推薦同好或聯絡 QQ。不包含私人留言與性別。</Text>
     </Surface>
     {context.isPending || !context.isFetchedAfterMount ? <Notice>正在讀取分享資料…</Notice> : context.error ? <Failure error={context.error} retry={() => void context.refetch()} />
       : stale ? <Notice>目前成分已刪除、重建或移交；請回到我的成分核對並保留原稿。</Notice> : null}

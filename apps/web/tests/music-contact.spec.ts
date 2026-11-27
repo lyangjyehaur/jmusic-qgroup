@@ -17,19 +17,19 @@ test('a member edits, finds, copies and clears a contact while keeping the same 
   await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (text: string) => Object.assign(window, { copiedContact: text }) }, configurable: true }));
   await page.goto('/me/music'); await openMusicContact(page);
   await save(page, '123456'); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
-  await expect(page.getByText('123456 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible();
-  await page.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); await expect(page.getByText('已複製聯絡 QQ。', { exact: true })).toBeVisible();
+  await expect(page.getByText('123456', { exact: true })).toBeVisible();
+  await page.getByRole('button', { name: '複製 QQ', exact: true }).click(); await expect(page.getByText('已複製 QQ。', { exact: true })).toBeVisible();
   expect(await page.evaluate(() => (window as unknown as { copiedContact: string }).copiedContact)).toBe('123456');
   await page.setViewportSize({ width: 360, height: 800 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-contact-mobile.png', fullPage: true });
   await page.getByRole('link', { name: '回到我的成分', exact: true }).click();
   await expectMusicTerm(page,'Aimer',true); await expect(page.getByRole('button', { name: '保存我的成分', exact: true }).and(page.locator(':enabled'))).toHaveCount(0);
   await page.getByRole('navigation',{name:'手機主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true }).or(page.getByRole('navigation',{name:'主要導覽',exact:true}).getByRole('link', { name: '同好', exact: true })).click();await page.getByRole('tab',{name:'查詢／比較',exact:true}).click();
-  await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
-  await expect(page).toHaveURL('/people/' + profile.id); await expect(page.getByRole('heading', { name: '小青', exact: true })).toBeVisible(); await page.locator(".profile-all-picks .disclosure-trigger").click();await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
-  await page.goto('/me/music/contact'); await save(page, ''); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible(); await expect(page.getByText('尚未填寫聯絡 QQ。', { exact: true })).toBeVisible();
-  await page.goto('/people?tab=search'); await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
-  await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
+  await page.getByLabel('QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
+  await expect(page).toHaveURL('/people/' + profile.id + '?from=%2Fpeople%3Ftab%3Dsearch'); await expect(page.locator('.profile-person-name')).toHaveText('小青'); await page.locator(".profile-all-picks .disclosure-trigger").click();await expect(page.getByText('Aimer · 本命', { exact: true })).toBeVisible();
+  await page.goto('/me/music/contact'); await save(page, ''); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible(); await expect(page.getByText('尚未填寫 QQ。', { exact: true })).toBeVisible();
+  await page.goto('/people?tab=search'); await page.getByLabel('QQ', { exact: true }).fill('123456'); await page.getByRole('button', { name: '查詢成分', exact: true }).click();
+  await expect(page.getByRole('alert')).toHaveText('找不到這份成分，請核對 QQ');
   const after = await (await context.request.get('/api/v2/me/music', { headers: { 'X-Account-Scope': viewer.scope } })).json(); expect(after.id).toBe(profile.id); expect(after.selections).toEqual(profile.selections);
 });
 test('a malformed success response retains the exact contact operation through reload and confirms the latest value', async ({ page, context }) => {
@@ -49,7 +49,7 @@ test('conflicting contact edits retain input and require an explicit read before
     await page.goto('/me/music/contact'); await input(page).fill('654321');
     const other = await remote.newPage(); await other.goto('/me/music/contact'); await save(other, '123456'); await expect(other.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(page.getByText('聯絡 QQ 已變更；請核對目前資料後再保存', { exact: true })).toBeVisible(); await expectControlValue(input(page), '654321');
-    await page.getByRole('button', { name: '核對目前聯絡 QQ，保留輸入', exact: true }).click(); await expect(page.getByText('123456 · 自填號碼，未經騰訊驗證', { exact: true })).toBeVisible(); await expectControlValue(input(page), '654321');
+    await page.getByRole('button', { name: '核對目前聯絡 QQ，保留輸入', exact: true }).click(); await expect(page.getByText('123456', { exact: true })).toBeVisible(); await expectControlValue(input(page), '654321');
     await page.getByRole('button', { name: '保存聯絡 QQ', exact: true }).click(); await expect(page.getByText('已保存聯絡 QQ。', { exact: true })).toBeVisible();
   } finally { await remote.close(); }
 });
@@ -68,8 +68,8 @@ test('member cards offer manual copy recovery and visitors cannot read or query 
   const { profile, headers } = await seed(context);
   expect((await context.request.put('/api/v2/me/music/contact', { headers: { ...headers, 'Idempotency-Key': crypto.randomUUID() }, data: { profileId: profile.id, musicEpoch: 0, revision: 0, contactQQ: '123456' } })).status()).toBe(200);
   await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async () => { throw new Error('synthetic denial'); } }, configurable: true }));
-  await page.goto('/people/' + profile.id); await page.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取號碼手動複製。', { exact: true })).toBeVisible();
-  await context.clearCookies(); await page.reload(); await expect(page.getByText('123456 · 自填號碼，未經騰訊驗證', { exact: true })).toHaveCount(0); await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible();
+  await page.goto('/people/' + profile.id); await page.getByRole('button', { name: '複製 QQ', exact: true }).click(); await expect(page.getByText('無法自動複製，請選取號碼手動複製。', { exact: true })).toBeVisible();
+  await context.clearCookies(); await page.reload(); await expect(page.getByText('123456', { exact: true })).toHaveCount(0); await expect(page.getByRole('link', { name: '登入', exact: true })).toBeVisible();
   await page.goto('/people'); await expect(page.getByRole('button', { name: '查詢成分', exact: true })).toHaveCount(0);
 });
 test('editing a contact preserves an unfinished selection draft and requires a fresh revision before saving it', async ({ page, context }) => {

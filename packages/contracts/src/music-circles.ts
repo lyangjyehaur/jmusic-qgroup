@@ -1,5 +1,5 @@
 import { z } from 'zod';
-const identity = z.object({ id: z.string(), name: z.string() });
+const identity = z.object({ id: z.string(), name: z.string(), avatarUrl: z.string().optional() });
 const entry = z.object({ id: z.string(), kind: z.enum(['main', 'sub']) });
 export const MusicCircles = z.object({
   minLink: z.number().int().min(1).max(100), membersWithSelection: z.number().int().nonnegative(), singles: z.number().int().nonnegative(),

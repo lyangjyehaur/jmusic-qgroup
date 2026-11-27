@@ -1,3 +1,4 @@
+import { musicAvatars, withMusicAvatar } from './music-identity';
 import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
@@ -18,7 +19,7 @@ export function musicContact(db: DB, userId: string): Contact {
   return db.prepare(`SELECT p.id AS profileId,COALESCE(c.contact_qq,'') AS contactQQ,COALESCE(c.source,'self_reported') AS source,COALESCE(c.revision,0) AS revision
     FROM music_profiles p LEFT JOIN music_profile_contacts c ON c.profile_id=p.id WHERE p.id=?`).get(profile.id) as Contact;
 }
-function memberProfile(db: DB, query: string, viewerId: string): z.infer<typeof MemberMusicProfile> {
+function memberProfile(db: DB, query: string, viewerId: string, clientId?: string): z.infer<typeof MemberMusicProfile> {
   const id = resolveMusicProfileId(db, query);
   const profile = db.prepare(`SELECT p.id,${musicNameSQL} AS name,
     COALESCE(c.contact_qq,'') AS contactQQ,CASE WHEN c.contact_qq!='' THEN c.source ELSE '' END AS contactSource
@@ -28,10 +29,10 @@ function memberProfile(db: DB, query: string, viewerId: string): z.infer<typeof 
     WHERE s.profile_id=? ORDER BY s.position`).all(profile.id) as z.infer<typeof MemberMusicProfile>['selections'];
   const fields = profileFields(db, profile.id);
   const owner = db.prepare('SELECT 1 FROM music_profiles WHERE id=? AND user_id=?').get(profile.id, viewerId);
-  return { ...profile, gender: owner || fields.genderPublic ? fields.gender : '',
+  return { ...withMusicAvatar(profile, musicAvatars(db, clientId)), gender: owner || fields.genderPublic ? fields.gender : '',
     note: musicNoteAllowed(db, viewerId, profile.id) ? fields.note : '', selections };
 }
-export function registerMusicContact(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
+export function registerMusicContact(app: FastifyInstance, db: DB, security: Security, now: () => Date, clientId?: string) {
   app.get('/api/v2/me/music/contact', async request => musicContact(db, security.scopedMember(request).id));
   app.put('/api/v2/me/music/contact', { config: { rateLimit: { max: 20, timeWindow: '1 minute' } } }, async (request, reply) => db.transaction(() => {
     const member = security.memberWrite(request); const input = SaveMusicContact.parse(request.body);
@@ -46,7 +47,7 @@ export function registerMusicContact(app: FastifyInstance, db: DB, security: Sec
     const epoch = (db.prepare('SELECT epoch FROM music_account_epochs WHERE user_id=?').get(member.id) as { epoch: number } | undefined)?.epoch ?? 0;
     if (input.profileId !== before.profileId || input.musicEpoch !== epoch) throw withApiError(new DomainError('PROFILE_ERASED', '成分已刪除或重建，請重新開啟目前成分', 409));
     if (input.revision !== before.revision) throw withApiError(new DomainError('CONTACT_CHANGED', '聯絡 QQ 已變更；請核對目前資料後再保存', 409));
-    if (input.contactQQ !== before.contactQQ && before.source === 'legacy') throw withApiError(new DomainError('LEGACY_CONTACT_FIXED', '舊成分的 QQ 是原資料查詢標識，更正請聯絡管理員', 409));
+    if (input.contactQQ !== before.contactQQ && before.source === 'legacy') throw withApiError(new DomainError('LEGACY_CONTACT_FIXED', '此 QQ 僅由管理員更正', 409));
     const duplicate = input.contactQQ && db.prepare(`SELECT 1 FROM music_profile_contacts WHERE contact_qq=? AND profile_id!=?
       UNION ALL SELECT 1 FROM music_legacy_identity i WHERE i.table_name='profile_contacts' AND json_extract(i.payload_json,'$.number')=?
       AND NOT EXISTS(SELECT 1 FROM music_legacy_profiles l WHERE l.legacy_key=json_extract(i.payload_json,'$.qq')) LIMIT 1`).get(input.contactQQ, before.profileId, input.contactQQ);
@@ -70,12 +71,12 @@ export function registerMusicContact(app: FastifyInstance, db: DB, security: Sec
   app.post('/api/v2/music/profiles/lookup', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const viewer = security.memberWrite(request);
     if (!getProfile(db, viewer.id)) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403));
-    return memberProfile(db, LookupMusicProfile.parse(request.body).query, viewer.id);
+    return memberProfile(db, LookupMusicProfile.parse(request.body).query, viewer.id, clientId);
   })());
   app.get('/api/v2/music/profiles/:id', async request => db.transaction(() => {
     const viewer = security.scopedMember(request);
     if (!getProfile(db, viewer.id)) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403));
     const { id } = MusicProfilePath.parse(request.params);
-    return memberProfile(db, id, viewer.id);
+    return memberProfile(db, id, viewer.id, clientId);
   })());
 }

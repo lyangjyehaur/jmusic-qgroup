@@ -33,6 +33,7 @@ export const MusicEntryMembers = z.object({
   members: z.array(z.object({
     id: z.string(),
     name: z.string(),
+    avatarUrl: z.string().optional(),
     contactQQ: z.string(),
     contactSource: z.enum(['legacy', 'self_reported', '']),
   })),

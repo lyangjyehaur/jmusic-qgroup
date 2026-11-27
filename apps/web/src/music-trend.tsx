@@ -15,7 +15,7 @@ import { musicEntryPath } from './music-entry';
 import { categoryLabel } from './music-entries';
 import { ListMusic } from 'lucide-react';
 import { ActionLink } from './action-link';
-import { Badge, PageHeader, Disclosure } from './kimi-ui';
+import { Avatar, Badge, PageHeader, Disclosure } from './kimi-ui';
 import { MusicBrowseTabs } from './music-browse-tabs';
 type Trend = z.infer<typeof MusicTrend>;
 const colors = [1,2,3,4,5].map(index=>'var(--app-chart-'+index+')');
@@ -53,8 +53,8 @@ function RecentMembers({ viewer }: { viewer: Member }) {
   if (query.isPending || !query.isFetchedAfterMount) return <Notice>正在讀取新增同好…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   return query.data.members.length ? <ul className="trend-member-list">{query.data.members.map(member => <li key={member.id}>
-    <Link to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: location.pathname + location.search })}>{member.name}</Link>
-    <Text size="sm">成分 ID：{member.id} · <Created time={member.createdAt} /></Text>
+    <Link to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: location.pathname + location.search })}><Avatar user={{name:member.name,avatar:member.name.slice(0,1),avatarUrl:member.avatarUrl,color:'var(--app-accent)'}} size="sm"/>{member.name}</Link>
+    <Text size="sm"><Created time={member.createdAt} /></Text>
   </li>)}</ul> : <Notice>尚無同好成分。</Notice>;
 }
 function TrendChart({ trend, entryPath }: { trend: Trend; entryPath: (id: string) => string }) {

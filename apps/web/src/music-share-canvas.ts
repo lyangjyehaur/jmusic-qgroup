@@ -19,8 +19,7 @@ export function drawMusicShare(canvas: HTMLCanvasElement, input: ShareCard) {
   };
   text(uiText('群聚・我的音樂成分'), 22, true); y += 24;
   text(input.context.name, 36, true);
-  if (input.context.profileId) text(uiText('成分 ID：') + input.context.profileId, 18, false, true);
-  if (input.contact && input.context.contactQQ) text(uiText('聯絡 QQ：') + input.context.contactQQ + uiText('（未經騰訊驗證）'), 19, false, true);
+  if (input.contact && input.context.contactQQ) text(uiText('聯絡 QQ：') + input.context.contactQQ, 19, false, true);
   text(`${input.picks.length}${uiText(" 項")}${input.draft ? uiText(' · 目前草稿') : uiText(' · 已保存成分')}`, 21, false, true); y += 20;
   for (const kind of ['main', 'sub'] as const) {
     const picks = input.picks.filter(pick => pick.kind === kind); if (!picks.length) continue;
@@ -42,8 +41,8 @@ export function drawMusicShare(canvas: HTMLCanvasElement, input: ShareCard) {
   const top = input.topMatch ? input.context.topMatch : null;
   if (top) {
     y += 8; text(uiText('推薦同好 · ') + (input.context.sort === 'familiar' ? uiText('我的熟悉度優先') : uiText('共同項／冷門優先')), 21, false, true);
-    text(top.name, 28, true); text(uiText('成分 ID：') + top.id, 18, false, true);
-    if (input.topContact && top.contactQQ) text(uiText('聯絡 QQ：') + top.contactQQ + uiText('（未經騰訊驗證）'), 19, false, true);
+    text(top.name, 28, true);
+    if (input.topContact && top.contactQQ) text(uiText('聯絡 QQ：') + top.contactQQ, 19, false, true);
     text(`${uiText("匹配度 ")}${top.matchPercent}${uiText("% · ")}${top.sharedCount}${uiText(" 個共同詞條")}`, 22); y += 16;
   }
   text(new URL('/music', input.origin).href, 19, false, true);

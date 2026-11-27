@@ -47,7 +47,7 @@ export function registerMusicFields(app: FastifyInstance, db: DB, security: Secu
     const next = normalize(input, before);
     if (next.name !== before.name) {
       const names = db.prepare(`SELECT ${musicNameSQL} AS name FROM music_profiles p ${musicNameJoins} WHERE ${musicProfileActiveSQL('p')} AND p.id!=?`).all(before.profileId) as { name: string }[];
-      if (names.some(row => musicNameKey(row.name) === musicNameKey(next.name))) throw withApiError(new DomainError('MUSIC_NAME_IN_USE', '此成分稱呼已被使用，請更換；如為你的舊成分，請先找回', 409));
+      if (names.some(row => musicNameKey(row.name) === musicNameKey(next.name))) throw withApiError(new DomainError('MUSIC_NAME_IN_USE', '此成分稱呼已被使用，請更換；如為你的成分，請先找回', 409));
     }
     const stamp = now().toISOString();
     if (next.name !== before.name || next.note !== before.note || next.gender !== before.gender || next.genderPublic !== before.genderPublic) {

@@ -196,7 +196,7 @@ export function PWAUpdateNotice() {
     },[]);
     return <div ref={notices} className="app-status-notices">
   {!state.online && <Notice>目前已離線；資料讀取與提交需要網路。未確認的操作請連線後明確核對。</Notice>}
-  {(state.waiting || state.ready || state.legacy) && <Notice>{state.legacy ? '舊成分站離線元件待退役；請保存草稿，關閉舊成分站視窗後重新開啟。' : state.waiting ? '有新版可用；請先保存或保全草稿。' : '頁面與離線元件版本不同；保存草稿後可重新載入。'} <Link to="/me/app">檢查應用程式更新</Link></Notice>}
+  {(state.waiting || state.ready || state.legacy) && <Notice>{state.legacy ? '舊網站離線元件待退役；請保存草稿，關閉舊網站視窗後重新開啟。' : state.waiting ? '有新版可用；請先保存或保全草稿。' : '頁面與離線元件版本不同；保存草稿後可重新載入。'} <Link to="/me/app">檢查應用程式更新</Link></Notice>}
     </div>;
 }
 export function AppSettingsPage() {

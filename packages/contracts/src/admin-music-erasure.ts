@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { ErasureProof } from './erasure-proof';
 export const AdminMusicErasurePreview = z.object({
   command:z.enum(['delete_profile','reset_music']),revision:z.string().regex(/^[a-f0-9]{64}$/),
-  profile:z.object({id:z.string(),name:z.string(),ownerId:z.string().nullable()}).nullable(),
+  profile:z.object({id:z.string(),name:z.string(),contactQQ:z.string().optional(),ownerName:z.string().optional(),ownerId:z.string().nullable()}).nullable(),
   profiles:z.number().int().nonnegative(),selections:z.number().int().nonnegative(),
   entries:z.number().int().nonnegative(),shouts:z.number().int().nonnegative(),
   historyRecords:z.number().int().nonnegative().default(0),

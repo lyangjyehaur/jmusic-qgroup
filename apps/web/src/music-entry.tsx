@@ -64,12 +64,11 @@ function EntryMembers({ viewer, id, returnTo }: { viewer: Member; id: string; re
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
   if (!query.data.members.length) return <Notice>尚無人選用此詞條。</Notice>;
   return <ul className="entry-selector-list">{query.data.members.map(member => <li key={member.id}>
-    <Link className="entry-selector-identity" aria-label={member.name} to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: returnTo })}><Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--moss)'}} size="sm"/><span>{member.name}</span></Link>
-    <Text>{member.contactQQ ? member.contactQQ + ' · ' + (member.contactSource === 'legacy' ? '舊成分查詢號碼' : '自填號碼') + '，未經騰訊驗證'
-      : '固定成分 ID：' + member.id}</Text>
+    <Link className="entry-selector-identity" aria-label={member.name} to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from: returnTo })}><Avatar user={{name:member.name,avatar:member.name.slice(0,1),avatarUrl:member.avatarUrl,color:'var(--moss)'}} size="sm"/><span>{member.name}</span></Link>
+    {member.contactQQ&&<Text>QQ {member.contactQQ}</Text>}
     <div className="page-actions entry-selector-copy">
       <CopyMusicValue key={member.name} value={member.name} label="名稱" compact onMessage={message=>setCopyFeedback(previous=>({...previous,[member.id]:message}))}/>
-      <CopyMusicValue key={member.contactQQ || member.id} value={member.contactQQ || member.id} label={member.contactQQ ? '聯絡 QQ' : '成分 ID'} compact onMessage={message=>setCopyFeedback(previous=>({...previous,[member.id]:message}))}/>
+      {member.contactQQ&&<CopyMusicValue key={member.contactQQ} value={member.contactQQ} label="QQ" compact onMessage={message=>setCopyFeedback(previous=>({...previous,[member.id]:message}))}/>}
     </div>
     {copyFeedback[member.id]&&<p className="entry-selector-feedback" role="status">{copyFeedback[member.id]}</p>}
   </li>)}</ul>;

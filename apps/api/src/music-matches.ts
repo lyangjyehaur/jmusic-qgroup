@@ -1,3 +1,4 @@
+import { musicAvatars, withMusicAvatar } from './music-identity';
 import { MusicProfilePath } from '@qgroup/contracts/http-paths';
 import { withApiError } from './error-display';
 import type { FastifyInstance } from 'fastify';
@@ -14,14 +15,15 @@ function viewerProfile(db: DB, userId: string) {
   if (!profile) throw withApiError(new DomainError('MUSIC_PROFILE_REQUIRED', '請先保存成分，再查看同好成分', 403));
   return profile;
 }
-function compare(db: DB, userId: string, target: string) {
+function compare(db: DB, userId: string, target: string, clientId?: string) {
   const profile = viewerProfile(db, userId), otherId = resolveMusicProfileId(db, target);
   if (profile.id === otherId) throw withApiError(new DomainError('COMPARE_SELF', '這是你自己的成分，請選擇另一份成分', 400));
   const { entries, members } = musicMatchData(db), me = members.find(m => m.id === profile.id)!, other = members.find(m => m.id === otherId)!;
   const allowed = musicMatches(me, members, entries).matches[0]?.member.id === other.id;
-  return MusicComparison.parse({ ...musicComparison(me.selections, other.selections, entries), me: matchingIdentity(me, true, true), other: matchingIdentity(other, allowed) });
+  const avatars = musicAvatars(db, clientId);
+  return MusicComparison.parse({ ...musicComparison(me.selections, other.selections, entries), me: withMusicAvatar(matchingIdentity(me, true, true), avatars), other: withMusicAvatar(matchingIdentity(other, allowed), avatars) });
 }
-export function registerMusicMatches(app: FastifyInstance, db: DB, security: Security) {
+export function registerMusicMatches(app: FastifyInstance, db: DB, security: Security, clientId?: string) {
   // Export projection is separate from matchingIdentity: it never loads notes into a response.
   app.get('/api/v2/me/music/share', async request => db.transaction(() => {
     const viewer = security.scopedMember(request), profile = getProfile(db, viewer.id);
@@ -39,17 +41,18 @@ export function registerMusicMatches(app: FastifyInstance, db: DB, security: Sec
     const { sort } = MusicSortQuery.parse(request.query);
     const { entries, members } = musicMatchData(db), me = members.find(m => m.id === profile.id)!;
     const result = musicMatches(me, members, entries, sort);
-    const expose = (row: typeof result.matches[number], index: number, sparse: boolean) => ({ member: matchingIdentity(row.member, !sparse && index === 0), stats: row.stats, shared: row.shared, onlyTheirs: row.onlyTheirs });
-    return MusicMatches.parse({ me: matchingIdentity(me, true, true), mine: musicComparison(me.selections, [], entries).mine, sort,
+    const avatars = musicAvatars(db, clientId);
+    const expose = (row: typeof result.matches[number], index: number, sparse: boolean) => ({ member: withMusicAvatar(matchingIdentity(row.member, !sparse && index === 0), avatars), stats: row.stats, shared: row.shared, onlyTheirs: row.onlyTheirs });
+    return MusicMatches.parse({ me: withMusicAvatar(matchingIdentity(me, true, true), avatars), mine: musicComparison(me.selections, [], entries).mine, sort,
       matches: result.matches.map((row, index) => expose(row, index, false)), sparseMatches: result.sparseMatches.map((row, index) => expose(row, index, true)) });
   })());
   app.post('/api/v2/music/compare', { config: { rateLimit: { max: 30, timeWindow: '1 minute' } } }, async request => db.transaction(() => {
     const viewer = security.memberWrite(request); viewerProfile(db, viewer.id);
-    return compare(db, viewer.id, LookupMusicProfile.parse(request.body).query);
+    return compare(db, viewer.id, LookupMusicProfile.parse(request.body).query, clientId);
   })());
   app.get('/api/v2/music/profiles/:id/comparison', async request => db.transaction(() => {
     const viewer = security.scopedMember(request); viewerProfile(db, viewer.id);
     const { id } = MusicProfilePath.parse(request.params);
-    return compare(db, viewer.id, id);
+    return compare(db, viewer.id, id, clientId);
   })());
 }

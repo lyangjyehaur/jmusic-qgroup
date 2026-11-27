@@ -15,14 +15,14 @@ import { musicNameJoins, musicNameSQL } from './music-fields';
 
 type Profile = z.infer<typeof AdminMusicProfile>;
 export const musicAdminProfileId = (params: unknown) => MusicProfilePath.parse(params).id;
-const projection = `SELECT p.id,${musicNameSQL} AS name,COALESCE(l.legacy_key,'') AS legacyKey,
+const projection = `SELECT p.id,${musicNameSQL} AS name,COALESCE(l.legacy_key,'') AS legacyKey,COALESCE(c.contact_qq,'') AS contactQQ,
   CASE WHEN l.pin_hash!='' THEN 1 ELSE 0 END AS hasPin,p.user_id AS userId,u.nickname,p.revision,
   CASE WHEN p.user_id IS NULL THEN 'unlinked' WHEN l.ownership_source='oauth' THEN 'oauth'
     WHEN l.ownership_source IN ('prelink','prelinked','admin_prelinked') THEN 'prelinked' ELSE 'account' END AS status
   FROM music_profiles p ${musicNameJoins}
   LEFT JOIN music_profile_contacts c ON c.profile_id=p.id`;
-function serialize(db: DB, row: { id: string; name: string; legacyKey: string; hasPin: number; userId: string | null; nickname: string | null; revision: number; status: Profile['status'] }): Profile {
-  return { id: row.id, name: row.name, legacyKey: row.legacyKey, hasPin: !!row.hasPin, owner: row.userId ? { id: row.userId, nickname: row.nickname ?? '未設定稱呼' } : null, revision: row.revision, status: row.status,
+function serialize(db: DB, row: { id: string; name: string; legacyKey: string; contactQQ: string; hasPin: number; userId: string | null; nickname: string | null; revision: number; status: Profile['status'] }): Profile {
+  return { id: row.id, name: row.name, legacyKey: row.legacyKey, contactQQ: row.contactQQ, hasPin: !!row.hasPin, owner: row.userId ? { id: row.userId, nickname: row.nickname ?? '未設定稱呼' } : null, revision: row.revision, status: row.status,
     selections: db.prepare(`SELECT s.entry_id AS entryId,e.name,e.kind,s.level FROM music_selections s JOIN music_entries e ON e.id=s.entry_id WHERE s.profile_id=? ORDER BY s.position`).all(row.id) as Profile['selections'] };
 }
 export function adminMusicProfile(db: DB, id: string, includeRetired=false) {

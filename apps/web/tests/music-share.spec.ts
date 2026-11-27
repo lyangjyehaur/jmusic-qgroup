@@ -34,7 +34,7 @@ test('shares current unsaved choices, exact ordered text and optional identities
   await expectControlValue(page.getByRole('textbox', { name: '詞條清單', exact: true }), expected);
   await page.getByRole('button', { name: '複製詞條清單', exact: true }).click(); await expect(page.getByText('已複製詞條清單。', { exact: true })).toBeVisible(); expect(await page.evaluate(() => (window as unknown as { shareCopied: string }).shareCopied)).toBe(expected);
   const drawn = await lines(page); expect(drawn).toContain('7 項 · 目前草稿'); expect(drawn).toContain('米津玄師'); expect(drawn.some(line => line.startsWith('只聽過幾首'))).toBe(true);
-  expect(drawn.join('')).not.toMatch(/123456|234567|留言|性別|private-pin|token|csrf/);
+  expect(drawn.join('')).not.toMatch(/123456|234567|留言|性別|private-pin|token|csrf|m_[a-f0-9]+|成分 ID|未經騰訊/);
   await redraw(page, () => page.getByRole('checkbox', { name: '包含我的聯絡 QQ', exact: true }).check()); expect((await lines(page)).join('')).toContain('123456');
   await redraw(page, () => page.getByRole('checkbox', { name: '包含同好的聯絡 QQ', exact: true }).check()); expect((await lines(page)).join('')).toContain('234567');
   await redraw(page, () => chooseOption(page,'分享推薦排序','familiar')); expect((await lines(page)).join('')).toContain('共同本命'); expect((await lines(page)).join('')).toContain('345678');

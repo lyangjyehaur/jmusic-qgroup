@@ -48,7 +48,7 @@ export const MusicFields = z.object({ profileId: z.string(), name: z.string(), n
 // against the actual prior value on the server, without silently truncating imports.
 export const SaveMusicFields = z.object({ profileId: z.string().min(1).max(80), musicEpoch: z.number().int().min(0), revision: z.number().int().min(0), name: z.string().max(16384), note: z.string().max(16384), gender: z.string().max(16384), genderPublic: z.boolean() }).strict();
 export const LookupMusicProfile = z.object({ query: z.string().trim().min(1).max(80) }).strict();
-export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), gender: z.string(), note: z.string(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
+export const MemberMusicProfile = z.object({ id: z.string(), name: z.string(), avatarUrl: z.string().optional(), contactQQ: z.string(), contactSource: z.enum(['legacy','self_reported','']), gender: z.string(), note: z.string(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
 export const ActivityRoster = z.object({eventId:z.string(),revision:z.number().int(),participants:z.array(z.object({
   id:z.string(),name:z.string(),note:z.string(),status:z.enum(['confirmed','waiting','tentative']),position:z.number().int(),waitingPosition:z.number().int().nullable(),
   isMe:z.boolean(),isGuest:z.boolean(),managedByMe:z.boolean(),managerName:z.string(),payerName:z.string(),withdrawalRequested:z.boolean(),confirmationState:z.string(),attendance:z.string(),avatarUrl:z.string(),
@@ -142,7 +142,7 @@ export const AdminPrivacyRequest = z.object({ id: z.string(), userId: z.string()
 export const AdminPrivacyQueue = z.object({ requests: z.array(AdminPrivacyRequest), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });
 export const SavePrivacyReview = z.object({ note: z.string().trim().refine(value => Array.from(value).length >= 1 && Array.from(value).length <= 1000), revision: z.string().regex(/^[a-f0-9]{64}$/), confirm: z.literal(true) }).strict();
 export const AdminMusicOwner = z.object({ id: z.string(), nickname: z.string() });
-export const AdminMusicProfile = z.object({ id: z.string(), name: z.string(), legacyKey: z.string(), hasPin: z.boolean(), owner: AdminMusicOwner.nullable(), status: z.enum(['oauth','prelinked','unlinked','account']), revision: z.number().int(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
+export const AdminMusicProfile = z.object({ id: z.string(), name: z.string(), contactQQ: z.string().optional(), legacyKey: z.string(), hasPin: z.boolean(), owner: AdminMusicOwner.nullable(), status: z.enum(['oauth','prelinked','unlinked','account']), revision: z.number().int(), selections: z.array(Selection.extend({ name: z.string(), kind: z.enum(['main','sub']) })) });
 export const AdminMusicSearch = z.object({ search: z.string().trim().max(100).default(''), status: z.enum(['all','oauth','prelinked','unlinked','account']).default('all'), offset: z.number().int().min(0).max(1000000).default(0) }).strict();
 export const AdminMusicProfiles = z.object({ profiles: z.array(AdminMusicProfile), total: z.number().int(), offset: z.number().int(), limit: z.literal(20) });
 export const PreviewMusicLink = z.object({ targetUserId: z.string().min(1).max(128).nullable() }).strict();

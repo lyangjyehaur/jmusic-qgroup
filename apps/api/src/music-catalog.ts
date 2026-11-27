@@ -1,3 +1,4 @@
+import { musicAvatars, withMusicAvatar } from './music-identity';
 import { ActivityPath } from '@qgroup/contracts/http-paths';
 import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { withApiError } from './error-display';
@@ -154,7 +155,7 @@ function blankProfile(db: DB, user: { id: string; nickname: string }, stamp: str
       )
       .get(user.id, stamp)
   )
-    throw withApiError(new DomainError('MUSIC_CLAIM_PENDING', '正在找回舊成分；請先完成或取消找回，再建立詞條', 409));
+    throw withApiError(new DomainError('MUSIC_CLAIM_PENDING', '正在找回成分；請先完成或取消找回，再建立詞條', 409));
   const id = 'm_' + randomUUID().replaceAll('-', '');
   db.prepare('INSERT INTO music_profiles(id,user_id,revision,updated_at) VALUES(?,?,0,?)').run(
     id,
@@ -164,7 +165,7 @@ function blankProfile(db: DB, user: { id: string; nickname: string }, stamp: str
   db.prepare("INSERT INTO music_profile_fields VALUES(?,?,'',0,'',0,0,?)").run(id, user.nickname, stamp);
   return id;
 }
-export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Security, now: () => Date) {
+export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Security, now: () => Date, clientId?: string) {
   db.transaction(() => backfillMusicEntryLocks(db)).immediate();
   app.get('/api/v2/music/catalog', async () => db.transaction(() => musicCatalog(db, now()))());
   app.get('/api/v2/music/entries/:id/members', async request => db.transaction(() => {
@@ -183,7 +184,8 @@ export function registerMusicCatalog(app: FastifyInstance, db: DB, security: Sec
       WHERE ${musicProfileActiveSQL('p')} AND s.entry_id=? ORDER BY ${musicSourceOrderSQL('profile','p')}`).all(id) as z.infer<typeof MusicEntryMembers>['members'];
     // Stable sort retains profile insertion order for equal names, as in the source list.
     members.sort((a, b) => textOrder(a.name, b.name));
-    return MusicEntryMembers.parse({ entryId: id, members });
+    const avatars = musicAvatars(db, clientId);
+    return MusicEntryMembers.parse({ entryId: id, members: members.map(member => withMusicAvatar(member, avatars)) });
   })());
   app.get('/api/v2/me/music/entries', async (request) =>
     db.transaction(() => myMusicEntries(db, security.scopedMember(request).id))(),

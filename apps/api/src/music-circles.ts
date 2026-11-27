@@ -1,3 +1,4 @@
+import { musicAvatars, withMusicAvatar } from './music-identity';
 import {musicProfileActiveSQL,musicSourceOrderSQL} from '@qgroup/database';
 import { createHash } from 'node:crypto';
 import { withApiError } from './error-display';
@@ -9,7 +10,7 @@ import type { Security } from './security';
 import { musicNameJoins, musicNameSQL } from './music-fields';
 import { createCircleJobs } from './music-circle-jobs';
 import type { MusicComputeBudget } from './music-compute-budget';
-export function registerMusicCircles(app: FastifyInstance, db: DB, security: Security, budget: MusicComputeBudget) {
+export function registerMusicCircles(app: FastifyInstance, db: DB, security: Security, budget: MusicComputeBudget, clientId?: string) {
   const jobs = createCircleJobs(budget);
   app.addHook('onClose', async () => jobs.close());
   const snapshot = (request: Parameters<Security['scopedMember']>[0], admit = false) => db.transaction(() => {
@@ -44,7 +45,8 @@ export function registerMusicCircles(app: FastifyInstance, db: DB, security: Sec
       const current = snapshot(request);
       if (current.userId !== before.userId || current.profileId !== before.profileId || current.version !== before.version)
         throw withApiError(new DomainError('CIRCLE_SOURCE_CHANGED', '成分或詞庫已變更，請重新分析同好圈子', 409));
-      return MusicCircles.parse(result);
+      const avatars = musicAvatars(db, clientId);
+      return MusicCircles.parse({ ...result, clusters: result.clusters.map(cluster => ({ ...cluster, members: cluster.members.map(member => withMusicAvatar(member, avatars)) })), singleMembers: result.singleMembers.map(member => withMusicAvatar(member, avatars)) });
     } finally {
       request.raw.removeListener('aborted', abort);
       reply.raw.removeListener('close', disconnected);

@@ -20,7 +20,7 @@ export function musicErasureScope(db:DB,id?:string){
   const count=(table:string)=> (db.prepare('SELECT count(*) n FROM '+table+(id?' WHERE profile_id=?':'')).get(...id?[id]:[]) as {n:number}).n;
   const shouts=(db.prepare('SELECT count(*) n FROM music_shouts'+(id?' WHERE profile_id=?':'')).get(...id?[id]:[]) as {n:number}).n;
   const historyRecords=id?0:(db.prepare("SELECT (SELECT count(*) FROM music_documents WHERE kind IN ('shouts','shoutHistory','trend','trend_sample'))+(SELECT count(*) FROM music_shout_authors) n").get() as {n:number}).n;
-  const preview=AdminMusicErasurePreview.parse({command:id?'delete_profile':'reset_music',revision,profile:profile?{id:profile.id,name:profile.name,ownerId:profile.owner?.id??null}:null,profiles:profiles.length,entries:id?(db.prepare("SELECT count(*) n FROM music_entry_details WHERE created_by=? OR created_by=?").get(id,profile!.legacyKey||id) as {n:number}).n:entries.length,selections:count('music_selections'),shouts,historyRecords});
+  const preview=AdminMusicErasurePreview.parse({command:id?'delete_profile':'reset_music',revision,profile:profile?{id:profile.id,name:profile.name,contactQQ:profile.contactQQ,ownerName:profile.owner?.nickname,ownerId:profile.owner?.id??null}:null,profiles:profiles.length,entries:id?(db.prepare("SELECT count(*) n FROM music_entry_details WHERE created_by=? OR created_by=?").get(id,profile!.legacyKey||id) as {n:number}).n:entries.length,selections:count('music_selections'),shouts,historyRecords});
   return{preview,profiles,entries};
 }
 export function registerAdminMusicErasure(app:FastifyInstance,db:DB,admin:AdminSecurity,now:()=>Date,privacy:PrivacyService){

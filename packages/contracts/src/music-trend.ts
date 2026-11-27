@@ -8,4 +8,4 @@ export const MusicTrend = z.object({
   new7d: z.object({ entries: z.number().int().nonnegative(), members: z.number().int().nonnegative() }),
   totals: z.object({ entries: z.number().int().nonnegative(), members: z.number().int().nonnegative() }),
 });
-export const MusicTrendMembers = z.object({ members: z.array(z.object({ id: z.string(), name: z.string(), createdAt: z.number().nullable() })).max(8) });
+export const MusicTrendMembers = z.object({ members: z.array(z.object({ id: z.string(), name: z.string(), avatarUrl: z.string().optional(), createdAt: z.number().nullable() })).max(8) });

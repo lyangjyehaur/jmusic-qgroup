@@ -42,7 +42,7 @@ function Circles({ viewer }: { viewer: Member }) {
 }
 function CircleCard({ circle, index }: { circle: Circle; index: number }) {
   const location = useLocation(), from = location.pathname + location.search;
-  const members=(items:Circle['members'])=><ul className="music-circle-members">{items.map(member=><li key={member.id}><Link to={'/people/'+encodeURIComponent(member.id)+'?'+new URLSearchParams({from})}><span aria-hidden="true"><Avatar user={{name:member.name,avatar:member.name.slice(0,1),color:'var(--app-accent)'}} size="sm"/></span><span>{member.name}</span></Link></li>)}</ul>;
+  const members=(items:Circle['members'])=><ul className="music-circle-members">{items.map(member=><li key={member.id}><Link to={'/people/'+encodeURIComponent(member.id)+'?'+new URLSearchParams({from})}><span aria-hidden="true"><Avatar user={{name:member.name,avatar:member.name.slice(0,1),avatarUrl:member.avatarUrl,color:'var(--app-accent)'}} size="sm"/></span><span>{member.name}</span></Link></li>)}</ul>;
   return <article className="music-circle" aria-label={'圈子 ' + (index + 1)}><header className="circle-card-heading"><UsersRound size={20}/><Heading level={3}>圈子 {index + 1} · {circle.size} 人</Heading></header>
     {members(circle.members.slice(0,8))}
     {circle.members.length>8&&<Disclosure className="circle-more-members" title={<>其餘成員 · {circle.members.length-8} 人</>}>{members(circle.members.slice(8))}</Disclosure>}
@@ -54,7 +54,7 @@ function CircleCard({ circle, index }: { circle: Circle; index: number }) {
 }
 function SingleMember({ member }: { member: z.infer<typeof MusicCircles>['singleMembers'][number] }) {
   const location = useLocation(), from = location.pathname + location.search;
-  return <li><Link to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from })}>{member.name}</Link><Text size="sm">{member.pickCount} 個詞條{member.pickCount > 8 ? '，列出前 8 個' : ''}</Text>
+  return <li><Link to={'/people/' + encodeURIComponent(member.id) + '?' + new URLSearchParams({ from })}><span aria-hidden="true"><Avatar user={{name:member.name,avatar:member.name.slice(0,1),avatarUrl:member.avatarUrl,color:'var(--app-accent)'}} size="sm"/></span><span>{member.name}</span></Link><Text size="sm">{member.pickCount} 個詞條{member.pickCount > 8 ? '，列出前 8 個' : ''}</Text>
     {member.picks.length ? <ul>{member.picks.map(entry => <li key={entry.id}><Link to={musicEntryPath(entry.id, new URLSearchParams({ from }).toString())}>{entry.name}</Link></li>)}</ul> : <Text>選擇的詞條已不在目前詞庫。</Text>}
   </li>;
 }

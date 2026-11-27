@@ -2,8 +2,7 @@ import { expectControlValue, selectControl } from './kimi-controls';
 import { durableRows,damageDraft } from './draft-helpers';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
-const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,
-  profile = (letter: string) => 'm_' + letter.repeat(32);
+const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
 test.use({ adminCatalog: true, musicRooms: true });
 async function login(context: BrowserContext, user = 'alice') {
   await context.addCookies([
@@ -86,9 +85,9 @@ test('free rooms analyze, split in three modes, preserve manual moves, lookup an
   await button(page,'恢復本機原稿').click();
   await expect(rooms(page).locator('.room-lab-room')).toHaveCount(2);
   await expect(rooms(page)).toContainText('待人工安排 · 1 人');
-  await page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true }).fill('10002');
+  await page.getByLabel('QQ', { exact: true }).fill('10002');
   await button(page, '定位成員').click();
-  await expectControlValue(page.getByLabel('搜尋成員名稱或成分 ID', { exact: true }), profile('b'));
+  await expectControlValue(page.getByLabel('搜尋成員名稱', { exact: true }), '詞庫bob');
   await expect(page.locator('.room-lab-pool').getByRole('checkbox')).toHaveCount(1);
   await page.getByRole('checkbox', { name: '包含自己', exact: true }).uncheck();
   const another = await context.newPage();

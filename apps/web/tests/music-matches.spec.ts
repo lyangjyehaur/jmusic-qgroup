@@ -49,9 +49,9 @@ test('both rankings keep all matches, sparse separation, familiarity and authori
 });
 test('alias comparisons reject self and missing members, use safe IDs in URLs and preserve all comparison groups', async ({ page, context }) => {
   await login(context); await page.goto('/people'); await page.getByRole('tab',{name:'查詢／比較',exact:true}).click();
-  const query = page.getByLabel('固定成分 ID 或聯絡 QQ', { exact: true });
+  const query = page.getByLabel('QQ', { exact: true });
   await query.fill(id(1)); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('這是你自己的成分，請選擇另一份成分');
-  await query.fill('999999'); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('找不到這份成分；請核對固定成分 ID 或聯絡 QQ');
+  await query.fill('999999'); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page.getByRole('alert')).toHaveText('找不到這份成分，請核對 QQ');
   await query.fill('20003'); await page.getByRole('button', { name: '比較成分', exact: true }).click(); await expect(page).toHaveURL('/people/' + id(3) + '/compare?from=%2Fpeople%3Ftab%3Dsearch');
   await expect(comparison(page).getByRole('heading', { name: '我的成分／共同本命', exact: true })).toBeVisible();
   await expect(comparison(page).getByRole('region', { name: '共同喜歡', exact: true })).toContainText('你：本命／對方：本命');
@@ -112,8 +112,8 @@ test('copy controls, mobile layout, keyboard term links and safe return destinat
   await login(context); await page.addInitScript(() => Object.defineProperty(navigator, 'clipboard', { value: { writeText: async (value: string) => Object.assign(window, { musicCopied: value }) }, configurable: true }));
   await page.setViewportSize({ width: 360, height: 800 }); await page.goto('/people'); const card = main(page).locator('.match-card').first();
   await card.getByText('更多成分資料',{exact:true}).click(); await card.getByText('複製資料',{exact:true}).click(); await card.getByRole('button', { name: '複製名稱', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('共同最多');
-  await card.getByRole('button', { name: '複製聯絡 QQ', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('234567');
-  await card.getByRole('button', { name: '複製成分 ID', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe(id(2));
+  await card.getByRole('button', { name: '複製 QQ', exact: true }).click(); expect(await page.evaluate(() => (window as unknown as { musicCopied: string }).musicCopied)).toBe('234567');
+  await expect(card.getByRole('button', { name: '複製成分 ID', exact: true })).toHaveCount(0); await expect(card).not.toContainText(id(2));
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true); await page.screenshot({ path: 'test-results/unified-matches-mobile.png', fullPage: true });
   const link = card.locator('.common-terms').getByRole('link', { name: 'Aimer', exact: true }); await link.focus(); await page.keyboard.press('Enter'); await expect(page.getByRole('heading', { name: 'Aimer', exact: true })).toBeVisible();
   await page.goto('/people/' + id(2) + '?from=%2Fpeople'); await expect(page.locator('.person-profile')).toBeVisible();

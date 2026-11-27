@@ -20,8 +20,8 @@ export function pendingOperations(storage:Pick<Storage,'length'|'key'|'getItem'>
       continue;
     }
     if(key===root+'music:claim:v1:'+scope){
-      try{const pending=MusicRecoveryRecord.nullable().parse(JSON.parse(storage.getItem(key)??'null'));if(pending)rows.push({id:key,label:uiText("找回舊成分"),to:'/me/music/recover',damaged:false});}
-      catch{rows.push({id:key,label:uiText("找回舊成分"),to:'/me/music/recover',damaged:true});}
+      try{const pending=MusicRecoveryRecord.nullable().parse(JSON.parse(storage.getItem(key)??'null'));if(pending)rows.push({id:key,label:uiText("找回成分"),to:'/me/music/recover',damaged:false});}
+      catch{rows.push({id:key,label:uiText("找回成分"),to:'/me/music/recover',damaged:true});}
       continue;
     }
     const shout=musicShoutDraftTarget(key,scope);
