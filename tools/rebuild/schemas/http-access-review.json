@@ -124,7 +124,7 @@
     "packages/domain/src/index.ts": "5b474793ff47738a0415981045c9aa097be708027774212c9fe90269502b22df",
     "packages/domain/src/music-circles.ts": "ce4b93a8d42faaba36a2f5c253e039e89832c9570a8bcfa027120c180e9b953f",
     "packages/domain/src/music-kana.ts": "2455ede77b494c54299372de2e6d9e87d3e702e9a15c32728cdc607e6f448697",
-    "packages/domain/src/music-labels.ts": "671ba5a220f9668d3ead8adcdc38721f928342ea963533aba53ebf15b33916a8",
+    "packages/domain/src/music-labels.ts": "cdb50e08f2c4344310fca2eab09e442ada2369a5ef9c9a27e4073c31a5e0794d",
     "packages/domain/src/music-matching.ts": "079a8418710d9127f4f2e114c2212e2299a658e7036411af845ba9fd34fe1ced",
     "packages/domain/src/music-rooms.ts": "29959a2db2d288851b629f1d46bfcedc45ed4128461f5cb95a4dfdd684c4ed8b",
     "packages/domain/src/music-search.ts": "3ac492c34d87da202f3b7529c56b86a58ecd6ddff5cfdb1c5d53000ae56be46a",
