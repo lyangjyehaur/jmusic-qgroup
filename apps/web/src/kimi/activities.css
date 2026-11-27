@@ -1,0 +1,65 @@
+/* Let titles use the available width before deciding where actions belong. */
+.kimi .page-heading-content { min-width:0; width:100%; }
+.kimi .page-heading h1 { text-wrap:pretty; overflow-wrap:anywhere; }
+.kimi.activity-detail-page > .page-header { flex-wrap:wrap; align-items:start; gap:16px 24px; }
+.kimi.activity-detail-page > .page-header > .page-heading { flex:1 1 24rem; }
+.kimi.activity-detail-page > .page-header > .page-actions { flex:0 1 auto; max-width:100%; }
+.kimi.activity-detail-page .page-header h1 { font-size:clamp(24px,3vw,30px); line-height:1.45; }
+.kimi.activity-detail-page .page-header .page-actions { flex-wrap:wrap; }
+.kimi.activity-detail-page .status-strip { flex-wrap:wrap; align-items:center; gap:10px 16px; }
+.kimi.activity-detail-page .status-strip .activity-capacity { display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+.kimi.activity-detail-page .status-strip .activity-capacity > span { display:inline-flex; }
+.kimi.activity-detail-page .status-strip .activity-capacity small { font-size:12px; }
+
+.kimi .activity-list { display:grid; gap:12px; border:0; }
+.kimi .activity-list-header { padding:0 16px 0 80px; grid-template-columns:minmax(0,1fr) 168px 112px 40px; gap:14px; border:0; }
+.kimi .activity-row { padding:18px 16px; grid-template-columns:50px minmax(0,1fr) 294px 40px; gap:14px; border:1px solid var(--line-soft); border-radius:var(--yahha-radius-panel); background:var(--paper); align-items:center; }
+.kimi .activity-row:last-child { border-bottom:1px solid var(--line-soft); }
+.kimi .activity-row:hover { background:var(--app-panel-tint); border-color:var(--line); }
+.kimi .activity-date { width:100%; padding:8px 4px; border:0; border-radius:8px; background:var(--moss-soft); gap:2px; }
+.kimi .activity-title-line { flex-wrap:nowrap; align-items:start; gap:8px; }
+.kimi .activity-title-line h2 { min-width:0; flex:1; line-height:1.5; overflow-wrap:anywhere; text-wrap:pretty; }
+.kimi .activity-title-line > .badge { flex:0 0 auto; margin-top:1px; }
+.kimi .activity-meta { display:flex; flex-wrap:wrap; gap:4px 14px; }
+.kimi .activity-meta > span { min-width:0; overflow-wrap:anywhere; align-items:start; }
+.kimi .activity-meta svg { margin-top:2px; }
+.kimi .my-registration { flex-wrap:wrap; }
+.kimi .activity-progress { display:grid; grid-template-columns:minmax(0,1fr) 112px; gap:14px; align-items:center; min-width:0; }
+.kimi .activity-progress .activity-status { justify-self:end; }
+.kimi .activity-capacity { display:grid; gap:3px; margin:0; min-width:0; }
+.kimi .activity-capacity > span { flex-wrap:wrap; }
+.kimi .activity-capacity small { font-size:11px; color:var(--muted); }
+.kimi .activity-capacity .formation-ready { color:var(--moss); }
+.kimi .activity-row > .row-arrow { width:40px; min-height:44px; align-self:start; }
+.kimi .me-activity-list .activity-progress { display:none; }
+.kimi .me-activity-list .activity-row { padding:14px 12px; }
+.kimi-shell :is(.brand,.mobile-brand) { min-width:0; }
+.kimi-shell :is(.brand,.mobile-brand) > span:last-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:.04em; }
+.kimi-shell .mobile-brand { flex:1 1 0; }
+.kimi-shell .topbar-actions { flex-shrink:0; }
+.site-title-setting { margin-bottom:24px; display:flex; flex-wrap:wrap; align-items:center; gap:8px 16px; }
+.site-title-setting h2 { flex-basis:100%; }
+.site-title-setting p { min-width:0; overflow-wrap:anywhere; flex:1; }
+
+@media(max-width:1100px) {
+  .kimi.activity-detail-page > .page-header { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
+  .kimi.activity-detail-page > .page-header > .page-heading { width:100%; }
+  .kimi.activity-detail-page > .page-header > .page-actions { justify-self:end; }
+  .kimi .activity-row { grid-template-columns:44px minmax(0,1fr) 40px; align-items:start; gap:10px 12px; }
+  .kimi .activity-main { grid-column:2; grid-row:1; }
+  .kimi .activity-date { grid-column:1; grid-row:1 / span 2; }
+  .kimi .activity-progress { grid-column:2 / -1; grid-row:2; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 12px; }
+  .kimi .activity-progress .activity-status { display:grid; gap:4px; margin:0; }
+  .kimi .activity-row > .row-arrow { grid-column:3; grid-row:1; }
+  .kimi .activity-list-header { display:none; }
+}
+@media(max-width:768px) {
+  .kimi .activity-row { grid-template-columns:40px minmax(0,1fr) 32px; padding:14px 12px; gap:10px; }
+  .kimi .activity-row > .row-arrow { width:32px; min-width:32px; }
+  .kimi .activity-meta { font-size:11px; margin-top:6px; }
+  .kimi .activity-date strong { font-size:23px; }
+  .kimi .activity-date span { font-size:11px; }
+  .kimi.activity-detail-page .page-header h1 { font-size:24px; }
+}
+html[data-density=compact] .kimi .activity-row { min-height:0; padding-block:12px; }
+html[data-density=compact] .kimi .activity-list { gap:8px; }

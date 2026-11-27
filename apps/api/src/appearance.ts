@@ -3,7 +3,7 @@ import { withApiError } from './error-display';
 import { randomBytes } from 'node:crypto';
 import type { FastifyInstance } from 'fastify';
 import sharp from 'sharp';
-import { EmptyHttpQuery, Appearance,AppearanceCommand,AppearanceResult } from '@qgroup/contracts';
+import { EmptyHttpQuery, Appearance,AppearanceCommand,AppearanceResult,SiteTitle } from '@qgroup/contracts';
 import { wallpaperDigest,type DB } from '@qgroup/database';
 import { DomainError,musicText } from '@qgroup/domain';
 import { z } from 'zod';
@@ -11,9 +11,11 @@ import type { AdminSecurity } from './admin-security';
 import { hash } from './security';
 const imageURL=(id:string)=>'/api/v2/appearance/walls/'+id+'/image';
 export function appearance(db:DB,publicOnly=false){
+  const site=db.prepare("SELECT payload_json FROM music_documents WHERE kind='site_appearance' AND position=0").get() as {payload_json:string}|undefined;
+  const siteTitle=site?SiteTitle.parse(JSON.parse(site.payload_json).title):'群聚';
   const config=db.prepare('SELECT rotate_seconds,revision FROM wallpaper_config WHERE id=1').get() as {rotate_seconds:number;revision:number};
   const rows=db.prepare('SELECT i.*,a.size FROM wallpaper_items i LEFT JOIN wallpaper_assets a ON a.digest=i.digest ORDER BY position').all() as {id:string;name:string;source:string;enabled:number;position:number;digest:string|null;size:number|null}[];
-  return Appearance.parse({revision:hash(JSON.stringify([config,rows])),rotateSeconds:config.rotate_seconds,items:rows.filter(r=>!publicOnly||r.enabled&&r.digest).map(r=>({id:r.id,name:r.name,enabled:!!r.enabled,url:imageURL(r.id),size:r.size??0,missing:!r.digest}))});
+  return Appearance.parse({revision:hash(JSON.stringify([config,rows,siteTitle])),siteTitle,rotateSeconds:config.rotate_seconds,items:rows.filter(r=>!publicOnly||r.enabled&&r.digest).map(r=>({id:r.id,name:r.name,enabled:!!r.enabled,url:imageURL(r.id),size:r.size??0,missing:!r.digest}))});
 }
 export async function wallpaperImage(data:string,mime:string){
   if(!data||data.length>2800000||data.length%4||!/^[A-Za-z0-9+/]*={0,2}$/.test(data))throw withApiError(new DomainError('WALLPAPER_IMAGE','圖片資料損壞，請重新選擇 PNG、JPG 或 WebP'));
@@ -49,7 +51,8 @@ export function registerAppearance(app:FastifyInstance,db:DB,admin:AdminSecurity
         db.prepare('INSERT OR IGNORE INTO wallpaper_assets VALUES(?,?,?,?)').run(digest,input.mime,raw,raw!.length);
         const position=(db.prepare('SELECT COALESCE(max(position),-1)+1 n FROM wallpaper_items').get() as {n:number}).n;
         db.prepare('INSERT INTO wallpaper_items VALUES(?,?,?,1,?,?)').run(id,'/walls/'+id+'.'+(input.mime==='image/png'?'png':input.mime==='image/jpeg'?'jpg':'webp'),name,position,digest);
-      }else if(input.command==='config')db.prepare('UPDATE wallpaper_config SET rotate_seconds=? WHERE id=1').run(input.rotateSeconds);
+      }else if(input.command==='site')db.prepare("INSERT INTO music_documents VALUES('site_appearance',0,?) ON CONFLICT(kind,position) DO UPDATE SET payload_json=excluded.payload_json").run(JSON.stringify({title:input.siteTitle}));
+      else if(input.command==='config')db.prepare('UPDATE wallpaper_config SET rotate_seconds=? WHERE id=1').run(input.rotateSeconds);
       else{
         id=input.id;const item=db.prepare('SELECT position,digest FROM wallpaper_items WHERE id=?').get(id) as {position:number;digest:string|null}|undefined;
         if(!item)throw withApiError(new DomainError('WALLPAPER_NOT_FOUND','壁紙不存在或已刪除',404));

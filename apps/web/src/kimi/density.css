@@ -22,6 +22,7 @@ html[data-density=compact] .kimi .common-terms > div { min-height:48px; padding-
 html[data-density=compact] .kimi :is(.people-lookup,.music-circle,.shout-compose,.shout-list .partner-post) { padding:14px; }
 html[data-density=compact] .kimi .people-summary { padding-block:10px; margin-bottom:16px; }
 @media(max-width:768px) {
+ html[data-density=compact] .kimi .person-card.match-card { padding:12px; }
  html[data-density=compact] .kimi .activity-row { min-height:0; padding-block:12px; }
  html[data-density=compact] .kimi .detail-layout { gap:16px; }
 }

@@ -3,7 +3,7 @@ import { activityCategoryLabel } from './activity-categories';
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { ArrowUpRight, CalendarPlus, Clock3, MapPin, UsersRound } from 'lucide-react';
+import { ArrowUpRight, CalendarPlus, Clock3, MapPin } from 'lucide-react';
 import type { z } from 'zod';
 import { ListedActivity, ActivitiesQuery, activityListStatus } from '@qgroup/contracts';
 import { Badge, EmptyState, PageHeader, SearchInput, Select, Button } from './kimi-ui';
@@ -11,6 +11,7 @@ import { Failure, Notice, useSession } from './shared';
 import { scopedHttp } from './http';
 import { ActivityBrowseTabs } from './activity-browse-tabs';
 import { activityDisplayDate } from './activity-summary';
+import { ActivityNumbers } from './activity-numbers';
 import { OverviewStats } from './overview-stats';
 import { uiText, displayLocale } from './language';
 const statuses = [['all',uiText('全部狀態')],['draft',uiText('草稿')],['open',uiText('報名中')],['full',uiText('已額滿')],['paused',uiText('未開放報名')],['ongoing',uiText('進行中')],['ended',uiText('已結束')],['unformed',uiText('未成團')],['cancelled',uiText('已取消')],['archived',uiText('已歸檔')]] as const;
@@ -27,8 +28,8 @@ export function KimiActivityRow({ event, rooms = false }: { event: z.infer<typeo
     <div className="activity-main"><div className="activity-title-line"><h2><Link to={to}>{event.title}</Link></h2><Badge>{activityCategoryLabel(event.category)}</Badge></div>
       <div className="activity-meta"><span><Clock3 size={14}/>{activityDisplayDate(event.startsAt,event.timezone)}</span><span><MapPin size={14}/>{event.location}</span></div>
       {mine&&<div className="my-registration">我的報名 <Badge tone={mine==='confirmed'?'green':'amber'} dot>{mine==='confirmed'?'正式':mine==='waiting'?'候補':'待確認'}</Badge>{mine==='tentative'&&<Link to={'/activities/'+event.id+'/conditions'}>前往確認</Link>}</div>}
-    </div><div className="activity-capacity"><span><UsersRound size={15}/><strong>{event.confirmed}</strong> / {event.capacity||'不限'}</span>{event.waiting>0&&<small>候補 {event.waiting} 人</small>}</div>
-    <div className="activity-status"><Badge tone={status==='open'?'green':status==='ongoing'?'blue':status==='cancelled'?'red':status==='unformed'?'amber':'neutral'} dot>{label}</Badge>{status==='unformed'&&<small>最低 {event.minimumParticipants} 人{event.archived?' · 已歸檔':''}</small>}{event.visibility!=='public'&&<small>僅邀請可見</small>}</div>
+    </div><div className="activity-progress"><ActivityNumbers confirmed={event.confirmed} minimumParticipants={event.minimumParticipants} capacity={event.capacity} waiting={event.waiting} finished={['ended','unformed','cancelled','archived'].includes(status)}/>
+    <div className="activity-status"><Badge tone={status==='open'?'green':status==='ongoing'?'blue':status==='cancelled'?'red':status==='unformed'?'amber':'neutral'} dot>{label}</Badge>{status==='unformed'&&event.archived&&<small>已歸檔</small>}{event.visibility!=='public'&&<small>僅邀請可見</small>}</div></div>
     <Link className="row-arrow" to={to} aria-label={(rooms?'分析活動成分：':'查看活動：')+event.title}><ArrowUpRight size={18}/></Link></article>;
 }
 export function KimiActivitiesPage({ mine = false }: { mine?: boolean }) {
@@ -54,7 +55,7 @@ export function KimiActivitiesPage({ mine = false }: { mine?: boolean }) {
     <div className="list-toolbar"><ActivityBrowseTabs value={mine?'mine':period==='history'?'past':'all'} onChange={value=>{if(value==='stats'){navigate('/activities/participation');return;}if(value==='polls'){navigate('/time-polls');return;}const next=new URLSearchParams(params);next.delete('page');if(value==='past')next.set('period','history');else next.delete('period');if(value==='mine')next.delete('period');const target=value==='mine'?'/me/activities':'/activities';navigateTab(target,next);}}/>
       <form className="filter-row" role="search" onSubmit={event=>{event.preventDefault();change({q:input.trim()});}}><SearchInput value={input} onChange={value=>{setInput(value);if(!value)change({q:''});}} placeholder="搜尋活動或地點"/><Button variant="ghost" className="sr-only" type="submit">搜尋活動</Button><Select value={queryValue?.status??'all'} onChange={event=>change({status:event.target.value})} aria-label="篩選活動狀態">{statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</Select></form>
     </div>
-    {!parsed.success?<Notice>活動篩選條件無效，請重新選擇。</Notice>:session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:mine&&!viewer?.authenticated?<Notice>請先<Link to="/login?returnTo=%2Fme%2Factivities">登入</Link>，再查看我的活動。</Notice>:list.isPending?<Notice>正在讀取活動…</Notice>:list.error?<Failure error={list.error} retry={()=>void list.refetch()}/>:<><div className="activity-list-header" aria-hidden="true"><span>活動安排</span><span>人數</span><span>狀態</span><span/></div><section className="activity-list" aria-label="活動列表">{list.data.events.map(event=><KimiActivityRow key={event.id} event={event} rooms={rooms}/>)}{!list.data.events.length&&<EmptyState title="沒有符合的活動" description="可清除搜尋或切換狀態篩選。"/>}</section><div className="pagination">{list.data.page>1&&<Button variant="secondary" onClick={()=>change({page:String(list.data.page-1)})}>上一頁</Button>}{list.data.hasMore&&<Button variant="secondary" onClick={()=>change({page:String(list.data.page+1)})}>下一頁</Button>}</div></>}
+    {!parsed.success?<Notice>活動篩選條件無效，請重新選擇。</Notice>:session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:mine&&!viewer?.authenticated?<Notice>請先<Link to="/login?returnTo=%2Fme%2Factivities">登入</Link>，再查看我的活動。</Notice>:list.isPending?<Notice>正在讀取活動…</Notice>:list.error?<Failure error={list.error} retry={()=>void list.refetch()}/>:<><div className="activity-list-header" aria-hidden="true"><span>活動安排</span><span>報名與成團</span><span>狀態</span><span/></div><section className="activity-list" aria-label="活動列表">{list.data.events.map(event=><KimiActivityRow key={event.id} event={event} rooms={rooms}/>)}{!list.data.events.length&&<EmptyState title="沒有符合的活動" description="可清除搜尋或切換狀態篩選。"/>}</section><div className="pagination">{list.data.page>1&&<Button variant="secondary" onClick={()=>change({page:String(list.data.page-1)})}>上一頁</Button>}{list.data.hasMore&&<Button variant="secondary" onClick={()=>change({page:String(list.data.page+1)})}>下一頁</Button>}</div></>}
     {todos.error&&<Failure error={todos.error} retry={()=>void todos.refetch()}/>}<div className="main-only-links"><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link>{mine&&<Link to={path('/activities')}>所有活動</Link>}</div>
   </div>;
   function navigateTab(target:string,next:URLSearchParams){navigate(target+(next.size?'?'+next:''));}

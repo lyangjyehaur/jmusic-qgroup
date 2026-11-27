@@ -21,6 +21,7 @@ import './participation.css';
 import './kimi/shell.css';
 import './kimi/people.css';
 import './kimi/density.css';
+import './kimi/activities.css';
 const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: 15000 } } });
 const AdminBotPage = lazyPage(() => import('./admin-bot').then(module => ({ default: module.AdminBotPage })));
 const AdminBotDeliveriesPage = lazyPage(() => import('./bot-deliveries').then(module => ({ default: module.AdminBotDeliveriesPage })));

@@ -20,6 +20,32 @@ async function setup(){
   return{db,app,read,send,command,upload,admin};
 }
 describe('transactional wallpaper and appearance administration',()=>{
+  it('changes the public site title with a durable administrator receipt while retaining business, bot and wallpaper rows',async()=>{
+    const s=await setup(),tables=['users','events','attendees','bot_outbox','bot_settings','wallpaper_items','wallpaper_assets'],before=tables.map(t=>s.db.prepare('SELECT * FROM '+t).all());
+    expect((await s.read(true)).siteTitle).toBe('群聚');
+    const body=await s.command({command:'site',siteTitle:'  日音同好 & Live  '}),key=randomUUID(),saved=await s.send(body,key);
+    expect(saved.statusCode,saved.body).toBe(200);expect((await s.read(true)).siteTitle).toBe('日音同好 & Live');
+    expect((await s.send(body,key)).json()).toEqual(saved.json());expect((await s.send({...body,siteTitle:'其他名稱'},key)).statusCode).toBe(409);
+    expect((await s.send({...body,siteTitle:'過期修改'})).json().code).toBe('APPEARANCE_CHANGED');
+    expect(tables.map(t=>s.db.prepare('SELECT * FROM '+t).all())).toEqual(before);
+    expect(sharedRecords(s.db,'alice')).toMatchObject({appearance_actions:1});
+    const old=s.db.prepare("SELECT payload_json FROM music_documents WHERE kind='site_appearance'").get();
+    s.db.exec("CREATE TRIGGER synthetic_site_failure BEFORE INSERT ON appearance_actions BEGIN SELECT RAISE(ABORT,'synthetic site audit failure'); END");
+    expect((await s.send(await s.command({command:'site',siteTitle:'不能部分保存'}))).statusCode).toBe(500);
+    expect(s.db.prepare("SELECT payload_json FROM music_documents WHERE kind='site_appearance'").get()).toEqual(old);
+    expect((await s.read(true)).siteTitle).toBe('日音同好 & Live');
+  });
+  it('validates site names and requires current administrator authority and confirmation',async()=>{
+    const s=await setup();
+    for(const siteTitle of ['', '  ', '字'.repeat(41), '日音\u0000同好', '日音\n同好'])expect((await s.send(await s.command({command:'site',siteTitle}))).statusCode).toBe(400);
+    const body=await s.command({command:'site',siteTitle:'日音同好'});
+    for(const patch of [{origin:'https://evil.example'},{'x-admin-csrf':'invalid'},{'x-account-scope':'invalid'},{'x-csrf-token':'invalid'},{cookie:''}])expect((await s.send(body,randomUUID(),{...s.admin,...patch})).statusCode).toBeGreaterThanOrEqual(400);
+    expect((await s.send({...body,confirm:false})).statusCode).toBe(400);
+    s.db.prepare("UPDATE user_admin_roles SET is_admin=0,revision=revision+1 WHERE user_id='alice'").run();
+    expect((await s.send(body)).statusCode).toBe(403);expect((await s.read(true)).siteTitle).toBe('群聚');
+    expect(s.db.prepare("SELECT * FROM music_documents WHERE kind='site_appearance'").all()).toEqual([]);
+  });
+
   it('retains exact PNG/JPEG/WebP bytes, serves old links, orders/toggles/removes and preserves every bot table',async()=>{
     const s=await setup(),tables=['users','events','attendees','bot_outbox','bot_settings'],before=tables.map(t=>s.db.prepare('SELECT * FROM '+t).all());
     expect(await s.read(true)).toMatchObject({rotateSeconds:24,items:[]});
@@ -73,7 +99,7 @@ describe('transactional wallpaper and appearance administration',()=>{
   it('retains minimal shared administrator audit, blocks private actor erasure from bypassing it and never leaks credentials in public output',async()=>{
     const s=await setup();await s.upload();expect(sharedRecords(s.db,'alice')).toMatchObject({appearance_actions:1});
     expect(()=>s.db.prepare("UPDATE appearance_actions SET actor_id=NULL").run()).toThrow('append-only');expect(()=>s.db.prepare('DELETE FROM appearance_actions').run()).toThrow('append-only');
-    const response=await s.read(true);expect(JSON.stringify(response)).not.toMatch(/actor|csrf|token|fixture-alice|receipt|base64/);expect(Object.keys(response).sort()).toEqual(['items','revision','rotateSeconds']);
+    const response=await s.read(true);expect(JSON.stringify(response)).not.toMatch(/actor|csrf|token|fixture-alice|receipt|base64/);expect(Object.keys(response).sort()).toEqual(['items','revision','rotateSeconds','siteTitle']);
   });
   it('fails closed on corrupted imported bytes and digest mismatch',async()=>{
     const s=await setup(),image=await s.upload(),url=(await s.read()).items[0]!.url;

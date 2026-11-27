@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { WallpaperLayer } from './appearance';
+import { WallpaperLayer, appearanceQuery } from './appearance';
 import { Notice, sessionQuery } from './shared';
 import { observeAccountChange } from './account-session';
 import { InboxLink } from './inbox';
@@ -22,6 +22,9 @@ import { discoveryDialogKind, RetainedPage } from './discovery-dialog';
 const navItems = [['/activities', uiText('活動'), 'activities'], ['/music', uiText('音樂'), 'music'], ['/people', uiText('同好'), 'people'], ['/me', uiText('我的'), 'me']] as const;
 export function Layout() {
   const session = useQuery(sessionQuery);
+  const appearance = useQuery(appearanceQuery);
+  const siteTitle = appearance.data?.siteTitle ?? '群聚';
+  useEffect(() => { document.title = siteTitle; }, [siteTitle]);
   const location = useLocation();
   const navigate = useNavigate();
   const shell = useRef<HTMLDivElement>(null);
@@ -73,12 +76,12 @@ export function Layout() {
   const nickname = session.data?.authenticated ? session.data.nickname : uiText('訪客');
   const navigation = navItems.map(([to, label, icon]) => <NavLink key={to} to={to} className={({ isActive }) => 'nav-item' + (isActive || to === '/activities' && (location.pathname === '/' || location.pathname.startsWith('/time-polls')) ? ' active' : '')}><InterfaceIcon name={icon}/><span>{label}</span></NavLink>);
   return <div className="app-shell kimi-shell" ref={shell}><WallpaperLayer/><a className="skip" href="#main">跳至主要內容</a>
-    <aside className="sidebar"><Link to="/activities" className="brand" aria-label="群聚首頁"><BrandMark/><span>群聚</span></Link>
+    <aside className="sidebar"><Link to="/activities" className="brand" aria-label={siteTitle+uiText('首頁')} title={siteTitle}><BrandMark/><span>{siteTitle}</span></Link>
       <nav className="side-nav" aria-label="主要導覽">{navigation}</nav>
       <div className="sidebar-bottom"><Link className="sidebar-account" to="/me"><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span><strong>{nickname}</strong><small>{session.data?.authenticated ? '帳號與設定' : '登入或註冊'}</small></span></Link></div>
     </aside>
     <div className="main-column"><header className="topbar">
-      <Link to="/activities" className="mobile-brand" aria-label="群聚首頁"><BrandMark/><span>群聚</span></Link>
+      <Link to="/activities" className="mobile-brand" aria-label={siteTitle+uiText('首頁')} title={siteTitle}><BrandMark/><span>{siteTitle}</span></Link>
       <Link className="global-search global-search-link" to={searchURL} state={searchState} aria-label="全站搜尋"><Search size={16} aria-hidden="true"/><span>搜尋活動、詞條或同好</span><kbd><Command size={11}/> K</kbd></Link>
       <div className="topbar-actions">
         <PopupMenu className="shell-menu appearance-menu" label="外觀設定" title={<><InterfaceIcon name="palette"/><span>外觀</span></>}><div className="shell-popover"><AppearanceControls quick/></div></PopupMenu>

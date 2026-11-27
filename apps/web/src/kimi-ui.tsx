@@ -277,7 +277,7 @@ export function PageHeader({ title, description, actions, back }: {
   title: string; description?: string; actions?: ReactNode; back?: ReactNode;
 }) {
   return <header className="page-header">
-    <div className="page-heading">{back}<div><YHeading level={1}>{title}</YHeading>{description && <YText size="sm" tone="muted">{description}</YText>}</div></div>
+    <div className="page-heading">{back}<div className="page-heading-content"><YHeading level={1}>{title}</YHeading>{description && <YText size="sm" tone="muted">{description}</YText>}</div></div>
     {actions && <div className="page-actions">{actions}</div>}
   </header>;
 }

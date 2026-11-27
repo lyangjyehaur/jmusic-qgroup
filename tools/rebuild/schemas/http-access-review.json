@@ -33,7 +33,7 @@
     "apps/api/src/admin-security.ts": "2c5acec4a950b0627db9755c8d83e6decd94cff86e4521e5e5189f080b17fde9",
     "apps/api/src/admin-users.ts": "7b7f2567326ecd37f0a66a3ddedaf6abd1386dbdb518c39ea2a3773b17833e16",
     "apps/api/src/app.ts": "56f8eee5dbb4da31bb150f3e6de06151eb1607fd1b0035fdcb419a3dfced8ef3",
-    "apps/api/src/appearance.ts": "f9308f7030b8c3824690a8be41830805d5e830f4440a3fcf40b5389ba6dc5f0f",
+    "apps/api/src/appearance.ts": "71bac84125105e9c281b631212cb267cbac8c4950ae2804dd5f70d68ebddfa8c",
     "apps/api/src/auth.ts": "c9f5924e4d4a237b5466b184887bb17be571494bf3044e83f22a778547afb84a",
     "apps/api/src/bot-deliveries.ts": "3f5b1f18456774577368a13dfc8e970119c617953e691b31822cf99110ddb37e",
     "apps/api/src/bot-delivery-command.ts": "ba4ab71fe0d06e54ac030c64b91b4ad630a9c1c4f96df61da68ebbcb1c7dd87a",

@@ -3,7 +3,7 @@ import { chooseOption } from './kimi-controls';
 import type { Locator } from '@playwright/test';
 
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
-const color = (locator: Locator, property: 'color' | 'backgroundColor' | 'borderLeftColor' = 'color') =>
+const color = (locator: Locator, property: 'color' | 'backgroundColor' | 'borderLeftColor' | 'fill' = 'color') =>
   locator.evaluate((el, key) => getComputedStyle(el)[key], property);
 
 // Check visible regions, not only the data attributes or individual buttons:
@@ -47,13 +47,16 @@ for (const width of [1440, 390]) test(`theme colors reach page regions and porta
       }
       await page.screenshot({ path: `test-results/theme-activities-${width}-${theme}-${preset}.png`, fullPage: true });
       await page.goto('/music?explorer=bubbles');
-      await expect(page.locator('.term-bubble.domain').first()).toBeVisible();
+      const domains = page.getByRole('region', { name: '領域排行', exact: true });
+      const bubble = domains.getByRole('group', { name: '領域氣泡圖', exact: true }).locator('a').first();
+      await expect(bubble).toBeVisible();
+      await expect(page.getByRole('region', { name: '細分排行', exact: true }).getByRole('group', { name: '細分氣泡圖', exact: true })).toBeVisible();
       Object.assign(sample, {
         searchPanel: await color(page.locator('.music-search-area'), 'backgroundColor'),
-        bubble: await color(page.locator('.term-bubble.domain').first(), 'backgroundColor'),
+        bubble: await color(bubble.locator('.bubble-circle'), 'fill'),
         link: await color(page.locator('.main-only-links a').first()),
       });
-      await page.locator('.term-bubble.domain').first().click();
+      await bubble.click();
       const dialog = page.getByRole('dialog');
       await expect(dialog).toBeVisible();
       await expect(dialog.locator('.music-entry-detail')).toBeVisible();
