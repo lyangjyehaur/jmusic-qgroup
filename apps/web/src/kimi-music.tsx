@@ -63,7 +63,7 @@ export function KimiMusicPage() {
         })}{!entries.length&&<Notice>沒有符合目前搜尋與篩選的詞條。</Notice>}</section>
         {params.get('entry')&&!selected&&<Notice>這個詞條不存在或已刪除。</Notice>}
       </>}
-    </div><div className="main-only-links"><Link to="/me/music/entries">我的詞條</Link><Link to={editorPath}>編輯我的成分</Link></div>
+    </div>
     {selected&&!inactive&&<Modal title={selected.name} wide footer={<>{selection&&<MusicSaveDock selection={selection}/>}<Button variant="secondary" onClick={()=>update('entry','')}>返回詞庫</Button><ActionLink variant="primary" to={editorPath}>編輯我的成分</ActionLink></>} onClose={()=>update('entry','')}><DialogPageContext.Provider value><MusicWorkspaceFeedback/>{query.error&&<Failure error={query.error} retry={()=>void query.refetch()}/>}<MusicEntryDetails entry={selected}/>{selection&&<div className="term-selection"><KimiSelectionSummary selection={selection} compact entryId={selected.id}/></div>}</DialogPageContext.Provider>{selection&&<MusicLevelPicker selection={selection}/>}</Modal>}
   </div>;
 }

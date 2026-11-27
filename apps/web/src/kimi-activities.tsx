@@ -45,7 +45,6 @@ export function KimiActivitiesPage({ mine = false }: { mine?: boolean }) {
   }});
   const todos=useQuery({queryKey:['private',viewer?.scope,'inbox-todos',null],enabled:!!viewer?.authenticated,queryFn:()=>scopedHttp(viewer!.scope).requestContract('GET /api/v2/me/todos',{})});
   const change=(patch:Record<string,string>)=>{const next=new URLSearchParams(params);next.delete('page');for(const [key,value] of Object.entries(patch))value?next.set(key,value):next.delete(key);setParams(next);};
-  const path=(target:string)=>target+(params.size?'?'+params:'');
   return <div className="kimi page activities-page"><PageHeader title={mine?'我的活動':rooms?'選擇活動分析成分':'活動'} actions={<Button onClick={()=>navigate('/activities/new')}><CalendarPlus size={17}/>新增活動</Button>}/>
     {list.data?.summary&&<OverviewStats label="活動摘要" items={[
       {label:uiText('近期活動'),value:list.data.summary.upcoming},
@@ -56,7 +55,7 @@ export function KimiActivitiesPage({ mine = false }: { mine?: boolean }) {
       <form className="filter-row" role="search" onSubmit={event=>{event.preventDefault();change({q:input.trim()});}}><SearchInput value={input} onChange={value=>{setInput(value);if(!value)change({q:''});}} placeholder="搜尋活動或地點"/><Button variant="ghost" className="sr-only" type="submit">搜尋活動</Button><Select value={queryValue?.status??'all'} onChange={event=>change({status:event.target.value})} aria-label="篩選活動狀態">{statuses.map(([value,label])=><option key={value} value={value}>{label}</option>)}</Select></form>
     </div>
     {!parsed.success?<Notice>活動篩選條件無效，請重新選擇。</Notice>:session.error?<Failure error={session.error} retry={()=>void session.refetch()}/>:mine&&!viewer?.authenticated?<Notice>請先<Link to="/login?returnTo=%2Fme%2Factivities">登入</Link>，再查看我的活動。</Notice>:list.isPending?<Notice>正在讀取活動…</Notice>:list.error?<Failure error={list.error} retry={()=>void list.refetch()}/>:<><div className="activity-list-header" aria-hidden="true"><span>活動安排</span><span>報名與成團</span><span>狀態</span></div><section className="activity-list" aria-label="活動列表">{list.data.events.map(event=><KimiActivityRow key={event.id} event={event} rooms={rooms}/>)}{!list.data.events.length&&<EmptyState title="沒有符合的活動" description="可清除搜尋或切換狀態篩選。"/>}</section><div className="pagination">{list.data.page>1&&<Button variant="secondary" onClick={()=>change({page:String(list.data.page-1)})}>上一頁</Button>}{list.data.hasMore&&<Button variant="secondary" onClick={()=>change({page:String(list.data.page+1)})}>下一頁</Button>}</div></>}
-    {todos.error&&<Failure error={todos.error} retry={()=>void todos.refetch()}/>}<div className="main-only-links"><Link to="/me/activities/drafts">活動草稿</Link><Link to="/me/music">我的成分</Link>{mine&&<Link to={path('/activities')}>所有活動</Link>}</div>
+    {todos.error&&<Failure error={todos.error} retry={()=>void todos.refetch()}/>}
   </div>;
   function navigateTab(target:string,next:URLSearchParams){navigate(target+(next.size?'?'+next:''));}
 }

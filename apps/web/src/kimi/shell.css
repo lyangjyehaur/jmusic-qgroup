@@ -71,7 +71,12 @@
     padding-inline: max(16px, var(--safe-area-left)) max(16px, var(--safe-area-right));
   }
   .kimi-shell .main > .retained-page > :is(.kimi.page, :not(.kimi)) { padding-bottom:28px; }
-  .kimi-shell .site-footer { padding:0 max(16px, var(--safe-area-right)) calc(var(--mobile-dock-height) + 20px) max(16px, var(--safe-area-left)); }
+  .kimi-shell .site-footer {
+    padding:0 max(16px, var(--safe-area-right)) calc(var(--mobile-dock-height) + 20px) max(16px, var(--safe-area-left));
+    flex-direction:column; justify-content:center; text-align:center; gap:0;
+  }
+  .kimi-shell .site-footer :is(nav,.site-footer-credits) { justify-content:center; }
+  .kimi-shell .site-footer .site-footer-credits { flex-direction:column; gap:0; }
   html.music-workspace-active .kimi-shell .site-footer { padding-bottom:20px; }
   :root[data-browser="android-qq"] .kimi.yj-dialog { padding-top:0 !important; }
   :root[data-browser="android-qq"] .kimi .modal-header { padding-top:16px; }
