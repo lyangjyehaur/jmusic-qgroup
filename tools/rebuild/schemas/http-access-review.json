@@ -62,7 +62,7 @@
     "apps/api/src/music-compute-budget.ts": "bad2ab05eaff74baaad4b5ebcd929d98e9229dbec6eccbac6f3d797ceead2223",
     "apps/api/src/music-contact.ts": "1ecda22b8cc94e78edabf3ce4106895ae3068fdc11931700e859538dce73df5b",
     "apps/api/src/music-entry-locks.ts": "e966b1fc28e3891a53617669c32424d86ccb35a81791d6995ba2146ebb967854",
-    "apps/api/src/music-entry-names.ts": "41e628513a0a703a57ef6bc7cabe87428f6e3e74c2818c7d017192bc77354caf",
+    "apps/api/src/music-entry-names.ts": "d8a2e4dbf49460539bcdfee720abf9880e3f1b73853bdce43eb5bd5ea4ad8a86",
     "apps/api/src/music-export.ts": "258a07403d013f957f13a9e82a164b47c7e08b7fae77b17524c0a4475762afd0",
     "apps/api/src/music-fields.ts": "eedf76ec1b8dab19aa3f8b39e33c853f7e2a6f6bd5b4a2dd22ab6c014b35b759",
     "apps/api/src/music-identity.ts": "bee3ee3711bcaf140f5a075d2c8df652cf13f40ad406debcb2ffbd579827d93e",
