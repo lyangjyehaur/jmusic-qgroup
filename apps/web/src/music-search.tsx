@@ -4,7 +4,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Surface } from 'yahha-ui';
 import { Button, Select } from './kimi-ui';
 import { createMusicSearchRank, type MusicNames } from '@qgroup/domain';
-import { categoryLabel } from './music-entries';
+import { categoryLabel, isDomainCategory } from './music-category';
 import { Field } from './settlement-controls';
 
 export function useMusicSearchShortcut(selector: string) {
@@ -29,21 +29,32 @@ export function useMusicSearch<T extends { id: string; name: string; aliases?: r
   // overwrite an expansion/view/range change using the previous render's URL.
   const latest = useRef({ rendered: params, pending: params });
   if (latest.current.rendered !== params) latest.current = { rendered: params, pending: params };
-  const search = params.get('q') ?? '', category = params.get('category') ?? '', kind = params.get('kind') ?? '';
+  const search = params.get('q') ?? '', rawCategory = params.get('category') ?? '', rawKind = params.get('kind') ?? '';
+  // Old domain-category links still work; subcategories never restrict domains.
+  const kind = isDomainCategory(rawCategory) ? 'main' : rawKind || (rawCategory ? 'sub' : '');
+  const category = kind === 'main' ? '' : rawCategory;
+  const categories = useMemo(() => [...new Set(entries.filter(entry => entry.kind === 'sub' && !isDomainCategory(entry.category)).map(entry => entry.category))], [entries]);
   const match = useMemo(() => createMusicSearchRank(entries), [entries]);
   const filtered = useMemo(()=>entries.filter(entry => (!kind || entry.kind === kind) && (!category || entry.category === category) && Number.isFinite(match(entry.id, search))).sort((a,b)=>match(a.id,search)-match(b.id,search)),[entries,kind,category,search,match]);
   const updateMany = (patch: Readonly<Record<string,string>>) => {
     const next = new URLSearchParams(latest.current.pending);
     for (const [key,value] of Object.entries(patch)) { if (value) next.set(key, value); else next.delete(key); }
+    if (isDomainCategory(next.get('category') ?? '')) { next.set('kind', 'main'); next.delete('category'); }
+    else if (next.get('kind') === 'main') next.delete('category');
+    else if (next.get('category') && !next.get('kind')) next.set('kind', 'sub');
     latest.current.pending = next;
     setParams(next, { replace: true });
   };
-  const update = (key: string, value: string) => updateMany({[key]:value});
-  return { search, category, kind, filtered, params, update, updateMany };
+  const update = (key: string, value: string) => updateMany(key === 'kind' && value !== 'sub' ? { kind: value, category: '' } : {[key]:value});
+  useEffect(() => {
+    if (rawKind !== kind || rawCategory !== category) updateMany({ kind, category });
+  }, [rawKind, kind, rawCategory, category]);
+  return { search, category, kind, categories, filtered, params, update, updateMany };
 }
-export function MusicSearch({ filters, categories, label = uiText('搜尋音樂詞條') }: {
-  filters: ReturnType<typeof useMusicSearch>; categories: readonly string[]; label?: string;
+export function MusicSearch({ filters, label = uiText('搜尋音樂詞條') }: {
+  filters: ReturnType<typeof useMusicSearch>; label?: string;
 }) {
+  const categories = filters.categories;
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const focus = (event: KeyboardEvent) => {
@@ -70,10 +81,10 @@ export function MusicSearch({ filters, categories, label = uiText('搜尋音樂�
         <option value="">全部類型</option><option value="main">領域</option><option value="sub">細分</option>
         {filters.kind && !['main', 'sub'].includes(filters.kind) && <option value={filters.kind}>未支援的類型</option>}
       </Select></Field>
-      <Field label="詞庫分類"><Select value={filters.category} onChange={event => filters.update('category', event.target.value)}>
+      {filters.kind !== 'main' && <Field label="細分類別"><Select value={filters.category} onChange={event => filters.update('category', event.target.value)}>
         <option value="">全部分類</option>{categories.map(category => <option key={category} value={category}>{categoryLabel(category)}</option>)}
         {filters.category && !categories.includes(filters.category) && <option value={filters.category}>{categoryLabel(filters.category)}（目前無詞條）</option>}
-      </Select></Field>
+      </Select></Field>}
     </div>
   </Surface>;
 }

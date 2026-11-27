@@ -104,7 +104,7 @@ test('uses public classifications, alias/name normalization, independent type fi
   await page.goto('/music');
   await page.getByLabel('搜尋音樂詞條', { exact: true }).fill('STRASSE');
   await expect(page.locator('.term-row')).toHaveCount(1);
-  await chooseOption(page,'詞庫分類','乐队');
+  await chooseOption(page,'細分類別','乐队');
   await chooseOption(page,'詞庫類型','main');
   await expect(page.getByText('沒有符合目前搜尋與篩選的詞條。', { exact: true })).toBeVisible();
   await chooseOption(page,'詞庫類型','sub');

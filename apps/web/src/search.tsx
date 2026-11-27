@@ -12,7 +12,7 @@ import { Failure, Notice, PageIntro, useSession } from './shared';
 import { scopedHttp } from './http';
 import { searchParameters } from './search-return';
 import { activityDisplayDate } from './activity-summary';
-import { categoryLabel } from './music-entries';
+import { categoryLabel } from './music-category';
 import { loginLink } from './auth';
 import './search.css';
 
@@ -67,7 +67,7 @@ function SearchContent() {
             {result.data.music.items.length ? <ul>{result.data.music.items.map(item => <li key={item.id}>
               <Link className="global-result" aria-label={item.name} to={target('/music/entries/' + encodeURIComponent(item.id))}>
                 <span className="search-result-icon" aria-hidden="true"><Music2 size={18}/></span>
-                <span className="search-result-copy"><strong>{item.name}</strong><MusicTranslation entry={item}/><span className="search-result-meta">{categoryLabel(item.category)}</span></span>
+                <span className="search-result-copy"><strong>{item.name}</strong><MusicTranslation entry={item}/>{item.kind==='sub'&&<span className="search-result-meta">{categoryLabel(item.category)}</span>}</span>
                 <span className="search-result-kind"><Badge>{item.kind === 'main' ? '領域' : '細分'}</Badge></span><ChevronRight className="search-result-arrow" size={16} aria-hidden="true"/>
               </Link>
             </li>)}</ul> : <p className="search-empty" role="status">沒有符合條件的詞條。</p>}

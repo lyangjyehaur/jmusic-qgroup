@@ -13,7 +13,7 @@ import { ApiError } from './api';
 import { Failure,Notice,PageIntro } from './shared';
 import { Field } from './settlement-controls';
 import { MusicSearch,useMusicSearch } from './music-search';
-import { categoryLabel } from './music-entries';
+import { categoryLabel, isDomainCategory, musicEntryTypeLabel } from './music-category';
 import { announceAccountChange } from './account-session';
 import { useDurableRecord } from './durable-record';
 import { DraftFeedback } from './draft-feedback';
@@ -89,7 +89,7 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
       {['create','update'].includes(value.command)&&<>
         <Field label="詞條名稱"><input value={value.name} disabled={locked} onChange={event=>edit({name:event.target.value})}/></Field><Text size="sm">{Array.from(musicText(value.name)).length} / 24 字</Text>
         <Field label="詞條類型"><Select value={value.kind} disabled={locked} onChange={event=>edit({kind:event.target.value as 'main'|'sub'})}><option value="main">領域</option><option value="sub">細分</option></Select></Field>
-        <Field label="詞條分類"><Select value={value.category} disabled={locked} onChange={event=>edit({category:event.target.value})}>{[...new Set([value.category,...catalog.data?.categories??[]])].map(category=><option key={category} value={category}>{categoryLabel(category)}</option>)}</Select></Field>
+        {value.kind==='sub'&&<Field label="詞條分類"><Select value={value.category} disabled={locked} onChange={event=>edit({category:event.target.value})}>{[...new Set([value.category,...catalog.data?.categories.filter(category=>!isDomainCategory(category))??[]])].map(category=><option key={category} value={category}>{categoryLabel(category)}</option>)}</Select></Field>}
         <MusicNameFields names={value.names??{...emptyMusicNames(),aliases:source?.aliases??[]}} disabled={locked} change={names=>edit({names:{...names,aliases:[...names.aliases]}})}/>
       </>}
       {value.command==='delete'&&<Text>此操作會移除詞條、所有人的相關選擇及建立紀錄，無法復原。</Text>}
@@ -103,9 +103,9 @@ function CatalogManager({viewer,access}:{viewer:Viewer;access:Access}){
       <Button variant="secondary" disabled={locked} onClick={()=>{record.change(blank());setConfirmed(false);setMessage('');}}>放棄原稿</Button></div>
     </Surface>}
     {catalog.isPending||!catalog.isFetchedAfterMount?<Notice>正在讀取管理詞庫…</Notice>:catalog.error?<Failure error={catalog.error} retry={()=>void catalog.refetch()}/>:<>
-      <Button disabled={locked||dirty} onClick={()=>begin('create')}>建立詞條</Button><MusicSearch filters={searchFilters} categories={catalog.data.categories} label="搜尋管理詞條"/>
+      <Button disabled={locked||dirty} onClick={()=>begin('create')}>建立詞條</Button><MusicSearch filters={searchFilters} label="搜尋管理詞條"/>
       <section aria-label="管理詞庫清單"><Heading level={2}>詞條 · {filters.filtered.length}</Heading>
-        {!visible.length?<Notice>{page>1?'這一頁沒有詞條，請返回上一頁。':'沒有符合的詞條。'}</Notice>:<ul className="account-list">{visible.map(entry=><li key={entry.id}><div><Heading level={3}>{entry.name}</Heading><Text>{entry.kind==='main'?'領域':'細分'} · {categoryLabel(entry.category)} · {entry.count} 人選用 · {entry.creationCount} 份建立紀錄</Text>{!!entry.aliases.length&&<Text>別名：{entry.aliases.join('、')}</Text>}<Text size="sm">{entry.id}{entry.creatorName?' · 建立者：'+entry.creatorName:''}</Text></div><div className="page-actions">{(['update','delete','merge'] as const).map(command=>{const action=command==='update'?uiText('編輯'):command==='delete'?uiText('刪除'):uiText('合併');return <Button key={command} aria-label={action+' '+entry.name} variant="secondary" disabled={locked||dirty} onClick={()=>begin(command,entry)}>{action}</Button>;})}</div></li>)}</ul>}
+        {!visible.length?<Notice>{page>1?'這一頁沒有詞條，請返回上一頁。':'沒有符合的詞條。'}</Notice>:<ul className="account-list">{visible.map(entry=><li key={entry.id}><div><Heading level={3}>{entry.name}</Heading><Text>{musicEntryTypeLabel(entry)} · {entry.count} 人選用 · {entry.creationCount} 份建立紀錄</Text>{!!entry.aliases.length&&<Text>別名：{entry.aliases.join('、')}</Text>}<Text size="sm">{entry.id}{entry.creatorName?' · 建立者：'+entry.creatorName:''}</Text></div><div className="page-actions">{(['update','delete','merge'] as const).map(command=>{const action=command==='update'?uiText('編輯'):command==='delete'?uiText('刪除'):uiText('合併');return <Button key={command} aria-label={action+' '+entry.name} variant="secondary" disabled={locked||dirty} onClick={()=>begin(command,entry)}>{action}</Button>;})}</div></li>)}</ul>}
         {(filters.filtered.length>20||page>1)&&<nav className="page-actions" aria-label="管理詞庫分頁"><Button variant="secondary" disabled={page<=1} onClick={()=>filters.update('page',String(page-1))}>上一頁</Button><Text>第 {page} 頁 · 共 {Math.max(1,Math.ceil(filters.filtered.length/20))} 頁</Text><Button variant="secondary" disabled={page*20>=filters.filtered.length} onClick={()=>filters.update('page',String(page+1))}>下一頁</Button></nav>}
       </section>
     </>}

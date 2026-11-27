@@ -9,7 +9,7 @@ import type { z } from 'zod';
 import { createWebHttpClient, scopedHttp } from './http';
 import { Failure, Notice, PageIntro } from './shared';
 import { MusicMemberAccess, type Member } from './member-access';
-import { categoryLabel } from './music-entries';
+import { musicEntryTypeLabel } from './music-category';
 import { useMusicWorkspace } from './music-selection';
 import { KimiSelectionSummary } from './kimi-music-editor';
 import { musicPeopleReturn, musicTrendReturn, musicCircleReturn } from './music-return';
@@ -36,7 +36,7 @@ export function MusicEntryDetails({ entry }: {
 }) {
   const workspace = useMusicWorkspace(), location = useLocation();
   const inDialog=useContext(DialogPageContext);
-  useDiscoveryDetails(entry.name,(entry.kind==='main'?uiText('領域'):uiText('細分'))+'・'+categoryLabel(entry.category));
+  useDiscoveryDetails(entry.name,musicEntryTypeLabel(entry));
   const selection = workspace.state === 'ready' ? workspace.selection : null;
   const detailPath = musicEntryPath(entry.id, location.search);
   return <section className="music-entry-detail" role="region" aria-label="詞條資料">

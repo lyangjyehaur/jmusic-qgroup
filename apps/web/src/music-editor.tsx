@@ -2,7 +2,7 @@ import { uiText } from './language';
 import { Link, useLocation } from 'react-router-dom';
 import { Heading, Surface, Text } from 'yahha-ui';
 import { Button, Select, Disclosure } from './kimi-ui';
-import { categoryLabel } from './music-entries';
+import { categoryLabel } from './music-category';
 import type { MusicSelection } from './music-selection';
 import { MusicSearch, useMusicSearch } from './music-search';
 import { PageIntro } from './shared';
@@ -38,25 +38,24 @@ export function SelectionPanel({ selection: form }: { selection: MusicSelection 
 export function ProfileEditor({ selection: form }: { selection: MusicSelection }) {
   const filters = useMusicSearch(form.entries);
   const filtered = new Set(filters.filtered.map(entry => entry.id));
-  const categories = [...new Set(form.entries.map(entry => entry.category))];
   return <div className="profile-editor"><PageIntro title="我的成分" /><nav className="tabs profile-tabs" aria-label="我的成分功能"><Link to="/me/music" aria-current="page">成分編輯</Link>
     <Link to="/me/music/entries">我的詞條</Link>{form.saved ? <>
       <Link to="/me/music/details">成分資料</Link><Link to="/me/music/contact">聯絡 QQ</Link>
       <Link to={'/people/' + form.saved.id}>查看我的成分卡</Link></> : <Link to="/me/music/recover">找回成分</Link>}
     </nav>{form.returnTo && <Link className="back" to={form.returnTo}>{form.returnTo.startsWith('/people/shouts') ? '回到找搭子' : form.returnTo.startsWith('/people/circles') ? '回到同好圈子' : form.returnTo.startsWith('/people') ? '回到同好成分' : form.returnTo.startsWith('/music/trends') ? '回到音樂趨勢' : '← 回到剛才的活動'}</Link>}
     <div className="content-columns music-editor"><section>
-      <MusicSearch filters={filters} categories={categories} label="尋找喜歡的音樂" />
+      <MusicSearch filters={filters} label="尋找喜歡的音樂" />
       {(['main', 'sub'] as const).map(kind => {
         const entries = form.entries.filter(entry => entry.kind === kind && filtered.has(entry.id));
-        const groups = [...new Set(entries.map(entry => entry.category))];
+        const groups = kind === 'main' ? [] : [...new Set(entries.map(entry => entry.category))];
+        const choices = (items: typeof entries) => <div className="choice-list">{items.map(entry =>
+          <Button key={entry.id} variant={form.selected.has(entry.id) ? 'primary' : 'secondary'}
+            aria-pressed={form.selected.has(entry.id)} disabled={form.locked}
+            onClick={() => form.toggle(entry)}>{entry.name}</Button>)}</div>;
         return <Surface className="selection-group" key={kind}><Heading level={2}>
           {kind === 'main' ? '領域' : '細分'} <small>{kind === 'main' ? `${form.mainCount} / 5` : `${form.subCount} / 15`}</small>
-          </Heading>{groups.map(category => <Disclosure key={category} open className="music-category"  title={<>{categoryLabel(category)} · {entries.filter(entry => entry.category === category).length} 項</>}>
-
-            <div className="choice-list">{entries.filter(entry => entry.category === category).map(entry =>
-              <Button key={entry.id} variant={form.selected.has(entry.id) ? 'primary' : 'secondary'}
-                aria-pressed={form.selected.has(entry.id)} disabled={form.locked}
-                onClick={() => form.toggle(entry)}>{entry.name}</Button>)}</div>
+          </Heading>{kind === 'main' && choices(entries)}{groups.map(category => <Disclosure key={category} open className="music-category"  title={<>{categoryLabel(category)} · {entries.filter(entry => entry.category === category).length} 項</>}>
+            {choices(entries.filter(entry => entry.category === category))}
           </Disclosure>)}{!entries.length && <Text tone="muted">{filters.search || filters.kind || filters.category ? '沒有符合的詞條。' : '詞庫尚無詞條。'}</Text>}
         </Surface>;
       })}

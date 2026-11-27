@@ -1,18 +1,19 @@
 /* Shared shell details from the Kimi prototype. The dock stays anchored to the
    viewport; keyboard avoidance belongs to editing actions, not navigation. */
 :root {
-  --safe-area-top: env(safe-area-inset-top, 0px);
+  --browser-safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-top: var(--browser-safe-area-top);
   --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --safe-area-left: env(safe-area-inset-left, 0px);
   --safe-area-right: env(safe-area-inset-right, 0px);
   --mobile-controls-bottom: max(var(--mobile-dock-height, 0px), var(--visual-viewport-inset, 0px));
 }
+:root[data-browser="android-qq"] { --safe-area-top: 0px; }
 .kimi-shell .nav-item { transition: background .15s, color .15s; }
 .kimi-shell :is(.nav-item, .dock-item, .sidebar-account, .menu-trigger),
 .kimi.menu-popover .shell-popover > a,
 .kimi.menu-popover .activity-menu > a { text-decoration: none; }
-/* Keep Yahha's selected paper fill and keyboard focus ring, without its ink line. */
-.kimi .yj-tabs-list > .tab::after,
+/* Content tabs keep Yahha's ink marker; plain navigation links do not. */
 .kimi :is(.tabs, .section-links) > :is(button, a)::after { content: none; }
 .kimi :is(.tabs, .section-links) > :is(button, a) { text-decoration: none; }
 .kimi .yj-tabs-list > .tab { padding-block: 10px; }
@@ -35,6 +36,22 @@
   padding: 0; border: 1px solid var(--line); border-radius: 50%;
   color: var(--ink); background: var(--paper); box-shadow: 0 2px 8px var(--app-shadow);
 }
+.kimi-shell .site-footer {
+  max-width:1180px; margin:0 auto; padding:0 32px 24px;
+  display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between;
+  gap:8px 24px; font-size:12px; color:var(--muted);
+}
+.kimi-shell .site-footer :is(nav,.site-footer-credits) { display:flex; align-items:center; flex-wrap:wrap; gap:4px 16px; }
+.kimi-shell .site-footer a { display:inline-flex; align-items:center; min-height:44px; color:inherit; }
+.kimi-shell .site-footer a:hover { color:var(--moss); }
+/* Fade only page content. Shell geometry and mounted form state stay intact. */
+.kimi-shell .retained-page:not([inert]) > .kimi.page,
+.kimi-shell .activity-workspace-base:not([inert]) > .kimi.page { animation:page-enter 160ms ease-out; }
+@keyframes page-enter { from { opacity:.7; } to { opacity:1; } }
+@media(prefers-reduced-motion:reduce) {
+  .kimi-shell .retained-page:not([inert]) > .kimi.page,
+  .kimi-shell .activity-workspace-base:not([inert]) > .kimi.page { animation:none; }
+}
 
 @media (max-width: 768px) {
   :root, .kimi, .kimi-shell {
@@ -53,6 +70,11 @@
   .kimi-shell .main > .retained-page > :not(.kimi) {
     padding-inline: max(16px, var(--safe-area-left)) max(16px, var(--safe-area-right));
   }
+  .kimi-shell .main > .retained-page > :is(.kimi.page, :not(.kimi)) { padding-bottom:28px; }
+  .kimi-shell .site-footer { padding:0 max(16px, var(--safe-area-right)) calc(var(--mobile-dock-height) + 20px) max(16px, var(--safe-area-left)); }
+  html.music-workspace-active .kimi-shell .site-footer { padding-bottom:20px; }
+  :root[data-browser="android-qq"] .kimi.yj-dialog { padding-top:0 !important; }
+  :root[data-browser="android-qq"] .kimi .modal-header { padding-top:16px; }
   .kimi.yj-dialog > [class*="dialogTitle"] {
     padding-left: max(20px, var(--safe-area-left));
     padding-right: calc(max(20px, var(--safe-area-right)) + 44px);

@@ -64,7 +64,7 @@
 .kimi.music-level-dialog > [class*="dialogDescription"] { margin:0; padding:12px 20px 0; font-size:13px; }
 .kimi .draft-leave-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
 .draft-feedback-float.kimi { position:fixed; z-index:105; top:calc(var(--topbar-height,64px) + 12px); right:20px; width:min(440px,calc(100vw - 32px)); display:grid; gap:6px; max-height:40dvh; overflow:auto; pointer-events:none; }
-.kimi.yj-dialog > .draft-feedback-float { position:absolute; top:calc(68px + env(safe-area-inset-top,0px)); right:16px; }
+.kimi.yj-dialog > .draft-feedback-float { position:absolute; top:calc(68px + var(--safe-area-top,0px)); right:16px; }
 .draft-feedback-float :is(button,a,.disclosure-trigger) { pointer-events:auto; }
 .kimi .draft-feedback-item { display:grid; gap:6px; }
 .kimi .draft-feedback-notice { padding:12px 16px; background:var(--paper); color:var(--ink); border:1px solid var(--yahha-contour,var(--line)); border-radius:var(--yahha-radius-note); box-shadow:var(--shadow); }
@@ -81,8 +81,8 @@
 .kimi .draft-feedback-inline .draft-feedback-notice { padding:0; border:0; box-shadow:none; background:transparent; }
 @media(max-width:768px) {
   .kimi.yj-dialog { padding:0 !important; }
-  .kimi.yj-dialog > [class*="dialogTitle"] { min-height:calc(64px + env(safe-area-inset-top,0px)); padding-top:calc(16px + env(safe-area-inset-top,0px)); }
-  .kimi.yj-dialog > [class*="dialogClose"] { top:calc(10px + env(safe-area-inset-top,0px)); }
+  .kimi.yj-dialog > [class*="dialogTitle"] { min-height:calc(64px + var(--safe-area-top,0px)); padding-top:calc(16px + var(--safe-area-top,0px)); }
+  .kimi.yj-dialog > [class*="dialogClose"] { top:calc(10px + var(--safe-area-top,0px)); }
   .kimi.yj-dialog > [class*="dialogBody"] { padding:16px; }
   .kimi.yj-dialog > [class*="dialogFooter"] { padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
   .kimi .draft-leave-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }

@@ -61,7 +61,7 @@ test('uses pinyin, kana initials and alias search with keyboard clearing, classi
   await openMusicCatalog(page);
   await chooseOption(page,'詞庫類型','main');
   await expect(page.getByRole('link',{name:'米津玄師',exact:true})).toHaveCount(0);
-  await chooseOption(page,'詞庫分類',{label:'領域'});
+  await expect(page.getByRole('combobox',{name:'細分類別',exact:true})).toHaveCount(0);
   await page.getByRole('button',{name:'選取J-POP',exact:true}).click();
   await page.getByRole('link',{name:/^我的成分/}).click();
   await expect(page.getByLabel('J-POP喜歡程度')).toHaveCount(0);
@@ -71,7 +71,7 @@ test('uses pinyin, kana initials and alias search with keyboard clearing, classi
   await expectMusicTerm(page,'J-POP',true);
   await openMusicCatalog(page);
   await expectOption(page,'詞庫類型','main');
-  await expectOption(page,'詞庫分類','領域');
+  await expect(page.getByRole('combobox',{name:'細分類別',exact:true})).toHaveCount(0);
 });
 test('recovers one original save UUID and body after moving workspace during a lost response', async ({ page, context }) => {
   await login(context);

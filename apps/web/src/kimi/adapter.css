@@ -573,6 +573,7 @@
 .kimi.music-page .music-search-area .yj-search-wrap { min-height:44px; }
 .kimi.music-page .music-search-area input { font-size:14px; }
 .kimi.music-page .music-filters { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin:0; }
+.kimi.music-page .music-filters-domain { grid-template-columns:minmax(0,1fr); }
 .kimi.music-page .music-filters .select-wrap { width:auto; min-width:0; }
 .kimi.music-page .music-filters [role=combobox] { min-height:44px; }
 .kimi.music-page .music-catalog-nav { display:flex; align-items:center; justify-content:space-between; gap:12px; margin-block:16px 20px; padding-bottom:8px; border-bottom:1px solid var(--line-soft); }
@@ -596,7 +597,6 @@
 .kimi.music-page .term-meta .term-category { font-size:11px; overflow-wrap:anywhere; }
 .kimi.music-page .term-row:hover, .kimi.music-page .term-row:focus-within { background:var(--moss-soft); }
 .kimi.music-page .music-trend-recent { margin-block:24px; padding-block:0; }
-.kimi.music-page.music-trend-page > .music-browse-tabs { margin-bottom:16px; }
 @media(max-width:639px){
  .kimi.music-page .overview-stats-four { grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 0; padding:10px 12px; }
  .kimi.music-page .overview-stats-four > div { padding-inline:12px; }

@@ -1,3 +1,4 @@
+import { SiteFooter } from './site-footer';
 import { PWAUpdateNotice } from './pwa';
 import { useEffect, useRef } from 'react';
 import { Link, NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom';
@@ -89,7 +90,7 @@ export function Layout() {
         <PopupMenu className="shell-menu account-menu" label="帳號選單" heading={nickname} title={<><Avatar user={{name:nickname,avatar:nickname.slice(0,1),color:"var(--moss)",avatarUrl:session.data?.authenticated?session.data.qq.avatarUrl:undefined}} size="sm"/><span className="viewer">{nickname}</span><ChevronDown size={14}/></>}><div className="shell-popover"><Link to="/me">帳號與設定</Link><Link to="/me/music">編輯我的成分</Link></div></PopupMenu>
       </div>
     </header>
-    <main id="main" ref={heading} tabIndex={-1} className="main"><PWAUpdateNotice/>{typeof location.state?.accountMessage === 'string' && <Notice>{location.state.accountMessage}</Notice>}{session.data?.authenticated && ['/', '/activities', '/me'].includes(location.pathname) && !location.search && !location.hash && <QQReauthReminder key={session.data.scope} viewer={session.data} returnTo={location.pathname} />}{searchBack && !overlay && <Link className="back" to={searchBack}>← 回到搜尋</Link>}{!discoveryPage && !overlay ? <RetainedPage location={location}>{outlet}</RetainedPage> : overlay && background.current && <RetainedPage location={background.current.location} inactive>{background.current.content}</RetainedPage>}{discoveryPage && outlet}</main>
+    <main id="main" ref={heading} tabIndex={-1} className="main"><PWAUpdateNotice/>{typeof location.state?.accountMessage === 'string' && <Notice>{location.state.accountMessage}</Notice>}{session.data?.authenticated && ['/', '/activities', '/me'].includes(location.pathname) && !location.search && !location.hash && <QQReauthReminder key={session.data.scope} viewer={session.data} returnTo={location.pathname} />}{searchBack && !overlay && <Link className="back" to={searchBack}>← 回到搜尋</Link>}{!discoveryPage && !overlay ? <RetainedPage location={location}>{outlet}</RetainedPage> : overlay && background.current && <RetainedPage location={background.current.location} inactive>{background.current.content}</RetainedPage>}{discoveryPage && outlet}<SiteFooter/></main>
     </div><nav className="mobile-dock" aria-label="手機主要導覽">{navItems.map(([to,label,icon])=><NavLink key={to} to={to} className={({isActive})=>'dock-item'+(isActive||to==='/activities'&&location.pathname.startsWith('/time-polls')?' active':'')}><InterfaceIcon name={icon} size={21}/><span>{label}</span></NavLink>)}</nav><PageTools />
   </div>;
 }

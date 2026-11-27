@@ -1,3 +1,4 @@
+import { categoryLabel, isDomainCategory, musicEntryTypeLabel } from './music-category';
 import { uiText } from './language';
 import { useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
@@ -18,8 +19,6 @@ type Mine = z.infer<typeof MyMusicEntries>;
 type Command = z.infer<typeof MusicEntryCommand>['command'];
 const endpoint = '/me/music/entries',
   path = (id: string) => endpoint + '/' + encodeURIComponent(id);
-export const categoryLabel = (value: string) =>
-  ({ 领域: uiText("領域"), 乐队: uiText("樂隊"), 组合: uiText("組合"), 社团: uiText("社團"), 企划: uiText("企劃") })[value] ?? value;
 export function MyMusicEntriesPage() {
   return (
     <>
@@ -56,7 +55,7 @@ function MineLoader({ viewer }: { viewer: Member }) {
               <div>
                 <Heading level={2}>{entry.name}</Heading>
                 <Text>
-                  {entry.kind === 'main' ? '領域' : '細分'} · {categoryLabel(entry.category)} · {entry.count}{' '}
+                  {musicEntryTypeLabel(entry)} · {entry.count}{' '}
                   人選用
                 </Text>
                 {entry.aliases.length > 0 && <Text>別名：{entry.aliases.join('、')}</Text>}
@@ -286,7 +285,7 @@ function EntryEditor({
               {value.kind === 'sub' && (
                 <Field label="詞條分類">
                   <Select value={value.category} onChange={(e) => edit({ category: e.target.value })}>
-                    {form.data.categories.map((category) => (
+                    {form.data.categories.filter(category => !isDomainCategory(category)).map((category) => (
                       <option key={category} value={category}>
                         {categoryLabel(category)}
                       </option>

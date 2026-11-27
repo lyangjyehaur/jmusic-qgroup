@@ -24,7 +24,7 @@ test('only administrators can read the catalog; profile-free administrators and 
 });
 test('creation, normalized search and editing retain category, type and metadata without a member quota',async({page,context})=>{
   await login(context);await page.goto('/admin/music-entries');await page.getByRole('button',{name:'建立詞條',exact:true}).click();
-  await page.getByLabel('詞條名稱',{exact:true}).fill('  管理自建音樂  ');await selectControl(page.getByLabel('詞條類型',{exact:true}), 'main');await selectControl(page.getByLabel('詞條分類',{exact:true}), '领域');await confirm(page);
+  await page.getByLabel('詞條名稱',{exact:true}).fill('  管理自建音樂  ');await selectControl(page.getByLabel('詞條類型',{exact:true}), 'main');await expect(page.getByLabel('詞條分類',{exact:true})).toHaveCount(0);await confirm(page);
   await expect(page.getByText('已建立詞條。',{exact:true})).toBeVisible();await page.getByLabel('搜尋管理詞條',{exact:true}).fill('管理自建');await expect(listing(page).getByRole('heading',{name:'詞條 · 1',exact:true})).toBeVisible();
   await listing(page).getByRole('button',{name:'編輯 管理自建音樂',exact:true}).click();await page.getByLabel('詞條名稱',{exact:true}).fill('管理更正音樂');await selectControl(page.getByLabel('詞條類型',{exact:true}), 'sub');await selectControl(page.getByLabel('詞條分類',{exact:true}), '歌手');await confirm(page);
   await expect(page.getByText('已保存詞條。',{exact:true})).toBeVisible();await page.getByLabel('搜尋管理詞條',{exact:true}).fill('管理更正');await expect(listing(page).getByRole('heading',{name:'管理更正音樂',exact:true})).toBeVisible();

@@ -35,11 +35,14 @@ for (const size of [{ width: 430, height: 932, top: 47, bottom: 34, sides: 0 }, 
     const button = (await appearance.boundingBox())!;
     expect(button.height).toBeGreaterThanOrEqual(40);
     expect(button.y).toBeGreaterThanOrEqual(size.top);
-    const pageBottom = await page.locator('.kimi.page').first().evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));
-    expect(pageBottom).toBeGreaterThanOrEqual(nav.height);
+    // The shared footer now owns the final clearance below page content.
+    const footerBottom = await page.getByRole('contentinfo').evaluate(el => parseFloat(getComputedStyle(el).paddingBottom));
+    expect(footerBottom).toBeGreaterThanOrEqual(nav.height);
     expect(await page.locator('.kimi.page').first().evaluate(el => parseFloat(getComputedStyle(el).paddingLeft))).toBeGreaterThanOrEqual(size.sides);
     await page.evaluate(() => scrollTo(0, document.documentElement.scrollHeight));
     expect((await dock.boundingBox())!.y).toBe(nav.y);
+    const credits = (await page.locator('.site-footer-credits').boundingBox())!;
+    expect(credits.y + credits.height).toBeLessThanOrEqual(nav.y);
     await page.evaluate(() => scrollTo(0, 0));
     expect((await dock.boundingBox())!.y).toBe(nav.y);
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -74,7 +77,7 @@ test('overscroll and browser chrome changes never lift the dock or save reminder
   }
 });
 
-for (const width of [430, 1440]) test(`navigation and tabs use color states without underlines at ${width}px`, async ({ page, context }) => {
+for (const width of [430, 1440]) test(`navigation keeps plain links and content tabs keep Yahha's active ink at ${width}px`, async ({ page, context }) => {
   await context.addCookies([{ name: 'kanban_session', value: 'fixture-alice', url: origin }]);
   await page.setViewportSize({ width, height: 932 }); await page.goto('/activities');
   const nav = page.locator(width < 769 ? '.mobile-dock' : '.side-nav');
@@ -84,13 +87,14 @@ for (const width of [430, 1440]) test(`navigation and tabs use color states with
   const tabs = page.getByRole('tablist', { name: '活動篩選', exact: true });
   for (const tab of await tabs.getByRole('tab').all()) {
     await tab.hover();
-    expect(await tab.evaluate(el => getComputedStyle(el, '::after').content)).toBe('none');
+    expect(await tab.evaluate(el => getComputedStyle(el, '::after').content)).toBe('""');
     await expect(tab).toHaveCSS('text-decoration-line', 'none');
   }
   await tabs.getByRole('tab', { name: '我的活動', exact: true }).click();
   const active = tabs.getByRole('tab', { name: '我的活動', exact: true });
   await expect(active).toHaveAttribute('aria-selected', 'true');
-  expect(await active.evaluate(el => getComputedStyle(el, '::after').content)).toBe('none');
+  await expect.poll(() => active.evaluate(el => getComputedStyle(el, '::after').opacity)).toBe('1');
+  expect(await active.evaluate(el => getComputedStyle(el, '::after').width)).toBe('32px');
   expect(await active.evaluate(el => getComputedStyle(el).backgroundColor)).not.toBe('rgba(0, 0, 0, 0)');
   await active.press('ArrowRight');
   await expect(tabs.getByRole('tab', { name: '往期與歸檔', exact: true })).toBeFocused();

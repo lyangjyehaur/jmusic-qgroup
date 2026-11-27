@@ -1,5 +1,6 @@
 import { AppSettingsPage, PWAProvider } from './pwa';
 import { AppearanceProvider,bootstrapAppearance } from './appearance-preferences';
+import { bootstrapBrowserInsets } from './browser-insets';
 import React from 'react';
 import { lazyPage } from './lazy-page';
 import { createRoot } from 'react-dom/client';
@@ -166,5 +167,6 @@ const router = createBrowserRouter([{ element: <LegacyEntryLayout />, errorEleme
   { path: 'me/privacy/consent', element: <PrivacyConsentPage /> },
   { path: 'admin', element: <AdminHome /> }, { path: 'admin/privacy', element: <AdminPrivacy /> }, { path: 'admin/privacy/:id', element: <AdminPrivacyReview /> }, { path: 'admin/users', element: <AdminDirectory /> }, { path: 'admin/users/:id', element: <AdminUserPage /> },
 ] }]);
+bootstrapBrowserInsets();
 bootstrapAppearance();
 createRoot(document.getElementById('root')!).render(<React.StrictMode><QueryClientProvider client={client}><AppearanceProvider><PWAProvider><RouterProvider router={router} /></PWAProvider></AppearanceProvider></QueryClientProvider></React.StrictMode>);
