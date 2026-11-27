@@ -12,8 +12,12 @@
 .kimi.activity-detail-page .status-strip .activity-capacity small { font-size:12px; }
 
 .kimi .activity-list { display:grid; gap:12px; border:0; }
-.kimi .activity-list-header { padding:0 16px 0 80px; grid-template-columns:minmax(0,1fr) 168px 112px 40px; gap:14px; border:0; }
-.kimi .activity-row { padding:18px 16px; grid-template-columns:50px minmax(0,1fr) 294px 40px; gap:14px; border:1px solid var(--line-soft); border-radius:var(--yahha-radius-panel); background:var(--paper); align-items:center; }
+.kimi .activity-list-header { padding:0 16px 0 80px; grid-template-columns:minmax(0,1fr) 168px 112px; gap:14px; border:0; }
+.kimi .activity-row { position:relative; padding:18px 16px; grid-template-columns:50px minmax(0,1fr) 294px; gap:14px; border:1px solid var(--line-soft); border-radius:var(--yahha-radius-panel); background:var(--paper); align-items:center; }
+.kimi .activity-card-link::after { content:""; position:absolute; inset:0; border-radius:inherit; }
+.kimi .activity-row:has(.activity-card-link:focus-visible) { outline:2px solid var(--app-focus); outline-offset:3px; }
+.kimi .activity-card-link:focus-visible { outline:none; }
+.kimi .activity-row .my-registration a { position:relative; z-index:1; }
 .kimi .activity-row:last-child { border-bottom:1px solid var(--line-soft); }
 .kimi .activity-row:hover { background:var(--app-panel-tint); border-color:var(--line); }
 .kimi .activity-date { width:100%; padding:8px 4px; border:0; border-radius:8px; background:var(--moss-soft); gap:2px; }
@@ -30,9 +34,8 @@
 .kimi .activity-capacity > span { flex-wrap:wrap; }
 .kimi .activity-capacity small { font-size:11px; color:var(--muted); }
 .kimi .activity-capacity .formation-ready { color:var(--moss); }
-.kimi .activity-row > .row-arrow { width:40px; min-height:44px; align-self:start; }
 .kimi .me-activity-list .activity-progress { display:none; }
-.kimi .me-activity-list .activity-row { padding:14px 12px; }
+.kimi .me-activity-list .activity-row { padding:14px 12px; grid-template-columns:42px minmax(0,1fr); }
 .kimi-shell :is(.brand,.mobile-brand) { min-width:0; }
 .kimi-shell :is(.brand,.mobile-brand) > span:last-child { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; letter-spacing:.04em; }
 .kimi-shell .mobile-brand { flex:1 1 0; }
@@ -45,17 +48,16 @@
   .kimi.activity-detail-page > .page-header { display:grid; grid-template-columns:minmax(0,1fr); gap:12px; }
   .kimi.activity-detail-page > .page-header > .page-heading { width:100%; }
   .kimi.activity-detail-page > .page-header > .page-actions { justify-self:end; }
-  .kimi .activity-row { grid-template-columns:44px minmax(0,1fr) 40px; align-items:start; gap:10px 12px; }
+  .kimi .activity-row { grid-template-columns:44px minmax(0,1fr); align-items:start; gap:10px 12px; }
   .kimi .activity-main { grid-column:2; grid-row:1; }
   .kimi .activity-date { grid-column:1; grid-row:1 / span 2; }
   .kimi .activity-progress { grid-column:2 / -1; grid-row:2; display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; gap:8px 12px; }
   .kimi .activity-progress .activity-status { display:grid; gap:4px; margin:0; }
-  .kimi .activity-row > .row-arrow { grid-column:3; grid-row:1; }
   .kimi .activity-list-header { display:none; }
 }
 @media(max-width:768px) {
-  .kimi .activity-row { grid-template-columns:40px minmax(0,1fr) 32px; padding:14px 12px; gap:10px; }
-  .kimi .activity-row > .row-arrow { width:32px; min-width:32px; }
+  .kimi .activity-row { grid-template-columns:40px minmax(0,1fr); padding:14px 12px; gap:10px; }
+  .kimi .me-activity-list .activity-row { grid-template-columns:36px minmax(0,1fr); }
   .kimi .activity-meta { font-size:11px; margin-top:6px; }
   .kimi .activity-date strong { font-size:23px; }
   .kimi .activity-date span { font-size:11px; }
