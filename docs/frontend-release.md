@@ -25,6 +25,8 @@ python3 deploy/frontend_release.py build \
 
 工具比較來源與實際 API 提交的後端輸入指紋，涵蓋 API、bot、共用 packages、套件與 lockfile、TypeScript 設定、API 建置器及映像定義。任何差異先停止，需部署並驗證 API 或獨立審查相容性，不能只填一個假的 API SHA。這是保守的發布限制，沒有宣稱完整語意相容性自動證明。
 
+指紋排除建置器禁止進入運行 bundle 的 `.test.ts`，讓單純修正測試不要求重啟 API；其他 testsupport 檔案、運行來源與建置規則仍在比較範圍。前端仍須搭配實際 API 映像驗收；測試檔排除不是完整相容性證明。
+
 4. 用隔離 API／資料驗證該前端產物及相關頁面、深連結與 PWA；將完整檔案包傳到伺服器的新暫存目錄，核對傳輸及 manifest 摘要。不要逐檔覆蓋現行目錄。
 5. 使用伺服器上已核准來源的發布工具切換：
 

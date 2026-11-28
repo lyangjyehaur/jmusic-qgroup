@@ -58,7 +58,9 @@ class FrontendSourceTests(unittest.TestCase):
             def git(*args):
                 return subprocess.check_output(["git", "-C", tmp, *args], stderr=subprocess.DEVNULL).decode().strip()
             git("init")
-            for name in ["apps/web/ui.tsx", "apps/api/server.ts", "packages/contracts/schema.ts", "package-lock.json"]:
+            test_files = ["apps/api/src/recovery.test.ts", "apps/api/testsupport/http.test.ts", "apps/bot/src/worker.test.ts", "packages/contracts/schema.test.ts"]
+            runtime_files = ["apps/api/server.ts", "apps/api/testsupport/helper.ts", "packages/contracts/schema.ts", "package-lock.json", "tools/rebuild/build-api.mjs"]
+            for name in ["apps/web/ui.tsx", *test_files, *runtime_files]:
                 (root / name).parent.mkdir(parents=True, exist_ok=True)
                 (root / name).write_text("baseline")
             def commit():
@@ -68,7 +70,10 @@ class FrontendSourceTests(unittest.TestCase):
             baseline = release.fingerprint(commit())
             (root / "apps/web/ui.tsx").write_text("new layout")
             self.assertEqual(release.fingerprint(commit()), baseline)
-            for name in ["apps/api/server.ts", "packages/contracts/schema.ts", "package-lock.json"]:
+            for name in test_files:
+                (root / name).write_text("corrected test")
+                self.assertEqual(release.fingerprint(commit()), baseline)
+            for name in runtime_files:
                 (root / name).write_text("new contract")
                 before = release.fingerprint(git("rev-parse", "HEAD"))
                 self.assertNotEqual(release.fingerprint(commit()), before)

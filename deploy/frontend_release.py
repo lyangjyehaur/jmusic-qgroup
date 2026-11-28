@@ -37,7 +37,10 @@ def git(*args):
 def fingerprint(commit):
     if not SHA.fullmatch(commit):
         raise ValueError("A full commit SHA is required")
-    return digest(git("ls-tree", "-r", commit, "--", *BACKEND_INPUTS))
+    # build-api.mjs rejects .test.ts dependencies in runtime bundles. Keep all
+    # other support files, runtime sources, package inputs and build rules pinned.
+    entries = git("ls-tree", "-r", "-z", commit, "--", *BACKEND_INPUTS).split(b"\0")
+    return digest(b"\0".join(entry for entry in entries if entry and not entry.partition(b"\t")[2].endswith(b".test.ts")))
 
 
 def allowed(name):
