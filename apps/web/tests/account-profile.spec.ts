@@ -31,7 +31,7 @@ test('changing a nickname updates other tabs while preserving the account, music
   await page.setViewportSize({ width: 360, height: 800 }); expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await page.screenshot({ path: 'test-results/unified-nickname-mobile.png', fullPage: true });
   await page.getByRole('button', { name: '保存稱呼', exact: true }).click(); await expect(page.getByText('已保存稱呼。', { exact: true })).toBeVisible();
-  await expect(other.getByRole('heading', { name: '新的站內稱呼', exact: true })).toBeVisible();
+  await expect(other.locator('.account-settings .binding-row').first().getByText('新的站內稱呼', { exact: true })).toBeVisible();
   await expect(other.getByText('已綁定 QQ：測試帳號 avatar-source', { exact: true })).toBeVisible();
   const after = await (await context.request.get('/api/v2/session')).json(); expect(after.scope).toBe(before.scope); expect(after.qq).toEqual(before.qq);
   await page.goto('/me/music'); await expectMusicTerm(page,'Aimer',true);
@@ -98,7 +98,7 @@ test('missing UnionID reauthorization keeps the original account and reports the
   await fakeQQ(page, 'auth-original-no-union');
   await page.goto('/login?mode=bind&returnTo=%2Fme%2Faccounts'); await authorize(page);
   await expect(page.getByText('尚未取得 UnionID；原帳號已保留，可在帳號頁重新授權。', { exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: '舊帳號', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('舊帳號', { exact: true })).toBeVisible();
   const missing = await (await context.request.get('/api/v2/session')).json(); expect(missing.scope).toBe(before.scope); expect(missing.qq.needsReauth).toBe(true);
   await page.goto('/activities'); await expect(page.getByRole('complementary', { name: 'QQ 資料更新提醒' })).toHaveCount(0);
   await fakeQQ(page, 'auth-original'); await page.goto('/login?mode=bind&returnTo=%2Fme%2Faccounts'); await authorize(page);

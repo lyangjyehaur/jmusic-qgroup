@@ -42,7 +42,7 @@ test('guest completes explicit login, edits music, returns to the activity and r
   await page.getByRole('link', { name: '回到剛才的活動' }).click();
   await expect(page).toHaveURL(/\/activities\/listen$/);
   await page.goto('/me/accounts');
-  await expect(page.getByRole('heading', { name: '測試帳號 task-context', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('測試帳號 task-context', { exact: true })).toBeVisible();
   await page.getByRole('button', { name: '登出此裝置' }).click();
   await expect(page.getByRole('heading', { name: '尚未登入' })).toBeVisible();
   expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(false);
@@ -63,16 +63,16 @@ test('cancel preserves guest identity and the exact invite task without creating
 });
 test('authorized account switching keeps private music data scoped to each account', async ({ page }) => {
   await authorize(page, 'switch-first'); await page.getByRole('button', { name: '確認登入', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '測試帳號 switch-first', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('測試帳號 switch-first', { exact: true })).toBeVisible();
   await page.goto('/me/music'); await toggleMusicTerm(page, 'Aimer');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click(); await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await authorize(page, 'switch-second');
   await expect(page.getByText('目前帳號「測試帳號 switch-first」的授權會保留', { exact: false })).toBeVisible();
   await page.getByRole('button', { name: '確認登入', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '測試帳號 switch-second', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('測試帳號 switch-second', { exact: true })).toBeVisible();
   await page.goto('/me/music'); await expectMusicTerm(page, 'Aimer', false);
   await page.goto('/me/accounts'); await page.getByRole('button', { name: '切換至 測試帳號 switch-first', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '測試帳號 switch-first', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('測試帳號 switch-first', { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 390, height: 844 });
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(page.getByRole('banner')).toHaveCount(1);
@@ -91,12 +91,12 @@ test('binding conflict prevents replacement and allows an explicit return to the
   await expect(page.getByText('目前帳號已綁定另一個 QQ，或此 QQ 已綁定其他帳號', { exact: false })).toBeVisible();
   await expect(page.getByRole('button', { name: '確認綁定', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: '取消並返回' }).click();
-  await expect(page.getByRole('heading', { name: '舊帳號', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('舊帳號', { exact: true })).toBeVisible();
   await expect(page.getByText('已綁定 QQ：原 QQ', { exact: true })).toBeVisible();
 });
 test('privacy consent opens the existing versioned policy and retains the unfinished login', async ({ page, context }) => {
   await page.goto('/login?returnTo=%2Fme%2Fmusic');
-  const popup = context.waitForEvent('page'); await page.getByRole('link', { name: '隱私政策', exact: true }).click();
+  const popup = context.waitForEvent('page'); await page.locator('.auth-panel').getByRole('link', { name: '隱私政策', exact: true }).click();
   const policy = await popup; await expect(policy.getByRole('heading', { name: '隱私政策', exact: true })).toBeVisible();
   await expect(policy.getByText('unified-2026-11-18', { exact: false })).toBeVisible(); await policy.close();
   await expect(page.getByRole('checkbox')).not.toBeChecked();
@@ -114,7 +114,7 @@ test('an unreadable finish response blocks repeats and checks the actual account
   await expect(page.getByRole('button', { name: '確認登入', exact: true })).toBeDisabled();
   await expect(page.getByRole('button', { name: '取消並返回' })).toBeDisabled();
   await page.getByRole('link', { name: '核對目前帳號', exact: true }).click();
-  await expect(page.getByRole('heading', { name: '測試帳號 uncertain-result', exact: true })).toBeVisible();
+  await expect(page.locator('.account-settings .binding-row').first().getByText('測試帳號 uncertain-result', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '回到原任務', exact: true }).click();
   await expect(page).toHaveURL(`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}/activities/listen?invite=retry#roster`);
   expect(finishes).toBe(1);
