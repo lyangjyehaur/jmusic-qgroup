@@ -1,4 +1,5 @@
 import { durableRows } from './draft-helpers';
+import { removeMusicTermFromDetail } from './kimi-controls';
 import { test, expect } from './fixtures';
 import type { BrowserContext, Page } from '@playwright/test';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -36,7 +37,7 @@ test('trend terms share the original unsaved selection, preserve search and retu
   await page.getByRole('complementary',{name:'我的選擇',exact:true}).getByRole('link', { name: '音樂詞庫', exact: true }).click(); await page.getByRole('tab', { name: '音樂趨勢', exact: true }).click();
   await expect(page).toHaveURL('/music/trends?q=Yoa'); await expect(page.getByRole('heading', { name: '尚未提交的修改', exact: true })).toHaveCount(0);
   await openChart(page);await page.getByRole('list', { name: '趨勢圖例', exact: true }).getByRole('link', { name: 'J-POP', exact: true }).click();
-  await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toBeVisible(); await page.getByRole('button', { name: '取消選取', exact: true }).click();
+  await expect(page.getByRole('region', { name: '詞條資料', exact: true })).toBeVisible(); await removeMusicTermFromDetail(page);
   await page.getByRole('link', { name: '回到音樂趨勢', exact: true }).click(); await expect(page).toHaveURL('/music/trends?q=Yoa');
   await expect(page.getByRole('button', { name: '移除Aimer', exact: true })).toHaveCount(0); await expect(page.getByRole('button', { name: '移除J-POP', exact: true })).toHaveCount(0);
   await page.getByRole('link', { name: '回到音樂詞庫', exact: true }).click(); await expect(page).toHaveURL('/music?q=Yoa'); expect(writes).toBe(0);

@@ -143,7 +143,8 @@ test('real historical activities below their minimum show an unformed status and
     const target = unformed[0]!;
     const row = page.locator('.activity-row').filter({ has: page.getByRole('link', { name: target.title, exact: true }) });
     await expect(row.locator('.activity-status')).toContainText('未成團');
-    await expect(row.locator('.activity-status')).toContainText('最低 ' + target.minimumParticipants + ' 人');
+    await expect(row.getByLabel('活動人數', { exact: true })).toContainText(target.minimumParticipants + ' 人成團');
+    await expect(row.locator('.formation-pending')).toHaveText(target.minimumParticipants + ' 人成團 · 未達門檻');
     await chooseStatus('未成團');
     await expect(page).toHaveURL(/status=unformed/);
     await expect(page.locator('.activity-row')).toHaveCount(Math.min(unformed.length, 20));

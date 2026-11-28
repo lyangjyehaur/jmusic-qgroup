@@ -1,4 +1,4 @@
-import { chooseOption, expectOption } from './kimi-controls';
+import { closeMusicLevel, chooseOption, expectOption } from './kimi-controls';
 import { test, expect } from './fixtures';
 import { durableRows } from './draft-helpers';
 const origin = `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`;
@@ -16,7 +16,7 @@ for (const mobile of [false, true]) test(`returning to the top preserves unfinis
   }
   const top = page.getByRole('button', { name: '回到頂部', exact: true });
   await expect(top).toHaveCount(0);
-  for(const name of ['Aimer','YOASOBI','ヨルシカ','米津玄師','J-POP']){await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill(name);await page.locator('.quick-add-results').getByRole('button').filter({hasText:name}).click();}
+  for(const name of ['Aimer','YOASOBI','ヨルシカ','米津玄師','J-POP']){await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill(name);await page.locator('.quick-add-results').getByRole('button').filter({hasText:name}).click();await closeMusicLevel(page);}
   await chooseOption(page,'Aimer喜歡程度','4');
   await expect(page.getByText('正在保存本機原稿…', { exact: true })).toHaveCount(0);
   const original = await durableRows(page);
@@ -56,7 +56,7 @@ test('mobile save stays above a reduced visual viewport and returns after the ke
   await page.setViewportSize({ width: 360, height: 800 });
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto('/me/music');
-  for(const name of ['Aimer','YOASOBI','ヨルシカ','米津玄師','J-POP']){await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill(name);await page.locator('.quick-add-results').getByRole('button').filter({hasText:name}).click();}
+  for(const name of ['Aimer','YOASOBI','ヨルシカ','米津玄師','J-POP']){await page.getByLabel('尋找喜歡的音樂',{exact:true}).fill(name);await page.locator('.quick-add-results').getByRole('button').filter({hasText:name}).click();await closeMusicLevel(page);}
   await chooseOption(page,'Aimer喜歡程度','4');
   await expect(page.getByText('正在保存本機原稿…', { exact: true })).toHaveCount(0);
   const original = await durableRows(page);

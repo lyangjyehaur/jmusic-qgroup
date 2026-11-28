@@ -127,7 +127,7 @@ describe('safe music claim recovery pointers',()=>{
    const raw=JSON.stringify({requestId:key,legacyQQ:'10001',...(action?{action}:{})});
    expect(MusicRecoveryRecord.parse(JSON.parse(raw)).requestId).toBe(key);
    const result=pendingOperations(storage({[name]:raw}),current);
-   expect(result).toEqual([{id:name,label:'找回舊成分',to:'/me/music/recover',damaged:false}]);
+   expect(result).toEqual([{id:name,label:'找回成分',to:'/me/music/recover',damaged:false}]);
    expect(JSON.stringify(result)).not.toContain('10001');expect(pendingOperations(storage({[name]:raw}),other)).toEqual([]);
   }
   expect(pendingOperations(storage({[name]:'null'}),current)).toEqual([]);
@@ -135,7 +135,7 @@ describe('safe music claim recovery pointers',()=>{
  it('rejects credentials and malformed pointers instead of restoring or exposing them',()=>{
   for(const patch of [{pin:'123456'},{digest:'PRIVATE_DIGEST'},{token:'PRIVATE_TOKEN'},{action:'start'},{requestId:'bad'},{legacyQQ:'123'}]){
    const value={requestId:key,legacyQQ:'10001',...patch};expect(MusicRecoveryRecord.safeParse(value).success).toBe(false);
-   expect(pendingOperations(storage({[name]:JSON.stringify(value)}),current)).toEqual([{id:name,label:'找回舊成分',to:'/me/music/recover',damaged:true}]);
+   expect(pendingOperations(storage({[name]:JSON.stringify(value)}),current)).toEqual([{id:name,label:'找回成分',to:'/me/music/recover',damaged:true}]);
   }
  });
 });

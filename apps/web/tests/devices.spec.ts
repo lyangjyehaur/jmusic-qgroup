@@ -62,7 +62,7 @@ test('two devices grant explicitly, switch separately and revoke without changin
     expect((await (await targetContext.request.get('/api/v2/session')).json()).nickname).toBe('測試帳號 device-target');
     await target.getByRole('link', { name: '前往帳號切換', exact: true }).click();
     await target.getByRole('button', { name: '切換至 測試帳號 device-source', exact: true }).click();
-    await expect(target.getByRole('heading', { name: '測試帳號 device-source', exact: true })).toBeVisible();
+    await expect(target.getByRole('button', { name: '測試帳號 device-source（目前帳號）', exact: true })).toBeDisabled();expect((await (await targetContext.request.get('/api/v2/session')).json()).nickname).toBe('測試帳號 device-source');
     await source.reload(); await source.getByRole('button', { name: '撤銷其他裝置 1', exact: true }).click();
     await source.evaluate(() => { (document.activeElement as HTMLElement)?.blur(); scrollTo(0, 0); });
     await source.screenshot({ path: 'test-results/unified-device-revoke-desktop.png', fullPage: true });
@@ -72,7 +72,7 @@ test('two devices grant explicitly, switch separately and revoke without changin
     await source.getByRole('button', { name: '確認撤銷', exact: true }).click();
     await expect(source.getByText('已撤銷該裝置的此帳號授權；其他帳號保留。', { exact: true })).toBeVisible();
     await recheckSession(target);
-    await expect(target.getByRole('heading', { name: '測試帳號 device-target', exact: true })).toBeVisible();
+    await expect(target.getByRole('button', { name: '測試帳號 device-target（目前帳號）', exact: true })).toBeDisabled();expect((await (await targetContext.request.get('/api/v2/session')).json()).nickname).toBe('測試帳號 device-target');
     await expect(target.getByRole('button', { name: '切換至 測試帳號 device-source', exact: true })).toHaveCount(0);
     await target.goto('/me/music'); await expectMusicTerm(target,'Aimer',true);
     expect(apiUrls.every(url => !url.includes(token))).toBe(true); expect(errors).toEqual([]);

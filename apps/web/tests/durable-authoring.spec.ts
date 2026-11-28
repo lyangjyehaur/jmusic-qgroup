@@ -93,9 +93,9 @@ test('restores incomplete ledger commands with their operation IDs and revisions
   const other=await context.newPage();await other.goto(origin+'/activities/listen/finance');
   await expectControlValue(other.getByLabel('金額（人民幣）',{exact:true}), '7.25');
   await expect(other.getByLabel('金額（人民幣）',{exact:true})).toBeDisabled();
-  await expect(other.locator('.finance-operation-panel')).toHaveAttribute('open','');
+  await expect(other.locator('.finance-operation-panel')).toHaveAttribute('data-open','true');
   await other.getByText('款項操作',{exact:true}).click();
-  await expect(other.locator('.finance-operation-panel')).not.toHaveAttribute('open','');
+  await expect(other.locator('.finance-operation-panel')).not.toHaveAttribute('data-open','true');
   await other.getByRole('button',{name:'恢復本機原稿',exact:true}).click();
   await expect(other.getByLabel('金額（人民幣）',{exact:true})).toBeVisible();
   await fresh.getByLabel('金額（人民幣）',{exact:true}).fill('8.25');await saved(fresh);await other.getByLabel('金額（人民幣）',{exact:true}).fill('9.25');

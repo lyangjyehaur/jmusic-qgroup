@@ -41,7 +41,9 @@ test('default closure, administrator confirmation and independent registration r
     await page.screenshot({ path: 'test-results/unified-registration-mobile.png', fullPage: true });
     await page.getByRole('button', { name: '建立帳號', exact: true }).click(); await expect(page).toHaveURL(baseURL + task);
     await setting(admin, false);
-    await page.goto('/me/accounts'); await expect(page.getByRole('heading', { name: '名稱註冊測試', exact: true })).toBeVisible();
+    await page.goto('/me/accounts'); await expect(page.getByRole('button', { name: '名稱註冊測試（目前帳號）', exact: true })).toBeDisabled();
+    const viewer = await (await page.request.get('/api/v2/session')).json();
+    expect(viewer.authenticated).toBe(true); expect(viewer.nickname).toBe('名稱註冊測試');
     await expect(page.getByRole('link', { name: '註冊設定', exact: true })).toHaveCount(0);
     await page.goto('/admin/registration'); await expect(page.getByLabel('管理救援憑證', { exact: true })).toBeVisible();
     await page.goto('/me/music'); await toggleMusicTerm(page, 'Aimer');
@@ -59,7 +61,9 @@ test('an unreadable registration result blocks repeat creation and checks the ac
     await expect(page.getByText('尚未確認註冊結果，請先核對目前帳號，避免重複建立。', { exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: '建立帳號', exact: true })).toBeDisabled();
     await page.getByRole('link', { name: '核對目前帳號', exact: true }).click();
-    await expect(page.getByRole('heading', { name: '核對註冊結果', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: '核對註冊結果（目前帳號）', exact: true })).toBeDisabled();
+    const viewer = await (await page.request.get('/api/v2/session')).json();
+    expect(viewer.authenticated).toBe(true); expect(viewer.nickname).toBe('核對註冊結果');
     await page.getByRole('link', { name: '回到原任務', exact: true }).click(); await expect(page).toHaveURL(baseURL + task);
     expect(writes).toBe(1);
   } finally { await setting(admin, false); await admin.close(); }

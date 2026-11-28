@@ -10,9 +10,10 @@ const poll=()=>({title:'原投票',category:'约K',location:'原地點',descript
 const row=(value:unknown,kind='event:new',extra={})=>{const source={key:'draft:'+scope+':'+kind,data:{react:1,value,revision:undefined,...extra},at:123};return {id:'b'.repeat(64),scope,sourceKey:source.key,source,raw:legacyRaw(source),savedAt:456} satisfies LegacySnapshot;};
 const draft=(record:LegacySnapshot,target:{id:string;route:'draft'|'arrangements'|'poll'}|null=null,zone='')=>JSON.parse(authoringDraft(record,decodeAuthoring(record,scope),target,zone).raw);
 describe('actual legacy activity/poll form conversion',()=>{
-  it('preserves text, settings, intent and calendar-day shifts across DST while converting to explicit Taipei input',()=>{
-    const r=row(activity()),result=draft(r);expect(result).toMatchObject({id:null,revision:0,clientIntent:intent,reason:'原原因',form:{title:' 原標題 ',location:' 原地點 ',description:'第一行\n第二行',feePolicy:' 原費用 ',capacity:'8',minimumParticipants:'2',botEnabled:true,joinOwner:true,timezone:'America/New_York',startsAt:'2026-03-08T14:30:00',deadline:'2026-03-07T12:59:00',withdrawalDeadline:'2026-03-07T13:30:00'},legacySource:{id:r.id,baseRevision:null,reviewRequired:false,notes:[]}});expect(r.raw).toContain(intent);
+  it('preserves text, settings, intent and calendar-day shifts across DST in the original event zone',()=>{
+    const r=row(activity()),result=draft(r);expect(result).toMatchObject({id:null,revision:0,clientIntent:intent,reason:'原原因',form:{title:' 原標題 ',location:' 原地點 ',description:'第一行\n第二行',feePolicy:' 原費用 ',capacity:'8',minimumParticipants:'2',botEnabled:true,joinOwner:true,timezone:'America/New_York',startsAt:'2026-03-08T01:30:00',deadline:'2026-03-06T23:59:00',withdrawalDeadline:'2026-03-07T00:30:00'},legacySource:{id:r.id,baseRevision:null,reviewRequired:false,notes:[]}});expect(r.raw).toContain(intent);
     const unlimited=draft(row({...activity(),capacity_unlimited:true}));expect(unlimited.form.capacity).toBe('0');expect(unlimited.form.durationHours).toBe('3');
+    expect(originalWallISO(result.form.startsAt.slice(0,16),result.form.timezone)).toBe('2026-03-08T06:30:00.000Z');
   });
   it('matches original wallToISO and rejects repeated, nonexistent, skipped and invalid wall calendars',()=>{
     const source=readFileSync('public/app.js','utf8'),from=source.indexOf('function wallDate('),to=source.indexOf('const zoneLabel=',from);
@@ -23,7 +24,7 @@ describe('actual legacy activity/poll form conversion',()=>{
   it('keeps ambiguous/incomplete original times and missing zones as notes without making up inputs',()=>{
     const ambiguous=draft(row({...activity(),event_date:'2026-11-01',start_day_offset:'0'}));expect(ambiguous.form.startsAt).toBe('');expect(ambiguous.legacySource.notes).toContainEqual(expect.objectContaining({field:'開始時間',original:'2026-11-01T01:30',message:expect.stringContaining('重複')}));
     const incomplete=draft(row({...activity(),event_date:'',start_day_offset:''}));expect(incomplete.form.startsAt).toBe('');expect(incomplete.legacySource.notes[0].original).toContain('01:30');
-    const missing=row({...activity(),timezone:''});expect(draft(missing).form.startsAt).toBe('');expect(draft(missing).form.timezone).toBe('');expect(draft(missing,null,'America/New_York').form.startsAt).toBe('2026-03-08T14:30:00');
+    const missing=row({...activity(),timezone:''});expect(draft(missing).form.startsAt).toBe('');expect(draft(missing).form.timezone).toBe('');expect(draft(missing,null,'America/New_York').form.startsAt).toBe('2026-03-08T01:30:00');
   });
   it('preserves date/exact candidate order and empty numbers; date deadline uses 23:59, not the captured clock',()=>{
     const dates=draft(row(poll(),'time-poll:new'));expect(dates.value).toMatchObject({options:['2026-03-09','2026-03-08'],capacity:'',minimum_participants:'2',deadline:'2026-03-07T04:59:00.000Z',time_mode:'date',client_intent:intent,bot_enabled:false});
@@ -38,7 +39,7 @@ describe('actual legacy activity/poll form conversion',()=>{
   it('decodes original fields/checkboxes/dataset and rejects unknown or duplicate fields instead of dropping them',()=>{
     const value=activity(),fields=Object.entries(value).filter(([name])=>!name.startsWith('_')).map(([name,value])=>({name,value:typeof value==='boolean'?'on':String(value),checked:typeof value==='boolean'?value:undefined}));
     const source={key:'draft:'+scope+':event:new',at:123,data:{fields,dataset:{intent,revision:'',lifecycle:'',previousEarly:'true'}}},record={...row(activity()),sourceKey:source.key,source,raw:legacyRaw(source)};
-    expect(draft(record).form.startsAt).toBe('2026-03-08T14:30:00');expect(()=>decodeAuthoring(row({...value,unknown:'retained'}),scope)).toThrow('格式尚未支援');
+    expect(draft(record).form.startsAt).toBe('2026-03-08T01:30:00');expect(()=>decodeAuthoring(row({...value,unknown:'retained'}),scope)).toThrow('格式尚未支援');
     for(const extra of [{name:'future-field',value:'retained'},{name:'title',value:'different'}])expect(()=>decodeAuthoring({...record,source:{...source,data:{...source.data,fields:[...fields,extra]}}},scope)).toThrow('重複欄位');
   });
   it('requires exact poll candidate coverage and rejects extra, missing, duplicate or mismatched calendar fields',()=>{

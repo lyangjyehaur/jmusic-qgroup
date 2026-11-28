@@ -33,7 +33,7 @@ test('bot party and tentative links preset forms and never replace an existing s
 });
 test('bot report and onsite links open the intended controls without recording money or attendance',async({page,context})=>{
   await login(context);page.on('dialog',dialog=>void dialog.accept());let writes=0;page.on('request',r=>{if(['POST','PUT','DELETE'].includes(r.method())&&r.url().includes('/activities/'))writes++;});
-  await page.goto('/?event=listen&action=report');await expect(page).toHaveURL('/activities/listen/finance?preset=report#finance-operation');await expectControlValue(page.locator('#finance-command'), 'report');await expect(page.locator('.finance-operation-panel')).toHaveAttribute('open','');
+  await page.goto('/?event=listen&action=report');await expect(page).toHaveURL('/activities/listen/finance?preset=report#finance-operation');await expectControlValue(page.locator('#finance-command'), 'report');await expect(page.locator('.finance-operation-panel')).toHaveAttribute('data-open','true');
   await page.goto('/?event=listen&action=onsite');await expect(page).toHaveURL('/activities/listen/attendance?preset=onsite');await expect(page.getByText('現場參加者 1',{exact:true})).toBeVisible();expect(writes).toBe(0);
 });
 test('copy starts an independent draft, clears dates and defaults group notification on, and creates no roster',async({page,context})=>{
@@ -44,8 +44,8 @@ test('copy starts an independent draft, clears dates and defaults group notifica
   expect((await(await context.request.get('/api/v2/activities/'+id+'/draft',{headers:await headers(context)})).json()).values.botEnabled).toBe(true);await page.goto('/activities/new');await expectControlValue(page.getByLabel('活動名稱',{exact:true}), '原本的新活動草稿');
 });
 test('old music hashes and HTML aliases enter native pages; replace redirects preserve back navigation',async({page})=>{
-  await page.goto('/contact');await expect(page.getByRole('heading',{name:'聯絡與投訴',exact:true})).toBeVisible();await page.goto('/music/index.html#rest');await expect(page).toHaveURL('/music?library=all');await expect(page.getByRole('region',{name:'音樂詞庫',exact:true})).toBeVisible();await page.goBack();await expect(page).toHaveURL('/contact');
-  await page.goto('/music/#event');await expect(page).toHaveURL('/activities?task=rooms');await page.getByRole('link',{name:/^分析活動成分：/}).first().click();await expect(page).toHaveURL(/\/tools\/room-lab\?eventId=/);
+  await page.goto('/contact');await expect(page.getByRole('heading',{name:'聯絡營運者',exact:true})).toBeVisible();await page.goto('/music/index.html#rest');await expect(page).toHaveURL('/music?library=all');await expect(page.getByRole('region',{name:'音樂詞庫',exact:true})).toBeVisible();await page.goBack();await expect(page).toHaveURL('/contact');
+  await page.goto('/music/#event');await expect(page).toHaveURL('/activities?task=rooms');await page.getByRole('main').locator('.activity-card-link').first().click();await expect(page).toHaveURL(/\/tools\/room-lab\?eventId=/);
   await page.goto('/music/admin.html');await expect(page).toHaveURL('/admin');await page.goto('/music/privacy.html');await expect(page).toHaveURL('/privacy');await expect(page.getByRole('heading',{name:'隱私政策',exact:true})).toBeVisible();
   await page.setViewportSize({width:360,height:800});await page.goto('/contact.html');await expect(page.getByRole('link',{name:'203008876@qq.com',exact:true})).toBeVisible();expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
 });

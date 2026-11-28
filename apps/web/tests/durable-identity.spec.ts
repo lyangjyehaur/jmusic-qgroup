@@ -22,7 +22,7 @@ async function fill(page:Page,kind:Kind){
   if(kind==='selection'){await toggleMusicTerm(page, 'YOASOBI');await chooseOption(page,'YOASOBI喜歡程度','4');}
   else await control(page,kind).fill(kind==='contact'?'123456':'關頁後的原稿');
   if(kind==='fields'){await chooseOption(page,'性別','custom');await page.getByLabel('自訂性別',{exact:true}).fill('原自訂性別');await page.getByLabel('在成分卡公開性別',{exact:true}).check();}
-  await expect.poll(async()=>(await durableRows(page)).some(row=>kind==='fields'?JSON.parse(row.raw).genderPublic===true:row.raw.includes(kind==='contact'?'123456':kind==='selection'?'sub-1':'關頁後的原稿'))).toBe(true);
+  await expect.poll(async()=>(await durableRows(page)).some(row=>kind==='fields'?JSON.parse(row.raw).genderPublic===true:row.raw.includes(kind==='contact'?'123456':kind==='selection'?'sub-0':'關頁後的原稿'))).toBe(true);
 }
 for(const flow of flows){
   test(flow.kind+' restores the exact closed-tab draft and requires explicit recovery before saving',async({page,context})=>{

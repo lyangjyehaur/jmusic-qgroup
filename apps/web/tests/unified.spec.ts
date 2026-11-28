@@ -23,7 +23,7 @@ test('guest browses activity and music in one responsive shell', async ({ page }
   for (const width of [360, 390, 614, 768, 1280]) {
     await page.setViewportSize({ width, height: 900 });
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
-    await expect(page.getByRole('navigation')).toBeVisible();
+    await expect(page.getByRole('navigation', { name: width <= 768 ? '手機主要導覽' : '主要導覽', exact: true })).toBeVisible();
   }
   await page.screenshot({ path: 'test-results/unified-activity-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
@@ -90,10 +90,13 @@ test('a concurrent profile update returns conflict without replacing the local s
   const previous = await (await context.request.get('/api/v2/me/music', { headers: { 'X-Account-Scope': viewer.scope } })).json();
   const update = await context.request.put('/api/v2/me/music', { headers: { Origin: `http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`, 'X-Account-Scope': viewer.scope, 'X-CSRF-Token': viewer.csrf, 'Idempotency-Key': crypto.randomUUID() }, data: { profileId: previous?.id ?? null, musicEpoch: viewer.musicEpoch, revision: previous?.revision ?? 0, selections: [{ entryId: 'main-4', level: 3 }] } });
   expect(update.status()).toBe(200);
+  const conflict = page.waitForResponse(response => response.url().endsWith('/api/v2/me/music') && response.request().method() === 'PUT');
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
-  await expect(page.getByText('成分已有更新；你的選擇仍保留，請核對最新版本')).toBeVisible();
+  expect((await conflict).status()).toBe(409);
+  await expect(page.getByRole('status').filter({ hasText: '成分版本不同，尚未保存' })).toBeVisible();
+  await expect(page.getByText('目前草稿和已保存的成分版本不同。你的勾選仍保留，請先讀取最新版本再保存。', { exact: true })).toBeVisible();
   await expectMusicTerm(page,'Eve',true);
-  await page.getByRole('button', { name: '核對最新版本，保留我的選擇' }).click();
+  await page.getByRole('button', { name: '讀取最新版本', exact: true }).click();
   await page.getByRole('button', { name: '保存我的成分', exact: true }).click();
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
 });

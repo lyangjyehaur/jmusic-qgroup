@@ -85,8 +85,9 @@ test('the active root worker preserves the complete synthetic QQ redirect and a 
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: '前往 QQ 登入', exact: true }).click();
     await page.getByRole('button', { name: '確認登入', exact: true }).click();
-    await expect(page.getByRole('heading', { name: '測試帳號 browser-default', exact: true })).toBeVisible();
-    expect((await (await context.request.get('/api/v2/session')).json()).authenticated).toBe(true);
+    await expect(page.getByRole('button', { name: '測試帳號 browser-default（目前帳號）', exact: true })).toBeDisabled();
+    const viewer = await (await context.request.get('/api/v2/session')).json();
+    expect(viewer.authenticated).toBe(true); expect(viewer.nickname).toBe('測試帳號 browser-default');
     let activityWrites = 0;
     page.on('request', request => { if (request.url().includes('/api/v2/activities/') && ['POST','PUT','DELETE'].includes(request.method())) activityWrites++; });
     await page.goto('/?event=listen&action=join');
@@ -196,7 +197,7 @@ test('retiring the exact legacy registration waits for old clients to close and 
         await page.goto(h.origin + '/me/app');
         await ready(page);
         await page.getByRole('button', { name: '檢查更新', exact: true }).click();
-        await expect(page.getByText('舊成分站離線元件待退役；請保存草稿，關閉舊成分站視窗後重新開啟。', { exact: false })).toBeVisible();
+        await expect(page.getByText('舊網站離線元件待退役；請保存草稿，關閉舊網站視窗後重新開啟。', { exact: false })).toBeVisible();
         await expect.poll(() => old.evaluate(async () => !!(await navigator.serviceWorker.getRegistration('/music/'))?.waiting)).toBe(true);
         expect(await old.evaluate(() => sessionStorage.getItem('old-draft'))).toBe('legacy original');
         expect(await old.evaluate(() => sessionStorage.getItem('controller-changes'))).toBe('0');

@@ -20,10 +20,10 @@ function inventory(source:string){
  mkdirSync(join(directory,'apps/api/src'),{recursive:true});writeFileSync(join(directory,'apps/api/src/routes.ts'),source);
  return readHttpOperationSources(directory);
 }
-it('binds all 104 parameterized operations and 131 decoded path values to their actual shared validators',async()=>{
+it('binds all 105 parameterized operations and 132 decoded path values to their actual shared validators',async()=>{
  const rows=checkHttpOperations(root),catalog=sharedSchemaCatalog(),spec=httpOpenAPI(rows,catalog);
- expect(rows.filter(row=>row.params.length)).toHaveLength(104);
- expect(rows.reduce((count,row)=>count+(row.path.match(/:[^/]+/g)?.length??0),0)).toBe(131);
+ expect(rows.filter(row=>row.params.length)).toHaveLength(105);
+ expect(rows.reduce((count,row)=>count+(row.path.match(/:[^/]+/g)?.length??0),0)).toBe(132);
  expect(new Set(rows.flatMap(row=>row.params)).size).toBe(19);
  expect(spec['x-qgroup-path-validation-bound']).toBe(true);expect(spec['x-qgroup-permission-bindings-complete']).toBe(false);
  expect(Object.values(HttpOperations).every(row=>Object.isFrozen(row.params))).toBe(true);

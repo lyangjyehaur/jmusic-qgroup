@@ -82,6 +82,16 @@ event=db.execute("SELECT * FROM events WHERE id='listen'").fetchone()
 events.patch(db,event,dict(id='alice',nickname='小青'),json.loads(sys.argv[2]))
 print(json.dumps({t:[dict(r) for r in db.execute('SELECT * FROM '+t+' WHERE '+('id' if t=='events' else 'event_id')+"='listen'")] for t in json.loads(sys.argv[4])}))`,source,JSON.stringify(i.data),path,JSON.stringify(names)],{encoding:'utf8',timeout:10000,env:{PATH:process.env.PATH,PYTHONDONTWRITEBYTECODE:'1',KANBAN_BOT_ENABLED:'0'}}));
    function normalize(input:Record<string,Record<string,unknown>[]>){input.notifications!.sort((a,b)=>String(a.user_id).localeCompare(String(b.user_id)));const ids=new Map<string,string>();for(const t of ['roster_parties','attendees'])input[t]!.forEach((r,n)=>ids.set(r.id as string,t+':'+n));const walk=(v:unknown):unknown=>typeof v==='string'?(ids.get(v)??v):Array.isArray(v)?v.map(walk):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([k])=>!['invite_token','id'].includes(k)||k==='id'&&typeof (v as {id:unknown}).id==='string').map(([k,x])=>[k,k.endsWith('_json')&&typeof x==='string'?walk(JSON.parse(x)):walk(x)])):v;return walk(input);}
+   if(c.data.action==='start'){
+    // The 2026-11-26 release explicitly preserves registration on start; compare
+    // every other original field and retained row against the immutable Python source.
+    expect(rows(s.db).events![0]).toMatchObject({lifecycle:'ongoing',registration_open:1,status:'open'});
+    expect(old.events[0]).toMatchObject({lifecycle:'ongoing',registration_open:0,status:'closed'});
+    old.events[0].registration_open=1;old.events[0].status='open';
+    const started=old.event_audit.filter((row:Record<string,unknown>)=>row.action==='event_start');expect(started).toHaveLength(1);
+    const snapshot=JSON.parse(started[0].after_json);expect(snapshot.event).toMatchObject({registration_open:0,status:'closed'});
+    started[0].after_json=JSON.stringify({...snapshot,event:{...snapshot.event,registration_open:1,status:'open'}});
+   }
    expect(normalize(rows(s.db))).toEqual(normalize(old));
   }
  }finally{rmSync(root,{recursive:true,force:true});}

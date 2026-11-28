@@ -136,7 +136,7 @@ test('requires latest vote counts before date finalization, preserves reasoned c
   await expect(page.getByText('已保存。', { exact: true })).toBeVisible();
   await page.getByRole('link', { name: '查看定案活動並報名', exact: true }).click();
   await expect(page.getByRole('heading', { name: '時間投票 date', exact: true })).toBeVisible();
-  await expect(page.locator('.status-strip')).toContainText('1 / 5 人');await expect(page.locator('.side-definitions > div').filter({hasText:'最低成團'})).toContainText('1 人');
+  await expect(page.locator('.status-strip')).toContainText('1 人已報名');await expect(page.locator('.status-strip')).toContainText('上限 5 人');await expect(page.locator('.side-definitions > div').filter({hasText:'最低成團'})).toContainText('1 人');
   await login(context, 'bob');
   await page.goto('/inbox');
   await expect(page.getByText('時間投票 date 的时间已确定，请查看安排后报名', { exact: true })).toBeVisible();
@@ -431,10 +431,13 @@ for (const width of [789, 390]) test(`poll list keeps one browse navigation and 
     const toolbar=document.querySelector('.polls-page > .list-toolbar')!.getBoundingClientRect();
     const list=document.querySelector('.time-poll-list')!.getBoundingClientRect();
     const row=document.querySelector('.time-poll-row')!.getBoundingClientRect();
-    const tabs=document.querySelector('.activity-browse-tabs .yj-tabs-list')!;
-    return {tabsOverflow:tabs.scrollWidth>tabs.clientWidth,headerHeight:header.height,left:Math.abs(header.left-list.left),width:Math.abs(header.width-list.width),row:Math.abs(row.width-list.width),gap:list.top-toolbar.bottom,overflow:document.documentElement.scrollWidth>innerWidth};
+    const tabs=document.querySelector<HTMLElement>('.activity-browse-tabs .yj-tabs-list')!;
+    const frame=tabs.getBoundingClientRect(),selected=tabs.querySelector('[aria-selected="true"]')!.getBoundingClientRect();
+    const tabTops=Array.from(tabs.querySelectorAll('[role="tab"]'),tab=>tab.getBoundingClientRect().top);
+    return {tabsOverflow:tabs.scrollWidth>tabs.clientWidth,tabsScroll:getComputedStyle(tabs).overflowX,selectedVisible:selected.left>=frame.left-1&&selected.right<=frame.right+1,tabRows:Math.max(...tabTops)-Math.min(...tabTops),headerHeight:header.height,left:Math.abs(header.left-list.left),width:Math.abs(header.width-list.width),row:Math.abs(row.width-list.width),gap:list.top-toolbar.bottom,overflow:document.documentElement.scrollWidth>innerWidth};
   });
-  expect(geometry.tabsOverflow).toBe(false);expect(geometry.headerHeight).toBeLessThanOrEqual(64);expect(geometry.left).toBeLessThanOrEqual(1);expect(geometry.width).toBeLessThanOrEqual(1);expect(geometry.row).toBeLessThanOrEqual(2);expect(geometry.gap).toBeGreaterThanOrEqual(16);expect(geometry.overflow).toBe(false);
+  // The fifth participation tab intentionally uses one horizontally scrollable row.
+  if(geometry.tabsOverflow)expect(geometry.tabsScroll).toBe('auto');expect(geometry.selectedVisible).toBe(true);expect(geometry.tabRows).toBeLessThanOrEqual(1);expect(geometry.headerHeight).toBeLessThanOrEqual(64);expect(geometry.left).toBeLessThanOrEqual(1);expect(geometry.width).toBeLessThanOrEqual(1);expect(geometry.row).toBeLessThanOrEqual(2);expect(geometry.gap).toBeGreaterThanOrEqual(16);expect(geometry.overflow).toBe(false);
   await page.screenshot({path:`artifacts/private/poll-layout-20261125/polls-${width}.png`,fullPage:true});
   await chooseOption(page,'投票範圍',{label:'往期投票'});await expect(page).toHaveURL('/time-polls?period=history');
   await expect(page.getByRole('tab',{name:'時間投票',exact:true})).toHaveAttribute('aria-selected','true');expect(writes).toBe(0);

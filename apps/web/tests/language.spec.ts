@@ -135,7 +135,8 @@ test.describe('simplified management display fragments',()=>{
     await languageHeader(context,'zh-CN');await context.addCookies([{name:'kanban_session',value:'fixture-registration-admin',url:`http://127.0.0.1:${process.env.REBUILD_TEST_PORT ?? 5082}`,httpOnly:true,sameSite:'Lax'}]);
     let writes=0;page.on('request',request=>{if(['PUT','POST','DELETE'].includes(request.method()))writes++;});await page.goto('/admin/music-entries');await page.getByRole('button',{name:'编辑 YOASOBI',exact:true}).click();
     await expect(page.getByRole('region',{name:'词条操作核对',exact:true}).getByRole('heading',{name:'编辑词条',exact:true})).toBeVisible();await expectControlValue(page.getByLabel('词条名称',{exact:true}), 'YOASOBI');
-    await selectControl(page.getByLabel('词条分类',{exact:true}), '领域');await expectControlValue(page.getByLabel('词条分类',{exact:true}), '领域');await expectAvailableOption(page.getByLabel('词条分类',{exact:true}),'领域','领域');expect(writes).toBe(0);
+    await selectControl(page.getByLabel('词条分类',{exact:true}), '乐队');await expectControlValue(page.getByLabel('词条分类',{exact:true}), '乐队');await expectAvailableOption(page.getByLabel('词条分类',{exact:true}),'乐队','乐队');await page.keyboard.press('Escape');
+    await selectControl(page.getByLabel('词条类型',{exact:true}), 'main');await expectControlValue(page.getByLabel('词条类型',{exact:true}), 'main');await expect(page.getByLabel('词条分类',{exact:true})).toHaveCount(0);expect(writes).toBe(0);
   });
 });
 
