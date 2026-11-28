@@ -1,6 +1,6 @@
 # 群聚看板
 
-統一版已於 2026-11-25 上線，遷移與保全見[切換紀錄](docs/releases/2026-11-25-unified-rebuild.md)。最新前端更新見[活動詳情、共用表單與手機 dock](docs/releases/2026-11-26-frontend-detail-controls-dock.md)。
+統一版已於 2026-11-25 上線，遷移與保全見[切換紀錄](docs/releases/2026-11-25-unified-rebuild.md)。最新前端更新見[「我的」頁面與響應式修正](docs/releases/2026-11-28-me-layout-responsive.md)。
 
 看板與成分的單一產品重構規劃及歷史驗收見 [重構文件入口](docs/unified-rebuild/README.md)，包含現有功能保留矩陣、統一操作流程、React／TSX 與 TypeScript 架構，以及資料遷移／驗收計畫。
 

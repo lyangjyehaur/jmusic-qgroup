@@ -1,6 +1,6 @@
 # 全站版面與響應式審查（2026-11-28）
 
-變更範圍：`web/frontend`。開發分支為 `codex/me-layout-20261128`；本次沒有合併、推送或正式發布。
+變更範圍：`web/frontend`。開發分支為 `codex/me-layout-20261128`。以下記錄本機審查；驗證完成後已合入並雙推 main，於 2026-11-28 09:55:05（Asia/Taipei）正式發布，見[發布紀錄](../releases/2026-11-28-me-layout-responsive.md)。
 
 ## 修正
 
