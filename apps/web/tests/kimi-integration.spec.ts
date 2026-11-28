@@ -82,8 +82,8 @@ test('search from a saved local authoring draft avoids duplicate controllers and
 });
 
 test('personal and music subpages preserve their frame, native URLs and return tabs',async({page,context})=>{
- await login(context);await page.goto('/me');await page.getByRole('tab',{name:'帳號與裝置',exact:true}).click();await expect(page).toHaveURL('/me/accounts');await expect(page.locator('.profile-banner')).toBeVisible();await expect(page.getByRole('tab',{name:'帳號與裝置',exact:true})).toHaveAttribute('aria-selected','true');
- await page.getByRole('tab',{name:'隱私與外觀',exact:true}).click();await expect(page).toHaveURL('/me/appearance');await expect(page.getByLabel('主題',{exact:true})).toBeVisible();await page.getByRole('tab',{name:'總覽',exact:true}).click();await expect(page).toHaveURL('/me');
+ await login(context);await page.goto('/me');await page.getByRole('tab',{name:'設定',exact:true}).click();await page.getByRole('navigation',{name:'我的設定',exact:true}).getByRole('link',{name:'帳號與 QQ 綁定',exact:true}).click();await expect(page).toHaveURL('/me/accounts');await expect(page.getByRole('region',{name:'我的資料',exact:true})).toHaveCount(0);await expect(page.getByRole('tab',{name:'設定',exact:true})).toHaveAttribute('aria-selected','true');
+ await page.getByRole('navigation',{name:'我的設定',exact:true}).getByRole('link',{name:'外觀',exact:true}).click();await expect(page).toHaveURL('/me/appearance');await expect(page.getByLabel('主題',{exact:true})).toBeVisible();await page.getByRole('tab',{name:'總覽',exact:true}).click();await expect(page).toHaveURL('/me');
  await page.goto('/me/music');await page.getByRole('tab',{name:'成分資料',exact:true}).click();await expect(page).toHaveURL('/me/music/details');await expect(page.getByRole('tab',{name:'成分資料',exact:true})).toHaveAttribute('aria-selected','true');await expect(page.getByRole('link',{name:'回到我的成分',exact:true})).toBeVisible();
 });
 
@@ -126,5 +126,5 @@ test('elapsed activities use historical labels and leave the personal current li
  const list=page.getByRole('region',{name:'活動列表',exact:true});await expect(list).toContainText(event.title);await expect(list).toContainText('已過預定時間');await expect(list).not.toContainText('進行中');
  await list.getByRole('link',{name:event.title,exact:true}).click();await expect(page.locator('.status-strip')).toContainText('已過預定時間');
  await page.getByRole('tab',{name:'結算',exact:true}).click();await expect(page).toHaveURL('/activities/listen/settlement');await expect(page.getByRole('tab',{name:'結算',exact:true})).toHaveAttribute('aria-selected','true');
- await page.goto('/me');await expect(page.getByText('目前沒有與你相關的活動。',{exact:true})).toBeVisible();await expect(page.locator('.me-activity-list')).toHaveCount(0);await expect(page.getByRole('link',{name:'全部活動',exact:true})).toBeVisible();
+ await page.goto('/me');await expect(page.getByText('目前沒有與你相關的近期活動。',{exact:true})).toBeVisible();await expect(page.locator('.me-activity-list')).toHaveCount(0);await expect(page.getByRole('link',{name:'全部活動',exact:true})).toBeVisible();
 });

@@ -23,7 +23,7 @@
 html.music-workspace-active .kimi-shell .main { padding-bottom: 256px; }
 .kimi-shell:has(.music-save-dock:not([hidden])) .back-to-top { bottom: calc(var(--mobile-dock-height) + var(--music-save-dock-height, 96px) + var(--visual-viewport-inset, 0px) + 36px); }
 .kimi.yj-dialog:has(.music-save-dock) { display: flex; flex-direction: column; overflow: hidden; }
-.kimi.yj-dialog:has(.music-save-dock) [class*="dialogBody"] { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: 120px; }
+.kimi.yj-dialog:has(.music-save-dock) [class*="dialogBody"] { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding-bottom: max(120px, calc(var(--music-dialog-save-height, 0px) + 24px)); }
 .kimi.yj-dialog [class*="dialogFooter"]:has(.music-save-dock) { flex: none; flex-direction: row; flex-wrap: wrap; align-items: center; margin-top: 0; }
 .kimi.yj-dialog [class*="dialogFooter"]:has(> .music-save-dock:only-child) { padding: 0; border: 0; }
 .kimi.yj-dialog .music-save-dock {

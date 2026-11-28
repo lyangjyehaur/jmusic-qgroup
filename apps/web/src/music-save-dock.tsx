@@ -13,9 +13,12 @@ export function MusicSaveDock({ selection: form }: { selection: MusicSelection }
   useLayoutEffect(()=>{
     const dialog=ref.current?.closest<HTMLElement>('[role=dialog]'),footer=ref.current?.parentElement;
     if(!dialog||!footer)return;
-    const measure=()=>dialog.style.setProperty('--music-dialog-footer-height',footer.getBoundingClientRect().height+'px');
-    const observer=new ResizeObserver(measure);observer.observe(footer);measure();
-    return()=>{observer.disconnect();dialog.style.removeProperty('--music-dialog-footer-height');};
+    const measure=()=>{
+      dialog.style.setProperty('--music-dialog-footer-height',footer.getBoundingClientRect().height+'px');
+      dialog.style.setProperty('--music-dialog-save-height',(ref.current?.getBoundingClientRect().height??0)+'px');
+    };
+    const observer=new ResizeObserver(measure);observer.observe(footer);if(ref.current)observer.observe(ref.current);measure();
+    return()=>{observer.disconnect();dialog.style.removeProperty('--music-dialog-footer-height');dialog.style.removeProperty('--music-dialog-save-height');};
   },[]);
   const visible=musicSaveDockVisible(form);
   const pending = !!form.draft.requestKey;

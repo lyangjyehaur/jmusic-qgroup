@@ -1,4 +1,4 @@
-/* Runtime mapping only: prototype.css is copied verbatim from the supplied app. */
+/* Runtime mapping from the supplied prototype to retained business components. */
 .kimi, .kimi-shell {
   font-size:14px; line-height:1.6;
   --bg: var(--app-bg); --paper: var(--app-surface); --paper-strong: var(--app-field);

@@ -67,7 +67,7 @@ for(const width of [1440,390])test(`unsaved term choices keep one reachable save
   });
   const dock=page.getByRole('region',{name:'詞條變動保存',exact:true});
   await expect(dock).toHaveCount(0);
-  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();
+  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();await closeMusicLevel(page);
   await expect(page.getByText('正在保存本機原稿…',{exact:true})).toHaveCount(0);
   await page.evaluate(()=>new Promise<void>(resolve=>requestAnimationFrame(()=>requestAnimationFrame(()=>resolve()))));
   const audit=await page.evaluate(()=>{const audit=(window as any).__selectionLayoutAudit;audit.stop=true;return audit;});
@@ -162,7 +162,7 @@ for(const width of [1440,390])test(`catalog conflicts offer recovery in place an
   await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();
   await expect(dock).toContainText('成分版本不同，尚未保存');await expect(dock).toContainText('請先讀取最新版本再保存');
   await expect(dock.getByRole('button',{name:'保存詞條變動',exact:true})).toHaveCount(0);
-  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
+  await page.getByRole('button',{name:'選取J-POP',exact:true}).click();await closeMusicLevel(page);await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
   let fail=true;await page.route('**/api/v2/me/music',async route=>{
     if(route.request().method()==='GET'&&fail){fail=false;return route.fulfill({status:503,json:{code:'UNAVAILABLE',message:'暫時無法讀取'}});}return route.continue();
   });

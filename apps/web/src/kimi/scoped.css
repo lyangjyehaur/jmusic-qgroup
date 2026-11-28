@@ -847,7 +847,8 @@
   :where(.kimi) .partner-layout, :where(.kimi).partner-layout { grid-template-columns: 1fr; }
 }
 
-@media (max-width: 760px) {
+/* Match the live shell and keyboard handling at the mobile boundary. */
+@media (max-width: 768px) {
   .kimi, .kimi-shell { --topbar-height: 56px; }
   :where(.kimi-shell) { font-size: 14px; }
   :where(.kimi-shell) .sidebar, :where(.kimi-shell).sidebar { display: none; }
