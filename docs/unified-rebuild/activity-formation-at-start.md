@@ -1,6 +1,6 @@
 # 開始時間的成團判定
 
-狀態：已完成本機實作與隔離驗證，尚未正式部署。發布範圍：`both`（web 的 frontend／API，以及正式 TypeScript bot；保留 Python bot 另作相容對照）。
+狀態：已於東八區 2026-11-28 21:31 正式部署，來源 `5bd474bc052ecc54acae35930429bfefe83c481f`。發布範圍：`both`（web 的 frontend／API 與正式 TypeScript bot；Python bot 另作相容對照）。實際版本、資料保全與回退見[發布紀錄](../releases/2026-11-28-formation-at-start.md)。
 
 ## 行為
 
@@ -27,7 +27,7 @@ schema 維持 15，沒有遷移。新增狀態使用既有、不受 enum 約束�
 
 HTTP 存取來源指紋已按實際修改核對更新：沒有放寬 session、Origin、account scope、CSRF、管理員、發起者或協辦權限。新增系統檢查只在既有隱私 guard 通過後執行。
 
-正式發布仍須先合入並雙邊同步遠端 main，通過明確 SHA 的 release-source 檢查，在乾淨目錄建置；核對發布當時的 API、正式 TypeScript bot 及前端版本組合。不能只替換前端靜態檔。舊程式回退可讀既有表結構與取消狀態，但不具備新自動判定，且可能把保存成團、之後人數下降的活動錯標未成團；回退需另驗證展示與業務相容性，不能只看 schema 版本。
+正式發布已合入並雙邊同步遠端 main，通過明確 SHA 的 release-source 檢查，在乾淨目錄建置並驗證 API、正式 TypeScript bot 與前端的實際版本組合。不能只替換前端靜態檔。舊程式回退可讀既有表結構與取消狀態，但不具備新自動判定，且可能把保存成團、之後人數下降的活動錯標未成團；回退需另驗證展示與業務相容性，不能只看 schema 版本。
 
 ## 驗證
 
