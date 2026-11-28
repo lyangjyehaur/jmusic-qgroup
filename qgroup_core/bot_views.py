@@ -14,11 +14,26 @@ def shareable(event):
 def registration_label(event):
     if event['lifecycle'] in ('ended', 'cancelled') or event['archived_at']:
         return '已结束报名'
-    if event['lifecycle'] == 'ongoing' or event['starts_at'] <= now():
-        return '已开始，补报名请联系发起者'
-    if event['deadline'] <= now():
-        return '已截止，补报名请联系发起者'
+    def moment(value):
+        parsed = datetime.fromisoformat(str(value).replace('Z', '+00:00'))
+        if parsed.tzinfo is None:
+            try:
+                zone = ZoneInfo(event['timezone']) if event['timezone'] else timezone.utc
+            except ZoneInfoNotFoundError:
+                zone = timezone.utc
+            parsed = parsed.replace(tzinfo=zone)
+        return parsed
+    try:
+        current = moment(now())
+        end = moment(event['starts_at']) + timedelta(hours=event['duration_hours'] or 0)
+        if end <= current:
+            return '已结束报名'
+        if moment(event['deadline']) <= current:
+            return '已截止，补报名请联系发起者'
+    except (ValueError, TypeError, OverflowError):
+        pass
     return '开放报名' if event['registration_open'] else '已暂停报名'
+
 
 
 def counts(db, event_id):
@@ -99,7 +114,7 @@ def public_tasks(db, event):
     if c['withdrawals']:
         tasks.append('有退出申请，请有报名管理权限的人到站内处理')
     active = event['lifecycle'] in ('scheduled', 'ongoing') and not event['archived_at']
-    if (active and event['minimum_participants'] and event['formation_state'] != 'confirmed'
+    if (active and event['minimum_participants'] and event['formation_state'] not in ('confirmed', 'formed')
             and (c['confirmed'] >= event['minimum_participants'] or event['deadline'] <= now())):
         tasks.append('请发起者决定是否成团；达到人数不代表已确认成团')
     if active and estimated_over(event):

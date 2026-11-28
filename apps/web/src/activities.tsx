@@ -17,6 +17,7 @@ import { ActivityParticipation } from './activity-participation';
 import { ActivityDetailStatus } from './activity-detail-status';
 import { useActivityDetailRefresh } from './activity-detail-refresh';
 import { participationReturn } from './participation-return';
+import { activityListStatus } from '@qgroup/contracts';
 import { ActivityNumbers } from './activity-numbers';
 import { InterfaceIcon } from './interface-icons';
 import { Badge, PageHeader, Tabs, PopupMenu } from './kimi-ui';
@@ -34,13 +35,13 @@ export function ActivityDetail({ panel, activeTab }: { panel?: ReactNode; active
   if (session.error) return <Failure error={session.error} retry={()=>void session.refetch()}/>;
   if (query.isPending) return <Notice>正在讀取活動…</Notice>;
   if (query.error) return <Failure error={query.error} retry={() => void query.refetch()} />;
-  const event = query.data;
+  const event = query.data, unformed = activityListStatus(event)==='unformed';
   const base='/activities/'+encodeURIComponent(id);
   const tab=activeTab??(location.hash==='#participants'?'members':['members','rooms','manage'].includes(search.get('view')??'')?search.get('view')!:'overview');
   const tabURL=(value:string)=>{const params=new URLSearchParams(search);params.delete('view');params.delete('task');if(value!=='overview')params.set('view',value);return base+(params.size?'?'+params:'')+(value==='members'?'#participants':'');};
   return <div className="kimi page activity-detail-page"><div className="detail-back-row"><Link className="back" to={participationBack ?? '/activities'}>{participationBack ? '← 返回參加紀錄' : '← 所有活動'}</Link><span>活動 ID · {id}</span></div>
     <PageHeader title={event.title} actions={<div className="page-actions"><ActionLink to={base+'/share'}>分享活動</ActionLink><PopupMenu className="activity-more"  title={<>更多活動操作</>}><div className="activity-menu"><Link to={'/activities/new?copyFrom='+encodeURIComponent(id)}>再約一次</Link><Link to={base+'/conditions'}>安排版本與確認</Link><Link to={base+'/history'}>活動歷史</Link>{viewer?.authenticated&&<><ActivityManagementLink key={viewer.scope} eventId={id} viewer={viewer}/><ActivityLifecycleLink key={'state:'+viewer.scope} eventId={id} viewer={viewer}/><Link to={base+'/delegation'}>管理分工</Link><Link to={base+'/bot-deliveries'}>群通知紀錄</Link></>}</div></PopupMenu></div>}/>
-    <div className="status-strip"><Badge tone={event.phase==='ongoing'&&!event.estimatedOver?'blue':'neutral'}>{event.archived?'已歸檔':event.estimatedOver?'已過預定時間':phaseLabel[event.phase]??event.phase}</Badge><Badge>{activityCategoryLabel(event.category)}</Badge><ActivityNumbers confirmed={event.confirmed} minimumParticipants={event.minimumParticipants} capacity={event.capacity} waiting={event.waiting} finished={event.estimatedOver||['ended','cancelled'].includes(event.phase)}/></div>
+    <div className="status-strip"><Badge tone={unformed?'amber':event.phase==='ongoing'&&!event.estimatedOver?'blue':'neutral'}>{unformed?(event.phase==='cancelled'?'未成團 · 已取消':'未成團'):event.archived?'已歸檔':event.estimatedOver?'已過預定時間':phaseLabel[event.phase]??event.phase}</Badge><Badge>{activityCategoryLabel(event.category)}</Badge><ActivityNumbers confirmed={event.confirmed} minimumParticipants={event.minimumParticipants} capacity={event.capacity} waiting={event.waiting} formationState={event.actualStartedAt?'formed':event.formationState} finished={event.estimatedOver||['ended','cancelled'].includes(event.phase)}/></div>
     {typeof location.state?.activityNotice==='string'&&<Notice>{location.state.activityNotice}</Notice>}
     {viewer?.authenticated&&<ActivityDetailStatus key={viewer.scope+':'+id} event={event} viewer={viewer}/>}
     <div className="activity-overview-mount detail-layout"><div className="detail-primary"><section className="event-facts" aria-label="活動安排"><div><InterfaceIcon name="clock"/><span><small>日期與時間</small><strong className="activity-time-range">{activityDisplayTimeRange(event)}</strong></span></div><div><InterfaceIcon name="location"/><span><small>集合地點</small><strong><ActivityLocation value={event.location}/></strong></span></div>{event.description&&<div><InterfaceIcon name="info"/><span><small>注意事項</small><p className="description activity-notes">{event.description}</p></span></div>}{event.feePolicy&&<div className="activity-fee-policy"><InterfaceIcon name="wallet"/><span><small>費用規則</small><p className="description activity-notes">{event.feePolicy}</p></span></div>}</section>

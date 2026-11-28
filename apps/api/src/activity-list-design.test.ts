@@ -29,7 +29,7 @@ test('distinguishes capacity, registration pause and actual lifecycle without ch
 
 test.each(['scheduled','ongoing','ended'])('classifies under-minimum historical %s activities separately without changing actual lifecycle',async lifecycle=>{
  const {app,db,headers}=await setup();
- db.prepare("UPDATE events SET lifecycle=?,starts_at='2026-11-16T12:00:00+08:00',duration_hours=3,minimum_participants=2,formation_state='confirmed' WHERE id='listen'").run(lifecycle);
+ db.prepare("UPDATE events SET lifecycle=?,starts_at='2026-11-16T12:00:00+08:00',duration_hours=3,minimum_participants=2,formation_state='pending' WHERE id='listen'").run(lifecycle);
  db.exec("INSERT INTO attendees(id,event_id,manager_id,user_id,name,payer_kind,status,created_at,updated_at) VALUES('under-self','listen','alice','alice','本人','self','confirmed','before','before')");
  const tables=['events','attendees','settlements','finance_entries','event_audit','bot_outbox'];
  const snapshot=()=>Object.fromEntries(tables.map(table=>[table,db.prepare('SELECT * FROM '+table+' ORDER BY rowid').all()])),before=snapshot();
@@ -58,6 +58,13 @@ test('does not classify active or zero-minimum activities as unformed and uses o
  expect((await app.inject('/api/v2/activities?period=history&status=ended')).json().events.map((e:{id:string})=>e.id)).toContain('listen');
  db.exec("UPDATE events SET minimum_participants=0 WHERE id='listen'; UPDATE attendees SET status='waiting' WHERE id='guest'");
  expect((await app.inject('/api/v2/activities?period=history&status=unformed')).json().events).toEqual([]);
+});
+
+test.each(["formation_state='confirmed'", "formation_state='formed'", "actual_started_at='2026-11-16T04:00:00Z'"])('retains a saved or manual formation decision after withdrawals: %s',async patch=>{
+ const {app,db}=await setup();
+ db.exec("UPDATE events SET starts_at='2026-11-16T04:00:00Z',duration_hours=3,minimum_participants=2,"+patch+" WHERE id='listen'");
+ expect((await app.inject('/api/v2/activities?period=history&status=unformed')).json().events).toEqual([]);
+ expect((await app.inject('/api/v2/activities?period=history&status=ended')).json().events.map((e:{id:string})=>e.id)).toContain('listen');
 });
 
 test.each(['scheduled','ongoing'])('moves an unsettled %s activity to history exactly at its planned end without mutating business records',async lifecycle=>{

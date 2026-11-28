@@ -199,6 +199,8 @@ def answer(db, command, argument=''):
         return text, None
     if command in ('活动', '往期'):
         phase = {'scheduled': '待开始', 'ongoing': '进行中', 'ended': '已结束', 'cancelled': '已取消'}[event['lifecycle']]
+        if event['formation_state'] == 'unformed' and event['lifecycle'] == 'cancelled':
+            phase = '未成团 · 已取消'
         lines = [head, '地点：'+event['location'], '报名截止：'+bot_outbox.local_time(event['deadline'], event['timezone']),
                  '正式 %d 人，候补 %d 人' % (c['confirmed'], c['waiting']),
                  '当前阶段：%s · %s' % (phase, bot_views.registration_label(event)), '', url]
@@ -212,7 +214,9 @@ def answer(db, command, argument=''):
             lines.append('存在整组候补，空位须按队列分配，不能保证直接报上。')
         if event['minimum_participants']:
             lines.append('最低成团 %d 人；%s' % (event['minimum_participants'],
-                         '发起者已确认成团' if event['formation_state'] == 'confirmed' else '待发起者决定是否成团'))
+                         '发起者已确认成团' if event['formation_state'] == 'confirmed' else
+                         '开始时已达门槛，已成团' if event['formation_state'] == 'formed' else
+                         '未成团，活动已取消' if event['formation_state'] == 'unformed' else '待发起者决定是否成团'))
         lines += ['', bot_outbox.event_url(event['id'], action='join')]
     elif command == '待办':
         lines = [head, '活动状态摘要（不是你的个人待办）：']
@@ -314,6 +318,8 @@ def answer_markdown(db, command, argument=''):
         c = bot_views.counts(db, event['id'])
         phase = {'scheduled': '待开始', 'ongoing': '进行中',
                  'ended': '已结束', 'cancelled': '已取消'}[event['lifecycle']]
+        if event['formation_state'] == 'unformed' and event['lifecycle'] == 'cancelled':
+            phase = '未成团 · 已取消'
         text = md.render_event(title, when, [
             ('地点', str(event['location'] or '')[:120]),
             ('报名截止', bot_outbox.local_time(event['deadline'], event['timezone'])),

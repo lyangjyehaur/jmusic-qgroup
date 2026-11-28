@@ -71,7 +71,7 @@ export function removalBlocker(db:DB,event:EventRow):string {
   return '';
 }
 export function requireEventRevision(event:EventRow,revision:number){if(event.revision!==revision)throw withApiError(new DomainError('ACTIVITY_CHANGED','活動或名單已有更新；輸入仍保留，請核對目前安排後再保存',409));}
-export function appendEventAudit(db:DB,event:EventRow,user:{id:string;nickname:string},action:string,before:unknown,after:unknown,reason:string,stamp:string,serialize:(value:unknown)=>string|undefined=JSON.stringify){
+export function appendEventAudit(db:DB,event:EventRow,user:{id:string|null;nickname:string},action:string,before:unknown,after:unknown,reason:string,stamp:string,serialize:(value:unknown)=>string|undefined=JSON.stringify){
   const beforeJSON=serialize(before),afterJSON=serialize(after);
   if(beforeJSON===afterJSON)return false;
   db.prepare('UPDATE events SET revision=revision+1 WHERE id=?').run(event.id);

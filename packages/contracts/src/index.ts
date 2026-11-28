@@ -121,13 +121,17 @@ export const Activity = z.object({
   startsAt: z.string(), deadline: z.string(), durationHours: z.number().nullable(), timezone: z.string().nullable(),
   description: z.string(), capacity: z.number().int(), minimumParticipants: z.number().int(),
   lifecycle: z.string(), phase: z.string(), registrationOpen: z.boolean(), estimatedOver: z.boolean(),
+  formationState: z.string().optional(),
+  actualStartedAt: z.string().nullable().optional(),
+  cancellationReason: z.string().optional(),
   archived: z.boolean(), confirmed: z.number().int(), waiting: z.number().int(), tentative: z.number().int(),
   feePolicy:z.string(),withdrawalDeadline:z.string().nullable(),conditionsVersion:z.number().int(),changeSummary:z.string(),visibility:z.string(),
 });
 export type ActivityView = z.infer<typeof Activity>;
 /** Browse classification; leaves actual lifecycle and registration state unchanged. */
-export function activityListStatus(event: Pick<ActivityView, 'phase' | 'estimatedOver' | 'archived' | 'minimumParticipants' | 'confirmed' | 'registrationOpen' | 'capacity'>) {
-  if (['scheduled','ongoing','ended'].includes(event.phase) && (event.phase === 'ended' || event.estimatedOver) && event.confirmed < event.minimumParticipants) return 'unformed';
+export function activityListStatus(event: Pick<ActivityView, 'phase' | 'estimatedOver' | 'archived' | 'minimumParticipants' | 'confirmed' | 'registrationOpen' | 'capacity' | 'formationState' | 'actualStartedAt'>) {
+  if (event.phase === 'cancelled' && event.formationState === 'unformed') return 'unformed';
+  if (!event.actualStartedAt && !['confirmed','formed'].includes(event.formationState ?? '') && ['scheduled','ongoing','ended'].includes(event.phase) && (event.phase === 'ended' || event.estimatedOver) && event.confirmed < event.minimumParticipants) return 'unformed';
   if (event.archived) return 'archived';
   if (event.estimatedOver) return 'ended';
   if (['draft','ongoing','ended','cancelled'].includes(event.phase)) return event.phase;

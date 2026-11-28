@@ -71,7 +71,7 @@ export function botPublicTasks(db: DB, event: EventRow, now: Date): string[] {
   if (c.pending || c.declined) tasks.push(c.pending + ' 人待确认新安排，' + c.declined + ' 人暂不同意，请逐人协调');
   if (c.withdrawals) tasks.push('有退出申请，请有报名管理权限的人到站内处理');
   const active = ['scheduled', 'ongoing'].includes(event.lifecycle) && !event.archived_at;
-  if (active && event.minimum_participants && event.formation_state !== 'confirmed' && (c.confirmed >= event.minimum_participants || botMoment(event.deadline, event.timezone) <= now.getTime())) tasks.push('请发起者决定是否成团；达到人数不代表已确认成团');
+  if (active && event.minimum_participants && !['confirmed','formed'].includes(event.formation_state) && (c.confirmed >= event.minimum_participants || botMoment(event.deadline, event.timezone) <= now.getTime())) tasks.push('请发起者决定是否成团；达到人数不代表已确认成团');
   if (active && botEstimatedOver(event, now)) tasks.push('已超过预计结束时间，请确认结束或延长');
   const bill = db.prepare('SELECT 1 FROM settlements WHERE event_id=?').get(event.id);
   if (['ended', 'cancelled'].includes(event.lifecycle) && !bill && !event.archived_at) tasks.push('请发起者核对出席、原约定并发布结算');

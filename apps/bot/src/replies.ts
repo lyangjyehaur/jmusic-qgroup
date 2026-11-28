@@ -62,7 +62,7 @@ export function answerPublicBotCommand(db:DB, command:PublicBotCommand|null, arg
     }
     let lines:string[];
     if(command==='活动'||command==='往期'){
-      const phase=phases[event.lifecycle]!+' · '+botRegistrationLabel(event,now);
+      const phase=(event.formation_state==='unformed'&&event.lifecycle==='cancelled'?'未成团 · 已取消':phases[event.lifecycle]!)+' · '+botRegistrationLabel(event,now);
       lines=[head,'地点：'+event.location,'报名截止：'+botLocalTime(event.deadline,event.timezone),'正式 '+c.confirmed+' 人，候补 '+c.waiting+' 人','当前阶段：'+phase,'',url(event)];
       let text=lines.join('\n'),markdown=renderBotEvent(title,when,[['地点',cut(event.location||'',120)],['报名截止',botLocalTime(event.deadline,event.timezone)],['人数','正式 '+c.confirmed+' 人，候补 '+c.waiting+' 人'],['当前阶段',phase]],url(event),countdown);
       if(command==='活动'){const roster=botRosterLines(db,event);text=withBotRoster(text,roster);markdown=withBotRoster(markdown,roster,true);}
@@ -71,7 +71,7 @@ export function answerPublicBotCommand(db:DB, command:PublicBotCommand|null, arg
     if(command==='名额'){
       lines=[head,botRegistrationLabel(event,now),'正式 '+c.confirmed+' 人 / 上限 '+(event.capacity||'不限'),'候补 '+c.waiting+' 人，待确认参加 '+c.tentative+' 人（不占名额）'];
       if(db.prepare("SELECT 1 FROM attendees a JOIN roster_parties p ON p.id=a.party_id WHERE a.event_id=? AND a.status='waiting' AND p.queue_mode='together' LIMIT 1").get(event.id))lines.push('存在整组候补，空位须按队列分配，不能保证直接报上。');
-      if(event.minimum_participants)lines.push('最低成团 '+event.minimum_participants+' 人；'+(event.formation_state==='confirmed'?'发起者已确认成团':'待发起者决定是否成团'));
+      if(event.minimum_participants)lines.push('最低成团 '+event.minimum_participants+' 人；'+(event.formation_state==='confirmed'?'发起者已确认成团':event.formation_state==='formed'?'开始时已达门槛，已成团':event.formation_state==='unformed'?'未成团，活动已取消':'待发起者决定是否成团'));
       lines.push('',url(event,'join'));return generic(withBotRoster(lines.join('\n'),botRosterLines(db,event)));
     }
     if(command==='待办'){

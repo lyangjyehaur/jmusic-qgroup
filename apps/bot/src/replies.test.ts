@@ -55,6 +55,14 @@ function bill(db:DB,closed=false,version=1){
 }
 const commands=[...new Set(Object.values(BOT_ALIASES))].filter((c):c is PublicBotCommand=>c!=='缩写');
 describe('native public bot commands',()=>{
+  it.each(['formed','unformed'])('matches saved %s decisions with the retained Python bot', state=>{
+    const s=setup();roster(s.db);
+    s.db.prepare('UPDATE events SET formation_state=?,lifecycle=? WHERE id=?').run(state,state==='formed'?'ongoing':'cancelled',ids.listen);
+    const expected=python(s.path,"print(json.dumps([dict(text=replies.answer(db,c,event_id)[0],markdown=replies.answer_markdown(db,c,event_id)) for c,event_id in values]))",[['名额',ids.listen],['待办',ids.listen],['往期',ids.listen],['活动',ids.listen]]);
+    expect(['名额','待办','往期','活动'].map(c=>{const result=s.answer(c as PublicBotCommand,ids.listen);return {text:result.text,markdown:result.markdown};})).toEqual(expected);
+    if(state==='formed')expect(s.answer('名额',ids.listen).text).toContain('已成团');
+    else expect(s.answer('往期',ids.listen).text).toContain('未成团 · 已取消');
+  });
   it('matches every legacy alias, panel label, mention and Unicode parsing variant',()=>{
     const s=setup(),values=[...Object.keys(BOT_ALIASES).flatMap(alias=>[alias,'<@!BOT_12> ／'+alias+'  abcdef12','＠@  /'+alias.toUpperCase()+'\u0085 2']),null,'','  ','<@BOT>','<@!BOT>','随便聊天','/unknown arg','///活动 2','／ / 活动','/ 帮助','\ufeff/help','/help\ufeff x','\u001c/名额\u001f 2','/活动\n 2','@\u200b','/活动\u2028二'];
     const expected=python(s.path,"print(json.dumps(dict(commands=replies.COMMANDS,parsed=[replies.parse(v) for v in values])))",values);

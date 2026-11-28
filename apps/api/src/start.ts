@@ -23,7 +23,7 @@ let retained:Awaited<ReturnType<typeof createRetainedErasureJournal>>|undefined;
 let app:ReturnType<typeof createApp>;
 try {
 retained=authorityConfig?await createRetainedErasureJournal(db,authorityConfig):undefined;
-app = createApp({ db, origin,runtimeInfo:version, legacyHistory, erasureJournal:retained, qq: qqProvider(origin), logger: true, musicTrendSampling: true, adminCredentialHash: () => process.env.REBUILD_ADMIN_KEY_HASH ?? '', botEnabledDefault: process.env.REBUILD_BOT_ENABLED === '1',
+app = createApp({ db, origin,runtimeInfo:version, legacyHistory, erasureJournal:retained, qq: qqProvider(origin), logger: true, musicTrendSampling: true, activityFormationScheduling: true, adminCredentialHash: () => process.env.REBUILD_ADMIN_KEY_HASH ?? '', botEnabledDefault: process.env.REBUILD_BOT_ENABLED === '1',
   activityBot:{enabled:process.env.REBUILD_BOT_ENABLED==='1',scheduleEnabled:process.env.REBUILD_BOT_SCHEDULE!=='0',keyboard:process.env.REBUILD_BOT_KEYBOARD==='1',personalQueue:process.env.REBUILD_BOT_PERSONAL_QUEUE==='1',baseURL:process.env.REBUILD_BOT_BASE_URL??origin,...(process.env.REBUILD_BOT_BROADCAST_KINDS?.trim()?{broadcastKinds:process.env.REBUILD_BOT_BROADCAST_KINDS.split(',').map(kind=>kind.trim()).filter(Boolean)}:{})},
   ...(frontendRoot?{frontendRoot}:existsSync(staticRoot)?{staticRoot}:{}) });
 } catch(error) {db.close();await retained?.close();throw error;}

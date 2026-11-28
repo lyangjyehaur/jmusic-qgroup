@@ -43,9 +43,9 @@ test('keeps invitations out of public totals and member drilldowns, and requires
   s.db.exec("DELETE FROM attendees WHERE user_id='alice'"); expect((await s.mine()).count).toBe(0);
   expect((await s.app.inject('/api/v2/activities/participation/members/alice')).statusCode).toBe(404);
 });
-test('excludes under-minimum events from all totals and records even after ending, archiving or formation confirmation', async () => {
+test('excludes under-minimum events from all totals and records even after ending or archiving when no formation decision was saved', async () => {
   const s = await setup(), memberId = hash('qgroup-participation-member:alice');
-  s.db.exec("UPDATE events SET minimum_participants=4,formation_state='confirmed',archived_at='before' WHERE id='stats-dinner'");
+  s.db.exec("UPDATE events SET minimum_participants=4,formation_state='pending',archived_at='before' WHERE id='stats-dinner'");
   const before = state(s.db);
   expect(await s.overview()).toMatchObject({ activityCount: 2, participationCount: 7, memberCount: 4 });
   const detail = ParticipationRecords.parse((await s.app.inject('/api/v2/activities/participation/members/' + memberId)).json());
@@ -70,6 +70,15 @@ test('formation counts confirmed guests but excludes waiting, tentative and with
   expect((await s.overview()).activityCount).toBe(3);
   s.db.exec("UPDATE events SET minimum_participants=0 WHERE id='stats-walk'; UPDATE attendees SET status='waiting' WHERE id='stats-guest'");
   expect((await s.overview()).activityCount).toBe(3);
+});
+
+test.each(["formation_state='confirmed'", "formation_state='formed'", "actual_started_at='2026-11-10T10:00:00Z'"])('retains actual participation after a saved or manual formation decision: %s', async patch => {
+  const s = await setup();
+  s.db.exec("UPDATE events SET minimum_participants=4," + patch + " WHERE id='stats-dinner'; UPDATE attendees SET status='withdrawn' WHERE id='stats-dinner-bob'");
+  expect(await s.overview()).toMatchObject({ activityCount: 3, participationCount: 9 });
+  expect((await s.mine()).count).toBe(3);
+  s.db.exec("UPDATE events SET lifecycle='cancelled',formation_state='unformed' WHERE id='stats-dinner'");
+  expect((await s.overview()).activityCount).toBe(2);
 });
 test('filters by activity start in Taipei time and includes projected endings only at the exact boundary', async () => {
   const s = await setup();

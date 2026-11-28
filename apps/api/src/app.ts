@@ -90,8 +90,9 @@ import type { QQProvider } from './qq-provider';
 import { redactRequestURL } from './request-log';
 import { registerPublicAPI } from './public-api';
 import {registerFrontendRelease} from './frontend-release';
+import { finalizeDueActivityFormations } from './activity-formation';
 export { hash, accountScope } from './security';
-export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; frontendRoot?: string; logger?: boolean; qq?: QQProvider; qqProfileClientId?: string; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
+export interface AppOptions { db: DB; origin: string; now?: () => Date; csrfSecret?: string; staticRoot?: string; frontendRoot?: string; logger?: boolean; qq?: QQProvider; qqProfileClientId?: string; botEnabledDefault?: boolean; activityBot?: ActivityBotDefaults; erasureJournal?: ErasureJournal; adminCredentialHash?: () => string; publicAPIKeys?: () => string; musicTrendSampling?: boolean; activityFormationScheduling?: boolean; pairedBackupScheduling?: boolean; legacyHistory?: import('zod').infer<typeof LegacyHistoryConfig>; runtimeInfo?:ReturnType<typeof runtimeInfo> }
 export function createApp(options: AppOptions) {
   const { db } = options;
   assertDatabaseUsable(db);
@@ -121,6 +122,21 @@ export function createApp(options: AppOptions) {
     if(options.staticRoot&&typeof config?.rootPath==='string'&&resolve(config.rootPath)===resolve(options.staticRoot)&&typeof config.file==='string'&&methods.every(method=>method==='GET'||method==='HEAD'))config.rateLimit=false;
   });
   app.register(rateLimit, { max: 180, timeWindow: '1 minute',keyGenerator:clientAddress });
+  const finalizeFormations = () => {
+    privacy.guard();
+    finalizeDueActivityFormations(db,now(),options.activityBot,id=>app.log.error({eventId:id},'Automatic cancellation bot hook failed; business write preserved'));
+  };
+  if (options.activityFormationScheduling) {
+    let timer: ReturnType<typeof setInterval> | undefined;
+    app.addHook('onReady',async()=>{
+      finalizeFormations();
+      timer=setInterval(()=>{try{finalizeFormations();}catch(error){app.log.error(error,'Activity formation check failed');}},15000);
+      timer.unref();
+    });
+    app.addHook('onClose',async()=>{clearInterval(timer);});
+    // Also check at request arrival, including partner APIs and every registration entrance.
+    app.addHook('preHandler',async request=>{if(request.url.startsWith('/api/')||/^\/music\/api(?:[/?]|$)/.test(request.url))finalizeFormations();});
+  }
   // Independent of browser sessions, write recovery hooks and browser errors.
   registerPublicAPI(app, db, now, options.publicAPIKeys ?? (() => process.env.KANBAN_PUBLIC_API_KEYS ?? ''), privacy.assertReadable);
   if (backups && options.pairedBackupScheduling !== false) {

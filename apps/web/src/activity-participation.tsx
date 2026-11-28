@@ -25,9 +25,11 @@ export function ActivityParticipation({ event, viewer }: { event: ActivityView; 
   const waitingPosition=roster.data?.participants.find(person=>person.isMe)?.waitingPosition;
   const companions = data?.people.filter(person => person.managedByMe && !person.isMe) ?? [];
   const closed = ['draft', 'ended', 'cancelled'].includes(event.phase) || event.archived;
-  return <section className="next-step-panel" aria-label="我的報名"><div className="next-step-copy"><h2>{own?(own.status==='waiting'&&waitingPosition?'候補第 '+waitingPosition+' 位':statusLabels[own.status]??own.status):'我的報名'}</h2>
-    {!viewer.authenticated&&closed&&<Text>{event.phase==='draft'?'草稿尚未開放報名。':'活動已結束或關閉報名。'}</Text>}
-    {viewer.authenticated&&(query.isPending?<Notice>正在讀取本人與同行報名…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>{own?.withdrawalRequested&&<p>退出申請已提交，等待名單管理者處理。</p>}{!data?.selfRegistered&&data?.signupBlocker&&<p>{data.signupBlocker}</p>}{!data?.selfRegistered&&!data?.signupBlocker&&closed&&<p>活動已結束或關閉報名。</p>}</>)}
+  const autoCancelled = event.phase==='cancelled'&&event.formationState==='unformed';
+  return <section className="next-step-panel" aria-label="我的報名"><div className="next-step-copy"><h2>{autoCancelled?'活動已取消':own?(own.status==='waiting'&&waitingPosition?'候補第 '+waitingPosition+' 位':statusLabels[own.status]??own.status):'我的報名'}</h2>
+    {autoCancelled&&<p>{event.cancellationReason||'開始時未達成團人數，活動已取消。'}</p>}
+    {!autoCancelled&&!viewer.authenticated&&closed&&<Text>{event.phase==='draft'?'草稿尚未開放報名。':'活動已結束或關閉報名。'}</Text>}
+    {viewer.authenticated&&(query.isPending?<Notice>正在讀取本人與同行報名…</Notice>:query.error?<Failure error={query.error} retry={()=>void query.refetch()}/>:<>{own?.withdrawalRequested&&<p>退出申請已提交，等待名單管理者處理。</p>}{!autoCancelled&&!data?.selfRegistered&&data?.signupBlocker&&<p>{data.signupBlocker}</p>}{!data?.selfRegistered&&!data?.signupBlocker&&closed&&<p>活動已結束或關閉報名。</p>}</>)}
     </div><div className="next-step-actions">
       {!viewer.authenticated&&!closed&&<ActionLink variant="primary" to={loginLink(base)}>登入報名</ActionLink>}
       {viewer.authenticated&&data&&<>

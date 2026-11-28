@@ -23,7 +23,7 @@ function collection(db: DB, now: Date, viewerId?: string) {
   // Ownership, management, matching names and payment responsibility never imply attendance.
   const rows = db.prepare(`SELECT e.* FROM events e WHERE e.status!='deleted'
     AND e.lifecycle IN ('scheduled','ongoing','ended')
-    AND (SELECT count(*) FROM attendees a WHERE a.event_id=e.id AND a.status='confirmed')>=e.minimum_participants
+    AND (e.actual_started_at IS NOT NULL OR e.formation_state IN ('confirmed','formed') OR (SELECT count(*) FROM attendees a WHERE a.event_id=e.id AND a.status='confirmed')>=e.minimum_participants)
     AND ${viewerId ? `(e.visibility='public' OR e.owner_id=? OR EXISTS(SELECT 1 FROM event_access x WHERE x.event_id=e.id AND x.user_id=?))
     AND EXISTS(SELECT 1 FROM attendees a WHERE a.event_id=e.id AND a.status='confirmed' AND a.user_id=?)` : "e.visibility='public'"}`).all(...(viewerId ? [viewerId, viewerId, viewerId] : [])) as Event[];
   const events = rows.filter(e => { const state = activityState(e, now); return periodDate(e.starts_at) !== null && Date.parse(e.starts_at) <= now.getTime() && (state.phase === 'ended' || state.estimatedOver); })

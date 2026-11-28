@@ -38,7 +38,7 @@ function blocker(db:DB,event:EventRow,action:Action,now:Date){
   if(action==='resume'&&(botMoment(event.deadline,event.timezone)<=now.getTime()||end<=now.getTime()))return '報名截止或活動結束時間已過，請先調整安排或使用邀請補報名';
   return '';
 }
-function needsReason(db:DB,event:EventRow,action:Action){return action==='cancel'||(action==='formation'&&event.formation_state!=='confirmed'&&(db.prepare("SELECT count(*) AS n FROM attendees WHERE event_id=? AND status='confirmed'").get(event.id) as {n:number}).n<event.minimum_participants);}
+function needsReason(db:DB,event:EventRow,action:Action){return action==='cancel'||(action==='formation'&&!['confirmed','formed'].includes(event.formation_state)&&(db.prepare("SELECT count(*) AS n FROM attendees WHERE event_id=? AND status='confirmed'").get(event.id) as {n:number}).n<event.minimum_participants);}
 export function activityLifecycle(db:DB,id:string,userId:string,now:Date){
   const event=authorize(db,id,userId),scopes=eventScopes(db,event,userId);
   return {id,title:event.title,revision:event.revision,lifecycle:event.lifecycle,registrationOpen:!!event.registration_open,formationState:event.formation_state,actualStartedAt:event.actual_started_at,actualEndedAt:event.actual_ended_at,archivedAt:event.archived_at,cancellationReason:event.cancellation_reason,removed:event.status==='deleted',actions:actions.filter(action=>scopes.has(ownerActions.has(action)?'owner':'schedule')).map(action=>({action,blockedReason:blocker(db,event,action,now),requiresReason:needsReason(db,event,action)}))};
