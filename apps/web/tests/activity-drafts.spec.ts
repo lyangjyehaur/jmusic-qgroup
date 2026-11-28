@@ -18,6 +18,8 @@ test('activity authoring returns to one private draft, keeps all settings and re
   await page.getByRole('button',{name:'建立活動草稿',exact:true}).click();await expect(page).toHaveURL(/\/activities\/[a-f0-9]{16}\/edit$/);await expectControlValue(title(page), '週末草稿');await expectControlValue(page.getByLabel('活動時區',{exact:true}), 'Asia/Tokyo');await expectControlValue(page.getByLabel('開始時間',{exact:true}), '14:30:25');
   await page.setViewportSize({width:360,height:800});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);await page.screenshot({path:'test-results/unified-activity-draft-mobile.png',fullPage:true});
   await advancedActivity(page);await chooseOption(page,'可見性','invitation');await expect(page.getByLabel('發布後同步到 QQ 群',{exact:true})).not.toBeChecked();await expect(page.getByLabel('發布後同步到 QQ 群',{exact:true})).toBeDisabled();await save(page);await expect(page.getByText('活動草稿已保存。',{exact:true})).toBeVisible();
+  const feedback=page.locator('main > .draft-feedback-stack');await expect(feedback.getByRole('button',{name:'關閉草稿提示',exact:true})).toBeVisible();
+  expect(await feedback.evaluate(element=>getComputedStyle(element).position)).toBe('static');
   await page.getByRole('link',{name:'活動草稿',exact:true}).click();await expect(page.getByRole('heading',{name:'週末草稿',exact:true})).toBeVisible();await page.getByRole('link',{name:'週末草稿',exact:true}).click();await expectControlValue(page.getByLabel('注意事項',{exact:true}), '需要自備的物品');await expectControlValue(page.getByLabel('費用規則',{exact:true}), '按實際人數分攤');
 });
 test('unknown creation retains its exact key and payload across reload and creates one event',async({page,context})=>{

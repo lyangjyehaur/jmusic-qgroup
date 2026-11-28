@@ -6,7 +6,7 @@ import { Button, IconButton } from './kimi-ui';
 import { X } from 'lucide-react';
 import { DraftLeaveConfirmation, type DraftNavigation } from './draft-navigation';
 
-// One fixed stack per page or dialog keeps messages from independent forms from overlapping.
+// Share one stack per page or dialog, reserving space instead of covering controls.
 const feedbackHosts = new WeakMap<Element, { node: HTMLDivElement; users: number }>();
 
 type DraftForm = DraftNavigation & {
@@ -26,17 +26,21 @@ export function DraftFeedback({ form, navigation = true, showProgress = false, p
   useEffect(() => { setDismissed(''); }, [form.message]);
   useLayoutEffect(() => {
     if (placement === 'inline') return;
-    const host = anchor.current?.closest('[role="dialog"], dialog') ?? document.body;
+    const dialog = anchor.current?.closest('[role="dialog"], dialog');
+    const host = dialog?.querySelector('[class*="dialogBody"]') ?? dialog ?? anchor.current?.closest('main') ?? document.body;
     let entry = feedbackHosts.get(host);
     if (!entry) {
-      const node = document.createElement('div'); node.className = 'kimi draft-feedback-float';
-      host.appendChild(node); entry = { node, users: 0 }; feedbackHosts.set(host, entry);
+      const node = document.createElement('div'); node.className = 'kimi draft-feedback-stack';
+      host.prepend(node); entry = { node, users: 0 }; feedbackHosts.set(host, entry);
     }
     entry.users++; setContainer(entry.node);
     return () => { if (--entry.users === 0) { entry.node.remove(); feedbackHosts.delete(host); } };
   }, [placement]);
   const message = form.message && form.message !== dismissed ? form.message : '';
   const attention = form.needsRestore || form.readError || form.storageError || message;
+  useEffect(() => {
+    if (placement === 'floating' && attention) container?.scrollIntoView({ block: 'nearest' });
+  }, [placement, container, attention]);
   const feedback = <div className={placement === 'floating' ? 'draft-feedback-item' : 'draft-feedback-inline'}>
     {attention && <section className="draft-feedback-notice" aria-label="草稿狀態">
       {form.needsRestore && <><p role="status">{restoreHint}</p><div className="draft-feedback-actions">

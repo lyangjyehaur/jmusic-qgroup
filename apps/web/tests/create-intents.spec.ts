@@ -51,7 +51,11 @@ test('read-only intent lookups retain incomplete input and ignore a response arr
 test('preserving an unreadable poll draft uses the same fresh intent in storage and the visible replacement',async({page,context})=>{
   await login(context);await page.goto('/time-polls/new');await fill(page,'poll');await damageDraft(page,'poll-create:','unreadable preserved poll');page.on('dialog',dialog=>void dialog.accept());await page.reload();await page.getByRole('button',{name:'保全原稿後繼續',exact:true}).click();await expect(page.getByLabel('投票名稱',{exact:true})).toBeEnabled();
   const original=(await durableRows(page,'versions')).map(row=>row.raw);expect(original).toContain('unreadable preserved poll');const stored=JSON.parse((await durableRows(page)).find(row=>row.key===key('poll'))!.raw).value.client_intent;
+  await page.reload();await expect(page.getByLabel('投票名稱',{exact:true})).toBeEnabled();
+  expect(JSON.parse((await durableRows(page)).find(row=>row.key===key('poll'))!.raw).value.client_intent).toBe(stored);
   let checked:unknown;page.on('request',r=>{if(r.url().endsWith('/me/create-intents/view'))checked=r.postDataJSON();});await page.getByRole('button',{name:'核對原投票建立識別',exact:true}).click();await expect(page.getByText(/不能據此認定未建立/)).toBeVisible();expect(checked).toEqual({kind:'poll',intent:stored});
+  let creates=0;await page.route('**/api/v2/time-polls',async route=>{if(route.request().method()==='POST'){creates++;expect(route.request().postDataJSON().client_intent).toBe(stored);}await route.continue();});
+  await fill(page,'poll');await page.getByRole('button',{name:button('poll'),exact:true}).click();await expect(page).toHaveURL(/\/time-polls\/[a-f0-9]{16}$/);expect(creates).toBe(1);
 });
 test('a delayed lookup cannot cross a local logout epoch even when the same account is still visible without tab signaling',async({page,context})=>{
   await page.addInitScript(()=>Object.defineProperty(globalThis,'BroadcastChannel',{value:undefined,configurable:true}));await login(context);await page.goto('/activities/new');await page.getByLabel('活動名稱',{exact:true}).fill('世代清除前原稿');

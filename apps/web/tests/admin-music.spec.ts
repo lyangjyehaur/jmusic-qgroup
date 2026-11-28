@@ -51,3 +51,19 @@ test('a former owner retains an unsaved choice but cannot edit music transferred
     const viewer = await (await context.request.get('/api/v2/session')).json(); const current = await (await context.request.get('/api/v2/admin/music/' + page.url().split('/').pop(), { headers: { 'X-Account-Scope': viewer.scope } })).json(); expect(current.selections.map((selection: { entryId: string }) => selection.entryId)).toEqual(['sub-2']);
   } finally { await otherContext.close(); }
 });
+
+test('same-name owners remain distinguishable in previews, saved ownership and the directory', async ({page,context,browser})=>{
+  for(const id of ['alice','bob']){
+    const member=await browser.newContext({baseURL:origin});try{
+      await login(member,id);const viewer=await(await member.request.get('/api/v2/session')).json();
+      const headers={'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf,Origin:origin,'Idempotency-Key':crypto.randomUUID()};
+      const profile=await(await member.request.get('/api/v2/me/profile',{headers})).json();
+      expect((await member.request.put('/api/v2/me/profile',{headers,data:{nickname:'同名測試',revision:profile.revision}})).status()).toBe(200);
+    }finally{await member.close();}
+  }
+  await login(context);await openProfile(page);await preview(page,'alice');await save(page);await done(page);
+  await preview(page,'bob');await expect(page.getByText('原帳號：同名測試（alice）',{exact:true})).toBeVisible();await expect(page.getByText('目標帳號：同名測試（bob）',{exact:true})).toBeVisible();
+  await page.setViewportSize({width:360,height:800});expect(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth)).toBe(true);
+  await save(page);await done(page);await expect(page.getByText('目前關聯：同名測試（bob）',{exact:true})).toBeVisible();
+  await page.getByRole('link',{name:'回到成分關聯',exact:true}).click();await expect(page.getByText('預先關聯 · 同名測試（bob）',{exact:true})).toBeVisible();
+});

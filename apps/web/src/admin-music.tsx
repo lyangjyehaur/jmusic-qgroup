@@ -19,7 +19,7 @@ function useAdminFailure(error: unknown, viewer: Viewer) {
   const client=useQueryClient();useEffect(()=>{if(error instanceof ApiError&&[401,403].includes(error.status))void client.invalidateQueries({queryKey:['private',viewer.scope,'admin-session']});},[error,client,viewer.scope]);
 }
 const statusLabels = { oauth: uiText("QQ 授權關聯"), prelinked: uiText("預先關聯"), unlinked: uiText("未關聯"), account: uiText("帳號成分") };
-const ownerLabel = (owner: Profile['owner']) => owner ? owner.nickname : uiText('未關聯');
+const ownerLabel = (owner: Profile['owner']) => owner ? owner.nickname+'（'+owner.id+'）' : uiText('未關聯');
 export function AdminMusicDirectory() {
   return <><PageIntro title="成分關聯" /><Link className="back" to="/admin">管理後台</Link><AdminGate>{(viewer, access) => <Directory key={access.scope} viewer={viewer} access={access} />}</AdminGate></>;
 }

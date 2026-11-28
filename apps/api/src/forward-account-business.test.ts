@@ -87,7 +87,9 @@ it('rejects closed override revision exhaustion without producing a partial epoc
 });
 it.each(['prepare','business','rebase'] as const)('rejects late original authority changes during %s',stage=>{
   const c=cases[0]!,input=inputCopy(c),root=join(c.s.fixtureRoot,'authority-'+stage);cpSync(input.authorityRoot,root,{recursive:true});for(const path of [root,join(root,'baseline'),join(root,'records')])chmodSync(path,0o700);input.authorityRoot=root;
-  const parent=stage==='rebase'?reconstructForwardAccountBusiness(input):c.business;let calls=0;
+  // beforeAll already reconstructs and verifies this exact parent. The copied
+  // authority root contains the same pinned bytes; only the boundary mutates it.
+  const parent=c.business;let calls=0;
   const boundary=()=>{if(++calls===2){const path=join(root,'authority-head.json');writeFileSync(path,Buffer.concat([readFileSync(path),Buffer.from(' ')]),{mode:0o600});}};
   expect(()=>stage==='prepare'?prepareForwardAccountEpoch(input,boundary):stage==='business'?reconstructForwardAccountBusiness(input,boundary):rebaseForwardAccountBusiness(input,parent,accountRebasedAt,boundary)).toThrow();expect(calls).toBe(2);
 });

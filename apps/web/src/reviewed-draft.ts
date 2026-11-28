@@ -56,7 +56,11 @@ export function useReviewedDraft<T, S, F>(options: {
       const saved: Draft = raw === null ? { value: baseline.current, dirty: false } : parse(raw);
       baseline.current = saved.baseline ?? (!saved.dirty && !saved.pending ? saved.value : options.blank(currentData.current));
       let next = { ...saved, baseline: baseline.current, dirty: !sameValue(saved.value, baseline.current) };
-      if(raw!==null&&!next.dirty&&!next.pending){baseline.current=options.blank(currentData.current);next={value:baseline.current,baseline:baseline.current,dirty:false};}
+      if(raw!==null&&!next.dirty&&!next.pending){
+        const fresh=options.blank(currentData.current);
+        // Refresh changed server values; keep an already-current saved form's identity.
+        if(!sameValue(next.value,fresh)){baseline.current=fresh;next={value:fresh,baseline:fresh,dirty:false};}
+      }
       setDraft(next); setNeedsRestore(next.dirty && !next.pending); setReadError(''); setConflict(false);
       setEpoch(n => n + 1);
     } catch { setReadError(uiText("無法讀取原稿，請先保全原稿再繼續。")); }

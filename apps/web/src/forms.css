@@ -63,9 +63,9 @@
 .kimi.music-level-dialog { width:min(420px,calc(100vw - 32px)); border-radius:var(--yahha-radius-dialog,16px); }
 .kimi.music-level-dialog > [class*="dialogDescription"] { margin:0; padding:12px 20px 0; font-size:13px; }
 .kimi .draft-leave-actions { display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; }
-.draft-feedback-float.kimi { position:fixed; z-index:105; top:calc(var(--topbar-height,64px) + 12px); right:20px; width:min(440px,calc(100vw - 32px)); display:grid; gap:6px; max-height:40dvh; overflow:auto; pointer-events:none; }
-.kimi.yj-dialog > .draft-feedback-float { position:absolute; top:calc(68px + var(--safe-area-top,0px)); right:16px; }
-.draft-feedback-float :is(button,a,.disclosure-trigger) { pointer-events:auto; }
+.draft-feedback-stack.kimi { width:min(440px,calc(100% - 32px)); margin:16px 16px 16px auto; display:grid; gap:6px; scroll-margin-top:calc(var(--topbar-height,64px) + 12px); }
+.draft-feedback-stack:empty { display:none; }
+.kimi.yj-dialog [class*="dialogBody"] > .draft-feedback-stack { width:100%; margin:0 0 16px; }
 .kimi .draft-feedback-item { display:grid; gap:6px; }
 .kimi .draft-feedback-notice { padding:12px 16px; background:var(--paper); color:var(--ink); border:1px solid var(--yahha-contour,var(--line)); border-radius:var(--yahha-radius-note); box-shadow:var(--shadow); }
 .kimi .draft-feedback-notice p { margin:0; font-size:13px; line-height:1.6; }
@@ -87,7 +87,6 @@
   .kimi.yj-dialog > [class*="dialogFooter"] { padding:12px 16px calc(12px + env(safe-area-inset-bottom,0px)); }
   .kimi .draft-leave-actions { display:grid; grid-template-columns:1fr 1fr; width:100%; }
   .kimi .draft-leave-actions > .button-danger { grid-column:1 / -1; }
-  .draft-feedback-float.kimi { right:12px; width:calc(100vw - 24px); }
 }
 /* Yahha control layout. Library classes own the actual inputs and interaction states. */
 .kimi :is(.yj-field,.select-wrap) { min-width:0; }
