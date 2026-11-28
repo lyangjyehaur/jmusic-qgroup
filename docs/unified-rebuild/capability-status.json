@@ -4781,13 +4781,17 @@
         "packages/domain/src/music-search.ts",
         "apps/web/src/music-selection.tsx",
         "apps/web/src/music-search.tsx",
-        "apps/web/src/music.tsx"
+        "apps/web/src/music.tsx",
+        "apps/web/src/music-save-dock.tsx",
+        "apps/web/src/music-level-picker.tsx"
       ],
       "behavior_evidence": [
         "apps/web/tests/domain-familiarity.spec.ts",
         "packages/domain/src/music-search.test.ts",
         "apps/web/tests/music-workspace.spec.ts",
-        "docs/unified-rebuild/224-music-parent-acceptance.md"
+        "docs/unified-rebuild/224-music-parent-acceptance.md",
+        "apps/web/tests/music-level-picker.spec.ts",
+        "apps/web/tests/music-save-dock.spec.ts"
       ],
       "data_evidence": [
         "docs/unified-rebuild/domain-familiarity-restoration.md",
@@ -4805,7 +4809,9 @@
         "apps/web/tests/music-workspace.spec.ts",
         "docs/unified-rebuild/37-music-workspace-checkpoint.md",
         "docs/unified-rebuild/131-full-browser-ci-checkpoint.md",
-        "docs/unified-rebuild/224-music-parent-acceptance.md"
+        "docs/unified-rebuild/224-music-parent-acceptance.md",
+        "apps/web/tests/music-level-picker.spec.ts",
+        "apps/web/tests/music-save-dock.spec.ts"
       ],
       "state": "passed",
       "remaining": ""

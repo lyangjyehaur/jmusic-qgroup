@@ -1400,11 +1400,15 @@
       "local_state": "parent_verified",
       "full_parent_state": "passed",
       "clauses": [
-        "四檔程度可編輯；領域無程度編輯選單；保存、改詞條類型及其他欄位不無聲改選擇。"
+        "本命／常聽／聽過一些／只聽過幾首四檔，領域與細分均可編輯；保存、改詞條類型及其他欄位不無聲改選擇。",
+        "2026-11-28 更正舊驗收條款對領域無程度編輯選單的錯誤判斷；新增勾選入口及版本衝突核對的程度顯示回歸。"
       ],
       "test_files": [
         "apps/api/src/music-catalog.test.ts",
-        "apps/web/tests/music-workspace.spec.ts"
+        "apps/web/tests/music-workspace.spec.ts",
+        "apps/web/tests/domain-familiarity.spec.ts",
+        "apps/web/tests/music-level-picker.spec.ts",
+        "apps/web/tests/music-save-dock.spec.ts"
       ],
       "parent_acceptance_checkpoint": "docs/unified-rebuild/224-music-parent-acceptance.md"
     },

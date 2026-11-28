@@ -146,15 +146,15 @@ test('lost save response keeps the dock visible and retries the original operati
   await expectStableLayout(page);
 });
 
-for(const width of [1440,390])test(`catalog conflicts offer recovery in place and retain choices at ${width}px`,async({page,context})=>{
+for(const [remoteLevel,label] of [[1,'只聽過幾首'],[2,'聽過一些'],[3,'常聽'],[4,'本命']] as const)for(const width of [1440,390])test(`catalog conflicts show saved domain level ${remoteLevel} and retain choices at ${width}px`,async({page,context})=>{
   await context.addCookies([{name:'kanban_session',value:'fixture-alice',url:origin}]);
   const viewer=await(await context.request.get('/api/v2/session')).json();
   const headers={Origin:origin,'X-Account-Scope':viewer.scope,'X-CSRF-Token':viewer.csrf};
-  const first=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'sub-2',level:4}]}});
+  const first=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:null,musicEpoch:0,revision:0,selections:[{entryId:'sub-2',level:4},{entryId:'main-1',level:2}]}});
   expect(first.status()).toBe(200);const profile=await first.json();
   await page.setViewportSize({width,height:900});await page.goto('/music?library=all');
   await page.getByRole('button',{name:'選取YOASOBI',exact:true}).click();await closeMusicLevel(page);
-  const remote=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:profile.id,musicEpoch:0,revision:profile.revision,selections:[{entryId:'sub-2',level:1}]}});
+  const remote=await context.request.put('/api/v2/me/music',{headers:{...headers,'Idempotency-Key':crypto.randomUUID()},data:{profileId:profile.id,musicEpoch:0,revision:profile.revision,selections:[{entryId:'sub-2',level:1},{entryId:'main-1',level:remoteLevel}]}});
   expect(remote.status()).toBe(200);
   const dock=page.getByRole('region',{name:'詞條變動保存',exact:true});const requests:{key:string,body:any}[]=[];
   page.on('request',r=>{if(r.method()==='PUT'&&r.url().endsWith('/me/music'))requests.push({key:r.headers()['idempotency-key']!,body:r.postDataJSON()});});
@@ -170,13 +170,13 @@ for(const width of [1440,390])test(`catalog conflicts offer recovery in place an
   await expect(dock.getByRole('button',{name:'讀取最新版本',exact:true})).toBeEnabled();
   await dock.getByRole('button',{name:'讀取最新版本',exact:true}).click();
   await expect(dock).toContainText('已讀取最新版本，你的勾選已保留。');expect(requests).toHaveLength(1);
-  await dock.locator(".disclosure-trigger").click();await expect(dock).toContainText('Aimer · 只聽過幾首');
+  await dock.locator(".disclosure-trigger").click();await expect(dock).toContainText('Aimer · 只聽過幾首');await expect(dock).toContainText('動畫歌曲 · '+label);
   await expect(page.getByRole('button',{name:'調整喜歡程度：YOASOBI',exact:true})).toBeEnabled();
   await expectStableLayout(page);
   await dock.getByRole('button',{name:'保存詞條變動',exact:true}).click();await expect(page.getByText('已保存。',{exact:true})).toBeVisible();
   expect(requests).toHaveLength(2);expect(requests[1]!.key).not.toBe(requests[0]!.key);
   const saved=await(await context.request.get('/api/v2/me/music',{headers:{'X-Account-Scope':viewer.scope}})).json();
-  expect(saved.selections).toEqual([{entryId:'sub-2',level:4},{entryId:'sub-0',level:3},{entryId:'main-0',level:3}]);
+  expect(saved.selections).toEqual([{entryId:'sub-2',level:4},{entryId:'main-1',level:2},{entryId:'sub-0',level:3},{entryId:'main-0',level:3}]);
 });
 
 test('restoring a stale draft explains the block before sending and pending saves never rebase',async({page,context})=>{
